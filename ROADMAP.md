@@ -6,13 +6,19 @@ in order to do one, it is in the wrong file.
 
 ## Where this stands
 
-**NOTHING IS WAITING BUT A PARKED PHASE.** The quest log below is Phase 1 by
-position only — it stays parked by the user's word until the stripped opening
-has been played. Everything else that was asked for has landed: the weapon
-soft-lock, the two wrong weapon bodies, the walls and the north lip, the
-kiting, the people you have met, what the sheet says about an ailment, the
-WHOLE of the camp, Rimespike's pack clear and dual wielding. **Say so and list
-the open questions rather than inventing work.**
+**ONE PHASE IS WAITING and it is BLOCKED on a question**: more characters, which
+the user asked for in the same breath as dual wielding — *"We also need to add a
+few more characters so we are going to end up well into the 10s of thousands of
+gens."* What a character IS here is a TRADE, and a trade is a body, a roster of
+weapon variants and a 45-node web whose every notable changes a RULE. The art is
+arithmetic; **the web is not, and open question 9 says the user wants trades
+reworked with no spec.** Ask before spending. The quest log after it is parked
+by his word until the stripped opening has been played.
+
+Everything else that was asked for has landed: the weapon soft-lock, the two
+wrong weapon bodies, the walls and the north lip, the kiting, the people you
+have met, what the sheet says about an ailment, the WHOLE of the camp,
+Rimespike's pack clear and dual wielding.
 
 **Everything before them has landed.** The trials-web round — the web and its
 six arms, all three events, the skill-tree tints, the arrow, the ailment rework,
@@ -20,7 +26,7 @@ settings and the book — and the trades round after it: pan and zoom, forty-fiv
 nodes a trade, Aether Ward and Overcharge. So has everything since — the Burst out of the trees, the
 text rules, attributes on gear, the effect redo, the weapon rework and the
 opening. **The balance pass has RUN** — the user released it, and the whole of
-what it found is below. Phase 1 (a quest log) stays parked by his word until the
+what it found is below. Phase 2 (a quest log) stays parked by his word until the
 stripped opening has been played.
 
 **ART IS GENERATED, and that is now written into `CLAUDE.md` and the `art`
@@ -426,7 +432,70 @@ not add a check that fails on one.
 
 ---
 
-## Phase 1 — A quest log instead of a pointing finger
+## Phase 1 — More characters
+
+**The user's ask, in full:** *"We also need to add a few more characters so we
+are going to end up well into the 10s of thousands of gens."* He is right about
+the scale and knows it; what he has not said is WHICH, or what they DO.
+
+**What a character IS in this game.** A TRADE. `Character.trade` is chosen when
+the character is made and is what the hero LOOKS like — `TRADE_BY_ID[trade].spec
+.sprite` is the body every variant is a variant OF. There are two: the Alchemist
+and the Aethermancer (`src/trades/`). A third is not a table row.
+
+**The art cost, measured on the round just finished** — this part is arithmetic
+and needs no decision:
+
+| | |
+|---|---|
+| the body itself | ~68 generations, most of an hour |
+| a portrait | 1, through `create_portrait_character` — nobody has spent one yet |
+| 8 weapon variants + 5 shield ones | ~13 × 90 ≈ **1,200** |
+| 10 dual-wield pairs | ~10 × 90 ≈ **900** |
+| **one trade, end to end** | **~2,200 generations**, and about 0.6 MB of bundle |
+
+**Everything that makes it cheap is already built.** `weapons.json` says what
+each weapon looks like once for every hero who carries it; `variant.mts` composes
+a variant's five states out of the base body's; `pairs.mts` layers an `_off` row
+onto the variant that already holds the other weapon and seeds the row to
+animate into. A new hero is `bodies.json` + `pairs.mts` + one run of each — no
+new words per weapon and no new tools.
+
+**THE WEB IS THE PART THAT IS NOT ARITHMETIC, and it is the blocker.** Five
+spokes of nine, 45 nodes, and **every notable changes a RULE rather than a
+number** — the demo fails a notable whose whole content is stat lines, and that
+is the rule the whole system lives on. Two trades exist and open question 9 says
+the user wants them REWORKED, with no spec. Authoring two more webs against a
+shape he may be about to change is the expensive way to find that out.
+
+- [ ] **ASK FIRST: how many, and what is each one ABOUT?** A trade is a
+      one-sentence idea before it is 45 nodes — the Alchemist is potions as an
+      engine, the Aethermancer is mana as one. **Do not invent a third.**
+- [ ] **And ask whether the WEB comes first.** Open question 9 is unanswered; a
+      new trade authored against the current shape is a new trade to redo.
+- [ ] **The body is designed, approved, rotated, animated and JUDGED before
+      any variant is queued.** A design is one generation and a roster is 2,200.
+- [ ] **A trade's sprite is a `TradeSpec.sprite`**, and `heroSpriteFor` falls
+      back to the base body for a variant nobody has drawn — so a trade ships
+      playable the moment its body lands and gets its weapons afterwards.
+- [ ] **Every phase puts itself in the dev kit.** A trade nobody can take up
+      without making a character is a trade nobody tests.
+
+**Traps.** `takeUpTrade` refuses a second trade outright — it is the one hard
+lock in a game that refunds everything else, so a new trade is not something a
+save can try on. `ladderCharacter` takes NO trade deliberately, so nothing
+measured will notice a new one; what a trade is worth is printed beside the deep
+end and asserted nowhere. The demo sweeps every trade node for a banned phrasing
+and for a notable that is only numbers.
+
+**Done when.** A new character can be made, is drawn holding what it carries,
+and its web changes rules the other two do not.
+
+**What must not break.** `npm run demo` (the trade sweeps), `smoke`, `shots`.
+
+---
+
+## Phase 2 — A quest log instead of a pointing finger
 
 **Not next, and deliberately.** The tutorial was deleted outright so the opening
 can be PLAYED with nothing explaining it. This is what teaching eventually
@@ -567,6 +636,11 @@ be picked up — they are decisions the user has not made. Ask before acting.
    further spec. The retheme itself landed on all three webs, so what is left is
    the trade web's SHAPE or its content, and only the user can say which. **The
    skills layout is explicitly fine.**
+
+   **THIS NOW BLOCKS PHASE 1.** More characters means more trade webs, and two
+   more authored against a shape that is about to change is two more to redo.
+   Answer this before the third trade's web, not before its body — the art is
+   independent of it and is the long pole.
 
 10. **Do the chasms come back?** The whole drop system — `VOID`, ledges, walls
    hanging into a hole, bridges — was built, judged and deleted at the user's
