@@ -443,11 +443,14 @@
     border-image: var(--fix-head) 6 16 / 6px 16px round;
     image-rendering: pixelated;
   }
+  /* ONE FRAME, and the icons sit in its groove. A riveted steel socket behind
+     every icon was a second frame inside the first, in another metal and
+     another temperature — the plate is warm brass and the sockets were cold
+     blue — so the row read as parts from two kits. */
   .railbtn {
     position: relative; display: grid; place-items: center;
     width: 34px; height: 34px; padding: 0; font-size: 0;
-    background: transparent; background-image: var(--fix-socket);
-    background-size: 100% 100%; image-rendering: pixelated;
+    background: transparent; image-rendering: pixelated;
     color: var(--text-dim);
     border: 0; border-radius: 0; box-shadow: none; cursor: pointer;
   }
