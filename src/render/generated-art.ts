@@ -7104,7 +7104,7 @@ export const GENERATED: Record<string, GeneratedArt> = {
     states: {"idle":[0,1],"walk":[2,3,4,5,6,7],"attack":[8,9,10,11]},
     key: {"A":"#0a0807","B":"#3a2a1a","C":"#2a1e14","D":"#221911","E":"#322417","F":"#44311d","G":"#140f0b","H":"#4e3820","I":"#0f0c09","J":"#362718","K":"#1e1610","L":"#2c2014","M":"#4b341d","N":"#1a130e","O":"#5d4123","P":"#6b4a26","Q":"#533a20","R":"#8a5e2c","S":"#7b5429","T":"#82592b","U":"#634524","V":"#7b4c23","W":"#c4631e","X":"#985722"},
   },
-  lambengolmor: {
+  glasswright: {
     grid: 48,
     stride: 1.15,
     dirs: ["south-east"],

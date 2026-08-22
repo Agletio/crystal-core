@@ -174,7 +174,7 @@ const DRAWN: Record<string, PortraitArt> = {
     }),
   },
 
-  lambengolmor: {
+  glasswright: {
     grid: 48,
     rows: rows({
         2: '.....................######.....................',

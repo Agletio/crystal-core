@@ -126,7 +126,10 @@ Exactly three things end a session, and a finished phase is not one:
   roster that came off one generator with one forced palette, however readable
   it is on its own. **Load the `art` skill and use the pipeline** — `icons.json`
   → `icon.mts` → `portrait.mts` for an icon, `bodies.json` → `body.mts` for a
-  body, `zoneset.mts` for a floor, `uikit.mts` for a fixture. The grids already
+  body, `zoneset.mts` for a floor, `uikit.mts` for a fixture. **A DESIGN IS
+  SHOWN TO THE USER AND APPROVED BY HIM BEFORE ANYTHING IS ROTATED, ANIMATED OR
+  DRESSED** — *"you're supposed to give me sample images before you begin making
+  animations or additional generations for characters."* The grids already
   in `src/ui/icons.ts` are what shipped before there was a generator; they are a
   FALLBACK for an id nobody has drawn yet and **nothing new joins them.**
 - **`GameState` is plain data**, `heal()` repairs it on every load, and

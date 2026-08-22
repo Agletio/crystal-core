@@ -106,6 +106,7 @@ import type { GearBase } from './types';
 import {
   arenaAt, canEnter, challengesIn, climbed, furthest, isChallenge, takeRung, zoneOpen,
 } from './ladder';
+import { canDualWield } from './sim/character';
 import {
   balance,
   grant,
@@ -6820,8 +6821,12 @@ rule('THE ROSTER — is every hero drawn holding what it carries?');
       want(wearing(undefined, shield));
       for (const main of oneOfEach(oneHanded)) want(wearing(main, shield));
     }
-    for (const main of oneOfEach(oneHanded)) {
-      for (const off of oneOfEach(oneHanded)) want(wearing(main, off));
+    // A PAIR is only an arrangement for the trade that may hold one. Asking the
+    // other three for pair art is asking for pictures nobody can reach.
+    if (canDualWield(wearing())) {
+      for (const main of oneOfEach(oneHanded)) {
+        for (const off of oneOfEach(oneHanded)) want(wearing(main, off));
+      }
     }
     line(`  ${body}: ${seen.size} arrangements a player can reach`);
     check(

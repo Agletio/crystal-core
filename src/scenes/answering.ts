@@ -10,7 +10,7 @@ import type { SceneDef } from '../scenes';
 
 export const ANSWERING_HALL: SceneDef = {
   id: 'answering_hall',
-  who: 'lambengolmor',
+  who: 'glasswright',
   name: 'The Answering',
   theme: 'fissure',
   plan: {

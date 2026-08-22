@@ -157,8 +157,15 @@ is kept; only the ids are the server's to say.
 2. **Design** — `create_image_pixflux`, `no_background: true`,
    `view: 'high top-down'`, `direction: 'south'`, 128, `text_guidance_scale:
    12`. Ask several concepts and several variants at once.
-3. **Approve.** Put candidates on the real zone floors, magnified (lift the
-   tile whose `key` is 0 out of `generated-tiles.ts`). **Nothing below this
+3. **Approve — AND THE USER IS WHO APPROVES.** *His word, after a body was
+   designed, rotated, animated and half-dressed before he ever saw it: "No stop
+   I hate this design he looks like an anime character. You're supposed to give
+   me sample images before you begin making animations or additional
+   generations for characters."* **SHOW HIM THE DESIGN SHEET AND STOP.** Do not
+   rotate, animate, dress or queue anything until he has picked one. A design
+   is one generation and everything past it is sixty-eight; judging it yourself
+   is not judging it. Put candidates on the real zone floors, magnified (lift
+   the tile whose `key` is 0 out of `generated-tiles.ts`). **Nothing below this
    line is cheap.**
 4. **Rotate** — `create_character`, `mode: 'v3'`, approved PNG as
    `reference_image_base64`, `size: 96`. `standard` mode is template-based: one
