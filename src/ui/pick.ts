@@ -166,8 +166,9 @@ function look(tradeId: string): void {
     el(
       'p',
       'picksay__cost',
-      `${TRADE.maxPoints} points, one every ${TRADE.levelsPerPoint} levels — ` +
-        'half the web, so which half is the decision.'
+      `${TRADE.maxPoints} points, ${TRADE.pointsPerGrant} at a time from level ` +
+        `${TRADE.firstAt} — a notable is always ${TRADE.pointsPerGrant} away, so ` +
+        'every pair finishes one and the last pair finishes a branch.'
     )
   );
 

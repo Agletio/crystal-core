@@ -238,8 +238,12 @@ the weapon that skill wants — *"It should just be you pick character/name/skil
 and land in the town."* There is no opening room; `armForSkill` is what puts it
 in your hand. The trade is what the hero LOOKS like; it is funded
 by character level out of its own budget, so it survives every skill you swap.
-Its web is five spokes of nine — a stem, a GATE everyone on that spoke takes,
-then a fork into two branches — and ten points reach one spoke whole.
+Its web is five spokes of TEN — one minor, a GATE everyone on that spoke takes,
+then a fork into two branches of minor, notable, minor, notable. **Every notable
+sits at an EVEN step from the middle and points come TWO AT A TIME**, so a grant
+is always a minor and the notable behind it and the last pair finishes a branch
+instead of stranding you short of its tip. Six points against fifty nodes: one
+branch whole, three notables, and the fork is still a decision at the cap.
 Seven main skills, each with its own tree; a mover and THREE passives fill the
 other slots, the mover having a nine-node web of its own. **A passive changes a
 RULE and pays for it**, and the second and third slots open at levels 20 and 40

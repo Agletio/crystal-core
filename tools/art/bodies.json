@@ -2314,7 +2314,7 @@
   },
   {
    "sprite": "mahthar_dagger",
-   "character": null,
+   "character": "e69eb176-b21d-4d4a-b631-6f81bed13477",
    "name": "Mahthar, with a dagger",
    "size": 96,
    "weapon": "dagger",
@@ -2344,7 +2344,7 @@
   },
   {
    "sprite": "mahthar_mace",
-   "character": null,
+   "character": "d028c0b3-83c7-4550-8713-c5dfa1dc8a63",
    "name": "Mahthar, with a mace",
    "size": 96,
    "weapon": "mace",
@@ -2374,7 +2374,7 @@
   },
   {
    "sprite": "mahthar_mace2h",
-   "character": null,
+   "character": "bbf1053e-8f7d-4729-8b4a-473eb5067f64",
    "name": "Mahthar, with a maul",
    "size": 96,
    "weapon": "mace2h",
@@ -2404,7 +2404,7 @@
   },
   {
    "sprite": "mahthar_staff",
-   "character": null,
+   "character": "f639514c-c261-42b1-84c2-c279fa06e377",
    "name": "Mahthar, with a staff",
    "size": 96,
    "weapon": "staff",
@@ -2434,7 +2434,7 @@
   },
   {
    "sprite": "mahthar_wand",
-   "character": null,
+   "character": "71e1a08f-3192-4806-a6ca-a576b6611b09",
    "name": "Mahthar, with a wand",
    "size": 96,
    "weapon": "wand",
@@ -2464,7 +2464,7 @@
   },
   {
    "sprite": "mahthar_bow",
-   "character": null,
+   "character": "4b743315-0ccf-4305-8de0-b2ec6f73726a",
    "name": "Mahthar, with a bow",
    "size": 96,
    "weapon": "bow",
@@ -2494,7 +2494,7 @@
   },
   {
    "sprite": "mahthar_sword_shield",
-   "character": null,
+   "character": "e64e5cae-f825-414b-bda5-267d37f2f7dd",
    "name": "Mahthar, with a sword and a shield",
    "size": 96,
    "weapon": "sword",
@@ -2525,7 +2525,7 @@
   },
   {
    "sprite": "mahthar_dagger_shield",
-   "character": null,
+   "character": "b371a7ef-ad9e-4509-8b4b-83f0bc0ff30b",
    "name": "Mahthar, with a dagger and a shield",
    "size": 96,
    "weapon": "dagger",
@@ -2556,7 +2556,7 @@
   },
   {
    "sprite": "mahthar_mace_shield",
-   "character": null,
+   "character": "20281f5a-8045-408f-91d6-d450ca9fd20d",
    "name": "Mahthar, with a mace and a shield",
    "size": 96,
    "weapon": "mace",
@@ -2587,7 +2587,7 @@
   },
   {
    "sprite": "mahthar_wand_shield",
-   "character": null,
+   "character": "c9ed58b0-ddba-4e32-ac88-5239d91ff666",
    "name": "Mahthar, with a wand and a shield",
    "size": 96,
    "weapon": "wand",
@@ -2618,7 +2618,7 @@
   },
   {
    "sprite": "mahthar_shield",
-   "character": null,
+   "character": "de8c9d6c-23d3-4a7e-81ba-6f4a1f99dc71",
    "name": "Mahthar, with a shield",
    "size": 96,
    "weapon": "shield",

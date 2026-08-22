@@ -35,8 +35,20 @@ export const tradeNodeById = (
   nodeId: string
 ): SkillNodeDef | undefined => tradeNodes(tradeId).find((n) => n.id === nodeId);
 
-export const tradePointsFor = (level: number): number =>
-  Math.max(0, Math.min(TRADE.maxPoints, Math.floor(level / TRADE.levelsPerPoint)));
+/** TWO AT A TIME, from `firstAt` — the level the trade itself is picked at. */
+export const tradePointsFor = (level: number): number => {
+  if (level < TRADE.firstAt) return 0;
+  const grants = 1 + Math.floor((level - TRADE.firstAt) / TRADE.levelsPerGrant);
+  return Math.min(TRADE.maxPoints, grants * TRADE.pointsPerGrant);
+};
+
+/** The level the next pair lands at, or null once they are all spent. */
+export const tradeNextAt = (level: number): number | null => {
+  if (tradePointsFor(level) >= TRADE.maxPoints) return null;
+  if (level < TRADE.firstAt) return TRADE.firstAt;
+  const done = Math.floor((level - TRADE.firstAt) / TRADE.levelsPerGrant);
+  return TRADE.firstAt + (done + 1) * TRADE.levelsPerGrant;
+};
 
 /** What taking every attribute point back costs. The one allocation with no
  *  click to undo it, so gold is what undoes it. */

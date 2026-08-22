@@ -190,7 +190,7 @@ import {
   bleedOf,
 } from './sim/grants';
 import { SPUR_COUNT, SPUR_STEPS, TRUNK_NODES } from './trees/layout';
-import { SPOKE_COUNT, TRADE_NODES } from './trades/layout';
+import { SPOKE_COUNT, SPOKE_NODES, TRADE_NODES } from './trades/layout';
 import {
   TRADES,
   TRADE_BY_ID,
@@ -6112,18 +6112,28 @@ rule('TRADES — is the part that is not the skill worth keeping a character for
 // quietly is a switch nobody reads, a walk that cheats the distance it is meant
 // to cost, or a rule that reads on a card and does nothing in the sim.
 {
+  const grants = TRADE.maxPoints / TRADE.pointsPerGrant;
+  const maxedAt = TRADE.firstAt + (grants - 1) * TRADE.levelsPerGrant;
   line(
-    `  ${TRADES.length} trades · ${TRADE.maxPoints} points at level ` +
-      `${TRADE.maxPoints * TRADE.levelsPerPoint}, one every ${TRADE.levelsPerPoint}`
+    `  ${TRADES.length} trades · ${TRADE.maxPoints} points in ${grants} pairs, ` +
+      `level ${TRADE.firstAt} to ${maxedAt}`
   );
 
   check(
-    tradePointsFor(TRADE.levelsPerPoint - 1) === 0
-      && tradePointsFor(TRADE.levelsPerPoint) === 1
-      && tradePointsFor(TRADE.maxPoints * TRADE.levelsPerPoint) === TRADE.maxPoints
+    tradePointsFor(TRADE.firstAt - 1) === 0
+      && tradePointsFor(TRADE.firstAt) === TRADE.pointsPerGrant
+      && tradePointsFor(maxedAt) === TRADE.maxPoints
       && tradePointsFor(999) === TRADE.maxPoints,
     'character level funds it, on its own curve, capped',
-    `${[4, 5, 50, 999].map(tradePointsFor).join(', ')}`
+    `${[TRADE.firstAt - 1, TRADE.firstAt, maxedAt, 999].map(tradePointsFor).join(', ')}`
+  );
+  // TWO AT A TIME, and never an odd number: a notable is always two steps on,
+  // so an odd budget would strand every build one short of one.
+  const odd = Array.from({ length: 120 }, (_, l) => tradePointsFor(l)).filter((p) => p % 2 !== 0);
+  check(
+    odd.length === 0 && TRADE.maxPoints % TRADE.pointsPerGrant === 0,
+    'and hands them over two at a time, so no level ever holds an odd number',
+    odd.join(', ')
   );
 
   for (const trade of TRADES) {
@@ -6132,13 +6142,14 @@ rule('TRADES — is the part that is not the skill worth keeping a character for
     const notables = nodes.filter((n) => n.kind === 'notable');
     line(`  ${id}: ${nodes.length} nodes, ${notables.length} of them notable`);
 
-    // Three notables a spoke: the GATE everybody on it takes, and the tip of
-    // each branch past the fork.
+    // FIVE notables a spoke: the GATE everybody on it takes, and a middle and a
+    // tip on each of the two branches past the fork.
+    const perSpoke = 5;
     check(
       nodes.length === TRADE_NODES
-        && notables.length === SPOKE_COUNT * 3
+        && notables.length === SPOKE_COUNT * perSpoke
         && new Set(nodes.map((n) => n.id)).size === nodes.length,
-      `${TRADE_NODES} nodes, ${SPOKE_COUNT * 3} of them notables, and no id used twice`,
+      `${TRADE_NODES} nodes, ${SPOKE_COUNT * perSpoke} of them notables, and no id used twice`,
       `${nodes.length} nodes, ${notables.length} notable`
     );
 
@@ -6178,17 +6189,23 @@ rule('TRADES — is the part that is not the skill worth keeping a character for
       [...orphans, ...dear].map((n) => n.id).join(', ')
     );
 
-    // The shape, and the whole of what makes the tree a decision: a GATE is
-    // three steps out and a branch tip six, so ten points buy one spoke walked
-    // whole and a second gate — never two whole spokes.
+    // The shape, and the whole of what makes the tree a decision: a GATE is two
+    // steps out and a branch tip six, which is the entire budget — so ONE
+    // branch fits whole and the fork stays a choice at the level cap.
     const gates = trade.spec.spokes.map((sp) => distance.get(sp.gate.id) ?? 0);
     const deepest = Math.max(...nodes.map((n) => distance.get(n.id) ?? 0));
-    const whole = Math.floor(TRADE.maxPoints / deepest);
     line(`  a gate costs ${gates[0]}, the deepest node ${deepest} of ${TRADE.maxPoints}`);
     check(
-      gates.every((d) => d === 3) && deepest === 6 && whole === 1,
-      'a gate is 3 steps out and a tip 6, so ONE spoke fits whole and no more',
-      `gates ${gates.join('/')} · deepest ${deepest} · ${whole} whole`
+      gates.every((d) => d === 2) && deepest === TRADE.maxPoints,
+      'a gate is 2 steps out and a branch tip is the whole budget, so ONE branch fits',
+      `gates ${gates.join('/')} · deepest ${deepest} of ${TRADE.maxPoints}`
+    );
+    // And the OTHER branch cannot also be had: a spoke is ten nodes against
+    // six points, which is what the old nine-against-ten stopped being.
+    check(
+      SPOKE_NODES > TRADE.maxPoints,
+      'and a whole spoke never fits, so the fork is still a decision at the cap',
+      `${SPOKE_NODES} nodes a spoke against ${TRADE.maxPoints} points`
     );
 
     // Every switch declared, read whatever the skill's delivery is, and able to
@@ -6212,6 +6229,50 @@ rule('TRADES — is the part that is not the skill worth keeping a character for
     // and one of them would win.
     const numbers = notables.filter((n) => Object.keys(n.grants ?? {}).length === 0);
     check(numbers.length === 0, 'every notable changes a rule rather than a number', numbers.map((n) => n.name).join(', '));
+
+    // THE GEOMETRY THE POINTS ARE HANDED OVER ON. Points come two at a time,
+    // so a notable has to sit at every EVEN step from the middle and a minor
+    // at every odd one — otherwise a pair lands you on a minor and the last
+    // one strands you a step short of a tip. This is the whole rework.
+    {
+      const by = Object.fromEntries(trade.nodes.map((n) => [n.id, n]));
+      const depth = (id: string): number => {
+        let d = 0;
+        let at: string | undefined = id;
+        while (at && at !== CENTRE) {
+          d++;
+          at = by[at]?.links?.[0];
+        }
+        return d;
+      };
+      const wrong = trade.nodes
+        .filter((n) => (depth(n.id) % 2 === 0) !== (n.kind === 'notable'))
+        .map((n) => `${n.id}@${depth(n.id)} is a ${n.kind}`);
+      check(
+        wrong.length === 0,
+        `${id}: a notable at every even step and a minor at every odd one`,
+        wrong.slice(0, 4).join(', ')
+      );
+
+      // PLAYED OUT, rather than argued from the shape: walk the web greedily a
+      // pair at a time, the way the levels hand them over, and every stop has
+      // to land on a notable. A build that never strands is the whole ask.
+      const walked: string[] = [];
+      const stops: string[] = [];
+      for (let pair = 0; pair < TRADE.maxPoints / TRADE.pointsPerGrant; pair++) {
+        for (let step = 0; step < TRADE.pointsPerGrant; step++) {
+          const open = trade.nodes.find((n) => canAllocateTrade(id, n.id, walked));
+          if (open) walked.push(open.id);
+        }
+        stops.push(by[walked[walked.length - 1]]?.kind ?? 'nothing');
+      }
+      check(
+        walked.length === TRADE.maxPoints && stops.every((k) => k === 'notable'),
+        `and every pair spent walks onto one — ${stops.join(', ')}`,
+        `${walked.length} spent, stopped on ${stops.join(', ')}`
+      );
+      line(`  ${id}: ${walked.length} points, ending on ${stops.length} notables`);
+    }
 
     const handed = new Map<string, number>();
     for (const n of nodes) {
@@ -6292,7 +6353,7 @@ rule('TRADES — is the part that is not the skill worth keeping a character for
     // half the budget and reaching it means finishing what you start.
     const fresh = (): Character => {
       const who = makeCharacter({}, 'strike');
-      who.level = TRADE.maxPoints * TRADE.levelsPerPoint;
+      who.level = maxedAt;
       takeUpTrade(who, id);
       return who;
     };
@@ -6406,10 +6467,11 @@ rule('TRADES — is the part that is not the skill worth keeping a character for
     const saved = createGame('fresh');
     saved.character.level = 50;
     takeUpTrade(saved.character, 'alchemist');
-    // Stem, gate, then a branch: the walk the new shape actually allows.
+    // A stem minor, the gate, and one branch whole — six nodes for six points,
+    // which is the entire budget walked in three pairs.
     for (const n of [
-      'alc_reaction_m0', 'alc_reaction_m1', 'alc_volatile',
-      'alc_detonating_m0', 'alc_detonating_m1', 'alc_detonation',
+      'alc_reaction_m0', 'alc_volatile',
+      'alc_detonating_m0', 'alc_touchpaper', 'alc_detonating_m2', 'alc_detonation',
     ]) {
       allocateTrade(saved.character, n);
     }

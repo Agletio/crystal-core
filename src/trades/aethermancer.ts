@@ -32,7 +32,6 @@ export const AETHERMANCER: TradeSpec = {
       theme: 'Warding',
       minors: [
         { text: '+10% increased Mana', stats: [stat('mana', 'inc', 10)] },
-        { text: '+6% increased Life', stats: [stat('life', 'inc', 6)] },
       ],
       gate: {
         id: 'aet_ward',
@@ -50,12 +49,20 @@ export const AETHERMANCER: TradeSpec = {
             { text: '+12% increased Mana', stats: [stat('mana', 'inc', 12)] },
             { text: '+8% increased Life', stats: [stat('life', 'inc', 8)] },
           ],
-          notable: {
-            id: 'aet_bulwark',
-            name: 'Bulwark of Aether',
-            description: '25% of every hit comes off mana before it reaches your life.',
-            grants: { manaShield: 0.25 },
-          },
+          notables: [
+            {
+              id: 'aet_standing',
+              name: 'Standing Ward',
+              description: '12% of every hit comes off mana before it reaches your life.',
+              grants: { manaShield: 0.12 },
+            },
+            {
+              id: 'aet_bulwark',
+              name: 'Bulwark of Aether',
+              description: '25% of every hit comes off mana before it reaches your life.',
+              grants: { manaShield: 0.25 },
+            },
+          ],
         },
         {
           id: 'shellwork',
@@ -64,12 +71,20 @@ export const AETHERMANCER: TradeSpec = {
             { text: '+220 Armour', stats: [stat('armour', 'flat', 220)] },
             { text: '+8% to all Resistances', stats: [stat('elementalRes', 'flat', 8)] },
           ],
-          notable: {
-            id: 'aet_shell',
-            name: 'The Outer Shell',
-            description: 'Mana pays 100% of an Ailment rather than the 20% a hit pays.',
-            grants: { wardWhole: true },
-          },
+          notables: [
+            {
+              id: 'aet_coldcomfort',
+              name: 'Cold Comfort',
+              description: '10% of your maximum life is added to your maximum mana.',
+              grants: { poolFromLife: 0.1 },
+            },
+            {
+              id: 'aet_shell',
+              name: 'The Outer Shell',
+              description: 'Mana pays 100% of an Ailment rather than the 20% a hit pays.',
+              grants: { wardWhole: true },
+            },
+          ],
         },
       ],
     },
@@ -78,7 +93,6 @@ export const AETHERMANCER: TradeSpec = {
       theme: 'Overflow',
       minors: [
         { text: '+7% increased Damage', stats: [stat('damage', 'inc', 7)] },
-        { text: '+12% increased Mana', stats: [stat('mana', 'inc', 12)] },
       ],
       gate: {
         id: 'aet_overcharge',
@@ -94,12 +108,20 @@ export const AETHERMANCER: TradeSpec = {
             { text: '+14% increased Mana', stats: [stat('mana', 'inc', 14)] },
             { text: '+9% increased Damage', stats: [stat('damage', 'inc', 9)] },
           ],
-          notable: {
-            id: 'aet_cataclysm',
-            name: 'Cataclysm',
-            description: 'Overcharge spends 8% more of the pool per use, and adds 8% more.',
-            grants: { overcharge: 0.08 },
-          },
+          notables: [
+            {
+              id: 'aet_kindling',
+              name: 'Kindling',
+              description: 'Overcharge spends 5% more of the pool per use, and adds 5% more.',
+              grants: { overcharge: 0.05 },
+            },
+            {
+              id: 'aet_cataclysm',
+              name: 'Cataclysm',
+              description: 'Overcharge spends 8% more of the pool per use, and adds 8% more.',
+              grants: { overcharge: 0.08 },
+            },
+          ],
         },
         {
           id: 'rime',
@@ -108,12 +130,20 @@ export const AETHERMANCER: TradeSpec = {
             { text: '+12% chance to apply Chill', stats: [stat('ailmentChance', 'flat', 12, ['chill'])] },
             { text: '+16% increased Cold Damage', stats: [stat('damage', 'inc', 16, ['cold'])] },
           ],
-          notable: {
-            id: 'aet_rime',
-            name: 'Rimebound',
-            description: '+45% chance to apply your Ailment.',
-            grants: { ailmentChance: 45 },
-          },
+          notables: [
+            {
+              id: 'aet_hoar',
+              name: 'Hoar',
+              description: 'Ailments you apply deal 20% more damage.',
+              grants: { ailmentMultiplier: 1.2 },
+            },
+            {
+              id: 'aet_rime',
+              name: 'Rimebound',
+              description: '+45% chance to apply your Ailment.',
+              grants: { ailmentChance: 45 },
+            },
+          ],
         },
       ],
     },
@@ -122,7 +152,6 @@ export const AETHERMANCER: TradeSpec = {
       theme: 'Siphoning',
       minors: [
         { text: '+15% increased Mana Regeneration', stats: [stat('manaRegen', 'inc', 15)] },
-        { text: '+6% increased Damage', stats: [stat('damage', 'inc', 6)] },
       ],
       gate: {
         id: 'aet_siphon',
@@ -138,12 +167,20 @@ export const AETHERMANCER: TradeSpec = {
             { text: '+8% increased Damage', stats: [stat('damage', 'inc', 8)] },
             { text: '+18% increased Mana Regeneration', stats: [stat('manaRegen', 'inc', 18)] },
           ],
-          notable: {
-            id: 'aet_deep_draw',
-            name: 'Deep Draw',
-            description: '5% of the damage you deal returns as mana.',
-            grants: { manaLeech: 0.05 },
-          },
+          notables: [
+            {
+              id: 'aet_firstdraw',
+              name: 'The First Draw',
+              description: '2.5% of the damage you deal returns to you as mana.',
+              grants: { manaLeech: 0.025 },
+            },
+            {
+              id: 'aet_deep_draw',
+              name: 'Deep Draw',
+              description: '5% of the damage you deal returns as mana.',
+              grants: { manaLeech: 0.05 },
+            },
+          ],
         },
         {
           id: 'wellspring',
@@ -152,12 +189,20 @@ export const AETHERMANCER: TradeSpec = {
             { text: '+22% increased Mana Regeneration', stats: [stat('manaRegen', 'inc', 22)] },
             { text: '+9% increased Mana', stats: [stat('mana', 'inc', 9)] },
           ],
-          notable: {
-            id: 'aet_wellspring',
-            name: 'Wellspring',
-            description: 'Every kill returns 4% of your maximum mana.',
-            grants: { manaOnKill: 0.04 },
-          },
+          notables: [
+            {
+              id: 'aet_trickle',
+              name: 'Trickle',
+              description: 'Every kill returns 2% of your maximum mana.',
+              grants: { manaOnKill: 0.02 },
+            },
+            {
+              id: 'aet_wellspring',
+              name: 'Wellspring',
+              description: 'Every kill returns 4% of your maximum mana.',
+              grants: { manaOnKill: 0.04 },
+            },
+          ],
         },
       ],
     },
@@ -166,7 +211,6 @@ export const AETHERMANCER: TradeSpec = {
       theme: 'Drought',
       minors: [
         { text: '+4% reduced Mana Cost', stats: [stat('manaCost', 'inc', -4)] },
-        { text: '+5% increased Damage', stats: [stat('damage', 'inc', 5)] },
       ],
       gate: {
         id: 'aet_dry_season',
@@ -182,12 +226,20 @@ export const AETHERMANCER: TradeSpec = {
             { text: '+6% reduced Mana Cost', stats: [stat('manaCost', 'inc', -6)] },
             { text: '+7% increased Damage', stats: [stat('damage', 'inc', 7)] },
           ],
-          notable: {
-            id: 'aet_last_drop',
-            name: 'The Last Drop',
-            description: '81% rather than 65% of your damage while Starved.',
-            grants: { starvedDamage: 1.25 },
-          },
+          notables: [
+            {
+              id: 'aet_rationed',
+              name: 'Rationed',
+              description: 'A Starved use lands for 73% of your damage rather than 65%.',
+              grants: { starvedDamage: 1.12 },
+            },
+            {
+              id: 'aet_last_drop',
+              name: 'The Last Drop',
+              description: '81% rather than 65% of your damage while Starved.',
+              grants: { starvedDamage: 1.25 },
+            },
+          ],
         },
         {
           id: 'thrift',
@@ -196,14 +248,22 @@ export const AETHERMANCER: TradeSpec = {
             { text: '+7% reduced Mana Cost', stats: [stat('manaCost', 'inc', -7)] },
             { text: '+10% increased Mana', stats: [stat('mana', 'inc', 10)] },
           ],
-          notable: {
-            id: 'aet_thrift',
-            name: 'Never Dry',
-            description:
-              'A use you cannot pay for spends life instead, 2 life for every point ' +
-              'of mana.',
-            grants: { payWithLife: 2 },
-          },
+          notables: [
+            {
+              id: 'aet_sparing',
+              name: 'Sparing',
+              description: '2% of the damage you deal returns to you as mana.',
+              grants: { manaLeech: 0.02 },
+            },
+            {
+              id: 'aet_thrift',
+              name: 'Never Dry',
+              description:
+                'A use you cannot pay for spends life instead, 2 life for every point ' +
+                'of mana.',
+              grants: { payWithLife: 2 },
+            },
+          ],
         },
       ],
     },
@@ -212,7 +272,6 @@ export const AETHERMANCER: TradeSpec = {
       theme: 'Vessel',
       minors: [
         { text: '+7% increased Life', stats: [stat('life', 'inc', 7)] },
-        { text: '+10% increased Mana', stats: [stat('mana', 'inc', 10)] },
       ],
       gate: {
         id: 'aet_vessel',
@@ -228,12 +287,20 @@ export const AETHERMANCER: TradeSpec = {
             { text: '+9% increased Life', stats: [stat('life', 'inc', 9)] },
             { text: '+11% increased Life', stats: [stat('life', 'inc', 11)] },
           ],
-          notable: {
-            id: 'aet_confluence',
-            name: 'Confluence',
-            description: '20% of your maximum life is added to the pool.',
-            grants: { poolFromLife: 0.2 },
-          },
+          notables: [
+            {
+              id: 'aet_deepening',
+              name: 'Deepening',
+              description: '10% of your maximum life is added to the pool.',
+              grants: { poolFromLife: 0.1 },
+            },
+            {
+              id: 'aet_confluence',
+              name: 'Confluence',
+              description: '20% of your maximum life is added to the pool.',
+              grants: { poolFromLife: 0.2 },
+            },
+          ],
         },
         {
           id: 'widening',
@@ -242,12 +309,20 @@ export const AETHERMANCER: TradeSpec = {
             { text: '+13% increased Mana', stats: [stat('mana', 'inc', 13)] },
             { text: '+15% increased Mana', stats: [stat('mana', 'inc', 15)] },
           ],
-          notable: {
-            id: 'aet_widening',
-            name: 'The Wider Bore',
-            description: 'Overcharge adds 1.6x what it spent rather than matching it.',
-            grants: { overchargeYield: 1.6 },
-          },
+          notables: [
+            {
+              id: 'aet_boredout',
+              name: 'Bored Out',
+              description: 'Overcharge adds 1.25x what it spent rather than matching it.',
+              grants: { overchargeYield: 1.25 },
+            },
+            {
+              id: 'aet_widening',
+              name: 'The Wider Bore',
+              description: 'Overcharge adds 1.6x what it spent rather than matching it.',
+              grants: { overchargeYield: 1.6 },
+            },
+          ],
         },
       ],
     },

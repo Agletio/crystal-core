@@ -20,6 +20,7 @@ import {
   canDeallocateTrade,
   neighboursOfTrade,
   tradeNodes,
+  tradeNextAt,
   tradePointsFor,
 } from '../trades';
 import { CENTRE } from '../trees/node';
@@ -99,8 +100,8 @@ function renderPicker(): void {
         'span',
         'catcard__count',
         earned > 0
-          ? `${TRADE_RULES.maxPoints} points, half the web`
-          : `not until level ${TRADE_RULES.levelsPerPoint}`
+          ? `${TRADE_RULES.maxPoints} points, ${TRADE_RULES.pointsPerGrant} at a time`
+          : `not until level ${TRADE_RULES.firstAt}`
       )
     );
     card.onclick = () => choose(trade.spec.id);
@@ -273,17 +274,17 @@ function render(): void {
   const { character } = game;
   const earned = tradePointsFor(character.level);
   const chosen = character.trade ? TRADE_BY_ID[character.trade] : null;
-  const nextAt = (Math.floor(character.level / TRADE.levelsPerPoint) + 1) * TRADE.levelsPerPoint;
+  const nextAt = tradeNextAt(character.level);
 
   $('trade-modal-title').textContent = chosen ? chosen.spec.name : 'Trade';
   $('trade-sub').textContent = chosen
     ? `${character.tradeAllocated.length}/${earned} points spent` +
-      (earned < TRADE.maxPoints
-        ? ` · next at level ${nextAt} · ${TRADE.maxPoints} at level ${TRADE.maxPoints * TRADE.levelsPerPoint}`
+      (nextAt !== null
+        ? ` · ${TRADE.pointsPerGrant} more at level ${nextAt} · ${TRADE.maxPoints} in all`
         : ' · every point earned')
     : earned > 0
       ? `${earned} point${earned === 1 ? '' : 's'} waiting — choose what to be.`
-      : `A trade is yours at level ${TRADE.levelsPerPoint}. You are ${character.level}.`;
+      : `A trade is yours at level ${TRADE.firstAt}. You are ${character.level}.`;
 
   // Who you ARE is chosen once, so this screen is where one is WALKED.
   $('trade-placeholder').textContent = chosen

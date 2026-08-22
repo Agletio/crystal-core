@@ -88,7 +88,7 @@ of nodes, because two copies of a reachability rule is one copy that is wrong.
 |---|---|---|
 | skill tree (`src/trees/`) | 3 ways in, a ring of 12, 6 branches, 6 trunk notables | level-funded |
 | movement web (`src/moves/`) | 3 arms of 3 | 6 — two whole arms fit, a third never does |
-| trade tree (`src/trades/`) | 5 spokes of 9: a stem of 2, a GATE, then two branches of 3 | 10 — ONE spoke walked whole, and 3 notables is the CEILING |
+| trade tree (`src/trades/`) | 5 spokes of 10: a stem of 1, a GATE, then two branches of minor-notable-minor-notable | 6, TWO AT A TIME — one BRANCH walked whole, and 3 notables is the CEILING |
 
 - **Content only**; `layout.ts` owns every coordinate, in tile units. Give a
   tree a `prefix` no other tree uses — node ids are what a save points at.
@@ -108,8 +108,17 @@ of nodes, because two copies of a reachability rule is one copy that is wrong.
   lives on: a trade handing out percentages competes on percentages and one
   wins; a trade that changes what is POSSIBLE cannot be compared. The demo
   fails a notable whose whole content is stat lines.
-- **A trade is funded by CHARACTER level** (`TRADE`: one point every 5, capped
-  at 10), out of its own budget — funded from skill points, "identity" and
+- **EVERY TRADE NOTABLE SITS AT AN EVEN STEP from the middle, and points come
+  TWO AT A TIME.** That is one rule with two halves and neither works alone: a
+  grant is always a minor and the notable behind it, and the last pair finishes
+  a branch rather than stranding a build one step short of its tip. An odd
+  budget, or a notable at an odd depth, breaks it — the demo walks each web a
+  pair at a time and fails if any stop lands on a minor.
+- **A whole SPOKE never fits.** Ten nodes against six points, so the fork is
+  still a decision at the level cap. It stopped being one when nine nodes faced
+  ten points and had one left over.
+- **A trade is funded by CHARACTER level** (`TRADE`: `pointsPerGrant` every
+  `levelsPerGrant` from `firstAt`, capped at `maxPoints`), out of its own budget — funded from skill points, "identity" and
   "generic stats" compete for the same point and the beeline is back.
 - **Changing trade refunds every point and costs gold.** `replayTrade` does for
   a trade what `replayTree` does for a skill, through the one `replayWeb`.

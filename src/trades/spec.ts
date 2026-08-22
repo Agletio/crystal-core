@@ -1,12 +1,12 @@
 /**
  * A trade is authored as CONTENT here and given coordinates by `layout.ts`.
+ * Five spokes: one minor, a GATE everybody on that spoke takes, then a fork
+ * into two branches of minor, notable, minor, notable. Ten a spoke, fifty.
  *
- * Five spokes, each a STEM that forks: two minors, a GATE notable everybody on
- * that spoke takes, then a choice of two branches of three. Nine a spoke,
- * forty-five in all. The forced half is the point: a spoke says what it IS
- * before it asks anything, and the customised half is where two builds on one
- * spoke stop looking alike. TEN POINTS against forty-five, UNCHANGED — more
- * nodes on one budget is more choice and never more power.
+ * EVERY NOTABLE SITS AT AN EVEN DEPTH, which is the whole geometry: points come
+ * two at a time, so a grant is a minor and the notable behind it and the last
+ * pair finishes a branch. SIX points against fifty — one branch whole, three
+ * notables, and the fork is still a choice at the cap.
  */
 import type { Minor, Notable } from '../trees/spec';
 import type { SkillNodeDef } from '../trees/node';
@@ -15,13 +15,13 @@ export interface Branch {
   id: string;
   theme: string; // what its minors are called
   minors: [Minor, Minor];
-  notable: Notable;
+  notables: [Notable, Notable]; // the branch's middle and its tip, each behind a minor
 }
 
 export interface Spoke {
   id: string;
   theme: string; // what the STEM's minors are called
-  minors: [Minor, Minor];
+  minors: [Minor];
   gate: Notable; // taken by everyone on this spoke, before it asks anything
   branches: [Branch, Branch];
 }

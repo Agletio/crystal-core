@@ -2089,8 +2089,11 @@ export const BURST = {
  * with a skill tree for the same point.
  */
 export const TRADE = {
-  levelsPerPoint: 5, // level 5 buys the first point, and picks the trade
-  maxPoints: 10,
+  firstAt: 5, // the level that picks the trade AND hands over the first pair
+  levelsPerGrant: 20, // so the three pairs land at 5, 25 and 45
+  pointsPerGrant: 2, // TWO AT A TIME: a notable is two steps on, so a pair buys one
+
+  maxPoints: 6,
   /** Gold to take every ATTRIBUTE point back, per level: the one allocation a
    *  click cannot undo. The TRADE is permanent — *"I think trade should be a
    *  permanent decision"* — so nothing buys a different one. */
