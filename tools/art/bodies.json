@@ -2799,7 +2799,8 @@
      "frames": 4,
      "say": "Dying with his knife, buckling at the knees, folding forward over the stomach and going down onto the side, lying flat and still, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
     }
-   }
+   },
+   "character": "0e292dbe-5925-4ba0-8704-fb3c9794980a"
   },
   {
    "sprite": "mahthar_dagger_mace",
@@ -2829,7 +2830,8 @@
      "frames": 4,
      "say": "Dying with his knife, buckling at the knees, folding forward over the stomach and going down onto the side, lying flat and still, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
     }
-   }
+   },
+   "character": "4707973e-ef28-4365-ba42-5ed6f8e748a1"
   },
   {
    "sprite": "mahthar_dagger_wand",
@@ -2859,7 +2861,8 @@
      "frames": 4,
      "say": "Dying with his knife, buckling at the knees, folding forward over the stomach and going down onto the side, lying flat and still, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
     }
-   }
+   },
+   "character": "c174d071-05a5-4809-8634-2de674c5e5f8"
   },
   {
    "sprite": "mahthar_mace_mace",
@@ -2889,7 +2892,8 @@
      "frames": 4,
      "say": "Dying with his iron club, buckling at the knees, folding forward over the stomach and going down onto the side, lying flat and still, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
     }
-   }
+   },
+   "character": "5ef3af6a-4bc8-4e8a-b5ec-daa72fd636f9"
   },
   {
    "sprite": "mahthar_mace_wand",
@@ -2919,7 +2923,8 @@
      "frames": 4,
      "say": "Dying with his iron club, buckling at the knees, folding forward over the stomach and going down onto the side, lying flat and still, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
     }
-   }
+   },
+   "character": "10a3b41b-7ed6-4d2d-80d9-09f022331ae3"
   },
   {
    "sprite": "mahthar_wand_wand",
@@ -2949,7 +2954,8 @@
      "frames": 4,
      "say": "Dying with his wand, buckling at the knees, folding forward over the stomach and going down onto the side, lying flat and still, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
     }
-   }
+   },
+   "character": "742fe247-6131-4b4a-b248-be01ec84aae4"
   }
  ],
  "_inks": "A body is FORCED onto a palette by image, and the roster's own is dark bone and rust. A family living somewhere else needs its own: `inks` names one of these, and a body without the field takes the roster's. Eight dark swatches to four accents in each, because the forcing image is equal-area and the proportion is what lands.",
