@@ -2716,13 +2716,14 @@ $('dev-kit').click();
     String(all('#trials-ladder .trialrow--done').length)
   );
   assert(
-    all('#trials-web .web__node').length === 18,
-    'eighteen nodes, drawn to fit rather than scrolled',
+    all('#trials-web .web__node').length === 156,
+    'a hundred and fifty-six nodes, built whole and roamed',
     String(all('#trials-web .web__node').length)
   );
 
+  // One way in per REGION, and the budget is what stops you walking them all.
   const openTrial = () => all('#trials-web .web__node--open');
-  assert(openTrial().length === 6, 'six ways in, one per arm', String(openTrial().length));
+  assert(openTrial().length === 12, 'twelve ways in, one per region', String(openTrial().length));
   openTrial()[0].dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
   assert(
     all('#trials-web .web__node--on').length === 1,

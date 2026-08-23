@@ -1750,6 +1750,9 @@
   /* The ladder beside the web: the order is the story, so it is read down. */
   .trialsplit { display: grid; grid-template-columns: minmax(220px, 1fr) 2fr; gap: 12px; align-items: start; }
   .trialsplit .webwrap--trade { margin-top: 0; }
+  /* A hundred and fifty-six nodes want the height: at the trade web's the
+     regions are a smudge and the whole point of the web is its shape. */
+  .webwrap--trials { height: min(56vh, 500px, calc(100vh - var(--dock-h, 0px) - 300px)); }
   .trialladder { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; }
   .trialrow { border: 6px solid transparent; border-left-width: 16px; border-right-width: 16px; border-image: var(--fix-head) 6 16 / 6px 16px round; background-color: var(--panel); background-clip: padding-box; padding: 4px 6px; }
   .trialrow--done { filter: brightness(1.12); }
@@ -2445,11 +2448,13 @@
       </div>
       <div class="trialsplit">
         <div class="trialladder" id="trials-ladder"></div>
-        <div class="webwrap webwrap--trade" id="trials-webwrap">
-          <svg class="web web--still" id="trials-web" role="img" aria-label="trials web"></svg>
+        <div class="webwrap webwrap--trade webwrap--trials" id="trials-webwrap">
+          <svg class="web web--roam" id="trials-web" role="img" aria-label="trials web"></svg>
           <div class="webmenu" id="trials-choice" hidden></div>
           <div class="webhud">
+            <button class="mini" id="trials-fit">Fit</button>
             <input class="find" id="trials-find" type="search" placeholder="Find a node" aria-label="Find a node in this web" />
+            <span class="webhud__hint">scroll to zoom · drag to move</span>
           </div>
         </div>
       </div>

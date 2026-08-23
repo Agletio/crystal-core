@@ -133,7 +133,8 @@ export function makeCharacter(
 
 /** Points the trials done have paid, and what is left of them. */
 export const trialPointsLeft = (character: Character): number =>
-  trialPointsFor(character.trials ?? []) - (character.trialAllocated?.length ?? 0);
+  trialPointsFor(character.trials ?? [], character.climbed ?? {}) -
+  (character.trialAllocated?.length ?? 0);
 
 /** One node, or nothing when it is not reachable or nothing is spare. */
 export function allocateTrial(character: Character, nodeId: string): boolean {

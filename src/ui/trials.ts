@@ -1,15 +1,16 @@
 /**
  * The Trials screen: the ladder on the left, the web on the right.
  *
- * A dozen nodes fit on a screen, so like the trade web this one is drawn to FIT
- * and has no pan, no zoom and no Fit button. Everything below is in WEB units
- * and the svg carries a viewBox framing them; nothing measures the element
- * while DRAWING, because the modal's height is decided after this runs.
+ * A HUNDRED AND FIFTY-SIX nodes, so it ROAMS — built once at `BUILD` pixels per
+ * unit with the camera a transform over the whole thing, exactly as the trade
+ * and skill webs are. It opens FRAMED, because the shape of the web is the
+ * decision: which four regions of twelve you can afford to walk.
  */
 import { TRIALS } from '../data';
 import {
   TRIALS_WEB,
   TRIAL_POINTS_MAX,
+  trialPointsFor,
   canAllocateTrial,
   canDeallocateTrial,
   neighboursOfTrial,
@@ -22,11 +23,16 @@ import { trialDone } from '../game/trials';
 import { attachTooltip, hideTooltip } from './tooltip';
 import { nodeCard } from './glossary';
 import { chain, frame, mount, svgEl } from './webart';
+import { BUILD, Camera } from './webcam';
 import { nodeGlyph } from './webicons';
 import type { GameState } from '../game/state';
 import type { SkillNodeDef } from '../trees/node';
 
 const $ = (id: string) => document.getElementById(id)!;
+
+/** Framed once per opening, never per render: a fit while you are reading is
+ *  the web jumping out from under the node you were about to take. */
+let framed = false;
 
 function el(tag: string, cls?: string, text?: string): HTMLElement {
   const node = document.createElement(tag);
@@ -72,12 +78,24 @@ function renderLadder(): void {
 // The web
 // ---------------------------------------------------------------------------
 
-/** FINDING A NODE. The web is a viewBox rather than a camera, so this MARKS
- *  and does not fly: what is dimmed is what does not match. */
+const cam = new Camera({
+  svg: 'trials-web',
+  wrap: 'trials-webwrap',
+  home: 40,
+  zoom: { min: 8, max: 120, step: 1.18 },
+});
+
+/** FINDING A NODE. Twelve regions is more than anybody scrolls through. */
 const find = new WebFind({
   input: 'trials-find',
   svg: 'trials-web',
   nodes: () => trialNodes(),
+  focus: (node) => {
+    cam.panX = node.x;
+    cam.panY = node.y;
+    cam.scale = Math.max(cam.scale, BUILD);
+    cam.apply();
+  },
 });
 
 function renderWeb(): void {
@@ -89,12 +107,14 @@ function renderWeb(): void {
   const taken = new Set(allocated);
   const spare = trialPointsLeft(game.character);
 
+  const view = svgEl('g', { class: 'web__view' });
   const reach = Math.max(1, ...nodes.map((n) => Math.hypot(n.x, n.y))) + MARGIN;
-  svg.setAttribute('viewBox', `${-reach} ${-reach} ${reach * 2} ${reach * 2}`);
-  svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+  cam.origin = Math.ceil(reach * BUILD);
+  svg.style.width = `${cam.origin * 2}px`;
+  svg.style.height = `${cam.origin * 2}px`;
 
-  const at = (n: { x: number; y: number }) => ({ x: n.x, y: n.y });
-  const middle = { x: 0, y: 0 };
+  const at = (n: { x: number; y: number }) => cam.place(n.x, n.y);
+  const middle = cam.place(0, 0);
   const byId = new Map(nodes.map((n) => [n.id, n]));
 
   // Edges first so studs sit on top of them, and trimmed to each end's rim: a
@@ -117,8 +137,8 @@ function renderWeb(): void {
       const dx = to.x - from.x;
       const dy = to.y - from.y;
       const len = Math.max(1e-3, Math.hypot(dx, dy));
-      const rFrom = NODE_R[node.kind];
-      const rTo = other === CENTRE ? HUB_R : NODE_R[far!.kind];
+      const rFrom = NODE_R[node.kind] * BUILD;
+      const rTo = (other === CENTRE ? HUB_R : NODE_R[far!.kind]) * BUILD;
       links.push({
         a: { x: from.x + (dx / len) * rFrom, y: from.y + (dy / len) * rFrom },
         b: { x: to.x - (dx / len) * rTo, y: to.y - (dy / len) * rTo },
@@ -127,37 +147,39 @@ function renderWeb(): void {
     }
   }
 
-  const casing = 0.16;
+  const casing = 0.16 * BUILD;
   for (const l of links) {
     for (const link of chain(l.a, l.b, casing * 0.5, `web__chain${l.live ? ' web__chain--on' : ''}`)) {
-      svg.append(link);
+      view.append(link);
     }
   }
 
   const hub = svgEl('g', { class: 'web__centre' });
-  for (const part of mount(middle, HUB_R, 'web__hub')) hub.append(part);
+  for (const part of mount(middle, HUB_R * BUILD, 'web__hub')) hub.append(part);
   attachTooltip(
     hub,
     () =>
       'The Fissure, as you have made it.\n' +
-      TRIALS_WEB.spec.arms.map((a) => `${a.theme} — ${a.blurb}`).join('\n')
+      TRIALS_WEB.spec.regions.map((r) => `${r.theme} — ${r.blurb}`).join('\n')
   );
-  svg.append(hub);
+  view.append(hub);
 
-  for (const node of nodes) drawNode(svg, node, taken, allocated, spare);
+  for (const node of nodes) drawNode(view, node, taken, allocated, spare);
+  svg.append(view);
+  cam.apply();
   // Every node is new, so whatever the box holds is marked again.
   find.paint();
 }
 
 function drawNode(
-  svg: SVGSVGElement,
+  view: SVGElement,
   node: SkillNodeDef,
   taken: Set<string>,
   allocated: string[],
   spare: number
 ): void {
-  const pos = { x: node.x, y: node.y };
-  const r = NODE_R[node.kind];
+  const pos = cam.place(node.x, node.y);
+  const r = NODE_R[node.kind] * BUILD;
   const owned = taken.has(node.id);
   const reachable = canAllocateTrial(node.id, allocated);
   const open = reachable && spare > 0;
@@ -195,6 +217,7 @@ function drawNode(
   });
 
   const act = () => {
+    if (cam.dragged) return;
     // A node that asks something never allocates on the click itself: the
     // option IS the allocation, so there is no state where one is taken and
     // the other is not.
@@ -214,7 +237,7 @@ function drawNode(
       act();
     }
   });
-  svg.append(group);
+  view.append(group);
 }
 
 /**
@@ -276,17 +299,18 @@ function render(): void {
   closeChoice();
 
   const { character } = game;
-  const earned = (character.trials ?? []).length;
+  const earned = trialPointsFor(character.trials ?? [], character.climbed ?? {});
   const spent = (character.trialAllocated ?? []).length;
 
   $('trials-sub').textContent =
-    `${spent}/${earned} points spent · ${TRIAL_POINTS_MAX} trials in all`;
-  // The bargain, said once where it is being made: every node here is a
-  // downside, and the payment is the danger it adds.
+    `${spent}/${earned} points spent · ${TRIAL_POINTS_MAX} to earn · ` +
+    `${trialNodes().length} nodes`;
+  // The bargain, said once where it is being made: most of this web is a
+  // downside, and what pays for it is the danger it adds.
   $('trials-note').textContent =
     earned > 0
-      ? 'Every node makes a descent worse. Reward comes off danger, so worse is what pays.'
-      : 'Points come from trials, never from levels. The ladder is on the left.';
+      ? 'A point per trial and a point per rung cleared. Most nodes make a descent worse, and worse is what pays.'
+      : 'Points come from trials and from rungs cleared, never from levels. The ladder is on the left.';
 
   renderLadder();
   renderWeb();
@@ -296,7 +320,16 @@ function render(): void {
 export function openTrials(): void {
   $('trials').hidden = false;
   find.clear();
+  framed = false;
   render();
+  // Opens on the MIDDLE at a size where a node can be read, not fitted: a
+  // hundred and fifty-six of them fitted is a grey smear you zoom straight out
+  // of, which is the same rule the skills web is under. Fit is a button.
+  if (!framed) {
+    cam.home();
+    cam.apply();
+    framed = true;
+  }
 }
 
 export function closeTrials(): void {
@@ -310,5 +343,10 @@ export function initTrials(state: GameState, changed?: () => void): void {
   game = state;
   onChanged = changed ?? null;
   ($('trials-close') as HTMLButtonElement).onclick = closeTrials;
+  ($('trials-fit') as HTMLButtonElement).onclick = () => {
+    cam.fit(trialNodes(), 1.2);
+    cam.apply();
+  };
+  cam.attach();
   find.attach();
 }

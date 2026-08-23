@@ -1,17 +1,17 @@
 /**
  * The trials web: the fourth thing walked through `webgraph.ts`, and the only
  * one whose points are not bought by a level. A skill tree is funded by that
- * skill's level and a trade by the character's; this is funded by TRIALS —
- * things done once, in order — so its points cannot be ground for. What it
- * spends them on is the bargain a crystal makes, in the same arithmetic.
+ * skill's level and a trade by the character's; this is funded by things DONE,
+ * so its points cannot be ground for, and what it spends them on is the bargain
+ * a crystal makes, in the same arithmetic.
  */
-import { TRIALS } from './data';
+import { LADDER, TRIALS } from './data';
 import { buildTrials } from './trials/layout';
 import { TRIAL_WEB } from './trials/web';
 import { canAllocateIn, canDeallocateIn, neighboursIn, replayWeb } from './webgraph';
 import type { SkillNodeDef } from './trees/node';
 
-export type { BuiltTrials, TrialArm, TrialSpec } from './trials/spec';
+export type { BuiltTrials, TrialBranch, TrialRegion, TrialSpec } from './trials/spec';
 
 export const TRIALS_WEB = buildTrials(TRIAL_WEB);
 
@@ -20,12 +20,19 @@ export const trialNodes = (): SkillNodeDef[] => TRIALS_WEB.nodes;
 export const trialNodeById = (nodeId: string): SkillNodeDef | undefined =>
   TRIALS_WEB.nodes.find((n) => n.id === nodeId);
 
-export const trialArmOf = (nodeId: string): string | undefined => TRIALS_WEB.armOf[nodeId];
+export const trialRegionOf = (nodeId: string): string | undefined => TRIALS_WEB.regionOf[nodeId];
 
-/** One point per trial done, and that is the whole budget. Never a level. */
-export const trialPointsFor = (done: readonly string[]): number => done.length;
+/** TRIALS AND RUNGS, never a level: both are things you DID, and together they
+ *  make a hundred and fifty-six nodes a decision rather than a shopping list. */
+export const trialPointsFor = (
+  done: readonly string[],
+  climbed: Record<string, number> = {}
+): number =>
+  done.length +
+  LADDER.zones.reduce((n, zone) => n + Math.min(zone.rungs, climbed[zone.theme] ?? 0), 0);
 
-export const TRIAL_POINTS_MAX = TRIALS.length; // every trial there will ever be
+export const TRIAL_POINTS_MAX = // every trial, and every rung there is to clear
+  TRIALS.length + LADDER.zones.reduce((n, z) => n + z.rungs, 0);
 
 export const neighboursOfTrial = (nodeId: string): Set<string> =>
   neighboursIn(trialNodes(), nodeId);

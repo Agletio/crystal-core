@@ -210,11 +210,14 @@ than tier 1 rolled badly.
 
 **Twelve modifiers was the whole ceiling, and the TRIALS WEB is how it rises.**
 Four sockets of three is all the difficulty a crystal can ever hold, so the web
-is a standing set of modifiers on top — earned one point at a time by doing a
-TRIAL, never bought by a level. Its lines merge into `RunSet.mods` beside the
-crystals' own and are weighed by the same `crystalRewards`, so harder is what
-pays. Per CHARACTER, and what it makes worse is every descent that character
-takes.
+is a standing set of modifiers on top. **TWELVE REGIONS, 156 nodes, 48 points**
+— a point per TRIAL and a point per RUNG cleared, never a level, so it cannot be
+ground for and you can walk about four regions of the twelve. Its lines merge
+into `RunSet.mods` beside the crystals' own and are weighed by the same
+`crystalRewards`, so harder is what pays. Most of it is danger; the Vein, the
+Reliquary and the Tithe pay in Rarity and Currency Find instead, and **what a
+reward node costs is the POINT** — it is a danger node you did not take. Per
+CHARACTER, and what it makes worse is every descent that character takes.
 
 **You press Enter once.** A cleared descent launches the next by itself and
 keeps going until you die, your bag fills, someone is waiting at the mouth, or

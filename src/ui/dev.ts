@@ -13,6 +13,7 @@ import { ladderCharacter } from '../sim/loadout';
 import { mainSkillId, skillProgress } from '../sim/character';
 import { heal } from '../game/save';
 import { takeMet } from '../game/scenes';
+import { TRIAL_POINTS_MAX } from '../trials';
 import { pathToNotable } from '../skills-tree';
 import type { GameState } from '../game/state';
 import { ask } from './confirm';
@@ -147,12 +148,12 @@ function render(): void {
   // can only be looked at on a save that has already done the work.
   const trials = group(
     'Trials',
-    'Points for the trials web. Normally earned once each, at the end of a cleared descent.'
+    'Points for the trials web. A point per trial and a point per rung cleared — so the climb buttons below are the other half of its budget.'
   );
   const paid = el('button', 'mini devbtn') as HTMLButtonElement;
   paid.id = 'dev-trials';
   paid.append(el('span', 'devbtn__name', `Do every trial`));
-  paid.append(el('span', 'devbtn__what', `${TRIALS.length} points, the whole web's budget`));
+  paid.append(el('span', 'devbtn__what', `${TRIALS.length} points; the rungs pay ${TRIAL_POINTS_MAX - TRIALS.length} more`));
   paid.onclick = () => {
     game.character.trials = TRIALS.map((t) => t.id);
     hooks.refresh();

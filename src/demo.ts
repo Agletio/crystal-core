@@ -2884,26 +2884,32 @@ rule('THE TRIALS WEB — is a harder descent actually harder, and paid for?');
   );
   check(strays.length === 0, `all ${TRIALS.length} trials ask conditions that exist`, strays.join(', '));
 
-  // Every line on this web is DANGER, which is the whole bargain: reward is
-  // derived from danger, so a node that is not weighed is a node paying nothing.
-  // A FINDING stat is the one exception, and it is the same exception a crystal
-  // makes — it carries no danger there either, and what it costs is the slot.
-  const finding = new Set(DROP_GROUPS.map((g) => findStat(g.id)));
+  // Every line here is either DANGER — which is the bargain, since reward is
+  // derived from danger — or REWARD, which is the other half of it. A reward
+  // line is not free: the POINT is what it costs, and a web of a hundred and
+  // fifty-six nodes against fifty points is a web where a rarity node is a
+  // danger node you did not take. What nothing may be is UNREAD: a stat neither
+  // side weighs is a line that prints and does nothing.
+  const paying = new Set([
+    'rarity',
+    'currencyFind',
+    ...DROP_GROUPS.map((g) => findStat(g.id)),
+  ]);
   const unweighed = nodes.flatMap((n) =>
     (n.stats ?? [])
-      .filter((s) => !DANGER_STATS[s.stat] && !finding.has(s.stat))
+      .filter((s) => !DANGER_STATS[s.stat] && !paying.has(s.stat))
       .map((s) => `${n.id}: ${s.stat}`)
   );
   check(
     unweighed.length === 0,
-    `every stat on all ${nodes.length} trial nodes is one \`crystalRewards\` weighs, or a finding line`,
+    `every stat on all ${nodes.length} trial nodes is one \`crystalRewards\` weighs, or one it PAYS in`,
     unweighed.join(', ')
   );
 
   // The one node that asks something. An option nothing reads is the whole
   // reason `NodeChoice.stats` exists rather than only `grants`.
   const asks = nodes.filter((n) => (n.choices ?? []).length > 0);
-  check(asks.length === 1, 'exactly one trial node asks a question', String(asks.length));
+  check(asks.length === 2, 'two trial nodes ask a question', String(asks.length));
   const asked = asks[0];
   const aimed = (pick: string): number => {
     const who: Character = {

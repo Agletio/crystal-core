@@ -65,6 +65,8 @@ to look:
 | Ambush | the eighth main skill: the `ambush` behaviour, `SkillUse.blink`, `AMBUSH` in `src/data.ts`, `src/trees/ambush.ts` |
 | the Relay | a Critical teleports you into the next body and pays for it; `critChain`, `RunState.relays`, and `SIM` in `src/sim/grants.ts` |
 | the rung tag | `#run-rung` and `syncRung` in `src/ui/run.ts` — which rung a descent is on, top right |
+| the trials atlas | 12 regions, 156 nodes, 48 points: `src/trials/{web,layout,spec}.ts`, points off trials AND rungs |
+| finding a node | `src/ui/websearch.ts` — one box for the skill, trade and trials webs; the shelf has its own |
 | Obreth's weapons | 23 variants: `tools/art/bodies.json`, `variant.mts seed`/`manifest`, `roster.mts` |
 | the trials web | `src/trials.ts`, `src/trials/*`, `TRIALS` in `src/data.ts` — six arms, eighteen nodes, six trials, per character |
 | Hoards | a pack modifier: `HOARD`, `hoardChance`, the `cart` prop, `openHoard` |
@@ -458,16 +460,13 @@ not add a check that fails on one.
 
 ## Phase 0 — nothing left in it
 
-Obreth's 23 arrangements are drawn and judged. The four that came back with the
-off hand as a bright blob were re-rolled off the same parents and the same
-words — *"just redo Obreth's ones and get them close"* — and they are: the
-round shield is a shield on the arm, the second club is a club, and the maul is
-a stone block the size Mahthar's is rather than a boulder. One idle was windowed
-to two frames to drop a flare the re-roll kept.
+Obreth's variants are drawn and judged, the crit rework and Ambush have landed,
+every web has a search box, and the trials web is twelve regions of 156 nodes.
 
-**The same wording still bites the other three heroes** — their pairs and shield
-combos came off the same `*_off` and `shield` clauses — and re-wording those is
-a roster-wide spend nobody has asked for. Not a task until he does.
+**The off-hand wording still bites the other three heroes** — their pairs and
+shield combos came off the same `*_off` and `shield` clauses, so wherever they
+show the blob it is the same cause. Re-wording those is a roster-wide spend
+nobody has asked for. Not a task until he does.
 
 ---
 
