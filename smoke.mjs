@@ -1787,6 +1787,29 @@ assert($('skills-list').hidden === false, 'and shows what is on that shelf');
 assert($('skills-back').hidden === false, 'with a way back');
 assert(all('#skills-list .skilltile').length === 8, 'every ability on the shelf is listed');
 
+// A SHELF you can search. Filters what is DRAWN and never what is held, and
+// it reads a skill's own card — so a damage type finds the skill that deals it.
+{
+  const box = $('skills-shelffind');
+  assert(box.hidden === false, 'the shelf carries a search box');
+  const all8 = all('#skills-list .skilltile').length;
+  box.value = 'poison';
+  box.dispatchEvent(new window.Event('input', { bubbles: true }));
+  const tiles = all('#skills-list .skilltile');
+  assert(tiles.length > 0 && tiles.length < all8,
+    'searching narrows the shelf', `${all8} -> ${tiles.length} for "poison"`);
+  assert(/Blight/.test(tiles.map((t) => t.textContent).join(' ')),
+    'and finds a skill by what it DEALS rather than what it is called',
+    tiles.map((t) => t.textContent).join(' '));
+  box.value = 'qqzz';
+  box.dispatchEvent(new window.Event('input', { bubbles: true }));
+  assert(all('#skills-list .skilltile').length === 0, 'a search matching nothing draws nothing');
+  box.value = '';
+  box.dispatchEvent(new window.Event('input', { bubbles: true }));
+  assert(all('#skills-list .skilltile').length === all8, 'and clearing it puts the shelf back',
+    String(all('#skills-list .skilltile').length));
+}
+
 // Back really does go back.
 $('skills-back').click();
 assert($('skills-cats').hidden === false, 'back returns to the categories');
@@ -1809,6 +1832,28 @@ const webNodes = () => all('#skills-web .web__node');
 // business rather than the DOM's: Fit pulls that camera back.
 const viewScale = () =>
   Number(/scale\(([\d.]+)\)/.exec($('skills-web').style.transform ?? '')?.[1] ?? 0);
+
+// FINDING A NODE. A web of a hundred and eleven is one you scroll past the
+// node you wanted; the box DIMS what does not match rather than hiding it, so
+// the shape of the web — which is the distance, which is the price — still reads.
+{
+  const box = $('skills-find');
+  const marked = (cls) => all(`#skills-web .${cls}`).length;
+  assert(marked('web__node--miss') === 0, 'nothing is dimmed before a search');
+  box.value = 'critical';
+  box.dispatchEvent(new window.Event('input', { bubbles: true }));
+  assert($('skills-web').classList.contains('web--finding'), 'the web knows it is being searched');
+  const hits = marked('web__node--hit');
+  assert(hits > 0 && hits < webNodes().length, 'the matches are marked',
+    `${hits} of ${webNodes().length}`);
+  assert(marked('web__node--miss') === webNodes().length - hits,
+    'and everything else is dimmed rather than removed',
+    `${marked('web__node--miss')} dimmed, ${webNodes().length} nodes`);
+  box.value = '';
+  box.dispatchEvent(new window.Event('input', { bubbles: true }));
+  assert(marked('web__node--miss') === 0 && marked('web__node--hit') === 0,
+    'and clearing it puts the whole web back');
+}
 const zoomedIn = viewScale();
 assert(zoomedIn > 0, 'the web is aimed by one transform', String(zoomedIn));
 assert(webNodes().length === 111, 'and built whole, every node once', String(webNodes().length));

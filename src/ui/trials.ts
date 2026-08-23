@@ -16,6 +16,7 @@ import {
   trialNodes,
 } from '../trials';
 import { CENTRE } from '../trees/node';
+import { WebFind } from './websearch';
 import { allocateTrial, deallocateTrial, trialPointsLeft } from '../sim/character';
 import { trialDone } from '../game/trials';
 import { attachTooltip, hideTooltip } from './tooltip';
@@ -70,6 +71,14 @@ function renderLadder(): void {
 // ---------------------------------------------------------------------------
 // The web
 // ---------------------------------------------------------------------------
+
+/** FINDING A NODE. The web is a viewBox rather than a camera, so this MARKS
+ *  and does not fly: what is dimmed is what does not match. */
+const find = new WebFind({
+  input: 'trials-find',
+  svg: 'trials-web',
+  nodes: () => trialNodes(),
+});
 
 function renderWeb(): void {
   const svg = $('trials-web') as unknown as SVGSVGElement;
@@ -136,6 +145,8 @@ function renderWeb(): void {
   svg.append(hub);
 
   for (const node of nodes) drawNode(svg, node, taken, allocated, spare);
+  // Every node is new, so whatever the box holds is marked again.
+  find.paint();
 }
 
 function drawNode(
@@ -284,6 +295,7 @@ function render(): void {
 
 export function openTrials(): void {
   $('trials').hidden = false;
+  find.clear();
   render();
 }
 
@@ -298,4 +310,5 @@ export function initTrials(state: GameState, changed?: () => void): void {
   game = state;
   onChanged = changed ?? null;
   ($('trials-close') as HTMLButtonElement).onclick = closeTrials;
+  find.attach();
 }

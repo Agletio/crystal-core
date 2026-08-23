@@ -28,6 +28,7 @@ import { allocateTrade, deallocateTrade, takeUpTrade, tradePointsLeft } from '..
 import { attachTooltip, hideTooltip } from './tooltip';
 import { nodeCard } from './glossary';
 import { chain, frame, mount, svgEl } from './webart';
+import { WebFind } from './websearch';
 import { BUILD, Camera } from './webcam';
 import { nodeGlyph } from './webicons';
 import { ask } from './confirm';
@@ -64,6 +65,20 @@ const cam = new Camera({
   wrap: 'trade-webwrap',
   home: 46,
   zoom: { min: 14, max: 130, step: 1.18 },
+});
+
+/** FINDING A NODE. Forty-five of them across five spokes is a web you scroll
+ *  past the one you were looking for. */
+const find = new WebFind({
+  input: 'trade-find',
+  svg: 'trade-web',
+  nodes: () => tradeNodes(game?.character.trade),
+  focus: (node) => {
+    cam.panX = node.x;
+    cam.panY = node.y;
+    cam.scale = Math.max(cam.scale, BUILD);
+    cam.apply();
+  },
 });
 
 /** Every node's own line, printed from the GRANT rather than its prose, so
@@ -261,6 +276,8 @@ function renderWeb(): void {
 
   svg.append(view);
   cam.apply();
+  // Every node is new, so whatever the box holds is marked again.
+  find.paint();
 }
 
 /** Stable id per node, so a tutorial step could ring one. */
@@ -320,6 +337,7 @@ export function openTrade(): void {
   $('trade').hidden = false;
   picking = false;
   framed = false;
+  find.clear();
   render();
 }
 
@@ -340,4 +358,5 @@ export function initTrade(state: GameState, changed?: () => void): void {
     cam.apply();
   };
   cam.attach();
+  find.attach();
 }

@@ -51,6 +51,7 @@ import {
   xpToNext,
 } from '../sim/character';
 import { AILMENT_BY_ID, DAMAGE_TYPE_BY_ID } from '../data';
+import { WebFind } from './websearch';
 import type { GameState } from '../game/state';
 import type { SkillCategory, SkillDef } from '../types';
 
@@ -79,6 +80,24 @@ let viewing: string | null = null;
 /** Which slot the next pick fills, set by clicking an empty one. A MODE, so it
  *  lives here and never in the save. */
 let arming: string | null = null;
+
+/** What is DRAWN on a SHELF. Eight abilities is already a screen you scan;
+ *  the filter reads a skill's own card, so "poison" finds Blight. */
+let shelfFind = '';
+
+/** FINDING A NODE in the web that is open. The camera is this screen's own, so
+ *  focusing one is a pan and a re-apply rather than anything the box knows. */
+const find = new WebFind({
+  input: 'skills-find',
+  svg: 'skills-web',
+  nodes: () => (viewing ? treeFor(viewing) : []),
+  focus: (node) => {
+    panX = node.x;
+    panY = node.y;
+    scale = Math.max(scale, BUILD);
+    applyView();
+  },
+});
 
 /** In ANY slot, which is the only right question once one shelf feeds three. */
 const heldAnywhere = (skillId: string): boolean =>
@@ -376,6 +395,16 @@ function renderShelves(): void {
  * eleven; the information did not go anywhere, since the tooltip is the same
  * card with the same keywords marked.
  */
+/** Its name, what it does, its tags and its damage types: a skill is looked
+ *  for by what it IS as often as by what it is called. */
+function skillMatches(skill: SkillDef): boolean {
+  const words = shelfFind.toLowerCase().split(/\s+/).filter(Boolean);
+  if (words.length === 0) return true;
+  const said = `${skill.name} ${skill.description} ${skill.tags.join(' ')} ` +
+    `${skill.damageTypes.join(' ')} ${skill.category ?? ''}`.toLowerCase();
+  return words.every((word) => said.includes(word));
+}
+
 function renderSkillList(): void {
   const host = $('skills-list');
   host.replaceChildren();
@@ -388,14 +417,16 @@ function renderSkillList(): void {
 
     // Even when the shelf holds ONE: it names what you are looking at, and a
     // shelf that grows a second kind needs no change here.
+    const shown = skills.filter(skillMatches);
+    if (shelfFind && shown.length === 0) continue;
     const bar = el('div', 'shelfhead');
     bar.append(categoryIcon(category, 18));
     bar.append(el('span', 'shelfhead__name', SKILL_CATEGORIES.find((c) => c.id === category)?.name ?? category));
-    bar.append(el('span', 'shelfhead__count', `${skills.length}`));
+    bar.append(el('span', 'shelfhead__count', shelfFind ? `${shown.length} of ${skills.length}` : `${skills.length}`));
     host.append(bar);
 
     const grid = el('div', 'skillgrid');
-    for (const skill of skills) {
+    for (const skill of skills.filter(skillMatches)) {
       const progress = skillProgress(game.character, skill.id);
       const spare = treePointsFor(skill.id, progress.level) - progress.allocated.length;
       const mine = heldAnywhere(skill.id);
@@ -681,6 +712,8 @@ function renderWeb(): void {
   // a layout pass per element added to it.
   svg.append(view);
   applyView();
+  // Every node is new, so whatever the box holds is marked again.
+  find.paint();
 }
 
 /**
@@ -752,6 +785,10 @@ function render(): void {
   $('skills-detail').hidden = depth !== 3;
   ($('skills-back') as HTMLButtonElement).hidden = depth === 1;
   ($('skills-devlevel') as HTMLButtonElement).hidden = depth !== 3;
+  // The shelf's filter belongs to the shelf: on the web, the box beside it
+  // finds a NODE, and two search boxes doing different jobs at once is one
+  // of them being typed into by mistake.
+  ($('skills-shelffind') as HTMLInputElement).hidden = depth !== 2;
 
   $('skills-modal-title').textContent =
     depth === 1
@@ -775,15 +812,24 @@ function render(): void {
 function back(): void {
   if (viewing) viewing = null;
   else shelf = null;
+  clearShelfFind();
   render();
 }
 
 /** Always at the TOP. Where you were last time is not where you are going, and
  *  a screen that reopens three deep hides the two questions above it. */
+function clearShelfFind(): void {
+  shelfFind = '';
+  const box = document.getElementById('skills-shelffind') as HTMLInputElement | null;
+  if (box) box.value = '';
+}
+
 export function openSkills(): void {
   $('skills').hidden = false;
   shelf = null;
   viewing = null;
+  find.clear();
+  clearShelfFind();
   render();
 }
 
@@ -811,6 +857,21 @@ export function initSkills(state: GameState, changed?: () => void): void {
   ($('skills-fit') as HTMLButtonElement).onclick = () => {
     fit();
     applyView();
+  };
+  find.attach();
+
+  const box = $('skills-shelffind') as HTMLInputElement;
+  box.value = '';
+  box.oninput = () => {
+    shelfFind = box.value.trim();
+    renderSkillList();
+  };
+  box.onkeydown = (event) => {
+    if (event.key === 'Escape' && box.value !== '') {
+      event.stopPropagation();
+      clearShelfFind();
+      renderSkillList();
+    }
   };
 
   const svg = $('skills-web');

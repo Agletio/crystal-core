@@ -1888,6 +1888,11 @@
    * and a notable is the reason to walk somewhere.
    */
   .web__node { cursor: pointer; }
+  /* A search DIMS rather than hides: a web with holes in it is a web whose
+     shape you can no longer read, and the shape is the distance. */
+  .web--finding .web__node--miss { opacity: .18; }
+  .web--finding .web__node--hit .web__node__halo { stroke: var(--citrine); opacity: 1; }
+  .web--finding .web__node--hit .web__node__img { filter: brightness(1.5); }
   /* A node is a generated frame with its image inside. */
   .web__node__img .sicon__ink { fill: var(--text-dim); }
   .web__node__img .sicon__lit { fill: var(--rust); }
@@ -2380,6 +2385,7 @@
       <h2 class="modal__title" id="skills-modal-title">Skills</h2>
       <div class="seedbar">
         <button class="mini" id="skills-devlevel" title="Dev only: grant a skill level">+1 level (dev)</button>
+        <input class="find" id="skills-shelffind" type="search" placeholder="Find a skill" aria-label="Filter the skills on this shelf" hidden />
         <button class="mini" id="skills-back" hidden>Back</button>
         <button class="mini" id="skills-close">Close</button>
       </div>
@@ -2411,6 +2417,7 @@
           <div class="webmenu" id="skills-choice" hidden></div>
           <div class="webhud">
             <button class="mini" id="skills-fit">Fit</button>
+            <input class="find" id="skills-find" type="search" placeholder="Find a node" aria-label="Find a node in this web" />
             <span class="webhud__hint">scroll to zoom · drag to move</span>
           </div>
         </div>
@@ -2441,6 +2448,9 @@
         <div class="webwrap webwrap--trade" id="trials-webwrap">
           <svg class="web web--still" id="trials-web" role="img" aria-label="trials web"></svg>
           <div class="webmenu" id="trials-choice" hidden></div>
+          <div class="webhud">
+            <input class="find" id="trials-find" type="search" placeholder="Find a node" aria-label="Find a node in this web" />
+          </div>
         </div>
       </div>
     </div>
@@ -2467,6 +2477,7 @@
         <svg class="web web--roam" id="trade-web" role="img" aria-label="trade web"></svg>
         <div class="webhud">
           <button class="mini" id="trade-fit">Fit</button>
+          <input class="find" id="trade-find" type="search" placeholder="Find a node" aria-label="Find a node in this web" />
         </div>
       </div>
     </div>
