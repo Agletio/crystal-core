@@ -1,7 +1,7 @@
 {
- "_": "What the generated art is, as ids on the generator. The SOURCE of truth, the way manifest.json is for the pipeline: `npx tsx tools/art/tables.mts` reads this and writes the three tables in src/render. Every id names something already generated — nothing here asks for one, so re-running costs nothing.",
- "_states": "A body's STATES are rows here and nowhere else. `group` is what the animation is called on the generator, `frames` is how many to keep, and `from`/`to` are the fraction of it worth keeping — a generated animation degrades across its run, so which window is usable is a fact about that generation. A state is named for an ACTION — idle, walk, attack — or for the SKILL a body throws, which is looked up first: `cast` is the fallback for a thrower with no animation of its own, and a body with neither reuses its melee swing.",
- "_dirs": "Which facings to pull, north to south. Only the east half of the compass is generated — the renderer mirrors anything facing left, so the western three are reflections.",
+ "_": "What the generated art is, as ids on the generator. The SOURCE of truth, the way manifest.json is for the pipeline: `npx tsx tools/art/tables.mts` reads this and writes the three tables in src/render. Every id names something already generated \u2014 nothing here asks for one, so re-running costs nothing.",
+ "_states": "A body's STATES are rows here and nowhere else. `group` is what the animation is called on the generator, `frames` is how many to keep, and `from`/`to` are the fraction of it worth keeping \u2014 a generated animation degrades across its run, so which window is usable is a fact about that generation. A state is named for an ACTION \u2014 idle, walk, attack \u2014 or for the SKILL a body throws, which is looked up first: `cast` is the fallback for a thrower with no animation of its own, and a body with neither reuses its melee swing.",
+ "_dirs": "Which facings to pull, north to south. Only the east half of the compass is generated \u2014 the renderer mirrors anything facing left, so the western three are reflections.",
  "tileset": {
   "id": "8887f424-d99a-4bc3-9b1a-9c311105a687",
   "floorIs": "lower"
@@ -3316,26 +3316,26 @@
    ],
    "states": {
     "idle": {
-     "group": "5b1d7aaa-fa44-48b4-bf61-3ce03104a9f4",
      "frames": 3,
-     "to": 0.6
+     "to": 0.6,
+     "group": "5b1d7aaa-fa44-48b4-bf61-3ce03104a9f4"
     },
     "walk": {
-     "group": "92c0e74e-1ca6-4e42-8ade-47c5992940ae",
      "frames": 6,
-     "to": 0.8
+     "to": 0.8,
+     "group": "92c0e74e-1ca6-4e42-8ade-47c5992940ae"
     },
     "attack": {
-     "group": "74d19935-9608-4ba4-9865-e4e4a6a39011",
-     "frames": 4
+     "frames": 4,
+     "group": "74d19935-9608-4ba4-9865-e4e4a6a39011"
     },
     "cast": {
-     "group": "cb0865c2-b238-4bcf-b073-a9a12761aabc",
-     "frames": 4
+     "frames": 4,
+     "group": "cb0865c2-b238-4bcf-b073-a9a12761aabc"
     },
     "death": {
-     "group": "47dba66d-a813-4801-a6aa-08014ef9e45b",
-     "frames": 4
+     "frames": 4,
+     "group": "47dba66d-a813-4801-a6aa-08014ef9e45b"
     }
    },
    "luma": 45,
@@ -3351,26 +3351,26 @@
    ],
    "states": {
     "idle": {
-     "group": "27422d5d-931e-4d73-851d-dda14fa14c8c",
      "frames": 3,
-     "to": 0.6
+     "to": 0.6,
+     "group": "27422d5d-931e-4d73-851d-dda14fa14c8c"
     },
     "walk": {
-     "group": "9f59d4cf-a915-4c8f-a954-8dfb27a8f2c1",
      "frames": 6,
-     "to": 0.8
+     "to": 0.8,
+     "group": "9f59d4cf-a915-4c8f-a954-8dfb27a8f2c1"
     },
     "attack": {
-     "group": "d3ca8d59-7c26-4f28-8425-e48586088460",
-     "frames": 4
+     "frames": 4,
+     "group": "d3ca8d59-7c26-4f28-8425-e48586088460"
     },
     "cast": {
-     "group": "63760299-76ba-481a-a737-d313fde65520",
-     "frames": 4
+     "frames": 4,
+     "group": "63760299-76ba-481a-a737-d313fde65520"
     },
     "death": {
-     "group": "990a6ba1-884c-423d-b0d5-8889d062e14c",
-     "frames": 4
+     "frames": 4,
+     "group": "990a6ba1-884c-423d-b0d5-8889d062e14c"
     }
    },
    "luma": 45,
@@ -3386,26 +3386,26 @@
    ],
    "states": {
     "idle": {
-     "group": "a87ad7cc-6c8a-43b9-9db0-5af4256eed2e",
      "frames": 3,
-     "to": 0.6
+     "to": 0.6,
+     "group": "a87ad7cc-6c8a-43b9-9db0-5af4256eed2e"
     },
     "walk": {
-     "group": "192ab7af-1f72-43ef-a126-1456e17be9a6",
      "frames": 6,
-     "to": 0.8
+     "to": 0.8,
+     "group": "192ab7af-1f72-43ef-a126-1456e17be9a6"
     },
     "attack": {
-     "group": "04a30e27-a178-44d8-a892-5f4b5942f895",
-     "frames": 4
+     "frames": 4,
+     "group": "04a30e27-a178-44d8-a892-5f4b5942f895"
     },
     "cast": {
-     "group": "ce13733b-f936-4b4d-a9ee-feedeb3218d8",
-     "frames": 4
+     "frames": 4,
+     "group": "ce13733b-f936-4b4d-a9ee-feedeb3218d8"
     },
     "death": {
-     "group": "b6aed45b-9767-4fef-ba15-8c9d69a1b536",
-     "frames": 4
+     "frames": 4,
+     "group": "b6aed45b-9767-4fef-ba15-8c9d69a1b536"
     }
    },
    "luma": 45,
@@ -3421,26 +3421,26 @@
    ],
    "states": {
     "idle": {
-     "group": "6ab4cf3d-5ceb-49d5-b95e-78de926a45fa",
      "frames": 3,
-     "to": 0.6
+     "to": 0.6,
+     "group": "6ab4cf3d-5ceb-49d5-b95e-78de926a45fa"
     },
     "walk": {
-     "group": "2f543166-1da6-4dac-803b-6f33ab204a3b",
      "frames": 6,
-     "to": 0.8
+     "to": 0.8,
+     "group": "2f543166-1da6-4dac-803b-6f33ab204a3b"
     },
     "attack": {
-     "group": "9b5398d6-9f49-4b52-8b54-9420ee0de5f4",
-     "frames": 4
+     "frames": 4,
+     "group": "9b5398d6-9f49-4b52-8b54-9420ee0de5f4"
     },
     "cast": {
-     "group": "e5272694-6be6-4a73-9666-bef287ce2684",
-     "frames": 4
+     "frames": 4,
+     "group": "e5272694-6be6-4a73-9666-bef287ce2684"
     },
     "death": {
-     "group": "d5d17320-2cf8-463d-9445-8107cc2213fb",
-     "frames": 4
+     "frames": 4,
+     "group": "d5d17320-2cf8-463d-9445-8107cc2213fb"
     }
    },
    "luma": 45,
@@ -3450,32 +3450,32 @@
    "grid": 48,
    "inks": 24,
    "sprite": "obreth_mace2h",
-   "character": "1667f1d4-183c-4a70-a2f2-53a7889e4002",
+   "character": "78d9a8ae-4ae2-4770-a6be-87fbe456d96b",
    "dirs": [
     "south-east"
    ],
    "states": {
     "idle": {
-     "group": "3ebfcdf8-0eb5-4ef7-b193-3941d29e5ff3",
      "frames": 3,
-     "to": 0.6
+     "to": 0.6,
+     "group": "6af286fd-c24c-4e03-be0f-140dd8575cd3"
     },
     "walk": {
-     "group": "6622a7dd-069b-415a-80d4-7d723f69845b",
      "frames": 6,
-     "to": 0.8
+     "to": 0.8,
+     "group": "cd667d9e-5e9a-4145-b018-923b87cb4b01"
     },
     "attack": {
-     "group": "a280239c-8de3-462f-984f-19787a00c528",
-     "frames": 4
+     "frames": 4,
+     "group": "f2be5ea7-1c5f-4628-9414-0fbad28d9aaa"
     },
     "cast": {
-     "group": "2383f732-edd0-42ab-b2e5-47796958e1d6",
-     "frames": 4
+     "frames": 4,
+     "group": "ef90188b-9bcc-4cba-89bf-c8d328c7c822"
     },
     "death": {
-     "group": "fc61ae52-0186-4875-a08f-d75b837d7ea1",
-     "frames": 4
+     "frames": 4,
+     "group": "79f448d6-a6d9-427a-9a65-4bb6281524c4"
     }
    },
    "luma": 45,
@@ -3491,26 +3491,26 @@
    ],
    "states": {
     "idle": {
-     "group": "aa8abc1f-fb4a-429f-add6-ba0cbcb68a81",
      "frames": 3,
-     "to": 0.6
+     "to": 0.6,
+     "group": "aa8abc1f-fb4a-429f-add6-ba0cbcb68a81"
     },
     "walk": {
-     "group": "c7319d13-bc7d-4b9b-8e45-aba0215329b5",
      "frames": 6,
-     "to": 0.8
+     "to": 0.8,
+     "group": "c7319d13-bc7d-4b9b-8e45-aba0215329b5"
     },
     "attack": {
-     "group": "6213b826-f1cf-4fec-95f3-e298a10047c3",
-     "frames": 4
+     "frames": 4,
+     "group": "6213b826-f1cf-4fec-95f3-e298a10047c3"
     },
     "cast": {
-     "group": "d8e35b9f-f930-46a8-9e09-d4abdecf7f42",
-     "frames": 4
+     "frames": 4,
+     "group": "d8e35b9f-f930-46a8-9e09-d4abdecf7f42"
     },
     "death": {
-     "group": "397e621c-7204-46ae-b448-ccb47de877d3",
-     "frames": 4
+     "frames": 4,
+     "group": "397e621c-7204-46ae-b448-ccb47de877d3"
     }
    },
    "luma": 45,
@@ -3526,26 +3526,26 @@
    ],
    "states": {
     "idle": {
-     "group": "4e324040-1e89-4a4c-8539-2da28945e9f0",
      "frames": 3,
-     "to": 0.6
+     "to": 0.6,
+     "group": "4e324040-1e89-4a4c-8539-2da28945e9f0"
     },
     "walk": {
-     "group": "5fb8e36e-7026-48d1-88e3-b8af35b4f177",
      "frames": 6,
-     "to": 0.8
+     "to": 0.8,
+     "group": "5fb8e36e-7026-48d1-88e3-b8af35b4f177"
     },
     "attack": {
-     "group": "c16dafad-9807-4645-84a5-80573a82a203",
-     "frames": 4
+     "frames": 4,
+     "group": "c16dafad-9807-4645-84a5-80573a82a203"
     },
     "cast": {
-     "group": "abfa033c-22ec-4f26-b94b-881681c20b05",
-     "frames": 4
+     "frames": 4,
+     "group": "abfa033c-22ec-4f26-b94b-881681c20b05"
     },
     "death": {
-     "group": "a16c0e94-f4cf-43b1-a171-fd7e5febba3e",
-     "frames": 4
+     "frames": 4,
+     "group": "a16c0e94-f4cf-43b1-a171-fd7e5febba3e"
     }
    },
    "luma": 45,
@@ -3561,26 +3561,26 @@
    ],
    "states": {
     "idle": {
-     "group": "c1ff17bb-2b25-4670-812a-c3a7758fb9c2",
      "frames": 3,
-     "to": 0.6
+     "to": 0.6,
+     "group": "c1ff17bb-2b25-4670-812a-c3a7758fb9c2"
     },
     "walk": {
-     "group": "a2fccfe6-05b5-445a-9964-d4faf4185a4f",
      "frames": 6,
-     "to": 0.8
+     "to": 0.8,
+     "group": "a2fccfe6-05b5-445a-9964-d4faf4185a4f"
     },
     "attack": {
-     "group": "87ff0439-822d-40fb-99ab-f36a57e30637",
-     "frames": 4
+     "frames": 4,
+     "group": "87ff0439-822d-40fb-99ab-f36a57e30637"
     },
     "cast": {
-     "group": "9787650a-10aa-4969-bb10-1f56b1a5b83a",
-     "frames": 4
+     "frames": 4,
+     "group": "9787650a-10aa-4969-bb10-1f56b1a5b83a"
     },
     "death": {
-     "group": "d6d03083-1294-45e3-abf5-81b1e06ffbf7",
-     "frames": 4
+     "frames": 4,
+     "group": "d6d03083-1294-45e3-abf5-81b1e06ffbf7"
     }
    },
    "luma": 45,
@@ -3596,26 +3596,26 @@
    ],
    "states": {
     "idle": {
-     "group": "b552572c-0df0-43b2-be4d-a8c1c23ac584",
      "frames": 3,
-     "to": 0.6
+     "to": 0.6,
+     "group": "b552572c-0df0-43b2-be4d-a8c1c23ac584"
     },
     "walk": {
-     "group": "7449fea2-47ad-4b08-a87b-9ca13ac7c5b6",
      "frames": 6,
-     "to": 0.8
+     "to": 0.8,
+     "group": "7449fea2-47ad-4b08-a87b-9ca13ac7c5b6"
     },
     "attack": {
-     "group": "b7fe7ec5-ca06-42a6-8ec3-799d9f959eff",
-     "frames": 4
+     "frames": 4,
+     "group": "b7fe7ec5-ca06-42a6-8ec3-799d9f959eff"
     },
     "cast": {
-     "group": "dee99474-d649-45eb-994c-cb11898f70d9",
-     "frames": 4
+     "frames": 4,
+     "group": "dee99474-d649-45eb-994c-cb11898f70d9"
     },
     "death": {
-     "group": "b979509e-2395-421c-a435-6f7d1fb35da1",
-     "frames": 4
+     "frames": 4,
+     "group": "b979509e-2395-421c-a435-6f7d1fb35da1"
     }
    },
    "luma": 45,
@@ -3631,26 +3631,26 @@
    ],
    "states": {
     "idle": {
-     "group": "adcc2f02-b4c4-4ba4-8a12-835996a59114",
      "frames": 3,
-     "to": 0.6
+     "to": 0.6,
+     "group": "adcc2f02-b4c4-4ba4-8a12-835996a59114"
     },
     "walk": {
-     "group": "72e0f5ac-e203-4a79-a4a0-823e4f27e22a",
      "frames": 6,
-     "to": 0.8
+     "to": 0.8,
+     "group": "72e0f5ac-e203-4a79-a4a0-823e4f27e22a"
     },
     "attack": {
-     "group": "8367c95f-a31c-41b8-90e4-775d8112a41e",
-     "frames": 4
+     "frames": 4,
+     "group": "8367c95f-a31c-41b8-90e4-775d8112a41e"
     },
     "cast": {
-     "group": "a8dee651-d2aa-4e00-839f-b4e597812c03",
-     "frames": 4
+     "frames": 4,
+     "group": "a8dee651-d2aa-4e00-839f-b4e597812c03"
     },
     "death": {
-     "group": "5a1cba64-7f9d-4bd7-ac66-4819c906dd77",
-     "frames": 4
+     "frames": 4,
+     "group": "5a1cba64-7f9d-4bd7-ac66-4819c906dd77"
     }
    },
    "luma": 45,
@@ -3666,26 +3666,26 @@
    ],
    "states": {
     "idle": {
-     "group": "c69c6c91-14e4-4818-8eed-2fab57b36d96",
      "frames": 3,
-     "to": 0.6
+     "to": 0.6,
+     "group": "c69c6c91-14e4-4818-8eed-2fab57b36d96"
     },
     "walk": {
-     "group": "e637f5da-5648-497f-a562-3d2ae2403277",
      "frames": 6,
-     "to": 0.8
+     "to": 0.8,
+     "group": "e637f5da-5648-497f-a562-3d2ae2403277"
     },
     "attack": {
-     "group": "8b130d67-3466-452c-9bc3-c0504da2d44f",
-     "frames": 4
+     "frames": 4,
+     "group": "8b130d67-3466-452c-9bc3-c0504da2d44f"
     },
     "cast": {
-     "group": "74ed57c6-7c9b-4a2c-9864-d9db1584e540",
-     "frames": 4
+     "frames": 4,
+     "group": "74ed57c6-7c9b-4a2c-9864-d9db1584e540"
     },
     "death": {
-     "group": "d65ccfeb-b62c-43eb-bd03-ac71c3dfe3f7",
-     "frames": 4
+     "frames": 4,
+     "group": "d65ccfeb-b62c-43eb-bd03-ac71c3dfe3f7"
     }
    },
    "luma": 45,
@@ -3701,26 +3701,26 @@
    ],
    "states": {
     "idle": {
-     "group": "fa54c70c-c841-4e85-80bf-581795dfee5c",
      "frames": 3,
-     "to": 0.6
+     "to": 0.6,
+     "group": "fa54c70c-c841-4e85-80bf-581795dfee5c"
     },
     "walk": {
-     "group": "a1384359-c695-485d-9fd3-1765dfe5015e",
      "frames": 6,
-     "to": 0.8
+     "to": 0.8,
+     "group": "a1384359-c695-485d-9fd3-1765dfe5015e"
     },
     "attack": {
-     "group": "23925c32-398b-48a8-9217-370981f9f049",
-     "frames": 4
+     "frames": 4,
+     "group": "23925c32-398b-48a8-9217-370981f9f049"
     },
     "cast": {
-     "group": "782a53d1-d9d4-4864-942e-79452838d723",
-     "frames": 4
+     "frames": 4,
+     "group": "782a53d1-d9d4-4864-942e-79452838d723"
     },
     "death": {
-     "group": "264d0aa1-e856-4c33-8f1d-624e0a1468ee",
-     "frames": 4
+     "frames": 4,
+     "group": "264d0aa1-e856-4c33-8f1d-624e0a1468ee"
     }
    },
    "luma": 45,
@@ -3736,26 +3736,26 @@
    ],
    "states": {
     "idle": {
-     "group": "bd44570b-2473-466d-97d8-2d0b5b86e771",
      "frames": 3,
-     "to": 0.6
+     "to": 0.6,
+     "group": "bd44570b-2473-466d-97d8-2d0b5b86e771"
     },
     "walk": {
-     "group": "59c17f08-ea70-4fd0-8831-b9edd4131dc1",
      "frames": 6,
-     "to": 0.8
+     "to": 0.8,
+     "group": "59c17f08-ea70-4fd0-8831-b9edd4131dc1"
     },
     "attack": {
-     "group": "e47be24f-97f6-4321-a3ec-60fe50705d69",
-     "frames": 4
+     "frames": 4,
+     "group": "e47be24f-97f6-4321-a3ec-60fe50705d69"
     },
     "cast": {
-     "group": "c3d386a0-711d-44df-903d-c1bb0f686c93",
-     "frames": 4
+     "frames": 4,
+     "group": "c3d386a0-711d-44df-903d-c1bb0f686c93"
     },
     "death": {
-     "group": "a737e01c-ec22-44c9-a1e6-2f32e6c86962",
-     "frames": 4
+     "frames": 4,
+     "group": "a737e01c-ec22-44c9-a1e6-2f32e6c86962"
     }
    },
    "luma": 45,
@@ -3771,26 +3771,26 @@
    ],
    "states": {
     "idle": {
-     "group": "c1d64be8-9b95-4bce-9391-7b8f79879ecb",
      "frames": 3,
-     "to": 0.6
+     "to": 0.6,
+     "group": "c1d64be8-9b95-4bce-9391-7b8f79879ecb"
     },
     "walk": {
-     "group": "8beb26ce-3d6d-4599-ac7f-e7deb021ed71",
      "frames": 6,
-     "to": 0.8
+     "to": 0.8,
+     "group": "8beb26ce-3d6d-4599-ac7f-e7deb021ed71"
     },
     "attack": {
-     "group": "c9738e4e-2b6f-4a64-802c-9b6ede07657b",
-     "frames": 4
+     "frames": 4,
+     "group": "c9738e4e-2b6f-4a64-802c-9b6ede07657b"
     },
     "cast": {
-     "group": "32e4febe-8882-4d31-9dc3-230b202005e2",
-     "frames": 4
+     "frames": 4,
+     "group": "32e4febe-8882-4d31-9dc3-230b202005e2"
     },
     "death": {
-     "group": "a156e2e9-cab9-4f97-ae6c-ae4f2a1e9ff5",
-     "frames": 4
+     "frames": 4,
+     "group": "a156e2e9-cab9-4f97-ae6c-ae4f2a1e9ff5"
     }
    },
    "luma": 45,
@@ -3806,26 +3806,26 @@
    ],
    "states": {
     "idle": {
-     "group": "0ab9e74c-73e2-4641-aef4-b0ea71a192d6",
      "frames": 3,
-     "to": 0.6
+     "to": 0.6,
+     "group": "0ab9e74c-73e2-4641-aef4-b0ea71a192d6"
     },
     "walk": {
-     "group": "61b1d32a-de0e-4a86-b16b-22495e7fc06e",
      "frames": 6,
-     "to": 0.8
+     "to": 0.8,
+     "group": "61b1d32a-de0e-4a86-b16b-22495e7fc06e"
     },
     "attack": {
-     "group": "c1dde499-2a70-4056-803f-756b267b3682",
-     "frames": 4
+     "frames": 4,
+     "group": "c1dde499-2a70-4056-803f-756b267b3682"
     },
     "cast": {
-     "group": "684d655e-7fb8-4e06-b97a-2ff97ed4a8da",
-     "frames": 4
+     "frames": 4,
+     "group": "684d655e-7fb8-4e06-b97a-2ff97ed4a8da"
     },
     "death": {
-     "group": "27b9e4fd-e113-4cb2-a2c0-3ddcbccd88a1",
-     "frames": 4
+     "frames": 4,
+     "group": "27b9e4fd-e113-4cb2-a2c0-3ddcbccd88a1"
     }
    },
    "luma": 45,
@@ -3841,26 +3841,26 @@
    ],
    "states": {
     "idle": {
-     "group": "20ed7e84-c2af-42fd-9af9-5b49208f4d52",
      "frames": 3,
-     "to": 0.6
+     "to": 0.6,
+     "group": "20ed7e84-c2af-42fd-9af9-5b49208f4d52"
     },
     "walk": {
-     "group": "026c3a8c-4c26-4c31-ac3c-7d4cabd56b24",
      "frames": 6,
-     "to": 0.8
+     "to": 0.8,
+     "group": "026c3a8c-4c26-4c31-ac3c-7d4cabd56b24"
     },
     "attack": {
-     "group": "cb6c5e21-59c1-486f-b7e2-2b21fe05489f",
-     "frames": 4
+     "frames": 4,
+     "group": "cb6c5e21-59c1-486f-b7e2-2b21fe05489f"
     },
     "cast": {
-     "group": "af371113-9378-4e5b-a7c2-bc6a3916395f",
-     "frames": 4
+     "frames": 4,
+     "group": "af371113-9378-4e5b-a7c2-bc6a3916395f"
     },
     "death": {
-     "group": "801366cb-ff90-4833-9394-4a931d2015bf",
-     "frames": 4
+     "frames": 4,
+     "group": "801366cb-ff90-4833-9394-4a931d2015bf"
     }
    },
    "luma": 45,
@@ -3876,26 +3876,26 @@
    ],
    "states": {
     "idle": {
-     "group": "812d869c-cdce-4fc5-bdf3-5ccb585d37f3",
      "frames": 3,
-     "to": 0.6
+     "to": 0.6,
+     "group": "812d869c-cdce-4fc5-bdf3-5ccb585d37f3"
     },
     "walk": {
-     "group": "6bc166d0-1ea0-4488-8efd-7395de9b8331",
      "frames": 6,
-     "to": 0.8
+     "to": 0.8,
+     "group": "6bc166d0-1ea0-4488-8efd-7395de9b8331"
     },
     "attack": {
-     "group": "1b68d9f4-48da-429f-8127-356b5ac84328",
-     "frames": 4
+     "frames": 4,
+     "group": "1b68d9f4-48da-429f-8127-356b5ac84328"
     },
     "cast": {
-     "group": "872e7cf3-e64a-4c7c-b7c1-b68777c88e60",
-     "frames": 4
+     "frames": 4,
+     "group": "872e7cf3-e64a-4c7c-b7c1-b68777c88e60"
     },
     "death": {
-     "group": "0a91f079-9bc2-40b3-8b7f-f92d0a6ad24d",
-     "frames": 4
+     "frames": 4,
+     "group": "0a91f079-9bc2-40b3-8b7f-f92d0a6ad24d"
     }
    },
    "luma": 45,
@@ -3905,32 +3905,32 @@
    "grid": 48,
    "inks": 24,
    "sprite": "obreth_mace_mace",
-   "character": "0795b4db-473d-40dc-94e9-866a2f3467ca",
+   "character": "57442827-e5e6-4dfd-b395-c3be75af9477",
    "dirs": [
     "south-east"
    ],
    "states": {
     "idle": {
-     "group": "252e6958-bda8-434b-b8d6-2992cc90335b",
      "frames": 3,
-     "to": 0.6
+     "to": 0.6,
+     "group": "c72d4b96-74b4-4acc-b46b-83e2ff27a951"
     },
     "walk": {
-     "group": "d964fcc0-0011-4aa9-9a5d-1ae4a71c262c",
      "frames": 6,
-     "to": 0.8
+     "to": 0.8,
+     "group": "e4b25011-2bfb-4b09-95eb-b7416bd68a1a"
     },
     "attack": {
-     "group": "efd87400-ccc6-4f61-a78b-ef99c2f2544e",
-     "frames": 4
+     "frames": 4,
+     "group": "b0ce7d6d-834f-4a4e-a971-660deb508f58"
     },
     "cast": {
-     "group": "6e43a473-2197-43e8-a797-aa077e153804",
-     "frames": 4
+     "frames": 4,
+     "group": "3506da1e-5469-4c46-a2ef-08c7dc0b40ed"
     },
     "death": {
-     "group": "a78c7247-cea2-45cb-ae5a-322052687dcf",
-     "frames": 4
+     "frames": 4,
+     "group": "c485c501-57dc-46c2-a591-d6e198841a9d"
     }
    },
    "luma": 45,
@@ -3946,26 +3946,26 @@
    ],
    "states": {
     "idle": {
-     "group": "6e8711cd-b296-46c8-8030-0703dcd3d6f4",
      "frames": 3,
-     "to": 0.6
+     "to": 0.6,
+     "group": "6e8711cd-b296-46c8-8030-0703dcd3d6f4"
     },
     "walk": {
-     "group": "910b81d4-7e6d-4b9b-8de0-310be1854de6",
      "frames": 6,
-     "to": 0.8
+     "to": 0.8,
+     "group": "910b81d4-7e6d-4b9b-8de0-310be1854de6"
     },
     "attack": {
-     "group": "a2946076-f457-4a80-bb21-1f1359c4f898",
-     "frames": 4
+     "frames": 4,
+     "group": "a2946076-f457-4a80-bb21-1f1359c4f898"
     },
     "cast": {
-     "group": "100a798e-1fbb-4422-b9ce-830b45e5a35f",
-     "frames": 4
+     "frames": 4,
+     "group": "100a798e-1fbb-4422-b9ce-830b45e5a35f"
     },
     "death": {
-     "group": "9f5d9790-423b-4b0c-a013-0f035083d65b",
-     "frames": 4
+     "frames": 4,
+     "group": "9f5d9790-423b-4b0c-a013-0f035083d65b"
     }
    },
    "luma": 45,
@@ -3981,26 +3981,26 @@
    ],
    "states": {
     "idle": {
-     "group": "727c5b69-2c74-457d-b2f2-a5576a97dfa5",
      "frames": 3,
-     "to": 0.6
+     "to": 0.6,
+     "group": "727c5b69-2c74-457d-b2f2-a5576a97dfa5"
     },
     "walk": {
-     "group": "ce1920ec-fb17-4601-b7cd-d3539f5b89c5",
      "frames": 6,
-     "to": 0.8
+     "to": 0.8,
+     "group": "ce1920ec-fb17-4601-b7cd-d3539f5b89c5"
     },
     "attack": {
-     "group": "eed67bd9-048d-4126-b48a-53026456ff2d",
-     "frames": 4
+     "frames": 4,
+     "group": "eed67bd9-048d-4126-b48a-53026456ff2d"
     },
     "cast": {
-     "group": "9fbbd613-3165-484e-a7da-a443f233d346",
-     "frames": 4
+     "frames": 4,
+     "group": "9fbbd613-3165-484e-a7da-a443f233d346"
     },
     "death": {
-     "group": "7626ac75-5ae4-4ad2-8f64-1d69752104f1",
-     "frames": 4
+     "frames": 4,
+     "group": "7626ac75-5ae4-4ad2-8f64-1d69752104f1"
     }
    },
    "luma": 45,
@@ -4016,26 +4016,26 @@
    ],
    "states": {
     "idle": {
-     "group": "f040b449-0af4-46a8-ad96-29356c37a40b",
      "frames": 3,
-     "to": 0.6
+     "to": 0.6,
+     "group": "f040b449-0af4-46a8-ad96-29356c37a40b"
     },
     "walk": {
-     "group": "24bce5e8-f8ff-4687-a97d-1aaf03a5c8a2",
      "frames": 6,
-     "to": 0.8
+     "to": 0.8,
+     "group": "24bce5e8-f8ff-4687-a97d-1aaf03a5c8a2"
     },
     "attack": {
-     "group": "1d3d9945-4a01-4b85-a40a-0d73515ea3fa",
-     "frames": 4
+     "frames": 4,
+     "group": "1d3d9945-4a01-4b85-a40a-0d73515ea3fa"
     },
     "cast": {
-     "group": "06705502-ca75-4ed4-ab22-bb4136e3ad3b",
-     "frames": 4
+     "frames": 4,
+     "group": "06705502-ca75-4ed4-ab22-bb4136e3ad3b"
     },
     "death": {
-     "group": "88b2f518-d967-4c21-9121-e9571cbae091",
-     "frames": 4
+     "frames": 4,
+     "group": "88b2f518-d967-4c21-9121-e9571cbae091"
     }
    },
    "luma": 45,
@@ -4045,32 +4045,32 @@
    "grid": 48,
    "inks": 24,
    "sprite": "obreth_mace_shield",
-   "character": "2973a550-084f-493e-a7dc-0818507a4eaa",
+   "character": "5cc3592a-2095-4b2b-8d53-7d05848d4ebd",
    "dirs": [
     "south-east"
    ],
    "states": {
     "idle": {
-     "group": "d30b9e0c-a9aa-488d-885f-55c7e2a8fac1",
      "frames": 3,
-     "to": 0.6
+     "to": 0.6,
+     "group": "67db59fb-70fd-40b5-9cbe-425ab3a7d231"
     },
     "walk": {
-     "group": "f0120eb9-11c1-49e4-b363-b183f84fb0aa",
      "frames": 6,
-     "to": 0.8
+     "to": 0.8,
+     "group": "5d3bd27f-0e10-48eb-ae3f-3a28a9c79106"
     },
     "attack": {
-     "group": "7b49ed05-132d-4b0b-9d5d-ad4799cef271",
-     "frames": 4
+     "frames": 4,
+     "group": "76c97b21-898b-4775-a13b-804b6bd530ce"
     },
     "cast": {
-     "group": "c6d74499-c05f-4940-8cbb-9485c04a0039",
-     "frames": 4
+     "frames": 4,
+     "group": "cf95748f-4428-4a66-871c-c2cd59015e20"
     },
     "death": {
-     "group": "9e9f0e26-e419-4a3b-b5e7-e48a06f24b2c",
-     "frames": 4
+     "frames": 4,
+     "group": "8911f887-aa08-49c4-9d1b-fd5fd0f5459e"
     }
    },
    "luma": 45,
@@ -4080,32 +4080,32 @@
    "grid": 48,
    "inks": 24,
    "sprite": "obreth_wand_shield",
-   "character": "d516a308-3707-48ba-a9ec-be379df29860",
+   "character": "c8e8957a-c5bb-452d-8869-a8844f3b8978",
    "dirs": [
     "south-east"
    ],
    "states": {
     "idle": {
-     "group": "423d7716-1482-47c9-9f48-86784c808be6",
-     "frames": 3,
-     "to": 0.6
+     "frames": 2,
+     "to": 0.4,
+     "group": "5fc7d17b-a9de-40e0-995e-b2f1b10d9ad0"
     },
     "walk": {
-     "group": "d2caa1ac-4ebf-49d3-aeeb-edfbcdc158cb",
      "frames": 6,
-     "to": 0.8
+     "to": 0.8,
+     "group": "08099cc2-efc9-42b1-88d4-00c9852ee048"
     },
     "attack": {
-     "group": "76abe3f7-3289-4c0e-ba9e-c8ced6958f2f",
-     "frames": 4
+     "frames": 4,
+     "group": "bbd601f4-480a-4c92-ae08-cf31daecab6d"
     },
     "cast": {
-     "group": "0806437f-b468-4200-965c-4dd23d8a7617",
-     "frames": 4
+     "frames": 4,
+     "group": "030b58d8-994c-4436-a4dc-616e85711d4c"
     },
     "death": {
-     "group": "4f88a2e6-8a35-40d7-b333-62df9e9863d8",
-     "frames": 4
+     "frames": 4,
+     "group": "416051b6-6347-4d80-a1ad-104aede8b763"
     }
    },
    "luma": 45,

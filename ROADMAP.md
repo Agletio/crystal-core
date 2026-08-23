@@ -456,42 +456,18 @@ not add a check that fails on one.
 
 ---
 
-## Phase 0 — WHAT THE OFF HAND IS DRAWN AS
+## Phase 0 — nothing left in it
 
-**Obreth's 23 arrangements have landed** — thirteen he carries alone and ten
-pairs, dressed off his own body and animated in five states each; `THE ROSTER`
-reports 23 of 23 and nothing of his is pinned at the fist any more. Every
-variant's words came out of `weapons.json`, so his sword was asked for in the
-same words as Mahthar's: the attack clause is identical for all nine families.
+Obreth's 23 arrangements are drawn and judged. The four that came back with the
+off hand as a bright blob were re-rolled off the same parents and the same
+words — *"just redo Obreth's ones and get them close"* — and they are: the
+round shield is a shield on the arm, the second club is a club, and the maul is
+a stone block the size Mahthar's is rather than a boulder. One idle was windowed
+to two frames to drop a flare the re-roll kept.
 
-**What judging found, and it is NOT his alone.** The MAIN hand is right
-everywhere. What comes back wrong is what the OFF hand is holding, in a subset
-of frames — the generator draws it as a bright blob instead of the thing:
-
-| variant | what it draws |
-|---|---|
-| `obreth_mace_shield` | a gold flare where the shield is, idle 2–3; white rings in the attack |
-| `obreth_wand_shield` | a white slab in idle 2, and no shield at all in 1 and 3 |
-| `obreth_mace_mace` | the second club is a white slab in idle 2 and a white burst in 3 |
-| `obreth_mace2h` | the maul head is an enormous white cube and the body reads maroon; the attack drops the maul and leaves the block on the floor |
-
-The two worst SINGLES were re-rolled and are fixed: the club changed size and
-threw a starburst, and the wand hung an orb in the air.
-
-**The repair is a decision nobody has been asked for, because it is roster-wide.**
-The `*_off` and `shield` clauses in `weapons.json` are ONE set of words for every
-hero that carries them, and the other three heroes' pairs were generated from
-them and shipped. Re-wording them to kill the blob makes those rows a lie about
-their own art — `variant.mts check` will say so — and the honest finish is to
-re-dress and re-animate every affected variant, which is ~100 generations apiece.
-**Ask before spending it.**
-
-`variant.mts seed <hero>` writes the thirteen rows a hero carries off his base
-body; `variant.mts manifest <hero>` writes the `generated.json` rows to import
-into and keeps a row's OWN window, since narrowing one to drop a bad frame is a
-decision rather than drift. `roster.mts <hero>` draws one hero's variants as a
-contact sheet, one row each — the only view that answers whether a weapon is the
-same weapon in every hand.
+**The same wording still bites the other three heroes** — their pairs and shield
+combos came off the same `*_off` and `shield` clauses — and re-wording those is
+a roster-wide spend nobody has asked for. Not a task until he does.
 
 ---
 
