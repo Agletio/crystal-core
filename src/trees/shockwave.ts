@@ -188,8 +188,8 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'sw_stonefoot',
           name: 'Stonefoot',
-          description: 'Shockwave deals 30% more damage to enemies within 2 tiles of you.',
-          grants: { moreClose: { within: 2, more: 0.3 } },
+          description: 'For 4s after a kill, Shockwave deals 30% more damage.',
+          grants: { killMore: { seconds: 4, more: 0.3 } },
         },
       },
     ],
@@ -206,8 +206,8 @@ const BRANCHES: Branch[] = [
     enabler: {
       id: 'sw_reverberation',
       name: 'Reverberation',
-      description: 'Shockwave deals 30% more damage to enemies more than 2.2 tiles away.',
-      grants: { moreFar: { beyond: 2.2, more: 0.3 } },
+      description: 'Shockwave deals 30% more damage while nothing has hit you for 3s.',
+      grants: { untouchedMore: { after: 3, more: 0.3 } },
     },
     twigs: [
       {

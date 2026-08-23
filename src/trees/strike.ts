@@ -223,8 +223,8 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'st_immovable',
           name: 'Immovable',
-          description: 'Strike deals 30% more damage to enemies within 2 tiles of you.',
-          grants: { moreClose: { within: 2, more: 0.3 } },
+          description: 'Strike deals 30% more damage while nothing has hit you for 3s.',
+          grants: { untouchedMore: { after: 3, more: 0.3 } },
         },
       },
     ],

@@ -2283,6 +2283,8 @@ export class RunSim {
           : [this.state.hero],
       rng: this.rng,
       momentum,
+      sinceKill: this.sinceKill,
+      sinceHit: this.sinceHit,
       hit: (target, multiplier) => this.dealDamage(user, target, multiplier, skill),
       ailment: (target, multiplier, seconds, spread) =>
         this.applyAilment(user, target, multiplier, seconds, skill, spread),
@@ -2470,15 +2472,16 @@ export class RunSim {
     if (defender.kind === 'hero' && this.flasked()) {
       scale *= 1 - Math.min(0.8, (this.grants.potionLess as number) ?? 0);
     }
-    // A shield blunts every hit; what stands close enough to feel you swings
-    // softer. Both are what the other hand bought.
+    // A shield blunts every hit: what the other hand bought.
     if (defender.kind === 'hero') {
       if (this.grip === 'shield') {
         scale *= 1 - Math.min(WARRIOR.shieldLessCap, (this.grants.shieldLess as number) ?? 0);
       }
-      const dread = (this.grants.dread as number) ?? 0;
-      if (dread > 0 && dist(attacker, defender) <= WARRIOR.dreadRadius) {
-        scale *= Math.max(0, 1 - dread / 100);
+      // THE PAINT: a blow that lands blunts the next ones, in the same window
+      // that sharpens what you swing back.
+      const painted = (this.grants.struckLess as number) ?? 0;
+      if (painted > 0 && this.sinceHit <= WARRIOR.paintSeconds) {
+        scale *= Math.max(0, 1 - painted / 100);
       }
       // What a KILL bought: cover, for as long as it lasts.
       const guard = (this.grants.killGuard as number) ?? 0;
@@ -2495,8 +2498,8 @@ export class RunSim {
       if (back > 0 && attacker.life < attacker.stats.maxLife * (WARRIOR.corneredBelow / 100)) {
         scale *= 1 + back / 100;
       }
-      const paint = (this.grants.warPaint as number) ?? 0;
-      if (paint > 0 && dist(attacker, defender) <= WARRIOR.paintRadius) scale *= 1 + paint / 100;
+      const paint = (this.grants.struckMore as number) ?? 0;
+      if (paint > 0 && this.sinceHit <= WARRIOR.paintSeconds) scale *= 1 + paint / 100;
       if (this.riposte > 0) scale *= 1 + ((this.grants.blockRiposte as number) ?? 0) / 100;
       // THE FIRST HIT on a body. `struck` is set below, so a second swing at
       // the same thing is an ordinary one however long the fight runs.

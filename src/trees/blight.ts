@@ -245,8 +245,8 @@ const BRANCHES: Branch[] = [
     enabler: {
       id: 'bl_spite',
       name: 'Spite',
-      description: 'Blight deals 30% more damage to enemies within 3 tiles of you.',
-      grants: { moreClose: { within: 3, more: 0.3 } },
+      description: 'For 4s after a kill, Blight deals 30% more damage.',
+      grants: { killMore: { seconds: 4, more: 0.3 } },
     },
     twigs: [
       {

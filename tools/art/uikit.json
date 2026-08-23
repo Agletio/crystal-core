@@ -62,16 +62,6 @@
    "radius": 3
   },
   {
-   "id": "head",
-   "kind": "rounded_rect",
-   "label": "long low title-bar plate of carved dark stone, chamfered edges, brass end fittings, lit top rim",
-   "x": 248,
-   "y": 164,
-   "w": 224,
-   "h": 40,
-   "radius": 3
-  },
-  {
    "id": "bar",
    "kind": "rounded_rect",
    "label": "long horizontal action-bar plate: a carved dark stone slab banded with dark iron, heavy tarnished brass end caps, warm lit top edge",
@@ -92,5 +82,5 @@
    "radius": 3
   }
  ],
- "_rim": "A SLIM frame for the rail was asked twice and `create_ui_asset` returned a whole KIT SHEET both times \u2014 free-form, with no `pieces`, that tool's prior is a sheet of assets whatever the description says, and 'ONE frame filling the image, NOT a sheet, NOT a set' did not move it. Its minimum is 192x192, so a small piece cannot be asked for at all. The rail uses the shipped `head` plate instead, at its own scale: `border-image: var(--fix-head) 6 16 / 6px 16px round`. Ask a new fixture through `pieces` or not at all."
+ "_rim": "A SLIM frame for the rail was asked twice and `create_ui_asset` returned a whole KIT SHEET both times \u2014 free-form, with no `pieces`, that tool's prior is a sheet of assets whatever the description says, and 'ONE frame filling the image, NOT a sheet, NOT a set' did not move it. Its minimum is 192x192, so a small piece cannot be asked for at all. Ask a new fixture through `pieces` or not at all. The `head` plate it once stood in for is gone: every plate is the panel with a hairline edge."
 }

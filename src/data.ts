@@ -236,8 +236,7 @@ export const WARRIOR = {
   riposteSeconds: 4, // how long a Block leaves the next hit sharpened
   heavyHandSeconds: 2,
   staggerSeconds: 3,
-  paintRadius: 4, // tiles, War Paint
-  dreadRadius: 5,
+  paintSeconds: 4, // how long the paint answers a blow, on both of its lines
   shieldLessCap: 0.6,
   secondSkinCap: 1,
 };
@@ -1677,7 +1676,7 @@ export const FORGED: ForgedDef[] = [
       name: 'Long-Angle',
       appliesTo: ['gear'],
       tags: ['forged'],
-      grants: { moreFar: { beyond: 4, more: 1.25 } },
+      grants: { untouchedMore: { after: 3, more: 1.25 } },
       tiers: [
         { ilvl: 1, weight: 0, stats: [{ stat: 'attackRange', form: 'flat', range: [1, 1] }] },
       ],

@@ -173,14 +173,15 @@ assert(
   text('run-selected').slice(0, 80)
 );
 
-// THE CLIMB. Progress drawn as pips: a row a zone, a pip a rung, and nothing
-// ever taken away — a cleared rung stays clickable so a wipe is answered by
-// dropping back two and grinding.
-assert(all('#run-climb .climbseam__zone').length === 3, 'the seam names all three zones');
-assert(all('#run-climb .pip').length === 42, 'and a station per rung', String(all('#run-climb .pip').length));
-// A STRETCH per zone rather than one unbroken line: a zone opens when the one
-// below is whole, and a single line says otherwise.
-assert(all('#run-climb .climbseam__rock').length === 3, 'drawn as three winding stretches',
+// THE CLIMB. ONE ZONE AT A TIME, on a tab, drawn as a seam down that zone's own
+// cross-section — and nothing ever taken away: a cleared rung stays clickable
+// so a wipe is answered by dropping back two and grinding.
+assert(all('#run-climb .climbtab').length === 3, 'a tab per zone');
+assert($('climb-tab-0').disabled === false && $('climb-tab-1').disabled === true,
+  'and only the ones you have opened');
+assert(all('#run-climb .pip').length === 12, 'the Fissure alone is drawn, a station per rung',
+  String(all('#run-climb .pip').length));
+assert(all('#run-climb .climbseam__rock').length === 1, 'as one winding stretch',
   String(all('#run-climb .climbseam__rock').length));
 assert($('climb-pip-0-1').classList.contains('pip--here'), 'a new character stands on the first');
 assert($('climb-pip-0-2').disabled === true, 'the rung above it is shut');
@@ -196,7 +197,7 @@ assert(
     && !$('climb-pip-0-3').classList.contains('pip--spike'),
   'and only the rungs that are one'
 );
-assert($('climb-pip-1-1').disabled === true, 'and so is the whole zone above');
+assert($('climb-pip-1-1') === null, 'and the zone above is behind its own tab');
 assert(
   /the fissure, rung 1/i.test($('run-launch').textContent),
   'and the way in names where it goes',
@@ -232,8 +233,12 @@ assert($('dev-climb-0') !== null, 'and a button that clears a zone of the climb'
 $('dev-climb-0').click();
 $('open-fissure').click();
 assert($('climb-pip-0-12').classList.contains('pip--done'), 'clearing the Fissure marks every rung of it');
-assert($('climb-pip-1-1').disabled === false, 'and opens the zone above');
+assert($('climb-tab-1').disabled === false, 'and opens the zone above');
+$('climb-tab-1').click();
+assert($('climb-pip-1-1').disabled === false, 'whose tab draws its own rungs');
 assert($('climb-pip-1-2').disabled === true, 'one rung at a time');
+assert($('climb-pip-0-1') === null, 'and only that zone');
+$('climb-tab-0').click();
 $('climb-pip-0-4').click();
 assert($('climb-pip-0-4').classList.contains('pip--here'), 'a cleared rung is still yours to grind');
 assert(

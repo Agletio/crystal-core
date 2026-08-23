@@ -240,9 +240,9 @@ const BRANCHES: Branch[] = [
         minors: 3,
         notable: {
           id: 'fb_closequarters',
-          name: 'Close Quarters',
-          description: 'Fireball deals 30% more damage to enemies within 2.5 tiles of you.',
-          grants: { moreClose: { within: 2.5, more: 0.3 } },
+          name: 'Clean Sweep',
+          description: 'For 4s after a kill, Fireball deals 30% more damage.',
+          grants: { killMore: { seconds: 4, more: 0.3 } },
         },
       },
       {
@@ -278,8 +278,8 @@ const TRUNK_NOTABLES: Notable[] = [
   {
     id: 'fb_longfuse',
     name: 'Long Fuse',
-    description: 'Fireball deals 30% more damage to enemies more than 5 tiles away.',
-    grants: { moreFar: { beyond: 5, more: 0.3 } },
+    description: 'Fireball deals 30% more damage while nothing has hit you for 3s.',
+    grants: { untouchedMore: { after: 3, more: 0.3 } },
   },
   {
     id: 'fb_transmutation',

@@ -23,9 +23,10 @@ export interface SkillUse {
   grants: Record<string, unknown>; // behaviour switches from the skill tree
   crit: boolean; // whether this whole use crit
   castIndex: number; // uses so far by this user, from zero
-  /** What Momentum this use has BUILT against `primary`, and against nobody
-   *  else — resolved by the sim, because the streak outlives one use. */
+  /** Momentum BUILT against `primary` and nobody else — the sim's to say. */
   momentum: number;
+  sinceKill: number; // seconds left of a kill still counting
+  sinceHit: number; // seconds since anything landed on the hero
   /** `multiplier` is relative to THIS skill's damage, not to anything else. */
   hit(target: Entity, multiplier: number): void;
   /**
@@ -125,11 +126,13 @@ export function targetScale(use: SkillUse, target: Entity): number {
   const ailing = g.moreVsAiling as number | undefined;
   if (ailing && target.ailments.length > 0) m *= 1 + ailing;
 
-  const close = g.moreClose as { within: number; more: number } | undefined;
-  if (close && separation(use.user, target) <= close.within) m *= 1 + close.more;
+  // NEITHER IS ABOUT WHERE YOU STAND: a kill and an untouched run are things a
+  // BUILD decides, and nobody drives the hero to a tile.
+  const killed = g.killMore as { seconds: number; more: number } | undefined;
+  if (killed && use.sinceKill > 0) m *= 1 + killed.more;
 
-  const far = g.moreFar as { beyond: number; more: number } | undefined;
-  if (far && separation(use.user, target) > far.beyond) m *= 1 + far.more;
+  const clean = g.untouchedMore as { after: number; more: number } | undefined;
+  if (clean && use.sinceHit >= clean.after) m *= 1 + clean.more;
 
   const low = g.moreVsLow as { below: number; more: number } | undefined;
   if (low && target.life <= target.stats.maxLife * low.below) m *= 1 + low.more;

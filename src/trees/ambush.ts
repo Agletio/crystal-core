@@ -337,8 +337,8 @@ const TRUNK_NOTABLES: Notable[] = [
   {
     id: 'am_close',
     name: 'Close Work',
-    description: 'Ambush deals 30% more damage to enemies within 2 tiles of you.',
-    grants: { moreClose: { within: 2, more: 0.3 } },
+    description: 'For 4s after a kill, Ambush deals 30% more damage.',
+    grants: { killMore: { seconds: 4, more: 0.3 } },
   },
 ];
 

@@ -580,28 +580,30 @@ export const GRANTS: GrantDef[] = [
         : `Below ${WARRIOR.corneredBelow}% of your maximum life you deal ${Math.round(n)}% more damage`;
     },
   },
+  // THE PAINT ANSWERS A BLOW. Both fire on being HIT, which is the one thing a
+  // man who stands in it can count on — and not on where he is standing.
   {
-    id: 'dread',
-    what: 'what stands near you swings softer',
+    id: 'struckLess',
+    what: 'a hit that lands on you blunts the next ones',
     reads: [STATS],
     merge: 'sum',
     say: (v) => {
       const n = asNumber(v);
       return n === null
         ? null
-        : `Enemies within ${WARRIOR.dreadRadius} tiles deal ${Math.round(n)}% less damage`;
+        : `For ${WARRIOR.paintSeconds}s after you are hit you take ${Math.round(n)}% less damage`;
     },
   },
   {
-    id: 'warPaint',
-    what: 'you hit what is close to you harder',
+    id: 'struckMore',
+    what: 'a hit that lands on you sharpens what you swing back',
     reads: [STATS],
     merge: 'sum',
     say: (v) => {
       const n = asNumber(v);
       return n === null
         ? null
-        : `You deal ${Math.round(n)}% more damage to enemies within ${WARRIOR.paintRadius} tiles`;
+        : `For ${WARRIOR.paintSeconds}s after you are hit you deal ${Math.round(n)}% more damage`;
     },
   },
   {
@@ -818,24 +820,28 @@ export const GRANTS: GrantDef[] = [
 
   { id: 'everyNth', what: 'every nth cast is worth more', reads: SCALED, changes: 'scale' },
   { id: 'moreVsAiling', what: 'more damage to enemies already suffering', reads: SCALED, changes: 'scale' },
+  // WHAT REPLACED THE DISTANCE NODES. *"It feels bad to ever take increased
+  // damage to near enemies when you can't control your character's location at
+  // all."* Both of these fire on something a BUILD decides — how fast it kills,
+  // and whether anything reaches it — rather than on where the walk put you.
   {
-    id: 'moreClose',
+    id: 'killMore',
     changes: 'scale',
-    what: 'more damage to enemies near you',
+    what: 'more damage for a moment after a kill',
     reads: SCALED,
     say: (v) => {
-      const p = pair(v, 'within', 'more');
-      return p && `${pct(p[1])} more damage to enemies within ${p[0]} tiles`;
+      const p = pair(v, 'seconds', 'more');
+      return p && `${pct(p[1])} more damage for ${p[0]}s after a kill`;
     },
   },
   {
-    id: 'moreFar',
+    id: 'untouchedMore',
     changes: 'scale',
-    what: 'more damage to enemies far from you',
+    what: 'more damage while nothing has landed on you',
     reads: SCALED,
     say: (v) => {
-      const p = pair(v, 'beyond', 'more');
-      return p && `${pct(p[1])} more damage to enemies over ${p[0]} tiles away`;
+      const p = pair(v, 'after', 'more');
+      return p && `${pct(p[1])} more damage while nothing has hit you for ${p[0]}s`;
     },
   },
   {

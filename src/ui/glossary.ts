@@ -48,7 +48,13 @@ export function nodeCard(name: string, state: string, lines: string[]): HTMLElem
   head.append(el('span', 'tip__state', state));
   card.append(head);
 
+  // SAID ONCE: a node's prose and its grant's own `say` are the same sentence
+  // by design, matched on WORDS since one of them ends in a full stop.
+  const said = new Set<string>();
   for (const line of lines.filter((l) => l.length > 0)) {
+    const key = line.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+    if (said.has(key) || [...said].some((was) => was.includes(key) || key.includes(was))) continue;
+    said.add(key);
     card.append(keywordLine(line, 'tip__body'));
   }
 

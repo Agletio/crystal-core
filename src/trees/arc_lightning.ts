@@ -226,9 +226,9 @@ const BRANCHES: Branch[] = [
         minors: 3,
         notable: {
           id: 'al_pointblank',
-          name: 'Point Blank',
-          description: 'Arc Lightning deals 30% more damage to enemies within 2.5 tiles of you.',
-          grants: { moreClose: { within: 2.5, more: 0.3 } },
+          name: 'Second Wind',
+          description: 'For 4s after a kill, Arc Lightning deals 30% more damage.',
+          grants: { killMore: { seconds: 4, more: 0.3 } },
         },
       },
       {
@@ -261,8 +261,8 @@ const TRUNK_NOTABLES: Notable[] = [
   {
     id: 'al_longreach',
     name: 'Long Reach',
-    description: 'Arc Lightning deals 30% more damage to enemies more than 5 tiles away.',
-    grants: { moreFar: { beyond: 5, more: 0.3 } },
+    description: 'Arc Lightning deals 30% more damage while nothing has hit you for 3s.',
+    grants: { untouchedMore: { after: 3, more: 0.3 } },
   },
   {
     id: 'al_transformer',

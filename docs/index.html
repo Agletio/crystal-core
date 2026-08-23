@@ -429,18 +429,15 @@
      touching sockets sized to clear the flask bar at 1280; the utility trio
      — Fill, Hide, the dev kit — sits on its own small plate above. */
   .rail { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
-  /* The PLATE is the slim horizontal one, not the heavy riveted square: a
-     14px frame round a 34px row of buttons was almost as much border as
-     content. `head` is authored as a bar — a 6px brass-edged band above and
-     below, end caps at 16 — and it is applied at the art's own scale, so no
-     row of it is resampled. */
+  /* Every plate is the PANEL with a hairline carved edge and nothing else.
+     A brass-edged band round a 34px row of buttons was more border than
+     content, and it read as a brown box round everything it touched. */
   .rail__row {
     display: flex; justify-content: flex-end;
     align-items: center; gap: 0;
-    padding: 0 2px;
+    padding: 3px 4px;
     background-color: var(--panel); background-image: var(--grit); background-clip: padding-box;
-    border: 6px solid transparent; border-left-width: 16px; border-right-width: 16px;
-    border-image: var(--fix-head) 6 16 / 6px 16px round;
+    border: 1px solid var(--edge); border-radius: var(--r);
     image-rendering: pixelated;
   }
   /* ONE FRAME, and the icons sit in its groove. A riveted steel socket behind
@@ -755,10 +752,9 @@
   body.mapfull #run-hud .debuffs { grid-area: marks; }
   .hud__who {
     display: flex; justify-content: space-between; align-items: baseline; font-size: 10px;
-    padding: 2px 6px; margin-bottom: 2px;
+    padding: 3px 9px; margin-bottom: 2px;
     background-color: var(--panel); background-clip: padding-box;
-    border: 4px solid transparent; border-left-width: 14px; border-right-width: 14px;
-    border-image: var(--fix-head) 6 16 / 4px 14px round; image-rendering: pixelated;
+    border: 1px solid var(--edge); border-radius: var(--r); image-rendering: pixelated;
   }
   .hud__name { font-family: var(--display); letter-spacing: .1em; text-transform: uppercase; color: var(--bone); }
   .hud__level { color: var(--text-dim); }
@@ -879,7 +875,7 @@
     width: min(520px, calc(100vw - 220px)); pointer-events: none;
     padding: 6px 12px 8px;
     background-color: var(--panel); background-image: var(--grit); background-clip: padding-box;
-    border: 6px solid transparent; border-left-width: 16px; border-right-width: 16px; border-image: var(--fix-head) 6 16 / 6px 16px round;
+    border: 1px solid var(--edge); border-radius: var(--r);
     image-rendering: pixelated;
   }
   /* Top right, clear of the boss bar's own 110px of margin at 1280. Read at a
@@ -889,8 +885,7 @@
     display: flex; flex-direction: column; align-items: flex-end; gap: 1px;
     padding: 4px 8px 5px; pointer-events: none;
     background-color: var(--panel); background-image: var(--grit); background-clip: padding-box;
-    border: 5px solid transparent; border-left-width: 14px; border-right-width: 14px;
-    border-image: var(--fix-head) 6 16 / 5px 14px round; image-rendering: pixelated;
+    border: 1px solid var(--edge); border-radius: var(--r); image-rendering: pixelated;
   }
   .rungtag__zone {
     font-size: 9px; letter-spacing: .12em; text-transform: uppercase; color: var(--text-dim);
@@ -923,7 +918,7 @@
     transform: translate(calc(-50% + var(--sx, 0px)), calc(-100% + var(--sy, 0px)));
     padding: 5px 11px; max-width: 240px;
     background-color: var(--panel); background-image: var(--grit); background-clip: padding-box;
-    border: 6px solid transparent; border-left-width: 16px; border-right-width: 16px; border-image: var(--fix-head) 6 16 / 6px 16px round;
+    border: 1px solid var(--edge); border-radius: var(--r);
     image-rendering: pixelated;
     font-family: var(--display); font-size: 13px; letter-spacing: .08em;
     color: var(--ember); text-align: center; white-space: nowrap;
@@ -932,9 +927,9 @@
      the seconds left under it, and a hover that says what it does. */
   .debuffs { display: flex; gap: 4px; }
   .debuff {
-    width: 40px; padding: 2px 0 1px; text-align: center;
+    width: 40px; padding: 3px 0 2px; text-align: center;
     background-color: var(--panel); background-clip: padding-box;
-    border: 6px solid transparent; border-left-width: 16px; border-right-width: 16px; border-image: var(--fix-head) 6 16 / 6px 16px round;
+    border: 1px solid var(--edge); border-radius: var(--r);
     image-rendering: pixelated;
   }
   .debuff__art { display: block; margin: 0 auto; image-rendering: pixelated; }
@@ -1077,7 +1072,7 @@
     width: min(600px, calc(100vw - 40px)); max-height: 46vh; overflow-y: auto;
     padding: 4px 8px 8px;
     background-color: var(--panel); background-image: var(--grit); background-clip: padding-box;
-    border: 6px solid transparent; border-left-width: 16px; border-right-width: 16px; border-image: var(--fix-head) 6 16 / 6px 16px round;
+    border: 1px solid var(--edge); border-radius: var(--r);
     image-rendering: pixelated; box-shadow: var(--lift);
   }
   .dock__head { display: flex; flex-wrap: wrap; gap: 10px; align-items: baseline; justify-content: space-between; margin-bottom: 8px; }
@@ -1214,12 +1209,11 @@
   /* --- the Fissure and its socket ------------------------------------- */
   .fissure { font-size: 12px; color: var(--text-dim); margin: 0 0 14px; }
 
-  /* A carved recess waiting to be filled — the same iron frame the cards use,
-     dimmed while empty so a filled one reads across the screen. */
+  /* A carved recess waiting to be filled, dimmed while empty. */
   .socket {
     display: block; width: 100%; text-align: left;
     background-color: var(--ink); background-image: var(--grit); background-clip: padding-box;
-    border: 6px solid transparent; border-left-width: 16px; border-right-width: 16px; border-image: var(--fix-head) 6 16 / 6px 16px round;
+    border: 1px solid var(--edge); border-radius: var(--r);
     image-rendering: pixelated; box-shadow: none; border-radius: 0;
   }
   .socket:hover { filter: brightness(1.08) drop-shadow(0 0 4px var(--citrine)); }
@@ -1302,25 +1296,33 @@
   }
   .climbcard .panel__title { font-size: 12px; margin-bottom: 1px; text-align: center; }
   .climb__where { font-size: 11px; color: var(--citrine); margin-bottom: 6px; text-align: center; }
-  /* THE SEAM: one line winding down through all 42 rungs, a station on each.
-     The line BEHIND you is lit and the line ahead is not, so how far you have
-     come is the picture rather than a number in the corner. */
-  .climbseam { position: relative; margin: 2px 0 4px; }
-  .climbseam__line { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
-  .climbseam__rock { fill: none; stroke: var(--edge); stroke-width: 3; stroke-linecap: round; }
-  .climbseam__lit { fill: none; stroke: var(--citrine); stroke-width: 3; stroke-linecap: round; opacity: .8; }
-  .climbseam__zone {
-    position: absolute; transform: translateX(-50%);
-    font-family: var(--display); font-size: 8px; letter-spacing: .1em; text-transform: uppercase;
-    color: var(--text-dim); white-space: nowrap; pointer-events: none;
+  /* THE SEAM: one zone at a time, drawn down that zone's own cross-section.
+     The picture is aspect-LOCKED and every station is placed in percent of it,
+     so a rung cannot drift off the chamber it sits in. */
+  .climbtabs { display: flex; justify-content: center; gap: 6px; margin-bottom: 8px; }
+  .climbtab__done { color: var(--text-dim); font-size: 10px; }
+  .climbtab--on { border-color: var(--citrine); color: var(--citrine); }
+  .climbtab--on .climbtab__done { color: var(--citrine); }
+  .climbtab--shut { border-style: dashed; }
+  .climbseam {
+    position: relative; margin: 0 auto 4px;
+    aspect-ratio: 688 / 384; width: min(100%, 466px);
+    background-color: var(--ink); background-size: 100% 100%;
+    image-rendering: pixelated; border: 1px solid var(--edge); border-radius: var(--r);
   }
-  .climbseam__zone--shut { opacity: .55; }
+  .climbseam__line { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+  .climbseam__rock { fill: none; stroke: var(--edge-lit); stroke-width: 1.4; stroke-linecap: round; opacity: .7; vector-effect: non-scaling-stroke; }
+  .climbseam__lit { fill: none; stroke: var(--citrine); stroke-width: 1.4; stroke-linecap: round; opacity: .9; vector-effect: non-scaling-stroke; }
   .pip {
     position: absolute; transform: translate(-50%, -50%);
     width: 19px; height: 19px; padding: 0; font: inherit; font-size: 9px; line-height: 17px;
     background: var(--panel); color: var(--text-dim);
     border: 1px solid var(--edge); border-radius: 50%; cursor: pointer;
   }
+  /* A pip is PLACED by its transform, so the button treatment's nudge on press
+     would throw it half its own width out from under the cursor — which ate
+     the click that was landing on it. */
+  .pip:active:not(:disabled) { transform: translate(-50%, -50%); box-shadow: var(--sunk); }
   /* A zone's LAST rung is its BOSS: bigger, and ringed twice so it is not read
      as another challenge floor, which is also ember. */
   .pip--boss {
@@ -1334,7 +1336,6 @@
   .climb__spike { color: var(--ember); }
   .pip--next { border-color: var(--citrine); color: var(--citrine); }
   .pip--shut { cursor: default; color: var(--edge-lit); }
-  /* Where you are pointed. The one pip that has to be findable at a glance. */
   /* Where you are pointed, ringed rather than outlined: a station is round. */
   .pip--here { box-shadow: 0 0 0 2px var(--citrine); color: var(--bone); }
   .pip:hover:not(:disabled) { background: var(--panel-lit); }
@@ -1506,10 +1507,10 @@
     width: max-content; max-width: min(300px, calc(100vw - 32px));
     display: flex; align-items: flex-end; gap: 8px;
     background-color: var(--panel); background-image: var(--grit); background-clip: padding-box;
-    border: 6px solid transparent; border-left-width: 16px; border-right-width: 16px; border-image: var(--fix-head) 6 16 / 6px 16px round;
+    border: 1px solid var(--edge); border-radius: var(--r);
     image-rendering: pixelated;
     box-shadow: 0 5px 0 rgba(0,0,0,.55);
-    padding: 2px 4px 2px 1px;
+    padding: 4px 7px 4px 4px;
   }
   /* Out of the box on two sides. A portrait cropped to the padding reads as an
      icon; one that breaks the frame reads as somebody leaning in — and the
@@ -1545,11 +1546,8 @@
   /* TREATMENT 1 of 4 — the WINDOW. The panel's slab, lifted off the map and
      given a head to drag it by. */
   .modal__card { background-color: var(--panel); background-image: linear-gradient(rgba(255,226,170,.035), transparent 30%), var(--grit); background-clip: padding-box; border: 30px solid transparent; border-image: var(--fix-win) 30 round; image-rendering: pixelated; box-shadow: var(--lift); width: min(720px, 100%); max-height: calc(100vh - var(--dock-h, 0px) - 40px); max-height: calc(100dvh - var(--dock-h, 0px) - 40px); display: flex; flex-direction: column; }
-  /* The head is the lit end of the slab, and the rule under it is the seam the
-     lamplight stops at. */
-  /* The head is a carved TITLE PLATE with brass end fittings, and it is still
-     the drag handle. */
-  .modal__head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 5px 14px; margin: 2px 2px 6px; background-color: var(--panel); background-clip: padding-box; border: 4px solid transparent; border-left-width: 16px; border-right-width: 16px; border-image: var(--fix-head) 6 16 / 4px 16px round; image-rendering: pixelated; }
+  /* The head is the lit end of the slab, and still the drag handle. */
+  .modal__head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 6px 12px; margin: 2px 2px 6px; background-color: var(--panel); background-clip: padding-box; border: 1px solid var(--edge); border-radius: var(--r); image-rendering: pixelated; }
   /* A face beside the name rather than at the other end of the bar: the head's
      usual space-between would put the person and who they are as far apart as
      the box allows. */
@@ -1739,7 +1737,7 @@
        instead — the spokes hanging off the low half of a web, gone. 205px is
        everything above and below it inside the card. */
     position: relative; height: min(50vh, 430px, calc(100vh - var(--dock-h, 0px) - 205px)); min-height: 170px;
-    border: 6px solid transparent; border-left-width: 16px; border-right-width: 16px; border-image: var(--fix-head) 6 16 / 6px 16px round;
+    border: 1px solid var(--edge); border-radius: var(--r);
     box-shadow: none;
     background-color: var(--web-ground); background-clip: padding-box;
     background-image:
@@ -1768,7 +1766,7 @@
      regions are a smudge and the whole point of the web is its shape. */
   .webwrap--trials { height: min(56vh, 500px, calc(100vh - var(--dock-h, 0px) - 300px)); }
   .trialladder { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; }
-  .trialrow { border: 6px solid transparent; border-left-width: 16px; border-right-width: 16px; border-image: var(--fix-head) 6 16 / 6px 16px round; background-color: var(--panel); background-clip: padding-box; padding: 4px 6px; }
+  .trialrow { border: 1px solid var(--edge); border-radius: var(--r); background-color: var(--panel); background-clip: padding-box; padding: 5px 9px; }
   .trialrow--done { filter: brightness(1.12); }
   .trialrow__head { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
   .trialrow__name { color: var(--text); }
@@ -1785,7 +1783,7 @@
   .bookrow__means { color: var(--text-dim); font-size: 12px; margin-top: 2px; }
   .web--still { cursor: default; }
   /* A node that asks a question opens this over itself. */
-  .webmenu { position: absolute; z-index: 2; min-width: 190px; background-color: var(--panel); background-image: var(--grit); background-clip: padding-box; border: 6px solid transparent; border-left-width: 16px; border-right-width: 16px; border-image: var(--fix-head) 6 16 / 6px 16px round; image-rendering: pixelated; box-shadow: var(--lift); padding: 2px; display: flex; flex-direction: column; gap: 4px; }
+  .webmenu { position: absolute; z-index: 2; min-width: 190px; background-color: var(--panel); background-image: var(--grit); background-clip: padding-box; border: 1px solid var(--edge); border-radius: var(--r); image-rendering: pixelated; box-shadow: var(--lift); padding: 2px; display: flex; flex-direction: column; gap: 4px; }
   .webmenu__row { text-align: left; padding: 6px 8px; display: flex; flex-direction: column; gap: 2px; }
   .webmenu__row:hover { background: var(--edge); border-color: var(--citrine); }
   .webmenu__row--on { border-color: var(--citrine); color: var(--citrine); }
@@ -1835,7 +1833,7 @@
     position: fixed; z-index: 100; pointer-events: none;
     max-width: 340px; padding: 6px 8px;
     background-color: var(--panel); background-image: var(--grit); background-clip: padding-box;
-    border: 6px solid transparent; border-left-width: 16px; border-right-width: 16px; border-image: var(--fix-head) 6 16 / 6px 16px round;
+    border: 1px solid var(--edge); border-radius: var(--r);
     image-rendering: pixelated;
     color: var(--text); font-size: 11px; line-height: 1.5;
     box-shadow: var(--lift);

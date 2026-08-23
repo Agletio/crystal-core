@@ -1,12 +1,12 @@
-/**
- * What a character looks like: the renderer is handed art keys and nothing else.
- * A hero IS his trade, and what he carries is drawn ON the body — a VARIANT of
- * the same man holding it. A picture pinned at the fist is the fallback.
- */
+/** What a character looks like: the renderer is handed art keys and nothing
+ *  else. A hero IS his trade, and what he carries is drawn ON the body — a
+ *  VARIANT of the same man holding it; a picture pinned at the fist is the
+ *  fallback. */
 import { GENERATED } from '../render/generated-art';
 import { HELD } from '../render/held';
 import { GEAR_BASE_BY_ID, OFF_SLOT, WEAPON_SLOT } from '../data';
 import { TRADE_BY_ID } from '../trades';
+import { canDualWield } from './character';
 import type { Character } from './character';
 
 export const HERO_SPRITE = 'wanderer';
@@ -40,11 +40,15 @@ export function heroSpriteFor(character: Character): string {
   return body;
 }
 
-/** The `HELD` row a SLOT draws, off the base's `art`. */
+/** The `HELD` row a SLOT draws. A SECOND WEAPON IS ONE TRADE'S PRIVILEGE and
+ *  the ART obeys that rather than the equipment, so an equip or a heal being
+ *  wrong cannot put a pair on somebody who has none. */
 export function heldFor(character: Character, slotId = WEAPON_SLOT): string | undefined {
   const worn = character.equipment[slotId];
   const art = worn ? GEAR_BASE_BY_ID[worn.base]?.art : undefined;
-  return art && HELD[art] ? art : undefined;
+  if (!art || !HELD[art]) return undefined;
+  if (slotId === OFF_SLOT && art !== 'shield' && !canDualWield(character)) return undefined;
+  return art;
 }
 
 /** What is left to PIN once the body has drawn what it already holds. */

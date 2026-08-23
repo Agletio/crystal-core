@@ -272,8 +272,8 @@ export const WARRIOR_TRADE: TradeSpec = {
       gate: {
         id: 'mah_paint',
         name: 'War Paint',
-        description: 'You deal 25% more damage to enemies within 4 tiles.',
-        grants: { warPaint: 25 },
+        description: 'For 4s after you are hit, you deal 25% more damage.',
+        grants: { struckMore: 25 },
       },
       branches: [
         {
@@ -287,14 +287,14 @@ export const WARRIOR_TRADE: TradeSpec = {
             {
               id: 'mah_dread',
               name: 'Dread',
-              description: 'Enemies within 5 tiles deal 12% less damage.',
-              grants: { dread: 12 },
+              description: 'For 4s after you are hit, you take 12% less damage.',
+              grants: { struckLess: 12 },
             },
             {
               id: 'mah_terror',
               name: 'Terror',
-              description: 'Enemies within 5 tiles deal a further 22% less damage.',
-              grants: { dread: 22 },
+              description: 'For 4s after you are hit, you take a further 22% less damage.',
+              grants: { struckLess: 22 },
             },
           ],
         },
@@ -316,9 +316,9 @@ export const WARRIOR_TRADE: TradeSpec = {
               id: 'mah_grind',
               name: 'Grind Them Down',
               description:
-                'Your hits Slow what they land on by a further 25%, and you deal 30% more ' +
-                'damage to enemies within 4 tiles.',
-              grants: { heavyHand: 25, warPaint: 30 },
+                'Your hits Slow what they land on by a further 25%, and for 4s after you ' +
+                'are hit you deal 30% more damage.',
+              grants: { heavyHand: 25, struckMore: 30 },
             },
           ],
         },

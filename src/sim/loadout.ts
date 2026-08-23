@@ -25,7 +25,7 @@ import { characterStats, damageDetail } from './stats';
 import { defaultGearBase, rollCrystal, rollGear } from '../economy';
 import { runSet } from './crystal';
 import { RunSim, TICK } from './run';
-import { attributePointsFor, equipSkill, makeCharacter, slotIsOpen } from './character';
+import { attributePointsFor, canDualWield, equipSkill, makeCharacter, slotIsOpen } from './character';
 import { MOVE_WEBS, canAllocate, treeFor, treePointsFor } from '../skills-tree';
 import { skillProgress } from './character';
 import type { Character } from './character';
@@ -276,9 +276,10 @@ export function bestBuild(band: number, rng: Rng, skillId = 'strike', atLevel?: 
 }
 
 /** A SECOND of what the main hand holds, in place of the shield: the ceiling
- *  tries both and the floor keeps its shield, since a measurement may not pick
- *  a build. False when there is nothing to pair with. */
+ *  tries both and the floor keeps its shield. False for anybody who may not
+ *  hold a pair — an arrangement nobody can reach is not a ceiling. */
 function dualWield(character: Character, ilvl: number, pool: ModPool, rng: Rng): boolean {
+  if (!canDualWield(character)) return false;
   const main = character.equipment[WEAPON_SLOT];
   const base = main ? GEAR_BASE_BY_ID[main.base] : undefined;
   if (!base || (base.hands ?? 1) > 1) return false;

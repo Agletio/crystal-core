@@ -99,6 +99,7 @@ import {
   DUAL,
   EQUIP_SLOTS,
   OFF_SLOT,
+  WARRIOR,
   WEAPON_SLOT,
 } from './data';
 import { variants } from './sim/appearance';
@@ -3548,6 +3549,9 @@ rule('DUAL WIELDING — is a pair two weapons or an average of one?');
   const held = (main: string, off: string | null): Character => {
     const c = makeCharacter(starterLoadout(new Rng(9)), 'strike');
     c.level = 1;
+    // The one trade that may hold a pair — a bare character cannot, and both
+    // the stat seam and the ART seam ask that question rather than assuming.
+    takeUpTrade(c, 'rogue');
     for (const worn of Object.values(c.equipment)) {
       worn.mods = [];
       worn.implicits = [];
@@ -3797,8 +3801,9 @@ rule('EVERY TREE — does every notable actually change the cast?');
 
   /**
    * What one set of grants does, as a string. Cast from several primaries, at
-   * several cast counts, critting and not — so a talent that only shows on the
-   * fifth cast, or only against something nearly dead, still shows.
+   * several cast counts, critting and not, after a kill and not — so a talent
+   * that only shows on the fifth cast, or only against something nearly dead,
+   * or only while nothing has touched you, still shows.
    */
   const fingerprint = (skill: any, behave: any, grants: Record<string, unknown>): string => {
     const marks: string[] = [];
@@ -3811,6 +3816,10 @@ rule('EVERY TREE — does every notable actually change the cast?');
           behave({
             skill, user, primary, enemies,
             rng: new Rng(9), grants, crit, castIndex,
+            // A kill still counting on the odd casts, and a stretch untouched
+            // growing across them: both conditions live inside the five.
+            sinceKill: castIndex % 2 === 1 ? 2 : 0,
+            sinceHit: castIndex,
             hit: (who: any, multiplier: number) => {
               marks.push(`h${enemies.indexOf(who)}:${multiplier.toFixed(3)}`);
               who.life -= multiplier * 5e4;
@@ -7275,14 +7284,16 @@ rule('THE WARRIOR — does what is in your other hand change anything?');
     );
   }
 
-  // What a hit COMES TO, put in front of the sim. Two sims off one seed differ
-  // only by the grant, and neither draws a number the other does not.
-  const hitFor = (who: Character, gap = 0.5): number => {
+  // What a hit COMES TO, put in front of the sim, `since` seconds after
+  // anything last landed on the hero. Two sims off one seed differ only by the
+  // grant, and neither draws a number the other does not.
+  const hitFor = (who: Character, since = 0): number => {
     const sim = new RunSim([], who, new Rng(808)) as any;
     const hero = sim.state.hero;
     const foe = sim.state.monsters[0];
-    foe.x = hero.x + gap;
+    foe.x = hero.x + 0.5;
     foe.y = hero.y;
+    sim.sinceHit = since;
     // A BODY THAT SURVIVES IT. A level 50 hero one-shots anything in the bare
     // Fissure, and every reading off a corpse is the same number: its life.
     foe.life = STANDING;
@@ -7291,18 +7302,20 @@ rule('THE WARRIOR — does what is in your other hand change anything?');
   };
 
   {
+    const cold = WARRIOR.paintSeconds + 1;
     const plain = hitFor(warrior([]));
     const painted = hitFor(warrior(['mah_paint_m0', 'mah_paint']));
     check(
       painted > plain * 1.2,
-      `War Paint is ${Math.round((painted / plain - 1) * 100)}% more damage on a body 0.5 tiles away`,
+      `War Paint is ${Math.round((painted / plain - 1) * 100)}% more damage in the ` +
+        `${WARRIOR.paintSeconds}s after a blow lands on you`,
       `${painted.toFixed(1)} against ${plain.toFixed(1)}`
     );
-    const far = hitFor(warrior(['mah_paint_m0', 'mah_paint']), 9);
+    const late = hitFor(warrior(['mah_paint_m0', 'mah_paint']), cold);
     check(
-      Math.abs(far - hitFor(warrior([]), 9)) < 0.01,
-      'and nothing at all on one 9 tiles away, which is what makes it a rule',
-      `${far.toFixed(1)} against ${hitFor(warrior([]), 9).toFixed(1)}`
+      Math.abs(late - hitFor(warrior([]), cold)) < 0.01,
+      'and nothing at all once that window has run out, which is what makes it a rule',
+      `${late.toFixed(1)} against ${hitFor(warrior([]), cold).toFixed(1)}`
     );
     // Against a body with ARMOUR ON IT: nothing in the bare Fissure has any,
     // and a share of nothing is nothing however the switch is wired.

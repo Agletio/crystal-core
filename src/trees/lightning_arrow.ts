@@ -249,8 +249,8 @@ const TRUNK_NOTABLES: Notable[] = [
   {
     id: 'la_longshot',
     name: 'Long Shot',
-    description: 'Lightning Arrow deals 35% more damage to enemies more than 5 tiles away.',
-    grants: { moreFar: { beyond: 5, more: 0.35 } },
+    description: 'Lightning Arrow deals 35% more damage while nothing has hit you for 3s.',
+    grants: { untouchedMore: { after: 3, more: 0.35 } },
   },
   {
     id: 'la_hunter',
