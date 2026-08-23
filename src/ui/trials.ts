@@ -6,11 +6,12 @@
  * and skill webs are. It opens FRAMED, because the shape of the web is the
  * decision: which four regions of twelve you can afford to walk.
  */
-import { TRIALS } from '../data';
+import { LADDER, THEME_BY_ID, TRIALS, TRIAL_POINTS } from '../data';
 import {
   TRIALS_WEB,
   TRIAL_POINTS_MAX,
   trialPointsFor,
+  trialsOpen,
   canAllocateTrial,
   canDeallocateTrial,
   neighboursOfTrial,
@@ -160,7 +161,7 @@ function renderWeb(): void {
     hub,
     () =>
       'The Fissure, as you have made it.\n' +
-      TRIALS_WEB.spec.regions.map((r) => `${r.theme} — ${r.blurb}`).join('\n')
+      TRIALS_WEB.spec.wheels.map((w) => `${w.theme} — ${w.blurb}`).join('\n')
   );
   view.append(hub);
 
@@ -301,19 +302,26 @@ function render(): void {
   const { character } = game;
   const earned = trialPointsFor(character.trials ?? [], character.climbed ?? {});
   const spent = (character.trialAllocated ?? []).length;
+  // SHUT until the Fissure is whole. The ladder still shows, so what is coming
+  // is legible from the first descent — it is the web that waits.
+  const open = trialsOpen(character.climbed ?? {});
+  const first = LADDER.zones[TRIAL_POINTS.freeZone];
+  const cleared = Math.min(first.rungs, character.climbed?.[first.theme] ?? 0);
 
-  $('trials-sub').textContent =
-    `${spent}/${earned} points spent · ${TRIAL_POINTS_MAX} to earn · ` +
-    `${trialNodes().length} nodes`;
-  // The bargain, said once where it is being made: most of this web is a
-  // downside, and what pays for it is the danger it adds.
-  $('trials-note').textContent =
-    earned > 0
-      ? 'A point per trial and a point per rung cleared. Most nodes make a descent worse, and worse is what pays.'
-      : 'Points come from trials and from rungs cleared, never from levels. The ladder is on the left.';
+  $('trials-sub').textContent = open
+    ? `${spent}/${earned} points spent · ${TRIAL_POINTS_MAX} to earn · ` +
+      `${trialNodes().length} nodes`
+    : `Shut. ${cleared} of ${first.rungs} rungs of ${
+        THEME_BY_ID[first.theme]?.name ?? first.theme
+      } cleared`;
+  $('trials-note').textContent = open
+    ? `${TRIAL_POINTS.perTrial} points a trial and ${TRIAL_POINTS.perRung} a rung above the Fissure. ` +
+      'Most nodes make a descent worse, and worse is what pays.'
+    : `The web opens when the Fissure is whole. Trials done before then keep their ${TRIAL_POINTS.perTrial} points.`;
 
+  $('trials-webwrap').hidden = !open;
   renderLadder();
-  renderWeb();
+  if (open) renderWeb();
   onChanged?.();
 }
 

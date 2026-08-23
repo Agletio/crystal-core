@@ -1,33 +1,30 @@
 /**
  * The trials web is authored as CONTENT here and given coordinates by
- * `layout.ts`. A REGION is a wedge of the circle: one gate off the middle, then
- * branches out of the gate, each a run of minors ending in a notable. REGION
- * COUNT IS OPEN — `buildTrade` throws on the wrong count because a trade has
- * five spokes forever, and this web GROWS instead, a region per kind of danger
- * anybody thinks of.
+ * `layout.ts`. It is a MAP, not a fan: WHEELS sit at fixed places and ROADS of
+ * generic nodes run between them, so reaching the thing you want is a route you
+ * worked out. A wheel's ring is ITS OWN — the Watch's is all rarer monsters,
+ * the Vein's is all coin — and its major hangs off the ring FURTHEST from the
+ * road, so half the ring is the price and which half is the decision.
  */
 import type { Minor, Notable } from '../trees/spec';
 import type { SkillNodeDef } from '../trees/node';
 
-/** A run of minors ending in a notable. The run IS the price of the notable. */
-export interface TrialBranch {
+export interface TrialWheel {
   id: string;
-  theme: string; // what its minors are called on the web
-  minors: Minor[];
-  notable: Notable;
-}
-
-export interface TrialRegion {
-  id: string;
-  theme: string;
-  blurb: string; // one line on the hub's card: what walking it does to a descent
-  gate: Notable; // the way in, and everything behind it is unreachable without it
-  branches: TrialBranch[];
+  theme: string; // what its ring is called on the web
+  blurb: string; // one line on the hub's card
+  at: { x: number; y: number }; // where it sits on the map, in web units
+  roads: string[]; // wheels (or CENTRE) a road runs to; naming it back is free
+  minors: Minor[]; // the ring, specific to this wheel
+  major: Notable; // the middle of it
 }
 
 export interface TrialSpec {
   prefix: string; // node ids start `${prefix}_`, and a save points at them
-  regions: TrialRegion[];
+  /** What a ROAD node says. Generic on purpose: a road is the price of where it
+   *  goes, and one worth walking for itself is one nobody plans around. */
+  road: Minor[];
+  wheels: TrialWheel[];
 }
 
 export interface BuiltTrials {

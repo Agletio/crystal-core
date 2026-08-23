@@ -1302,17 +1302,30 @@
   }
   .climbcard .panel__title { font-size: 12px; margin-bottom: 1px; text-align: center; }
   .climb__where { font-size: 11px; color: var(--citrine); margin-bottom: 6px; text-align: center; }
-  /* ONE LINE A ZONE: name, pips, count. Stacked, the three zones pushed the
-     way in off the bottom of the screen. */
-  .climbrow { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
-  .climbrow--shut { opacity: .5; }
-  .climbrow__name { font-family: var(--display); font-size: 10px; color: var(--text); width: 74px; flex: none; }
-  .climbrow__count { font-size: 9px; color: var(--text-dim); margin-left: auto; text-align: right; flex: none; }
-  .climbrow__pips { display: flex; flex-wrap: wrap; gap: 2px; }
+  /* THE SEAM: one line winding down through all 42 rungs, a station on each.
+     The line BEHIND you is lit and the line ahead is not, so how far you have
+     come is the picture rather than a number in the corner. */
+  .climbseam { position: relative; margin: 2px 0 4px; }
+  .climbseam__line { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+  .climbseam__rock { fill: none; stroke: var(--edge); stroke-width: 3; stroke-linecap: round; }
+  .climbseam__lit { fill: none; stroke: var(--citrine); stroke-width: 3; stroke-linecap: round; opacity: .8; }
+  .climbseam__zone {
+    position: absolute; transform: translateX(-50%);
+    font-family: var(--display); font-size: 8px; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--text-dim); white-space: nowrap; pointer-events: none;
+  }
+  .climbseam__zone--shut { opacity: .55; }
   .pip {
-    width: 19px; height: 17px; padding: 0; font: inherit; font-size: 9px; line-height: 17px;
+    position: absolute; transform: translate(-50%, -50%);
+    width: 19px; height: 19px; padding: 0; font: inherit; font-size: 9px; line-height: 17px;
     background: var(--panel); color: var(--text-dim);
-    border: 1px solid var(--edge); border-radius: 0; cursor: pointer;
+    border: 1px solid var(--edge); border-radius: 50%; cursor: pointer;
+  }
+  /* A zone's LAST rung is its BOSS: bigger, and ringed twice so it is not read
+     as another challenge floor, which is also ember. */
+  .pip--boss {
+    width: 24px; height: 24px; font-size: 10px; border-color: var(--gore);
+    box-shadow: 0 0 0 1px var(--panel), 0 0 0 2px var(--gore);
   }
   .pip--done { background: var(--edge); color: var(--text); }
   /* A CHALLENGE FLOOR, marked before you walk into it. */
@@ -1322,7 +1335,8 @@
   .pip--next { border-color: var(--citrine); color: var(--citrine); }
   .pip--shut { cursor: default; color: var(--edge-lit); }
   /* Where you are pointed. The one pip that has to be findable at a glance. */
-  .pip--here { outline: 2px solid var(--citrine); outline-offset: 0; color: var(--bone); }
+  /* Where you are pointed, ringed rather than outlined: a station is round. */
+  .pip--here { box-shadow: 0 0 0 2px var(--citrine); color: var(--bone); }
   .pip:hover:not(:disabled) { background: var(--panel-lit); }
   .fissurecard .sockets { grid-template-columns: 1fr 1fr; gap: 12px; text-align: left; }
   .fissurecard .panel__title { font-size: 15px; }

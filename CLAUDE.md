@@ -193,7 +193,9 @@ one for a set with no rung. The CLIMB draws it: a row a zone, a pip a rung.
 same seam — and the room fills with rares instead of stepping. **A zone's LAST
 rung is its BOSS**, in an arena of its own (`LADDER.zones[z].arena`, read through
 `arenaAt`), and clearing that is the whole of what opens the zone above: The
-Answering, The Refraction, The Flowering.
+Answering, The Refraction, The Flowering. The CLIMB is drawn as a SEAM — one
+line winding down through the 42, a station on each, a stretch per zone, lit as
+far as you have cleared.
 
 Four sockets hold crystals permanently. Their COUNT is how long a run is, their
 MODIFIERS how hard it is; a crystal's LEVEL is only capacity and its FAMILY
@@ -210,14 +212,21 @@ than tier 1 rolled badly.
 
 **Twelve modifiers was the whole ceiling, and the TRIALS WEB is how it rises.**
 Four sockets of three is all the difficulty a crystal can ever hold, so the web
-is a standing set of modifiers on top. **TWELVE REGIONS, 156 nodes, 48 points**
-— a point per TRIAL and a point per RUNG cleared, never a level, so it cannot be
-ground for and you can walk about four regions of the twelve. Its lines merge
-into `RunSet.mods` beside the crystals' own and are weighed by the same
-`crystalRewards`, so harder is what pays. Most of it is danger; the Vein, the
-Reliquary and the Tithe pay in Rarity and Currency Find instead, and **what a
-reward node costs is the POINT** — it is a danger node you did not take. Per
-CHARACTER, and what it makes worse is every descent that character takes.
+is a standing set of modifiers on top. **It is a MAP, not a fan**: TWELVE
+WHEELS on three rings, 156 nodes, joined by ROADS of generic nodes, so reaching
+a thing is a route you worked out. A wheel's ring of six is one idea said six
+ways with its MAJOR at the middle, hung off the ring point FURTHEST from the
+road — half the ring is what the major costs.
+
+**60 points: five a TRIAL, one a RUNG, and the Fissure pays nothing** — the web
+is SHUT until the Fissure is whole (`trialsOpen`), so a new character meets the
+climb before it meets a hundred and fifty-six nodes. Never a level, so it cannot
+be ground for. Its lines merge into `RunSet.mods` beside the crystals' own and
+are weighed by the same `crystalRewards`, so harder is what pays. Most of it is
+danger; the Vein, the Reliquary and the Tithe pay in Rarity and Currency Find
+instead, and **what a reward node costs is the ROAD** — it is a danger node you
+did not walk to. Per CHARACTER, and it worsens every descent that character
+takes.
 
 **You press Enter once.** A cleared descent launches the next by itself and
 keeps going until you die, your bag fills, someone is waiting at the mouth, or

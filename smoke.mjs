@@ -176,15 +176,19 @@ assert(
 // THE CLIMB. Progress drawn as pips: a row a zone, a pip a rung, and nothing
 // ever taken away — a cleared rung stays clickable so a wipe is answered by
 // dropping back two and grinding.
-assert(all('#run-climb .climbrow').length === 3, 'the climb draws a row per zone');
-assert(all('#run-climb .pip').length === 42, 'and a pip per rung', String(all('#run-climb .pip').length));
+assert(all('#run-climb .climbseam__zone').length === 3, 'the seam names all three zones');
+assert(all('#run-climb .pip').length === 42, 'and a station per rung', String(all('#run-climb .pip').length));
+// A STRETCH per zone rather than one unbroken line: a zone opens when the one
+// below is whole, and a single line says otherwise.
+assert(all('#run-climb .climbseam__rock').length === 3, 'drawn as three winding stretches',
+  String(all('#run-climb .climbseam__rock').length));
 assert($('climb-pip-0-1').classList.contains('pip--here'), 'a new character stands on the first');
 assert($('climb-pip-0-2').disabled === true, 'the rung above it is shut');
 // A CHALLENGE FLOOR is marked BEFORE you walk into it: a rung that is suddenly
 // four times the fight, unannounced, reads as the game breaking.
 assert(
   all('#run-climb .pip--spike').length > 0,
-  'the challenge floors are marked on the pips',
+  'the challenge floors are marked on the seam',
   String(all('#run-climb .pip--spike').length)
 );
 assert(
@@ -2715,15 +2719,37 @@ $('dev-kit').click();
     'and the dev kit has done all of them, so the web can be walked',
     String(all('#trials-ladder .trialrow--done').length)
   );
+  // SHUT until the Fissure is whole: a new character meets the climb before it
+  // meets a hundred and fifty-six more nodes.
+  assert(
+    $('trials-webwrap').hidden === true,
+    'the web is shut until the Fissure is cleared',
+    String($('trials-webwrap').hidden)
+  );
+  assert(
+    /Shut/.test(text('trials-sub')) && /rungs/.test(text('trials-sub')),
+    'and the screen says how far off it is',
+    text('trials-sub')
+  );
+
+  // The dev kit clears it, which is the only way a headless check reaches the
+  // other side of a gate that is twelve real descents wide.
+  $('trials-close').click();
+  $('open-dev').click();
+  $('dev-climb-0').click();
+  $('open-trials').click();
+  assert($('trials-webwrap').hidden === false, 'clearing the Fissure opens the web');
+
   assert(
     all('#trials-web .web__node').length === 156,
     'a hundred and fifty-six nodes, built whole and roamed',
     String(all('#trials-web .web__node').length)
   );
 
-  // One way in per REGION, and the budget is what stops you walking them all.
+  // FOUR ways in, one per road off the middle — everything else is reached by
+  // walking, which is the whole of what makes a route a decision.
   const openTrial = () => all('#trials-web .web__node--open');
-  assert(openTrial().length === 12, 'twelve ways in, one per region', String(openTrial().length));
+  assert(openTrial().length === 4, 'four roads out of the middle', String(openTrial().length));
   openTrial()[0].dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
   assert(
     all('#trials-web .web__node--on').length === 1,

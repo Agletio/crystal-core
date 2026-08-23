@@ -2872,9 +2872,12 @@ export const BOSS_KEY_BY_ID: Record<string, BossKeyDef> = Object.fromEntries(
   BOSS_KEYS.map((k) => [k.id, k])
 );
 
-/** Something done once, paying ONE point into the trials web — hence no `gives`
- *  field. Twelve crystal modifiers was the whole permanent difficulty of the
- *  game; this is how that ceiling rises, and few trials keep it a decision. */
+/** WHAT THE WEB IS PAID IN. A trial pays a HANDFUL, so finishing one is an
+ *  event rather than a tick; a rung pays one, and only above `freeZone` — the
+ *  Fissure pays nothing and the web is SHUT until it is whole. */
+export const TRIAL_POINTS = { perTrial: 5, perRung: 1, freeZone: 0 };
+
+/** Something done once, paying `TRIAL_POINTS.perTrial` into the trials web. */
 export interface TrialDef {
   id: string;
   name: string;

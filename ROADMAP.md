@@ -65,7 +65,8 @@ to look:
 | Ambush | the eighth main skill: the `ambush` behaviour, `SkillUse.blink`, `AMBUSH` in `src/data.ts`, `src/trees/ambush.ts` |
 | the Relay | a Critical teleports you into the next body and pays for it; `critChain`, `RunState.relays`, and `SIM` in `src/sim/grants.ts` |
 | the rung tag | `#run-rung` and `syncRung` in `src/ui/run.ts` — which rung a descent is on, top right |
-| the trials atlas | 12 regions, 156 nodes, 48 points: `src/trials/{web,layout,spec}.ts`, points off trials AND rungs |
+| the trials atlas | a MAP: 12 wheels, roads between them, 156 nodes, 60 points; shut until the Fissure is whole |
+| the climb, drawn | `src/ui/climb.ts` — one seam winding down through the 42, a stretch per zone |
 | finding a node | `src/ui/websearch.ts` — one box for the skill, trade and trials webs; the shelf has its own |
 | Obreth's weapons | 23 variants: `tools/art/bodies.json`, `variant.mts seed`/`manifest`, `roster.mts` |
 | the trials web | `src/trials.ts`, `src/trials/*`, `TRIALS` in `src/data.ts` — six arms, eighteen nodes, six trials, per character |

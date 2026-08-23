@@ -129,6 +129,7 @@ import { findPath } from './sim/pathfind';
 import { folkMet, gaveKey, hasMet, keyOwed, takeBoss, takeMet } from './game/scenes';
 import { TRIAL_CONDITIONS, healTrials } from './game/trials';
 import { TRIAL_POINTS_MAX, canAllocateTrial, canDeallocateTrial, trialNodes } from './trials';
+import { TRIAL_POINTS } from './data';
 import { forgedFor, graft, graftRefusal, graftableKinds, relicFor, spendRelic } from './game/graft';
 import {SCENES, SCENE_BY_ID } from './scenes';
 import { CAMP_ART, CAMP_HOTSPOTS, CAMP_SPOTS, CAMP_STAND } from './scenes/camp';
@@ -3099,8 +3100,9 @@ rule('THE TRIALS WEB — is a harder descent actually harder, and paid for?');
   save.character.trials = [TRIALS[0].id, 'a_trial_nobody_wrote'];
   healTrials(save.character);
   check(
-    save.character.trials.length === 1 && save.character.trialAllocated.length === 1,
-    'and heal() refunds a walk no surviving trial paid for',
+    save.character.trials.length === 1 &&
+      save.character.trialAllocated.length === TRIAL_POINTS.perTrial,
+    `and heal() cuts a walk back to what one surviving trial pays for — ${TRIAL_POINTS.perTrial}`,
     `${save.character.trials.length} trials, ${save.character.trialAllocated.length} nodes`
   );
 }
