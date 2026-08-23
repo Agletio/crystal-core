@@ -68,7 +68,9 @@ function renderLadder(): void {
     const row = el('div', `trialrow${done ? ' trialrow--done' : ''}`);
     const head = el('div', 'trialrow__head');
     head.append(el('span', 'trialrow__name', trial.name));
-    head.append(el('span', 'trialrow__state', done ? 'done — one point' : 'open'));
+    head.append(
+      el('span', 'trialrow__state', done ? `done — ${TRIAL_POINTS.perTrial} points` : 'open')
+    );
     row.append(head);
     row.append(el('div', 'trialrow__detail', trial.detail));
     host.append(row);
