@@ -707,6 +707,116 @@ and its web changes rules the other two do not.
 
 ---
 
+## Phase 4 — THE LOOP: the rung is the ladder, the crystals are the run
+
+**The user's diagnosis, and it is the right one:** *"I like the progressively
+getting harder and I like the crystals but I don't know how to work them
+together."* They are the same dial with two handles. Both sell DANGER and both
+feed `crystalRewards` — the climb tops out at 822 danger, four crystals rolled
+for danger come to 1366. The game already noticed and resolved it by switching
+one off: `crystalsUnlocked` means nothing rolls on a crystal and nothing levels
+one until you hold all four, so for the whole climb a crystal is a tier token.
+The most tactile system in the game is inert for the entire first playthrough
+and then becomes a second copy of the ladder you just finished.
+
+**The shape, in the user's words:** *"keep the rung system but the crystals
+combined choose the zone that controls mob types and uniques that can drop…
+change all the mods to be effectively just powerful nodes from the trials tree.
+Like for example it could be 50% chance for enemies guarding a box to all
+respawn once they die… Then you just have the rungs progressively make it
+harder and give you more crystals of different types."*
+
+So each answers ONE question and never the other's:
+
+| | |
+|---|---|
+| **the RUNG** | how hard. Monster level, item level, and the ONLY source of raw scaling. It also pays out the crystals. |
+| **the CRYSTALS** | what this run IS. Their families pick the WORLD; their mods are MECHANICS, not numbers. |
+
+**AND MODS HAVE USES** — the user's own answer to what makes a permanent socket
+a live decision: *"you roll a mod and it lasts for a certain amount runs and
+then it's gone. Like more common ones can last longer and maybe super rare ones
+last less? Or maybe there can be different tiers of the same mod that rolls with
+more uses?"* Four sockets stay permanent and so do the four crystals; what burns
+down is what is rolled ON them. That closes the economy: a descent pays currency,
+currency re-rolls a crystal, the roll burns down over descents. The bench already
+targets crystals (`targets: { kinds: ['crystal'] }`), so the last side of that
+triangle is the only new one.
+
+### What is already built, and it is more than it looks
+
+- **`mapTheme(share)` is the crystal-chosen world and it already works** — four
+  worlds out of three families, half of one family taking the rock, two halves
+  and no Normal being the Seam. It is sitting in `src/sim/crystal.ts` as the
+  FALLBACK. `theme: LADDER.zones[at.zone]?.theme ?? mapTheme(share)` is the one
+  line where the rung steps on it.
+- **Uniques already gate by world** — `DropGate.zone`, filtered before the pick.
+- **The pools already weigh the same per monster**, held by the demo, so "keep
+  mobs roughly similar base power" is a rule that already holds.
+- **Six mechanics already exist** and price themselves through `DANGER_STATS`:
+  `hoardChance`, `wellChance`, `bearerChance`, `packCount`, `packSize`,
+  `layoutComplexity`, `monsterRank`. A new mechanic is a sim rule, a
+  `DangerStat` row and a `ModDef` — no new seam.
+
+### What the crystal pool is TODAY, which is the problem stated as data
+
+17 modifiers: 3 mechanics (`pack_size`, `pack_count`, `layout_maze`), 3 drop
+bias (`find_weapons`, `find_armour`, `find_trinkets`), and **11 of pure stat
+inflation** — armour, crit, three added elements, damage, life, speed and three
+wards. The interesting content lives on the trials web instead, where it is
+bought once and never thought about again. Exactly backwards.
+
+### The collision nobody had spotted
+
+**The ladder's zones ARE the worlds.** `LADDER.zones` is `fissure`(12) /
+`prismatic`(14) / `demonic`(16), and the climb's three tabs are named and
+painted after them. Once the crystals choose the world the three acts need
+their own identity: **The Answering, The Refraction, The Flowering**, after the
+halls already at their tops, with the climb art redrawn as DEPTH rather than as
+worlds. The save keys under `character.climbed` stay the strings they are —
+renaming one costs the player their climb.
+
+### The steps, each leaving the suite green
+
+1. **THE WORLD COMES FROM THE CRYSTALS.** Delete the rung's override. Split
+   `LadderZone.theme` into an `id` (the save key, values unchanged) and a `name`,
+   rename the three acts, redraw the three climb scenes as depth. A character
+   with no crystals gets the bare Fissure, which is what `composition([])`
+   already answers.
+2. **MODS HAVE USES.** `RolledMod.uses`, decremented on every clear for every
+   socketed crystal, the mod dropped at zero. Rolled off the mod's TIER — a
+   high tier is stronger and burns faster, so it is a decision rather than a
+   strict upgrade. `heal` repairs a missing or absurd count; the card prints
+   `4 runs left`; the report says what expired. A dry crystal is a sixth thing
+   that ends an Enter-chain.
+3. **THE MECHANICS POOL.** Replace the 11 inflation mods with ~20 mechanics.
+   The user's own is first: **The Second Watch** — a Hoard's guards all stand
+   back up once when the last of them falls. Then: **The Slab** (one body a pack
+   takes no damage until the rest are down), **The Chain** (waking one pack
+   wakes the next), **The Toll** (the way out is shut until N packs are down),
+   **The Echo** (a Rare leaves a shade that fights on), **The Grafting** (bodies
+   falling near each other fuse), **The Blooming** (the longer you are down
+   there the more arrives), **The Tithe** (currency held back and paid in one
+   lump at the exit).
+4. **THE RUNGS PAY THE CRYSTALS.** `CRYSTAL_QUESTS`' danger thresholds become
+   rung rewards; `crystalsUnlocked` and `TIER_BY_SOCKETS` go, and the base tier
+   a run may drop comes off the RUNG.
+5. **THE TRIALS WEB FOLLOWS.** If crystals stop selling monster life and damage,
+   the Weight, Hide and Reading wheels are the last place raw scaling is bought
+   — and they are the dullest wheels for exactly the reason this phase exists.
+6. **REBALANCE.** The rung is the only raw ladder, so `DANGER.lifeAtTop` /
+   `hitAtTop` and the rung curve are re-derived against it.
+
+**Done when.** A descent's world is what you socketed, its content is what you
+rolled, its difficulty is the rung you picked, and the four sockets are a
+decision you re-make because what is on them runs out.
+
+**What must not break.** `heal` — a save holding a crystal with no `uses` on its
+mods must come back playable. `npm run mods` (every modifier rolls, does
+something and reads), `demo`, `smoke`, `shots`.
+
+---
+
 ## Phase 3 — A quest log instead of a pointing finger
 
 **Not next, and deliberately.** The tutorial was deleted outright so the opening
