@@ -1450,20 +1450,18 @@
   .camp__crystals, .camp__hotspots { pointer-events: none; }
   /* Centred ON the socket it fills, at the size the hollow is. */
   .camp__crystal { position: absolute; transform: translate(-50%, -50%); }
-  /* A hotspot is INVISIBLE until you are on it, and then it is the thing's own
-     edge lit rather than a box drawn round it — a rectangle over a tent reads
-     as a bug. `drop-shadow` on a transparent button lights nothing, so the
-     highlight is a soft radial wash inside the rectangle instead. */
+  /* A hotspot DRAWS NOTHING — *"it should just highlight the charatcer or not
+     at all the box is weird"*. A person lights their own silhouette on the
+     canvas (`body()` in `ui/camp.ts`); a bench has no canvas to light, so what
+     says you are on it is the tooltip. A rectangle is never the answer, and
+     the button treatment's nudge on press would slide one off its thing. */
   .camp__hot {
     position: absolute; padding: 0; border: 0; border-radius: 0;
     background: transparent; box-shadow: none; cursor: pointer;
-    transition: background-color .12s ease; pointer-events: auto;
+    pointer-events: auto;
   }
-  .camp__hot:hover, .camp__hot:focus-visible {
-    background: radial-gradient(closest-side, rgba(252,222,111,.20), rgba(252,222,111,.05) 70%, transparent);
-    outline: none;
-  }
-  .camp__hot:active { background: radial-gradient(closest-side, rgba(252,222,111,.32), transparent); }
+  .camp__hot:active:not(:disabled) { transform: none; box-shadow: none; }
+  .camp__hot:focus-visible { outline: 2px solid var(--citrine); outline-offset: 0; }
   /* SOMEBODY WANTS YOU: over the head, and the only thing on the picture that
      moves without the wind. It takes no pointer of its own, so the click still
      lands on the person underneath it. */

@@ -117,7 +117,7 @@ const hudProbe = () => {
 /** EVERY screen the game has, as a CHECKLIST: a state here with no file at the
  *  end fails the run, so one nobody opened cannot quietly keep the old look. */
 const STATES = [
-  'title', 'slots', 'pick', 'welcome', 'camp', 'camp-hover', 'fissure',
+  'title', 'slots', 'pick', 'welcome', 'camp', 'camp-hover', 'camp-lit', 'fissure',
   'dock', 'crystals', 'sheet', 'shop', 'stash', 'settings', 'history',
   'toast', 'itemmenu', 'confirm',
   'handover', 'descent', 'results',
@@ -267,6 +267,12 @@ for (const vp of VIEWPORTS) {
   }
   await page.waitForTimeout(400);
   await shoot('handover');
+  // ON A PERSON. A hotspot draws nothing at all; what lights is the BODY's own
+  // silhouette on the canvas under it, so this is the shot that judges it.
+  await page.hover('#camp-who-workshop').catch(() => {});
+  await page.waitForTimeout(400);
+  await shoot('camp-lit');
+  await page.evaluate(() => document.getElementById('tooltip')?.setAttribute('hidden', ''));
 
   // THE ARENA, the one room left, through the dev menu's own door.
   await page.evaluate(() => document.getElementById('open-dev')?.click());

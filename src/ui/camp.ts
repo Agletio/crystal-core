@@ -38,10 +38,18 @@ let game: GameState;
 let opens: Record<string, (spot: Hotspot, at: DOMRect) => void> = {};
 let live = false;
 let started = 0;
+/** Which of the folk the pointer is on, drawn with their own edge lit. A
+ *  rectangle over a body reads as a bug — *"it should just highlight the
+ *  charatcer or not at all the box is weird"* — and a body is on the CANVAS,
+ *  so nothing CSS can do reaches it. */
+let lit = -1;
 
 /** How far a window may be off the picture's own shape before the picture is
  *  let go of rather than pulled: past this it reads as squashed. */
 const STRETCH = 1.3;
+
+/** `--citrine`, which the canvas cannot read a token for. */
+const RIM = '#fcde6f';
 
 /** FILLS THE WINDOW, and the two axes are allowed to differ. Cover is not on:
  *  the bench is against the left edge and the shelf against the right, so a
@@ -125,6 +133,8 @@ function mountFolk(): void {
       },
       'camp-folk'
     );
+    btn.addEventListener('pointerenter', () => { lit = i; });
+    btn.addEventListener('pointerleave', () => { if (lit === i) lit = -1; });
     // A MARK over the head of anybody holding something for you, so a picture
     // never has to be swept for the one person who has changed his mind.
     if (wants(def)) {
@@ -264,9 +274,9 @@ function draw(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, at: numb
   const met = folkMet(game);
   met.forEach((who, i) => {
     const spot = CAMP_SPOTS[i % CAMP_SPOTS.length];
-    body(ctx, who.who, spot.x, spot.y, at, i * 0.7);
+    body(ctx, who.who, spot.x, spot.y, at, i * 0.7, i === lit);
   });
-  body(ctx, heroSpriteFor(game.character), CAMP_STAND.x, CAMP_STAND.y, at, 0);
+  body(ctx, heroSpriteFor(game.character), CAMP_STAND.x, CAMP_STAND.y, at, 0, false);
 }
 
 /** One body, standing, at its own idle cadence. Drawn from its FEET, which is
@@ -277,7 +287,8 @@ function body(
   fx: number,
   fy: number,
   at: number,
-  offset: number
+  offset: number,
+  rim: boolean
 ): void {
   const art = GENERATED[sprite];
   if (!art) return;
@@ -289,6 +300,20 @@ function body(
   const s = CAMP_HERO_SCALE;
   const left = Math.round(fx - (art.grid * s) / 2);
   const top = Math.round(fy - art.grid * s);
+  const solid = (x: number, y: number): boolean => !!art.key[frames[y]?.[x] ?? 0];
+  // THE EDGE, derived the way the import derives an outline: every empty cell
+  // touching a filled one. It is the body's own silhouette, so what lights up
+  // is the person rather than a box round them.
+  if (rim) {
+    ctx.fillStyle = RIM;
+    for (let y = -1; y <= art.grid; y++) {
+      for (let x = -1; x <= art.grid; x++) {
+        if (solid(x, y)) continue;
+        if (!solid(x - 1, y) && !solid(x + 1, y) && !solid(x, y - 1) && !solid(x, y + 1)) continue;
+        ctx.fillRect(left + x * s, top + y * s, s, s);
+      }
+    }
+  }
   for (let y = 0; y < art.grid; y++) {
     const row = frames[y];
     if (!row) continue;
