@@ -1823,20 +1823,23 @@ export const CURRENCY_BY_ID: Record<string, CurrencyDef> = Object.fromEntries(
 
 /** A crystal's level is its MOD CAPACITY and nothing else: two blank level 4s
  *  are as dangerous as two blank level 1s. `xp` is the total to sit at it. */
+/** A LEVEL BUYS TWO THINGS and nothing else buys either: `mods` is how many
+ *  lines it holds, `tier` the best gear BASE a run may drop. Levelling IS gear
+ *  progression now, so `xp` is a real climb — measured in the demo's gauge. */
 export const CRYSTAL_LEVELS = [
-  { level: 1, mods: 0, xp: 0 },
-  { level: 2, mods: 1, xp: 5 },
-  { level: 3, mods: 2, xp: 20 },
-  { level: 4, mods: 3, xp: 60 },
+  { level: 1, mods: 0, tier: 1, xp: 0 },
+  { level: 2, mods: 1, tier: 1, xp: 25 },
+  { level: 3, mods: 2, tier: 2, xp: 120 },
+  { level: 4, mods: 3, tier: 3, xp: 400 },
 ];
 
-/**
- * What one cleared descent is worth to every crystal SOCKETED for it. Danger
- * is the multiplier, so a socket spent on a fresh crystal is a socket not
- * carrying danger, which is the whole cost. The flat term is why it is
- * `1 + danger`: four blanks are a set with no danger at all, and a game whose
- * first crystals can never level is a game with no way up.
- */
+/** The best base tier ONE crystal's level allows. */
+export const tierForLevel = (level: number): number =>
+  CRYSTAL_LEVELS.find((l) => l.level === Math.round(level))?.tier ?? 1;
+
+/** What one cleared descent is worth to every crystal SOCKETED for it. Danger
+ *  is the multiplier; the flat term is why it is `1 + danger`, since four
+ *  blanks carry none and would otherwise never level at all. */
 export const CRYSTAL_XP = {
   perClear: 1,
   /** Danger points that add one clear's worth on top. */
@@ -3277,13 +3280,6 @@ export const DROP_BANDS: DropBand[] = [
   { fill: [4, 6], currency: 'exotic', gearChance: 0.038, ilvl: 70 },
 ];
 
-/** THE TIER A CRYSTAL BUYS, by how many are SOCKETED — *"first run t1 only…
- *  repeat again for t2 and second crystal, t3 and third."* It caps the base's
- *  TIER and never its item level, so a cycle is WELL-ROLLED t1, not bad t1. */
-export const TIER_BY_SOCKETS = [1, 2, 3, 3, 3];
-
-export const tierForSockets = (filled: number): number =>
-  TIER_BY_SOCKETS[Math.max(0, Math.min(TIER_BY_SOCKETS.length - 1, filled))];
 
 export const bandFor = (power: number): DropBand =>
   DROP_BANDS[Math.max(0, Math.min(DROP_BANDS.length - 1, Math.round(power)))];

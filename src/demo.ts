@@ -37,6 +37,7 @@ import {
   CURRENCY_BY_ID,
   CRYSTAL_QUESTS,
   CRYSTAL_LEVELS,
+  CRYSTAL_XP,
   INTRO,
   BOSSES,
   BOSS_BY_ID,
@@ -334,7 +335,6 @@ import {
   questDanger,
   QUEST_CONDITIONS,
   ownedCrystals,
-  crystalsUnlocked,
   takeHandover,
   questMet,
   xpForClear,
@@ -9977,8 +9977,9 @@ rule('THE COLLECTION — do crystals arrive, and do they grow?');
     `${stale.name} after healing`
   );
 
-  // NOTHING LEVELS UNTIL THE CLIMB IS BEHIND YOU. *"No, can only level once you
-  // get to the end so no mods."* A crystal on the ladder is a plain TIER TOKEN.
+  // A CRYSTAL LEVELS FROM THE FIRST DESCENT. It used to earn nothing until all
+  // four were held, which made the whole first cycle a tier token — the gate
+  // that existed because the rung and the crystal were the same ladder.
   const climbing = createGame('fresh');
   climbing.character = ladderCharacter(1, new Rng(3));
   const early = makeCrystal(1);
@@ -9989,14 +9990,14 @@ rule('THE COLLECTION — do crystals arrive, and do they grow?');
     runToCompletion(sim, 400);
     buildReport(climbing, sim.state);
     check(
-      !crystalsUnlocked(climbing) && crystalXp(early) === CRYSTAL_LEVELS[0].xp,
-      `a crystal earns nothing while fewer than ${RUN_SLOTS.length} are held`,
-      `held ${ownedCrystals(climbing).length}, xp ${crystalXp(early)}`
+      crystalXp(early) > CRYSTAL_LEVELS[0].xp,
+      `the FIRST crystal you own earns on the first clear, holding ${ownedCrystals(climbing).length} of ${RUN_SLOTS.length}`,
+      `xp ${crystalXp(early)}`
     );
   }
 
-  // And once all four are in hand the seam is the old one: sockets are paid
-  // and a bag is not.
+  // Socketed is paid and a bag is not, which is what makes a socket spent on a
+  // fresh crystal cost something.
   const game = createGame('fresh');
   game.character = ladderCharacter(1, new Rng(3));
   const socketed = makeCrystal(1);
@@ -10007,9 +10008,8 @@ rule('THE COLLECTION — do crystals arrive, and do they grow?');
   runToCompletion(sim, 400);
   const report = buildReport(game, sim.state);
   check(
-    crystalsUnlocked(game) && report.cleared
-      && crystalXp(socketed) > crystalXp(pocketed) && crystalXp(pocketed) === 0,
-    'and once all four are held a cleared run pays the sockets and nothing in a bag',
+    report.cleared && crystalXp(socketed) > crystalXp(pocketed) && crystalXp(pocketed) === 0,
+    'and a cleared run pays the sockets and nothing in a bag',
     `${sim.state.status}: socketed ${crystalXp(socketed)}, carried ${crystalXp(pocketed)}`
   );
 
@@ -10108,22 +10108,48 @@ rule('THE COLLECTION — do crystals arrive, and do they grow?');
     );
   }
 
-  // THE TIER A CRYSTAL BUYS. The climb makes a run harder and richer; a socket
-  // is what makes it drop a better BASE, and it never touches item level.
+  // THE TIER A CRYSTAL BUYS, and it is its LEVEL — *"make it where tiers are
+  // just based on crystal level."* How MANY are socketed used to buy it, which
+  // made a second crystal worth more than levelling the first.
   {
-    const tiers = [0, 1, 2, 3, 4].map((n) =>
-      runSet(Array.from({ length: n }, () => makeCrystal(1))).maxTier
+    const tiers = CRYSTAL_LEVELS.map((l) =>
+      runSet(Array.from({ length: 4 }, () => makeCrystal(l.level))).maxTier
     );
-    line(`  best base tier by sockets: ${tiers.join(' · ')}`);
+    line(`  best base tier by crystal level: ${tiers.join(' · ')}`);
     check(
-      tiers[0] === 1 && tiers.every((t, i) => i === 0 || t >= tiers[i - 1]) && tiers[4] === 3,
-      'nothing socketed drops tier 1 bases only, and the tier climbs with the sockets',
+      runSet([]).maxTier === 1
+        && tiers.every((t, i) => i === 0 || t >= tiers[i - 1])
+        && tiers[0] === 1 && tiers[tiers.length - 1] === 3,
+      'nothing socketed drops tier 1 bases only, and the tier climbs with the LEVEL',
       tiers.join(', ')
     );
+    // The MEAN, so every socket counts: one good crystal cannot carry three
+    // blanks, and a fresh one swapped in costs tier until it catches up.
+    const mixed = runSet([makeCrystal(4), makeCrystal(1), makeCrystal(1), makeCrystal(1)]).maxTier;
+    check(
+      mixed < runSet(Array.from({ length: 4 }, () => makeCrystal(4))).maxTier,
+      'and one levelled crystal beside three blanks does NOT drop what four levelled ones do',
+      `${mixed} against ${runSet(Array.from({ length: 4 }, () => makeCrystal(4))).maxTier}`
+    );
+
+    // HOW LONG A CRYSTAL TAKES, at the danger a rung actually carries. Levelling
+    // is the whole of gear progression now, so the pace is the pace of the game.
+    const clears = (danger: number, to: number): number =>
+      Math.ceil((CRYSTAL_LEVELS.find((l) => l.level === to)?.xp ?? 0)
+        / (CRYSTAL_XP.perClear + danger / CRYSTAL_XP.perDanger));
+    gauge(
+      'clears to level 4: ' +
+        [0, 200, 400, 822].map((d) => `${d} danger ${clears(d, 4)}`).join(' · ')
+    );
+    gauge(
+      'and to level 2: ' +
+        [0, 200, 400, 822].map((d) => `${d} danger ${clears(d, 2)}`).join(' · ')
+    );
+
     // Played out: what a real run at the top of the climb can actually hand you.
-    const dropped = (sockets: number): Set<number> => {
+    const dropped = (level: number): Set<number> => {
       const out = new Set<number>();
-      const crystals = Array.from({ length: sockets }, () => makeCrystal(4));
+      const crystals = Array.from({ length: 4 }, () => makeCrystal(level));
       for (let seed = 0; seed < 60; seed++) {
         const sim = new RunSim(crystals, ladderCharacter(6, new Rng(seed)), new Rng(900 + seed), {
           rung: { zone: 2, rung: 15 },
@@ -10135,13 +10161,13 @@ rule('THE COLLECTION — do crystals arrive, and do they grow?');
       }
       return out;
     };
-    const bare = dropped(0);
+    const blank = dropped(1);
     const full = dropped(4);
-    line(`  tiers actually dropped: none socketed ${[...bare].sort().join('/')} · four ${[...full].sort().join('/')}`);
+    line(`  tiers actually dropped: four blanks ${[...blank].sort().join('/')} · four at level 4 ${[...full].sort().join('/')}`);
     check(
-      bare.size > 0 && Math.max(...bare) === 1 && Math.max(...full) === 3,
-      'and the deepest rung in the game drops tier 1 with nothing in, tier 3 with four',
-      `${[...bare].join(',')} against ${[...full].join(',')}`
+      blank.size > 0 && Math.max(...blank) === 1 && Math.max(...full) === 3,
+      'and the deepest rung drops tier 1 on blank crystals, tier 3 on levelled ones',
+      `${[...blank].join(',')} against ${[...full].join(',')}`
     );
   }
 }

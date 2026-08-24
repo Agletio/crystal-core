@@ -799,9 +799,12 @@ renaming one costs the player their climb.
    falling near each other fuse), **The Blooming** (the longer you are down
    there the more arrives), **The Tithe** (currency held back and paid in one
    lump at the exit).
-4. **THE RUNGS PAY THE CRYSTALS.** `CRYSTAL_QUESTS`' danger thresholds become
-   rung rewards; `crystalsUnlocked` and `TIER_BY_SOCKETS` go, and the base tier
-   a run may drop comes off the RUNG.
+4. **THE GATES ARE GONE, and tier is the crystal's LEVEL.** `crystalsUnlocked`
+   and `TIER_BY_SOCKETS` are deleted; `CRYSTAL_LEVELS` carries a `tier` and
+   `tierForSet` reads the MEAN level socketed. Levelling is a real climb — 25 /
+   120 / 400 xp — measured by a gauge at four dangers. **STILL OWED:**
+   `CRYSTAL_QUESTS`' danger thresholds becoming rung rewards, so the climb is
+   what hands out crystals.
 5. **THE TRIALS WEB FOLLOWS.** If crystals stop selling monster life and damage,
    the Weight, Hide and Reading wheels are the last place raw scaling is bought
    — and they are the dullest wheels for exactly the reason this phase exists.

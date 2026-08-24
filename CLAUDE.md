@@ -217,17 +217,22 @@ because failing a rung already costs nothing but time. Gear never carries one.
 A roll running out is the sixth thing that ends an Enter-chain.
 
 Four sockets hold crystals permanently. Their COUNT is how long a run is, their
-MODIFIERS how hard it is; a crystal's LEVEL is only capacity and its FAMILY
-(Normal / Demonic / Prismatic) only which monsters spawn. Danger and socket
+MODIFIERS how hard it is; a crystal's LEVEL buys capacity and tier, and its
+FAMILY (Normal / Demonic / Prismatic) picks which monsters spawn and which
+world you walk into. Danger and socket
 count fold into one **run power**, and every reward reads that and nothing else.
 A fifth socket takes a **boss key**.
 
-**ON THE CLIMB A CRYSTAL IS A TIER TOKEN.** Nothing rolls on one and nothing
-levels one until all four are HELD (`crystalsUnlocked`) — the ladder's
-difficulty is the rung and the challenge floors, never a socket. What a socket
-buys instead is the base TIER a run may drop (`TIER_BY_SOCKETS`, 1/2/3/3/3),
-where the RUNG buys the item level: a first cycle is well-rolled tier 1 rather
-than tier 1 rolled badly.
+**A CRYSTAL'S LEVEL IS THE WHOLE OF GEAR PROGRESSION.** *"Make it where tiers
+are just based on crystal level and make it take longer to level them."*
+`CRYSTAL_LEVELS` buys two things and nothing else buys either: `mods` is how
+many lines it holds, `tier` the best gear BASE a run may drop, read off the
+MEAN level socketed (`tierForSet`) so one good crystal cannot carry three
+blanks. The RUNG buys item level, so a first cycle is well-rolled tier 1 rather
+than tier 1 rolled badly. Nothing gates levelling any more — a crystal earns
+from the first clear it is socketed for — and `xp` is a real climb: measured,
+level 4 is 400 clears at the bare Fissure, 87 at 200 danger and 26 at the top,
+which says go DEEPER rather than grind where you are.
 
 **Twelve modifiers was the whole ceiling, and the TRIALS WEB is how it rises.**
 Four sockets of three is all the difficulty a crystal can ever hold, so the web

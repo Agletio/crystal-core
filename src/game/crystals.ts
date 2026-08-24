@@ -200,10 +200,6 @@ export interface CrystalGain {
 
 /** THE ENDGAME GATE: a crystal on the climb is a plain TIER TOKEN, and nothing
  *  rolls on one or levels one until all four are HELD. */
-export const crystalsUnlocked = (game: GameState): boolean =>
-  ownedCrystals(game).length >= RUN_SLOTS.length;
-
-/** A roll that ran out on the descent just cleared, so the report can say so. */
 export interface ModBurn { crystal: Item; name: string }
 
 /** WHAT A CLEAR SPENDS: one descent off every roll on every socketed crystal,
@@ -228,9 +224,8 @@ export function spendSocketed(game: GameState): ModBurn[] {
   return gone;
 }
 
-/** Only while socketed, and only once the climb is behind you. */
+/** Only while SOCKETED: a socket spent on a fresh crystal is the whole cost. */
 export function advanceSocketed(game: GameState, set: RunSet): CrystalGain[] {
-  if (!crystalsUnlocked(game)) return [];
   const xp = xpForClear(set.rewards.danger);
   const out: CrystalGain[] = [];
   for (const crystal of Object.values(game.sockets ?? {})) {

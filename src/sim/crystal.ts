@@ -13,7 +13,7 @@ import {
   POWER,
   REWARD,
   bandFor,
-  tierForSockets,
+  tierForLevel,
 } from '../data';
 import { challengeMod, dropBias, rungMod } from './stats';
 import { dangerScore } from '../mods';
@@ -45,6 +45,15 @@ function totalOf(mods: RolledMod[], stat: string): number {
   return total;
 }
 
+/** THE BEST BASE A RUN MAY DROP, off the MEAN LEVEL socketed — every socket
+ *  counts, so one good crystal cannot carry three blanks. It caps the base's
+ *  TIER and never its item level: a cycle is WELL-ROLLED t1, not bad t1. */
+export function tierForSet(crystals: Item[]): number {
+  if (crystals.length === 0) return 1;
+  const mean = crystals.reduce((n, c) => n + Number(c.meta.level ?? 1), 0) / crystals.length;
+  return tierForLevel(Math.floor(mean));
+}
+
 /** A crystal from before families, or one naming a family that was retired. */
 export const crystalFamily = (crystal: Item): MonsterFamily =>
   FAMILY_BY_ID[String(crystal.meta.family)]?.id ?? 'normal';
@@ -72,7 +81,7 @@ export function dominantFamily(share: Composition): MonsterFamily {
 }
 
 /** Half of one family takes the rock; two halves and no Normal is the Seam,
- *  which therefore takes exactly two of each and cannot be stumbled into. */
+ *  so it takes exactly two of each and cannot be stumbled into. */
 export function mapTheme(share: Composition): MapTheme {
   const half = 0.5 - 1e-6;
   if (share.normal <= 1e-6 && share.demonic >= half && share.prismatic >= half) return 'seam';
@@ -81,11 +90,9 @@ export function mapTheme(share: Composition): MapTheme {
   return 'fissure';
 }
 
-/**
- * Which family each pack belongs to, exact rather than rolled: a set that came
- * out 30% demonic on the seed would make composition something you hope for.
- * Leftover packs go to the largest remainders, dealt round-robin to interleave.
- */
+/** Which family each pack belongs to, EXACT rather than rolled — 30% demonic on
+ *  the seed would make composition something you hope for. Leftovers go to the
+ *  largest remainders, dealt round-robin to interleave. */
 export function familyPlan(share: Composition, packs: number): MonsterFamily[] {
   const ids = MONSTER_FAMILIES.map((f) => f.id).filter((id) => share[id] > 0);
   const exact = ids.map((id) => share[id] * packs);
@@ -165,7 +172,7 @@ export function runSet(
     rewards,
     power,
     band: bandFor(power),
-    maxTier: tierForSockets(crystals.length),
+    maxTier: tierForSet(crystals),
     composition: share,
     // WHAT YOU SOCKETED IS WHERE YOU GO. The rung is depth and nothing else —
     // it used to name the world too, which made the crystals a second ladder.
@@ -176,8 +183,8 @@ export function runSet(
   };
 }
 
-/** Each world's bonus, in the share it holds. Multipliers on gold and currency
- *  frequency; rarity is percent, which is how everything else states it. */
+/** Each world's bonus in the share it holds: gold and currency are
+ *  multipliers, rarity is percent like everything else. */
 export function familyPays(share: Composition): { gold: number; currency: number; rarity: number } {
   const out = { gold: 1, currency: 1, rarity: 0 };
   for (const family of MONSTER_FAMILIES) {
