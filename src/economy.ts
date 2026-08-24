@@ -1,6 +1,8 @@
 import { Rng } from './rng';
 import { ModPool, baseTier, modCapacity, rollRandomMod } from './mods';
 import {
+  ARMOUR_FAMILIES,
+  ARMOUR_SLOT_KINDS,
   CRYSTAL_ILVL,
   CRYSTAL_LEVELS,
   EQUIP_SLOTS,
@@ -125,15 +127,31 @@ export function perfectChance(sockets: number, danger: number): number {
   return at * (1 + steep * PERFECT.dangerLift);
 }
 
-/** Drop weight per kind: how many equip slots are FOR it. Two rings, twice as
- *  often. A slot counts ONCE, for the kind it is named after — the off hand also
- *  takes a weapon, and counting it twice doubles every weapon drop by accident. */
-const KIND_WEIGHT: Record<string, number> = EQUIP_SLOTS.reduce(
+/** Equip slots FOR a kind, counted ONCE each: the off hand also takes a
+ *  weapon, and counting it twice doubles every weapon drop by accident. */
+const SLOTS_FOR: Record<string, number> = EQUIP_SLOTS.reduce(
   (acc, slot) => ({ ...acc, [slot.accepts[0]]: (acc[slot.accepts[0]] ?? 0) + 1 }),
   {} as Record<string, number>
 );
 
-/** Kind first, base only within it: one uniform pick would make composition a
+/** What a FILTER can name inside a kind: the eight weapon families, the three
+ *  armour archetypes, one apiece for a shield, a ring and an amulet. A hybrid
+ *  family is two archetypes rather than a thirteenth. */
+const ARCHETYPES = new Set(ARMOUR_FAMILIES.flatMap((f) => f.archetypes)).size;
+const FAMILIES_IN = (kind: string): number =>
+  (ARMOUR_SLOT_KINDS as readonly string[]).includes(kind)
+    ? ARCHETYPES
+    : new Set(GEAR_BASES.filter((b) => b.kind === kind).map((b) => b.family ?? kind)).size;
+
+/** Drop weight per kind: its slots TIMES what a filter can name in it. Slots
+ *  alone made rings the commonest drop at 22% and the whole weapon kind rarer
+ *  than boots — a filter cuts a kind by FAMILY, so a kind with none survives
+ *  every cut whole and a filtered bag came back all jewellery. */
+const KIND_WEIGHT: Record<string, number> = Object.fromEntries(
+  Object.entries(SLOTS_FOR).map(([kind, slots]) => [kind, slots * FAMILIES_IN(kind)])
+);
+
+/** Kind first, base only within it: a uniform pick would make composition a
  *  side effect of content volume — 144 armour bases to one ring. */
 export function pickGearBase(
   ilvl: number,
@@ -145,8 +163,7 @@ export function pickGearBase(
   const eligible = GEAR_BASES.filter((b) => (b.ilvl ?? 1) <= ilvl && (b.tier ?? 1) <= maxTier);
   const kinds = [...new Set(eligible.map((b) => b.kind))];
   // A crystal hunting weapons weights the KIND pick and nothing else, so it
-  // cannot conjure a base the item level does not already allow.
-  // dropBias is already a multiplier: 1 is untouched.
+  // cannot conjure a base the item level does not allow. 1 is untouched.
   const kind = rng.weighted(kinds, (k) => (KIND_WEIGHT[k] ?? 1) * (bias[GROUP_OF_KIND[k]] ?? 1));
   if (!kind) return undefined;
   return rng.pick(eligible.filter((b) => b.kind === kind));

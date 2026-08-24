@@ -1033,6 +1033,42 @@ rule('THE FILTER — what comes up out of the Fissure, and can the loop wedge?')
       'every gear base falls in exactly one keep group',
       `${homeless.length} in none, ${doubled.length} in two`
     );
+
+    // WHAT A FILTER LEAVES. *"I end up just immediately filtering all except
+    // 1/2 base types and 1/2 weapons. The problem is doing that with the way
+    // items are weighted you end up with just a ton of rings and amulets."*
+    // Weighted by SLOTS alone that was true and measured: a ring cannot be
+    // filtered by family, so it survived every cut whole while a weapon family
+    // was cut to an eighth. A gauge, printed rather than asserted.
+    const roll = new Rng(7);
+    const share: Record<string, number> = {};
+    const SPINS = 20000;
+    for (let i = 0; i < SPINS; i++) {
+      const base = pickGearBase(60, roll);
+      const group = base ? keepGroupFor(base) : undefined;
+      if (group) share[group.name] = (share[group.name] ?? 0) + 1;
+    }
+    const pct = (name: string) => (100 * (share[name] ?? 0)) / SPINS;
+    // One archetype's three groups and one weapon family: the cut the line was
+    // written about, with jewellery kept because there is nothing to cut it by.
+    const kept = ['Tank', 'Tank / Mage', 'Tank / Rogue', 'Maces', 'Rings', 'Amulets'];
+    const total = kept.reduce((n, k) => n + pct(k), 0);
+    const jewels = pct('Rings') + pct('Amulets');
+    gauge(
+      `every drop: ${pct('Rings').toFixed(1)}% rings, ${pct('Amulets').toFixed(1)}% amulets, ` +
+        `${pct('Maces').toFixed(1)}% maces, ${pct('Tank').toFixed(1)}% of one armour group`
+    );
+    gauge(
+      `filtered to melee plate and maces, ${total.toFixed(0)}% of drops bank and ` +
+        `${((100 * jewels) / total).toFixed(0)}% of the bag is jewellery`
+    );
+    // A group nothing can drop into is a filter row that never does anything.
+    const barren = KEEP_GROUPS.filter((g) => !share[g.name]);
+    check(
+      barren.length === 0,
+      'and every one of them is reachable by a drop',
+      barren.map((g) => g.name).join(', ')
+    );
   }
 
   const game = createGame('fresh');

@@ -457,7 +457,7 @@ export const ARMOUR_FAMILIES: ArmourFamily[] = [
   },
 ];
 
-const ARMOUR_SLOT_KINDS = ['helmet', 'body', 'gloves', 'boots'] as const;
+export const ARMOUR_SLOT_KINDS = ['helmet', 'body', 'gloves', 'boots'] as const;
 
 /** What the balance harnesses wear. Middling armour, or they measure the tank. */
 export const REFERENCE_ARMOUR_FAMILY = 'skirmisher';
