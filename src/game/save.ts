@@ -458,8 +458,8 @@ export function heal(game: GameState): Healed {
   // the zone holds is clamped: the zone after it reads that number.
   const climbed: Record<string, number> = {};
   for (const zone of LADDER.zones) {
-    const was = Math.floor(Number(game.character.climbed?.[zone.theme] ?? 0));
-    if (Number.isFinite(was) && was > 0) climbed[zone.theme] = Math.min(zone.rungs, was);
+    const was = Math.floor(Number(game.character.climbed?.[zone.id] ?? 0));
+    if (Number.isFinite(was) && was > 0) climbed[zone.id] = Math.min(zone.rungs, was);
   }
   game.character.climbed = climbed;
 

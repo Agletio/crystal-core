@@ -9167,13 +9167,20 @@ rule('THE CLIMB — does a rung open, stay open, and get harder?');
     `re-grinding rung 3 moved the count to ${climbed(walker, 0)}`
   );
 
-  // The rung IS the zone: composition still picks one for a set with no rung,
-  // but a climb says where it is, and that is what the pips promise.
-  const themes = LADDER.zones.map((zone, z) => runSet([], null, { zone: z, rung: 1 }).theme);
+  // WHAT YOU SOCKETED IS WHERE YOU GO, and the rung is depth alone. It used to
+  // be the other way round, which made the crystals a second ladder.
+  const bare = LADDER.zones.map((_, z) => runSet([], null, { zone: z, rung: 1 }).theme);
   check(
-    themes.every((theme, z) => theme === LADDER.zones[z].theme),
-    `each zone's rungs land in its own world — ${themes.join(', ')}`,
-    `a rung sent the run somewhere else: ${themes.join(', ')}`
+    bare.every((theme) => theme === 'fissure'),
+    `with nothing socketed every rung is the bare Fissure — ${[...new Set(bare)].join(', ')}`,
+    bare.join(', ')
+  );
+  const rot = [makeCrystal(1, 'demonic'), makeCrystal(1, 'demonic')];
+  const sent = LADDER.zones.map((_, z) => runSet(rot, null, { zone: z, rung: 1 }).theme);
+  check(
+    sent.every((theme) => theme === 'demonic'),
+    'and two Demonic crystals send every one of them to the Rot instead',
+    sent.join(', ')
   );
 
   // DANGER RISES, every single rung, and the very first one is untouched: the
@@ -9226,7 +9233,7 @@ rule('THE CLIMB — does a rung open, stay open, and get harder?');
       const life = mean(sim.state.monsters.map((m) => m.stats.maxLife));
       const hit = mean(sim.state.monsters.map((m) => m.stats.damage));
       gauge(
-        `${(THEME_BY_ID[zone.theme]?.name ?? zone.theme).padEnd(14)}` +
+        `${zone.name.padEnd(14)}` +
           `${String(rung).padStart(5)}   ${Math.round(sim.set.rewards.danger).toString().padStart(6)}   ` +
           `${Math.round(life).toString().padStart(12)}   ` +
           `${Math.round(hit).toString().padStart(14)}   ` +
@@ -9257,7 +9264,7 @@ rule('THE CLIMB — does a rung open, stay open, and get harder?');
   {
     const spikes = LADDER.zones.map((_, z) => challengesIn(z));
     line(`  challenge floors: ${LADDER.zones.map((zone, z) =>
-      `${THEME_BY_ID[zone.theme]?.name ?? zone.theme} ${spikes[z].join('/')}`).join(' · ')}`);
+      `${zone.name} ${spikes[z].join('/')}`).join(' · ')}`);
     check(
       spikes.every((list) => list.length > 0),
       'every zone has challenge floors on it',
@@ -9321,11 +9328,11 @@ rule('THE CLIMB — does a rung open, stay open, and get harder?');
       id: arenaAt({ zone: z, rung: zone.rungs }),
       under: arenaAt({ zone: z, rung: zone.rungs - 1 }),
     }));
-    line(`  arenas: ${arenas.map((a) => `${a.zone.theme} ${a.zone.rungs} → ${a.id}`).join(' · ')}`);
+    line(`  arenas: ${arenas.map((a) => `${a.zone.name} ${a.zone.rungs} → ${a.id}`).join(' · ')}`);
     check(
       arenas.every((a) => a.id !== null) && arenas.every((a) => a.under === null),
       'every zone ends on an arena, and only its LAST rung is one',
-      arenas.map((a) => `${a.zone.theme}:${a.id}/${a.under}`).join(' ')
+      arenas.map((a) => `${a.zone.id}:${a.id}/${a.under}`).join(' ')
     );
 
     // Each arena is a real room, holding a real boss, drawn as its own body.
@@ -9334,10 +9341,9 @@ rule('THE CLIMB — does a rung open, stay open, and get harder?');
     for (const at of arenas) {
       const room = SCENE_BY_ID[at.id ?? ''];
       const boss = BOSS_BY_ID[room?.encounter ?? ''];
-      if (!room) broken.push(`${at.zone.theme}: no room ${at.id}`);
+      if (!room) broken.push(`${at.zone.name}: no room ${at.id}`);
       else if (!boss) broken.push(`${at.id}: no boss ${room.encounter}`);
       else if (!GENERATED[boss.sprite]) broken.push(`${boss.id}: nothing drawn for ${boss.sprite}`);
-      else if (room.theme !== at.zone.theme) broken.push(`${at.id} is ${room.theme}, not ${at.zone.theme}`);
       else fought.push(boss.id);
     }
     check(
@@ -9381,7 +9387,7 @@ rule('THE CLIMB — does a rung open, stay open, and get harder?');
 
   // A save is the one thing that can hold a climb nobody walked.
   const bent = createGame();
-  bent.character.climbed = { [LADDER.zones[0].theme]: 999, nowhere: 4 };
+  bent.character.climbed = { [LADDER.zones[0].id]: 999, nowhere: 4 };
   heal(bent);
   check(
     climbed(bent.character, 0) === LADDER.zones[0].rungs &&

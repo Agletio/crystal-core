@@ -15,7 +15,7 @@ export interface Rung {
 export const zoneAt = (zone: number) => LADDER.zones[zone];
 
 export const climbed = (character: Character, zone: number): number =>
-  character.climbed?.[zoneAt(zone)?.theme ?? ''] ?? 0;
+  character.climbed?.[zoneAt(zone)?.id ?? ''] ?? 0;
 
 /** OPEN once the one before it is climbed whole. The first always is. */
 export function zoneOpen(character: Character, zone: number): boolean {
@@ -63,9 +63,9 @@ export const challengesIn = (zone: number): number[] =>
 
 /** Cleared, and never un-cleared: re-grinding an old rung records nothing. */
 export function takeRung(character: Character, at: Rung): void {
-  const theme = zoneAt(at.zone)?.theme;
-  if (!theme || at.rung < 1) return;
+  const key = zoneAt(at.zone)?.id;
+  if (!key || at.rung < 1) return;
   const was = climbed(character, at.zone);
-  if (at.rung > was) character.climbed = { ...(character.climbed ?? {}), [theme]: at.rung };
+  if (at.rung > was) character.climbed = { ...(character.climbed ?? {}), [key]: at.rung };
 }
 

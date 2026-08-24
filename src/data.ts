@@ -2175,10 +2175,25 @@ export const socketPackSize = (filled: number): number => rung(filled, SOCKET_SC
 export const LADDER = {
   // `arena` is the LAST RUNG of the zone: a fight rather than a descent, and
   // clearing it is what records the rung the zone above opens on.
+  // A zone is DEPTH, never a world — what world you walk into is what you
+  // SOCKETED. `id` is the save key under `character.climbed`, still spelt the
+  // way the worlds were: renaming one costs a player their climb.
   zones: [
-    { theme: 'fissure' as MapTheme, rungs: 12, arena: 'answering_hall' },
-    { theme: 'prismatic' as MapTheme, rungs: 14, arena: 'refraction_hall' },
-    { theme: 'demonic' as MapTheme, rungs: 16, arena: 'flowering_hall' },
+    {
+      id: 'fissure', name: 'The Answering', art: 'climb_act1',
+      blurb: 'Shallow workings, shored and square. Somebody came back out of these.',
+      rungs: 12, arena: 'answering_hall',
+    },
+    {
+      id: 'prismatic', name: 'The Refraction', art: 'climb_act2',
+      blurb: 'Below daylight, where the rock has started closing what was cut.',
+      rungs: 14, arena: 'refraction_hall',
+    },
+    {
+      id: 'demonic', name: 'The Flowering', art: 'climb_act3',
+      blurb: 'Older than anybody who dug toward it. Nothing down here was worked.',
+      rungs: 16, arena: 'flowering_hall',
+    },
   ],
   lifeAtTop: 520,
   damageAtTop: 430,

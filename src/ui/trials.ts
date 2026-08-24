@@ -308,14 +308,12 @@ function render(): void {
   // is legible from the first descent — it is the web that waits.
   const open = trialsOpen(character.climbed ?? {});
   const first = LADDER.zones[TRIAL_POINTS.freeZone];
-  const cleared = Math.min(first.rungs, character.climbed?.[first.theme] ?? 0);
+  const cleared = Math.min(first.rungs, character.climbed?.[first.id] ?? 0);
 
   $('trials-sub').textContent = open
     ? `${spent}/${earned} points spent · ${TRIAL_POINTS_MAX} to earn · ` +
       `${trialNodes().length} nodes`
-    : `Shut. ${cleared} of ${first.rungs} rungs of ${
-        THEME_BY_ID[first.theme]?.name ?? first.theme
-      } cleared`;
+    : `Shut. ${cleared} of ${first.rungs} rungs of ${first.name} cleared`;
   $('trials-note').textContent = open
     ? `${TRIAL_POINTS.perTrial} points a trial and ${TRIAL_POINTS.perRung} a rung above the Fissure. ` +
       'Most nodes make a descent worse, and worse is what pays.'

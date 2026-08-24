@@ -167,9 +167,9 @@ export function runSet(
     band: bandFor(power),
     maxTier: tierForSockets(crystals.length),
     composition: share,
-    // THE RUNG IS THE ZONE. Composition still picks one for anything with no
-    // rung — a measured set, a harness — but a climb says where it is.
-    theme: (at ? LADDER.zones[at.zone]?.theme : undefined) ?? mapTheme(share),
+    // WHAT YOU SOCKETED IS WHERE YOU GO. The rung is depth and nothing else —
+    // it used to name the world too, which made the crystals a second ladder.
+    theme: mapTheme(share),
     mix,
     yield: 1 + mix * REWARD.mixYield,
     pays: familyPays(share),

@@ -34,7 +34,7 @@ export const trialPointsFor = (
     (n, zone, z) =>
       z <= TRIAL_POINTS.freeZone
         ? n
-        : n + Math.min(zone.rungs, climbed[zone.theme] ?? 0) * TRIAL_POINTS.perRung,
+        : n + Math.min(zone.rungs, climbed[zone.id] ?? 0) * TRIAL_POINTS.perRung,
     0
   );
 
@@ -42,7 +42,7 @@ export const trialPointsFor = (
  *  and a trade to read before a hundred and fifty-six more nodes arrive. */
 export const trialsOpen = (climbed: Record<string, number> = {}): boolean => {
   const first = LADDER.zones[TRIAL_POINTS.freeZone];
-  return (climbed[first.theme] ?? 0) >= first.rungs;
+  return (climbed[first.id] ?? 0) >= first.rungs;
 };
 
 export const TRIAL_POINTS_MAX = // every trial, and every rung that pays for one

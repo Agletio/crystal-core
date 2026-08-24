@@ -171,12 +171,12 @@ function render(): void {
   LADDER.zones.forEach((zone, z) => {
     const button = el('button', 'mini devbtn') as HTMLButtonElement;
     button.id = `dev-climb-${z}`;
-    const name = THEME_BY_ID[zone.theme]?.name ?? zone.theme;
+    const name = zone.name;
     button.append(el('span', 'devbtn__name', `Clear ${name}`));
     button.append(el('span', 'devbtn__what', `${zone.rungs} rungs, and everything above it`));
     button.onclick = () => {
       const done: Record<string, number> = { ...game.character.climbed };
-      for (let i = 0; i <= z; i++) done[LADDER.zones[i].theme] = LADDER.zones[i].rungs;
+      for (let i = 0; i <= z; i++) done[LADDER.zones[i].id] = LADDER.zones[i].rungs;
       game.character.climbed = done;
       hooks.refresh();
       note(`Dev: ${name} cleared.`);

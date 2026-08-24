@@ -199,8 +199,8 @@ assert(
 );
 assert($('climb-pip-1-1') === null, 'and the zone above is behind its own tab');
 assert(
-  /the fissure, rung 1/i.test($('run-launch').textContent),
-  'and the way in names where it goes',
+  /the answering, rung 1/i.test($('run-launch').textContent),
+  'and the way in names the DEPTH it goes to — the world is what you socketed',
   $('run-launch').textContent
 );
 
@@ -242,7 +242,7 @@ $('climb-tab-0').click();
 $('climb-pip-0-4').click();
 assert($('climb-pip-0-4').classList.contains('pip--here'), 'a cleared rung is still yours to grind');
 assert(
-  /the fissure, rung 4/i.test($('run-launch').textContent),
+  /the answering, rung 4/i.test($('run-launch').textContent),
   'and the way in follows the pick',
   $('run-launch').textContent
 );

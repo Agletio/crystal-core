@@ -193,15 +193,18 @@ and 16 rungs; a rung is CHOSEN, one you have cleared stays open for the rest of
 that character's life, and a zone opens when the one below it is whole. Its
 difficulty rides the crystal seam as ONE synthetic mod (`rungMod`, beside
 `trialMod` and `treeMod`), so `crystalRewards` pays a harder rung more with
-nothing written twice — and the rung is also the ZONE, composition only picking
-one for a set with no rung.
+nothing written twice. **A ZONE IS DEPTH AND NEVER A WORLD** — The Answering,
+The Refraction, The Flowering, named for the halls at their tops. What world you
+walk into is what you SOCKETED (`mapTheme`), and the two used to be the same
+thing, which made the crystals a second ladder. `LadderZone.id` is still spelt
+the way the worlds were, because it is the save key under `character.climbed`.
 **Every fourth rung is a CHALLENGE FLOOR** — `challengeMod`, a second mod on the
 same seam — and the room fills with rares instead of stepping. **A zone's LAST
 rung is its BOSS**, in an arena of its own (`LADDER.zones[z].arena`, read through
 `arenaAt`), and clearing that is the whole of what opens the zone above: The
 Answering, The Refraction, The Flowering. **THE CLIMB IS DRAWN ONE ZONE AT A
-TIME, on a TAB**, as a seam descending that zone's own generated cross-section
-(`SCENE_ART.climb_<theme>`) with a station on every rung, lit as far as you have
+TIME, on a TAB**, as a seam descending that act's own generated cross-section
+(`LadderZone.art`) with a station on every rung, lit as far as you have
 cleared. Every station is placed in PERCENT of the picture, so a rung cannot
 drift off the chamber it sits in.
 

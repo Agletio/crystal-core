@@ -15,7 +15,6 @@
  * thing you may enter rather than at somebody else's rung.
  */
 import { LADDER } from '../data';
-import { THEME_BY_ID } from '../data';
 import { canEnter, climbed, furthest, isChallenge, zoneAt, zoneOpen } from '../ladder';
 import type { Rung } from '../ladder';
 import { SCENE_ART } from '../render/generated-scene';
@@ -59,7 +58,7 @@ export function climbTotals(character: Character): { done: number; all: number }
 
 /** A rung named: what it IS, rather than which one anybody is pointed at. */
 export const rungName = (at: Rung): string =>
-  `${THEME_BY_ID[zoneAt(at.zone)?.theme ?? '']?.name ?? '?'}, rung ${at.rung}`;
+  `${zoneAt(at.zone)?.name ?? '?'}, rung ${at.rung}`;
 
 /** What the Enter button says: the rung you are about to walk into. */
 export const rungLabel = (character: Character): string => rungName(rungNow(character));
@@ -69,7 +68,7 @@ export const rungLabel = (character: Character): string => rungName(rungNow(char
 export function climbLine(character: Character, at: Rung | null, cleared: boolean): string | null {
   const zone = at ? zoneAt(at.zone) : null;
   if (!at || !zone) return null;
-  const name = THEME_BY_ID[zone.theme]?.name ?? zone.theme;
+  const name = zone.name;
   const done = Math.min(zone.rungs, climbed(character, at.zone));
   if (!cleared) {
     return `${name}, rung ${at.rung}. ${done} of ${zone.rungs} cleared — drop back a rung or two and grind if you need to.`;
@@ -77,13 +76,13 @@ export function climbLine(character: Character, at: Rung | null, cleared: boolea
   if (at.rung < zone.rungs) return `${name}, rung ${at.rung} cleared. Rung ${at.rung + 1} is open.`;
   const after = zoneAt(at.zone + 1);
   if (!after) return `${name}, rung ${at.rung} cleared. That is the whole climb.`;
-  return `${name} is finished. ${THEME_BY_ID[after.theme]?.name ?? after.theme} is open.`;
+  return `${name} is finished. ${after.name} is open.`;
 }
 
 /** What a shut zone is waiting on: the one below it, by name. */
 const shutBy = (zone: number): string => {
   const before = zoneAt(zone - 1);
-  return THEME_BY_ID[before?.theme ?? '']?.name ?? 'the zone below';
+  return before?.name ?? 'the zone below';
 };
 
 interface Station {
@@ -130,10 +129,9 @@ const svgEl = (tag: string, attrs: Record<string, string>): SVGElement => {
 function tabs(host: HTMLElement, character: Character, at: number, redraw: () => void): void {
   const row = el('div', 'climbtabs');
   LADDER.zones.forEach((zone, z) => {
-    const theme = THEME_BY_ID[zone.theme];
     const open = zoneOpen(character, z);
     const done = Math.min(zone.rungs, climbed(character, z));
-    const tab = el('button', 'mini climbtab', theme?.name ?? zone.theme) as HTMLButtonElement;
+    const tab = el('button', 'mini climbtab', zone.name) as HTMLButtonElement;
     tab.id = `climb-tab-${z}`;
     tab.classList.toggle('climbtab--on', z === at);
     tab.classList.toggle('climbtab--shut', !open);
@@ -141,8 +139,8 @@ function tabs(host: HTMLElement, character: Character, at: number, redraw: () =>
     tab.append(el('span', 'climbtab__done', ` ${done}/${zone.rungs}`));
     attachTooltip(tab, () =>
       open
-        ? `${theme?.name ?? zone.theme}. ${done} of ${zone.rungs} rungs cleared. ${theme?.blurb ?? ''}`
-        : `${theme?.name ?? zone.theme}. Shut until ${shutBy(z)} is cleared whole.`);
+        ? `${zone.name}. ${done} of ${zone.rungs} rungs cleared. ${zone.blurb}`
+        : `${zone.name}. Shut until ${shutBy(z)} is cleared whole.`);
     tab.onclick = () => {
       shown = z;
       redraw();
@@ -164,7 +162,6 @@ export function renderClimb(host: HTMLElement, character: Character, onPick: () 
   if (shown === null || !zoneOpen(character, shown)) shown = at.zone;
   const z = shown;
   const zone = LADDER.zones[z];
-  const theme = THEME_BY_ID[zone.theme];
 
   host.append(el('p', 'panel__title', 'The climb'));
   const where = el('p', 'climb__where',
@@ -180,7 +177,7 @@ export function renderClimb(host: HTMLElement, character: Character, onPick: () 
   const trail = el('div', 'climbseam');
   // The zone's own generated cross-section, or the bare panel until one is
   // drawn for it — a missing picture may not take the rungs with it.
-  const art = SCENE_ART[`climb_${zone.theme}`];
+  const art = SCENE_ART[zone.art];
   if (art) trail.style.backgroundImage = `url(${art.png})`;
 
   const svg = svgEl('svg', {
@@ -213,16 +210,16 @@ export function renderClimb(host: HTMLElement, character: Character, onPick: () 
     pip.disabled = !can;
 
     const what = boss
-      ? ` The top of ${theme?.name ?? zone.theme}: a fight in an arena of its own.`
+      ? ` The top of ${zone.name}: a fight in an arena of its own.`
       : isChallenge(z, station.rung)
         ? ' A challenge floor: the room fills with rares.'
         : '';
     attachTooltip(pip, () =>
       (!can
-        ? `${theme?.name ?? zone.theme}, rung ${station.rung}. Clear rung ${cleared + 1} first.`
+        ? `${zone.name}, rung ${station.rung}. Clear rung ${cleared + 1} first.`
         : station.rung <= cleared
-          ? `${theme?.name ?? zone.theme}, rung ${station.rung}. Cleared. Go back and grind it any time.`
-          : `${theme?.name ?? zone.theme}, rung ${station.rung}. The furthest you may go.`) + what
+          ? `${zone.name}, rung ${station.rung}. Cleared. Go back and grind it any time.`
+          : `${zone.name}, rung ${station.rung}. The furthest you may go.`) + what
     );
     pip.onclick = () => {
       if (pickRung(character, here)) onPick();

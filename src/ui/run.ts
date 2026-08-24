@@ -1509,7 +1509,7 @@ function syncRung(): void {
   const at = ran;
   host.hidden = !at || (phase !== 'running' && phase !== 'scene');
   if (host.hidden || !at) return;
-  $('run-rung-zone').textContent = THEME_BY_ID[zoneAt(at.zone)?.theme ?? '']?.name ?? '';
+  $('run-rung-zone').textContent = zoneAt(at.zone)?.name ?? '';
   $('run-rung-n').textContent = `Rung ${at.rung}`;
   const what = $('run-rung-what');
   what.textContent = arenaAt(at) ? 'Boss' : isChallenge(at.zone, at.rung) ? 'Challenge floor' : '';
