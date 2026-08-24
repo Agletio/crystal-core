@@ -263,6 +263,13 @@ the ZONE (`mapTheme`, `MAP_THEMES`).
   stat saturates and `crystalRewards` scores the capped amount, so four wards
   of one type are paid for as one. A new danger stat that saturates needs its
   `cap` written down with it.
+- **A KIND's drop weight is its SLOTS times what a FILTER can name in it** —
+  eight weapon families, three armour archetypes, one apiece for a shield, a
+  ring and an amulet, all derived. Slots alone is the obvious rule and it is
+  wrong: measured, a ring was the commonest drop in the game at 22% and the
+  whole weapon kind rarer than boots, because the filter cuts a kind by family
+  and a kind with none survives every cut whole. Filtered to one archetype and
+  one weapon family, 58% of what banked was jewellery.
 - **Power buys access; composition and modifiers buy payment.** Item level and
   what a band can drop come off `POWER` alone and nothing else may move it.
   `FAMILY_YIELD`, `REWARD.mixYield` and the finding modifiers pay in currency

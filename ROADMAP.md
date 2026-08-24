@@ -14,11 +14,12 @@ it leaves behind is a balance question for the balance pass: a first cycle is
 now tier 1 gear for all 42 rungs, and nobody has measured whether that clears
 the deep end.
 
-**Phase 2 is more characters, and Mahthar is FINISHED** — body, thirteen weapon
-variants, ten dual-wield pairs, his web and the fifteen switches under it. All
-that is left of the phase is a decision nobody has been asked for: whether there
-is a fourth. The quest log after it is parked by the user's word until a start
-with nothing explaining it has been played.
+**PHASE 2 — MORE CHARACTERS — IS DONE.** Four trades: the Alchemist, the
+Aethermancer, Mahthar and Obreth, each with a body, thirteen weapon variants and
+a web that changes rules the others do not. Obreth also holds the ten PAIRS
+nobody else may reach. All that is left of the phase is a decision nobody has
+been asked for: whether there is a FIFTH. The quest log after it is parked by
+the user's word until a start with nothing explaining it has been played.
 
 Everything else that was asked for has landed: the weapon soft-lock, the two
 wrong weapon bodies, the walls and the north lip, the kiting, the people you
@@ -66,7 +67,11 @@ to look:
 | the Relay | a Critical teleports you into the next body and pays for it; `critChain`, `RunState.relays`, and `SIM` in `src/sim/grants.ts` |
 | the rung tag | `#run-rung` and `syncRung` in `src/ui/run.ts` — which rung a descent is on, top right |
 | the trials atlas | a MAP: 12 wheels, roads between them, 156 nodes, 60 points; shut until the Fissure is whole |
-| the climb, drawn | `src/ui/climb.ts` — one seam winding down through the 42, a stretch per zone |
+| the climb, drawn | `src/ui/climb.ts` — ONE ZONE at a time on a tab, a seam down its own generated cross-section |
+| every plate | the `head` band is retired: a hairline carved edge, fourteen rules and the piece out of the kit |
+| no distance bonuses | `killMore` / `untouchedMore` / `struckMore` / `struckLess` replace `moreClose` / `moreFar` / `warPaint` / `dread` |
+| the drop mix | a kind's weight is its SLOTS times what a filter can NAME in it — rings 22% → 8.5% |
+| a lit person | a camp hotspot draws nothing; `body()` rims the silhouette on the canvas |
 | finding a node | `src/ui/websearch.ts` — one box for the skill, trade and trials webs; the shelf has its own |
 | Obreth's weapons | 23 variants: `tools/art/bodies.json`, `variant.mts seed`/`manifest`, `roster.mts` |
 | the trials web | `src/trials.ts`, `src/trials/*`, `TRIALS` in `src/data.ts` — six arms, eighteen nodes, six trials, per character |
@@ -676,9 +681,11 @@ equipped? Like crit per dagger equipped, attack speed for swords etc."*
 - [x] **THE WEAPON SPECIALIST is in**, and it is the user's own node:
       `WEAPON_SPECIALITY` says what each family is for and `specialistMod`
       reads it PER WEAPON HELD, so a matched pair is that line twice.
-- [ ] **The rogue's ART: body, portrait, thirteen variants, ten pairs.** ~2,200
-      generations and most of a day. He plays without it — `heroSpriteFor`
-      falls back to the base man.
+- [x] **THE ROGUE'S ART IS DONE.** Body, thirteen weapon variants and the ten
+      PAIRS nobody else may hold — 24 rows in `generated.json`, and `THE ROSTER`
+      in the demo reads `obreth: 23 of 23 arrangements a player can reach are
+      drawn`. He has no portrait and needs none: `portraitIcon` falls back to
+      the map sprite, as it does for Mahthar.
 
 **THE COST, said plainly:** thirty pair variants are already drawn — ten each
 for the Alchemist, the Aethermancer and Mahthar — and this rule makes all thirty

@@ -139,6 +139,12 @@ Exactly three things end a session, and a finished phase is not one:
 - **Only Pixi draws sprites**; `canvas2d` is a fallback with none. Sprite work
   being invisible there is correct. Anything per-tile is a pure function in
   `render/renderer.ts` so both renderers read one answer.
+- **NOTHING KEYS OFF WHERE THE HERO STANDS.** *"It feels bad to ever take like
+  % increased damage to near enemies when you can't control your character's
+  location at all."* Nobody drives him, so a condition on distance is a
+  condition on the pathfinder. A conditional buys off something the BUILD
+  decides — a kill still counting, a stretch with nothing landing on you, a
+  target's life, an Ailment already on it.
 - **Claims need evidence.** A balance claim needs a measurement, an art claim
   needs a screenshot.
 
@@ -188,14 +194,16 @@ that character's life, and a zone opens when the one below it is whole. Its
 difficulty rides the crystal seam as ONE synthetic mod (`rungMod`, beside
 `trialMod` and `treeMod`), so `crystalRewards` pays a harder rung more with
 nothing written twice — and the rung is also the ZONE, composition only picking
-one for a set with no rung. The CLIMB draws it: a row a zone, a pip a rung.
+one for a set with no rung.
 **Every fourth rung is a CHALLENGE FLOOR** — `challengeMod`, a second mod on the
 same seam — and the room fills with rares instead of stepping. **A zone's LAST
 rung is its BOSS**, in an arena of its own (`LADDER.zones[z].arena`, read through
 `arenaAt`), and clearing that is the whole of what opens the zone above: The
-Answering, The Refraction, The Flowering. The CLIMB is drawn as a SEAM — one
-line winding down through the 42, a station on each, a stretch per zone, lit as
-far as you have cleared.
+Answering, The Refraction, The Flowering. **THE CLIMB IS DRAWN ONE ZONE AT A
+TIME, on a TAB**, as a seam descending that zone's own generated cross-section
+(`SCENE_ART.climb_<theme>`) with a station on every rung, lit as far as you have
+cleared. Every station is placed in PERCENT of the picture, so a rung cannot
+drift off the chamber it sits in.
 
 Four sockets hold crystals permanently. Their COUNT is how long a run is, their
 MODIFIERS how hard it is; a crystal's LEVEL is only capacity and its FAMILY
