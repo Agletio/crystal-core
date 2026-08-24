@@ -6,6 +6,9 @@ import {
   AILMENT,
   ALL_MODS,
   AILMENT_OF_TYPE,
+  CRYSTAL_MODS,
+  USES,
+  usesFor,
   ATTRIBUTES,
   DEFENCE,
   FISSURE,
@@ -144,7 +147,9 @@ import type { RunState } from './sim/run';
 import {
   declaredCapacity,
   baseTier,
+  fullUses,
   modCapacity,
+  rollRandomMod,
   slotAllocation,
   slotCapacity,
   slotTypes,
@@ -10007,6 +10012,101 @@ rule('THE COLLECTION — do crystals arrive, and do they grow?');
     'and once all four are held a cleared run pays the sockets and nothing in a bag',
     `${sim.state.status}: socketed ${crystalXp(socketed)}, carried ${crystalXp(pocketed)}`
   );
+
+  // A ROLL BURNS DOWN, and only a crystal's. *"You roll a mod and it lasts for a
+  // certain amount runs and then it's gone."* What has to hold is that a CLEAR
+  // spends exactly one, a DEATH spends none, the roll goes at zero, and a rarer
+  // tier of the same modifier starts with fewer.
+  {
+    const burn = createGame('fresh');
+    // Strong enough to CLEAR what it socketed: a use is spent on a clear, so a
+    // probe that dies every descent measures nothing.
+    burn.character = ladderCharacter(6, new Rng(3));
+    const rolled = makeCrystal(4);
+    while (rolled.mods.length < 2) {
+      const mod = rollRandomMod(rolled, pool, new Rng(70 + rolled.mods.length));
+      if (mod && !rolled.mods.some((m) => m.group === mod.group)) rolled.mods.push(mod);
+    }
+    for (const c of [rolled, makeCrystal(1), makeCrystal(1), makeCrystal(1)]) addItem(burn, c);
+    socketItem(burn, rolled, RUN_SLOTS[0].id);
+    const started = rolled.mods.map((m) => m.uses ?? 0);
+    line(`  a fresh roll carries ${started.join(' and ')} descents, of ` +
+      `${USES.least} to ${USES.most}`);
+    check(
+      started.every((n) => n >= USES.least && n <= USES.most),
+      'a crystal roll comes out of the ground with descents on it',
+      started.join(', ')
+    );
+
+    /** One descent, cleared or not, and what every roll has left after it. */
+    let cleared = 0;
+    const descend = (seed: number, kill: boolean): number[] => {
+      const sim = new RunSim(Object.values(burn.sockets ?? {}), burn.character, new Rng(seed));
+      if (kill) runToCompletion(sim, 400);
+      else sim.state.hero.life = 0;
+      if (buildReport(burn, sim.state).cleared) cleared++;
+      return rolled.mods.map((m) => m.uses ?? 0);
+    };
+    const dead = descend(515, false);
+    check(
+      dead.every((n, i) => n === started[i]),
+      'a death spends none of them — failing a rung costs nothing but time',
+      `${started.join(',')} → ${dead.join(',')}`
+    );
+    const once = descend(515, true);
+    check(
+      cleared === 1 && once.every((n, i) => n === started[i] - 1),
+      'and a clear spends exactly one off every roll on it',
+      `${started.join(',')} → ${once.join(',')} over ${cleared} clears`
+    );
+
+    // Down to nothing, which is the state the whole rule exists for.
+    let guard = 0;
+    let last: ReturnType<typeof buildReport> | null = null;
+    while (rolled.mods.length > 0 && guard++ < USES.most + 4) {
+      const sim = new RunSim(Object.values(burn.sockets ?? {}), burn.character, new Rng(515));
+      runToCompletion(sim, 400);
+      last = buildReport(burn, sim.state);
+    }
+    check(
+      rolled.mods.length === 0 && guard <= USES.most + 1,
+      `and a roll is GONE at zero — the crystal ran dry ${guard} descents in`,
+      `${rolled.mods.length} left after ${guard}`
+    );
+    check(
+      (last?.burnt.length ?? 0) > 0,
+      'and the report names what ran out, so a chained descent stops on it',
+      JSON.stringify(last?.burnt.map((b) => b.name) ?? [])
+    );
+
+    // A save that predates uses comes back FULL rather than never expiring, and
+    // a count on a worn piece is stripped: gear is kept, crystals burn.
+    const old = makeCrystal(4);
+    const line1 = rollRandomMod(old, pool, new Rng(71));
+    if (line1) old.mods.push(line1);
+    for (const mod of old.mods) delete mod.uses;
+    addItem(burn, old);
+    const worn = Object.values(burn.character.equipment)[0];
+    if (worn && worn.mods[0]) worn.mods[0].uses = 3;
+    heal(burn);
+    check(
+      old.mods.every((m) => m.uses === fullUses(m))
+        && Object.values(burn.character.equipment).every((i) => i.mods.every((m) => m.uses === undefined)),
+      'a save written before uses heals to full, and no worn piece ever carries one',
+      old.mods.map((m) => `${m.name} ${m.uses}`).join(', ')
+    );
+
+    // COMMON LASTS LONGER. The tier's own weight is what says so, which is the
+    // rarity that already decides how often it turns up.
+    const laddered = CRYSTAL_MODS.filter((d) => d.tiers.length > 1)
+      .map((d) => d.tiers.map((t) => usesFor(t.weight)));
+    line(`  descents by tier: ${laddered.map((u) => u.join('<')).join(' · ')}`);
+    check(
+      laddered.every((u) => u.every((n, i) => i === 0 || n >= u[i - 1])),
+      'and a rarer tier of the same modifier is stronger and runs out sooner',
+      JSON.stringify(laddered)
+    );
+  }
 
   // THE TIER A CRYSTAL BUYS. The climb makes a run harder and richer; a socket
   // is what makes it drop a better BASE, and it never touches item level.

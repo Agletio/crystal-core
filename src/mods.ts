@@ -1,5 +1,5 @@
 import { Rng } from './rng';
-import { DANGER_STATS, GEAR_BASE_BY_ID, baseMods } from './data';
+import { DANGER_STATS, GEAR_BASE_BY_ID, MOD_BY_ID, USES, baseMods, usesFor } from './data';
 import type {
   FillState,
   Item,
@@ -212,7 +212,7 @@ export function rollValues(entry: ModEntry, rng: Rng): StatRoll[] {
 }
 
 export function instantiate(entry: ModEntry, rng: Rng): RolledMod {
-  return {
+  const rolled: RolledMod = {
     entryId: entry.id,
     defId: entry.defId,
     group: entry.group,
@@ -222,6 +222,16 @@ export function instantiate(entry: ModEntry, rng: Rng): RolledMod {
     tags: entry.tags,
     stats: rollValues(entry, rng),
   };
+  // A CRYSTAL ROLL BURNS DOWN, and only a crystal roll: gear is kept.
+  if (entry.appliesTo.includes('crystal')) rolled.uses = usesFor(entry.weight);
+  return rolled;
+}
+
+/** DESCENTS A ROLL STARTED WITH, off the tier it actually came from. Asked by
+ *  `heal` and by the card, so what is repaired and what is printed agree. */
+export function fullUses(mod: RolledMod): number {
+  const tier = MOD_BY_ID[mod.defId]?.tiers[mod.tier - 1];
+  return tier ? usesFor(tier.weight) : USES.most;
 }
 
 /** Weighted pick from the eligible pool, then roll it. Null if nothing fits. */

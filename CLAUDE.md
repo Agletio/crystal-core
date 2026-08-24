@@ -208,6 +208,14 @@ TIME, on a TAB**, as a seam descending that act's own generated cross-section
 cleared. Every station is placed in PERCENT of the picture, so a rung cannot
 drift off the chamber it sits in.
 
+**A CRYSTAL ROLL BURNS DOWN.** *"You roll a mod and it lasts for a certain
+amount runs and then it's gone."* `RolledMod.uses` is descents left, set at the
+roll off the TIER'S OWN WEIGHT (`usesFor`) so a rarer tier is stronger and runs
+out sooner — a decision rather than an upgrade. A CLEAR spends one off every
+roll on every socketed crystal and drops it at zero; a DEATH spends none,
+because failing a rung already costs nothing but time. Gear never carries one.
+A roll running out is the sixth thing that ends an Enter-chain.
+
 Four sockets hold crystals permanently. Their COUNT is how long a run is, their
 MODIFIERS how hard it is; a crystal's LEVEL is only capacity and its FAMILY
 (Normal / Demonic / Prismatic) only which monsters spawn. Danger and socket
@@ -240,8 +248,9 @@ did not walk to. Per CHARACTER, and it worsens every descent that character
 takes.
 
 **You press Enter once.** A cleared descent launches the next by itself and
-keeps going until you die, your bag fills, someone is waiting at the mouth, or
-you say so. All five end on the same report and open the same dock.
+keeps going until you die, your bag fills, someone is waiting at the mouth, a
+crystal roll runs out, or you say so. All six end on the same report and open
+the same dock.
 
 **THERE ARE NO ROOMS, and a person is FOUND IN THEIR OWN ZONE.** *"Honestly just
 ditch all the rooms. I want to encounter them randomly in the maps and they

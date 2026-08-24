@@ -24,7 +24,7 @@ import type { GameState } from './state';
 import { grant, makeCrystal } from '../economy';
 import { crystalFamily } from '../sim/crystal';
 import type { RunSet } from '../sim/crystal';
-import type { Item } from '../types';
+import type { Item, RolledMod } from '../types';
 
 /** Every crystal you own: socketed, or in the collection. */
 export function ownedCrystals(game: GameState): Item[] {
@@ -202,6 +202,31 @@ export interface CrystalGain {
  *  rolls on one or levels one until all four are HELD. */
 export const crystalsUnlocked = (game: GameState): boolean =>
   ownedCrystals(game).length >= RUN_SLOTS.length;
+
+/** A roll that ran out on the descent just cleared, so the report can say so. */
+export interface ModBurn { crystal: Item; name: string }
+
+/** WHAT A CLEAR SPENDS: one descent off every roll on every socketed crystal,
+ *  dropped at zero. It is what makes four permanent sockets a live decision —
+ *  the sockets do not move, what is on them runs out. A DEATH SPENDS NOTHING,
+ *  because failing a rung already costs nothing but time. */
+export function spendSocketed(game: GameState): ModBurn[] {
+  const gone: ModBurn[] = [];
+  for (const crystal of Object.values(game.sockets ?? {})) {
+    const kept: RolledMod[] = [];
+    for (const mod of crystal.mods) {
+      if (mod.uses === undefined) {
+        kept.push(mod);
+      } else if (mod.uses > 1) {
+        kept.push({ ...mod, uses: mod.uses - 1 });
+      } else {
+        gone.push({ crystal, name: mod.name });
+      }
+    }
+    crystal.mods = kept;
+  }
+  return gone;
+}
 
 /** Only while socketed, and only once the climb is behind you. */
 export function advanceSocketed(game: GameState, set: RunSet): CrystalGain[] {

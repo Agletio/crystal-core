@@ -106,7 +106,7 @@ let seed = 0;
 /** Descents cleared without stopping. Reset by the click that starts the loop. */
 let streak = 0;
 /** Why the loop stopped, for the card that reports it. */
-let halt: 'died' | 'full' | 'once' | 'left' | 'chose' | 'met' = 'once';
+let halt: 'died' | 'full' | 'once' | 'left' | 'chose' | 'met' | 'dry' = 'once';
 /** Armed mid-descent: finish this one, bank it, and do not go back down. */
 let leaving = false;
 /** A boss whose key is armed, spent by the launch. UI state like `leaving`:
@@ -570,6 +570,9 @@ function finish(left = false): void {
 
   if (report.cleared) payTrials(sim.state);
 
+  // A ROLL RAN OUT, so the next descent is not the one you set up. Chained
+  // through, a set would wear down to a bare run nobody chose.
+  const dry = report.burnt.length > 0;
   halt = left
     ? 'left'
     : !report.cleared
@@ -578,12 +581,14 @@ function finish(left = false): void {
         ? 'full'
         : leaving
           ? 'chose'
-          : 'once';
+          : dry
+            ? 'dry'
+            : 'once';
 
   // `leaving` is the only stop you choose while the fight is still on, so it
   // is checked here rather than at the launch: the descent you armed it during
   // still finishes and still banks.
-  if (report.cleared && !report.bagsFull && !leaving) {
+  if (report.cleared && !report.bagsFull && !leaving && !dry) {
     // Drop into the hole first. The next descent is built at the bottom of it.
     handover = 0.0001;
     banked = report;
@@ -737,6 +742,10 @@ function haltLine(report: RunReport): string {
   if (halt === 'left') return `You walked out. ${kept}`;
   if (halt === 'died') return `You died. ${kept}`;
   if (halt === 'full') return `Your bags are full after ${runs}. Clear some of it to go again.`;
+  if (halt === 'dry') {
+    const names = report.burnt.map((b) => b.name).join(', ');
+    return `Cleared ${runs}. ${names} ran out — roll the socket again before the next.`;
+  }
   if (halt === 'chose') return `Cleared ${runs}, and stopped where you asked.`;
   return `Cleared ${runs}.`;
 }

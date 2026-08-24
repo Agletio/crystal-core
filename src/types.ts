@@ -79,6 +79,8 @@ export interface RolledMod {
   tier: number;
   tags: string[];
   stats: StatRoll[];
+  /** Descents left, on a CRYSTAL alone: a clear spends one, zero drops it. */
+  uses?: number;
 }
 
 export interface Item {

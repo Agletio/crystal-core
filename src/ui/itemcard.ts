@@ -5,7 +5,7 @@
  * and none could use colour. The split `statParts` makes is the point: the
  * rolled NUMBER is one colour and the modifier's name another.
  */
-import { baseTier, modCapacity, slotTypes, tierName } from '../mods';
+import { baseTier, fullUses, modCapacity, slotTypes, tierName } from '../mods';
 import { statParts } from '../mod-text';
 import { crystalFamily, rewardRows } from '../sim/crystal';
 import { crystalProgress } from '../game/crystals';
@@ -58,7 +58,17 @@ function modBlock(mod: RolledMod, named: boolean): HTMLElement {
   const block = el('div', 'tip__mod');
   for (const line of mod.stats) block.append(statLine(line));
   block.append(...grantLines(mod));
-  if (named) block.append(el('div', 'tip__modname', `T${mod.tier} ${mod.name}`));
+  if (named) {
+    const foot = el('div', 'tip__modname', `T${mod.tier} ${mod.name}`);
+    // WHAT IS LEFT OF IT, out of what it started with — the number a player
+    // plans around, and the last descent has to read as the last one.
+    if (mod.uses !== undefined) {
+      const left = el('span', mod.uses <= 1 ? 'tip__uses tip__uses--last' : 'tip__uses',
+        ` · ${mod.uses} of ${fullUses(mod)} descents left`);
+      foot.append(left);
+    }
+    block.append(foot);
+  }
   return block;
 }
 

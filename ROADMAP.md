@@ -778,16 +778,17 @@ renaming one costs the player their climb.
 
 ### The steps, each leaving the suite green
 
-1. **THE WORLD COMES FROM THE CRYSTALS.** Delete the rung's override. Split
-   `LadderZone.theme` into an `id` (the save key, values unchanged) and a `name`,
-   rename the three acts, redraw the three climb scenes as depth. A character
-   with no crystals gets the bare Fissure, which is what `composition([])`
-   already answers.
-2. **MODS HAVE USES.** `RolledMod.uses`, decremented on every clear for every
-   socketed crystal, the mod dropped at zero. Rolled off the mod's TIER — a
-   high tier is stronger and burns faster, so it is a decision rather than a
-   strict upgrade. `heal` repairs a missing or absurd count; the card prints
-   `4 runs left`; the report says what expired. A dry crystal is a sixth thing
+1. ~~**THE WORLD COMES FROM THE CRYSTALS.**~~ **DONE.** The override is gone,
+   `LadderZone` splits into `id` / `name` / `blurb` / `art`, the acts are The
+   Answering, The Refraction and The Flowering, and their cross-sections are
+   redrawn as depth. The demo's check is INVERTED: nothing socketed is the bare
+   Fissure at every rung, two Demonic crystals send every one to the Rot.
+2. ~~**MODS HAVE USES.**~~ **DONE.** `RolledMod.uses`, set at the roll off the
+   tier's own weight through `usesFor`, 5 to 20 descents. A clear spends one off
+   every roll on every socketed crystal and drops it at zero; a death spends
+   none. `heal` fills a missing count and clamps an absurd one, and strips any
+   that ever landed on gear. The card prints `n of N descents left` and lights
+   the last one; the report names what ran out; a dry crystal is the sixth thing
    that ends an Enter-chain.
 3. **THE MECHANICS POOL.** Replace the 11 inflation mods with ~20 mechanics.
    The user's own is first: **The Second Watch** — a Hoard's guards all stand

@@ -9,6 +9,7 @@ import { SAVE_VERSION, createGame, findAnywhere, giftWeapon, wornItems } from '.
 import { takeMet } from './scenes';
 import { healQuests, ownedCrystals } from './crystals';
 import { healTrials } from './trials';
+import { fullUses } from '../mods';
 import { crystalFamily } from '../sim/crystal';
 import type { GameState } from './state';
 import {
@@ -374,8 +375,7 @@ export function heal(game: GameState): Healed {
 
   for (const item of [...game.crystals, ...Object.values(game.sockets ?? {})]) {
     if (item.kind !== 'crystal') continue;
-    // `tier` was the word before levels; the base id never moved, so this is
-    // the whole of that rename's cost.
+    // `tier` was the word before levels; the base id never moved.
     if (item.meta.level === undefined && item.meta.tier !== undefined) {
       item.meta.level = item.meta.tier;
       delete item.meta.tier;
@@ -393,6 +393,17 @@ export function heal(game: GameState): Healed {
     if (item.mods.length > 0 || !ALL_MODS.some((m) => m.id === item.meta.scripted)) {
       delete item.meta.scripted;
     }
+    // A ROLL WRITTEN BEFORE USES gets what its tier would have rolled, so an
+    // old save comes back full. Out of range is CLAMPED rather than dropped.
+    for (const mod of item.mods) {
+      const full = fullUses(mod);
+      if (!(Number(mod.uses) >= 1)) mod.uses = full;
+      else mod.uses = Math.min(Math.round(Number(mod.uses)), full);
+    }
+  }
+  // GEAR IS KEPT: a count on a worn piece would silently eat it, so it goes.
+  for (const item of [...game.inventory, ...game.stash, ...wornItems(game)]) {
+    for (const mod of item.mods) delete mod.uses;
   }
   // The first heal that repairs a LINE rather than dropping an item. A graft
   // stands where the base's own implicit stood, so a forged def that no longer

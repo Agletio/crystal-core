@@ -869,6 +869,17 @@ export const WARD_GROUPS = [
   { id: 'physical', name: 'of Thick Hide', types: ['physical'] },
 ];
 
+/** DESCENTS A CRYSTAL ROLL IS WORTH, off the tier's own WEIGHT: what decides
+ *  how OFTEN it turns up decides how LONG it stays, so a high tier is stronger
+ *  and burns faster — *"super rare ones last less."* */
+export const USES = { most: 20, least: 5, common: 1000, rare: 100 };
+
+export function usesFor(weight: number): number {
+  const lo = Math.log(USES.rare);
+  const at = (Math.log(Math.max(1, weight)) - lo) / (Math.log(USES.common) - lo);
+  return Math.round(USES.least + Math.max(0, Math.min(1, at)) * (USES.most - USES.least));
+}
+
 export const CRYSTAL_MODS: ModDef[] = [
   {
     id: 'pack_size',
@@ -2175,9 +2186,8 @@ export const socketPackSize = (filled: number): number => rung(filled, SOCKET_SC
 export const LADDER = {
   // `arena` is the LAST RUNG of the zone: a fight rather than a descent, and
   // clearing it is what records the rung the zone above opens on.
-  // A zone is DEPTH, never a world — what world you walk into is what you
-  // SOCKETED. `id` is the save key under `character.climbed`, still spelt the
-  // way the worlds were: renaming one costs a player their climb.
+  // A zone is DEPTH, never a world: what you walk into is what you SOCKETED.
+  // `id` is the save key, still spelt the way the worlds were.
   zones: [
     {
       id: 'fissure', name: 'The Answering', art: 'climb_act1',

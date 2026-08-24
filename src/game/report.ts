@@ -5,7 +5,8 @@
  */
 import { bagsFull, bankLoot, grantFirstClear } from './state';
 import type { GameState } from './state';
-import { advanceSocketed } from './crystals';
+import { advanceSocketed, spendSocketed } from './crystals';
+import type { ModBurn } from './crystals';
 import type { CrystalGain } from './crystals';
 import { grant } from '../economy';
 import { DAMAGE_TYPE_BY_ID, MAIN_SLOT, SKILL_SLOTS } from '../data';
@@ -31,6 +32,8 @@ export interface RunReport {
   items: Item[];
   /** Crystals that gained a tier for being socketed through this. */
   levelled: CrystalGain[];
+  /** Rolls that ran out on this descent. A dry crystal ends an Enter-chain. */
+  burnt: ModBurn[];
   /** True when there was loot and the hero died holding it. */
   lostLoot: boolean;
   /** Whether the bag is at or over its limit now this run has banked. */
@@ -60,6 +63,7 @@ export function buildReport(game: GameState, run: RunState, left = false): RunRe
 
   const banked: Record<string, number> = {};
   let levelled: CrystalGain[] = [];
+  let burnt: ModBurn[] = [];
   let filtered = { kept: [] as Item[], sold: 0, gold: 0 };
 
   if (cleared) {
@@ -90,6 +94,7 @@ export function buildReport(game: GameState, run: RunState, left = false): RunRe
     // Socketed only. A crystal in a bag is a crystal that was not used, and
     // this is what makes a socket spent on a fresh one cost something.
     levelled = advanceSocketed(game, run.set);
+    burnt = spendSocketed(game);
   }
 
   // XP is earned either way — you learned something on the way to dying.
@@ -132,6 +137,10 @@ export function buildReport(game: GameState, run: RunState, left = false): RunRe
   for (const gain of levelled) {
     rows.push({ label: gain.crystal.name, value: `+${gain.levels} level` });
   }
+  // WHAT RAN OUT — the whole point of a use is that you feel it end.
+  for (const burn of burnt) {
+    rows.push({ label: `${burn.crystal.name} · ${burn.name}`, value: 'used up' });
+  }
 
   // Damage taken, split by type — worst first and under its own name, because
   // a monster brings its own element now and a descent routinely shows three
@@ -161,6 +170,7 @@ export function buildReport(game: GameState, run: RunState, left = false): RunRe
     banked,
     items: cleared ? [...filtered.kept] : [],
     levelled,
+    burnt,
     lostLoot: !cleared && hadLoot,
     bagsFull: bagsFull(game),
     filtered: { sold: filtered.sold, gold: filtered.gold },
