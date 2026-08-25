@@ -7902,13 +7902,22 @@ rule('WHAT A BAND IS WORTH — does pushing power actually pay?');
     'and is worth more experience',
     perXp.map((n) => n.toFixed(1)).join(' → ')
   );
-  // The top of what four sockets can hold has to reach the top of the drop
-  // table. If it does not, the best gear in the game is behind a set nobody
-  // can assemble, and nothing else here would say so.
+  // THE TOP DROP BAND HAS TO BE REACHABLE, or the best gear in the game is
+  // behind something nobody can assemble. Asked of a DESCENT and not of four
+  // crystals alone: raw danger is the RUNG's now, and what a crystal carries is
+  // a rule the sim runs. Four sockets by themselves stop around power 4.6.
+  const alone = reached[reached.length - 1];
+  const deepest = LADDER.zones.length - 1;
+  const top = runSet(
+    deepestSet(new Rng(4242), pool),
+    null,
+    { zone: deepest, rung: LADDER.zones[deepest].rungs }
+  ).power;
+  line(`  four sockets alone reach power ${alone.toFixed(2)}; at the deepest rung, ${top.toFixed(2)}`);
   check(
-    reached[reached.length - 1] >= DROP_BANDS.length - 1.5,
-    'and the best set four sockets can hold reaches the top drop band',
-    `the ladder stops at power ${reached[reached.length - 1].toFixed(2)}`
+    top >= DROP_BANDS.length - 1.5,
+    'and the deepest rung with the best set in it reaches the top drop band',
+    `the ladder stops at power ${top.toFixed(2)}`
   );
 }
 
@@ -8338,14 +8347,16 @@ rule('ELEMENTS — does a monster bring its own, and does a ward still matter?')
   // modifier rolling WHICH element would be a name that lies about which
   // resistance to bring.
   {
+    // AN ELEMENT AND ITS WARD ARE THE TRIALS WEB'S. A crystal rolls neither any
+    // more — what it carries is a rule the floor runs — so the pairing is asked
+    // of the only place either still lives.
+    const webStats = new Set(trialNodes().flatMap((n) => (n.stats ?? []).map((st) => st.stat)));
     const missing = ADDED_DAMAGE_TYPES.filter(
-      (t) =>
-        !ALL_MODS.some((m) => m.tiers.some((x) => x.stats.some((st) => st.stat === monsterAddedStat(t)))) ||
-        !ALL_MODS.some((m) => m.tiers.some((x) => x.stats.some((st) => st.stat === monsterResStat(t))))
+      (t) => !webStats.has(monsterAddedStat(t)) || !webStats.has(monsterResStat(t))
     );
     check(
       missing.length === 0 && ADDED_DAMAGE_TYPES.length === 3,
-      'every element a crystal adds has its own modifier and its own ward',
+      'every element the web adds has its own node and its own ward',
       missing.join(', ')
     );
     const unnamed = ADDED_DAMAGE_STATS.filter(
@@ -8783,11 +8794,22 @@ rule('WARDS — is there a crystal roll your build can ignore?');
 // builds."* A modifier a build walks past is a mod slot doing nothing, and one
 // ward per damage type meant seven of every eight rolls were that.
 {
-  const wards = ALL_MODS.filter(
-    (m) => m.appliesTo?.includes('crystal') && m.id.endsWith('_ward')
-  );
+  // ANSWERED OUTRIGHT, and by deletion rather than by folding. A crystal rolls
+  // no resistance, no monster life and no monster damage at all now — every one
+  // of its modifiers is a rule the floor runs, which no build walks past. What
+  // is left of the wards lives on the TRIALS web, and that is where they are
+  // asked about: `nodeStat` is what a walked arm can actually hand the sim.
+  const nodeStat = new Set(trialNodes().flatMap((n) => (n.stats ?? []).map((st) => st.stat)));
   const crystalMods = ALL_MODS.filter((m) => m.appliesTo?.includes('crystal'));
-  line(`  ${crystalMods.length} crystal modifiers, ${wards.length} of them wards`);
+  const narrow = crystalMods.filter((m) =>
+    m.tiers.some((t) => t.stats.some((st) => st.stat.endsWith('Res')))
+  );
+  line(`  ${crystalMods.length} crystal modifiers, ${narrow.length} of them a resistance`);
+  check(
+    narrow.length === 0,
+    'not one crystal modifier is a resistance, so none of them is a build\'s to ignore',
+    narrow.map((m) => m.id).join(', ')
+  );
 
   // EVERY TYPE COVERED, and none of them twice: a type in no ward is a damage
   // family the deep end never argues with, and one in two is weighed twice.
@@ -8805,55 +8827,33 @@ rule('WARDS — is there a crystal roll your build can ignore?');
     `uncovered ${uncovered.join(', ')} · twice ${twice.join(', ')}`
   );
 
-  // And a ward WRITES every type in its family, at every tier. A family that
-  // named four types and rolled one would read as generic and act as narrow.
-  const thin: string[] = [];
-  for (const group of WARD_GROUPS) {
-    const def = wards.find((m) => m.id === `monster_${group.id}_ward`);
-    if (!def) {
-      thin.push(`${group.id}: no modifier`);
-      continue;
-    }
-    for (const tier of def.tiers) {
-      const wrote = new Set(tier.stats.map((st) => st.stat));
-      const want = group.types.map((t: string) => monsterResStat(t));
-      if (want.some((w: string) => !wrote.has(w)) || wrote.size !== want.length) {
-        thin.push(`${def.id} ilvl ${tier.ilvl}: ${[...wrote].join(', ')}`);
-      }
-    }
-  }
-  check(thin.length === 0, 'and every ward writes its whole family at every tier', thin.join(' | '));
-
-  // THE TEST THE PASS EXISTS FOR: pick any damage type a build can deal, and
-  // some ward argues with it. Asked of the ROLLED modifier rather than of the
-  // table, so it is what a crystal actually hands the sim.
-  const blind: string[] = [];
-  for (const type of DAMAGE_TYPES) {
-    const stat = monsterResStat(type.id);
-    const answers = wards.filter((m) => m.tiers.some((t) => t.stats.some((st) => st.stat === stat)));
-    if (answers.length === 0) blind.push(type.id);
-  }
+  // THE TEST THE PASS EXISTS FOR, asked where wards now live: pick any damage
+  // type a build can deal, and something on the web argues with it. A type
+  // nothing wards is a family the deep end never has an answer to.
+  const blind = DAMAGE_TYPES.filter((t) => !nodeStat.has(monsterResStat(t.id))).map((t) => t.id);
   check(
     blind.length === 0,
-    'so no damage type in the game is one the deep end never wards against',
+    `so none of the ${DAMAGE_TYPES.length} damage types is one the web never wards against`,
     `nothing wards ${blind.join(', ')}`
   );
 
-  // What it came to, measured by ROLLING rather than by reading the table.
+  // WHAT A CRYSTAL ACTUALLY ROLLS NOW, measured by rolling rather than read off
+  // the table — and every line of it is a rule, which is the whole change.
   {
     const pool = new ModPool(ALL_MODS);
-    for (const level of CRYSTAL_LEVELS.map((t) => t.level)) {
+    for (const level of CRYSTAL_LEVELS.filter((t) => t.mods > 0).map((t) => t.level)) {
       let danger = 0;
-      let rolls = 0;
+      const seen = new Map<string, number>();
       const runs = 200;
       for (let i = 0; i < runs; i++) {
         const set = [0, 1, 2, 3].map((k) => rollCrystal(level, pool, new Rng(i * 97 + k * 13 + level)));
         danger += runSet(set).rewards.danger;
-        rolls += set.flatMap((c) => c.mods).filter((m) => m.defId.endsWith('_ward')).length;
+        for (const m of set.flatMap((c) => c.mods)) seen.set(m.defId, (seen.get(m.defId) ?? 0) + 1);
       }
+      const top = [...seen].sort((a, b) => b[1] - a[1])[0];
       gauge(
-        `level ${level}: ${(rolls / runs).toFixed(2)} ward rolls in four sockets, ` +
-          `mean danger ${Math.round(danger / runs)}`
+        `level ${level}: mean danger ${Math.round(danger / runs)} over four sockets, ` +
+          `${seen.size} different rules, commonest ${top?.[0] ?? 'none'}`
       );
     }
   }
@@ -9920,8 +9920,8 @@ rule('THE COLLECTION — do crystals arrive, and do they grow?');
       made.ok ? String(made.item.meta.scripted) : '—'
     );
     check(
-      giftWaiting(g) === null && giftSchedule(g).includes('at a depth'),
-      'and everything after that is a quest rather than a schedule',
+      giftWaiting(g) === null && /rung \d+/.test(giftSchedule(g)),
+      'and everything after that is a DEPTH, named by rung rather than scheduled',
       giftSchedule(g)
     );
   }
@@ -10296,6 +10296,191 @@ rule('THE COLLECTION — do crystals arrive, and do they grow?');
     giftWaiting(met) === null,
     'and once he has handed those over the Lampwright owes nothing at all',
     JSON.stringify(giftWaiting(met))
+  );
+}
+
+// ===========================================================================
+rule('THE ROCK\'S OWN RULES — does a crystal DO something, or just add up?');
+
+// *"Change all the mods to be effectively just powerful nodes from the trials
+// tree. Like for example it could be 50% chance for enemies guarding a box to
+// all respawn once they die."* Eleven modifiers used to be a bigger number on a
+// body; raw scaling is the RUNG's now. So every one of these has to be provable
+// by PLAYING a descent — it fires, it pays, and the room still empties.
+{
+  /** A set carrying exactly one mechanic, at the top of its range, and nothing
+   *  else — so what the descent does differently is that mechanic alone. */
+  const carrying = (stat: string, value: number): Item[] => {
+    const crystal = makeCrystal(4);
+    crystal.mods = [
+      {
+        entryId: `probe_${stat}`,
+        defId: 'probe',
+        group: `probe_${stat}`,
+        slot: 'mod',
+        name: `of the ${stat}`,
+        tier: 1,
+        tags: [],
+        stats: [{ stat, form: 'flat', value, tags: [] }],
+      },
+    ];
+    return [crystal];
+  };
+  const bare: Item[] = [makeCrystal(4)];
+  const who = () => ladderCharacter(5, new Rng(7));
+  const play = (set: Item[], seed: number) => {
+    const sim = new RunSim(set, who(), new Rng(seed));
+    const end = runToCompletion(sim, 900);
+    return { sim, end };
+  };
+
+  // EVERY ONE OF THEM HAS TO END. A rule that puts bodies back on the floor is
+  // a rule that can loop for ever, and that is the only way any of these can
+  // break the game rather than merely balance it.
+  const ends: string[] = [];
+  for (const [stat, value] of [
+    ['watchChance', 100], ['veinChance', 100], ['splitChance', 100],
+    ['wardenChance', 100], ['giltChance', 100], ['hoardChance', 100],
+    ['wellChance', 100], ['monsterRank', 400],
+  ] as Array<[string, number]>) {
+    const { end } = play(carrying(stat, value), 6161);
+    if (end.status === 'running') ends.push(`${stat} never finished`);
+  }
+  check(
+    ends.length === 0,
+    'every one of them at 100% still empties the room — nothing here can loop',
+    ends.join(', ')
+  );
+
+  // THE SECOND WATCH, the user's own: a Hoard's guards stand back up ONCE. So
+  // what has to hold is that they come back AND that they come back once —
+  // the flag is on the lock, so a room can never grow past twice its guards.
+  {
+    const set = carrying('hoardChance', 100);
+    set[0].mods.push({ ...set[0].mods[0], entryId: 'probe_watch', group: 'probe_watch',
+      stats: [{ stat: 'watchChance', form: 'flat', value: 100, tags: [] }] });
+    const { sim } = play(set, 5252);
+    const risen = sim.state.hoards.filter((h) => h.risen).length;
+    const opened = sim.state.hoards.filter((h) => h.opened).length;
+    const guards = sim.state.monsters.filter((m) => m.hoard).length;
+    line(`  the Second Watch: ${sim.state.hoards.length} locks, ${risen} stood back up, ` +
+      `${opened} opened, ${guards} guards put down in all`);
+    check(
+      risen > 0 && opened === risen,
+      'a Hoard\'s guards stand back up, and the lock still opens after they do',
+      `${risen} rose, ${opened} opened of ${sim.state.hoards.length}`
+    );
+    // ONCE. Every lock that rose is flagged, and nothing clears the flag, so
+    // the count of risen locks can never exceed the count of locks.
+    check(
+      risen <= sim.state.hoards.length,
+      'and no lock ever does it twice — the flag is on the lock, not a counter',
+      `${risen} risings over ${sim.state.hoards.length} locks`
+    );
+  }
+
+  // THE VEIN pays CURRENCY where a Hoard pays gear: the same guard and the same
+  // lock, a different thing behind it, which is what makes the pair a decision.
+  {
+    const vein = play(carrying('veinChance', 100), 4242);
+    const hoard = play(carrying('hoardChance', 100), 4242);
+    const coin = (s: typeof vein) =>
+      Object.entries(s.end.loot.currency).filter(([id]) => id !== 'gold')
+        .reduce((n, [, v]) => n + v, 0);
+    line(`  a Vein pays ${coin(vein)} currency and ${vein.end.loot.items.length} pieces; ` +
+      `a Hoard ${coin(hoard)} and ${hoard.end.loot.items.length}`);
+    check(
+      vein.sim.state.hoards.every((h) => h.pays === 'currency')
+        && hoard.sim.state.hoards.every((h) => h.pays === 'gear'),
+      'a Vein and a Hoard are the same lock and pay different things',
+      `${vein.sim.state.hoards.length} veins, ${hoard.sim.state.hoards.length} hoards`
+    );
+    check(
+      coin(vein) > coin(hoard),
+      'and the Vein is the one that pays in currency',
+      `${coin(vein)} against ${coin(hoard)}`
+    );
+  }
+
+  // THE WARDEN: nothing in its pack can be hurt while it stands, and the warden
+  // itself always can — which is the whole reason the room still empties.
+  {
+    const { sim } = play(carrying('wardenChance', 100), 3333);
+    const wardens = sim.state.monsters.filter((m) => m.warden);
+    check(
+      wardens.length > 0 && wardens.every((m) => m.dead),
+      'a warded pack cannot be finished without its Warden, so every one is down',
+      `${wardens.filter((m) => m.dead).length}/${wardens.length} down`
+    );
+    // Put in front of the sim: a sheltered body takes NOTHING, and the same
+    // body takes damage the moment its warden is gone.
+    const probe = new RunSim(carrying('wardenChance', 100), who(), new Rng(3333)) as any;
+    const warden = probe.state.monsters.find((m: any) => m.warden);
+    const kin = probe.state.monsters.find((m: any) => !m.warden && m.pack === warden?.pack);
+    const life = kin?.life ?? 0;
+    probe.dealDamage(probe.state.hero, kin, 1, undefined);
+    const sheltered = kin.life;
+    warden.dead = true;
+    probe.dealDamage(probe.state.hero, kin, 1, undefined);
+    check(
+      sheltered === life && kin.life < life,
+      'and a hit on one of its pack lands for NOTHING until the Warden is down',
+      `${life} → ${sheltered} warded → ${kin.life} after`
+    );
+  }
+
+  // THE SPLITTING is the Welling's mirror: what dies leaves one of the rank
+  // BELOW, and a common leaves nothing. The ladder is the termination proof.
+  {
+    const { sim, end } = play(carrying('splitChance', 100), 2121);
+    const split = sim.state.monsters.filter((m) => m.split);
+    const commons = split.filter((m) => m.rank === MONSTER_RANKS[0].id);
+    line(`  the Splitting: ${end.totalMonsters} bodies from ${sim.state.monsters.length - split.length} spawned, ` +
+      `${split.length} of them split off`);
+    check(
+      split.length > 0 && split.every((m) => !MONSTER_RANKS[0] || m.rank !== undefined),
+      'a body leaves one of the rank below it',
+      `${split.length} split off`
+    );
+    check(
+      commons.every((m) => m.split) && end.status !== 'running',
+      'and a common leaves nothing, which is what bounds it',
+      `${commons.length} commons off splits, run ${end.status}`
+    );
+  }
+
+  // GILDED is the one with no danger on it at all: pure coin, priced as the
+  // find modifiers are — the cost is the socket and the slot a rule is not in.
+  {
+    const gilt = play(carrying('giltChance', 100), 1717);
+    const plain = play(bare, 1717);
+    line(`  Gilded pays ${Math.round(gilt.end.loot.currency.gold ?? 0)} gold against ` +
+      `${Math.round(plain.end.loot.currency.gold ?? 0)}`);
+    check(
+      (gilt.end.loot.currency.gold ?? 0) > (plain.end.loot.currency.gold ?? 0),
+      'Gilded pays coin off a body on top of what the kill already paid',
+      `${Math.round(gilt.end.loot.currency.gold ?? 0)} against ${Math.round(plain.end.loot.currency.gold ?? 0)}`
+    );
+    check(
+      Math.abs(runSet(carrying('giltChance', 100)).rewards.danger
+        - runSet(bare).rewards.danger) < 1e-6,
+      'and carries no danger, so it is never paid for twice',
+      `${runSet(carrying('giltChance', 100)).rewards.danger}`
+    );
+  }
+
+  // THE POOL, said as one fact: what a crystal rolls is what the floor DOES.
+  const crystalMods = ALL_MODS.filter((m) => m.appliesTo.includes('crystal'));
+  const inflation = crystalMods.filter((m) =>
+    m.tiers.some((t) => t.stats.some((st) =>
+      ['monsterLife', 'monsterDamage', 'monsterArmour', 'monsterCrit', 'monsterMoveSpeed'].includes(st.stat)
+        || st.stat.endsWith('Res')))
+  );
+  line(`  ${crystalMods.length} crystal modifiers, ${inflation.length} of them a bigger number on a body`);
+  check(
+    inflation.length === 0,
+    'and NOTHING a crystal rolls is raw monster scaling any more — that is the rung\'s',
+    inflation.map((m) => m.id).join(', ')
   );
 }
 

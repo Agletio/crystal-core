@@ -74,7 +74,12 @@ import {
   socketPackSize,
   socketPacks,
   socketSize,
+  GILT,
   HOARD,
+  SPLIT,
+  VEIN,
+  WARDEN,
+  WATCH,
   RELIC_BY_ID,
   AILMENTS,
   AILMENT_BY_ID,
@@ -266,6 +271,12 @@ export interface Entity {
   defId?: string;
   abilityId?: string;
   welled?: boolean; // came up out of a body rather than being spawned with the map
+  /** Which PACK it spawned with, so a Warden can shelter its own and nobody
+   *  else's. Absent on anything the map did not spawn. */
+  pack?: number;
+  /** THE WARDEN: while this one stands, nothing else in its pack can be hurt. */
+  warden?: boolean;
+  split?: boolean; // came out of a body that split, and so cannot split again
   bears?: string; // a `RelicDef` id this body is carrying, handed over when it dies
   /** Just out of a Freeze: the next hit on it is a Critical, whatever your
    *  chance is. Crit comes back to an ailment from THIS side and no other. */
@@ -290,6 +301,10 @@ export interface Hoard {
   x: number;
   y: number;
   opened: boolean;
+  /** A VEIN pays currency where a Hoard pays gear: same lock, different thing. */
+  pays: 'gear' | 'currency';
+  /** THE SECOND WATCH has already put this one's guards back up. Once, ever. */
+  risen?: boolean;
 }
 
 export interface Floater {
@@ -514,6 +529,9 @@ export class RunSim {
   private statsFor = new Map<string, CombatStats>(); // per kind, ability and RANK
   /** Read once: rolled per death, and only ever when something bought it. */
   private wellChance = 0;
+  private splitChance = 0;
+  private giltChance = 0;
+  private watchChance = 0;
   private byId = new Map<number, Entity>();
   /**
    * The socketed set: how long the run is, how dangerous, and what it pays.
@@ -539,6 +557,9 @@ export class RunSim {
     this.skill = effectiveSkill(SKILL_BY_ID[mainSkillId(character)] ?? SKILLS[0], this.grants);
     this.set = runSet(crystals, trialMod(character), options.rung);
     this.wellChance = percentStat(this.set.mods, 'wellChance');
+    this.splitChance = percentStat(this.set.mods, 'splitChance');
+    this.giltChance = percentStat(this.set.mods, 'giltChance');
+    this.watchChance = percentStat(this.set.mods, 'watchChance');
 
     const def = options.scene ? SCENE_BY_ID[options.scene] : undefined;
     const plan = def?.plan;
@@ -816,6 +837,10 @@ export class RunSim {
     // Rolled ONLY when something bought it, or a set with no Hoards in it would
     // still spend a draw a set with none does not, and the seed would part.
     const hoardChance = percentStat(this.set.mods, 'hoardChance');
+    // A VEIN is a Hoard that pays currency, rolled AFTER it so a set carrying
+    // both cannot put two locks on one pack.
+    const veinChance = percentStat(this.set.mods, 'veinChance');
+    const wardenChance = percentStat(this.set.mods, 'wardenChance');
     // A gate is a WALL: the pool is filtered before the pick, so a Bearer in
     // the Fissure can never be carrying a corpse the Rot owns.
     const carried = RELICS.filter((r) => opensHere(r.gate, this.set.power, this.set.theme));
@@ -824,13 +849,22 @@ export class RunSim {
     for (let p = 0; p < packCount; p++) {
       const room = this.rng.pick(rooms) ?? rooms[0];
       const hoarded = hoardChance > 0 && this.rng.chance(hoardChance / 100);
-      const hoard = hoarded ? ++this.nextHoard : 0;
-      const lift = 1 + (rank0 + (hoarded ? HOARD.rank : 0)) / 100;
-      const guards = hoarded ? Math.round(packSize * HOARD.size) : packSize;
-      if (hoarded) {
+      // One lock a pack: the last guard down answers for one thing.
+      const veined = !hoarded && veinChance > 0 && this.rng.chance(veinChance / 100);
+      const locked = hoarded || veined;
+      const hoard = locked ? ++this.nextHoard : 0;
+      const lift = 1 + (rank0 + (locked ? HOARD.rank : 0)) / 100;
+      const guards = locked ? Math.round(packSize * HOARD.size) : packSize;
+      if (locked) {
         const middle = roomCenter(room); // a PROP: both renderers already draw one
         map.props.push({ id: HOARD.prop, x: middle.x, y: middle.y });
-        this.putDown.push({ id: hoard, x: middle.x, y: middle.y, opened: false });
+        this.putDown.push({
+          id: hoard,
+          x: middle.x,
+          y: middle.y,
+          opened: false,
+          pays: veined ? 'currency' : 'gear',
+        });
       }
 
       // One kind per pack. Mixed packs read as noise; a uniform pack reads as
@@ -838,17 +872,19 @@ export class RunSim {
       const pool = MONSTERS_BY_FAMILY[plan[p] ?? 'normal'];
       const def = this.rng.weighted(pool, (m) => m.weight) ?? pool[0];
       // Per PACK, off the half of the table this BODY can do: two elements in
-      // one pack read as noise, and the pack that shoots is one you can see.
+      // one pack read as noise.
       const ability = this.abilityFor(def);
       const thrown = ability.skill ? SKILL_BY_ID[ability.skill] : undefined;
-      // One carrier per pack, whatever the kind. Five Chanters would stack
-      // five chants on their own neighbours, and read on screen as fog rather
-      // than as a thing in the middle of the room worth killing first.
+      // One carrier per pack: five Chanters stacking five chants on their own
+      // neighbours reads as fog rather than a thing worth killing first.
       const carrier = def.aura ? this.rng.int(0, guards - 1) : -1;
       // One body at the top rung holding what somebody upstairs wants.
       const bearing = bearerChance > 0 && this.rng.chance(bearerChance / 100);
       const bearer = bearing ? this.rng.int(0, guards - 1) : -1;
       const relic = bearing ? this.rng.pick(carried) : undefined;
+      // THE WARDEN, rolled per pack like every other body-picker here.
+      const warding = wardenChance > 0 && this.rng.chance(wardenChance / 100);
+      const warden = warding ? this.rng.int(0, guards - 1) : -1;
 
       // Stats differ between the melee and ranged variants of a kind, so they
       // key separately — a ranged pack reaches much further and has to notice
@@ -860,7 +896,12 @@ export class RunSim {
         const rank =
           i === bearer
             ? MONSTER_RANKS[MONSTER_RANKS.length - 1]
-            : this.rng.weighted(MONSTER_RANKS, (r) => rankWeight(r, lift)) ?? MONSTER_RANKS[0];
+            : this.rng.weighted(
+                MONSTER_RANKS,
+                // A WARDEN is what the pack is standing behind, so it is drawn
+                // off a heavily lifted ladder rather than at the pack's own.
+                (r) => rankWeight(r, i === warden ? lift * (1 + WARDEN.rank / 100) : lift)
+              ) ?? MONSTER_RANKS[0];
         const stats = this.rankedStats(def, ability, rank);
 
         const radius = def.radius * rank.scale;
@@ -877,6 +918,8 @@ export class RunSim {
           abilityId: ability.id,
           ...(i === bearer && relic ? { bears: relic.id } : {}),
           ...(def.aura && i === carrier ? { aura: def.aura } : {}),
+          pack: p,
+          ...(i === warden ? { warden: true } : {}),
           x: at.x,
           y: at.y,
           facing: this.rng.float(0, Math.PI * 2),
@@ -1858,6 +1901,31 @@ export class RunSim {
     );
     if (candidates.length === 0) return null;
 
+    // THE WARDEN IS ANSWERED HERE, because automation is universal: a hero
+    // picking by count would swing at a body taking nothing while its pack ate
+    // him, so the answer ships rather than being a thing a player does.
+    const open = candidates.filter((m) => !this.sheltered(m));
+    // Nothing in reach is worth a swing, so this is not a target at all: the
+    // caller walks instead. A sheltered body implies a LIVING warden, and a
+    // warden is never sheltered, so something hittable always exists to walk
+    // to — which is what stops a warded room stalling a headless run.
+    if (open.length === 0) return null;
+    if (open.length < candidates.length) return this.bestOf(hero, open);
+
+    return this.bestOf(hero, candidates);
+  }
+
+  /** Behind a Warden still standing. Asked by the target picker AND by
+   *  `dealDamage`, so what he swings at and what lands are one answer. */
+  private sheltered(m: Entity): boolean {
+    if (m.warden || m.pack === undefined) return false;
+    return this.state.monsters.some((o) => !o.dead && o.warden && o.pack === m.pack);
+  }
+
+  /** Whichever of these an area skill catches most of, ties to the closer. */
+  private bestOf(hero: Entity, candidates: Entity[]): Entity | null {
+    if (candidates.length === 0) return null;
+    const radius = this.areaRadiusFor(hero);
     let best = candidates[0];
     let bestScore = -1;
     let bestDist = Infinity;
@@ -1893,7 +1961,11 @@ export class RunSim {
   private acquireTarget(hero: Entity): Entity | null {
     if (hero.targetId !== null) {
       const held = this.byId.get(hero.targetId);
-      if (held && !held.dead) return held;
+      // A held target that is BEHIND A WARDEN is dropped rather than kept: it
+      // cannot be hurt and it cannot die, so holding it is a hero swinging at
+      // one body for ever while its pack eats him. The one deadlock this whole
+      // mechanic could produce, and it is here rather than in the damage.
+      if (held && !held.dead && !this.sheltered(held)) return held;
       hero.targetId = null;
       hero.path = [];
     }
@@ -1901,7 +1973,7 @@ export class RunSim {
     const { grid } = this.state.map;
     const occupancy = new Map<number, Entity>();
     for (const m of this.state.monsters) {
-      if (m.dead) continue;
+      if (m.dead || this.sheltered(m)) continue;
       const key = Math.round(m.y) * grid.width + Math.round(m.x);
       if (!occupancy.has(key)) occupancy.set(key, m);
     }
@@ -2424,6 +2496,13 @@ export class RunSim {
   ): void {
     const s = this.state;
     if (defender.dead) return;
+
+    // THE WARDEN, asked before anything rolls so a sheltered hit costs no draw
+    // and the seed still replays. The warden itself is always hurtable.
+    if (defender.kind === 'monster' && this.sheltered(defender)) {
+      s.floaters.push({ x: defender.x, y: defender.y, text: 'warded', age: 0, crit: false, on: 'monster' });
+      return;
+    }
 
     // A Block stops a HIT and nothing else: an ailment ticks straight through
     // it, exactly as it does through armour. Rolled only when there is a chance
@@ -3222,6 +3301,8 @@ export class RunSim {
     this.spreadAilments(victim);
     this.openHoard(victim);
     this.wellUp(victim);
+    this.splitDown(victim);
+    this.gild(victim);
     // Its own path, never `rollRelicDrop`: that loops every row, so a Bearer
     // going through it would hand over the OTHER relic as well.
     const borne = victim.bears ? RELIC_BY_ID[victim.bears] : undefined;
@@ -3284,14 +3365,12 @@ export class RunSim {
   }
 
   /**
-   * THE WELLING: a death brings something up out of the body, one rank higher.
+   * THE WELLING: a death brings something up out of the body, one rank HIGHER.
    *
-   * The rank LADDER is the whole termination proof and there is no counter: a
-   * body comes up one rung above what died, and the top rung — `risen`, weight
-   * 0, which nothing rolls — wells nothing. So one common death raises at most
-   * a magic, a rare and a risen, and a descent can never grow past four times
-   * what it spawned with. That beat a per-descent cap and a decaying chance,
-   * both of which bound the chain with a number somebody has to tune.
+   * The rank LADDER is the termination proof and there is no counter: the top
+   * rung — `risen`, weight 0 — wells nothing, so a descent can never grow past
+   * four times what it spawned with. That beat a per-descent cap and a decaying
+   * chance, both of which bound the chain with a number somebody must tune.
    */
   private wellUp(victim: Entity): void {
     if (this.wellChance <= 0 || victim.kind !== 'monster') return;
@@ -3338,22 +3417,118 @@ export class RunSim {
       welled: true,
       dead: false,
     };
+    this.putUp(born);
+  }
+
+  /** THE SPLITTING: what dies leaves ONE of the rank below. The Welling's
+   *  mirror, terminating by the same argument — the LADDER is the proof and
+   *  there is no counter. A common leaves nothing, so a room is bounded. */
+  private splitDown(victim: Entity): void {
+    if (this.splitChance <= 0 || victim.kind !== 'monster') return;
+    const at = MONSTER_RANKS.findIndex((r) => r.id === victim.rank);
+    const rank = MONSTER_RANKS[at - 1];
+    const def = MONSTER_BY_ID[victim.defId ?? ''];
+    const ability = MONSTER_ABILITIES.find((a) => a.id === victim.abilityId);
+    if (!rank || !def || !ability) return;
+    if (!this.rng.chance(this.splitChance / 100)) return;
+
+    const stats = this.rankedStats(def, ability, rank);
+    const thrown = ability.skill ? SKILL_BY_ID[ability.skill] : undefined;
+    this.putUp({
+      ...victim,
+      id: this.nextId++,
+      rank: rank.id,
+      scale: def.scale * rank.scale,
+      radius: def.radius * rank.scale,
+      skillId: thrown ? ability.skill : null,
+      bounty: rank.bounty,
+      stats,
+      // A SHARE, so a split pack is a mopping-up and not the fight again.
+      life: stats.maxLife * SPLIT.life,
+      mana: 0,
+      ailments: [],
+      effects: [],
+      cooldown: 0,
+      path: [],
+      pathTimer: 0,
+      targetId: null,
+      walked: 0,
+      aggroed: true,
+      hitFlash: 0,
+      deathAge: 0,
+      actionTimer: 0,
+      action: 'idle',
+      hoard: undefined, // it guards nothing: the lock was the body that fell
+      bears: undefined,
+      warden: undefined,
+      split: true,
+      dead: false,
+    });
+  }
+
+  /** GILDED: coin where the body fell, on top of what the kill paid. */
+  private gild(victim: Entity): void {
+    if (this.giltChance <= 0 || victim.kind !== 'monster') return;
+    if (!this.rng.chance(this.giltChance / 100)) return;
+    const paid = GILT.gold * victim.bounty;
+    this.state.loot.currency.gold = (this.state.loot.currency.gold ?? 0) + paid;
+    this.state.floaters.push({
+      x: victim.x, y: victim.y, text: `+${Math.round(paid)}`, age: 0, crit: false, on: 'monster',
+    });
+  }
+
+  /** One more body, counted so the readout cannot tick backwards. */
+  private putUp(born: Entity): void {
     this.state.monsters.push(born);
     this.byId.set(born.id, born);
-    // Or the readout ticks down and then climbs, which reads as a bug.
     this.state.totalMonsters++;
   }
 
-  /** The last guard is down, so the Hoard opens. Nothing is clicked and nothing
-   *  is walked to — the guard WAS the lock, which is what lets a headless run
-   *  open every one it can beat with no policy to ship. */
+  /**
+   * The last guard is down, so the lock opens — a HOARD pays gear, a VEIN pays
+   * currency. Nothing is clicked: the guard WAS the lock.
+   *
+   * THE SECOND WATCH stands between the two — *"50% chance for enemies guarding
+   * a box to all respawn once they die."* ONCE per lock, flagged on the lock,
+   * so a room never grows past twice the guards it spawned with.
+   */
   private openHoard(victim: Entity): void {
     if (!victim.hoard) return;
     const box = this.state.hoards.find((h) => h.id === victim.hoard);
     if (!box || box.opened) return;
     if (this.state.monsters.some((m) => !m.dead && m.hoard === victim.hoard)) return;
 
+    if (this.watchChance > 0 && !box.risen && this.rng.chance(this.watchChance / 100)) {
+      box.risen = true;
+      // Every one of them, where it fell. They come up AWAKE, because they were.
+      for (const body of this.state.monsters) {
+        if (body.hoard !== box.id || !body.dead) continue;
+        this.putUp({
+          ...body,
+          id: this.nextId++,
+          life: body.stats.maxLife * WATCH.life,
+          ailments: [],
+          effects: [],
+          deathAge: 0,
+          hitFlash: 0,
+          cooldown: 0,
+          path: [],
+          pathTimer: 0,
+          targetId: null,
+          aggroed: true,
+          action: 'idle',
+          actionTimer: 0,
+          dead: false,
+        });
+      }
+      return;
+    }
+
     box.opened = true;
+    if (box.pays === 'currency') {
+      for (let i = 0; i < VEIN.drops; i++) this.rollCurrency();
+      return;
+    }
     for (let i = 0; i < HOARD.drops; i++) this.dropGear();
   }
 

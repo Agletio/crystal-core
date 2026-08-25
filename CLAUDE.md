@@ -216,6 +216,22 @@ roll on every socketed crystal and drops it at zero; a DEATH spends none,
 because failing a rung already costs nothing but time. Gear never carries one.
 A roll running out is the sixth thing that ends an Enter-chain.
 
+**A CRYSTAL ROLLS A RULE, NEVER A NUMBER ON A BODY.** *"Change all the mods to
+be effectively just powerful nodes from the trials tree. Like for example it
+could be 50% chance for enemies guarding a box to all respawn once they die."*
+Eleven modifiers used to be monster life, damage, armour, crit, three added
+elements, speed and three wards; raw scaling is the RUNG's now and every one of
+the fifteen is something the floor DOES — the Second Watch, the Hoard, the Vein,
+the Warden, the Splitting, the Welling, the Bearer, the Watched, Gilded, density
+and layout, and what a run is pointed at. Not one of them is a resistance, so
+there is no crystal roll a build walks past. **A rule that puts bodies back on
+the floor needs a TERMINATION PROOF, and it is never a counter**: the Second
+Watch is flagged on the lock, the Welling climbs a rank ladder that ends, the
+Splitting descends one that ends at common, and a Warden is always hurtable
+itself. **The Warden's answer SHIPS** — `sheltered` is asked by the target
+picker AND by `dealDamage`, so a headless hero walks to the warden rather than
+swinging at a body taking nothing.
+
 Four sockets hold crystals permanently. Their COUNT is how long a run is, their
 MODIFIERS how hard it is; a crystal's LEVEL buys capacity and tier, and its
 FAMILY (Normal / Demonic / Prismatic) picks which monsters spawn and which

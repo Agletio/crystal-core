@@ -869,9 +869,8 @@ export const WARD_GROUPS = [
   { id: 'physical', name: 'of Thick Hide', types: ['physical'] },
 ];
 
-/** DESCENTS A CRYSTAL ROLL IS WORTH, off the tier's own WEIGHT: what decides
- *  how OFTEN it turns up decides how LONG it stays, so a high tier is stronger
- *  and burns faster — *"super rare ones last less."* */
+/** DESCENTS A ROLL IS WORTH, off its tier's own WEIGHT: what decides how OFTEN
+ *  it turns up decides how LONG it stays — *"super rare ones last less."* */
 export const USES = { most: 20, least: 5, common: 1000, rare: 100 };
 
 export function usesFor(weight: number): number {
@@ -906,120 +905,121 @@ export const CRYSTAL_MODS: ModDef[] = [
   },
   // Reward is derived from danger, so no crystal modifier is pure upside: a mod
   // that only gave you something would be a mod with no decision in it.
+  // --- what the ROCK DOES, never what a monster's numbers are -------------
+  //
+  // *"Change all the mods to be effectively just powerful nodes from the trials
+  // tree."* Eleven rows here were a bigger number on a body; raw scaling is the
+  // RUNG's now, so every row under this is a rule the sim runs.
+
   {
-    id: 'monster_armour',
+    id: 'crystal_watch',
     slot: 'mod',
-    name: 'of Hardened Hide',
+    name: 'of the Second Watch',
     appliesTo: ['crystal'],
-    tags: ['danger'],
-    // Armour is POINTS — it feeds armourReduction, which curves them into a
-    // percentage. Written as 'inc' it multiplied a base of zero and did
-    // nothing at all; these same numbers are meaningful as flat armour.
+    tags: ['danger', 'hoard'],
     tiers: [
-      {
-        ilvl: 60,
-        weight: 150,
-        name: 'of Scaled Hide',
-        stats: [
-          { stat: 'monsterArmour', form: 'flat', range: [110, 160] },
-          { stat: 'monsterArmour', form: 'inc', range: [50, 70] },
-        ],
-      },
-      {
-        ilvl: 45,
-        weight: 300,
-        stats: [
-          { stat: 'monsterArmour', form: 'flat', range: [60, 90] },
-          { stat: 'monsterArmour', form: 'inc', range: [30, 45] },
-        ],
-      },
-      { ilvl: 1, weight: 800, stats: [{ stat: 'monsterArmour', form: 'flat', range: [25, 45] }] },
+      { ilvl: 55, weight: 170, stats: [{ stat: 'watchChance', form: 'flat', range: [55, 75] }], name: 'of the Long Watch' },
+      { ilvl: 20, weight: 460, stats: [{ stat: 'watchChance', form: 'flat', range: [30, 50] }] },
+      { ilvl: 1, weight: 820, stats: [{ stat: 'watchChance', form: 'flat', range: [15, 28] }], name: 'of the Standing Watch' },
     ],
   },
   {
-    id: 'monster_crit',
+    id: 'crystal_hoard',
     slot: 'mod',
-    name: 'of Cruelty',
+    name: 'of the Hoard',
     appliesTo: ['crystal'],
-    tags: ['danger'],
+    tags: ['danger', 'hoard', 'quantity'],
     tiers: [
-      { ilvl: 60, weight: 130, name: 'of Malice', stats: [{ stat: 'monsterCrit', form: 'inc', range: [45, 65] }] },
-      { ilvl: 50, weight: 250, stats: [{ stat: 'monsterCrit', form: 'inc', range: [25, 40] }] },
-      { ilvl: 1, weight: 700, stats: [{ stat: 'monsterCrit', form: 'inc', range: [10, 20] }] },
-    ],
-  },
-  /* Three modifiers, one per element, rather than one that rolls which: a
-     crystal modifier is read and answered with a resistance, and a name saying
-     Cinders over a roll saying cold is worse than two more rows. Each ADDS a
-     share of what a monster already hits for, as its own type on top of what
-     the monster brings, so a ward blunts it rather than switching it off. */
-  {
-    id: 'monster_fire',
-    slot: 'mod',
-    name: 'of Cinders',
-    appliesTo: ['crystal'],
-    tags: ['danger', 'fire'],
-    tiers: [
-      { ilvl: 40, weight: 280, stats: [{ stat: 'monsterFire', form: 'inc', range: [225, 375] }] },
-      { ilvl: 1, weight: 700, stats: [{ stat: 'monsterFire', form: 'inc', range: [35, 75] }] },
+      { ilvl: 50, weight: 190, stats: [{ stat: 'hoardChance', form: 'flat', range: [26, 38] }], name: 'of the Cache' },
+      { ilvl: 20, weight: 520, stats: [{ stat: 'hoardChance', form: 'flat', range: [14, 24] }] },
+      { ilvl: 1, weight: 900, stats: [{ stat: 'hoardChance', form: 'flat', range: [6, 12] }], name: 'of the Stash' },
     ],
   },
   {
-    id: 'monster_cold',
+    id: 'crystal_vein',
     slot: 'mod',
-    name: 'of Frost',
+    name: 'of the Vein',
     appliesTo: ['crystal'],
-    tags: ['danger', 'cold'],
+    tags: ['danger', 'hoard', 'finding'],
     tiers: [
-      { ilvl: 40, weight: 280, stats: [{ stat: 'monsterCold', form: 'inc', range: [225, 375] }] },
-      { ilvl: 1, weight: 700, stats: [{ stat: 'monsterCold', form: 'inc', range: [35, 75] }] },
+      { ilvl: 50, weight: 180, stats: [{ stat: 'veinChance', form: 'flat', range: [24, 36] }], name: 'of the Lode' },
+      { ilvl: 20, weight: 500, stats: [{ stat: 'veinChance', form: 'flat', range: [13, 22] }] },
+      { ilvl: 1, weight: 880, stats: [{ stat: 'veinChance', form: 'flat', range: [6, 11] }], name: 'of the Seam' },
     ],
   },
   {
-    id: 'monster_lightning',
+    id: 'crystal_warden',
     slot: 'mod',
-    name: 'of Storms',
-    appliesTo: ['crystal'],
-    tags: ['danger', 'lightning'],
-    tiers: [
-      { ilvl: 40, weight: 280, stats: [{ stat: 'monsterLightning', form: 'inc', range: [225, 375] }] },
-      { ilvl: 1, weight: 700, stats: [{ stat: 'monsterLightning', form: 'inc', range: [35, 75] }] },
-    ],
-  },
-  {
-    id: 'monster_damage',
-    slot: 'mod',
-    name: 'of Ferocity',
+    name: 'of the Warden',
     appliesTo: ['crystal'],
     tags: ['danger'],
     tiers: [
-      { ilvl: 60, weight: 180, name: 'of Savagery', stats: [{ stat: 'monsterDamage', form: 'inc', range: [450, 640] }] },
-      { ilvl: 40, weight: 400, stats: [{ stat: 'monsterDamage', form: 'inc', range: [175, 250] }] },
-      { ilvl: 1, weight: 900, stats: [{ stat: 'monsterDamage', form: 'inc', range: [45, 90] }] },
+      { ilvl: 55, weight: 160, stats: [{ stat: 'wardenChance', form: 'flat', range: [45, 65] }], name: 'of the Keeper' },
+      { ilvl: 20, weight: 470, stats: [{ stat: 'wardenChance', form: 'flat', range: [22, 38] }] },
+      { ilvl: 1, weight: 850, stats: [{ stat: 'wardenChance', form: 'flat', range: [10, 18] }], name: 'of the Watchman' },
     ],
   },
   {
-    id: 'monster_life',
+    id: 'crystal_split',
     slot: 'mod',
-    name: 'of Resilience',
+    name: 'of the Splitting',
     appliesTo: ['crystal'],
-    tags: ['danger'],
+    tags: ['danger', 'density'],
     tiers: [
-      { ilvl: 60, weight: 180, name: 'of Endurance', stats: [{ stat: 'monsterLife', form: 'inc', range: [400, 560] }] },
-      { ilvl: 40, weight: 400, stats: [{ stat: 'monsterLife', form: 'inc', range: [150, 225] }] },
-      { ilvl: 1, weight: 900, stats: [{ stat: 'monsterLife', form: 'inc', range: [35, 75] }] },
+      { ilvl: 55, weight: 175, stats: [{ stat: 'splitChance', form: 'flat', range: [50, 70] }], name: 'of the Sundering' },
+      { ilvl: 20, weight: 490, stats: [{ stat: 'splitChance', form: 'flat', range: [26, 44] }] },
+      { ilvl: 1, weight: 870, stats: [{ stat: 'splitChance', form: 'flat', range: [12, 22] }], name: 'of the Parting' },
     ],
   },
   {
-    id: 'monster_speed',
+    id: 'crystal_welling',
     slot: 'mod',
-    name: 'of Swiftness',
+    name: 'of the Welling',
     appliesTo: ['crystal'],
     tags: ['danger'],
     tiers: [
-      { ilvl: 1, weight: 700, stats: [{ stat: 'monsterMoveSpeed', form: 'inc', range: [10, 22] }] },
+      { ilvl: 55, weight: 165, stats: [{ stat: 'wellChance', form: 'flat', range: [16, 24] }], name: 'of the Rising' },
+      { ilvl: 20, weight: 480, stats: [{ stat: 'wellChance', form: 'flat', range: [8, 14] }] },
+      { ilvl: 1, weight: 840, stats: [{ stat: 'wellChance', form: 'flat', range: [3, 7] }], name: 'of the Stirring' },
     ],
   },
+  {
+    id: 'crystal_bearer',
+    slot: 'mod',
+    name: 'of the Bearer',
+    appliesTo: ['crystal'],
+    tags: ['danger'],
+    tiers: [
+      { ilvl: 60, weight: 140, stats: [{ stat: 'bearerChance', form: 'flat', range: [9, 14] }], name: 'of the Procession' },
+      { ilvl: 25, weight: 420, stats: [{ stat: 'bearerChance', form: 'flat', range: [4, 8] }] },
+      { ilvl: 1, weight: 760, stats: [{ stat: 'bearerChance', form: 'flat', range: [2, 3] }], name: 'of the Carrier' },
+    ],
+  },
+  {
+    id: 'crystal_watched',
+    slot: 'mod',
+    name: 'of the Watched',
+    appliesTo: ['crystal'],
+    tags: ['danger', 'quantity'],
+    tiers: [
+      { ilvl: 55, weight: 175, stats: [{ stat: 'monsterRank', form: 'inc', range: [180, 260] }], name: 'of the Assembly' },
+      { ilvl: 20, weight: 500, stats: [{ stat: 'monsterRank', form: 'inc', range: [80, 150] }] },
+      { ilvl: 1, weight: 900, stats: [{ stat: 'monsterRank', form: 'inc', range: [30, 65] }], name: 'of the Few' },
+    ],
+  },
+  // No danger at all, so it is priced as the find modifiers are.
+  {
+    id: 'crystal_gilded',
+    slot: 'mod',
+    name: 'Gilded',
+    appliesTo: ['crystal'],
+    tags: ['finding'],
+    tiers: [
+      { ilvl: 55, weight: 180, stats: [{ stat: 'giltChance', form: 'flat', range: [28, 40] }], name: 'Gold-Struck' },
+      { ilvl: 1, weight: 480, stats: [{ stat: 'giltChance', form: 'flat', range: [10, 20] }] },
+    ],
+  },
+
   {
     id: 'layout_maze',
     slot: 'mod',
@@ -1037,26 +1037,6 @@ export const CRYSTAL_MODS: ModDef[] = [
       },
     ],
   },
-  // The answer is a second damage FAMILY rather than a second element.
-  ...WARD_GROUPS.map((group) => ({
-    id: `monster_${group.id}_ward`,
-    slot: 'mod' as const,
-    name: group.name,
-    appliesTo: ['crystal' as const],
-    tags: ['danger'],
-    tiers: WARD_TIERS.map(
-      ([ilvl, weight, low, high]) => ({
-        ilvl,
-        weight,
-        stats: group.types.map((type) => ({
-          stat: monsterResStat(type),
-          form: 'inc' as const,
-          range: [low, high] as [number, number],
-        })),
-      })
-    ),
-  })),
-
   // What the rock gives up, rather than what it holds. These carry no danger
   // and never raise a drop's item level: the run pays exactly what it paid,
   // in a shape you chose. The cost is the socket, and the mod slot in it
@@ -1823,9 +1803,8 @@ export const CURRENCY_BY_ID: Record<string, CurrencyDef> = Object.fromEntries(
 
 /** A crystal's level is its MOD CAPACITY and nothing else: two blank level 4s
  *  are as dangerous as two blank level 1s. `xp` is the total to sit at it. */
-/** A LEVEL BUYS TWO THINGS and nothing else buys either: `mods` is how many
- *  lines it holds, `tier` the best gear BASE a run may drop. Levelling IS gear
- *  progression now, so `xp` is a real climb — measured in the demo's gauge. */
+/** A LEVEL BUYS `mods` — lines it holds — and `tier`, the best gear BASE a run
+ *  may drop. Levelling IS gear progression, so `xp` is a real climb. */
 export const CRYSTAL_LEVELS = [
   { level: 1, mods: 0, tier: 1, xp: 0 },
   { level: 2, mods: 1, tier: 1, xp: 25 },
@@ -1833,19 +1812,16 @@ export const CRYSTAL_LEVELS = [
   { level: 4, mods: 3, tier: 3, xp: 400 },
 ];
 
-/** WHICH TIER OF MODIFIER A LEVEL ROLLS — a LIFT and never a gate, so the best
- *  stays possible at every level and so does the worst. An entry's weight is
- *  multiplied by this raised to how far its tier sits above the worst its
- *  modifier has. Indexed by crystal level, 1 first. */
+/** WHICH TIER A LEVEL ROLLS — a LIFT, never a gate: an entry's weight raised to
+ *  how far its tier sits above the worst its modifier has, so the best and the
+ *  worst both stay possible at every level. Indexed by level, 1 first. */
 export const MOD_TIER_LIFT = [1, 1.2, 2, 3.6];
 
-/** The best base tier ONE crystal's level allows. */
 export const tierForLevel = (level: number): number =>
   CRYSTAL_LEVELS.find((l) => l.level === Math.round(level))?.tier ?? 1;
 
-/** What one cleared descent is worth to every crystal SOCKETED for it. Danger
- *  is the multiplier; the flat term is why it is `1 + danger`, since four
- *  blanks carry none and would otherwise never level at all. */
+/** What a clear is worth to every SOCKETED crystal. Danger multiplies; the flat
+ *  term is why it is `1 + danger`, or four blanks would never level. */
 export const CRYSTAL_XP = {
   perClear: 1,
   /** Danger points that add one clear's worth on top. */
@@ -1945,10 +1921,9 @@ export interface QuestNeed {
   [param: string]: unknown;
 }
 
-/** WHAT A DEPTH HANDS OVER — *"the entire Crystal handout should be scratched
- *  and it should just be at certain depths instead."* The FAMILY is what a
- *  depth is FOR, since what you socket is where you go. Paid on a rung being
- *  NEWLY cleared. The first change of world is The Answering rung 8. */
+/** WHAT A DEPTH HANDS OVER — *"scratched… just be at certain depths instead."*
+ *  The FAMILY is what a depth is FOR, since what you socket is where you go.
+ *  Paid on a rung being NEWLY cleared; rung 8 is the first change of world. */
 export interface CrystalDepth {
   zone: number; // index into LADDER.zones
   rung: number;
@@ -2131,14 +2106,11 @@ export const socketPackSize = (filled: number): number => rung(filled, SOCKET_SC
  *  defence MULTIPLIES — that build stopped 88% of every hit on 1813 life and
  *  out-REGENERATED the whole map. Read off what danger alone BUYS, so it
  *  saturates where the hero's item level does. */
-/** THE LADDER, in order. A RUNG is CHOSEN — one you have cleared stays open and
- *  failing costs nothing but time — and its difficulty rides the crystal seam
- *  through `rungMod`, so what it pays and drops is arithmetic already written.
- *  `*AtTop` is the LAST rung of the LAST zone; a rung is a share of it, so the
- *  climb is one curve rather than three. `curve` above 1 bites late. */
+/** THE LADDER, in order. A RUNG is CHOSEN, one cleared stays open, and its
+ *  difficulty rides the crystal seam through `rungMod`. `*AtTop` is the LAST
+ *  rung of the LAST zone, so the climb is one curve rather than three. */
 export const LADDER = {
-  // `arena` is the LAST RUNG of the zone: a fight rather than a descent, and
-  // clearing it is what records the rung the zone above opens on.
+  // `arena` is the zone's LAST RUNG: a fight rather than a descent.
   // A zone is DEPTH, never a world: what you walk into is what you SOCKETED.
   // `id` is the save key, still spelt the way the worlds were.
   zones: [
@@ -2164,8 +2136,8 @@ export const LADDER = {
   curve: 1.8,
 };
 
-/** A CHALLENGE FLOOR: a rung that SPIKES rather than steps, and never a zone's
- *  last — that one is the boss's. One more mod on the crystal seam. */
+/** A CHALLENGE FLOOR: a rung that SPIKES rather than steps, never a zone's
+ *  last — that one is the boss's. */
 export const CHALLENGE = {
   every: 4,
   rank: 1600, // percent on every rank above common: the room fills with rares
@@ -3152,7 +3124,34 @@ export const DANGER_STATS: Record<string, DangerStat> = {
   wellChance: { weight: 0.5, rewards: true, cap: 100 },
   // Percent of PACKS carrying a Bearer: a `risen` body roughly triples a pack's
   bearerChance: { weight: 1.2, rewards: true, cap: 100 }, // life, weighed as monsterLife would
+  // Percent of HOARDS whose guards stand back up once: that pack again, halved
+  // because it fires on hoards alone.
+  watchChance: { weight: 0.17, rewards: true, cap: 100 },
+  veinChance: { weight: 0.33, rewards: true, cap: 100 }, // a Hoard's guard
+  // Cheaper than the Welling, which goes the other way: what a split leaves is
+  // always weaker than what fell.
+  splitChance: { weight: 0.3, rewards: true, cap: 100 },
+  // Fight LENGTH rather than threat, so it is weighed the way density is.
+  wardenChance: { weight: 0.45, rewards: true, cap: 100 },
+  giltChance: { weight: 0, rewards: false, cap: 100 }, // coin, and no danger at all
 };
+
+/** THE SECOND WATCH — *"50% chance for enemies guarding a box to all respawn
+ *  once they die."* ONCE, flagged on the HOARD rather than counted. */
+export const WATCH = { life: 1 };
+
+/** THE VEIN: a Hoard that pays CURRENCY. Same guard, same lock. */
+export const VEIN = { drops: 5 };
+
+/** THE SPLITTING: what dies leaves one of the rank below; a common leaves
+ *  nothing, which is the whole of what bounds it. */
+export const SPLIT = { life: 0.55 };
+
+export const GILT = { gold: 14 };
+
+/** THE WARDEN: one body a pack, and nothing else in it can be hurt while it
+ *  stands. It ends because the warden itself always can. */
+export const WARDEN = { rank: 900 };
 
 /** A pack with something in it worth walking towards. Nothing is CLICKED, which
  *  is what makes it legal under universal automation: the last guard down. */

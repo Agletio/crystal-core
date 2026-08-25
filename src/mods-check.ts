@@ -167,7 +167,16 @@ line('\n── EFFECT — does the engine actually read each stat? ────�
     for (const w of families) line(`         ${w}`);
   }
 
-  // Crystal mods land on monsters and on the map generator instead.
+  // EVERY STAT ANY CRYSTAL MOD WRITES, off the pool itself so a new mechanic
+  // cannot be forgotten. A Warden moves no monster stat at all, and reading one
+  // through the danger curve alone is a check passing for the wrong reason.
+  const crystalStats = [
+    ...new Set(
+      crystalPool.entries.flatMap((e) => e.stats.map((st) => st.stat))
+    ),
+  ].sort();
+
+  // They also land on monsters and on the map generator.
   const crystalFingerprint = (mods: RolledMod[]): string => {
     const d = mapDensity(mods);
     const m = monsterStats(mods, MONSTERS.find((x) => x.family === 'normal')!);
@@ -178,6 +187,7 @@ line('\n── EFFECT — does the engine actually read each stat? ────�
       // them would call every ward inert.
       ...DAMAGE_TYPES.map((t) => m.resistances[t.id] ?? 0),
       computeStat(1, mods, 'layoutComplexity'),
+      ...crystalStats.map((stat) => computeStat(0, mods, stat)),
       // What a run is pointed at is a thing the engine reads too: a crystal
       // that hunts weapons changes no monster and no room.
       ...Object.values(dropBias(mods)),

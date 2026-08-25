@@ -789,15 +789,13 @@ renaming one costs the player their climb.
    that ever landed on gear. The card prints `n of N descents left` and lights
    the last one; the report names what ran out; a dry crystal is the sixth thing
    that ends an Enter-chain.
-3. **THE MECHANICS POOL.** Replace the 11 inflation mods with ~20 mechanics.
-   The user's own is first: **The Second Watch** — a Hoard's guards all stand
-   back up once when the last of them falls. Then: **The Slab** (one body a pack
-   takes no damage until the rest are down), **The Chain** (waking one pack
-   wakes the next), **The Toll** (the way out is shut until N packs are down),
-   **The Echo** (a Rare leaves a shade that fights on), **The Grafting** (bodies
-   falling near each other fuse), **The Blooming** (the longer you are down
-   there the more arrives), **The Tithe** (currency held back and paid in one
-   lump at the exit).
+3. ~~**THE MECHANICS POOL.**~~ **DONE.** The 11 inflation modifiers are gone and
+   the pool is 15 rules: five new to the sim — **the Second Watch** (the user's
+   own), **the Vein** (a Hoard that pays currency), **the Warden** (a pack that
+   cannot be hurt until one body is down), **the Splitting** (what dies leaves
+   one of the rank below), **Gilded** (coin off a body) — plus crystal rolls for
+   the four mechanics that already existed in the sim but were trials-only.
+   Measured: 0 of 15 is a resistance or a monster stat.
 4. ~~**THE GATES ARE GONE, and tier is the crystal's LEVEL.**~~ **DONE.**
    `crystalsUnlocked` and `TIER_BY_SOCKETS` deleted; `CRYSTAL_LEVELS` carries a
    `tier` and `tierForSet` reads the MEAN level socketed. Levelling is a real
