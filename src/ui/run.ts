@@ -41,7 +41,7 @@ import { spend } from '../economy';
 import { bagsFull, crystalsIn, socketed, unsocket } from '../game/state';
 import type { GameState } from '../game/state';
 import { crystalProgress, takeDepth } from '../game/crystals';
-import { bossBeaten, folkMet, hasMet, takeBoss, takeMet } from '../game/scenes';
+import { bossBeaten, hasMet, takeBoss, takeMet } from '../game/scenes';
 import { takeTrials } from '../game/trials';
 import { SCENES, SCENE_BY_ID } from '../scenes';
 import type { Hotspot } from '../scenes/camp';
@@ -292,33 +292,10 @@ export function goHome(): boolean {
   return true;
 }
 
-/** WHO IS ABOUT. Everybody you have found, and a button that TALKS to them —
- *  the same conversation clicking their body in the camp starts. A picture is
- *  easy to miss, so this is the readable way to the same thing. */
-function renderFolk(): void {
-  const host = $('run-folk');
-  const met = folkMet(game);
-  host.hidden = met.length === 0;
-  host.replaceChildren();
-  if (met.length === 0) return;
-
-  host.append(el('p', 'panel__title', 'Who is about'));
-  const row = el('div', 'folkrow');
-  for (const def of met) {
-    const button = el('button', 'mini folkbtn') as HTMLButtonElement;
-    button.id = `run-visit-${def.id}`;
-    const face = portraitIcon(def.who, 30);
-    if (face) button.append(face);
-    button.append(el('span', 'folkbtn__name', def.name));
-    button.onclick = () => openTalk(def, button.getBoundingClientRect());
-    attachTooltip(button, () => def.said);
-    row.append(button);
-  }
-  host.append(row);
-}
+// WHO IS ABOUT is the CAMP's — *"that's what the camp is for."* A list of the
+// same people here was a second route to one conversation.
 
 function renderMenu(): void {
-  renderFolk();
   renderClimb($('run-climb'), game.character, () => renderMenu());
   const grid = $('run-sockets');
   grid.replaceChildren();
@@ -576,8 +553,7 @@ function finish(left = false): void {
 
   if (report.cleared) payTrials(sim.state);
 
-  // A ROLL RAN OUT, so the next descent is not the one you set up. Chained
-  // through, a set would wear down to a bare run nobody chose.
+  // A ROLL RAN OUT: the next descent is not the one you set up.
   const dry = report.burnt.length > 0;
   halt = left
     ? 'left'
@@ -591,9 +567,8 @@ function finish(left = false): void {
             ? 'dry'
             : 'once';
 
-  // `leaving` is the only stop you choose while the fight is still on, so it
-  // is checked here rather than at the launch: the descent you armed it during
-  // still finishes and still banks.
+  // `leaving` is the only stop you choose mid-fight, so the descent you armed
+  // it during still finishes and still banks.
   if (report.cleared && !report.bagsFull && !leaving && !dry) {
     // Drop into the hole first. The next descent is built at the bottom of it.
     handover = 0.0001;
@@ -706,8 +681,7 @@ function enterScene(
   playing = false;
   accumulator = 0;
   note(def.said, 'add');
-  // A camera left pointed at a corner of the descent that just ended is a
-  // black screen with no obvious way out of it.
+  // A camera left in a corner of the last descent is a black screen.
   renderer?.follow();
   if (def.encounter) beginArrival();
   setPhase('scene');

@@ -606,11 +606,10 @@ for (const vp of VIEWPORTS) {
   await page.evaluate(() => document.getElementById('sheet-close')?.click());
   await page.waitForTimeout(150);
 
-  // The GRAFT bench: the last beat of a CONVERSATION IN THE CAMP. The kit has
-  // met him and carries what he wants, which is the whole of what puts it up.
-  await page.evaluate(() => document.getElementById('open-fissure')?.click());
-  await page.waitForTimeout(200);
-  await page.evaluate(() => document.getElementById('run-visit-ossuary')?.click());
+  // The GRAFT bench: the last beat of a CONVERSATION IN THE CAMP, reached the
+  // one way there is — by clicking the man standing in it. The kit has met him
+  // and carries what he wants, which is the whole of what puts the bench up.
+  await page.evaluate(() => document.getElementById('camp-who-ossuary')?.click());
   try {
     await page.waitForFunction(() => document.getElementById('speech')?.hidden === false, null, {
       timeout: 30000,

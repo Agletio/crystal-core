@@ -2930,13 +2930,14 @@ assert(
     'and nothing in it has a click: it is carried to a person, never spent'
   );
 
-  // WHO IS ABOUT. Somebody you have found is somebody standing in the camp,
-  // so a relic you decide to keep is a decision rather than the same room again.
+  // WHO IS ABOUT IS THE CAMP'S, and the Fissure holds no second list of the
+  // same people — *"that's what the camp is for, you can talk to them there."*
   const folk = [...document.querySelectorAll('[id^="run-visit-"]')];
-  assert(folk.length > 0, 'everybody the kit has met has a way back to them', String(folk.length));
-  assert($('run-folk').hidden === false, 'and the panel saying so is up');
+  assert(folk.length === 0, 'the Fissure lists nobody: talking to people is the camp', String(folk.length));
+  const inCamp = [...document.querySelectorAll('#camp-folk .camp__hot')];
+  assert(inCamp.length > 0, 'and everybody the kit has met is standing there instead', String(inCamp.length));
   assert(
-    folk.every((b) => b.getAttribute('aria-label') !== ''),
+    inCamp.every((b) => b.getAttribute('aria-label') !== ''),
     'and each one says who they are'
   );
 }

@@ -1598,20 +1598,9 @@
   .slotcell__label { font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 3px; }
   .slotcell__btn { width: 100%; text-align: left; padding: 7px 9px; display: flex; align-items: center; gap: 8px; min-height: 46px; }
   .slotcell__btn--worn { border-color: var(--edge-lit); }
-  /* Who is about: one button a person, portrait and name. A strip in the rail
-     beside the map rather than a framed card over it — the frame cost the map
-     the height that made this screen scroll. */
-  .folkcard {
-    margin: 0 0 10px; padding: 6px 0 8px; text-align: center;
-    border-bottom: 1px solid var(--edge);
-  }
-  .folkcard .panel__title { font-size: 11px; margin-bottom: 5px; }
   /* Something on the map you can click. The map itself is a thing you WATCH,
      so this is the camp's alone and never a descent's. */
   .stage--over { cursor: pointer; }
-  .folkrow { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
-  .folkbtn { display: flex; align-items: center; gap: 6px; padding: 5px 9px; }
-  .folkbtn__name { font-size: 11px; }
   /* The hand your skill cannot be swung with. Marked, never emptied — the
      Fissure is what refuses, and it says the sentence in full. */
   .slotcell--wrong .slotcell__btn { border-color: var(--ember); }
@@ -2294,10 +2283,6 @@
         </div>
         <div class="fissurecard__side">
           <p class="fissure">A thin place in the rock. Always open, always free.</p>
-          <!-- Everybody you have met, and a way back to them. In this column
-               and not above the map: framed across the top it cost the map two
-               hundred pixels of height, which is what forced the scroll. -->
-          <div class="folkcard" id="run-folk" hidden></div>
           <div class="sockets" id="run-sockets"></div>
           <div id="run-selected"></div>
 
