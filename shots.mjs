@@ -305,6 +305,20 @@ for (const vp of VIEWPORTS) {
     await page.waitForTimeout(250);
   }
   await shoot('fissure');
+  // NOTHING ON THIS SCREEN SCROLLS — *"it needs to be designed in a way that
+  // doesn't require you to scroll."* The map is sized off the room LEFT, so
+  // anything that outgrows the fold is a layout fault rather than a long list.
+  const spill = await page.evaluate(() => {
+    const card = document.querySelector('#run-menu .modal__card');
+    const body = document.querySelector('#run-menu .modal__body');
+    const seam = document.querySelector('#run-menu .climbseam');
+    if (!card || !body || !seam) return 'the Fissure has no body to measure';
+    const box = card.getBoundingClientRect();
+    const under = seam.getBoundingClientRect().bottom - box.bottom;
+    const past = Math.max(body.scrollHeight - body.clientHeight, box.bottom - innerHeight, under);
+    return past > 2 ? `the Fissure needs ${Math.round(past)}px of scrolling` : null;
+  });
+  if (spill) problems.push(`${vp.name}: ${spill}`);
   await page.evaluate(() => document.getElementById('run-launch')?.click());
   await page.waitForFunction(() => document.body.dataset.runPhase === 'running', null, {
     timeout: 30000,

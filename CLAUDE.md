@@ -205,7 +205,10 @@ rung is its BOSS**, in an arena of its own (`LADDER.zones[z].arena`, read throug
 Answering, The Refraction, The Flowering. **THE CLIMB IS DRAWN ONE ZONE AT A
 TIME, on a TAB**, as a seam descending that act's own generated cross-section
 (`LadderZone.art`) with a station on every rung, lit as far as you have
-cleared. Every station is placed in PERCENT of the picture, so a rung cannot
+cleared. **The Fissure window is TWO COLUMNS and nothing on it scrolls** —
+*"the map being much larger almost the entire screen and the sockets on the
+right side"* — so the seam is sized off the room LEFT rather than off the
+viewport, and `shots` fails the screen if it needs scrolling. Every station is placed in PERCENT of the picture, so a rung cannot
 drift off the chamber it sits in.
 
 **A CRYSTAL ROLL BURNS DOWN.** *"You roll a mod and it lasts for a certain

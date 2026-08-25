@@ -1277,20 +1277,35 @@
   .mini--enter:hover:not(:disabled) { filter: brightness(1.12) drop-shadow(0 0 5px var(--citrine)); color: var(--bone); }
   .mini--enter:active:not(:disabled) { box-shadow: none; }
   .runbar--go { margin-top: 20px; justify-content: center; }
-  /* Centred and roomier, now that nothing shares the screen with it. */
+  /* THE MAP IS THE SCREEN. Two columns: the climb takes whatever is left after
+     a fixed rail of everything you press, so nothing on it ever has to scroll.
+     NOTHING HERE SCROLLS, so the map is sized off the room LEFT rather than off
+     the viewport: the body stops scrolling, every box between it and the seam
+     gives up its minimum height, and the seam is the one that stretches. */
+  #run-menu .modal__body {
+    overflow: hidden; display: flex; flex-direction: column; min-height: 0; gap: 8px;
+  }
+  #run-menu .fissurecard { flex: 1 1 auto; min-height: 0; }
+  .fissurecard__map { min-height: 0; display: flex; flex-direction: column; }
+  .fissurecard__map .climbcard { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
   .fissurecard {
-    width: min(620px, 100%); margin: min(6vh, 60px) auto 0;
+    display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 18px;
+    align-items: stretch;
+    width: 100%; margin: 0;
     padding: 12px 16px; text-align: center;
     background-clip: padding-box;
     border: 30px solid transparent; border-image: var(--fix-win) 30 round;
     image-rendering: pixelated; box-shadow: var(--lift); border-radius: 0;
   }
-  /* Two cards on one screen: the second does not want the first's headroom. */
-  #run-folk:not([hidden]) + .fissurecard { margin-top: 6px; }
-  /* The climb: a row a zone, a pip a rung. Ruled off inside the Fissure's own
-     card rather than framed again — a third frame put Enter below the fold. */
+  .fissurecard__side { text-align: center; }
+  /* Under a certain width the rail costs the map more than it is worth. */
+  @media (max-width: 900px) {
+    .fissurecard { grid-template-columns: minmax(0, 1fr); }
+  }
+  /* The climb, ruled off inside the Fissure's own card rather than framed
+     again — a third frame put Enter below the fold. */
   .climbcard {
-    text-align: left; margin: 0 0 14px;
+    text-align: left; margin: 0;
     border-top: 1px solid var(--edge); border-bottom: 1px solid var(--edge);
     padding: 8px 0 4px;
   }
@@ -1305,8 +1320,14 @@
   .climbtab--on .climbtab__done { color: var(--citrine); }
   .climbtab--shut { border-style: dashed; }
   .climbseam {
-    position: relative; margin: 0 auto 4px;
-    aspect-ratio: 688 / 384; width: min(100%, 466px);
+    /* Capped by the HEIGHT there is and by the column it sits in, whichever
+       binds — the ratio turns one width into both, so the picture is whole and
+       a station cannot drift off the chamber it sits in. The height cap is what
+       the card is NOT: a modal head, the climb's own title and tabs, and the
+       window frame come to about 250px of the viewport. */
+    position: relative; margin: 0 auto; min-height: 0;
+    aspect-ratio: 688 / 384;
+    width: min(100%, calc(min(60vh, 500px) * 688 / 384));
     background-color: var(--ink); background-size: 100% 100%;
     image-rendering: pixelated; border: 1px solid var(--edge); border-radius: var(--r);
   }
@@ -1339,7 +1360,9 @@
   /* Where you are pointed, ringed rather than outlined: a station is round. */
   .pip--here { box-shadow: 0 0 0 2px var(--citrine); color: var(--bone); }
   .pip:hover:not(:disabled) { background: var(--panel-lit); }
-  .fissurecard .sockets { grid-template-columns: 1fr 1fr; gap: 12px; text-align: left; }
+  /* THE WINDOW IS THE SCREEN, near enough: the map is the whole point of it. */
+  #run-menu .modal__card { width: min(1240px, 100%); }
+  .fissurecard .sockets { grid-template-columns: 1fr 1fr; gap: 10px; text-align: left; }
   .fissurecard .panel__title { font-size: 15px; }
   .fissurecard .fissure { font-size: 13px; margin-bottom: 18px; }
   .mini--go:hover:not(:disabled) { background: var(--edge); }
@@ -1575,16 +1598,14 @@
   .slotcell__label { font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 3px; }
   .slotcell__btn { width: 100%; text-align: left; padding: 7px 9px; display: flex; align-items: center; gap: 8px; min-height: 46px; }
   .slotcell__btn--worn { border-color: var(--edge-lit); }
-  /* Who is about: one button a person, portrait and name. Sized on the
-     Fissure's card, above it, since it is the same screen's other question. */
+  /* Who is about: one button a person, portrait and name. A strip in the rail
+     beside the map rather than a framed card over it — the frame cost the map
+     the height that made this screen scroll. */
   .folkcard {
-    width: min(620px, 100%); margin: min(3vh, 22px) auto 0;
-    padding: 8px 14px; text-align: center;
-    background-clip: padding-box;
-    border: 30px solid transparent; border-image: var(--fix-win) 30 round;
-    image-rendering: pixelated; box-shadow: var(--lift); border-radius: 0;
+    margin: 0 0 10px; padding: 6px 0 8px; text-align: center;
+    border-bottom: 1px solid var(--edge);
   }
-  .folkcard .panel__title { font-size: 13px; margin-bottom: 6px; }
+  .folkcard .panel__title { font-size: 11px; margin-bottom: 5px; }
   /* Something on the map you can click. The map itself is a thing you WATCH,
      so this is the camp's alone and never a descent's. */
   .stage--over { cursor: pointer; }
@@ -2263,28 +2284,29 @@
       </div>
     </div>
     <div class="modal__body">
-      <!-- Everybody you have met, and a way back to them. -->
-      <div class="folkcard" id="run-folk" hidden></div>
+      <!-- TWO COLUMNS AND NOTHING SCROLLS. The map is the screen — *"I am
+           imaging the map being much larger almost the entire screen and the
+           sockets on the right side"* — so the climb takes the width it can and
+           everything you PRESS stands in a column beside it. -->
       <div class="panel fissurecard">
-        <p class="fissure">A thin place in the rock. Always open, always free.</p>
-
-        <!-- WHERE YOU ARE ON THE CLIMB. Above the sockets because it is the
-             choice made first: a rung is where you go, a crystal is what you
-             take. Inside the same card, or the way in falls off the screen. -->
-        <div class="climbcard" id="run-climb"></div>
-
-        <div class="sockets" id="run-sockets"></div>
-        <div id="run-selected"></div>
-
-        <div class="runbar runbar--go">
-          <button class="mini mini--go mini--enter" id="run-launch">Enter the Fissure</button>
+        <div class="fissurecard__map">
+          <div class="climbcard" id="run-climb"></div>
         </div>
-        <p class="runblocked" id="run-blocked"></p>
-        <p class="runsrc">
-          Clear it all, then something waits at the exit.
-          A socketed crystal stays socketed, and a cleared descent starts the
-          next one until you die or your bags fill.
-        </p>
+        <div class="fissurecard__side">
+          <p class="fissure">A thin place in the rock. Always open, always free.</p>
+          <!-- Everybody you have met, and a way back to them. In this column
+               and not above the map: framed across the top it cost the map two
+               hundred pixels of height, which is what forced the scroll. -->
+          <div class="folkcard" id="run-folk" hidden></div>
+          <div class="sockets" id="run-sockets"></div>
+          <div id="run-selected"></div>
+
+          <div class="runbar runbar--go">
+            <button class="mini mini--go mini--enter" id="run-launch">Enter the Fissure</button>
+          </div>
+          <p class="runblocked" id="run-blocked"></p>
+          <p class="runsrc">A cleared descent starts the next one.</p>
+        </div>
       </div>
     </div>
   </div>
