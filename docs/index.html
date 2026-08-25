@@ -1288,14 +1288,13 @@
   #run-menu .fissurecard { flex: 1 1 auto; min-height: 0; }
   .fissurecard__map { min-height: 0; display: flex; flex-direction: column; }
   .fissurecard__map .climbcard { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+  /* NO FRAME OF ITS OWN. The window is already carved, and a second `win` inside
+     the first is a border inside a border — nothing is being separated by it. */
   .fissurecard {
     display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 18px;
     align-items: stretch;
-    width: 100%; margin: 0;
-    padding: 12px 16px; text-align: center;
-    background-clip: padding-box;
-    border: 30px solid transparent; border-image: var(--fix-win) 30 round;
-    image-rendering: pixelated; box-shadow: var(--lift); border-radius: 0;
+    width: 100%; margin: 0; padding: 0; text-align: center;
+    background: none; border: 0; box-shadow: none;
   }
   .fissurecard__side { text-align: center; }
   /* Under a certain width the rail costs the map more than it is worth. */
