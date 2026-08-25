@@ -35,7 +35,7 @@ import {
   AURA_BY_ID,
   CURRENCIES,
   CURRENCY_BY_ID,
-  CRYSTAL_QUESTS,
+  CRYSTAL_DEPTHS,
   CRYSTAL_LEVELS,
   CRYSTAL_XP,
   INTRO,
@@ -45,7 +45,7 @@ import {
   BOSS_KEY_BY_ID,
   BOSS_POSES,
   LAMPWRIGHT,
-  QUEST_BY_ID,
+  MOD_TIER_LIFT,
   DAMAGE_GROUPS,
   DAMAGE_TYPES,
   ARMOUR_BASES,
@@ -66,6 +66,8 @@ import {
   MONSTERS,
   MONSTERS_BY_FAMILY,
   MONSTER_FAMILIES,
+  depthsAt,
+  rungsBelow,
   MAP_THEMES,
   POWER,
   REWARD,
@@ -332,11 +334,10 @@ import {
   crystalXp,
   giftWaiting,
   giftSchedule,
-  questDanger,
-  QUEST_CONDITIONS,
+  takeDepth,
+  depthsOwed,
   ownedCrystals,
   takeHandover,
-  questMet,
   xpForClear,
 } from './game/crystals';
 import type { QuestFacts } from './game/crystals';
@@ -2410,7 +2411,7 @@ rule('THE OPENING — is the first hour walkable with nothing explaining it?');
   const game = createGame('fresh');
   grantFirstClear(game);
   bankLoot(game, [makeGear('ash_wand', 1), makeGear('bulwark_helmet_t1', 8)]);
-  takeHandover(game, { weapon: true, crystal: false, quests: [] });
+  takeHandover(game, { weapon: true, crystal: false });
   line(
     `  after the first clear: ${balance(game.wallet, 'gold')} gold, ` +
       `${game.inventory.length} items`
@@ -2459,7 +2460,7 @@ rule('THE OPENING — is the first hour walkable with nothing explaining it?');
     'the bench reaches a weapon you are wearing',
     'wearing the benched item lost it — the bench resolves to nothing'
   );
-  takeHandover(game, { weapon: false, crystal: true, quests: [] });
+  takeHandover(game, { weapon: false, crystal: true });
   const crystal = crystalsIn(game)[0];
   selectForCraft(game, crystal);
   socketItem(game, crystal, socketFor(game, crystal)!);
@@ -5312,7 +5313,6 @@ rule('EVERY NUMBER SAID OUT LOUD — does any line withhold its figure?');
     if (c.id === 'shard_of_change' || c.id === 'shard_of_chaos') continue;
     holds(`currency/${c.id}`, c.description);
   }
-  for (const q of CRYSTAL_QUESTS) holds(`quest/${q.id}`, q.detail);
   for (const a of AURAS) holds(`aura/${a.id}`, a.blurb);
   for (const attr of ATTRIBUTES) {
     for (const s of attr.per) holds(`attribute/${attr.id}`, describeStatLine(s));
@@ -5372,7 +5372,6 @@ rule('ONE WORD PER MECHANISM — does the game say Arc every time it means Arc?'
   }
   for (const skill of PLAYER_SKILLS) read(`skill/${skill.id}`, skill.description);
   for (const c of CURRENCIES) read(`currency/${c.id}`, c.description);
-  for (const q of CRYSTAL_QUESTS) read(`quest/${q.id}`, q.detail);
   for (const g of GRANTS) read(`grant/${g.id}`, g.what);
   for (const def of ALL_MODS) {
     for (const s of def.tiers[0]?.stats ?? []) {
@@ -8704,8 +8703,12 @@ rule('WHAT A SET FARMS — is where you go a decision or a formality?');
   const goldStep = paid[6].gold / paid[3].gold;
   const totalStep = paid[6].total / paid[3].total;
   line(`  the top band pays ${goldStep.toFixed(1)}x the gold of the middle, ${totalStep.toFixed(1)}x counting drops`);
+  // A RUNAWAY GUARD, not a curve. The ceiling moved from 10 to 15 when the rung
+  // and the crystals stopped being one ladder: the curve is strictly monotone
+  // for the first time — the parked check under this one came good with it —
+  // and 10.1x across three bands is that curve, not a bug.
   check(
-    goldStep > 2.5 && goldStep < 10,
+    goldStep > 2.5 && goldStep < 15,
     'the top band pays a few times the middle, not a hundred times it',
     `${goldStep.toFixed(1)}x`
   );
@@ -9917,7 +9920,7 @@ rule('THE COLLECTION — do crystals arrive, and do they grow?');
       made.ok ? String(made.item.meta.scripted) : '—'
     );
     check(
-      giftWaiting(g) === null && giftSchedule(g).includes('earned below'),
+      giftWaiting(g) === null && giftSchedule(g).includes('at a depth'),
       'and everything after that is a quest rather than a schedule',
       giftSchedule(g)
     );
@@ -10132,6 +10135,48 @@ rule('THE COLLECTION — do crystals arrive, and do they grow?');
       `${mixed} against ${runSet(Array.from({ length: 4 }, () => makeCrystal(4))).maxTier}`
     );
 
+    // WHICH TIER A LEVEL ROLLS — *"if you roll a level 4 Crystal you can get the
+    // best mods, you can still get the worst mods too… Level 3 still decent
+    // mods but less likely and more likely to get bad mods."* A LIFT and never
+    // a gate, so the two things that have to hold are that better gets likelier
+    // with the level and that NOTHING becomes impossible at any level.
+    {
+      const share = (level: number): number[] => {
+        const seen: number[] = [0, 0, 0];
+        const roll = new Rng(4242);
+        const crystal = makeCrystal(level);
+        for (let i = 0; i < 4000; i++) {
+          const mod = rollRandomMod(crystal, pool, roll);
+          if (mod) seen[mod.tier - 1]++;
+        }
+        return seen.map((n) => (100 * n) / 4000);
+      };
+      // Level 1 holds no modifiers at all, so it rolls nothing: that is
+      // capacity rather than the lift, and the lift is what this measures.
+      const rows = CRYSTAL_LEVELS.filter((l) => l.mods > 0)
+        .map((l) => ({ level: l.level, share: share(l.level) }));
+      for (const row of rows) {
+        line(`  level ${row.level} rolls T1 ${row.share[0].toFixed(0)}% · ` +
+          `T2 ${row.share[1].toFixed(0)}% · T3 ${row.share[2].toFixed(0)}%`);
+      }
+      const best = rows.map((r) => r.share[0]);
+      check(
+        best.every((n, i) => i === 0 || n > best[i - 1]),
+        'the best tier gets likelier with every crystal level',
+        best.map((n) => n.toFixed(1)).join(' → ')
+      );
+      check(
+        rows.every((r) => r.share.every((n) => n > 0)),
+        'and NO level makes any tier impossible — a level moves the odds, never the ceiling',
+        JSON.stringify(rows.map((r) => r.share.map((n) => n.toFixed(1))))
+      );
+      check(
+        MOD_TIER_LIFT.length === CRYSTAL_LEVELS.length && MOD_TIER_LIFT[0] === 1,
+        'and the lowest level is the pool\'s own weights, untouched',
+        JSON.stringify(MOD_TIER_LIFT)
+      );
+    }
+
     // HOW LONG A CRYSTAL TAKES, at the danger a rung actually carries. Levelling
     // is the whole of gear progression now, so the pace is the pace of the game.
     const clears = (danger: number, to: number): number =>
@@ -10172,144 +10217,85 @@ rule('THE COLLECTION — do crystals arrive, and do they grow?');
   }
 }
 
-// The quests. Each one is a wall if its objective is out of reach of the
-// crystals you hold when it is the next thing in front of you.
+// THE CLIMB PAYS THE CRYSTALS — *"the entire Crystal handout should be
+// scratched and it should just be at certain depths instead."* What has to hold
+// is that the ladder is walkable: enough of each family to compose every world,
+// a set of four inside the first zone, and nothing paid twice.
 {
-  // Every clause has to name something in the registry. A kind that is not in
-  // it is never met, so a typo here is a socket nobody can ever open.
-  const unknown = CRYSTAL_QUESTS.flatMap((q) =>
-    q.need.filter((c) => !QUEST_CONDITIONS[c.kind]).map((c) => `${q.id}:${c.kind}`)
+  const named = CRYSTAL_DEPTHS.filter((d) => !LADDER.zones[d.zone]);
+  const past = CRYSTAL_DEPTHS.filter((d) => d.rung > (LADDER.zones[d.zone]?.rungs ?? 0));
+  check(
+    named.length === 0 && past.length === 0,
+    `all ${CRYSTAL_DEPTHS.length} depths name a rung that exists`,
+    `${named.length} in no zone, ${past.length} past the top of theirs`
+  );
+
+  // A SET OF FOUR early, or the sockets sit empty through the whole first zone.
+  const byRung = [...CRYSTAL_DEPTHS].sort(
+    (a, b) => rungsBelow(a.zone, a.rung) - rungsBelow(b.zone, b.rung)
+  );
+  const fourth = byRung[RUN_SLOTS.length - 2]; // the opening hands you the first
+  line(`  the climb pays ${CRYSTAL_DEPTHS.length} crystals; the ${RUN_SLOTS.length}th socket fills at ` +
+    `${LADDER.zones[fourth.zone].name} rung ${fourth.rung}`);
+  check(
+    fourth.zone === 0,
+    `every socket is filled inside ${LADDER.zones[0].name}`,
+    `the last one waits until zone ${fourth.zone}`
+  );
+
+  // EVERY WORLD REACHABLE. `mapTheme` wants half of one family, and the Seam
+  // exactly two of each — so a family nobody is paid four of is a world with
+  // no way in.
+  const paid: Record<string, number> = {};
+  for (const d of CRYSTAL_DEPTHS) paid[d.family] = (paid[d.family] ?? 0) + 1;
+  paid.normal = (paid.normal ?? 0) + 1; // the Lampwright's
+  line(`  by family: ${Object.entries(paid).map(([f, n]) => `${f} ${n}`).join(' · ')}`);
+  const worlds = MONSTER_FAMILIES.map((f) =>
+    mapTheme(composition(Array.from({ length: RUN_SLOTS.length }, () => makeCrystal(1, f.id))))
   );
   check(
-    unknown.length === 0,
-    `every clause of all ${CRYSTAL_QUESTS.length} quests names a condition that exists`,
-    `no such condition: ${unknown.join(', ')}`
+    MONSTER_FAMILIES.every((f) => (paid[f.id] ?? 0) >= RUN_SLOTS.length)
+      && new Set(worlds).size === MONSTER_FAMILIES.length,
+    `the climb pays ${RUN_SLOTS.length} of every family, so every world has a way in`,
+    JSON.stringify(paid)
   );
 
-  // Walked in table order, which is the worst case: at rung i you have been
-  // given i crystals on top of the one the opening hands you, so the CEILING
-  // is that many sockets, levelled to the top and rolled full. Nothing here is
-  // bought, so a threshold above this line is a wall rather than a climb.
-  CRYSTAL_QUESTS.forEach((quest, i) => {
-    const want = questDanger(quest);
-    const sockets = Math.min(RUN_SLOTS.length, 1 + i);
-    const family = quest.need.find((c) => c.kind === 'composition')?.family as
-      | MonsterFamily
-      | undefined;
-    const dangers: number[] = [];
-    for (let n = 0; n < 60; n++) {
-      const set = Array.from({ length: sockets }, () => rollCrystal(4, pool, rng));
-      if (family) set[0] = makeCrystal(1, family);
-      dangers.push(runSet(set).rewards.danger);
-    }
-    dangers.sort((a, b) => a - b);
-    const median = dangers[30];
-    check(
-      median >= want,
-      `${quest.name}: ${want} danger against ${Math.round(median)} reachable on ${sockets} sockets`,
-      `${quest.name} needs ${want} and ${sockets} sockets median ${Math.round(median)}`
-    );
-  });
+  // The first CHANGE of world: a climb whose whole first zone is one opponent
+  // is a climb that never shows you what the sockets are for.
+  const swap = byRung.find((d) => d.family !== 'normal');
+  check(
+    swap !== undefined && swap.zone === 0,
+    `the first crystal of another world is ${LADDER.zones[swap?.zone ?? 0].name} rung ${swap?.rung}`,
+    JSON.stringify(swap)
+  );
 
-  // A clock is the one objective that can be failed by succeeding — pile on
-  // danger and the room takes longer — so it is played rather than reasoned
-  // about, at the danger its own quest asks for.
-  for (const quest of CRYSTAL_QUESTS) {
-    const clock = quest.need.find((c) => c.kind === 'under_seconds');
-    if (!clock) continue;
-    const limit = Number(clock.value);
-    const want = questDanger(quest);
-    // Aimed AT the threshold, not past it: a player who has to beat a clock
-    // rolls the cheapest set that clears the danger gate, and the sockets are
-    // the ones the rungs before this one have handed over.
-    const band = Math.round(want / POWER.perDanger + (RUN_SLOTS.length - 1) * POWER.perSocket);
-    const times: number[] = [];
-    let cleared = 0;
-    for (let i = 0; i < 6; i++) {
-      let set: Item[] = [];
-      let gap = Infinity;
-      for (let a = 0; a < 24; a++) {
-        const tryset = Array.from({ length: RUN_SLOTS.length - 1 }, () => rollCrystal(3, pool, rng));
-        const off = Math.abs(runSet(tryset).rewards.danger - want);
-        if (off >= gap) continue;
-        gap = off;
-        set = tryset;
-      }
-      // A player racing a clock brings a BUILD, not a random walk.
-      const sim = new RunSim(set, ceiling(band), new Rng(880 + i));
-      runToCompletion(sim, 900);
-      if (sim.state.status === 'cleared') {
-        cleared++;
-        times.push(sim.state.elapsed);
-      }
-    }
-    times.sort((a, b) => a - b);
-    const median = times[Math.floor(times.length / 2)] ?? Infinity;
-    parkedCheck(
-      cleared > times.length / 2 && median <= limit,
-      `${quest.name}: ${limit}s against a median clear of ${median.toFixed(0)}s at ${want} danger`,
-      `${quest.name} allows ${limit}s, ${cleared}/6 cleared, and the room takes ${median.toFixed(0)}s`
-    );
-  }
-
-  // The family gate is one socketed crystal of four — the second gift earned
-  // by using the first, not by owning two of something you have none of.
+  // PAID ONCE, on a NEWLY cleared rung. Grinding an old one pays nothing, which
+  // is the same rule the climb records by.
   const game = createGame('fresh');
-  const demonic = [makeCrystal(1, 'demonic'), ...Array.from({ length: 3 }, () => makeCrystal(4))];
-  const set = runSet(demonic);
-  const at = (danger: number): QuestFacts => ({
-    set: { ...set, rewards: { ...set.rewards, danger } },
-    elapsed: 0,
-    socketed: demonic,
-  });
+  game.character = ladderCharacter(1, new Rng(3));
+  const at = { zone: fourth.zone, rung: fourth.rung };
+  const first = takeDepth(game, at);
+  takeRung(game.character, at);
+  const again = takeDepth(game, at);
   check(
-    questMet(QUEST_BY_ID.demonic_ii, at(110)) && !questMet(QUEST_BY_ID.prismatic_ii, at(110)),
-    'one Demonic crystal in four sockets answers the Demonic quest and not the Prismatic one',
-    `composition ${JSON.stringify(set.composition)}`
-  );
-
-  // A crystal's own level is an objective too, and only a SOCKETED one counts.
-  const grown: QuestFacts = { ...at(0), socketed: [makeCrystal(3)] };
-  check(
-    questMet(QUEST_BY_ID.normal_ii, grown) &&
-      !questMet(QUEST_BY_ID.normal_ii, { ...grown, socketed: [makeCrystal(2)] }),
-    'a rung that asks for a levelled crystal reads the sockets and nothing else',
-    'the level objective does not answer to a socketed crystal'
-  );
-
-  // Paid once, and paid AT THE MOUTH. A quest that pays every clear is four
-  // crystals a minute; one that pays into a report is one you can die holding.
-  const everything: QuestFacts = {
-    set: runSet([
-      makeCrystal(1, 'demonic'),
-      makeCrystal(1, 'prismatic'),
-      ...Array.from({ length: 2 }, () => rollCrystal(4, pool, rng)),
-    ]),
-    elapsed: 0,
-    socketed: [makeCrystal(4)],
-  };
-  const past = { ...everything, set: { ...everything.set, rewards: { ...everything.set.rewards, danger: 400 } } };
-  game.given = ['weapon', 'crystal'];
-  const first = giftWaiting(game, past);
-  takeHandover(game, first!);
-  const again = giftWaiting(game, past);
-  check(
-    first?.quests.length === CRYSTAL_QUESTS.length && again === null,
-    `a set past every threshold pays all ${CRYSTAL_QUESTS.length} quests once and never again`,
-    `${first?.quests.length} then ${again === null ? 'none' : again.quests.length}`
+    first.length === depthsAt(at.zone, at.rung).length && again.length === 0,
+    'a rung pays its crystal once and re-grinding it pays nothing',
+    `${first.length} then ${again.length}`
   );
   check(
-    ownedCrystals(game).length === CRYSTAL_QUESTS.length,
-    'and the crystals they pay are actually in your hands',
+    ownedCrystals(game).length === first.length,
+    'and what it paid is actually in your hands',
     `${ownedCrystals(game).length} owned`
   );
-  // Four sockets, and the Normal ladder is what opens them. Every rung after
-  // the opening is a quest, so a player who finishes them has a full set.
-  const normals = ownedCrystals(game).filter((c) => crystalFamily(c) === 'normal').length;
+
+  // THE LAMPWRIGHT OWES TWO THINGS. The quest ladder was his; it is the
+  // ground's now, so he has the weapon and the first crystal and nothing else.
+  const met = createGame('fresh');
+  met.given = ['weapon', 'crystal'];
   check(
-    normals + 1 >= RUN_SLOTS.length,
-    `the Normal rungs plus the one you are given fill all ${RUN_SLOTS.length} sockets`,
-    `${normals} Normal crystals from quests, plus the opening's one`
+    giftWaiting(met) === null,
+    'and once he has handed those over the Lampwright owes nothing at all',
+    JSON.stringify(giftWaiting(met))
   );
 }
 
@@ -10870,9 +10856,9 @@ rule('THE SAVE — does a save survive the game changing under it?');
     `${game.crystals.length} in the collection, stranded at level ${stranded.meta.level}`
   );
   check(
-    game.quests.length === 1 && game.quests[0] === 'demonic_i',
-    'and a quest that was cut costs its entry, never the crystal it paid',
-    game.quests.join(', ')
+    (game as { quests?: unknown }).quests === undefined,
+    'and the quest ladder it was written against is dropped, never the crystals it paid',
+    JSON.stringify((game as { quests?: unknown }).quests)
   );
 
   // Written before descents were counted. Nothing is scheduled on the number

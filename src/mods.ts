@@ -1,5 +1,13 @@
 import { Rng } from './rng';
-import { DANGER_STATS, GEAR_BASE_BY_ID, MOD_BY_ID, USES, baseMods, usesFor } from './data';
+import {
+  DANGER_STATS,
+  GEAR_BASE_BY_ID,
+  MOD_BY_ID,
+  MOD_TIER_LIFT,
+  USES,
+  baseMods,
+  usesFor,
+} from './data';
 import type {
   FillState,
   Item,
@@ -234,6 +242,17 @@ export function fullUses(mod: RolledMod): number {
   return tier ? usesFor(tier.weight) : USES.most;
 }
 
+/** WHAT A CRYSTAL'S LEVEL DOES TO THE ODDS: a lift on the entry's own weight,
+ *  raised to how far its tier sits above the WORST its modifier has. A level 4
+ *  can still roll the worst line and a level 2 the best — the level moves the
+ *  odds, never the ceiling. Pure, so a seed still replays. */
+export function tierLift(item: Item, entry: ModEntry): number {
+  if (item.kind !== 'crystal') return 1;
+  const lift = MOD_TIER_LIFT[Math.min(MOD_TIER_LIFT.length, Math.max(1, Number(item.meta.level) || 1)) - 1];
+  const worst = MOD_BY_ID[entry.defId]?.tiers.length ?? entry.tier;
+  return lift ** (worst - entry.tier);
+}
+
 /** Weighted pick from the eligible pool, then roll it. Null if nothing fits. */
 export function rollRandomMod(
   item: Item,
@@ -242,7 +261,7 @@ export function rollRandomMod(
   opts: { slot?: ModSlot; tag?: string } = {}
 ): RolledMod | null {
   const candidates = pool.eligible(item, opts);
-  const entry = rng.weighted(candidates, (e) => e.weight);
+  const entry = rng.weighted(candidates, (e) => e.weight * tierLift(item, e));
   return entry ? instantiate(entry, rng) : null;
 }
 

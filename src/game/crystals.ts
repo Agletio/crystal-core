@@ -7,22 +7,23 @@
  * and the capacity are all rewritten together.
  */
 import {
-  CRYSTAL_QUESTS,
+  CRYSTAL_DEPTHS,
   CRYSTAL_LEVELS,
   CRYSTAL_XP,
   INTRO,
   LAMPWRIGHT,
-  QUEST_BY_ID,
+  depthsAt,
   RUN_SLOTS,
   SKILL_BY_ID,
   crystalName,
 } from '../data';
-import type { CrystalQuest } from '../data';
+import type { CrystalDepth } from '../data';
 import { mainSkillId, pointsAvailable } from '../sim/character';
 import { armForSkill, giveGift } from './state';
 import type { GameState } from './state';
 import { grant, makeCrystal } from '../economy';
 import { crystalFamily } from '../sim/crystal';
+import { zoneAt } from '../ladder';
 import type { RunSet } from '../sim/crystal';
 import type { Item, RolledMod } from '../types';
 
@@ -41,7 +42,6 @@ export function ownedCrystals(game: GameState): Item[] {
 export interface Waiting {
   weapon: boolean;
   crystal: boolean;
-  quests: CrystalQuest[];
 }
 
 /** The ACTIVE skill at `INTRO.crystalSkillLevel` with every point of it spent:
@@ -54,13 +54,15 @@ export function crystalEarned(game: GameState): boolean {
   return pointsAvailable(skillId, progress) === 0;
 }
 
-export function giftWaiting(game: GameState, clear?: QuestFacts): Waiting | null {
+/** THE LAMPWRIGHT OWES TWO THINGS AND NO MORE: the weapon your skill wants and
+ *  your FIRST crystal. Every crystal after it comes out of the ground at a
+ *  DEPTH, so there is nothing left for him to schedule. */
+export function giftWaiting(game: GameState): Waiting | null {
   const given = game.given ?? [];
   const weapon = !given.includes('weapon');
   const crystal = !weapon && !given.includes('crystal') && crystalEarned(game);
-  const quests = clear ? openQuests(game).filter((q) => questMet(q, clear)) : [];
-  if (!weapon && !crystal && quests.length === 0) return null;
-  return { weapon, crystal, quests };
+  if (!weapon && !crystal) return null;
+  return { weapon, crystal };
 }
 
 /** What the collection screen says about the next meeting. */
@@ -84,7 +86,15 @@ export function giftSchedule(game: GameState): string {
       `${name} is level ${progress?.level ?? 1}, with ${spare} unspent.`
     );
   }
-  return `${who} hands over whatever is owed when you talk to him in the camp. Everything left is earned below.`;
+  // NAMING THE NEXT ONE, because "somewhere below" is the one thing on this
+  // screen a player cannot act on. The Lampwright is done after the first.
+  const next = depthsOwed(game)[0];
+  if (!next) return `Every crystal in the ground is yours. ${who} has nothing else.`;
+  const zone = zoneAt(next.zone);
+  return (
+    `${who} has nothing else. The next crystal is in the wall at ` +
+    `${zone?.name ?? '?'} rung ${next.rung} — clear it and it is yours.`
+  );
 }
 
 /** Everything one meeting puts in your hands. Currency has no slot. */
@@ -110,13 +120,6 @@ export function takeHandover(game: GameState, waiting: Waiting): Handover {
     giveGift(game, crystal);
     grant(game.wallet, INTRO.scriptedCurrency, 1);
     currency[INTRO.scriptedCurrency] = 1;
-    items.push(crystal);
-  }
-  // Marked as they are handed over, never at the report.
-  for (const quest of waiting.quests) {
-    game.quests = [...(game.quests ?? []), quest.id];
-    const crystal = makeCrystal(quest.gives.level, quest.gives.family);
-    giveGift(game, crystal);
     items.push(crystal);
   }
   return { items, currency };
@@ -198,8 +201,7 @@ export interface CrystalGain {
   levels: number;
 }
 
-/** THE ENDGAME GATE: a crystal on the climb is a plain TIER TOKEN, and nothing
- *  rolls on one or levels one until all four are HELD. */
+/** A roll that ran out on the descent just cleared. */
 export interface ModBurn { crystal: Item; name: string }
 
 /** WHAT A CLEAR SPENDS: one descent off every roll on every socketed crystal,
@@ -235,15 +237,9 @@ export function advanceSocketed(game: GameState, set: RunSet): CrystalGain[] {
   return out;
 }
 
-// --- quests -----------------------------------------------------------------
+// --- what a DEPTH pays ------------------------------------------------------
 
-export const questDone = (game: GameState, id: string): boolean =>
-  (game.quests ?? []).includes(id);
-
-/** Float shares: one crystal of four is 0.25 and must not miss its own gate. */
-const EPSILON = 1e-6;
-
-/** What one cleared descent was, for an objective to be asked about. */
+/** What one cleared descent WAS, for a trial to be asked about it. */
 export interface QuestFacts {
   set: RunSet;
   /** Seconds it took. */
@@ -255,38 +251,23 @@ export interface QuestFacts {
   bearers?: number; // Bearers put down during it
 }
 
-export type QuestConditionImpl = (facts: QuestFacts, params: any) => boolean;
-
-/**
- * THIS is the extension point, the same way `CONDITIONS` is for the bench: a
- * new objective is an entry here plus a row in `CRYSTAL_QUESTS`. A clause
- * naming a kind that is not in here is never met, and the demo holds the table
- * to the registry so a typo cannot become a quest nobody can finish.
- */
-export const QUEST_CONDITIONS: Record<string, QuestConditionImpl> = {
-  danger: (f, p) => f.set.rewards.danger >= p.value,
-
-  composition: (f, p) =>
-    ((f.set.composition as Record<string, number>)[p.family] ?? 0) + EPSILON >= (p.share ?? 0),
-
-  crystal_level: (f, p) => f.socketed.some((c) => crystalLevel(c) >= p.value),
-
-  under_seconds: (f, p) => f.elapsed <= p.value,
-};
-
-export const questMet = (quest: CrystalQuest, facts: QuestFacts): boolean =>
-  quest.need.every((clause) => QUEST_CONDITIONS[clause.kind]?.(facts, clause) === true);
-
-/** The danger a quest asks for, or 0. For harnesses that have to reach it. */
-export const questDanger = (quest: CrystalQuest): number =>
-  Math.max(0, ...quest.need.filter((c) => c.kind === 'danger').map((c) => Number(c.value) || 0));
-
-/** Still open, in table order: the screen shows them as a ladder. */
-export const openQuests = (game: GameState): CrystalQuest[] =>
-  CRYSTAL_QUESTS.filter((q) => !questDone(game, q.id));
-
-/** A quest id that no longer exists costs its entry and nothing else. */
-export function healQuests(game: GameState): void {
-  const held = Array.isArray(game.quests) ? game.quests : [];
-  game.quests = held.filter((id) => QUEST_BY_ID[id]);
+/** WHAT A RUNG HANDS OVER, asked BEFORE `takeRung` records it — so grinding an
+ *  old rung pays nothing and the two cannot disagree about "newly". */
+export function takeDepth(game: GameState, at: { zone: number; rung: number }): Item[] {
+  const already = Number(game.character.climbed?.[zoneAt(at.zone)?.id ?? ''] ?? 0);
+  if (already >= at.rung) return [];
+  const out: Item[] = [];
+  for (const depth of depthsAt(at.zone, at.rung)) {
+    const crystal = makeCrystal(1, depth.family);
+    giveGift(game, crystal);
+    out.push(crystal);
+  }
+  return out;
 }
+
+/** Every depth still ahead of this character, in climb order. */
+export const depthsOwed = (game: GameState): CrystalDepth[] =>
+  CRYSTAL_DEPTHS.filter(
+    (d) => Number(game.character.climbed?.[zoneAt(d.zone)?.id ?? ''] ?? 0) < d.rung
+  );
+

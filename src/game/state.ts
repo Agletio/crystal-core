@@ -7,7 +7,6 @@
 import { Rng } from '../rng';
 import {
   BOSSES,
-  CRYSTAL_QUESTS,
   EQUIP_SLOTS,
   OFF_SLOT,
   FISSURE,
@@ -216,7 +215,6 @@ export function resetGame(game: GameState, mode: StartMode): void {
       : [];
   // The dev kit is handed every crystal in the game, so its quests are already
   // answered — left open, the first dangerous descent pays out four duplicates.
-  game.quests = mode === 'dev' ? CRYSTAL_QUESTS.map((q) => q.id) : [];
   game.bosses = mode === 'dev' ? BOSSES.map((b) => b.id) : []; // handed the door too
   // Every trial done, so the whole web is walkable: a screen nobody can reach
   // holding points nobody has is a screen nobody tested.

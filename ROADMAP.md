@@ -255,11 +255,11 @@ got. The section to read first is **FLOOR AND CEILING**, which did not exist
 before this round and is the one that says whether any of the others mean
 anything.
 
-### It owes three parked checks
+### It owes two parked checks
 
 Each is a `parkedCheck` in `src/demo.ts` printing its number and failing
 nothing; the pass puts them back to `check`. **The demo prints its own parked
-count and this list has to agree with it — three today.**
+count and this list has to agree with it — two today.**
 
 1. **"the characters checked actually cover every shape it polices"** — the
    sheet audit no longer builds a character exercising a "more" line.
@@ -274,13 +274,12 @@ The boss grid's MECHANISM is still a real `check` and stays one — speed answer
 it at full tier 1, a build with neither answer never does, and t2 trivialises
 it. Only the rung PLATE comes good at is parked.
 
-3. **"every band pays more than the one below"** — it PASSED until the ward
-   pass, and now dips twice: `155 → 207 → 377 → 356 → 2745 → 2294 → 4383`, at
-   bands 3 and 5. Folding eight wards into three took five weak modifiers out of
-   the crystal pool, which made the average roll worth more danger and moved
-   every band's income with it. The dips are small against the noise in a
-   ten-run cell; what the pass owes is more runs per cell before deciding
-   whether the curve is actually non-monotone.
+3. ~~**"every band pays more than the one below"**~~ — **COME GOOD, and phase 4
+   is why.** It dipped at bands 3 and 5 for as long as the rung and the crystals
+   were one ladder and a set aimed at a band could be any crystal level.
+   Measured now: `155 → 162 → 339 → 477 → 1374 → 2625 → 5384`, strictly rising.
+   The runaway guard above it moved from 10x to 15x to admit the curve, which
+   reads 10.1x.
 
 **Strike's
 `baseDamage` was calibrated against the boss grid** at 80 (95 let thin tier 1
@@ -799,12 +798,13 @@ renaming one costs the player their climb.
    falling near each other fuse), **The Blooming** (the longer you are down
    there the more arrives), **The Tithe** (currency held back and paid in one
    lump at the exit).
-4. **THE GATES ARE GONE, and tier is the crystal's LEVEL.** `crystalsUnlocked`
-   and `TIER_BY_SOCKETS` are deleted; `CRYSTAL_LEVELS` carries a `tier` and
-   `tierForSet` reads the MEAN level socketed. Levelling is a real climb — 25 /
-   120 / 400 xp — measured by a gauge at four dangers. **STILL OWED:**
-   `CRYSTAL_QUESTS`' danger thresholds becoming rung rewards, so the climb is
-   what hands out crystals.
+4. ~~**THE GATES ARE GONE, and tier is the crystal's LEVEL.**~~ **DONE.**
+   `crystalsUnlocked` and `TIER_BY_SOCKETS` deleted; `CRYSTAL_LEVELS` carries a
+   `tier` and `tierForSet` reads the MEAN level socketed. Levelling is a real
+   climb — 25 / 120 / 400 xp — gauged at four dangers. **And the handout is
+   scratched:** `CRYSTAL_QUESTS` is gone whole, `CRYSTAL_DEPTHS` pays one at a
+   rung, and `MOD_TIER_LIFT` makes a crystal's level decide which TIER of
+   modifier it rolls — a lift and never a gate.
 5. **THE TRIALS WEB FOLLOWS.** If crystals stop selling monster life and damage,
    the Weight, Hide and Reading wheels are the last place raw scaling is bought
    — and they are the dullest wheels for exactly the reason this phase exists.

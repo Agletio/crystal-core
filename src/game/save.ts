@@ -7,7 +7,7 @@
  */
 import { SAVE_VERSION, createGame, findAnywhere, giftWeapon, wornItems } from './state';
 import { takeMet } from './scenes';
-import { healQuests, ownedCrystals } from './crystals';
+import { ownedCrystals } from './crystals';
 import { healTrials } from './trials';
 import { fullUses } from '../mods';
 import { crystalFamily } from '../sim/crystal';
@@ -405,17 +405,17 @@ export function heal(game: GameState): Healed {
   for (const item of [...game.inventory, ...game.stash, ...wornItems(game)]) {
     for (const mod of item.mods) delete mod.uses;
   }
-  // The first heal that repairs a LINE rather than dropping an item. A graft
-  // stands where the base's own implicit stood, so a forged def that no longer
-  // resolves has to put that line BACK — otherwise the piece keeps a hole
-  // where the base's line used to be and nothing can ever fill it.
+  // The one heal that repairs a LINE rather than dropping an item: a graft
+  // stands where the base's implicit stood, so a forged def that no longer
+  // resolves has to put that line BACK or the piece keeps a hole.
   for (const item of [...game.inventory, ...game.stash, ...wornItems(game)]) {
     if (item.meta.grafted === undefined || FORGED_BY_ID[String(item.meta.grafted)]) continue;
     item.implicits = makeGear(item.base, item.ilvl, undefined, isPerfect(item)).implicits;
     delete item.meta.grafted;
     out.items++;
   }
-  healQuests(game);
+  // The quest ladder is gone: a crystal comes out of the ground at a depth.
+  delete (game as { quests?: unknown }).quests;
 
   // A boss id no table resolves is the whole cost of ever renaming one, and a
   // room called up by a key that has since been cut is a room nobody can enter.

@@ -223,12 +223,25 @@ world you walk into. Danger and socket
 count fold into one **run power**, and every reward reads that and nothing else.
 A fifth socket takes a **boss key**.
 
+**A CRYSTAL COMES OUT OF THE GROUND AT A DEPTH.** *"The entire Crystal handout
+should be scratched and it should just be at certain depths instead."*
+`CRYSTAL_DEPTHS` is one row per rung that pays one, and the FAMILY is what that
+depth is FOR. Paid on a rung being NEWLY cleared, asked before `takeRung`
+records it, so grinding an old rung pays nothing. Fifteen across the climb plus
+the Lampwright's — four of every family, so every world has a way in, the fourth
+socket fills at The Answering rung 6 and the first crystal of another world is
+rung 8. **The Lampwright owes the weapon and the FIRST crystal and nothing
+else**; there is no quest ladder any more.
+
 **A CRYSTAL'S LEVEL IS THE WHOLE OF GEAR PROGRESSION.** *"Make it where tiers
 are just based on crystal level and make it take longer to level them."*
-`CRYSTAL_LEVELS` buys two things and nothing else buys either: `mods` is how
-many lines it holds, `tier` the best gear BASE a run may drop, read off the
-MEAN level socketed (`tierForSet`) so one good crystal cannot carry three
-blanks. The RUNG buys item level, so a first cycle is well-rolled tier 1 rather
+`CRYSTAL_LEVELS` buys three things and nothing else buys any of them: `mods` is
+how many lines it holds, `tier` the best gear BASE a run may drop — read off the
+MEAN level socketed (`tierForSet`), so one good crystal cannot carry three
+blanks — and `MOD_TIER_LIFT` is which TIER of modifier it rolls. That last one
+is a LIFT and never a gate: measured, a level 2 crystal rolls the best tier 27%
+of the time and a level 4 one 52%, and the WORST is still 14% at level 4. *"You
+can still get the worst mods too and it's just possible to get the very best."* The RUNG buys item level, so a first cycle is well-rolled tier 1 rather
 than tier 1 rolled badly. Nothing gates levelling any more — a crystal earns
 from the first clear it is socketed for — and `xp` is a real climb: measured,
 level 4 is 400 clears at the bare Fissure, 87 at 200 danger and 26 at the top,

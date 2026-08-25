@@ -40,7 +40,7 @@ import {
 import { spend } from '../economy';
 import { bagsFull, crystalsIn, socketed, unsocket } from '../game/state';
 import type { GameState } from '../game/state';
-import { crystalProgress } from '../game/crystals';
+import { crystalProgress, takeDepth } from '../game/crystals';
 import { bossBeaten, folkMet, hasMet, takeBoss, takeMet } from '../game/scenes';
 import { takeTrials } from '../game/trials';
 import { SCENES, SCENE_BY_ID } from '../scenes';
@@ -565,8 +565,14 @@ function finish(left = false): void {
 
   if (report.cleared) streak++;
 
-  // THE CLIMB. A rung already cleared records nothing.
-  if (report.cleared && !left && ran) takeRung(game.character, ran);
+  // THE CLIMB. A rung already cleared records nothing — and what the DEPTH
+  // pays is asked first, because "newly cleared" is what `takeRung` writes.
+  if (report.cleared && !left && ran) {
+    for (const crystal of takeDepth(game, ran)) {
+      note(`${crystal.name} was in the wall at ${rungName(ran)}. It is yours.`, 'add');
+    }
+    takeRung(game.character, ran);
+  }
 
   if (report.cleared) payTrials(sim.state);
 
@@ -660,8 +666,13 @@ function endEncounter(): void {
   // Marked at the clear, so a room you died in is one you meet again. BEFORE
   // the trials are asked: the first rung is this boss being down.
   if (report.cleared && def?.encounter) takeBoss(game, def.encounter);
-  // And if the room WAS a rung, the climb records it.
-  if (report.cleared && ran) takeRung(game.character, ran);
+  // And if the room WAS a rung, the climb records it — after the depth is paid.
+  if (report.cleared && ran) {
+    for (const crystal of takeDepth(game, ran)) {
+      note(`${crystal.name} was in the wall at ${rungName(ran)}. It is yours.`, 'add');
+    }
+    takeRung(game.character, ran);
+  }
   if (report.cleared) payTrials(state);
 
   const after = report.cleared && !revisit ? (def?.after ?? []) : [];

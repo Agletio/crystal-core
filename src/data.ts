@@ -1833,6 +1833,12 @@ export const CRYSTAL_LEVELS = [
   { level: 4, mods: 3, tier: 3, xp: 400 },
 ];
 
+/** WHICH TIER OF MODIFIER A LEVEL ROLLS — a LIFT and never a gate, so the best
+ *  stays possible at every level and so does the worst. An entry's weight is
+ *  multiplied by this raised to how far its tier sits above the worst its
+ *  modifier has. Indexed by crystal level, 1 first. */
+export const MOD_TIER_LIFT = [1, 1.2, 2, 3.6];
+
 /** The best base tier ONE crystal's level allows. */
 export const tierForLevel = (level: number): number =>
   CRYSTAL_LEVELS.find((l) => l.level === Math.round(level))?.tier ?? 1;
@@ -1932,102 +1938,46 @@ export const INTRO = {
   bossRoom: 'answering_hall',
 };
 
-/**
- * Every crystal past the first is gone and got. One clause of an objective:
- * `kind` names an entry in `QUEST_CONDITIONS` and everything else on it is
- * that condition's own parameters, so a new objective is a registry entry and
- * a row here rather than a change to anything that reads quests.
- */
+/** One clause of a TRIAL's objective: `kind` names an entry in
+ *  `TRIAL_CONDITIONS` and the rest is that condition's own parameters. */
 export interface QuestNeed {
   kind: string;
   [param: string]: unknown;
 }
 
-/** ALL of `need`. `detail` is the objective in words, and the screen shows it,
- *  so it and the clauses have to be changed together. */
-export interface CrystalQuest {
-  id: string;
-  name: string;
-  detail: string;
-  need: QuestNeed[];
-  gives: { level: number; family: MonsterFamily };
+/** WHAT A DEPTH HANDS OVER — *"the entire Crystal handout should be scratched
+ *  and it should just be at certain depths instead."* The FAMILY is what a
+ *  depth is FOR, since what you socket is where you go. Paid on a rung being
+ *  NEWLY cleared. The first change of world is The Answering rung 8. */
+export interface CrystalDepth {
+  zone: number; // index into LADDER.zones
+  rung: number;
+  family: MonsterFamily;
 }
 
-/**
- * Two ladders in one list, walkable in any order. The Normal rungs open the
- * sockets; the other two worlds are the opponents you take into them. A share
- * of 0.25 is ONE socketed crystal of that family out of four, so the second
- * gift of a world is earned by using its first.
- *
- * Every rung has to be plausible to a character that has just done the one
- * before it — the demo measures that, which is why the numbers can be soft.
- */
-export const CRYSTAL_QUESTS: CrystalQuest[] = [
-  {
-    id: 'normal_ii',
-    name: 'A Second Lamp',
-    detail: 'Bring a socketed crystal to level 3.',
-    need: [{ kind: 'crystal_level', value: 3 }],
-    gives: { level: 1, family: 'normal' },
-  },
-  {
-    id: 'demonic_i',
-    name: 'The First Door',
-    detail: 'Clear a descent at 30 danger.',
-    need: [{ kind: 'danger', value: 30 }],
-    gives: { level: 1, family: 'demonic' },
-  },
-  {
-    id: 'normal_iii',
-    name: 'Wider Ground',
-    detail: 'Clear a descent at 40 danger.',
-    need: [{ kind: 'danger', value: 40 }],
-    gives: { level: 1, family: 'normal' },
-  },
-  {
-    id: 'prismatic_i',
-    name: 'The Lit Seam',
-    detail: 'Clear a descent at 60 danger.',
-    need: [{ kind: 'danger', value: 60 }],
-    gives: { level: 1, family: 'prismatic' },
-  },
-  {
-    id: 'normal_iv',
-    name: 'Before The Lamp Dies',
-    detail: 'Clear a descent at 70 danger in under 90 seconds.',
-    need: [
-      { kind: 'danger', value: 70 },
-      { kind: 'under_seconds', value: 90 },
-    ],
-    gives: { level: 1, family: 'normal' },
-  },
-  {
-    id: 'demonic_ii',
-    name: 'Deeper In',
-    detail: 'Clear a descent at 110 danger with a Demonic crystal socketed.',
-    need: [
-      { kind: 'danger', value: 110 },
-      { kind: 'composition', family: 'demonic', share: 0.25 },
-    ],
-    gives: { level: 1, family: 'demonic' },
-  },
-  {
-    id: 'prismatic_ii',
-    name: 'Further Through',
-    detail: 'Clear a descent at 110 danger with a Prismatic crystal socketed.',
-    need: [
-      { kind: 'danger', value: 110 },
-      { kind: 'composition', family: 'prismatic', share: 0.25 },
-    ],
-    gives: { level: 1, family: 'prismatic' },
-  },
+export const CRYSTAL_DEPTHS: CrystalDepth[] = [
+  { zone: 0, rung: 2, family: 'normal' },
+  { zone: 0, rung: 4, family: 'normal' },
+  { zone: 0, rung: 6, family: 'normal' },
+  { zone: 0, rung: 8, family: 'demonic' },
+  { zone: 0, rung: 10, family: 'prismatic' },
+  { zone: 0, rung: 12, family: 'demonic' },
+
+  { zone: 1, rung: 3, family: 'prismatic' },
+  { zone: 1, rung: 6, family: 'demonic' },
+  { zone: 1, rung: 9, family: 'prismatic' },
+  { zone: 1, rung: 12, family: 'normal' },
+  { zone: 1, rung: 14, family: 'demonic' },
+
+  { zone: 2, rung: 4, family: 'prismatic' },
+  { zone: 2, rung: 8, family: 'demonic' },
+  { zone: 2, rung: 12, family: 'normal' },
+  { zone: 2, rung: 16, family: 'prismatic' },
 ];
 
-export const QUEST_BY_ID: Record<string, CrystalQuest> = Object.fromEntries(
-  CRYSTAL_QUESTS.map((q) => [q.id, q])
-);
+export const depthsAt = (zone: number, rung: number): CrystalDepth[] =>
+  CRYSTAL_DEPTHS.filter((d) => d.zone === zone && d.rung === rung);
 
-/** Every crystal rolls at the same item level, so a level buys room, never power. */
 export const CRYSTAL_ILVL = 70;
 
 // --- combat baselines ------------------------------------------------------

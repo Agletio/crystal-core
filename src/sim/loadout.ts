@@ -1,8 +1,6 @@
-/**
- * A reference set of gear and crystals for the dev kit and the balance
- * harnesses. Item level is the only parameter: it decides the base's tier as
- * well as which modifier tiers can roll.
- */
+/** A reference set of gear and crystals for the dev kit and the balance
+ *  harnesses. A BAND is the parameter: it picks the crystal shape and the item
+ *  level, and a crystal's own LEVEL is what decides the base tier. */
 import { Rng } from '../rng';
 import { ModPool } from '../mods';
 import {
@@ -15,6 +13,7 @@ import {
   GEAR_BASE_BY_ID,
   OFF_SLOT,
   PLAYER_SKILLS,
+  POWER,
   REFERENCE_ARMOUR_FAMILY,
   RUN_SLOTS,
   SKILL_BY_ID,
@@ -123,8 +122,8 @@ export function ladderCharacter(
  */
 export type BuildShape = 'runner' | 'tank' | 'neither';
 
-/** Every shape keeps the OFFENCE lines — the fight has a dps check in it. What
- *  a shape decides is the ANSWER besides: speed, plate, or none. */
+/** Every shape keeps the OFFENCE lines; what it decides is the ANSWER
+ *  besides — speed, plate, or none. */
 const CORE = ['damage', 'critChance', 'critMultiplier', 'attackSpeed', 'castSpeed'];
 
 const SHAPE_LINES: Record<BuildShape, (stat: string) => boolean> = {
@@ -133,18 +132,16 @@ const SHAPE_LINES: Record<BuildShape, (stat: string) => boolean> = {
   neither: (s) => CORE.includes(s),
 };
 
-/** What each shape WEARS. `bulwark` spends its whole budget on the rating and
- *  is what "full armour build" means; the reference family is middling, which
- *  is the point of it — a shape has to reach for its own bases. */
+/** What each shape WEARS. `bulwark` spends its whole budget on the rating; the
+ *  reference family is middling, so a shape reaches for its own bases. */
 const SHAPE_PLATE: Record<BuildShape, string> = {
   runner: 'shadow',
   tank: 'bulwark',
   neither: REFERENCE_ARMOUR_FAMILY,
 };
 
-/** What each shape puts in its passive slots. A shape's answer to the boss is
- *  the whole point of it, so this is chosen and not drawn. `neither` names
- *  none, which is what having no answer IS. */
+/** What each shape puts in its passive slots — chosen, not drawn. `neither`
+ *  names none, which is what having no answer IS. */
 const SHAPE_PASSIVES: Record<BuildShape, string[]> = {
   runner: ['featherstep'],
   tank: ['sundering'],
@@ -410,9 +407,8 @@ function greedyTree(character: Character, skillId: string): void {
   }
 }
 
-/** What a minor is worth for being ON THE WAY to something. Without it a greedy
- *  walk buys the first notable it can reach and then stalls on minors forever,
- *  which is a worse build than the random walk it is meant to beat. */
+/** What a minor is worth for being ON THE WAY. Without it a greedy walk buys
+ *  the first notable it reaches and stalls on minors forever. */
 const REACH = 12;
 
 /** Sockets fill before levels climb, so a set grows the way a player's does. */
@@ -442,20 +438,24 @@ export function deepestSet(rng: Rng, pool: ModPool): Item[] {
  */
 export function ladderSet(band: number, rng: Rng, pool: ModPool): Item[] {
   const target = Math.max(0, Math.min(DROP_BANDS.length - 1, Math.round(band)));
+  // THE SHAPE IS THE BAND'S, one for one, and only the ROLLS are aimed: level
+  // buys the base tier and danger buys the band, so picking whichever shape got
+  // closest chose low-level crystals carrying big rolls.
+  const [filled, level] = LADDER_SHAPES[Math.min(target, LADDER_SHAPES.length - 1)];
+  // AIMED AT DANGER, not power: power CLAMPS, so at the top band every big roll
+  // scores the same and "closest" picked the deep end rather than a band.
+  const want = Math.max(0, target * POWER.perDanger - filled * POWER.perSocket * POWER.perDanger);
   let best: Item[] = [];
   let closest = Infinity;
-
-  for (const [filled, level] of LADDER_SHAPES) {
-    if (filled > RUN_SLOTS.length || level > CRYSTAL_LEVELS.length) continue;
-    // Twelve tries, not four: some of what a crystal rolls carries no danger,
-    // and a player aiming at a band re-rolls those away.
-    for (let attempt = 0; attempt < 12; attempt++) {
-      const set = Array.from({ length: filled }, () => rollCrystal(level, pool, rng));
-      const gap = Math.abs(runSet(set).power - target);
-      if (gap >= closest) continue;
-      closest = gap;
-      best = set;
-    }
+  // Two dozen tries: some rolls carry no danger, and a player re-rolls those.
+  for (let attempt = 0; attempt < 24; attempt++) {
+    const set = Array.from({ length: Math.min(filled, RUN_SLOTS.length) }, () =>
+      rollCrystal(Math.min(level, CRYSTAL_LEVELS.length), pool, rng)
+    );
+    const gap = Math.abs(runSet(set).rewards.danger - want);
+    if (gap >= closest) continue;
+    closest = gap;
+    best = set;
   }
   return best;
 }

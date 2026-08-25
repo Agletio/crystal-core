@@ -913,10 +913,11 @@ assert(
   text('crystals-count')
 );
 // Nothing about a gift is a probability any more, so the screen states a fact.
-// A percentage here would be the one thing on it a player cannot act on.
+// A percentage here would be the one thing on it a player cannot act on — and
+// so would "somewhere below", which is why the next crystal is named by RUNG.
 assert(
-  /talk to him in the camp/i.test(text('crystals-npc')),
-  'the collection says where whatever is owed gets handed over',
+  /(talk to him in the camp|rung \d+)/i.test(text('crystals-npc')),
+  'the collection says where the next crystal is, by name and by rung',
   text('crystals-npc')
 );
 assert(
@@ -925,13 +926,19 @@ assert(
   text('crystals-npc')
 );
 assert(
-  all('#crystals-quests .quest').length === 7,
-  'every rung of both ladders is listed',
+  all('#crystals-quests .quest').length === 15,
+  'and every depth the climb pays a crystal at is listed under it',
   String(all('#crystals-quests .quest').length)
 );
+// The panel tracks the CLIMB, never the collection. The dev kit hands over every
+// crystal in the game and walks no rung for any of them, so nothing here reads
+// as taken — which is the whole distinction worth holding: what pays a crystal
+// is the ground, and owning one says nothing about having been there.
 assert(
-  all('#crystals-quests .quest--done').length === 7,
-  'and the dev kit, which is handed every crystal, has them all answered'
+  all('#crystals-quests .quest').length > 0
+    && all('#crystals-quests .quest--done').length === 0,
+  'and a depth reads as taken only where the CLIMB passed it, never off the kit',
+  String(all('#crystals-quests .quest--done').length)
 );
 // A crystal levels only while socketed, which is the reason to socket a blank
 // one at all — so the row has to say where it stands.
