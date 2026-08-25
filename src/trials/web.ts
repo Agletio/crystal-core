@@ -44,16 +44,16 @@ export const TRIAL_WEB: TrialSpec = {
   // Small, and every one of them worth having on the way past. Nothing here is
   // a decision — the decision is which road you are on.
   road: [
-    m('+6% increased Monster Life', stat('monsterLife', 'inc', 6)),
-    m('+5% increased Monster Damage', stat('monsterDamage', 'inc', 5)),
     m('+6% increased Pack Size', stat('packSize', 'inc', 6)),
     m('+5% increased Pack Count', stat('packCount', 'inc', 5)),
     m('+12% increased Magic and Rare monsters', stat('monsterRank', 'inc', 12)),
     m('+3 Rarity', stat('rarity', 'flat', 3)),
     m('+6% increased Currency Find', stat('currencyFind', 'inc', 6)),
     m('+6% increased Layout Complexity', stat('layoutComplexity', 'inc', 6)),
-    m('+4% Monster Critical Chance', stat('monsterCrit', 'inc', 4)),
-    m('+6% increased Monster Armour', stat('monsterArmour', 'inc', 6)),
+    m('+2% of packs guard a Hoard', stat('hoardChance', 'inc', 2)),
+    m('+2% of deaths leave one of the rank below', stat('splitChance', 'inc', 2)),
+    m('+3% of packs hold a Warden', stat('wardenChance', 'inc', 3)),
+    m('+10% increased Magic and Rare monsters', stat('monsterRank', 'inc', 10)),
   ],
   wheels: [
     // --- the inner four: reached straight off the middle -------------------
@@ -66,41 +66,41 @@ export const TRIAL_WEB: TrialSpec = {
       minors: [
         m('+20% increased Magic and Rare monsters', stat('monsterRank', 'inc', 20)),
         m('+20% increased Magic and Rare monsters', stat('monsterRank', 'inc', 20)),
-        m('+6% Monster Critical Chance', stat('monsterCrit', 'inc', 6)),
+        m('+4% of packs hold a Warden', stat('wardenChance', 'inc', 4)),
         m('+25% increased Magic and Rare monsters', stat('monsterRank', 'inc', 25)),
         m('+5 Rarity', stat('rarity', 'flat', 5)),
-        m('+6% Monster Critical Chance', stat('monsterCrit', 'inc', 6)),
+        m('+30% increased Magic and Rare monsters', stat('monsterRank', 'inc', 30)),
       ],
       major: {
         id: 'tr_watched',
         name: 'Watched',
         description:
-          '+120% increased Magic and Rare monsters and +15% Monster Critical ' +
-          'Chance. Every one of them was already facing the way you came in.',
-        stats: [stat('monsterRank', 'inc', 120), stat('monsterCrit', 'inc', 15)],
+          '+150% increased Magic and Rare monsters, and +10% of packs hold a ' +
+          'Warden. Every one of them was already facing the way you came in.',
+        stats: [stat('monsterRank', 'inc', 150), stat('wardenChance', 'inc', 10)],
       },
     },
     {
       id: 'weight',
-      theme: 'The Weight',
-      blurb: 'The same monsters, carrying more. The rock leans on everything in it.',
+      theme: 'The Warden',
+      blurb: 'Something in every pack the rest of it is standing behind.',
       at: at(0, 1),
       roads: [CENTRE],
       minors: [
-        m('+12% increased Monster Life', stat('monsterLife', 'inc', 12)),
-        m('+10% increased Monster Damage', stat('monsterDamage', 'inc', 10)),
-        m('+14% increased Monster Life', stat('monsterLife', 'inc', 14)),
-        m('+8% increased Monster Movement Speed', stat('monsterMoveSpeed', 'inc', 8)),
-        m('+12% increased Monster Damage', stat('monsterDamage', 'inc', 12)),
-        m('+16% increased Monster Life', stat('monsterLife', 'inc', 16)),
+        m('+6% of packs hold a Warden', stat('wardenChance', 'inc', 6)),
+        m('+7% of packs hold a Warden', stat('wardenChance', 'inc', 7)),
+        m('+15% increased Magic and Rare monsters', stat('monsterRank', 'inc', 15)),
+        m('+7% of packs hold a Warden', stat('wardenChance', 'inc', 7)),
+        m('+8% of packs hold a Warden', stat('wardenChance', 'inc', 8)),
+        m('+4 Rarity', stat('rarity', 'flat', 4)),
       ],
       major: {
         id: 'tr_grave_weight',
-        name: 'Grave Weight',
+        name: 'Nothing Gets Past',
         description:
-          '+50% increased Monster Life and +30% increased Monster Damage. ' +
-          'Nothing new is down there. There is simply more of what is.',
-        stats: [stat('monsterLife', 'inc', 50), stat('monsterDamage', 'inc', 30)],
+          '+25% of packs hold a Warden. Nothing else in a pack can be hurt ' +
+          'while its Warden stands, and it is the biggest thing in there.',
+        stats: [stat('wardenChance', 'inc', 25)],
       },
     },
     {
@@ -138,7 +138,7 @@ export const TRIAL_WEB: TrialSpec = {
         m('+4 Rarity', stat('rarity', 'flat', 4)),
         m('+12% increased Currency Find', stat('currencyFind', 'inc', 12)),
         m('+14% increased Currency Find', stat('currencyFind', 'inc', 14)),
-        m('+8% increased Monster Damage', stat('monsterDamage', 'inc', 8)),
+        m('+5% of packs guard a Vein', stat('veinChance', 'inc', 5)),
       ],
       major: {
         id: 'tr_salt',
@@ -146,7 +146,7 @@ export const TRIAL_WEB: TrialSpec = {
         description:
           '+45% increased Currency Find. What they were hauling up here was ' +
           'never the interesting part.',
-        stats: [stat('currencyFind', 'inc', 45)],
+        stats: [stat('currencyFind', 'inc', 45), stat('veinChance', 'inc', 14)],
       },
     },
 
@@ -186,9 +186,9 @@ export const TRIAL_WEB: TrialSpec = {
       minors: [
         m('+5% of deaths well up something worse', stat('wellChance', 'inc', 5)),
         m('+6% of deaths well up something worse', stat('wellChance', 'inc', 6)),
-        m('+12% increased Monster Life', stat('monsterLife', 'inc', 12)),
+        m('+8% of deaths leave one of the rank below', stat('splitChance', 'inc', 8)),
         m('+6% of deaths well up something worse', stat('wellChance', 'inc', 6)),
-        m('+6% Monster Critical Chance', stat('monsterCrit', 'inc', 6)),
+        m('+10% of deaths leave one of the rank below', stat('splitChance', 'inc', 10)),
         m('+7% of deaths well up something worse', stat('wellChance', 'inc', 7)),
       ],
       major: {
@@ -208,11 +208,11 @@ export const TRIAL_WEB: TrialSpec = {
       roads: ['press', 'vein'],
       minors: [
         m('+3% of packs carry a Bearer', stat('bearerChance', 'inc', 3)),
-        m('+15% increased Monster Armour', stat('monsterArmour', 'inc', 15)),
+        m('+5% of packs hold a Warden', stat('wardenChance', 'inc', 5)),
         m('+3% of packs carry a Bearer', stat('bearerChance', 'inc', 3)),
         m('+5 Rarity', stat('rarity', 'flat', 5)),
         m('+4% of packs carry a Bearer', stat('bearerChance', 'inc', 4)),
-        m('+18% increased Monster Armour', stat('monsterArmour', 'inc', 18)),
+        m('+12% of bodies drop coin where they fall', stat('giltChance', 'inc', 12)),
       ],
       major: {
         id: 'tr_the_bearer',
@@ -253,72 +253,49 @@ export const TRIAL_WEB: TrialSpec = {
     // --- the outer four: the long roads, and the hardest things on them ----
     {
       id: 'reading',
-      theme: 'The Reading',
-      blurb: 'The rock is writing, and what it wrote is on every hand down there.',
+      theme: 'The Second Watch',
+      blurb: 'The rock is writing, and what it wrote is that they get up again.',
       at: at(2, 0),
       roads: ['hoard', 'reliquary'],
       minors: [
-        m('+8% of Monster Damage Added as Fire', stat('monsterFire', 'inc', 8)),
-        m('+8% of Monster Damage Added as Cold', stat('monsterCold', 'inc', 8)),
-        m('+8% of Monster Damage Added as Lightning', stat('monsterLightning', 'inc', 8)),
-        m('+10% of Monster Damage Added as Fire', stat('monsterFire', 'inc', 10)),
-        m('+10% of Monster Damage Added as Cold', stat('monsterCold', 'inc', 10)),
-        m('+10% of Monster Damage Added as Lightning', stat('monsterLightning', 'inc', 10)),
+        m('+10% of Hoards whose guards stand back up', stat('watchChance', 'inc', 10)),
+        m('+12% of Hoards whose guards stand back up', stat('watchChance', 'inc', 12)),
+        m('+4% of packs guard a Hoard', stat('hoardChance', 'inc', 4)),
+        m('+12% of Hoards whose guards stand back up', stat('watchChance', 'inc', 12)),
+        m('+14% of Hoards whose guards stand back up', stat('watchChance', 'inc', 14)),
+        m('+5% of packs guard a Hoard', stat('hoardChance', 'inc', 5)),
       ],
       major: {
         id: 'tr_read_aloud',
         name: 'Read Aloud',
         description:
-          '+22% of Monster Damage Added as Fire, +22% as Cold and +22% as ' +
-          'Lightning. You can hear it before it reaches you, which does not help.',
-        stats: [
-          stat('monsterFire', 'inc', 22),
-          stat('monsterCold', 'inc', 22),
-          stat('monsterLightning', 'inc', 22),
-        ],
+          '+45% of Hoards whose guards stand back up, and +12% of packs guard ' +
+          'a Hoard. They do it once each. You can hear it before it happens.',
+        stats: [stat('watchChance', 'inc', 45), stat('hoardChance', 'inc', 12)],
       },
     },
     {
       id: 'hide',
-      theme: 'The Hide',
-      blurb: 'Harder to get through, and it knows which way you hit.',
+      theme: 'The Splitting',
+      blurb: 'Harder to get through, because none of it goes down in one piece.',
       at: at(2, 1),
       roads: ['hoard', 'welling'],
       minors: [
-        m('+12% increased Monster Armour', stat('monsterArmour', 'inc', 12)),
-        m(
-          '+10% Monster Fire, Cold and Lightning Resistance',
-          stat('monsterFireRes', 'flat', 10),
-          stat('monsterColdRes', 'flat', 10),
-          stat('monsterLightningRes', 'flat', 10)
-        ),
-        m('+15% increased Monster Armour', stat('monsterArmour', 'inc', 15)),
-        m(
-          '+10% Monster Poison, Dark and Light Resistance',
-          stat('monsterPoisonRes', 'flat', 10),
-          stat('monsterDarkRes', 'flat', 10),
-          stat('monsterLightRes', 'flat', 10)
-        ),
-        m('+12% Monster Physical Resistance', stat('monsterPhysicalRes', 'flat', 12)),
-        m('+18% increased Monster Armour', stat('monsterArmour', 'inc', 18)),
+        m('+10% of deaths leave one of the rank below', stat('splitChance', 'inc', 10)),
+        m('+12% of deaths leave one of the rank below', stat('splitChance', 'inc', 12)),
+        m('+20% increased Magic and Rare monsters', stat('monsterRank', 'inc', 20)),
+        m('+12% of deaths leave one of the rank below', stat('splitChance', 'inc', 12)),
+        m('+8% of deaths well up something worse', stat('wellChance', 'inc', 8)),
+        m('+14% of deaths leave one of the rank below', stat('splitChance', 'inc', 14)),
       ],
       major: {
         id: 'tr_warded',
         name: 'Grown Over',
         description:
-          '+55% increased Monster Armour and +15% Monster Resistance to every ' +
-          'damage type there is. Bring the one they have not answered yet.',
-        stats: [
-          stat('monsterArmour', 'inc', 55),
-          stat('monsterPhysicalRes', 'flat', 15),
-          stat('monsterFireRes', 'flat', 15),
-          stat('monsterColdRes', 'flat', 15),
-          stat('monsterLightningRes', 'flat', 15),
-          stat('monsterPoisonRes', 'flat', 15),
-          stat('monsterDarkRes', 'flat', 15),
-          stat('monsterLightRes', 'flat', 15),
-          stat('monsterPrismaticRes', 'flat', 15),
-        ],
+          '+50% of deaths leave one of the rank below, and +80% increased ' +
+          'Magic and Rare monsters. A common leaves nothing, and that is all ' +
+          'that stops it.',
+        stats: [stat('splitChance', 'inc', 50), stat('monsterRank', 'inc', 80)],
       },
     },
     {
@@ -329,22 +306,22 @@ export const TRIAL_WEB: TrialSpec = {
       roads: ['welling', 'bearer'],
       minors: [
         m('+10% increased Layout Complexity', stat('layoutComplexity', 'inc', 10)),
-        m('+8% increased Monster Movement Speed', stat('monsterMoveSpeed', 'inc', 8)),
+        m('+6% of packs guard a Vein', stat('veinChance', 'inc', 6)),
         m('+12% increased Layout Complexity', stat('layoutComplexity', 'inc', 12)),
         m('+8% increased Pack Count', stat('packCount', 'inc', 8)),
-        m('+10% increased Monster Movement Speed', stat('monsterMoveSpeed', 'inc', 10)),
+        m('+6% of packs guard a Hoard', stat('hoardChance', 'inc', 6)),
         m('+14% increased Layout Complexity', stat('layoutComplexity', 'inc', 14)),
       ],
       major: {
         id: 'tr_winding',
         name: 'The Long Way Round',
         description:
-          '+40% increased Layout Complexity, +25% increased Pack Count and +20% ' +
-          'increased Monster Movement Speed. They are round the corner before you.',
+          '+40% increased Layout Complexity, +25% increased Pack Count and +14% ' +
+          'of packs guard a Vein. Everything worth having is round one more corner.',
         stats: [
           stat('layoutComplexity', 'inc', 40),
           stat('packCount', 'inc', 25),
-          stat('monsterMoveSpeed', 'inc', 20),
+          stat('veinChance', 'inc', 14),
         ],
       },
     },
@@ -356,22 +333,24 @@ export const TRIAL_WEB: TrialSpec = {
       roads: ['bearer', 'reliquary'],
       minors: [
         m('+12% increased Currency Find', stat('currencyFind', 'inc', 12)),
-        m('+12% increased Monster Damage', stat('monsterDamage', 'inc', 12)),
+        m('+14% of bodies drop coin where they fall', stat('giltChance', 'inc', 14)),
         m('+6 Rarity', stat('rarity', 'flat', 6)),
         m('+14% increased Currency Find', stat('currencyFind', 'inc', 14)),
-        m('+14% increased Monster Damage', stat('monsterDamage', 'inc', 14)),
+        m('+8% of packs hold a Warden', stat('wardenChance', 'inc', 8)),
         m('+7 Rarity', stat('rarity', 'flat', 7)),
       ],
       major: {
         id: 'tr_the_tithe',
         name: 'The Whole Purse',
         description:
-          '+40% increased Currency Find and +26 Rarity, and +45% increased ' +
-          'Monster Damage. What it charges and what it hands over are one deal.',
+          '+40% increased Currency Find, +26 Rarity and +30% of bodies drop ' +
+          'coin where they fall, and +18% of packs hold a Warden. What it ' +
+          'charges and what it hands over are one deal.',
         stats: [
           stat('currencyFind', 'inc', 40),
           stat('rarity', 'flat', 26),
-          stat('monsterDamage', 'inc', 45),
+          stat('giltChance', 'inc', 30),
+          stat('wardenChance', 'inc', 18),
         ],
       },
     },

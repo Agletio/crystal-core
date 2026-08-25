@@ -278,7 +278,12 @@ road — half the ring is what the major costs.
 is SHUT until the Fissure is whole (`trialsOpen`), so a new character meets the
 climb before it meets a hundred and fifty-six nodes. Never a level, so it cannot
 be ground for. Its lines merge into `RunSet.mods` beside the crystals' own and
-are weighed by the same `crystalRewards`, so harder is what pays. Most of it is
+are weighed by the same `crystalRewards`, so harder is what pays. **Every one
+of its 156 nodes is a RULE, the same vocabulary the crystals roll** — no
+monster life, no damage, no armour, no crit, no added element and no ward
+anywhere in it. **NOTHING IN THE GAME WARDS A DAMAGE TYPE any more**, so there
+is no element that is worse to bring; a monster's element is its own ability's,
+which is what an Ailment still keys off. Most of it is
 danger; the Vein, the Reliquary and the Tithe pay in Rarity and Currency Find
 instead, and **what a reward node costs is the ROAD** — it is a danger node you
 did not walk to. Per CHARACTER, and it worsens every descent that character

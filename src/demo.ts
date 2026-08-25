@@ -8347,17 +8347,32 @@ rule('ELEMENTS — does a monster bring its own, and does a ward still matter?')
   // modifier rolling WHICH element would be a name that lies about which
   // resistance to bring.
   {
-    // AN ELEMENT AND ITS WARD ARE THE TRIALS WEB'S. A crystal rolls neither any
-    // more — what it carries is a rule the floor runs — so the pairing is asked
-    // of the only place either still lives.
-    const webStats = new Set(trialNodes().flatMap((n) => (n.stats ?? []).map((st) => st.stat)));
-    const missing = ADDED_DAMAGE_TYPES.filter(
-      (t) => !webStats.has(monsterAddedStat(t)) || !webStats.has(monsterResStat(t))
+    // A MONSTER'S ELEMENT IS ITS OWN ABILITY'S, and that is the only place one
+    // comes from. Nothing a player rolls or walks to adds an element to a body
+    // or wards one — the crystals stopped when their pool became rules, and the
+    // web stopped with them. THAT IS THE FINDING, not an omission: a ward is
+    // the purest form of a number on a body, and every one of them is gone.
+    const rollable = new Set(
+      ALL_MODS.flatMap((m) => m.tiers.flatMap((t) => t.stats.map((st) => st.stat)))
+    );
+    const walkable = new Set(trialNodes().flatMap((n) => (n.stats ?? []).map((st) => st.stat)));
+    // A MONSTER's, never the hero's: gear rolls the resistances you WEAR, and
+    // those are the other half of what makes a damage type mean anything.
+    const written = [...rollable, ...walkable].filter(
+      (st) => (st.startsWith('monster') && st.endsWith('Res')) || ADDED_DAMAGE_STATS.includes(st)
     );
     check(
-      missing.length === 0 && ADDED_DAMAGE_TYPES.length === 3,
-      'every element the web adds has its own node and its own ward',
-      missing.join(', ')
+      written.length === 0,
+      'nothing a player rolls or walks to adds an element to a monster, or wards one',
+      written.join(', ')
+    );
+    // And a monster still THROWS one, which is what keeps a damage type a thing
+    // you meet at all. Ailments key off the type, so this is load-bearing.
+    const throwers = MONSTER_ABILITIES.filter((a) => a.skill).length;
+    check(
+      throwers > 0,
+      `a body's element is its own ability's — ${throwers} of them throw one`,
+      String(throwers)
     );
     const unnamed = ADDED_DAMAGE_STATS.filter(
       (stat) => !/Damage Added as /.test(describeStatLine({ stat, form: 'inc', value: 50, tags: [] }))
@@ -8827,14 +8842,15 @@ rule('WARDS — is there a crystal roll your build can ignore?');
     `uncovered ${uncovered.join(', ')} · twice ${twice.join(', ')}`
   );
 
-  // THE TEST THE PASS EXISTS FOR, asked where wards now live: pick any damage
-  // type a build can deal, and something on the web argues with it. A type
-  // nothing wards is a family the deep end never has an answer to.
-  const blind = DAMAGE_TYPES.filter((t) => !nodeStat.has(monsterResStat(t.id))).map((t) => t.id);
+  // THE TEST THE PASS EXISTS FOR, and the answer is now the strongest one there
+  // is: NOTHING wards, so there is no damage type that is worse to bring than
+  // another. `WARD_GROUPS` and `monsterResStat` stay — the stat pipeline still
+  // reads them, so a future mechanic could write one — but nothing does.
+  const warded = DAMAGE_TYPES.filter((t) => nodeStat.has(monsterResStat(t.id))).map((t) => t.id);
   check(
-    blind.length === 0,
-    `so none of the ${DAMAGE_TYPES.length} damage types is one the web never wards against`,
-    `nothing wards ${blind.join(', ')}`
+    warded.length === 0,
+    `no ward exists at all, so none of the ${DAMAGE_TYPES.length} damage types is worse to bring`,
+    `still warded: ${warded.join(', ')}`
   );
 
   // WHAT A CRYSTAL ACTUALLY ROLLS NOW, measured by rolling rather than read off

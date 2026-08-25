@@ -803,9 +803,11 @@ renaming one costs the player their climb.
    scratched:** `CRYSTAL_QUESTS` is gone whole, `CRYSTAL_DEPTHS` pays one at a
    rung, and `MOD_TIER_LIFT` makes a crystal's level decide which TIER of
    modifier it rolls — a lift and never a gate.
-5. **THE TRIALS WEB FOLLOWS.** If crystals stop selling monster life and damage,
-   the Weight, Hide and Reading wheels are the last place raw scaling is bought
-   — and they are the dullest wheels for exactly the reason this phase exists.
+5. ~~**THE TRIALS WEB FOLLOWS.**~~ **DONE.** All 156 nodes and the road are
+   rules now. The Weight became **The Warden**, the Reading **The Second Watch**
+   and the Hide **The Splitting**; every inflation minor scattered through the
+   other nine went with them. Measured: 0 monster life, damage, armour, crit,
+   move speed, added element or ward anywhere in the web.
 6. **REBALANCE.** The rung is the only raw ladder, so `DANGER.lifeAtTop` /
    `hitAtTop` and the rung curve are re-derived against it.
 
