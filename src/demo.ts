@@ -120,6 +120,7 @@ import {
   makeCrystal,
   pickGearBase,
   priceOfItem,
+  recipeInputs,
   rollCrystal,
   makeGear,
   makeUnique,
@@ -320,6 +321,7 @@ import {
   socketFor,
   socketItem,
   socketed,
+  gearKindOf,
   sortGear,
   relicsIn,
   stashRoom,
@@ -2417,7 +2419,8 @@ rule('THE OPENING — is the first hour walkable with nothing explaining it?');
       `${game.inventory.length} items`
   );
 
-  const bill = RECIPES.find((r) => r.id === 'make_shard_of_making')?.inputs.gold ?? 0;
+  const making = RECIPES.find((r) => r.id === 'make_shard_of_making');
+  const bill = making ? (recipeInputs(making, 1).gold ?? 0) : 0;
   check(
     FISSURE.firstClear.gold >= bill,
     `the first clear pays ${FISSURE.firstClear.gold} gold and the shard it can buy costs ${bill}`,
@@ -8675,7 +8678,7 @@ rule('WHERE THE GOLD COMES FROM — is selling worth the walk to the counter?');
   }
   // What a level-1 shelf holds, which is the whole of what the opening asks for.
   const bench = RECIPES.filter((r) => (r.level ?? 1) === 1).reduce(
-    (n, r) => n + (r.inputs.gold ?? 0),
+    (n, r) => n + (recipeInputs(r, 1).gold ?? 0),
     0
   );
   const perRun = (earned + sold) / descents;
@@ -8685,6 +8688,54 @@ rule('WHERE THE GOLD COMES FROM — is selling worth the walk to the counter?');
     `and covers the level-1 shelf (${bench} gold) in one run`,
     `${perRun.toFixed(1)} gold a run against a ${bench} gold shelf`
   );
+}
+
+// ===========================================================================
+rule('HOW LONG A SLOT TAKES — the one figure scarcity moves and nothing else');
+
+// `ladderCharacter` and `bestBuild` both roll their own gear out of thin air,
+// so every difficulty number in this file survives a drop rate of zero. This is
+// the only place the loot economy is asked how long GEARING takes: a character
+// that keeps whatever raises its power, over a run of clears.
+//
+// A gauge. What it prints is the user's own target — a bare slot inside a
+// handful of clears, a settled one taking hundreds — and it never fails: the
+// curve is order statistics on the mod pool, so an assertion here would be an
+// assertion about luck.
+{
+  for (const band of [2, 4]) {
+    // A CEILING, and a FRESH one: `ladderCharacter` cannot clear band 4 at all,
+    // and the memoised `ceiling()` is shared — this loop wears what it finds.
+    const hero = bestBuild(band, new Rng(11));
+    let seen = 0;
+    let taken = 0;
+    let clears = 0;
+    const at: number[] = [];
+    for (let s = 0; s < 12; s++) {
+      const set = ladderSet(band, new Rng(77 + s), pool);
+      const final = runToCompletion(new RunSim(set, hero, new Rng(303 + s)), 900);
+      if (final.status !== 'cleared') continue;
+      clears++;
+      for (const item of final.loot.items) {
+        if (item.kind !== 'gear') continue;
+        seen++;
+        const kind = gearKindOf(item);
+        const slot = kind && EQUIP_SLOTS.find((e) => e.accepts.some((a) => a === kind));
+        if (!slot) continue;
+        const was = hero.equipment[slot.id];
+        const before = buildPower(hero);
+        hero.equipment[slot.id] = item;
+        if (buildPower(hero) > before) {
+          taken++;
+          at.push(clears);
+        } else hero.equipment[slot.id] = was;
+      }
+    }
+    gauge(
+      `band ${band}: ${clears} clears paid ${seen} pieces (${(seen / Math.max(1, clears)).toFixed(1)} ` +
+        `a clear); ${taken} were worn, at clear ${at.join(', ') || '—'}`
+    );
+  }
 }
 
 // ===========================================================================

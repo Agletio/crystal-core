@@ -532,6 +532,9 @@ export class RunSim {
   private splitChance = 0;
   private giltChance = 0;
   private watchChance = 0;
+  private gearLeft = 0;
+  private currencyLeft = 0;
+  private budgeted = false;
   private byId = new Map<number, Entity>();
   /**
    * The socketed set: how long the run is, how dangerous, and what it pays.
@@ -937,7 +940,7 @@ export class RunSim {
           pathTimer: 0,
           targetId: null,
           walked: 0,
-          ...(hoarded ? { hoard } : {}),
+          ...(locked ? { hoard } : {}), // a VEIN's guards carry it too, or it never opens
           aggroed: false,
           hitFlash: 0,
           dead: false,
@@ -3314,18 +3317,36 @@ export class RunSim {
 
   }
 
-  /**
-   * A piece's item level comes off the power band, and the base's tier comes
-   * off that — so a weak set cannot hand you a six-modifier base however lucky
-   * you get. Rarity raises the CHANCE, never the ceiling, or a rarity-stacked
-   * bare run out-drops an honest set.
-   */
+  /** Item level comes off the power band and the base's tier off that, so a
+   *  weak set cannot hand you a six-modifier base however lucky you get. */
   private rollGearDrop(): void {
-    const drops = this.set.band;
+    this.budgets();
+    if (!this.rng.chance(this.gearLeft / this.bodiesLeft())) return;
+    this.gearLeft--;
+    this.dropGear();
+  }
+
+  /**
+   * WHAT IS LEFT TO PAY, over WHAT IS LEFT TO KILL. Drawing the budget down as
+   * it lands is the one spread whose TOTAL is the band's figure however the
+   * floor behaves: a rule that puts bodies back raises the divisor and lowers
+   * every later draw, so the Welling and the Splitting cost the run nothing.
+   * Seeded on the first kill — rarity is read off gear and the crystals.
+   */
+  private budgets(): void {
+    if (this.budgeted) return;
+    this.budgeted = true;
     const hero = this.state.hero.stats;
-    const rarity = this.set.rewards.rarity + hero.rarity + this.set.pays.rarity;
-    const chance = drops.gearChance * this.set.yield * (1 + rarity / 200);
-    if (this.rng.chance(chance)) this.dropGear();
+    // RARITY IS NOT IN HERE: it buys what a piece IS, never how many arrive.
+    // In the count it paid the deep end 17× its band. `yield` is run LENGTH.
+    this.gearLeft = this.set.band.gearPerRun * this.set.yield;
+    this.currencyLeft =
+      CURRENCY_DROP.perRun * (1 + hero.currencyFind / 100) * this.set.pays.currency;
+  }
+
+  /** Bodies still to come, this one included — `killed` is already counted. */
+  private bodiesLeft(): number {
+    return Math.max(1, this.state.totalMonsters - this.state.killed + 1);
   }
 
   /** ONE piece, unconditionally. A Hoard pays in these rather than in a second
@@ -3526,7 +3547,7 @@ export class RunSim {
 
     box.opened = true;
     if (box.pays === 'currency') {
-      for (let i = 0; i < VEIN.drops; i++) this.rollCurrency();
+      for (let i = 0; i < VEIN.drops; i++) this.dropCurrency();
       return;
     }
     for (let i = 0; i < HOARD.drops; i++) this.dropGear();
@@ -3541,18 +3562,19 @@ export class RunSim {
     }
   }
 
+  /** Currency Find changes HOW OFTEN and rarity HOW GOOD — never both. */
   private rollCurrency(): void {
-    // Gear stacks with the crystal: currency find changes HOW OFTEN, rarity
-    // changes HOW GOOD. Two separate questions, so two separate stats.
-    const hero = this.state.hero.stats;
-    const chance =
-      CURRENCY_DROP.chancePerKill * (1 + hero.currencyFind / 100) * this.set.pays.currency;
-    if (!this.rng.chance(chance)) return;
+    this.budgets();
+    if (!this.rng.chance(this.currencyLeft / this.bodiesLeft())) return;
+    this.currencyLeft--;
+    this.dropCurrency();
+  }
 
-    // The tier caps the class. Rarity decides how often you reach the ceiling;
-    // the crystal decides where the ceiling is. Without the cap, a T1 map with
-    // enough rarity would drop the currency that re-rolls a Brilliant item —
-    // which is the whole ladder skipped in one lucky kill.
+  /** ONE piece, unconditionally — what the Vein pays in, off the budget. */
+  private dropCurrency(): void {
+    const hero = this.state.hero.stats;
+    // Rarity decides how often you reach the ceiling; the crystal decides where
+    // it IS. Uncapped, a T1 map with enough rarity skips the whole ladder.
     const ceiling = CURRENCY_CLASSES.indexOf(this.set.band.currency);
     const rarity = this.set.rewards.rarity + hero.rarity + this.set.pays.rarity;
     const climb = CURRENCY_DROP.upgradeChance * (1 + rarity / 100);

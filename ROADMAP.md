@@ -821,6 +821,67 @@ something and reads), `demo`, `smoke`, `shots`.
 
 ---
 
+## Phase 5 — LOOT IS RARE, and danger buys QUALITY
+
+**The user's complaint, and it was not about the filter:** *"getting a new helm
+with three mods is super annoying, just keep rerolling the one you already have
+instead… an item with no mods could be better than one with 3, you just need to
+click the currency to add the mods."*
+
+**Measured, he is exactly right.** A Shard of Making was 5 gold from an
+unlimited recipe, and a clear banks 54 gold at the bare Fissure against
+**30,359** at the deep end — 6,072 shards a clear. `ModPool.eligible` gates the
+bench and the floor through the SAME condition (`e.ilvl > item.ilvl`), so a
+drop carried no line 425 shards could not fabricate. The only things a found
+piece held that gold could not buy were its base tier and its item level. **The
+filter was not broken — it was honest**, and a modifier-count filter would have
+been a filter for the part that did not matter.
+
+**The volume, and where it came from.** Gear a clear ran 2.1 → 8.6 → 28.6 →
+**84.3**. `gearChance` was per KILL and barely moved (it even ROSE at band 2);
+what moved was kills, 26 → 847. **A per-kill rate cannot express "a deep run
+pays better" when the kill count is itself the difficulty.**
+
+**The chase is already deep enough — measured.** Keeping the best of 200,000
+top-base chests rolled to capacity: new bests at drops 1, 2, 3, 5, 34, 90, 166,
+973, 1401, 17206 … 151940. 18 upgrades in 200,000, last gap 40,554. **The user's
+own targets** — *"you don't even have a chest equipped? 2-10 [clears] at most.
+End game with a mostly t1 chest? Maybe hundreds or even thousands"* — fall out
+of that curve at about **two gear drops a clear** across 8 gear kinds.
+
+### The steps
+
+1. ~~**LOOT IS PER RUN.**~~ **DONE.** `DropBand.gearChance` → `gearPerRun` and
+   `CURRENCY_DROP.chancePerKill` → `perRun`, drawn down body by body against
+   what is LEFT to kill. A live divisor was not enough: the count climbs from
+   ~100 to 845 as the Welling and the Splitting put bodies back, and an early
+   body divided by 100 paid 17× the band. **Rarity came OUT of the count** — it
+   buys what a piece IS, never how many arrive. `fill` rises to [6,6] at the
+   top, so a drop arrives judgeable instead of needing the bench first.
+2. **PERFECT BECOMES THE CHASE.** Its rate is a SHARE of drops, so against 84 a
+   clear it paid 3.79 — wallpaper. With the count flat, cut `atThree`/`atFull`
+   so it is an event. *The user: "one rung, make it even rarer than currently
+   relative to chance per item that drops AND reduce total items."*
+3. ~~**THE BENCH IS AN ANTI-BRICK, NOT A SUPPLY.**~~ **DONE.** `Recipe`
+   gains `goldPerIlvl` and the Shard of Making rides the shelf's own item
+   level — 46 gold at level 1 against ~45,000 deep. **A CONSTANT PRICE CANNOT
+   THROTTLE ANYTHING** across a 562× income swing: tuned to cost a clear at the
+   top it is 560 clears at the bottom, so a new character could never buy one.
+4. **A GAUGE FOR CLEARS-TO-GEAR-A-SLOT.** `ladderCharacter` and `bestBuild`
+   both roll their own gear from thin air, so **scarcity moves no harness
+   number** — the suite will stay green while the game gets much slower. The
+   figure being tuned needs to exist in the suite.
+
+**Done when.** A clear pays two or three pieces at every band, each arriving
+finished enough to judge; a Perfect base is an event; and adding a modifier
+costs a descent rather than five gold.
+
+**What must not break.** `heal`. The opening: a bare descent must still cover
+the level-1 shelf, which is now 46 gold rather than 5. `mods`, `demo`, `smoke`,
+`shots`.
+
+---
+
 ## Phase 3 — A quest log instead of a pointing finger
 
 **Not next, and deliberately.** The tutorial was deleted outright so the opening

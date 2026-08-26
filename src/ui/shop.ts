@@ -12,6 +12,7 @@ import {
   pickGearBase,
   priceOfItem,
   rollGear,
+  recipeInputs,
   runRecipe,
   sellPrice,
   spend,
@@ -66,7 +67,7 @@ function hasRoomFor(recipe: Recipe): boolean {
  */
 function affordableCount(recipe: Recipe): number {
   let most = Infinity;
-  for (const [id, n] of Object.entries(recipe.inputs)) {
+  for (const [id, n] of Object.entries(recipeInputs(recipe, game.character.level))) {
     most = Math.min(most, Math.floor(balance(game.wallet, id) / n));
   }
   return Number.isFinite(most) ? Math.max(0, most) : 0;
@@ -110,7 +111,7 @@ function buy(recipeId: string, count = 1): void {
   let last: Item | null = null;
 
   for (let i = 0; i < count; i++) {
-    const result = runRecipe(game.wallet, recipeId);
+    const result = runRecipe(game.wallet, recipeId, game.character.level);
     if (!result.ok) {
       stopped = result.error ?? 'cannot afford that';
       break;
@@ -144,7 +145,7 @@ function buy(recipeId: string, count = 1): void {
 
 /** A price in words, not in wallet keys. Gold is a mass noun and takes no `s`. */
 function priceOf(recipe: Recipe): string {
-  return Object.entries(recipe.inputs)
+  return Object.entries(recipeInputs(recipe, game.character.level))
     .map(([id, n]) => {
       if (id === 'gold') return `${n} gold`;
       const name = CURRENCY_BY_ID[id]?.name ?? id;

@@ -3190,43 +3190,42 @@ export const REWARD = {
  * `basic → uncommon → rare → exotic` is the only route to the scarce ones.
  */
 export const CURRENCY_DROP = {
-  chancePerKill: 0.022,
+  /** Pieces of currency a CLEAR pays, before Currency Find and the crystals. */
+  perRun: 0.9,
   /** Per-step chance to climb one class, before rarity is applied. */
   upgradeChance: 0.17,
 };
 
 // --- what a run drops ------------------------------------------------------
 //
-// Indexed by run power, which decides what a map can GIVE you and not just how
-// much. `ilvl` is the load-bearing one: it decides which modifier TIERS are
-// reachable AND which gear bases can drop, and a base's tier is the whole of
-// how many modifiers it holds — so a band's item level is its ceiling twice
-// over. `fill` is only how finished a piece ARRIVES.
+// Indexed by run power. `ilvl` decides which modifier TIERS are reachable AND
+// which bases can drop; a base's tier is how many modifiers it holds.
+//
+// **DANGER BUYS QUALITY, NEVER QUANTITY.** Kills run 26 at the bare Fissure
+// against 847 at the deep end: a per-KILL rate paid 1.5 a clear, then 84.
 
 export interface DropBand {
   /** Mods a dropped piece arrives with, as [min, max] of its cap. */
   fill: [number, number];
   /** Best currency class this band can produce. */
   currency: CurrencyClass;
-  /** Chance per kill that a piece of gear drops at all. */
-  gearChance: number;
+  /** Pieces of gear a CLEAR pays, before the crystals' own yield and rarity. */
+  gearPerRun: number;
   /** Item level dropped gear rolls at. */
   ilvl: number;
 }
 
 export const DROP_BANDS: DropBand[] = [
-  // The bare Fissure. Mostly junk, occasionally a one-modifier piece — enough
-  // that the free descent has some upside, which is the difference between a
-  // tutorial and a tax.
-  { fill: [1, 1], currency: 'basic', gearChance: 0.05, ilvl: 10 },
-  { fill: [1, 2], currency: 'basic', gearChance: 0.075, ilvl: 10 },
-  { fill: [1, 2], currency: 'uncommon', gearChance: 0.068, ilvl: 22 },
-  // Tier 2 bases are in reach here, and deliberately not filled.
-  { fill: [2, 3], currency: 'uncommon', gearChance: 0.06, ilvl: 34 },
+  // The bare Fissure: mostly junk, but enough that a free descent is not a tax.
+  { fill: [1, 1], currency: 'basic', gearPerRun: 1.3, ilvl: 10 },
+  { fill: [1, 2], currency: 'basic', gearPerRun: 1.4, ilvl: 10 },
+  { fill: [2, 3], currency: 'uncommon', gearPerRun: 1.4, ilvl: 22 },
+  // NEARLY finished from here up: a drop the bench must finish is one nobody reads.
+  { fill: [3, 4], currency: 'uncommon', gearPerRun: 1.5, ilvl: 34 },
   // Where a build becomes possible: tier 3 bases, six modifiers apiece.
-  { fill: [3, 4], currency: 'rare', gearChance: 0.052, ilvl: 46 },
-  { fill: [3, 5], currency: 'rare', gearChance: 0.045, ilvl: 58 },
-  { fill: [4, 6], currency: 'exotic', gearChance: 0.038, ilvl: 70 },
+  { fill: [4, 5], currency: 'rare', gearPerRun: 1.5, ilvl: 46 },
+  { fill: [5, 6], currency: 'rare', gearPerRun: 1.6, ilvl: 58 },
+  { fill: [6, 6], currency: 'exotic', gearPerRun: 1.7, ilvl: 70 },
 ];
 
 
@@ -3363,12 +3362,13 @@ export const ROGUE = {
 
 /** A PERFECT base: 25% more of everything the BASE hands over — the armour
  *  rating, the swing, every implicit. It rolls modifiers like any other. */
+/** THE ENDGAME CHASE. A SHARE of drops: at 84 a clear it paid 3.79 a descent. */
 export const PERFECT = {
   lift: 0.25,
   tier: 3, // the top base tier and no other
   minSockets: 3, // what the last two sockets are FOR
-  atThree: 0.004, // share of gear drops, before danger
-  atFull: 0.015,
+  atThree: 0.0016, // share of gear drops, before danger
+  atFull: 0.006,
   dangerLift: 2, // at `dangerFull`, three times the odds
   dangerFull: 900,
 };
@@ -4198,14 +4198,14 @@ export const skillsInCategory = (category: SkillCategory): SkillDef[] =>
   SKILLS.filter((s) => s.category === category);
 
 export const RECIPES: Recipe[] = [
-  // The whole shelf. Everything else drops, because a shop that stocks the
-  // bench is a shop that replaces the map — and adding a modifier is the one
-  // thing you need enough of that running out of it is only tedious.
+  // The whole shelf: an ANTI-BRICK, not a supply. At 5 flat gold it was 6,072 a
+  // clear deep. The base fits `FISSURE.firstClear.gold` or a fresh bench shuts.
   {
     id: 'make_shard_of_making',
     name: 'Shard of Making',
     level: 1,
-    inputs: { gold: 5 },
+    inputs: { gold: 22 },
+    goldPerIlvl: 2.2,
     output: { type: 'currency', id: 'shard_of_making', qty: 1 },
   },
 ];

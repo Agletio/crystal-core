@@ -348,12 +348,13 @@ export interface SkillSlotDef {
 export interface Recipe {
   id: string;
   name: string;
-  /**
-   * Character level the shop starts stocking this at; omitted means 1. Also
-   * what stops the shop short-cutting the crystal ladder.
-   */
+  /** Character level the shelf starts stocking this at, omitted means 1 — and
+   *  what stops it short-cutting the crystal ladder. */
   level?: number;
   inputs: Record<string, number>; // currency id -> quantity consumed
+  /** Gold per point of the shelf's item level, SQUARED — one flat price is
+   *  unbuyable at the bottom of the climb and free at the top. */
+  goldPerIlvl?: number;
   output:
     | { type: 'currency'; id: string; qty: number }
     | { type: 'item'; base: string; qty: number };

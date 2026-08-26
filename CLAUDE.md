@@ -266,6 +266,33 @@ from the first clear it is socketed for — and `xp` is a real climb: measured,
 level 4 is 400 clears at the bare Fissure, 87 at 200 danger and 26 at the top,
 which says go DEEPER rather than grind where you are.
 
+**LOOT IS PAID PER RUN, AND DANGER BUYS QUALITY — NEVER QUANTITY.**
+`DropBand.gearPerRun` and `CURRENCY_DROP.perRun` are what a CLEAR pays, drawn
+down body by body against what is LEFT to kill. A per-KILL rate could not say
+this: kills run 26 at the bare Fissure against 847 at the deep end, so a rate
+that looked flat paid 1.5 pieces a clear at one end and 84 at the other. **A
+budget that DEPLETES is the only spread that survives a floor putting bodies
+back** — dividing by the live total instead paid the Welling and the Splitting
+17× the band. **RARITY IS NOT IN THE COUNT**: it buys what a piece IS — the base
+drawn, a named one, a currency's class — and what a deep run buys is `fill`,
+`ilvl` and the base tier those reach. A drop arrives FINISHED enough to judge
+(`fill` reaches [6,6]), because a piece the bench has to be spent on first is a
+piece nobody reads.
+
+**A PERFECT BASE IS THE ENDGAME CHASE, and it is the only step above ordinary.**
+25% on the implicit, top tier only, three sockets minimum. Its rate is a SHARE
+of drops, which is why the count had to be flattened first — at 84 a clear the
+same odds paid 3.79 Perfect bases a descent and the rare tier was wallpaper.
+
+**THE BENCH IS AN ANTI-BRICK, NOT A SUPPLY.** A Shard of Making at 5 flat gold
+was 6,072 a clear at the deep end, so a found piece's rolled lines were worth
+five gold apiece and the floor could never beat the bench — *"an item with no
+mods could be better than one with 3, you just need to click the currency."*
+`Recipe.goldPerIlvl` rides the shelf's own item level instead. **A CONSTANT
+PRICE CANNOT THROTTLE ANYTHING**: a clear banks 54 gold at the bare Fissure
+against 30,359 at the deep end, so one number tuned to cost a clear at the top
+is 560 clears at the bottom and a new character could never buy one.
+
 **Twelve modifiers was the whole ceiling, and the TRIALS WEB is how it rises.**
 Four sockets of three is all the difficulty a crystal can ever hold, so the web
 is a standing set of modifiers on top. **It is a MAP, not a fan**: TWELVE

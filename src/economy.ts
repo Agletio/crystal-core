@@ -352,11 +352,21 @@ export interface RecipeResult {
   error?: string;
 }
 
-export function runRecipe(wallet: Wallet, recipeId: string): RecipeResult {
+/** WHAT THE SHELF CHARGES THIS CHARACTER. One price for a whole climb is what
+ *  made adding a modifier free; the shelf's item level is what it rides. */
+export function recipeInputs(recipe: Recipe, level: number): Record<string, number> {
+  if (!recipe.goldPerIlvl) return recipe.inputs;
+  const ilvl = Math.max(1, level) * SHOP.ilvlPerLevel;
+  const gold = (recipe.inputs.gold ?? 0) + Math.round(recipe.goldPerIlvl * ilvl * ilvl);
+  return { ...recipe.inputs, gold };
+}
+
+export function runRecipe(wallet: Wallet, recipeId: string, level = 1): RecipeResult {
   const recipe = RECIPE_BY_ID[recipeId];
   if (!recipe) return { ok: false, error: `no recipe '${recipeId}'` };
-  if (!spend(wallet, recipe.inputs)) {
-    const need = Object.entries(recipe.inputs)
+  const inputs = recipeInputs(recipe, level);
+  if (!spend(wallet, inputs)) {
+    const need = Object.entries(inputs)
       .map(([id, n]) => `${n} ${id}`)
       .join(', ');
     return { ok: false, error: `need ${need}` };
