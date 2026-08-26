@@ -54,7 +54,9 @@ export interface GrantDef {
 }
 
 /** 0.35 → "35%". Grants carry fractions; nothing player-facing may. */
-const pct = (n: number): string => `${Math.round(n * 100)}%`;
+/** ONE DECIMAL where there is one: rounded whole, 0.025 printed as "3%" while
+ *  the sim leeched 2.5%, and a card that rounds its own mechanism is a lie. */
+const pct = (n: number): string => `${+(n * 100).toFixed(1)}%`;
 
 /** A multiplier as the change it makes: 1.6 → "60%". */
 const more = (n: number): string => pct(n - 1);

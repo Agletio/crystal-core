@@ -40,6 +40,19 @@ export function glossaryOf(lines: string[]): HTMLElement | null {
   return box;
 }
 
+const wordsOf = (s: string): string[] =>
+  s.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim().split(' ').filter(Boolean);
+
+/** THE SAME FACT SAID AGAIN: every NUMBER of the new line is already in the old
+ *  and most of its words are. ORDER-FREE, because prose reorders a grant's
+ *  clauses; a line bringing a number of its own is never a repeat. */
+function echoes(now: string[], was: string[]): boolean {
+  if (now.length === 0) return false;
+  const seen = new Set(was);
+  if (!now.filter((w) => /^\d/.test(w)).every((n) => seen.has(n))) return false;
+  return now.filter((w) => seen.has(w)).length >= now.length * 0.7;
+}
+
 /** A node's card: name and state, its lines, then the glossary. Both webs draw
  *  it, so a vocabulary cannot grow on one screen and not on the other. */
 export function nodeCard(name: string, state: string, lines: string[]): HTMLElement {
@@ -48,13 +61,12 @@ export function nodeCard(name: string, state: string, lines: string[]): HTMLElem
   head.append(el('span', 'tip__state', state));
   card.append(head);
 
-  // SAID ONCE: a node's prose and its grant's own `say` are the same sentence
-  // by design, matched on WORDS since one of them ends in a full stop.
-  const said = new Set<string>();
+  // SAID ONCE: prose and its grant's `say` are one sentence by design.
+  const said: string[][] = [];
   for (const line of lines.filter((l) => l.length > 0)) {
-    const key = line.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
-    if (said.has(key) || [...said].some((was) => was.includes(key) || key.includes(was))) continue;
-    said.add(key);
+    const words = wordsOf(line);
+    if (said.some((was) => echoes(words, was) || echoes(was, words))) continue;
+    said.push(words);
     card.append(keywordLine(line, 'tip__body'));
   }
 
