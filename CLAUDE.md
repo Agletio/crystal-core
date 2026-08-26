@@ -279,6 +279,17 @@ drawn, a named one, a currency's class — and what a deep run buys is `fill`,
 (`fill` reaches [6,6]), because a piece the bench has to be spent on first is a
 piece nobody reads.
 
+**A DROPPED PIECE NEVER ARRIVES FULL.** `DropBand.fill` is a SHARE of the
+BASE's own capacity, clamped to leave at least one slot open. Written as a
+COUNT it clamped to full on every smaller base — 80% of deep drops arrived with
+no room, and a Shard of Making needs `has_open_slot`, so the one currency the
+shelf sells was refused by almost everything the floor dropped. **The item you
+save currency for is one with good lines and room to add**, which is the whole
+of what makes scarce currency a decision rather than a tax — *"the currency
+needs to be rare enough you need to wait to find an item that's good enough to
+start using it on."* **A lock pays TWICE the run's budget and no more**:
+`HOARD.drops` against `gearPerRun`, `VEIN.drops` against `CURRENCY_DROP.perRun`.
+
 **A PERFECT BASE IS THE ENDGAME CHASE, and it is the only step above ordinary.**
 25% on the implicit, top tier only, three sockets minimum. Its rate is a SHARE
 of drops, which is why the count had to be flattened first — at 84 a clear the

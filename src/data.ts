@@ -3141,7 +3141,8 @@ export const DANGER_STATS: Record<string, DangerStat> = {
 export const WATCH = { life: 1 };
 
 /** THE VEIN: a Hoard that pays CURRENCY. Same guard, same lock. */
-export const VEIN = { drops: 5 };
+/** Twice the currency budget, as `HOARD.drops` is twice `gearPerRun`. */
+export const VEIN = { drops: 2 };
 
 /** THE SPLITTING: what dies leaves one of the rank below; a common leaves
  *  nothing, which is the whole of what bounds it. */
@@ -3205,7 +3206,8 @@ export const CURRENCY_DROP = {
 // against 847 at the deep end: a per-KILL rate paid 1.5 a clear, then 84.
 
 export interface DropBand {
-  /** Mods a dropped piece arrives with, as [min, max] of its cap. */
+  /** Mods a dropped piece arrives with, as [min, max] SHARES of its own cap.
+   *  Never all of them: headroom is what a Shard of Making is spent on. */
   fill: [number, number];
   /** Best currency class this band can produce. */
   currency: CurrencyClass;
@@ -3217,15 +3219,14 @@ export interface DropBand {
 
 export const DROP_BANDS: DropBand[] = [
   // The bare Fissure: mostly junk, but enough that a free descent is not a tax.
-  { fill: [1, 1], currency: 'basic', gearPerRun: 1.3, ilvl: 10 },
-  { fill: [1, 2], currency: 'basic', gearPerRun: 1.4, ilvl: 10 },
-  { fill: [2, 3], currency: 'uncommon', gearPerRun: 1.4, ilvl: 22 },
-  // NEARLY finished from here up: a drop the bench must finish is one nobody reads.
-  { fill: [3, 4], currency: 'uncommon', gearPerRun: 1.5, ilvl: 34 },
+  { fill: [0.4, 0.5], currency: 'basic', gearPerRun: 1.3, ilvl: 10 },
+  { fill: [0.4, 0.55], currency: 'basic', gearPerRun: 1.4, ilvl: 10 },
+  { fill: [0.45, 0.6], currency: 'uncommon', gearPerRun: 1.4, ilvl: 22 },
+  { fill: [0.5, 0.65], currency: 'uncommon', gearPerRun: 1.5, ilvl: 34 },
   // Where a build becomes possible: tier 3 bases, six modifiers apiece.
-  { fill: [4, 5], currency: 'rare', gearPerRun: 1.5, ilvl: 46 },
-  { fill: [5, 6], currency: 'rare', gearPerRun: 1.6, ilvl: 58 },
-  { fill: [6, 6], currency: 'exotic', gearPerRun: 1.7, ilvl: 70 },
+  { fill: [0.5, 0.7], currency: 'rare', gearPerRun: 1.5, ilvl: 46 },
+  { fill: [0.55, 0.75], currency: 'rare', gearPerRun: 1.6, ilvl: 58 },
+  { fill: [0.6, 0.85], currency: 'exotic', gearPerRun: 1.7, ilvl: 70 },
 ];
 
 

@@ -867,10 +867,26 @@ of that curve at about **two gear drops a clear** across 8 gear kinds.
    level — 46 gold at level 1 against ~45,000 deep. **A CONSTANT PRICE CANNOT
    THROTTLE ANYTHING** across a 562× income swing: tuned to cost a clear at the
    top it is 560 clears at the bottom, so a new character could never buy one.
-4. **A GAUGE FOR CLEARS-TO-GEAR-A-SLOT.** `ladderCharacter` and `bestBuild`
-   both roll their own gear from thin air, so **scarcity moves no harness
-   number** — the suite will stay green while the game gets much slower. The
-   figure being tuned needs to exist in the suite.
+4. ~~**A GAUGE FOR CLEARS-TO-GEAR-A-SLOT.**~~ **DONE.** `ladderCharacter` and
+   `bestBuild` both roll their own gear from thin air, so scarcity moves no
+   other harness number. Reads 1.9 a clear at band 2 and 8.5 at band 4.
+5. ~~**HEADROOM, AND A LOCK PAYS TWICE THE BUDGET.**~~ **DONE.** `fill` was
+   documented as a share of capacity and written as a COUNT, so it clamped to
+   full on every smaller base: **80% of deep drops arrived with no open slot**
+   and refused the one currency the shelf sells. Now a genuine share, clamped
+   to leave a slot — measured 0%. `VEIN.drops` 5 → 2, matching `HOARD.drops`
+   against its own budget; at five it paid **12.5 Shards of Making a clear**.
+
+### What is left in it
+
+- **THE HOARD IS THE DEEP END'S WHOLE VOLUME.** Band 6 pays 23 gear a clear
+  against a 1.5 budget, because `openHoard` calls `dropGear` outside it and
+  `HOARD.drops` is 3 a lock. Every other band is 1.8–5.5. Cutting it is a
+  decision about what that modifier IS — *"what it changes is HOW MANY"* — so
+  it wants asking, not assuming.
+- **The named-piece check is thin.** 16 descents expects 5.5 and read 3; a zero
+  is a 1-in-250 flake. Uniques are a share of drops like Perfect, and the count
+  fell under them.
 
 **Done when.** A clear pays two or three pieces at every band, each arriving
 finished enough to judge; a Perfect base is an event; and adding a modifier

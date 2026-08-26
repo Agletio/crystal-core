@@ -10668,13 +10668,16 @@ rule('UNIQUES — is every named piece real, reachable and unbreakable?');
     // At the LEVEL that end is for. A set rolled to the top of what four
     // crystals hold kills a level 40 build in six seconds, and a character that
     // dies before its first kill is not a reading on the drop table.
+    // SIXTEEN, not eight. A named piece is a share of DROPS, and the drop count
+    // fell twentyfold when loot went per-run — at eight descents this expects
+    // 2.8 and reads zero one run in sixteen, which is a flake, not a finding.
     let found = 0;
-    for (let i = 0; i < 8; i++) {
+    for (let i = 0; i < 16; i++) {
       const sim = new RunSim(set, ceiling(6, 'arc_lightning', LEVELLING.maxLevel), new Rng(600 + i));
       runToCompletion(sim, 600);
       found += sim.state.loot.items.filter((it) => it.meta.unique !== undefined).length;
     }
-    check(found > 0, `and the deep end actually hands them out — ${found} in 8 descents`, 'none dropped at all');
+    check(found > 0, `and the deep end actually hands them out — ${found} in 16 descents`, 'none dropped at all');
   }
 
   // The bulk button takes every carried piece no currency has touched, which

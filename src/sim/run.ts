@@ -51,6 +51,7 @@ import {
   MONSTER_BY_ID,
   CURRENCIES,
   CURRENCY_DROP,
+  baseMods,
   DEFENCE,
   ROGUE,
   WARRIOR,
@@ -3374,7 +3375,10 @@ export class RunSim {
     const base = pickGearBase(drops.ilvl, this.rng, dropBias(this.set.mods), this.set.maxTier);
     if (!base) return;
 
-    const mods = this.rng.int(drops.fill[0], drops.fill[1]);
+    // A DROPPED PIECE NEVER ARRIVES FULL: `fill` is a SHARE of the base's cap.
+    const cap = baseMods(base.tier);
+    const share = this.rng.float(drops.fill[0], drops.fill[1]);
+    const mods = Math.max(1, Math.min(cap - 1, Math.round(share * cap)));
     // PERFECT, and drawn ONLY when the odds are above zero — the same rule
     // Block is under. A draw at 0% moves every roll after it, which is a whole
     // game's worth of measurements re-seeded for a thing that cannot happen.
