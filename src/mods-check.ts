@@ -13,6 +13,7 @@ import {
   FORGED,
   GEAR_BASES,
   GEAR_MODS,
+  ATTRIBUTES,
   SKILLS,
   WEAPON_BASES,
 } from './data';
@@ -21,8 +22,12 @@ import { makeItem, makeCrystal } from './economy';
 import { dropBias, heroStats, monsterStats, mapDensity, wornAttributeMod } from './sim/stats';
 import { describeMod } from './crafting';
 import { describeStatLine, tagWord } from './mod-text';
-import { treeFor } from './skills-tree';
+import { SKILL_TREES, treeFor } from './skills-tree';
+import { trialNodes } from './trials';
+import { TRADES } from './trades';
+import { GRANT_BY_ID } from './sim/grants';
 import { graft } from './game/graft';
+import { readFileSync, readdirSync } from 'node:fs';
 import { Rng } from './rng';
 import { DAMAGE_TYPES, MONSTERS } from './data';
 import type { Item, ModEntry, RolledMod } from './types';
@@ -57,6 +62,37 @@ function maxRoll(entry: ModEntry): RolledMod {
  * this modifier exist at all", and a tier 1 base holding two answers no to
  * most of them for reasons that have nothing to do with the modifier.
  */
+/**
+ * EVERY STAT THE ENGINE READS BY NAME, scanned off the engine itself. Derived
+ * from the MODS' own vocabulary this was vacuous: a stat counted as measured
+ * because something wrote it, so a typo'd name validated itself. A stat nothing
+ * reads is never in here, which is the whole question this file asks.
+ */
+const READ_BY_ENGINE: string[] = (() => {
+  const from = [
+    ...readdirSync('src/sim').map((f) => `src/sim/${f}`),
+    ...readdirSync('src/game').map((f) => `src/game/${f}`),
+    'src/mods.ts', 'src/economy.ts', 'src/crafting.ts', 'src/trials.ts', 'src/trades.ts',
+  ].filter((f) => f.endsWith('.ts'));
+  const found = new Set<string>();
+  for (const file of from) {
+    const text = readFileSync(file, 'utf8');
+    for (const hit of text.matchAll(/(?:percentStat|computeStat|statOf)\([^)]*?'([a-zA-Z]+)'/g)) {
+      found.add(hit[1]);
+    }
+  }
+  return [...found].sort();
+})();
+
+/** A probe: arbitrary stat lines worn as one modifier, so a node's content can
+ *  be measured by the same fingerprints a rolled mod is. */
+const asRolled = (
+  id: string,
+  stats: Array<{ stat: string; form: string; value: number; tags?: string[] }>
+): RolledMod =>
+  ({ entryId: id, defId: id, group: id, slot: 'defence', name: id, tier: 1, tags: [],
+     stats: stats.map((l) => ({ ...l, tags: l.tags ?? [] })) }) as unknown as RolledMod;
+
 const open = (item: Item): Item => ({
   ...item,
   ilvl: 100,
@@ -170,11 +206,6 @@ line('\n── EFFECT — does the engine actually read each stat? ────�
   // EVERY STAT ANY CRYSTAL MOD WRITES, off the pool itself so a new mechanic
   // cannot be forgotten. A Warden moves no monster stat at all, and reading one
   // through the danger curve alone is a check passing for the wrong reason.
-  const crystalStats = [
-    ...new Set(
-      crystalPool.entries.flatMap((e) => e.stats.map((st) => st.stat))
-    ),
-  ].sort();
 
   // They also land on monsters and on the map generator.
   const crystalFingerprint = (mods: RolledMod[]): string => {
@@ -187,7 +218,9 @@ line('\n── EFFECT — does the engine actually read each stat? ────�
       // them would call every ward inert.
       ...DAMAGE_TYPES.map((t) => m.resistances[t.id] ?? 0),
       computeStat(1, mods, 'layoutComplexity'),
-      ...crystalStats.map((stat) => computeStat(0, mods, stat)),
+      // BASE 100, not 0: `inc` on nothing is nothing, and 7 of the 15 crystal
+      // families are inc-only, so a zero base saw nothing from any of them.
+      ...READ_BY_ENGINE.map((stat) => computeStat(100, mods, stat)),
       // What a run is pointed at is a thing the engine reads too: a crystal
       // that hunts weapons changes no monster and no room.
       ...Object.values(dropBias(mods)),
@@ -201,6 +234,22 @@ line('\n── EFFECT — does the engine actually read each stat? ────�
     inertCrystal.length === 0,
     `all ${crystalPool.entries.length} crystal entries change something`,
     inertCrystal.map((e) => e.id).join(', ')
+  );
+
+  // THE TRIALS WEB reaches the run the same way a crystal does, so it is held
+  // to the same bar and read through the same fingerprint.
+  const trialBase = crystalFingerprint([]);
+  const inertTrial = trialNodes().filter((node) => {
+    if (Object.keys(node.grants ?? {}).length > 0) return false;
+    // A node that ASKS carries its lines on the answers, not on itself.
+    const own = [...(node.stats ?? []), ...(node.choices ?? []).flatMap((c) => c.stats ?? [])];
+    if (own.length === 0) return true;
+    return crystalFingerprint([asRolled('trial_probe', own)]) === trialBase;
+  });
+  check(
+    inertTrial.length === 0,
+    `all ${trialNodes().length} trials nodes change something a descent reads`,
+    inertTrial.map((n) => n.name).join(', ')
   );
 }
 
@@ -369,6 +418,90 @@ line('\n── FORGED — a line no drop can roll is still a line ────�
   );
   check(inert.length === 0, 'and every one of them changes something', inert.join(', '));
   check(wordless.length === 0, 'and every line on one reads', wordless.join(', '));
+}
+
+// ---------------------------------------------------------------------------
+line('\n── THE WEBS — does a node\'s stat line reach the sheet? ─────────');
+// The same question this file asks of a modifier, asked of every web: a tree
+// minor, a trade minor, a movement node, an attribute step and a base implicit
+// are all stat lines, and nothing else checks that the engine reads one. A
+// notable is covered by the demo (it must change the CAST); a minor was not
+// covered anywhere, and a minor that moves no number is a point spent on air.
+{
+  // One flat point of everything a percentage could scale: an "increased
+  // Armour" line is waiting for armour, not broken.
+  const floor = asRolled('web_floor', [
+    'armour', 'life', 'damage', 'mana', 'moveSpeed', 'attackSpeed', 'castSpeed',
+  ].map((stat) => ({ stat, form: 'flat', value: 100 })).concat(
+    ['critChance', 'critMultiplier', 'areaOfEffect', 'lifeRegen', 'manaRegen', 'attackRange']
+      .map((stat) => ({ stat, form: 'flat', value: 10 }))
+  ));
+
+  // EVERY number, and the two RECORDS flattened: read as objects they stringify
+  // the same however they change, which called every ailment line in the game
+  // dead when the probe was written.
+  const print = (worn: RolledMod[]): string =>
+    SKILLS.map((sk) => {
+      const st = heroStats(worn, 30, sk);
+      return [st.maxLife, st.damage, st.attacksPerSecond, st.critChance, st.critMultiplier,
+        st.moveSpeed, st.armour, st.armourReduction, st.attackRange, st.lifeRegen, st.maxMana,
+        st.manaRegen, st.manaCost, st.areaOfEffect, st.rarity, st.currencyFind,
+        st.dodgeChance, st.blockChance,
+        ...Object.values(st.ailmentChance), ...Object.values(st.ailmentDps),
+        ...Object.values(st.resistances)].join(',');
+    }).join('|');
+
+  const bare = print([floor]);
+  const inert: string[] = [];
+  let audited = 0;
+  const reaches = (where: string, what: string, stats?: Array<{ stat: string; form: string; value: number; tags?: string[] }>) => {
+    if (!stats?.length) return;
+    audited++;
+    if (print([floor, asRolled('web_probe', stats)]) === bare) inert.push(`${where}: ${what}`);
+  };
+
+  for (const [skillId, nodes] of Object.entries(SKILL_TREES)) {
+    for (const node of nodes) {
+      reaches(skillId, node.name, node.stats);
+      for (const pick of node.choices ?? []) reaches(skillId, `${node.name}/${pick.name}`, pick.stats);
+    }
+  }
+  for (const trade of TRADES) for (const node of trade.nodes) reaches(trade.spec.id, node.name, node.stats);
+  for (const attr of ATTRIBUTES) reaches('attribute', attr.name, attr.per);
+  for (const base of GEAR_BASES) {
+    reaches('implicit', base.name, base.implicit?.map((l) => ({ ...l, value: l.range[1] })));
+  }
+  check(
+    inert.length === 0,
+    `all ${audited} stat lines across the webs, attributes and implicits move a number`,
+    inert.slice(0, 6).join(' | ')
+  );
+
+  // The other half of a web: a switch it hands over must be DECLARED and must
+  // be able to say its own value, or the card prints nothing and the point is
+  // spent on a switch the sim never looks for.
+  const broken: string[] = [];
+  const switches = (where: string, what: string, grants?: Record<string, unknown>) => {
+    for (const [id, value] of Object.entries(grants ?? {})) {
+      const def = GRANT_BY_ID[id];
+      if (!def) broken.push(`${where} ${what}: '${id}' is not in GRANTS`);
+      else if (def.say && def.say(value as never) === null) {
+        broken.push(`${where} ${what}: '${id}' cannot say ${JSON.stringify(value)}`);
+      }
+    }
+  };
+  for (const [skillId, nodes] of Object.entries(SKILL_TREES)) {
+    for (const node of nodes) {
+      switches(skillId, node.name, node.grants);
+      for (const pick of node.choices ?? []) switches(skillId, `${node.name}/${pick.name}`, pick.grants);
+    }
+  }
+  for (const trade of TRADES) for (const node of trade.nodes) switches(trade.spec.id, node.name, node.grants);
+  check(
+    broken.length === 0,
+    'and every switch they hand over is declared and says its own value',
+    broken.slice(0, 6).join(' | ')
+  );
 }
 
 // ---------------------------------------------------------------------------
