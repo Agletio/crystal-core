@@ -46,6 +46,7 @@ import {
   PROPS,
   tileDecals,
   tileSize,
+  lootBeam,
   vfxColour,
   TILE_AT_1X,
   ZOOM_MIN,
@@ -464,6 +465,39 @@ export function createCanvasRenderer(host: HTMLElement, palette: Palette): Rende
     drawLifeBar(v, hero, 1.1, palette.verdite, true);
   }
 
+  /** WHAT LANDED. The same answer the other renderer draws, in this one's own
+   *  primitives: a pool, a column and the name. `lootBeam` is shared, so the
+   *  two cannot disagree about what is rare. */
+  function drawLoot(state: RunState, v: View): void {
+    for (const drop of state.ground) {
+      const beam = lootBeam(palette, drop.rank);
+      const x = cx(v, drop.x);
+      const y = cy(v, drop.y);
+      ctx.fillStyle = beam.colour;
+      ctx.globalAlpha = beam.lit * 0.3;
+      ctx.beginPath();
+      ctx.arc(x, y, v.tile * 0.22, 0, Math.PI * 2);
+      ctx.fill();
+      // Stacked fading bands, the same shape Pixi draws — and an `arc` and a
+      // `fillRect` are all this file uses anywhere else. Nothing here is
+      // reachable by a test (Pixi has to THROW first), so it borrows no
+      // primitive the rest of the renderer has not already proven.
+      const bands = 6;
+      for (let i = 0; i < bands; i++) {
+        ctx.globalAlpha = beam.lit * (1 - i / bands) * 0.5;
+        const wide = v.tile * 0.13 * (1 - (i / bands) * 0.6);
+        const step = (beam.tall * v.tile) / bands;
+        ctx.fillRect(x - wide, y - (i + 1) * step, wide * 2, step);
+      }
+      ctx.globalAlpha = 0.55 + beam.lit * 0.45;
+      ctx.fillStyle = beam.colour;
+      ctx.font = `500 ${Math.max(8, v.tile * 0.4)}px ui-monospace, monospace`;
+      ctx.textAlign = 'center';
+      ctx.fillText(drop.item.name, x, y + v.tile * 0.6);
+      ctx.globalAlpha = 1;
+    }
+  }
+
   /** Under the bodies: the field they are standing in, not a badge on them. */
   function drawAuras(state: RunState, v: View): void {
     // The Fall, drawn as a shape because this renderer has no sprites.
@@ -556,6 +590,7 @@ export function createCanvasRenderer(host: HTMLElement, palette: Palette): Rende
 
     drawMap(state, v);
     drawAuras(state, v);
+    drawLoot(state, v);
 
     for (const m of state.monsters) {
       if (!m.dead || m.deathAge < DEATH_FADE) drawMonster(v, m);
