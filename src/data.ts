@@ -3141,8 +3141,8 @@ export const DANGER_STATS: Record<string, DangerStat> = {
 export const WATCH = { life: 1 };
 
 /** THE VEIN: a Hoard that pays CURRENCY. Same guard, same lock. */
-/** Twice the currency budget, as `HOARD.drops` is twice `gearPerRun`. */
-export const VEIN = { drops: 2 };
+/** A lock paying currency where a Hoard pays gear. ONE piece, like the Hoard. */
+export const VEIN = { drops: 1 };
 
 /** THE SPLITTING: what dies leaves one of the rank below; a common leaves
  *  nothing, which is the whole of what bounds it. */
@@ -3160,7 +3160,9 @@ export const HOARD = {
   prop: 'cart', // no new art: a cart standing in the rock is already a hoard
   size: 1.6, // the guard, against an ordinary pack
   rank: 250, // `monsterRank`, on the guard alone
-  drops: 3, // pieces when the last of them is down
+  drops: 1, // ONE thing when the last of them is down, never a pile
+  goldChance: 0.3, // or coin instead, which makes opening one a small gamble
+  gold: 90, // at the bare Fissure, lifted by the run's own danger
 };
 
 /**

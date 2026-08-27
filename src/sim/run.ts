@@ -51,6 +51,7 @@ import {
   MONSTER_BY_ID,
   CURRENCIES,
   CURRENCY_DROP,
+  POWER,
   baseMods,
   DEFENCE,
   ROGUE,
@@ -3550,11 +3551,17 @@ export class RunSim {
     }
 
     box.opened = true;
-    if (box.pays === 'currency') {
-      for (let i = 0; i < VEIN.drops; i++) this.dropCurrency();
+    // ONE THING, sometimes coin: three a lock paid 23 gear a clear deep.
+    if (this.rng.chance(HOARD.goldChance)) {
+      const paid = HOARD.gold * (1 + this.set.rewards.danger / POWER.perDanger);
+      this.state.loot.currency.gold = (this.state.loot.currency.gold ?? 0) + paid;
+      this.state.floaters.push({
+        x: box.x, y: box.y, text: `+${Math.round(paid)}`, age: 0, crit: false, on: 'monster',
+      });
       return;
     }
-    for (let i = 0; i < HOARD.drops; i++) this.dropGear();
+    if (box.pays === 'currency') this.dropCurrency();
+    else this.dropGear();
   }
 
   /** A corpse for whoever wants one. A gate is a wall, so the pool is filtered
