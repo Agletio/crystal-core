@@ -885,14 +885,44 @@ of that curve at about **two gear drops a clear** across 8 gear kinds.
 
 ### What is left in it
 
-- **THE HOARD IS THE DEEP END'S WHOLE VOLUME.** Band 6 pays 23 gear a clear
-  against a 1.5 budget, because `openHoard` calls `dropGear` outside it and
-  `HOARD.drops` is 3 a lock. Every other band is 1.8–5.5. Cutting it is a
-  decision about what that modifier IS — *"what it changes is HOW MANY"* — so
-  it wants asking, not assuming.
+- ~~**THE HOARD IS THE DEEP END'S WHOLE VOLUME.**~~ **ANSWERED AND DONE.**
+  *"Change the hoard to just give one item each box max either currency or
+  items and give it a chance to just give gold."* `HOARD.drops` and
+  `VEIN.drops` are 1 apiece and a box pays coin instead 30% of the time,
+  lifted by the run's own danger. Band 6 fell from 23.0 gear a clear to 8.1.
+- ~~**LOOT IS SOMETHING YOU WATCH ARRIVE.**~~ **DONE.** `RunState.ground`
+  holds what dropped and WHERE, through one seam (`lay`) so a piece cannot
+  enter a run without landing somewhere. `lootRank` is one answer the sim and
+  both renderers read; the name draws under the beam in its own colour; the
+  hero collects between fights, past `acquireTarget`, which is what "not
+  fighting" MEANS. A drop with no route is flagged `stuck` once and never
+  chased again — measured, 24 runs and none still running at the cap.
+- **THE CHEST — BLOCKED ON GENERATIONS, and the pipeline is written down.**
+  *"I want it to be a chest that will actually open and when you kill all the
+  mobs your character walks up and opens it… the art needs to look open."*
+  The generator is empty (`generations_remaining: 0`, 8761 of 8710 used,
+  refills **2026-09-13**), so the art is left undone rather than drawn by hand.
+  **Ask it as an OBJECT, not a pixflux still**: `create_1_direction_object`
+  takes `view: 'top-down'` as a real enum, where pixflux's `high top-down`
+  came back 3/4 isometric on all eight tries even with DIRECTLY ABOVE in
+  capitals. Then `create_object_state(object_id, 'lid thrown wide open')` —
+  a state OF THE SAME OBJECT, which is the only way the open frame is
+  guaranteed to be the same chest rather than one that merely resembles it.
+  `animate_object` could swing the lid rather than snapping between frames.
+  Eight rejected designs sit in `tools/art/cache/chest_*.png`.
+  The walk-up-and-open waits on this: the open frame is what it lands on.
 - **The named-piece check is thin.** 16 descents expects 5.5 and read 3; a zero
   is a 1-in-250 flake. Uniques are a share of drops like Perfect, and the count
   fell under them.
+- **THE FLOWERING BUYS NO DIFFICULTY, and that is the open question.**
+  `dangerStep` saturates at 330 danger and the rung alone reaches 338 by zone 1
+  rung 14 — so 16 of the 42 rungs have monsters no harder than two zones down,
+  at the same item level, paying more. Measured, a ceiling build walks out of
+  the deep end at 94% life where the demo wants under 70%. `CLAUDE.md` says the
+  saturation is deliberate ("it saturates where the hero's item level does"),
+  so fixing it changes a stated rule: decouple `dangerStep` from run power,
+  extend item level past 70 so both caps move together, or accept that
+  difficulty ends at The Refraction. **Asked; not answered.**
 
 **Done when.** A clear pays two or three pieces at every band, each arriving
 finished enough to judge; a Perfect base is an event; and adding a modifier
