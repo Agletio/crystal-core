@@ -261,8 +261,12 @@ Each is a `parkedCheck` in `src/demo.ts` printing its number and failing
 nothing; the pass puts them back to `check`. **The demo prints its own parked
 count and this list has to agree with it — two today.**
 
-1. **"the characters checked actually cover every shape it polices"** — the
-   sheet audit no longer builds a character exercising a "more" line.
+1. ~~**"the characters checked actually cover every shape it polices"**~~ —
+   **RETIRED, and it is a real `check` again.** The sheet audit walks
+   deliberately to every node that MULTIPLIES rather than hoping a random walk
+   lands on one, and a `more` STAT line now counts as multiplying beside
+   `ailmentMultiplier` and `convertTree`. Every tree has a `damage more` node
+   and sixteen random points never once reached one.
 2. **"plate answers the boss a rung earlier than speed does"** — the PLATE half
    is fixed and the other half is not. Weapons taking damage of their own put
    full tier 1 plate back to **8/8** from 0/8, which is where it should be. But
@@ -274,12 +278,14 @@ The boss grid's MECHANISM is still a real `check` and stays one — speed answer
 it at full tier 1, a build with neither answer never does, and t2 trivialises
 it. Only the rung PLATE comes good at is parked.
 
-3. ~~**"every band pays more than the one below"**~~ — **COME GOOD, and phase 4
-   is why.** It dipped at bands 3 and 5 for as long as the rung and the crystals
-   were one ladder and a set aimed at a band could be any crystal level.
-   Measured now: `155 → 162 → 339 → 477 → 1374 → 2625 → 5384`, strictly rising.
-   The runaway guard above it moved from 10x to 15x to admit the curve, which
-   reads 10.1x.
+3. **"every band pays more than the one below"** — **BACK ON THE LIST, and the
+   loot round is why.** It came good under phase 4 at
+   `155 → 162 → 339 → 477 → 1374 → 2625 → 5384`. Making loot a per-RUN budget
+   flattened the count, and it now reads
+   `171 → 155 → 243 → 336 → 1314 → 2131 → 4100` — one dip, band 0 into band 1.
+   Those two bands share an item level (10) and differ by 0.1 of a piece a
+   clear, so nothing separates them but noise. Either band 1 buys something
+   band 0 does not, or the two collapse into one.
 
 **Strike's
 `baseDamage` was calibrated against the boss grid** at 80 (95 let thin tier 1

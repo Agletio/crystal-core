@@ -4415,13 +4415,20 @@ rule('THE SHEET — does every number on it survive being checked?');
 
   // A random walk found no node that scales an ailment DOWN, and one of those
   // is exactly what made the sheet disagree with itself. Every node that
-  // touches a damage multiplier gets walked to on purpose, choices and all.
+  // touches a damage multiplier gets walked to on purpose, choices and all —
+  // a MORE line included, which sixteen random points never once landed on
+  // even though every tree has one.
+  const multiplies = (node: ReturnType<typeof treeFor>[number], choice: string | null): boolean => {
+    const picked = node.choices?.find((c) => c.id === choice);
+    const grants = { ...(node.grants ?? {}), ...(picked?.grants ?? {}) };
+    if ('ailmentMultiplier' in grants || 'convertTree' in grants) return true;
+    return [...(node.stats ?? []), ...(picked?.stats ?? [])].some((l) => l.form === 'more');
+  };
   for (const skill of MAIN_SKILLS) {
     for (const node of treeFor(skill.id)) {
       const options = node.choices?.length ? node.choices.map((c) => c.id) : [null];
       for (const choice of options) {
-        const grants = { ...(node.grants ?? {}), ...(node.choices?.find((c) => c.id === choice)?.grants ?? {}) };
-        if (!('ailmentMultiplier' in grants) && !('convertTree' in grants)) continue;
+        if (!multiplies(node, choice)) continue;
 
         const path = pathTo(skill.id, node.id);
         if (path.length === 0) continue;
