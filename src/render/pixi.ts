@@ -254,6 +254,8 @@ export async function createPixiRenderer(
    *  mirroring twice. */
   const helds = new Map<string, Sprite>();
   const floaters: Text[] = [];
+  /** One label per drop, pooled the way the floaters are. */
+  const dropNames: Text[] = [];
   const effectArt: Sprite[] = [];
   const groundArt: Sprite[] = [];
   let effectsDrawn = 0;
@@ -1221,6 +1223,31 @@ export async function createPixiRenderer(
     for (let i = groundDrawn; i < groundArt.length; i++) groundArt[i].visible = false;
   }
 
+  /** WHAT IT IS, under its own beam. Screen space like every other label, so a
+   *  name stays legible however far out the map is zoomed. */
+  function drawLootNames(state: RunState): void {
+    state.ground.forEach((drop, i) => {
+      let label = dropNames[i];
+      if (!label) {
+        label = new Text({ text: '', style: { fontFamily: 'monospace', fontSize: 12, fill: 0xffffff } });
+        label.anchor.set(0.5, 0);
+        textLayer.addChild(label);
+        dropNames[i] = label;
+      }
+      const beam = lootBeam(palette, drop.rank);
+      label.visible = true;
+      label.text = drop.item.name;
+      label.style.fontSize = Math.max(8, Math.min(18, tile * 0.4));
+      label.style.fill = toHexNumber(beam.colour);
+      // Dimmer than a damage number: it is standing there to be read when you
+      // look, not to be shouted over the fight.
+      label.alpha = 0.55 + beam.lit * 0.45;
+      label.x = sx(drop.x);
+      label.y = sy(drop.y) + tile * 0.25;
+    });
+    for (let i = state.ground.length; i < dropNames.length; i++) dropNames[i].visible = false;
+  }
+
   /** Damage numbers live in screen space so zooming doesn't blur them. */
   function drawFloaters(state: RunState): void {
     state.floaters.forEach((f, i) => {
@@ -1345,6 +1372,7 @@ export async function createPixiRenderer(
 
     drawOverlays(state);
     drawFloaters(state);
+    drawLootNames(state);
     app.render();
   }
 

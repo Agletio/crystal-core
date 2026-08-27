@@ -143,6 +143,8 @@ const FINALE_RANGE = 5;
 
 /** Close enough to be standing on the way out, and the descent is over. */
 const AT_EXIT = 0.5;
+/** Close enough to stoop for it. */
+const AT_DROP = 0.6;
 
 /** How far a pacing body walks from where it was standing, and back. */
 const PACE_STEP = 2;
@@ -317,6 +319,8 @@ export interface Ground {
   item: Item;
   rank: number;
   age: number;
+  /** No route. Set once and never chased again, or the run would hang. */
+  stuck?: boolean;
 }
 
 export interface Floater {
@@ -1496,6 +1500,24 @@ export class RunSim {
       return;
     }
 
+    // PICKED UP BETWEEN FIGHTS, never during one: this is past `acquireTarget`,
+    // so nothing is on him. It changes no reward — the bag fills either way.
+    const lying = this.nearestDrop(hero);
+    if (lying) {
+      if (dist(hero, lying) <= AT_DROP) {
+        s.ground = s.ground.filter((g) => g !== lying);
+        s.floaters.push({
+          x: lying.x, y: lying.y, text: lying.item.name, age: 0, crit: false, on: 'hero',
+        });
+        return;
+      }
+      this.face(hero, lying.x, lying.y);
+      this.settleAction(hero, true);
+      if (this.advance(hero, lying, dt)) return;
+      // No route. Leave it where it fell rather than standing here wanting it.
+      lying.stuck = true;
+    }
+
     // Nothing reachable is left, and the way out is a place you walk to.
     const exit = s.map.exit;
     const out = dist(hero, exit);
@@ -1976,6 +1998,20 @@ export class RunSim {
   /** The equipped skill's area in tiles, for aiming. */
   private areaRadiusFor(user: Entity): number {
     return this.areaRadius(user, (this.skill.params?.radius as number) ?? 0);
+  }
+
+  /** The nearest thing on the floor he can still get to. */
+  private nearestDrop(hero: Entity): Ground | null {
+    let best: Ground | null = null;
+    let near = Infinity;
+    for (const drop of this.state.ground) {
+      if (drop.stuck) continue;
+      const d = dist(hero, drop);
+      if (d >= near) continue;
+      near = d;
+      best = drop;
+    }
+    return best;
   }
 
   private acquireTarget(hero: Entity): Entity | null {
@@ -3371,7 +3407,18 @@ export class RunSim {
   private lay(item: Item): void {
     this.state.loot.items.push(item);
     const at = this.dropAt ?? this.state.hero;
-    this.state.ground.push({ x: at.x, y: at.y, item, rank: lootRank(item), age: 0 });
+    // SCATTERED where it falls. Two pieces off one body land on one tile, and
+    // stacked they are one unreadable label over another — so each is nudged,
+    // off the sim's own rng because a seed still has to replay.
+    const angle = this.rng.float(0, Math.PI * 2);
+    const out = this.rng.float(0.15, 0.55);
+    this.state.ground.push({
+      x: at.x + Math.cos(angle) * out,
+      y: at.y + Math.sin(angle) * out,
+      item,
+      rank: lootRank(item),
+      age: 0,
+    });
   }
 
   /** ONE piece, unconditionally. A Hoard pays in these rather than in a second

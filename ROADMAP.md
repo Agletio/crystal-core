@@ -259,7 +259,7 @@ anything.
 
 Each is a `parkedCheck` in `src/demo.ts` printing its number and failing
 nothing; the pass puts them back to `check`. **The demo prints its own parked
-count and this list has to agree with it — two today.**
+count and this list has to agree with it — one today.**
 
 1. ~~**"the characters checked actually cover every shape it polices"**~~ —
    **RETIRED, and it is a real `check` again.** The sheet audit walks
@@ -278,14 +278,14 @@ The boss grid's MECHANISM is still a real `check` and stays one — speed answer
 it at full tier 1, a build with neither answer never does, and t2 trivialises
 it. Only the rung PLATE comes good at is parked.
 
-3. **"every band pays more than the one below"** — **BACK ON THE LIST, and the
-   loot round is why.** It came good under phase 4 at
-   `155 → 162 → 339 → 477 → 1374 → 2625 → 5384`. Making loot a per-RUN budget
-   flattened the count, and it now reads
-   `171 → 155 → 243 → 336 → 1314 → 2131 → 4100` — one dip, band 0 into band 1.
-   Those two bands share an item level (10) and differ by 0.1 of a piece a
-   clear, so nothing separates them but noise. Either band 1 buys something
-   band 0 does not, or the two collapse into one.
+3. **"every band pays more than the one below"** — passing again, **and it
+   flipped on NOISE rather than on a fix.** The loot round dipped it at band 0
+   into band 1 (`171 → 155 → …`); scattering a drop where it falls added two
+   rng draws apiece, the whole seed stream moved, and it came back up. Nothing
+   structural changed: **bands 0 and 1 share an item level (10) and differ by
+   0.1 of a piece a clear**, so what separates them is luck. Either band 1 buys
+   something band 0 does not, or the two collapse into one — until then this
+   check will keep flipping with any change that touches the rng.
 
 **Strike's
 `baseDamage` was calibrated against the boss grid** at 80 (95 let thin tier 1
