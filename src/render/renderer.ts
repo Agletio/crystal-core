@@ -25,6 +25,9 @@ export interface Palette {
   dust: string;
   amethyst: string;
   citrine: string;
+  tier1: string;
+  tier2: string;
+  tier3: string;
   quartz: string;
   verdite: string;
   ember: string;
@@ -132,6 +135,10 @@ const VARS: Array<[keyof Palette, string]> = [
   ['dust', '--dust'],
   ['amethyst', '--amethyst'],
   ['citrine', '--citrine'],
+  // A tier colour is CONTENT and means the same on a card as on the floor.
+  ['tier1', '--tier1'],
+  ['tier2', '--tier2'],
+  ['tier3', '--tier3'],
   ['quartz', '--quartz'],
   ['verdite', '--verdite'],
   ['ember', '--ember'],
@@ -194,6 +201,16 @@ export function vfxColour(palette: Palette, kind: string, damageType: string): s
   if (kind === 'leap') return palette.verdite;
   if (kind === 'crit_surge') return palette.citrine;
   return damageColour(palette, damageType);
+}
+
+/** A DROP'S BEAM: colour and reach, off `lootRank` so a card and the floor
+ *  cannot disagree. An ordinary piece gets a low dull column rather than none —
+ *  the point is seeing that something LANDED, then how good it is. */
+export function lootBeam(palette: Palette, rank: number): { colour: string; tall: number; lit: number } {
+  if (rank >= 3) return { colour: palette.tier3, tall: 3.2, lit: 0.85 };
+  if (rank === 2) return { colour: palette.amethyst, tall: 2.4, lit: 0.7 };
+  if (rank === 1) return { colour: palette.tier2, tall: 1.6, lit: 0.5 };
+  return { colour: palette.tier1, tall: 0.9, lit: 0.28 };
 }
 
 /** Damage reads as the world it comes from, not as a slot in a legend. */

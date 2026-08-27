@@ -109,6 +109,14 @@ function implicitsFor(def: GearBase | undefined, perfect = false): RolledMod[] {
 /** `meta.perfect` is the flag; what it lifts is written onto the ITEM. */
 export const isPerfect = (item: Item): boolean => item.meta.perfect === true;
 
+/** HOW LOUD A DROP IS, one number the floor and its beam both read: ordinary,
+ *  well rolled, a Perfect base, a named piece. */
+export function lootRank(item: Item): number {
+  if (item.kind === 'relic' || item.meta.unique !== undefined) return 3;
+  if (isPerfect(item)) return 2;
+  return item.mods.length >= 4 ? 1 : 0;
+}
+
 /** HANDS ARE A FACT ABOUT THE BASE, never a tag and never a family name. Lives
  *  beside the other base facts so the sim can ask without reaching into game/. */
 export const isTwoHanded = (item: Item): boolean =>

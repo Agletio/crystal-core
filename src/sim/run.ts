@@ -92,7 +92,7 @@ import type { MonsterAbilityDef, MonsterDef, MonsterRankDef } from '../types';
 import { LURKS, SCENE_BY_ID, scaleFor } from '../scenes';
 import type { SceneAct } from '../scenes';
 import { ModPool, computeStat } from '../mods';
-import { makeRelic, makeUnique, perfectChance, pickGearBase, rollGear } from '../economy';
+import { lootRank, makeRelic, makeUnique, perfectChance, pickGearBase, rollGear } from '../economy';
 import type { Boost, Item, SkillDef } from '../types';
 import type { MonsterRank } from '../render/bestiary';
 
@@ -309,6 +309,16 @@ export interface Hoard {
   risen?: boolean;
 }
 
+/** A drop LYING ON THE FLOOR. Nothing picks one up — the bag fills on the way
+ *  out either way — so this is WEIGHT, not a mechanic. */
+export interface Ground {
+  x: number;
+  y: number;
+  item: Item;
+  rank: number;
+  age: number;
+}
+
 export interface Floater {
   x: number;
   y: number;
@@ -386,6 +396,8 @@ export interface RunState {
   hero: Entity;
   monsters: Entity[];
   floaters: Floater[];
+  /** What is lying about, oldest first. */
+  ground: Ground[];
   vfx: Vfx[];
   /** Every Hoard put down this descent, and whether its guard is dead yet. */
   hoards: Hoard[];
@@ -534,6 +546,8 @@ export class RunSim {
   private splitChance = 0;
   private giltChance = 0;
   private watchChance = 0;
+  /** Where the thing that is dropping fell — a body, or a box. */
+  private dropAt: { x: number; y: number } | null = null;
   private gearLeft = 0;
   private currencyLeft = 0;
   private budgeted = false;
@@ -631,6 +645,7 @@ export class RunSim {
       hero,
       monsters,
       floaters: [],
+      ground: [],
       vfx: [],
       hoards: this.putDown,
       welled: 0,
@@ -3298,6 +3313,7 @@ export class RunSim {
     s.xpGained += this.xpPerKill * victim.bounty;
     s.loot.currency.gold =
       (s.loot.currency.gold ?? 0) + this.goldPerKill * victim.bounty;
+    this.dropAt = victim;
     this.rollCurrency();
     this.rollGearDrop();
     this.rollRelicDrop();
@@ -3312,7 +3328,7 @@ export class RunSim {
     // going through it would hand over the OTHER relic as well.
     const borne = victim.bears ? RELIC_BY_ID[victim.bears] : undefined;
     if (borne) {
-      s.loot.items.push(makeRelic(borne));
+      this.lay(makeRelic(borne));
       s.bearers++;
     }
     this.events.push({ kind: 'kill', total: s.killed, xp: this.xpPerKill });
@@ -3351,6 +3367,13 @@ export class RunSim {
     return Math.max(1, this.state.totalMonsters - this.state.killed + 1);
   }
 
+  /** WHERE IT FELL: one seam in, one place it lands. */
+  private lay(item: Item): void {
+    this.state.loot.items.push(item);
+    const at = this.dropAt ?? this.state.hero;
+    this.state.ground.push({ x: at.x, y: at.y, item, rank: lootRank(item), age: 0 });
+  }
+
   /** ONE piece, unconditionally. A Hoard pays in these rather than in a second
    *  kind of loot: what it changes is HOW MANY, never what the band can hold. */
   private dropGear(): void {
@@ -3367,7 +3390,7 @@ export class RunSim {
     );
     if (named.length > 0 && this.rng.chance(UNIQUE_DROP.chance * (1 + rarity / 200))) {
       const def = this.rng.pick(named)!;
-      this.state.loot.items.push(makeUnique(def, drops.ilvl, this.rng));
+      this.lay(makeUnique(def, drops.ilvl, this.rng));
       return;
     }
 
@@ -3385,9 +3408,7 @@ export class RunSim {
     // game's worth of measurements re-seeded for a thing that cannot happen.
     const odds = perfectChance(this.set.filled, this.set.rewards.danger);
     const perfect = odds > 0 && this.rng.chance(odds);
-    this.state.loot.items.push(
-      rollGear(base.id, drops.ilvl, mods, DROP_POOL, this.rng, perfect)
-    );
+    this.lay(rollGear(base.id, drops.ilvl, mods, DROP_POOL, this.rng, perfect));
   }
 
   /**
@@ -3560,6 +3581,7 @@ export class RunSim {
       });
       return;
     }
+    this.dropAt = box;
     if (box.pays === 'currency') this.dropCurrency();
     else this.dropGear();
   }
@@ -3569,7 +3591,7 @@ export class RunSim {
   private rollRelicDrop(): void {
     for (const def of RELICS) {
       if (!opensHere(def.gate, this.set.power, this.set.theme)) continue;
-      if (this.rng.chance(def.chance)) this.state.loot.items.push(makeRelic(def));
+      if (this.rng.chance(def.chance)) this.lay(makeRelic(def));
     }
   }
 

@@ -62,6 +62,7 @@ import {
   tileDecals,
   tileSize,
   toHexNumber,
+  lootBeam,
   vfxColour,
   ZOOM_MIN,
 } from './renderer';
@@ -190,13 +191,15 @@ export async function createPixiRenderer(
   // A generated effect is a PICTURE, so it cannot be drawn into the blocks
   // layer beside the lightning that wraps it.
   /** Effect art that lies ON the floor, under everything standing on it. */
+  /** UNDER the bodies: a drop is on the floor and the hero walks in front. */
+  const lootLayer = new Graphics();
   const vfxGroundLayer = new Container();
   const vfxArtLayer = new Container();
   const entityLayer = new Container();
   const textLayer = new Container();
 
   world.addChild(
-    groundLayer, wallLayer, mapLayer, propLayer, auraLayer, vfxGroundLayer,
+    groundLayer, wallLayer, mapLayer, propLayer, auraLayer, lootLayer, vfxGroundLayer,
     entityLayer, vfxLayer, vfxArtLayer
   );
   app.stage.addChild(world, textLayer);
@@ -909,8 +912,34 @@ export async function createPixiRenderer(
     };
   }
 
+  /** WHAT LANDED, lying where it fell: a pool on the floor and a column of
+   *  light out of it, in the item's own rank colour. Nothing is picked up. */
+  function drawLoot(state: RunState): void {
+    lootLayer.clear();
+    for (const drop of state.ground) {
+      const beam = lootBeam(palette, drop.rank);
+      const colour = toHexNumber(beam.colour);
+      const x = cx(drop.x);
+      const y = cy(drop.y);
+      // TILE UNITS. This layer is scaled by the camera, so `tile` — the pixel
+      // size — belongs nowhere in here; it is what hairline WIDTHS convert by.
+      const pulse = 0.85 + 0.15 * Math.sin(state.elapsed * 2.2 + drop.x);
+      lootLayer.ellipse(x, y, 0.3, 0.15).fill({ color: colour, alpha: beam.lit * 0.4 });
+      // Narrowing bands, not one rectangle: fading as it rises reads as light.
+      const bands = 6;
+      for (let i = 0; i < bands; i++) {
+        const up = (i / bands) * beam.tall * pulse;
+        const wide = 0.13 * (1 - (i / bands) * 0.6);
+        const fade = beam.lit * (1 - i / bands) * 0.5;
+        lootLayer.rect(x - wide, y - up - 0.1, wide * 2, beam.tall / bands + 0.02)
+          .fill({ color: colour, alpha: fade });
+      }
+    }
+  }
+
   function drawOverlays(state: RunState): void {
     vfxLayer.clear();
+    drawLoot(state);
     effectsDrawn = 0;
     groundDrawn = 0;
     // Keep hairlines visible however far out we're zoomed.
