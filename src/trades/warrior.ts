@@ -9,6 +9,7 @@
  * NOTHING in it writes `blockChance`. A shield's whole worth stays one number
  * you read off the piece; what this buys is what a Block DOES.
  */
+import { TRADE_BASE } from '../data';
 import { stat } from '../trees/node';
 import type { TradeSpec } from './spec';
 
@@ -24,6 +25,10 @@ export const WARRIOR_TRADE: TradeSpec = {
     'fight that was worth it, which is most of them. He wears no shirt because ' +
     'the rock is warm and because what is written on him is the only armour he ' +
     'trusts.',
+  baseline: {
+    short: 'A hit big enough for the body it lands on Stuns it.',
+    grants: { stunSeconds: TRADE_BASE.warriorStunSeconds },
+  },
   skill: 'strike',
   prefix: 'mah',
   sprite: 'mahthar',
@@ -301,7 +306,7 @@ export const WARRIOR_TRADE: TradeSpec = {
         },
         {
           id: 'marks',
-          theme: 'Marks',
+          theme: 'Concussion',
           minors: [
             { text: '+8% increased Damage', stats: [stat('damage', 'inc', 8)] },
             { text: '+4% increased Movement Speed', stats: [stat('moveSpeed', 'inc', 4)] },
@@ -310,16 +315,18 @@ export const WARRIOR_TRADE: TradeSpec = {
             {
               id: 'mah_heavyhand',
               name: 'Heavy Hand',
-              description: 'Your hits Slow what they land on by 30% for 2s.',
-              grants: { heavyHand: 30 },
+              description:
+                '+70% increased chance to Stun, your Stuns last 0.5s longer, and your hits ' +
+                'Slow what they land on by 30% for 2s.',
+              grants: { stunMore: 70, stunSeconds: 0.5, heavyHand: 30 },
             },
             {
-              id: 'mah_grind',
-              name: 'Grind Them Down',
+              id: 'mah_aftershock',
+              name: 'Aftershock',
               description:
-                'Your hits Slow what they land on by a further 25%, and for 4s after you ' +
-                'are hit you deal 30% more damage.',
-              grants: { heavyHand: 25, struckMore: 30 },
+                'A Stun Bursts for 55% of your damage — including on a body your hit killed ' +
+                'outright, which always Stuns.',
+              grants: { stunBurst: 0.55 },
             },
           ],
         },

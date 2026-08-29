@@ -14,7 +14,7 @@
  * `means` carries its own numbers, out of the same tables the sim reads. A
  * glossary quoting a figure by hand is a glossary that goes stale silently.
  */
-import { AILMENT_BY_ID, BURST, DAMAGE_TYPE_BY_ID, DEFENCE, MANA, MELEE, PASSIVE_DAMAGE, POTIONS, PROJECTILE } from './data';
+import { AILMENT_BY_ID, BURST, DAMAGE_TYPE_BY_ID, DEFENCE, MANA, MELEE, PASSIVE_DAMAGE, POTIONS, PROJECTILE, WARRIOR, stunChanceFor } from './data';
 
 export interface KeywordDef {
   id: string;
@@ -372,7 +372,20 @@ export const KEYWORDS: KeywordDef[] = [
       `What a flask holds. Each carries ${POTIONS[0]?.charges ?? 2}, a descent ` +
       `always begins full, and nothing about them survives one — there is ` +
       `nothing to hoard.`,
-    grants: ['chargeRegen'],
+    grants: ['chargeRegen', 'chargeOnKill'],
+  },
+  {
+    id: 'stun',
+    name: 'Stun',
+    says: ['Stun', 'Stuns', 'Stunned', 'Stunning'],
+    means:
+      'An enemy neither swings nor closes for a duration. The chance is the ' +
+      `share of its MAXIMUM life the one hit took, raised to the power ` +
+      `${WARRIOR.stunPower} — ${pct(stunChanceFor(0.1))} for a tenth of it, ` +
+      `${pct(stunChanceFor(0.8))} for four fifths — and a hit that kills a body ` +
+      'outright always Stuns it, so what a Stun sets off still fires on one you ' +
+      'take down in a single blow.',
+    grants: ['stunSeconds', 'stunMore', 'stunBurst'],
   },
 ];
 
@@ -412,6 +425,11 @@ export const BANNED: Record<string, string> = {
   explodes: 'Burst',
   explosion: 'Burst',
   'blows up': 'Burst',
+  splash: 'Burst',
+  splashes: 'Burst',
+  'knocks out': 'Stun',
+  stagger: 'Stun',
+  staggers: 'Stun',
 };
 
 /**

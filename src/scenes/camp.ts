@@ -13,7 +13,7 @@ export interface Hotspot {
   y: number;
   w: number;
   h: number;
-  opens: 'fissure' | 'craft' | 'stash' | 'character' | 'socket' | 'room';
+  opens: 'fissure' | 'craft' | 'stash' | 'character' | 'socket' | 'trials' | 'room';
   slot?: number; // which of `RUN_SLOTS`, for a socket in the rock
   room?: string; // which `SceneDef`, for somebody standing about
   says: string;
@@ -46,6 +46,13 @@ export const CAMP_HOTSPOTS: Hotspot[] = [
     opens: 'stash',
     says: 'The shelf. What you are not carrying, and what you meant to come back for.',
   },
+  // THE FIRE, the one lit thing in the picture nothing else claims.
+  {
+    id: 'fire',
+    x: 188, y: 304, w: 100, h: 78,
+    opens: 'trials',
+    says: 'The fire. What you have promised the rock, and what it is costing you.',
+  },
   // The FABRIC: a rectangle round the guy ropes reaches the socket and the shelf.
   {
     id: 'tent',
@@ -67,7 +74,7 @@ export const CAMP_SPOTS = [
   { x: 474, y: 322 },
   { x: 150, y: 332 },
   { x: 566, y: 300 },
-  { x: 262, y: 350 },
+  { x: 402, y: 348 },
 ];
 
 /** WHAT MOVES: light breathing over what burns. `period` is a cycle, seconds. */

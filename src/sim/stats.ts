@@ -367,7 +367,12 @@ export function heroStats(
     maxLife,
     lifeRegen: computeStat((maxLife * HERO_BASE.lifeRegenPercent) / 100, mods, 'lifeRegen'),
     maxMana,
-    manaRegen: computeStat((maxMana * HERO_BASE.manaRegenPercent) / 100, mods, 'manaRegen'),
+    // PERCENTAGE POINTS on the base, never flat: a bigger pool refills faster.
+    manaRegen: computeStat(
+      (maxMana * (HERO_BASE.manaRegenPercent + ((grants.poolRegen as number) ?? 0))) / 100,
+      mods,
+      'manaRegen'
+    ),
     // The tree's multipliers land LAST, on top of whatever gear did.
     manaCost: Math.max(
       0,

@@ -146,13 +146,10 @@ function begin(): void {
 }
 
 document.getElementById('open-craft')!.addEventListener('click', openCraft);
-document.getElementById('open-crystals')!.addEventListener('click', openCrystals);
-document.getElementById('open-stash')!.addEventListener('click', openStash);
 document.getElementById('open-inventory')!.addEventListener('click', openInventory);
 document.getElementById('open-character')!.addEventListener('click', () => openCharacter());
 document.getElementById('open-skills')!.addEventListener('click', openSkills);
 document.getElementById('open-trade')!.addEventListener('click', openTrade);
-document.getElementById('open-trials')!.addEventListener('click', openTrials);
 document.getElementById('open-history')!.addEventListener('click', openHistory);
 document.getElementById('open-save')!.addEventListener('click', () => openSaveData());
 document.getElementById('open-settings')!.addEventListener('click', () => openSettings());

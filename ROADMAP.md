@@ -168,6 +168,15 @@ thing at a time"* — so what comes next is whatever playing it turns up.
 
 ### Live known issues
 
+- **The Aethermancer's WAND variant is drawn holding two wands, and the repair
+  is generated and waiting.** `weapons.json` already says "His other hand is
+  empty" and every other body's `_wand` is correct, so the shipped rotation is
+  one generation that drifted. A fresh dress landed clean —
+  `create_character_state` `ca653859-92dd-4dae-9ff3-938dd98b5aaa` off the
+  aethermancer base, frames in `tools/art/cache/designs/aeth_wand_v2-*.png`,
+  shown to the user. What is left is the five ANIMATIONS off that state
+  (~65 generations) and a re-import, and it waits on his word.
+
 - **The tier ladder the boss is meant to gate does not exist yet.** The fight
   itself now lands where it was asked to — full tier 1 answers it with speed or
   with plate and with neither it does not — but nothing about beating it opens

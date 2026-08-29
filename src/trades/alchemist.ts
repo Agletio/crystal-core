@@ -9,6 +9,7 @@
  * power between dry spells; stack the last two and you are permanently a
  * little better.
  */
+import { TRADE_BASE } from '../data';
 import { stat } from '../trees/node';
 import type { TradeSpec } from './spec';
 
@@ -24,6 +25,10 @@ export const ALCHEMIST: TradeSpec = {
     'blood among them. He does not win a fight so much as outlast it, one ' +
     'mouthful at a time, and what is in the flask is the only part of him ' +
     'that has not been used up.',
+  baseline: {
+    short: 'Kills put flask Charges back, so the flasks are never a descent’s whole budget.',
+    grants: { chargeOnKill: TRADE_BASE.alchemistChargePerKill },
+  },
   skill: 'fireball',
   prefix: 'alc',
   sprite: 'alchemist',

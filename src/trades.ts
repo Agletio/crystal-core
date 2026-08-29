@@ -3,14 +3,15 @@
  *
  * A skill tree is per skill and funded by that skill's own level, so changing
  * skill throws the whole of what you were away. A trade is funded by CHARACTER
- * level, out of its own budget, and it survives every skill you ever swap to —
- * which is what makes keeping a character worth anything.
+ * level and survives every skill you ever swap to, which is what makes keeping
+ * a character worth anything.
  *
- * Every notable changes a RULE rather than handing out a percentage. That is
- * the whole reason two of them cannot be compared: a trade that gave numbers
- * would compete with the other on numbers, and one of them would win.
+ * Every notable changes a RULE rather than handing out a percentage: a trade
+ * that gave numbers would compete with the other on numbers, and one would win.
  */
 import { TRADE } from './data';
+import { GRANT_BY_ID } from './sim/grants';
+import type { TradeSpec } from './trades/spec';
 import { buildTrade } from './trades/layout';
 import { AETHERMANCER } from './trades/aethermancer';
 import { ALCHEMIST } from './trades/alchemist';
@@ -54,8 +55,7 @@ export const tradeNextAt = (level: number): number | null => {
   return TRADE.firstAt + (done + 1) * TRADE.levelsPerGrant;
 };
 
-/** What taking every attribute point back costs. The one allocation with no
- *  click to undo it, so gold is what undoes it. */
+/** The one allocation with no click to undo it, so gold is what undoes it. */
 export const respecCost = (level: number): number =>
   Math.max(TRADE.respecPerLevel, Math.round(level * TRADE.respecPerLevel));
 
@@ -81,15 +81,32 @@ export const replayTradeNodes = (
   cap: number
 ): string[] => replayWeb(tradeNodes(tradeId), wanted, cap);
 
-/** Every switch the walked trade hands over, merged by each grant's own rule. */
+/**
+ * Every switch the trade hands over: its BASELINE first, then what has been
+ * walked. One seam, so the free half reaches the sim, the sheet and every card
+ * without a second path, and a summed grant a node also carries ADDS to the
+ * baseline — the Aether Ward is a bigger version of the one you had.
+ */
 export function tradeGrants(
   tradeId: string | null | undefined,
   allocated: readonly string[]
 ): Record<string, unknown> {
   const out: Record<string, unknown> = {};
+  const base = tradeId ? TRADE_BY_ID[tradeId]?.spec.baseline.grants : undefined;
+  if (base) mergeGrants(out, base);
   for (const id of allocated) {
     const node = tradeNodeById(tradeId, id);
     if (node?.grants) mergeGrants(out, node.grants);
   }
   return out;
+}
+
+/** The baseline with every number in it: what the web's middle prints. */
+export function baselineLines(spec: TradeSpec): string[] {
+  const said = [...(spec.baseline.says ?? [])];
+  for (const [key, value] of Object.entries(spec.baseline.grants ?? {})) {
+    const line = GRANT_BY_ID[key]?.say?.(value);
+    if (line) said.push(line);
+  }
+  return said;
 }

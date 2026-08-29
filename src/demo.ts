@@ -108,6 +108,8 @@ import {
   EQUIP_SLOTS,
   OFF_SLOT,
   WARRIOR,
+  TRADE_BASE,
+  stunChanceFor,
   WEAPON_SLOT,
 } from './data';
 import { variants } from './sim/appearance';
@@ -226,6 +228,8 @@ import { SPUR_COUNT, SPUR_STEPS, TRUNK_NODES } from './trees/layout';
 import { SPOKE_COUNT, SPOKE_NODES, TRADE_NODES } from './trades/layout';
 import {
   TRADES,
+  baselineLines,
+  tradeGrants,
   TRADE_BY_ID,
   canAllocateTrade,
   canDeallocateTrade,
@@ -6368,6 +6372,48 @@ rule('TRADES — is the part that is not the skill worth keeping a character for
     odd.join(', ')
   );
 
+  // WHAT A TRADE GIVES FOR NOTHING. A baseline is what tells two of them apart
+  // in the first hour, before a level has paid for a point — so the screen you
+  // pick on has to say it, and the sim has to be holding it with nothing walked.
+  {
+    const mute: string[] = [];
+    const unread: string[] = [];
+    const missing: string[] = [];
+    for (const trade of TRADES) {
+      const { spec } = trade;
+      const said = baselineLines(spec);
+      if (!spec.baseline.short || said.length === 0) missing.push(spec.id);
+      // The web's middle prints figures, so a baseline with no number in it is
+      // a line a player cannot act on.
+      if (!said.some((s) => /\d/.test(s))) mute.push(spec.id);
+      const held = tradeGrants(spec.id, []);
+      for (const key of Object.keys(spec.baseline.grants ?? {})) {
+        const def = GRANT_BY_ID[key];
+        if (!def || !def.reads.includes(STATS)) unread.push(`${spec.id}: ${key}`);
+        else if (held[key] === undefined) unread.push(`${spec.id}: ${key} never reaches the sim`);
+      }
+      line(`  ${spec.id.padEnd(13)}${said.join(' · ').slice(0, 84)}`);
+    }
+    check(missing.length === 0, 'every trade gives something before a point is spent', missing.join(', '));
+    check(mute.length === 0, 'and the web’s middle says it with the figures in it', mute.join(', '));
+    check(
+      unread.length === 0,
+      'and it reaches the sim through the one seam, with nothing walked',
+      unread.join(', ')
+    );
+
+    // A SUMMED grant a node also carries ADDS to the baseline rather than
+    // replacing it — the Aether Ward is a bigger version of the one you had.
+    const bare = tradeGrants('aethermancer', []).manaShield as number;
+    const warded = tradeGrants('aethermancer', ['aet_warding_m0', 'aet_ward']).manaShield as number;
+    check(
+      bare === TRADE_BASE.aethermancerShield && warded > bare,
+      `the Ward builds on the free ${(bare * 100).toFixed(0)}% rather than replacing it — ` +
+        `${(warded * 100).toFixed(0)}% walked`,
+      `${bare} then ${warded}`
+    );
+  }
+
   for (const trade of TRADES) {
     const id = trade.spec.id;
     const nodes = trade.nodes;
@@ -6656,8 +6702,10 @@ rule('TRADES — is the part that is not the skill worth keeping a character for
     const before = treeGrants(who).manaShield;
     equipSkill(who, 'blight');
     check(
-      mainSkillId(who) === 'blight' && treeGrants(who).manaShield === before && before === 0.2,
-      'a trade survives changing skill, where a skill tree does not',
+      mainSkillId(who) === 'blight'
+        && treeGrants(who).manaShield === before
+        && (before as number) > TRADE_BASE.aethermancerShield,
+      'a trade survives changing skill, where a skill tree does not — its baseline too',
       `${before} → ${treeGrants(who).manaShield}`
     );
   }
@@ -6749,6 +6797,27 @@ rule('TRADE RULES — does each one actually change what the sim does?');
     const final = runToCompletion(sim, 900);
     return { sim, final };
   };
+
+  // THE POOL REFILLS ON ITS OWN, for nothing, and it is a SHARE of the pool
+  // rather than a flat number — so pouring points into mana refills faster too,
+  // which is what makes every one of the five roads pull on the same thing.
+  {
+    const his = characterStats(armed([]));
+    const nobody = characterStats(makeCharacter(starterLoadout(new Rng(21), 30), 'strike'));
+    check(
+      his.manaRegen > nobody.manaRegen && nobody.manaRegen > 0,
+      `the Aethermancer regenerates ${his.manaRegen.toFixed(1)} mana a second against ` +
+        `everybody else's ${nobody.manaRegen.toFixed(1)}`,
+      `${his.manaRegen} against ${nobody.manaRegen}`
+    );
+    const deeper = armed(['aet_vessel_m0']);
+    const grown = characterStats(deeper);
+    check(
+      grown.maxMana <= his.maxMana || grown.manaRegen / grown.maxMana - his.manaRegen / his.maxMana < 1e-9,
+      'and it is a share of the pool, so a bigger pool refills proportionally',
+      `${(grown.manaRegen / grown.maxMana).toFixed(4)} against ${(his.manaRegen / his.maxMana).toFixed(4)}`
+    );
+  }
 
   // The pool takes hits, and ailments, before life does.
   {
@@ -7559,6 +7628,90 @@ rule('THE WARRIOR — does what is in your other hand change anything?');
     );
   }
 
+  // THE STUN, which is the trade's for nothing. It is what a HEAVY BLOW does:
+  // the chance is the share of the body's own maximum life the one hit took,
+  // and a hit that kills always Stuns — which is the whole reason Aftershock
+  // can be spent on by a build that one-shots what it swings at.
+  {
+    const struck = (nodes: string[], life: number, seed = 808) => {
+      const sim = new RunSim([], warrior(nodes), new Rng(seed)) as any;
+      const hero = sim.state.hero;
+      const foe = sim.state.monsters[0];
+      foe.x = hero.x + 0.5;
+      foe.y = hero.y;
+      foe.stats.maxLife = life;
+      foe.life = life;
+      sim.dealDamage(hero, foe, 1, undefined);
+      return sim;
+    };
+    // A body with a hundred times the life the hero can deal takes a graze.
+    const oneHit = struck([], 1);
+    const graze = Array.from({ length: 60 }, (_, i) => struck([], 1e7, 400 + i)).filter(
+      (s) => s.state.stunned > 0
+    ).length;
+    check(
+      oneHit.state.stunned === 1 && oneHit.state.monsters[0].dead,
+      'a hit that kills a body outright always Stuns it',
+      `${oneHit.state.stunned} Stuns`
+    );
+    check(
+      graze === 0,
+      `and a graze at a millionth of a body's life Stuns none of 60 — ${graze}`,
+      `${graze} of 60`
+    );
+    // AND IT STOPS THE BODY. A stunned monster neither swings nor closes.
+    const held = struck([], 1e7, 808);
+    held.state.monsters[0].effects.push({ id: 'stunned', remaining: 5 });
+    held.state.monsters[0].aggroed = true;
+    const wasAt = { x: held.state.monsters[0].x, y: held.state.monsters[0].y };
+    for (let i = 0; i < 30; i++) held.stepMonster(held.state.monsters[0], TICK);
+    check(
+      held.state.monsters[0].x === wasAt.x && held.state.monsters[0].y === wasAt.y,
+      'a Stunned body neither swings nor closes for as long as it runs',
+      `moved to ${held.state.monsters[0].x}, ${held.state.monsters[0].y}`
+    );
+
+    // AFTERSHOCK, on a body the hit KILLED — the case the guaranteed Stun on a
+    // killing blow exists for. A BYSTANDER is stood inside the radius and its
+    // life read: a Burst measured on an empty floor proves nothing.
+    const shocking = (nodes: string[]): number => {
+      const sim = new RunSim([], warrior(nodes), new Rng(808)) as any;
+      const hero = sim.state.hero;
+      const [foe, near] = sim.state.monsters;
+      foe.x = hero.x + 0.5;
+      foe.y = hero.y;
+      foe.stats.maxLife = 1;
+      foe.life = 1;
+      near.x = foe.x + 1;
+      near.y = foe.y;
+      near.stats.maxLife = STANDING;
+      near.life = STANDING;
+      sim.dealDamage(hero, foe, 1, undefined);
+      return STANDING - near.life;
+    };
+    const spent = ['mah_paint_m0', 'mah_paint', 'mah_marks_m0', 'mah_heavyhand', 'mah_marks_m1', 'mah_aftershock'];
+    const burst = shocking(spent);
+    const nothing = shocking([]);
+    check(
+      burst > 0 && nothing === 0,
+      `a Stun on a body killed outright Bursts ${Math.round(burst)} onto what stands ` +
+        `within ${WARRIOR.stunBurstRadius} tiles, where the same hit unspent does nothing`,
+      `${burst} against ${nothing}`
+    );
+    // The chance is the CURVE, and one implementation answers the card too.
+    line(
+      `  a hit for a tenth of a body's life Stuns ${(stunChanceFor(0.1) * 100).toFixed(1)}% ` +
+        `of the time, four fifths ${(stunChanceFor(0.8) * 100).toFixed(1)}%, a kill always`
+    );
+    check(
+      stunChanceFor(0.01) < stunChanceFor(0.1)
+        && stunChanceFor(0.1) < stunChanceFor(0.8)
+        && stunChanceFor(1.2) === 1,
+      'and the bigger the share of a body it took, the likelier it is',
+      `${stunChanceFor(0.01)}, ${stunChanceFor(0.8)}, ${stunChanceFor(1.2)}`
+    );
+  }
+
   // And it PLAYS: the same six points on the two arrangements the trade is
   // about, each walked to its own tip and each clearing what it walks into.
   {
@@ -7811,6 +7964,53 @@ rule('POTIONS — a budget you spend, and one rule that spends it');
         `${had} charges to ${sim.state.charges[flask]}, ${before} effects to ${sim.state.hero.effects.length}`
       );
     }
+  }
+
+  // THE ALCHEMIST'S BASELINE, which is charged by BODIES and never by a clock.
+  // That is the whole point of the shape: a room full of things to kill keeps
+  // the flasks topped up, and a lone tanky body buys no sustain at all — where
+  // seconds would have handed a build grinding one down permanent regeneration
+  // for nothing spent.
+  {
+    const brewer = makeCharacter({}, 'blight');
+    takeUpTrade(brewer, 'alchemist');
+    const flask = POTIONS[0].id;
+
+    const spend = (sim: any): void => {
+      sim.state.charges[flask] = 0;
+      sim.recharging[flask] = 0;
+    };
+    const killing = new RunSim([], brewer, new Rng(4242)) as any;
+    spend(killing);
+    const bodies = Math.round(1 / TRADE_BASE.alchemistChargePerKill);
+    for (let i = 0; i < bodies && killing.state.monsters[i]; i++) {
+      killing.kill(killing.state.monsters[i]);
+    }
+    check(
+      (killing.state.charges[flask] ?? 0) >= 1,
+      `${bodies} kills put a Charge back into the Alchemist's flask`,
+      `${killing.state.charges[flask]} charges after ${bodies} kills`
+    );
+
+    // The clock buys NOTHING on its own, which is what keeps a boss honest.
+    const waiting = new RunSim([], brewer, new Rng(4242)) as any;
+    spend(waiting);
+    for (let i = 0; i < 600; i++) waiting.stepRecharge(TICK);
+    check(
+      (waiting.state.charges[flask] ?? 0) === 0,
+      'and standing still for 10s puts none back, so a lone body buys no sustain',
+      `${waiting.state.charges[flask]} charges after 10s of nothing`
+    );
+
+    // And nobody else gets it: a baseline is what tells the trades apart.
+    const plain = new RunSim([], makeCharacter({}, 'blight'), new Rng(4242)) as any;
+    spend(plain);
+    for (let i = 0; i < bodies && plain.state.monsters[i]; i++) plain.kill(plain.state.monsters[i]);
+    check(
+      (plain.state.charges[flask] ?? 0) === 0,
+      'and a character with no trade gets nothing back for a kill',
+      `${plain.state.charges[flask]} charges`
+    );
   }
 
   // Every potion is on a key, and the key is a table entry rather than a

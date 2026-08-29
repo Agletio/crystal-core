@@ -8,7 +8,9 @@
  * `reads` names behaviours in SKILL_BEHAVIOURS; STATS is the stat layer, which
  * runs for every skill whatever its delivery is.
  */
-import { AMBUSH, BURST, MANA, PASSIVE_DAMAGE, ROGUE, WARRIOR, WEAPON_SPECIALITY } from '../data';
+import {
+  AMBUSH, BURST, HERO_BASE, MANA, PASSIVE_DAMAGE, ROGUE, WARRIOR, WEAPON_SPECIALITY, stunChanceFor,
+} from '../data';
 
 export const STATS = 'stats';
 
@@ -189,6 +191,69 @@ export const GRANTS: GrantDef[] = [
       return n === null || n <= 0
         ? null
         : `Each flask regains a Charge every ${(1 / n).toFixed(1)}s`;
+    },
+  },
+  {
+    id: 'chargeOnKill',
+    what: 'a kill returns part of a flask Charge',
+    // Charged by BODIES rather than by a clock: a lone boss buys no sustain,
+    // where a room full of things to kill keeps every flask topped up.
+    reads: [STATS],
+    merge: 'sum',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null || n <= 0
+        ? null
+        : `Every ${(1 / n).toFixed(0)} kills returns a Charge to each flask`;
+    },
+  },
+
+  {
+    id: 'stunSeconds',
+    what: 'a heavy hit Stuns what it lands on',
+    reads: [STATS],
+    merge: 'sum',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null || n <= 0
+        ? null
+        : `A hit Stuns for ${n}s, at ${pct(stunChanceFor(0.1))} for a tenth of a body’s ` +
+          `maximum life and ${pct(stunChanceFor(0.8))} for four fifths of it — always on a ` +
+          'hit that kills outright';
+    },
+  },
+  {
+    id: 'stunMore',
+    what: 'you Stun more often',
+    reads: [STATS],
+    merge: 'sum',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null ? null : `${n}% increased chance to Stun`;
+    },
+  },
+  {
+    id: 'stunBurst',
+    what: 'a Stun Bursts around the body it landed on',
+    reads: [STATS],
+    merge: 'sum',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null
+        ? null
+        : `A Stun Bursts for ${pct(n)} of your damage, ${WARRIOR.stunBurstRadius} tiles across`;
+    },
+  },
+  {
+    id: 'poolRegen',
+    what: 'your mana pool refills faster',
+    reads: [STATS],
+    merge: 'sum',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null
+        ? null
+        : `${n}% of your maximum mana returns every second, over the ${HERO_BASE.manaRegenPercent}% everybody has`;
     },
   },
 

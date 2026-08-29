@@ -408,7 +408,7 @@ for (const vp of VIEWPORTS) {
 
   // The collection. Nothing is in it yet on a fresh game, but the quest ladder
   // is text at full width, which is where a narrow screen tears.
-  await page.evaluate(() => document.getElementById('open-crystals')?.click());
+  await page.evaluate(() => document.getElementById('camp-socket0')?.click());
   await page.waitForTimeout(300);
   await shoot('crystals');
   await page.evaluate(() => document.getElementById('crystals-close')?.click());
@@ -585,7 +585,7 @@ for (const vp of VIEWPORTS) {
     // a screenshot of the gate is a screenshot of nothing being judged.
     document.getElementById('open-dev')?.click();
     document.getElementById('dev-climb-0')?.click();
-    document.getElementById('open-trials')?.click();
+    document.getElementById('camp-fire')?.click();
     for (let i = 0; i < 3; i++) {
       const open = document.querySelector('#trials-web .web__node--open');
       if (!open) break;

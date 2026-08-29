@@ -26,11 +26,20 @@ export interface Spoke {
   branches: [Branch, Branch];
 }
 
+/** WHAT THE TRADE GIVES FOR NOTHING, before a point is spent. */
+export interface TradeBase {
+  short: string; // the line the cast hall picks on
+  says?: string[]; // for a baseline no grant carries; quotes the sim's own tables
+
+  grants?: Record<string, unknown>; // the web's middle prints these off `say`
+}
+
 export interface TradeSpec {
   id: string;
   name: string;
   blurb: string; // the rule it changes, in one line: what the picker shows
   lore: string; // who he IS, where the blurb is the rule he changes
+  baseline: TradeBase;
   prefix: string; // node ids start `${prefix}_`, and a save points at them
   skill: string; // THE SKILL HE COMES DOWN HOLDING; the Skills screen swaps it
   sprite?: string; // the generated body he is DRAWN as; omitted, the base man

@@ -145,7 +145,7 @@ await makeCharacter();
 // The zone is the composition, so it is chosen by socketing rather than by a
 // setting: the kit is handed every crystal and the collection is where they go.
 for (const want of SOCKETS[zone] ?? []) {
-  await page.evaluate(() => document.getElementById('open-crystals')?.click());
+  await page.evaluate(() => document.getElementById('camp-socket0')?.click());
   await page.waitForTimeout(250);
   const put = await page.evaluate((family) => {
     const cards = [...document.querySelectorAll('#crystals-list .crystal')];

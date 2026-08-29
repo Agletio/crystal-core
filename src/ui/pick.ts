@@ -163,6 +163,11 @@ function look(tradeId: string): void {
   box.append(el('h3', 'picksay__name', trade.spec.name));
   box.append(el('p', 'picksay__lore', trade.spec.lore));
   box.append(el('p', 'picksay__rule', trade.spec.blurb));
+  // WHAT IT GIVES FOR NOTHING, loosely: the figures are the web's middle.
+  const free = el('p', 'picksay__free');
+  free.append(el('span', 'picksay__freelabel', 'Comes with: '));
+  free.append(el('span', 'picksay__freesaid', trade.spec.baseline.short));
+  box.append(free);
   // What he comes down holding, NAMED — and the card is the same one the
   // Skills screen raises, so the description is written in one place.
   const opens = SKILL_BY_ID[trade.spec.skill];

@@ -239,6 +239,29 @@ export const WARRIOR = {
   paintSeconds: 4, // how long the paint answers a blow, on both of its lines
   shieldLessCap: 0.6,
   secondSkinCap: 1,
+  stunPower: 1.5, // above 1, so a graze nearly never Stuns and a heavy blow nearly always does
+  stunBurstRadius: 2.6,
+};
+
+/** A hit's chance to Stun, off the share of MAXIMUM life it took. ONE
+ *  implementation, so the line a card prints is the roll the sim makes. */
+export const stunChanceFor = (share: number): number =>
+  Math.max(0, Math.min(1, share ** WARRIOR.stunPower));
+
+/**
+ * WHAT A TRADE GIVES FOR NOTHING, before a point is spent. Four rows against
+ * each other, because a baseline is what tells two trades apart in the first
+ * hour rather than at the point cap.
+ *
+ * The Alchemist's is charged by KILLS and never by a clock: seconds would hand
+ * a build grinding down one tanky body permanent regeneration for nothing,
+ * where a room full of things to kill is where the flasks should come back.
+ */
+export const TRADE_BASE = {
+  alchemistChargePerKill: 1 / 8,
+  warriorStunSeconds: 1.1,
+  aethermancerPoolRegen: 2.5, // percent of maximum mana a second, over the base
+  aethermancerShield: 0.1,
 };
 
 /** Sockets in the Fissure. Count is run LENGTH; what is in them is difficulty. */
@@ -2085,12 +2108,8 @@ export const MONSTER_BASE = {
 export const SOCKET_SCALE = {
   size: [0.62, 1, 1.15, 1.3, 1.45],
   packs: [0.66, 1, 1.5, 2, 2.5],
-  /**
-   * Thinner packs at the bottom. Every other rung adds LENGTH, which a level
-   * one character survives by walking out hurt — but the first crystal you are
-   * given lands on a character who has cleared the Fissure exactly once, and a
-   * full-sized pack at 50 monsters is what kills them.
-   */
+  /** Thinner packs at the bottom: length is survived by walking out hurt, where
+   *  a full-sized pack of 50 kills a character one clear old. */
   packSize: [0.66, 0.8, 1, 1, 1],
 };
 
@@ -2101,16 +2120,6 @@ export const socketSize = (filled: number): number => rung(filled, SOCKET_SCALE.
 export const socketPacks = (filled: number): number => rung(filled, SOCKET_SCALE.packs);
 export const socketPackSize = (filled: number): number => rung(filled, SOCKET_SCALE.packSize);
 
-/** Run power: the one number every reward reads, so difficulty and payout
- *  cannot drift apart. 0 is the bare Fissure and the baseline for XP, gold,
- *  drops and item level. Sockets add a little, never enough to beat danger. */
-/** What a map's DANGER does to the bodies in it, and danger 0 is exactly 1 —
- *  a new character's Fissure is untouched. A monster that dies before it swings
- *  cannot be made harder by anything else: a band 6 map's monsters had the 27
- *  life of the bare Fissure's while the hero hit 7.4 times harder, and every
- *  defence MULTIPLIES — that build stopped 88% of every hit on 1813 life and
- *  out-REGENERATED the whole map. Read off what danger alone BUYS, so it
- *  saturates where the hero's item level does. */
 /** THE LADDER, in order. A RUNG is CHOSEN, one cleared stays open, and its
  *  difficulty rides the crystal seam through `rungMod`. `*AtTop` is the LAST
  *  rung of the LAST zone, so the climb is one curve rather than three. */
@@ -2160,6 +2169,8 @@ export function rungsBelow(zone: number, rung: number): number {
 
 export const LADDER_RUNGS = LADDER.zones.reduce((n, z) => n + z.rungs, 0);
 
+/** What DANGER does to the bodies in a map. Danger 0 is exactly 1, so a new
+ *  character's Fissure is untouched. */
 export const DANGER = {
   lifeAtTop: 10, // what the top of the curve adds to a body's life
   hitAtTop: 14, //  and to its hit
@@ -2170,10 +2181,11 @@ export const DANGER = {
 export const dangerStep = (danger: number): number =>
   Math.min(POWER.max, danger / POWER.perDanger) / POWER.max;
 
+/** RUN POWER: the one number every reward reads, so difficulty and payout
+ *  cannot drift apart. 0 is the bare Fissure. */
 export const POWER = {
-  perSocket: 0.3,
-  /** Danger points that buy one point of run power. */
-  perDanger: 55,
+  perSocket: 0.3, // sockets are LENGTH, so they never buy enough to beat danger
+  perDanger: 55, // danger points that buy one point of run power
   max: 6,
 };
 

@@ -11,9 +11,11 @@
  * fact about its family, held in `WEAPON_SPECIALITY`, and it is read PER WEAPON
  * — so a matched pair is that line twice.
  */
-import { ORDER } from '../data';
+import { DUAL, ORDER } from '../data';
 import { stat } from '../trees/node';
 import type { TradeSpec } from './spec';
+
+const pct = (n: number): string => `${Math.round(n * 100)}%`;
 
 export const ROGUE_TRADE: TradeSpec = {
   id: 'rogue',
@@ -27,6 +29,14 @@ export const ROGUE_TRADE: TradeSpec = {
     'and he has been trading them up ever since, one hand at a time. He has ' +
     'never once been seen carrying a shield and he is unkind about people who ' +
     'are. What the Order wanted read, he has not said.',
+  baseline: {
+    short: 'Capable of holding two weapons at once — no other trade may.',
+    says: [
+      `Both hands may hold a one-handed weapon. A pair puts ${pct(DUAL.main)} of the main ` +
+        `hand and ${pct(DUAL.off)} of the off hand into every hit, and the rate ALTERNATES: ` +
+        'this swing at the main hand’s, the next at the off hand’s.',
+    ],
+  },
   skill: 'ambush',
   prefix: 'rog',
   sprite: 'obreth',

@@ -407,6 +407,9 @@
   .picksay__arms { margin: 0; font-size: 12px; color: var(--text-dim); cursor: help; align-self: flex-start; }
   .picksay__armslabel { letter-spacing: .08em; text-transform: uppercase; font-size: 11px; }
   .picksay__armsname { color: var(--citrine); border-bottom: 1px dotted var(--edge-lit); }
+  .picksay__free { margin: 0; font-size: 12px; line-height: 1.5; color: var(--text); }
+  .picksay__freelabel { letter-spacing: .08em; text-transform: uppercase; font-size: 11px; color: var(--text-dim); }
+  .picksay__freesaid { color: var(--citrine); }
   .picksay__cost { margin: 0; font-size: 12px; color: var(--text-dim); opacity: .8; }
   .pickroads { display: flex; flex-wrap: wrap; gap: 6px; }
   .pickroads__one {
@@ -2018,12 +2021,9 @@
     <div class="rail__row rail__row--main">
       <button class="railbtn" id="open-inventory" data-key="inventory">Inventory</button>
       <button class="railbtn" id="open-craft" data-key="craft">Crafting</button>
-      <button class="railbtn" id="open-crystals" data-key="crystals">Crystals</button>
-      <button class="railbtn" id="open-stash" data-key="stash">Stash</button>
       <button class="railbtn" id="open-character" data-key="character">Character</button>
       <button class="railbtn" id="open-skills" data-key="skills">Skills</button>
       <button class="railbtn" id="open-trade" data-key="trade">Trade</button>
-      <button class="railbtn" id="open-trials" data-key="trials">Trials</button>
       <button class="railbtn" id="open-history" data-key="history">History</button>
       <button class="railbtn" id="open-save" data-key="save">Save &amp; Load</button>
       <button class="railbtn" id="open-settings" data-key="settings">Settings</button>
@@ -2347,10 +2347,12 @@
           <div id="run-selected"></div>
 
           <div class="runbar runbar--go">
-            <button class="mini mini--go mini--enter" id="run-launch">Enter the Fissure</button>
+            <button class="mini mini--go mini--enter" id="run-launch">Enter</button>
+          </div>
+          <div class="runbar runbar--go">
+            <button class="mini" id="run-repeat">Repeat</button>
           </div>
           <p class="runblocked" id="run-blocked"></p>
-          <p class="runsrc">A cleared descent starts the next one.</p>
         </div>
       </div>
     </div>

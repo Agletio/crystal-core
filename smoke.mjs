@@ -109,6 +109,20 @@ assert(
   'and names the skill he comes down holding',
   text('pick-say')
 );
+// WHAT HE GIVES FOR NOTHING, on the screen you pick on: a trade you cannot
+// tell from another until level 5 is four figures standing in a room.
+assert(
+  /comes with/i.test(text('pick-say')) && /mana/i.test(text('pick-say')),
+  'and says what the trade gives before a point is spent',
+  text('pick-say')
+);
+$('pick-rogue').click();
+assert(
+  /comes with/i.test(text('pick-say')) && /two weapons/i.test(text('pick-say')),
+  'which is a different line for a different trade',
+  text('pick-say')
+);
+$('pick-aethermancer').click();
 assert($('pick-take') !== null, 'and offers to be him');
 $('pick-take').click();
 assert($('pick').hidden === true, 'taking him closes the hall');
@@ -206,12 +220,30 @@ assert(
 );
 assert($('climb-pip-1-1') === null, 'and the zone above is behind its own tab');
 assert(
-  /the answering, rung 1/i.test($('run-launch').textContent),
-  'and the way in names the DEPTH it goes to — the world is what you socketed',
+  /^enter$/i.test($('run-launch').textContent.trim()),
+  'and the way in just says Enter: the rung is picked on the climb beside it',
   $('run-launch').textContent
 );
 
 assert($('run-launch').disabled === false, 'the Fissure is enterable with nothing');
+
+// REPEAT: whether a clear goes straight back down. On by default, and a
+// preference, so it is one click and it survives a reload.
+assert($('run-repeat') !== null, 'there is a Repeat toggle under the way in');
+assert(
+  $('run-repeat').getAttribute('aria-pressed') === 'true',
+  'and a clear launches the next descent until you say otherwise',
+  $('run-repeat').getAttribute('aria-pressed')
+);
+$('run-repeat').click();
+assert(
+  $('run-repeat').getAttribute('aria-pressed') === 'false'
+    && !$('run-repeat').classList.contains('mini--on'),
+  'clicking it turns the chain off, and it reads as off',
+  $('run-repeat').getAttribute('aria-pressed')
+);
+$('run-repeat').click();
+assert($('run-repeat').getAttribute('aria-pressed') === 'true', 'and back on again');
 const beforeFissure = dockItems().length;
 $('run-launch').click();
 assert($('run-stagewrap').hidden === false, 'the Fissure starts');
@@ -249,8 +281,8 @@ $('climb-tab-0').click();
 $('climb-pip-0-4').click();
 assert($('climb-pip-0-4').classList.contains('pip--here'), 'a cleared rung is still yours to grind');
 assert(
-  /the answering, rung 4/i.test($('run-launch').textContent),
-  'and the way in follows the pick',
+  /^enter$/i.test($('run-launch').textContent.trim()),
+  'and still just says Enter after the pick moves',
   $('run-launch').textContent
 );
 assert(
@@ -921,8 +953,8 @@ assert($('settings').hidden === true, 'Escape closes it');
 // spent, so this screen only ever grows, and it is where two crystals are
 // compared before one of them goes in.
 assert($('crystals').hidden === true, 'the collection starts closed');
-$('open-crystals').click();
-assert($('crystals').hidden === false, 'and opens from the header');
+$('camp-socket0').click();
+assert($('crystals').hidden === false, 'and a socket in the camp rock is what opens it');
 
 assert(crystalCards().length > 0, 'the dev kit fills it', String(crystalCards().length));
 assert(
@@ -1001,8 +1033,8 @@ assert($('crystals').hidden === true, 'Escape closes the collection');
 // --- the stash ------------------------------------------------------------
 // A carry limit needs somewhere for the overflow to go that isn't the floor.
 assert($('stash').hidden === true, 'the stash starts closed');
-$('open-stash').click();
-assert($('stash').hidden === false, 'the stash opens');
+$('camp-shelf').click();
+assert($('stash').hidden === false, 'the shelf in the camp opens it');
 
 const stashSlots = () => all('#stash-slots .slot');
 const stashed = () => all('#stash-slots .slot:not(.slot--empty)');
@@ -1078,8 +1110,8 @@ assert($('craft').hidden === true, 'crafting closes');
 assert($('camp').hidden === false, 'and the camp is waiting underneath');
 assert(document.body.dataset.runPhase === 'menu', 'which is home, and not a descent');
 assert(
-  document.querySelectorAll('#camp-hotspots .camp__hot').length === 8,
-  'with everything on the picture there is to click',
+  document.querySelectorAll('#camp-hotspots .camp__hot').length === 9,
+  'with everything on the picture there is to click, the fire among them',
   String(document.querySelectorAll('#camp-hotspots .camp__hot').length)
 );
 // The Fissure window is the sockets and the one button, and nothing else:
@@ -2279,7 +2311,7 @@ const purse = () => Number(text('wallet').match(/\d+/)?.[0] ?? 0);
 // Crystals are a standing choice, not stock, so nothing offers to buy or sell
 // one — and the screen that holds them has no route to either.
 {
-  $('open-crystals').click();
+  $('camp-socket0').click();
   const labels = crystalCards().flatMap((c) =>
     [...c.querySelectorAll('button')].map((b) => b.textContent ?? '')
   );
@@ -2733,9 +2765,10 @@ $('dev-kit').click();
 
 // --- the trials: the one web a level never pays for -----------------------
 {
-  assert($('open-trials') !== null, 'there is a Trials button on the rail');
-  $('open-trials').click();
-  assert($('trials').hidden === false, 'and it opens a screen of its own');
+  // NOT ON THE RAIL any more: the fire in the camp is the only way in.
+  assert($('open-trials') === null, 'the rail has no Trials button');
+  $('camp-fire').click();
+  assert($('trials').hidden === false, 'and the fire opens a screen of its own');
 
   assert(
     all('#trials-ladder .trialrow').length === 6,
@@ -2765,7 +2798,7 @@ $('dev-kit').click();
   $('trials-close').click();
   $('open-dev').click();
   $('dev-climb-0').click();
-  $('open-trials').click();
+  $('camp-fire').click();
   assert($('trials-webwrap').hidden === false, 'clearing the Fissure opens the web');
 
   assert(
@@ -2796,13 +2829,14 @@ $('dev-kit').click();
   assert($('trials').hidden === true, 'and it closes again');
 }
 
-// --- keeping going is not a choice ----------------------------------------
-// Chaining descents is what this game is; Return to camp is the ONE way out
-// you choose, and there is no third.
-assert($('run-repeat') === null, 'no checkbox offers to make the idle game not idle');
+// --- keeping going, and the one toggle that says whether -------------------
+// Chaining descents is what this game is and it is still what Enter does. What
+// the user asked for is a way to say otherwise ONCE rather than every descent:
+// "Leave after this run" armed a stop one descent ahead and is still gone.
+assert($('run-repeat') !== null, 'one toggle says whether a clear goes back down');
 assert(
   $('run-leave') === null && $('run-abandon') !== null,
-  'and the one button that stops the loop is still there'
+  'and the one button that stops the loop mid-descent is still there'
 );
 
 // --- windows: on top is what you touched last ------------------------------
@@ -2815,7 +2849,7 @@ assert(
   // prompt in a browser, where it lands before the frame is painted.
   const settled = () => Promise.resolve();
 
-  $('open-stash').click();
+  $('camp-shelf').click();
   await settled();
   $('open-history').click();
   await settled();

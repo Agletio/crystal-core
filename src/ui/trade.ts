@@ -16,6 +16,7 @@ import { GRANT_BY_ID } from '../sim/grants';
 import {
   TRADES,
   TRADE_BY_ID,
+  baselineLines,
   canAllocateTrade,
   canDeallocateTrade,
   neighboursOfTrade,
@@ -216,7 +217,11 @@ function renderWeb(): void {
   const spec = TRADE_BY_ID[tradeId].spec;
   const hub = svgEl('g', { class: 'web__centre' });
   for (const part of mount(middle, hubR, 'web__hub')) hub.append(part);
-  attachTooltip(hub, () => `${spec.name}\n${spec.blurb}`);
+  // The middle is WHAT THE TRADE ITSELF GIVES, said with every figure in it —
+  // off each grant's own `say`, so the card and the sim cannot come apart.
+  attachTooltip(hub, () =>
+    [spec.name, spec.blurb, '', spec.baseline.short, ...baselineLines(spec)].join('\n')
+  );
   view.append(hub);
 
   for (const node of nodes) {

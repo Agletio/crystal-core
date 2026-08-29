@@ -47,7 +47,7 @@ import { SCENES, SCENE_BY_ID } from '../scenes';
 import type { Hotspot } from '../scenes/camp';
 import { initCamp, openCamp, closeCamp, isCampOpen, renderCamp } from './camp';
 import { openTalk } from './talk';
-import { climbLine, renderClimb, rungLabel, rungName, rungNow } from './climb';
+import { climbLine, renderClimb, rungName, rungNow } from './climb';
 import { arenaAt, isChallenge, takeRung, zoneAt } from '../ladder';
 import type { Rung } from '../ladder';
 import type { SceneDef } from '../scenes';
@@ -72,6 +72,7 @@ import { badge } from './badge';
 import { openCharacter } from './character';
 import { openCraft } from './craft';
 import { openStash } from './stash';
+import { openTrials } from './trials';
 import { drawn, portraitIcon, skillIcon } from './icons';
 import { itemIcon } from './icons';
 import { itemCard } from './itemcard';
@@ -109,9 +110,6 @@ let seed = 0;
 let streak = 0;
 /** Why the loop stopped, for the card that reports it. */
 let halt: 'died' | 'full' | 'once' | 'left' | 'chose' | 'met' | 'dry' = 'once';
-/** Armed mid-descent: finish this one, bank it, and do not go back down. */
-/** A boss whose key is armed, spent by the launch. UI state:
- *  what is SAVED is the room a spent key has already paid for. */
 /** THE RUNG THIS DESCENT IS, set at the launch: a clear records what was
  *  walked rather than what is picked by the time it ends. */
 let ran: Rung | null = null;
@@ -131,18 +129,12 @@ let handover = 0;
 let banked: RunReport | null = null;
 /** Set to `banked` when the loop is stopping and the drop has still to play. */
 let pending: RunReport | null = null;
-/** Held while the room is being crossed, for `land()` afterwards — the report
- *  and the STATE are the descent's, not the scene's, or the card that lands
- *  lists the loot of a room with nothing in it. */
-/** What he is holding, until the hero reaches him and the panel opens. */
-/** The room waiting at the bottom of the hole, until the drop has played. */
 /** Set while the room was WALKED TO rather than scheduled: nothing was banked,
  *  so leaving it goes back to the Fissure instead of down a stair. */
 let visiting = false;
 /** The room you are standing in, and whether its beats have been started. */
 let arrivedIn = '';
 let spoke = false;
-/** Close enough to see it. Fit (1×) makes a monster four pixels. */
 /** How long a phase's shout stays up. */
 const SHOUT_FOR = 1.9;
 /** The look at what you called up, there and back. */
@@ -251,19 +243,17 @@ const OPENS: Record<Hotspot['opens'], (spot: Hotspot, at: DOMRect) => void> = {
   fissure: () => openFissure(),
   craft: () => openCraft(),
   stash: () => openStash(),
+  trials: () => openTrials(),
   character: () => openCharacter(),
   room: (spot, at) => {
     const def = SCENE_BY_ID[spot.room ?? ''];
     if (def) openTalk(def, at);
   },
-  socket: (spot) => {
-    const slot = RUN_SLOTS[spot.slot ?? 0];
-    if (!slot) return;
-    if (!game.sockets[slot.id]) return openCrystals();
-    unsocket(game, slot.id);
-    refreshRunPanels();
-    renderInventory();
-  },
+  // A SOCKET IS THE ONLY DOOR TO THE CRYSTALS, so it opens them whether or not
+  // one is in it: taking a crystal BACK is what the Fissure card's own sockets
+  // are for, and a filled socket that unsocketed instead would be four screens
+  // and no way to reach the fifth.
+  socket: () => openCrystals(),
 };
 
 export function openFissure(): void {
@@ -295,7 +285,25 @@ export function goHome(): boolean {
 // WHO IS ABOUT is the CAMP's — *"that's what the camp is for."* A list of the
 // same people here was a second route to one conversation.
 
+/** WHETHER A CLEAR GOES STRAIGHT BACK DOWN. A preference like Hide is, so it
+ *  survives a reload; absent it is ON, which is what every save written before
+ *  the toggle holds and what *"you press Enter once"* has always meant. */
+const repeating = (): boolean => game.repeating !== false;
+
+function syncRepeat(): void {
+  const btn = $('run-repeat') as HTMLButtonElement;
+  const on = repeating();
+  btn.classList.toggle('mini--on', on);
+  btn.setAttribute('aria-pressed', String(on));
+  attachTooltip(btn, () =>
+    on
+      ? 'Repeat — on.\nA cleared descent launches the next one by itself, and keeps going until you die, your bag fills, somebody is waiting at the mouth, a crystal roll runs out, or you press Return to camp.'
+      : 'Repeat — off.\nA cleared descent ends on its report and puts you back in the camp.'
+  );
+}
+
 function renderMenu(): void {
+  syncRepeat();
   renderClimb($('run-climb'), game.character, () => renderMenu());
   const grid = $('run-sockets');
   grid.replaceChildren();
@@ -392,9 +400,12 @@ function renderMenu(): void {
     ? 'Your bags are full. Sell or stash some of it before you go back down.'
     : weaponRefusal(game.character);
   const launcher = $('run-launch') as HTMLButtonElement;
+  // Just ENTER: the rung is picked on the climb beside it and the crack is the
+  // only thing this opens. A KEY is the exception — the crack opens onto the
+  // boss instead of a descent, and the press is what spends the key.
   launcher.textContent = game.called
     ? `Face ${BOSS_BY_ID[game.called]?.name ?? game.called}`
-    : `Enter ${rungLabel(game.character)}`;
+    : 'Enter';
   launcher.disabled = why !== null;
   launcher.classList.toggle('mini--off', why !== null);
   $('run-blocked').textContent = why ?? '';
@@ -566,7 +577,7 @@ function finish(left = false): void {
           ? 'dry'
           : 'once';
 
-  if (report.cleared && !report.bagsFull && !dry) {
+  if (report.cleared && !report.bagsFull && !dry && repeating()) {
     // Drop into the hole first. The next descent is built at the bottom of it.
     handover = 0.0001;
     banked = report;
@@ -1237,6 +1248,11 @@ export function initRun(state: GameState): void {
       launch();
   };
 
+  ($('run-repeat') as HTMLButtonElement).onclick = () => {
+    game.repeating = !repeating();
+    syncRepeat();
+  };
+
   // *"Change abandon to return to camp and make it where all the loot on the
   // floor just gets picked up when you return to camp."* It costs the DESCENT
   // — no rung, no crystal, no trial point — and nothing else.
@@ -1543,6 +1559,6 @@ function renderBadges(): void {
     ?.classList.toggle('railbtn--new', game.cameBack && !game.skillsSeen);
   badge('open-skills', spareTreePoints(game.character, mainSkillId(game.character)));
   badge('open-trade', tradePointsLeft(game.character));
-  badge('open-trials', trialPointsLeft(game.character));
+  badge('camp-fire', trialPointsLeft(game.character));
 }
 

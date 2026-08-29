@@ -180,15 +180,19 @@ picture's own pixels, and `src/ui/camp.ts` scales the whole stage, so a hotspot
 cannot drift off the thing it sits on. It FILLS the window and the two axes
 scale independently — the bench is against one edge and the shelf against the
 other, so a cover crop takes a verb off the screen. There is no map, no carve
-and no walk: eight hotspots — the crack, four sockets in the rock, the bench,
-the shelf, the tent — and what MOVES is light, wind and idling bodies on one
-canvas over the art. Everybody you have met stands about in it and clicking one
+and no walk: nine hotspots — the crack, four sockets in the rock, the bench,
+the shelf, the tent, the fire — and what MOVES is light, wind and idling bodies
+on one canvas over the art. Everybody you have met stands about in it and clicking one
 goes to their room — a person's hotspot is their own body's grid, where that
 body was drawn. **THE FISSURE IS REACHED FROM THE CAMP AND NOWHERE ELSE** —
 *"remove the fissure button, the shop, from the ui in the bottom right rail,
-have that only be from camp"* — the crack. Everything else is still on the
-rail, and a screen with neither a button nor a hotspot is one somebody will
-lose.
+have that only be from camp"* — the crack. **FOUR MORE SCREENS ARE THE
+PICTURE'S ALONE**: the STASH is the shelf, the CRYSTALS are the four sockets
+(which open that screen whether or not one is in them — taking a crystal back
+is the Fissure card's own sockets' job, and a filled socket that unsocketed
+instead would leave no door at all), and the TRIALS are the FIRE, the one lit
+thing in the art nothing else claimed. Everything else is still on the rail,
+and a screen with neither a button nor a hotspot is one somebody will lose.
 
 **A COUNTER BELONGS TO A PERSON, and the shop is the Lampwright's.** *"The shop
 should exist in the first character you meet… Each character can have something
@@ -372,11 +376,16 @@ instead, and **what a reward node costs is the ROAD** — it is a danger node yo
 did not walk to. Per CHARACTER, and it worsens every descent that character
 takes.
 
-**You press Enter once.** A cleared descent launches the next by itself and
-keeps going until you die, your bag fills, someone is waiting at the mouth, a
-crystal roll runs out, or you say so. All of them end on the same report and
-open the same dock. **Saying so is ONE BUTTON — Return to camp — and it KEEPS
-what the descent found**: *"make it where all the loot on the floor just gets
+**You press Enter once, and the button says ENTER** — the rung is picked on the
+climb beside it, so naming it there said it twice. A cleared descent launches
+the next by itself and keeps going until you die, your bag fills, someone is
+waiting at the mouth, a crystal roll runs out, or you say so. All of them end on
+the same report and open the same dock. **REPEAT is the one toggle that says
+whether**, under the button — `GameState.repeating`, a preference like Hide,
+absent meaning ON. It is not "Leave after this run" in a new coat: that armed a
+stop one descent AHEAD, where this is a standing answer you give once.
+**Saying so is ONE BUTTON — Return to camp — and it KEEPS what the descent
+found**: *"make it where all the loot on the floor just gets
 picked up when you return to camp… you can min max by doing a hard level for a
 bit and then returning before you die."* Only DYING banks nothing. What a walk
 does not buy is PROGRESS — no rung, no crystal out of the wall, no levelling of
@@ -446,6 +455,28 @@ Four of them: potions as an engine, mana as one, **what is in your other hand**
 **DUAL WIELDING IS ONE TRADE'S PRIVILEGE** — `TradeSpec.dualWields`, read
 through `canDualWield` and nowhere else. Obreth and the Lambengolmor are both of
 **the Obsidian Order** (`ORDER`), who hold that the rock is writing.
+
+**EVERY TRADE GIVES SOMETHING FOR NOTHING**, which is what tells two of them
+apart in the first hour rather than at the point cap. `TradeSpec.baseline` is
+one `short` line — what the cast hall picks on — and a grants bag merged by
+`tradeGrants` BEFORE anything walked, so the free half reaches the sim, the
+sheet and every card through the one seam, and a summed grant a node also
+carries ADDS to it (the Aether Ward is a bigger version of the ward you had).
+The web's MIDDLE prints the specific line, off each grant's own `say`. The four
+are in `TRADE_BASE`: the rogue holds two weapons, the Alchemist's flask
+**Charges come back on KILLS** (`chargeOnKill` — never a clock, or a build
+grinding one tanky body down would have permanent regeneration for nothing),
+the Aethermancer's pool refills as a SHARE of itself and eats 10% of every hit,
+and a Warrior's heavy blow **Stuns**.
+
+**A STUN IS WHAT A HEAVY BLOW DOES**, and the chance is the share of the body's
+own MAXIMUM life the one hit took (`stunChanceFor`, `WARRIOR.stunPower` — 3% at
+a tenth, 72% at four fifths). **A hit that KILLS always Stuns**, because what a
+Stun sets off has to fire on a body taken down in one: a build strong enough to
+one-shot would otherwise lose the branch it spent points on exactly where that
+branch is working. A Stunned body neither swings nor closes and its cooldown
+still runs down, so a Stun is time off the fight and not a free swing at the end
+of it. Rolled only where there IS a Stun, or every hero swing would spend a draw.
 Its web is five spokes of TEN — one minor, a GATE everyone on that spoke takes,
 then a fork into two branches of minor, notable, minor, notable. **Every notable
 sits at an EVEN step from the middle and points come TWO AT A TIME**, so a grant

@@ -56,6 +56,7 @@ import {
   DEFENCE,
   ROGUE,
   WARRIOR,
+  stunChanceFor,
   ENCOUNTERS,
   ALL_MODS,
   HERO_BASE,
@@ -162,6 +163,9 @@ const CRIT_BUFF = 'crit_surge';
 
 /** A Slow, on a MONSTER — the first `TimedEffect` on anything but the hero. */
 const SLOWED = 'slowed';
+
+/** A Stun: while it runs the body neither swings nor closes. */
+const STUNNED = 'stunned';
 
 /** Ordered worst-to-best, so rarity climbs the list. */
 const CURRENCY_CLASSES = ['basic', 'uncommon', 'rare', 'exotic'] as const;
@@ -461,6 +465,7 @@ export interface RunState {
   drunk: number;
   /** Charges a trade handed back mid-descent. Zero without one. */
   regained: number;
+  stunned: number; // counting one your hit killed outright, which always Stuns
   /** Uses that spent a share of the pool for damage. Zero without the node. */
   overcharges: number;
   /** Follow-ups a Critical bought, teleport and all. Zero without the node. */
@@ -675,6 +680,7 @@ export class RunSim {
       charges: Object.fromEntries(POTIONS.map((p) => [p.id, p.charges])),
       drunk: 0,
       regained: 0,
+      stunned: 0,
       overcharges: 0,
       relays: 0,
       absorbed: 0,
@@ -1919,6 +1925,15 @@ export class RunSim {
 
     // Above the aggro gate: a pose an unwoken body was knocked into would hold
     if (m.actionTimer > 0) m.actionTimer -= dt; // for the rest of the descent
+
+    // STUNNED: it neither swings nor closes, and its cooldown above still runs
+    // down — so a Stun is time off the fight, not a free swing at the end of it.
+    if (m.effects.some((e) => e.id === STUNNED)) {
+      m.path = [];
+      this.settleAction(m, false);
+      return;
+    }
+
     if (!m.aggroed) {
       this.pace(m, dt);
       return;
@@ -2307,14 +2322,17 @@ export class RunSim {
     if (!e.effects.some((x) => x.id === SLOWED)) delete e.slowed;
   }
 
-  /** A charge as a cooldown rather than a budget: banked fractionally per flask
-   *  and never past what that flask holds, so it is never a stockpile. */
+  /** A charge as a cooldown rather than a budget, never a stockpile. */
   private stepRecharge(dt: number): void {
-    const rate = (this.grants.chargeRegen as number) ?? 0;
-    if (rate <= 0) return;
+    this.bankCharges(((this.grants.chargeRegen as number) ?? 0) * dt);
+  }
+
+  /** The one place a Charge comes back, whether a clock or a body paid for it. */
+  private bankCharges(amount: number): void {
+    if (amount <= 0) return;
     for (const potion of POTIONS) {
       if ((this.state.charges[potion.id] ?? 0) >= potion.charges) continue;
-      const banked = (this.recharging[potion.id] ?? 0) + rate * dt;
+      const banked = (this.recharging[potion.id] ?? 0) + amount;
       const whole = Math.floor(banked);
       this.recharging[potion.id] = banked - whole;
       if (whole <= 0) continue;
@@ -2734,6 +2752,7 @@ export class RunSim {
       if (live) live.remaining = Math.max(live.remaining, WARRIOR.heavyHandSeconds);
       else defender.effects.push({ id: SLOWED, remaining: WARRIOR.heavyHandSeconds });
     }
+    if (attacker.kind === 'hero' && defender.kind !== 'hero') this.stun(defender, dmg);
     if (attacker.kind === 'hero' && defender.kind !== 'hero') this.sunder(defender);
     if (defender.kind === 'hero') this.sinceHit = 0;
     defender.hitFlash = 0.18;
@@ -2797,6 +2816,49 @@ export class RunSim {
     }
 
     if (defender.life <= 0) this.kill(defender);
+  }
+
+  /**
+   * A STUN, off the share of the body's own MAXIMUM life this hit took, so it
+   * is what a heavy blow does rather than a rider on every swing. A hit that
+   * KILLS always Stuns: what a Stun sets off has to fire on a body taken down
+   * in one, or a build strong enough to one-shot loses the branch it spent
+   * points on exactly where that branch is working. Rolled only where there is
+   * a Stun at all, or every hero swing would spend a draw.
+   */
+  private stun(target: Entity, dealt: number): void {
+    const seconds = (this.grants.stunSeconds as number) ?? 0;
+    if (seconds <= 0 || target.stats.maxLife <= 0) return;
+    const more = 1 + ((this.grants.stunMore as number) ?? 0) / 100;
+    const chance =
+      target.life <= 0 ? 1 : stunChanceFor(dealt / target.stats.maxLife) * more;
+    if (!this.rng.chance(chance)) return;
+
+    const live = target.effects.find((e) => e.id === STUNNED);
+    if (live) live.remaining = Math.max(live.remaining, seconds);
+    else target.effects.push({ id: STUNNED, remaining: seconds });
+    this.state.stunned++;
+    this.stunBurst(target);
+  }
+
+  /** Off the hero's OWN damage and never the hit: a body one-shot for ten times
+   *  its life must not Burst for ten times as much. */
+  private stunBurst(at: Entity): void {
+    const share = (this.grants.stunBurst as number) ?? 0;
+    if (share <= 0) return;
+    const hero = this.state.hero;
+    const swing = Object.values(hero.stats.damageByType).reduce((n, v) => n + v, 0);
+    const damage = swing * share;
+    if (damage <= 0) return;
+
+    const type = hero.stats.damageType ?? 'physical';
+    const radius = WARRIOR.stunBurstRadius;
+    for (const m of this.state.monsters) {
+      if (m === at || m.dead || dist(m, at) > radius) continue;
+      m.life -= this.afterResistance(m, damage, type);
+      if (m.life <= 0) this.kill(m);
+    }
+    this.emit('burst', [{ x: at.x, y: at.y }, { x: at.x + radius, y: at.y }], type, 0.3);
   }
 
   /** Physical, whatever the skill deals: a Bleed is what the hit opened. */
@@ -3357,6 +3419,7 @@ export class RunSim {
     if (this.grants.killGuard || this.grants.killHaste || this.grants.killMove) {
       this.sinceKill = Math.max(ROGUE.guardSeconds, ROGUE.hasteSeconds);
     }
+    this.bankCharges((this.grants.chargeOnKill as number) ?? 0);
     const fed = (this.grants.killHeal as number) ?? 0;
     if (fed > 0) {
       const hero = s.hero;

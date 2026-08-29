@@ -9,6 +9,7 @@
  * one bad pack away from having neither, and the far notables are where you
  * buy your way out of that.
  */
+import { TRADE_BASE } from '../data';
 import { stat } from '../trees/node';
 import type { TradeSpec } from './spec';
 
@@ -23,6 +24,15 @@ export const AETHERMANCER: TradeSpec = {
     'spending it ever since — on damage, on hurts he should have taken, on ' +
     'the next hour. There is nothing left of him that is not the pool. He is ' +
     'starved, wired, and entirely certain he has the better end of it.',
+  baseline: {
+    short:
+      'The pool refills on its own, and part of every hit is paid out of it before ' +
+      'your life.',
+    grants: {
+      poolRegen: TRADE_BASE.aethermancerPoolRegen,
+      manaShield: TRADE_BASE.aethermancerShield,
+    },
+  },
   skill: 'rimespike',
   prefix: 'aet',
   sprite: 'aethermancer',
