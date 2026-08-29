@@ -62,9 +62,12 @@ to look:
 
 | | |
 |---|---|
-| a trade comes ARMED | `TradeSpec.skill`, equipped where the trade is TAKEN; the welcome is the name alone |
+| ONE way out | Return to camp, and it KEEPS the loot — only dying banks nothing; "leave after this run" is gone |
+| the crack and the shelf | the Fissure and the shop come off the rail; the shelf is stock and the stash moved into the tent |
+| twelve LOCKS | `LOCKS` — three a world, shut and open frames of one object, the rare one paying Rarity and never a bigger pile |
+| a trade comes ARMED | `TradeSpec.skill`, equipped where the trade is TAKEN; the cast hall names it and hovers its card, and the welcome is the name alone |
 | the Skills rail glows | `GameState.skillsSeen` / `cameBack`, `.railbtn--new` until it has been opened once |
-| change it at CAMP | `src/ui/atcamp.ts` — a change made mid-descent says where it takes effect |
+| next run, not now | `src/ui/atcamp.ts` — a change made mid-descent says WHEN it lands, and refuses nothing |
 | the XP bar | ticks at 5% and 25%, layered gradients, and an edge |
 | the frame FITS | `--win-edge` is the art's own thickness — 29/28/26/30 inside a slice of 30, so no world shows through |
 | a face in a FRAME | `FACE.panel` is 78 against the bubble's 52; one table, three call sites |
@@ -909,7 +912,14 @@ of that curve at about **two gear drops a clear** across 8 gear kinds.
   the loot"* — `GATHER` at the mouth, and **`elapsed` is HELD through it**,
   because the clock is the fight's and the gather is presentation after it.
   The walk to each drop is gone, and `Ground.stuck` with it.
-- **THE CHEST — SIXTEEN DESIGNS ARE ASKED AND SHOWN; waiting on the pick.**
+- ~~**THE CHEST.**~~ **THE ART IS IN: twelve locks, three a world, shut and
+  open.** *"Let's just do 3 per zone. 2 variations of the normal chest and 1
+  rarer chest that gives slightly better loot. Keep them thematic matching the
+  area they goin."* `LOCKS` in `src/data.ts`; `tools/art/chest.mts` is the
+  pipeline and the words. 64 candidates cost 100 generations — $0.48 — and the
+  twelve open frames $1.75. **What is left of it is the WALK**: the hero still
+  opens one by killing the last guard, not by standing over it.
+- **How it was asked, kept because the next prop wants it too.**
   *"I want it to be a chest that will actually open and when you kill all the
   mobs your character walks up and opens it… the art needs to look open."*
   The user put $30 of credits on the account and work bills to them

@@ -347,9 +347,10 @@ for (const vp of VIEWPORTS) {
     problems.push(`${vp.name}: the arena never opened`);
     await shoot('scene');
   }
-  // 'Go back' is the way out of a room you walked to; the fight itself is the
-  // only way out of one you bought with a key.
-  await page.evaluate(() => document.getElementById('run-leave')?.click());
+  // 'Go back' is the way out of a room you walked to, and it is the same
+  // button that returns you to camp from a descent; the fight itself is the
+  // only way out of a room you bought with a key.
+  await page.evaluate(() => document.getElementById('run-abandon')?.click());
   await page.waitForTimeout(600);
 
   // THE DESCENT. Nothing has been cleared yet, so the crack is the way in.
@@ -360,7 +361,7 @@ for (const vp of VIEWPORTS) {
   await page.waitForTimeout(300);
   if (await page.evaluate(() => document.getElementById('run-menu')?.hidden !== false)) {
     problems.push(`${vp.name}: clicking the crack never opened it`);
-    await page.evaluate(() => document.getElementById('open-fissure')?.click());
+    await page.evaluate(() => document.getElementById('camp-crack')?.click());
     await page.waitForTimeout(250);
   }
   await shoot('fissure');
@@ -398,7 +399,7 @@ for (const vp of VIEWPORTS) {
   if (await page.evaluate(() => document.getElementById('camp')?.hidden !== false)) {
     problems.push(`${vp.name}: the report did not come home to the camp`);
   }
-  await page.evaluate(() => document.getElementById('open-fissure')?.click());
+  await page.evaluate(() => document.getElementById('camp-crack')?.click());
   await page.waitForTimeout(250);
   await page.evaluate(() => document.getElementById('run-menu-close')?.click());
   await page.waitForTimeout(200);

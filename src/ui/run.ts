@@ -72,6 +72,7 @@ import { badge } from './badge';
 import { openCharacter } from './character';
 import { openCraft } from './craft';
 import { openStash } from './stash';
+import { openShop } from './shop';
 import { drawn, portraitIcon, skillIcon } from './icons';
 import { itemIcon } from './icons';
 import { itemCard } from './itemcard';
@@ -110,8 +111,7 @@ let streak = 0;
 /** Why the loop stopped, for the card that reports it. */
 let halt: 'died' | 'full' | 'once' | 'left' | 'chose' | 'met' | 'dry' = 'once';
 /** Armed mid-descent: finish this one, bank it, and do not go back down. */
-let leaving = false;
-/** A boss whose key is armed, spent by the launch. UI state like `leaving`:
+/** A boss whose key is armed, spent by the launch. UI state:
  *  what is SAVED is the room a spent key has already paid for. */
 /** THE RUNG THIS DESCENT IS, set at the launch: a clear records what was
  *  walked rather than what is picked by the time it ends. */
@@ -251,8 +251,8 @@ function runHandler() {
 const OPENS: Record<Hotspot['opens'], (spot: Hotspot, at: DOMRect) => void> = {
   fissure: () => openFissure(),
   craft: () => openCraft(),
+  shop: () => openShop(),
   stash: () => openStash(),
-  character: () => openCharacter(),
   room: (spot, at) => {
     const def = SCENE_BY_ID[spot.room ?? ''];
     if (def) openTalk(def, at);
@@ -286,7 +286,6 @@ export function goHome(): boolean {
   banked = null;
   pending = null;
   handover = 0;
-  leaving = false;
   streak = 0;
   refreshRunPanels();
   openCamp();
@@ -564,15 +563,11 @@ function finish(left = false): void {
       ? 'died'
       : report.bagsFull
         ? 'full'
-        : leaving
-          ? 'chose'
-          : dry
-            ? 'dry'
-            : 'once';
+        : dry
+          ? 'dry'
+          : 'once';
 
-  // `leaving` is the only stop you choose mid-fight, so the descent you armed
-  // it during still finishes and still banks.
-  if (report.cleared && !report.bagsFull && !leaving && !dry) {
+  if (report.cleared && !report.bagsFull && !dry) {
     // Drop into the hole first. The next descent is built at the bottom of it.
     handover = 0.0001;
     banked = report;
@@ -1127,29 +1122,15 @@ function frame(now: number): void {
 }
 
 /**
- * The gentle way out, and the only stop you can choose while the fight is on.
- * Nothing to arm when this descent was already the last one — with the loop
- * off, or with the bag about to shut the Fissure, it ends by itself.
+ * THE ONE WAY OUT, and it keeps what you found. A room you WALKED to has a way
+ * back out of it too — a person with nothing to hand over would otherwise be a
+ * room with no exit.
  */
 function setLeaveLabel(): void {
-  const btn = $('run-leave') as HTMLButtonElement;
-  // Neither means anything outside a descent, and a room with a fight in it is
-  // the one you may not walk out of — leaving would be a way to skip a boss.
-  const abandon = $('run-abandon') as HTMLButtonElement;
-  abandon.disabled = phase !== 'running';
-  const live = phase === 'running';
-  // A room you WALKED to has a way back out of it, and it is this button: a
-  // person with nothing to hand over would otherwise be a room with no exit.
+  const btn = $('run-abandon') as HTMLButtonElement;
   const back = phase === 'scene' && visiting;
-  btn.textContent = back
-    ? 'Go back'
-    : !live
-      ? 'Last descent'
-      : leaving
-        ? 'Leaving after this one'
-        : 'Leave after this run';
-  btn.disabled = !live && !back;
-  btn.classList.toggle('mini--on', live && leaving);
+  btn.textContent = back ? 'Go back' : 'Return to camp';
+  btn.disabled = phase !== 'running' && !back;
 }
 
 /**
@@ -1254,22 +1235,14 @@ export function initRun(state: GameState): void {
   ($('run-launch') as HTMLButtonElement).onclick = () => {
     if (bagsFull(game)) return;
     streak = 0;
-    leaving = false;
-    launch();
+      launch();
   };
 
-  ($('run-leave') as HTMLButtonElement).onclick = () => {
-    if (visiting) return sceneEnded();
-    if (phase !== 'running') return;
-    leaving = !leaving;
-    note(leaving ? 'Leaving after this descent.' : 'Staying down.');
-    setLeaveLabel();
-  };
-
-  // The hard way out, and the only one that costs you something: this descent
-  // banks nothing, exactly as dying in it would. Every clear before it already
-  // banked as it happened, so it ends on the same card.
+  // *"Change abandon to return to camp and make it where all the loot on the
+  // floor just gets picked up when you return to camp."* It costs the DESCENT
+  // — no rung, no crystal, no trial point — and nothing else.
   ($('run-abandon') as HTMLButtonElement).onclick = () => {
+    if (visiting) return sceneEnded();
     if (!sim || phase === 'scene') return;
     if (phase !== 'running') return;
     // Mid-drop the descent is already over and banked, so this means "do not
@@ -1392,7 +1365,6 @@ export function enterRoomNow(id: string): boolean {
   banked = null;
   pending = null;
   handover = 0;
-  leaving = false;
   streak = 0;
   enterScene(def);
   visiting = true;

@@ -4504,6 +4504,186 @@
    "object": "082328ea-c3ec-473d-9ba4-0f3ac77c65b2",
    "tiles": 2,
    "tone": 0
+  },
+  {
+   "id": "lock_fissure_plain",
+   "object": "402246f1-1b49-4ebf-95e0-630ae89acef5",
+   "tiles": 1.15,
+   "tone": 0.55,
+   "dull": 0.35
+  },
+  {
+   "id": "lock_fissure_plain_open",
+   "object": "492f4e7e-3581-4b4e-9645-f2c0d7f2e761",
+   "tiles": 1.15,
+   "tone": 0.55,
+   "dull": 0.35,
+   "with": "lock_fissure_plain"
+  },
+  {
+   "id": "lock_fissure_iron",
+   "object": "c715df7c-2037-4165-a81a-94e266612dc2",
+   "tiles": 1.15,
+   "tone": 0.55,
+   "dull": 0.35
+  },
+  {
+   "id": "lock_fissure_iron_open",
+   "object": "fb43bfcf-957f-4b55-a5ca-26cc0a102977",
+   "tiles": 1.15,
+   "tone": 0.55,
+   "dull": 0.35,
+   "with": "lock_fissure_iron"
+  },
+  {
+   "id": "lock_fissure_locked",
+   "object": "e0f6c78d-436a-4446-8256-9a3f11a7bd91",
+   "tiles": 1.15,
+   "tone": 0.55,
+   "dull": 0.35
+  },
+  {
+   "id": "lock_fissure_locked_open",
+   "object": "4df11547-7144-42ac-9ec5-a1416ad949b9",
+   "tiles": 1.15,
+   "tone": 0.55,
+   "dull": 0.35,
+   "with": "lock_fissure_locked"
+  },
+  {
+   "id": "lock_rot_bound",
+   "object": "54cc9784-9770-41a0-a39d-02c7d39641a3",
+   "tiles": 1.15,
+   "tone": 0.28,
+   "dull": 0.24
+  },
+  {
+   "id": "lock_rot_bound_open",
+   "object": "84733ae1-02a9-4c18-8660-77eef5643801",
+   "tiles": 1.15,
+   "tone": 0.28,
+   "dull": 0.24,
+   "with": "lock_rot_bound"
+  },
+  {
+   "id": "lock_rot_ribbed",
+   "object": "f850ef56-a19e-4aea-900b-af94391b1dd0",
+   "tiles": 1.15,
+   "tone": 0.28,
+   "dull": 0.24
+  },
+  {
+   "id": "lock_rot_ribbed_open",
+   "object": "80d3d1bd-5700-4d1f-a9ce-b097adc522e0",
+   "tiles": 1.15,
+   "tone": 0.28,
+   "dull": 0.24,
+   "with": "lock_rot_ribbed"
+  },
+  {
+   "id": "lock_rot_horned",
+   "object": "e13b9959-a7cc-4d11-abbb-862fd95d4389",
+   "tiles": 1.15,
+   "tone": 0.28,
+   "dull": 0.24
+  },
+  {
+   "id": "lock_rot_horned_open",
+   "object": "22da92c1-e21b-420d-824c-97f0eab12fe8",
+   "tiles": 1.15,
+   "tone": 0.28,
+   "dull": 0.24,
+   "with": "lock_rot_horned"
+  },
+  {
+   "id": "lock_cavern_pane",
+   "object": "2f04a315-af21-4656-a2e5-ed1d98647e64",
+   "tiles": 1.15,
+   "tone": 0.18,
+   "dull": 0.2
+  },
+  {
+   "id": "lock_cavern_pane_open",
+   "object": "8d2f769c-129a-4074-aa04-626cd36686dd",
+   "tiles": 1.15,
+   "tone": 0.18,
+   "dull": 0.2,
+   "with": "lock_cavern_pane"
+  },
+  {
+   "id": "lock_cavern_teeth",
+   "object": "79c63eea-4906-46e3-ba12-227a29a52ba7",
+   "tiles": 1.15,
+   "tone": 0.18,
+   "dull": 0.2
+  },
+  {
+   "id": "lock_cavern_teeth_open",
+   "object": "6a029f02-ac02-4721-b8dd-bcf91486c5a7",
+   "tiles": 1.15,
+   "tone": 0.18,
+   "dull": 0.2,
+   "with": "lock_cavern_teeth"
+  },
+  {
+   "id": "lock_cavern_gem",
+   "object": "63ede47f-b2bb-4a41-92c8-b55f9dad3c07",
+   "tiles": 1.15,
+   "tone": 0.18,
+   "dull": 0.2
+  },
+  {
+   "id": "lock_cavern_gem_open",
+   "object": "18332014-3b46-493e-96a2-e46d09c7e840",
+   "tiles": 1.15,
+   "tone": 0.18,
+   "dull": 0.2,
+   "with": "lock_cavern_gem"
+  },
+  {
+   "id": "lock_seam_slab",
+   "object": "5560ca59-152a-43b5-903b-b56bd9abcb67",
+   "tiles": 1.15,
+   "tone": 0.22,
+   "dull": 0.22
+  },
+  {
+   "id": "lock_seam_slab_open",
+   "object": "f4b5f78a-933b-4da0-8019-782902eefe6c",
+   "tiles": 1.15,
+   "tone": 0.22,
+   "dull": 0.22,
+   "with": "lock_seam_slab"
+  },
+  {
+   "id": "lock_seam_split",
+   "object": "c6e8b365-a47b-472e-82f5-ea87cf97ffd5",
+   "tiles": 1.15,
+   "tone": 0.22,
+   "dull": 0.22
+  },
+  {
+   "id": "lock_seam_split_open",
+   "object": "7617d91f-144f-4165-a68e-40313aa8596b",
+   "tiles": 1.15,
+   "tone": 0.22,
+   "dull": 0.22,
+   "with": "lock_seam_split"
+  },
+  {
+   "id": "lock_seam_crown",
+   "object": "ce3eca6c-707c-4e3f-9296-8c217a8566cd",
+   "tiles": 1.15,
+   "tone": 0.22,
+   "dull": 0.22
+  },
+  {
+   "id": "lock_seam_crown_open",
+   "object": "ac5a5c36-d394-468b-a715-de935dce7398",
+   "tiles": 1.15,
+   "tone": 0.22,
+   "dull": 0.22,
+   "with": "lock_seam_crown"
   }
  ]
 }

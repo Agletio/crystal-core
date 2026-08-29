@@ -194,8 +194,10 @@ function asConverted(node: SkillNodeDef, skillId: string): string {
 }
 
 /** A shelf row's card, in the shape a tree node takes so the glossary comes
- *  with it. The only reading a WEBLESS skill has: the click equips it. */
-function skillCard(skill: SkillDef): HTMLElement {
+ *  with it. The only reading a WEBLESS skill has: the click equips it. Exported
+ *  because the cast hall names the skill a trade comes down holding, and a
+ *  second card written there would be the same card said differently. */
+export function skillCard(skill: SkillDef): HTMLElement {
   const slot = slotForSkill(skill.id);
   const where = slot ? SKILL_SLOT_BY_ID[slot]?.name.toLowerCase() : '';
   const on = !!slot && equippedSkill(game.character, slot) === skill.id;

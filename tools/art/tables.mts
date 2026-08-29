@@ -111,6 +111,10 @@ interface PropSpec {
   tiles: number;
   tone?: number;
   dull?: number;
+  /** Another prop this one is a FRAME OF — a lock and its open lid. The pair
+   *  crops to ONE box, or the taller frame squares to a bigger grid and the
+   *  box jumps sideways the moment it opens. */
+  with?: string;
 }
 
 interface Manifest {
@@ -491,20 +495,24 @@ async function ground(spec: { id: string; floorIs: string; also?: string[] }): P
 /** A prop is ONE picture with a transparent field round it, cropped to what it
  *  actually draws — a generator hands back a square with a lot of nothing in
  *  it, and the nothing would be counted as part of the prop's footprint. */
-function cropped(rows: string[]): string[] {
+function cropped(rows: string[], beside?: string[]): string[] {
   let top = rows.length;
   let bottom = -1;
   let left = rows[0]?.length ?? 0;
   let right = -1;
-  rows.forEach((row, y) =>
-    [...row].forEach((c, x) => {
-      if (c === '.') return;
-      top = Math.min(top, y);
-      bottom = Math.max(bottom, y);
-      left = Math.min(left, x);
-      right = Math.max(right, x);
-    })
-  );
+  // Over BOTH frames when there are two: one box, so a lid going back does not
+  // also move the box under it.
+  for (const grid of beside ? [rows, beside] : [rows]) {
+    grid.forEach((row, y) =>
+      [...row].forEach((c, x) => {
+        if (c === '.') return;
+        top = Math.min(top, y);
+        bottom = Math.max(bottom, y);
+        left = Math.min(left, x);
+        right = Math.max(right, x);
+      })
+    );
+  }
   if (bottom < 0) return rows;
   // Square, so the renderer can scale by one number and a prop never squashes.
   const span = Math.max(bottom - top, right - left) + 1;
@@ -518,17 +526,31 @@ function cropped(rows: string[]): string[] {
  *  back `not found` — so a row the server lost keeps the grid it ships. */
 async function furniture(specs: PropSpec[], ground: Tone | null): Promise<Record<string, Prop>> {
   const out: Record<string, Prop> = {};
+  const uncropped: Record<string, string[]> = {};
   for (const spec of specs) {
     const text = await callTool('get_map_object', { object_id: spec.object });
     const url = urlsIn(text).find((u) => /\.png/.test(u)) ?? urlsIn(text)[0];
-    if (!url) {
+    // A map object and a 1-direction object are different rows on the server:
+    // the map endpoint answers for both but only DOWNLOADS the first, and the
+    // other's frames are under `rotations/`. Every prop keeps the path it was
+    // imported by, and the fallback is only reached when that path 500s.
+    let png: Buffer | null = null;
+    if (url) {
+      png = await download(url).catch(() => null);
+    }
+    if (!png) {
+      const said = await callTool('get_object', { object_id: spec.object, include_preview: false });
+      const frame = urlsIn(said).find((u) => /rotations\/.*\.png/.test(u));
+      if (frame) png = await download(frame).catch(() => null);
+    }
+    if (!png) {
       const had = PROP_ART[spec.id];
       if (!had) throw new Error(`${spec.id}: no image and none shipped — ${text.slice(0, 90)}`);
       console.log(`  ${spec.id}: gone from the server, keeping the grid that ships`);
       out[spec.id] = { grid: had.grid, tiles: had.tiles, rows: had.rows, key: had.key };
       continue;
     }
-    const got = debackground(decodePng(await download(url)));
+    const got = debackground(decodePng(png));
     const raw = spec.dull ? dulled(got, spec.dull) : got;
     const pull = spec.tone ?? PROP_TONE;
     const image =
@@ -536,9 +558,19 @@ async function furniture(specs: PropSpec[], ground: Tone | null): Promise<Record
     const inks = new Inks();
     noted(image, inks);
     inks.settle(PROP_INKS);
-    const rows = cropped(rowsOf(image, inks));
+    const whole_ = rowsOf(image, inks);
+    uncropped[spec.id] = whole_;
+    const rows = cropped(whole_, spec.with ? uncropped[spec.with] : undefined);
     console.log(`  ${spec.id}: ${rows.length} grid, ${spec.tiles} tiles across, ${inks.size} inks`);
     out[spec.id] = { grid: rows.length, tiles: spec.tiles, rows, key: inks.key };
+  }
+  // A frame naming its partner sets the box for BOTH, so the first of a pair is
+  // re-cropped once the second has been read.
+  for (const spec of specs) {
+    if (!spec.with || !uncropped[spec.with]) continue;
+    const rows = cropped(uncropped[spec.with], uncropped[spec.id]);
+    const had = out[spec.with];
+    if (had) out[spec.with] = { ...had, grid: rows.length, rows };
   }
   return out;
 }

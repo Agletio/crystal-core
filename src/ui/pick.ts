@@ -17,6 +17,8 @@ import { GENERATED } from '../render/generated-art';
 import { HERO_SPRITE } from '../sim/appearance';
 import { IDLE_CYCLE } from '../render/sprites';
 import { equipSkill, takeUpTrade } from '../sim/character';
+import { attachTooltip, hideTooltip } from './tooltip';
+import { skillCard } from './skills';
 import type { BuiltTrade } from '../trades';
 import type { GameState } from '../game/state';
 
@@ -161,8 +163,16 @@ function look(tradeId: string): void {
   box.append(el('h3', 'picksay__name', trade.spec.name));
   box.append(el('p', 'picksay__lore', trade.spec.lore));
   box.append(el('p', 'picksay__rule', trade.spec.blurb));
+  // What he comes down holding, NAMED — and the card is the same one the
+  // Skills screen raises, so the description is written in one place.
   const opens = SKILL_BY_ID[trade.spec.skill];
-  if (opens) box.append(el('p', 'picksay__arms', `Comes down holding ${opens.name}.`));
+  if (opens) {
+    const line = el('p', 'picksay__arms');
+    line.append(el('span', 'picksay__armslabel', 'Starting Skill: '));
+    line.append(el('span', 'picksay__armsname', opens.name));
+    attachTooltip(line, () => skillCard(opens));
+    box.append(line);
+  }
   box.append(roads(trade));
   box.append(
     el(
@@ -208,6 +218,7 @@ function render(): void {
 }
 
 export function closePick(): void {
+  hideTooltip();
   $('pick').hidden = true;
   globalThis.clearInterval(ticking);
   ticking = undefined;

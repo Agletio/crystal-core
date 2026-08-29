@@ -3,7 +3,6 @@
  * The trade brings a skill with it, so this is the one thing the cast hall
  * cannot answer.
  */
-import { SKILL_BY_ID } from '../data';
 import { TRADE_BY_ID } from '../trades';
 import { equipSkill, mainSkillId } from '../sim/character';
 import type { GameState } from '../game/state';
@@ -12,14 +11,6 @@ const $ = (id: string) => document.getElementById(id)!;
 
 let game: GameState;
 let onChosen: (() => void) | null = null;
-
-/** Off the SLOT, so an old save reaching this screen holding something else is
- *  described rather than told. */
-function arms(): string {
-  const held = mainSkillId(game.character) ?? TRADE_BY_ID[game.character.trade ?? '']?.spec.skill;
-  const skill = held ? SKILL_BY_ID[held] : undefined;
-  return skill ? `You go down with ${skill.name}.` : 'You go down armed.';
-}
 
 function go(): void {
   // Fall back rather than block on an empty field — nobody should be stopped
@@ -48,7 +39,6 @@ export function maybeShowWelcome(): void {
     $('welcome').hidden = true;
     return;
   }
-  $('welcome-arms').textContent = arms();
   $('welcome').hidden = false;
   ($('welcome-name') as HTMLInputElement).focus();
 }

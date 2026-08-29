@@ -145,9 +145,7 @@ function begin(): void {
   onRunFocused();
 }
 
-document.getElementById('open-fissure')!.addEventListener('click', openFissure);
 document.getElementById('open-craft')!.addEventListener('click', openCraft);
-document.getElementById('open-shop')!.addEventListener('click', openShop);
 document.getElementById('open-crystals')!.addEventListener('click', openCrystals);
 document.getElementById('open-stash')!.addEventListener('click', openStash);
 document.getElementById('open-inventory')!.addEventListener('click', openInventory);

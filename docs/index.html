@@ -403,7 +403,10 @@
   .picksay__name { margin: 0; font-family: var(--display); font-size: 17px; letter-spacing: .08em; color: var(--citrine); }
   .picksay__lore { margin: 0; font-size: 13px; line-height: 1.55; color: var(--text-dim); }
   .picksay__rule { margin: 0; font-size: 13px; line-height: 1.5; color: var(--text); }
-  .picksay__arms { margin: 0; font-size: 12px; color: var(--rust); }
+  /* Hoverable, so it raises the Skills screen's own card. */
+  .picksay__arms { margin: 0; font-size: 12px; color: var(--text-dim); cursor: help; align-self: flex-start; }
+  .picksay__armslabel { letter-spacing: .08em; text-transform: uppercase; font-size: 11px; }
+  .picksay__armsname { color: var(--citrine); border-bottom: 1px dotted var(--edge-lit); }
   .picksay__cost { margin: 0; font-size: 12px; color: var(--text-dim); opacity: .8; }
   .pickroads { display: flex; flex-wrap: wrap; gap: 6px; }
   .pickroads__one {
@@ -2009,10 +2012,8 @@
       <button class="railbtn railbtn--dev" id="open-dev">Dev menu</button>
     </div>
     <div class="rail__row rail__row--main">
-      <button class="railbtn" id="open-fissure" data-key="fissure">The Fissure</button>
       <button class="railbtn" id="open-inventory" data-key="inventory">Inventory</button>
       <button class="railbtn" id="open-craft" data-key="craft">Crafting</button>
-      <button class="railbtn" id="open-shop" data-key="shop">Shop</button>
       <button class="railbtn" id="open-crystals" data-key="crystals">Crystals</button>
       <button class="railbtn" id="open-stash" data-key="stash">Stash</button>
       <button class="railbtn" id="open-character" data-key="character">Character</button>
@@ -2038,7 +2039,6 @@
   <div id="view-run">
     <div id="run-stagewrap" hidden>
     <div class="runbar">
-      <button class="mini" id="run-leave">Leave after this run</button>
       <button class="mini" id="run-abandon">Abandon</button>
       <button class="mini" id="run-details" aria-expanded="false">Details</button>
       <span class="sub" id="run-camhint"></span>
@@ -2685,7 +2685,6 @@
         <input id="welcome-name" class="namefield__input" type="text" maxlength="24"
                placeholder="Wanderer" autocomplete="off" />
       </label>
-      <p class="empty" id="welcome-arms"></p>
       <button class="mini mini--go" id="welcome-go">Go down</button>
     </div>
   </div>
@@ -2712,7 +2711,7 @@
      rather than the OS's white box. -->
 <div class="tip" id="tooltip" hidden></div>
 <div class="itemmenu" id="itemmenu" hidden></div>
-<div class="atcamp" id="atcamp" hidden>Takes effect at camp.</div>
+<div class="atcamp" id="atcamp" hidden>Takes effect on your next run.</div>
 <div class="toast" id="toast" hidden></div>
 <script src="./app.js"></script>
 </body>

@@ -104,6 +104,11 @@ assert($('pick-warrior') !== null && $('pick-rogue') !== null, 'the warrior and 
 assert($('pick-say').hidden === true, 'saying nothing until one is clicked');
 $('pick-aethermancer').click();
 assert($('pick-say').hidden === false, 'clicking one says who he is');
+assert(
+  /starting skill/i.test(text('pick-say')) && /rimespike/i.test(text('pick-say')),
+  'and names the skill he comes down holding',
+  text('pick-say')
+);
 assert($('pick-take') !== null, 'and offers to be him');
 $('pick-take').click();
 assert($('pick').hidden === true, 'taking him closes the hall');
@@ -115,11 +120,6 @@ assert($('welcome').hidden === false, 'and a game with no skill still asks for o
 // asking for a skill here was the cast hall's question a second time.
 assert(all('#welcome-skills .welcomecard').length === 0, 'and no longer offers a skill of its own');
 assert($('welcome-name') !== null, 'and asks who you are');
-assert(
-  /rimespike/i.test(text('welcome-arms')),
-  'saying what the trade you took is holding',
-  text('welcome-arms')
-);
 
 $('welcome-name').value = 'Vespera';
 $('welcome-go').click();
@@ -238,7 +238,7 @@ for (const id of ['dev-meet-workshop', 'dev-room-answering_hall', 'dev-gear-3', 
 // above the first are unreachable to every check under here without it.
 assert($('dev-climb-0') !== null, 'and a button that clears a zone of the climb');
 $('dev-climb-0').click();
-$('open-fissure').click();
+$('camp-crack').click();
 assert($('climb-pip-0-12').classList.contains('pip--done'), 'clearing the Fissure marks every rung of it');
 assert($('climb-tab-1').disabled === false, 'and opens the zone above');
 $('climb-tab-1').click();
@@ -721,7 +721,7 @@ assert(all('.dock .slot--on').length === 0, 'nothing highlighted after closing')
 // item scrolled away exactly when you went to buy something for it.
 assert($('shop').hidden === true, 'the shop starts closed');
 assert(!$('craft').contains($('workshop')), 'the shop is not inside crafting');
-$('open-shop').click();
+$('camp-shelf').click();
 assert($('shop').hidden === false, 'the shop opens');
 
 const buys = all('#workshop button.buy');
@@ -1073,7 +1073,7 @@ assert(
 );
 // The Fissure window is the sockets and the one button, and nothing else:
 // what a character IS is on the sheet, which has its own checks below.
-$('open-fissure').click();
+$('camp-crack').click();
 assert($('run-menu').hidden === false, 'the crack opens over the camp');
 assert($('run-stats') === null, 'and the Fissure carries no character panel');
 assert($('run-launch') !== null, 'only the sockets and the way in');
@@ -1437,26 +1437,24 @@ assert(
   'and to the map again once it closes'
 );
 
-// --- leaving, gently and otherwise ----------------------------------------
-// Pause is gone: there was nothing to do with a paused fight. What a running
-// descent needs instead is a way to say "this one, then stop", so the loop
-// ends on a clear rather than on a run you threw away.
-assert($('run-leave').disabled === false, 'a running descent can be told to be the last');
-assert(/leave after/i.test(text('run-leave')), 'and says so', text('run-leave'));
-$('run-leave').click();
-assert(/leaving after/i.test(text('run-leave')), 'arming it reads back', text('run-leave'));
-$('run-leave').click();
-assert(/leave after/i.test(text('run-leave')), 'and it un-arms', text('run-leave'));
-
-// Abandon is the hard version, and it ends where every other ending does: a
-// report, so what the earlier clears banked is something you can see rather
-// than something you hope happened.
+// --- the one way out ------------------------------------------------------
+// *"Change abandon to return to camp and make it where all the loot on the
+// floor just gets picked up when you return to camp."* One button, and it
+// KEEPS what the descent found — only dying banks nothing.
+assert($('run-abandon').disabled === false, 'a running descent can be walked out of');
+assert(/return to camp/i.test(text('run-abandon')), 'and says where it goes', text('run-abandon'));
+const carried = $('run-abandon') && dockItems().length;
 $('run-abandon').click();
-assert($('run-results').hidden === false, 'abandoning reports the run');
+assert($('run-results').hidden === false, 'walking out reports the run');
 assert(
-  /walked out/i.test(text('run-results')),
-  'and says you walked out rather than died',
+  /back at camp/i.test(text('run-results')),
+  'and says you came back rather than died',
   text('run-results').slice(0, 60)
+);
+assert(
+  dockItems().length >= carried,
+  'and nothing you were carrying was taken off you for leaving',
+  `${carried} before, ${dockItems().length} after`
 );
 $('run-again').click();
 assert(
@@ -2283,7 +2281,7 @@ const purse = () => Number(text('wallet').match(/\d+/)?.[0] ?? 0);
 // old bulk button could only take the heap nothing had been spent on, so the
 // pieces you actually wanted rid of still came out one right-click at a time.
 {
-  $('open-shop').click();
+  $('camp-shelf').click();
   const mode = () => $('shop-sell');
   assert(/sell mode/i.test(text('shop-sell')), 'the counter offers a sell mode', text('shop-sell'));
   assert(
@@ -2788,12 +2786,12 @@ $('dev-kit').click();
 }
 
 // --- keeping going is not a choice ----------------------------------------
-// Chaining descents is what this game is; Leave after this run and Abandon are
-// the two ways out and there is no third.
+// Chaining descents is what this game is; Return to camp is the ONE way out
+// you choose, and there is no third.
 assert($('run-repeat') === null, 'no checkbox offers to make the idle game not idle');
 assert(
-  $('run-leave') !== null && $('run-abandon') !== null,
-  'and the two buttons that stop the loop are still there'
+  $('run-leave') === null && $('run-abandon') !== null,
+  'and the one button that stops the loop is still there'
 );
 
 // --- windows: on top is what you touched last ------------------------------

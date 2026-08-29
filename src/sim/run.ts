@@ -78,6 +78,8 @@ import {
   socketSize,
   GILT,
   HOARD,
+  LOCK,
+  LOCKS,
   SPLIT,
   VEIN,
   WARDEN,
@@ -307,6 +309,11 @@ export interface Hoard {
   opened: boolean;
   /** A VEIN pays currency where a Hoard pays gear: same lock, different thing. */
   pays: 'gear' | 'currency';
+  /** Which of the world's three it is, where its PROP sits in `map.props`, and
+   *  whether it is the RARE one — which pays quality, never a bigger pile. */
+  lock: { shut: string; open: string };
+  at: number;
+  rare: boolean;
   /** THE SECOND WATCH has already put this one's guards back up. Once, ever. */
   risen?: boolean;
 }
@@ -881,14 +888,20 @@ export class RunSim {
       const guards = locked ? Math.round(packSize * HOARD.size) : packSize;
       if (locked) {
         const middle = roomCenter(room); // a PROP: both renderers already draw one
-        map.props.push({ id: HOARD.prop, x: middle.x, y: middle.y });
+        const set = LOCKS[this.set.theme] ?? LOCKS.fissure;
+        const rare = this.rng.chance(LOCK.rareChance);
+        const which = rare ? set.rare : (this.rng.pick(set.common) ?? set.common[0]);
         this.putDown.push({
           id: hoard,
           x: middle.x,
           y: middle.y,
           opened: false,
           pays: veined ? 'currency' : 'gear',
+          lock: which,
+          at: map.props.length,
+          rare,
         });
+        map.props.push({ id: which.shut, x: middle.x, y: middle.y });
       }
 
       // One kind per pack. Mixed packs read as noise; a uniform pack reads as
@@ -3408,10 +3421,10 @@ export class RunSim {
 
   /** ONE piece, unconditionally. A Hoard pays in these rather than in a second
    *  kind of loot: what it changes is HOW MANY, never what the band can hold. */
-  private dropGear(): void {
+  private dropGear(lift = 0): void {
     const drops = this.set.band;
     const hero = this.state.hero.stats;
-    const rarity = this.set.rewards.rarity + hero.rarity + this.set.pays.rarity;
+    const rarity = this.set.rewards.rarity + hero.rarity + this.set.pays.rarity + lift;
 
     // A named piece instead of a rolled one. A gate is a wall, so the pool is
     // filtered before the pick and no amount of rarity argues with it.
@@ -3604,9 +3617,16 @@ export class RunSim {
     }
 
     box.opened = true;
+    // THE LID GOES BACK: the same object's own open frame, in place.
+    const prop = this.state.map.props[box.at];
+    if (prop && prop.id === box.lock.shut) prop.id = box.lock.open;
+
     // ONE THING, sometimes coin: three a lock paid 23 gear a clear deep.
     if (this.rng.chance(HOARD.goldChance)) {
-      const paid = HOARD.gold * (1 + this.set.rewards.danger / POWER.perDanger);
+      const paid =
+        HOARD.gold *
+        (box.rare ? LOCK.rareGold : 1) *
+        (1 + this.set.rewards.danger / POWER.perDanger);
       this.state.loot.currency.gold = (this.state.loot.currency.gold ?? 0) + paid;
       this.state.floaters.push({
         x: box.x, y: box.y, text: `+${Math.round(paid)}`, age: 0, crit: false, on: 'monster',
@@ -3614,8 +3634,11 @@ export class RunSim {
       return;
     }
     this.dropAt = box;
-    if (box.pays === 'currency') this.dropCurrency();
-    else this.dropGear();
+    // A RARE lock buys QUALITY and never quantity — the same one piece, drawn
+    // against more Rarity, which is the only lever the rest of the game uses.
+    const lift = box.rare ? LOCK.rareRarity : 0;
+    if (box.pays === 'currency') this.dropCurrency(lift);
+    else this.dropGear(lift);
   }
 
   /** A corpse for whoever wants one. A gate is a wall, so the pool is filtered
@@ -3636,12 +3659,12 @@ export class RunSim {
   }
 
   /** ONE piece, unconditionally — what the Vein pays in, off the budget. */
-  private dropCurrency(): void {
+  private dropCurrency(lift = 0): void {
     const hero = this.state.hero.stats;
     // Rarity decides how often you reach the ceiling; the crystal decides where
     // it IS. Uncapped, a T1 map with enough rarity skips the whole ladder.
     const ceiling = CURRENCY_CLASSES.indexOf(this.set.band.currency);
-    const rarity = this.set.rewards.rarity + hero.rarity + this.set.pays.rarity;
+    const rarity = this.set.rewards.rarity + hero.rarity + this.set.pays.rarity + lift;
     const climb = CURRENCY_DROP.upgradeChance * (1 + rarity / 100);
     let rank = 0;
     while (rank < ceiling && this.rng.chance(climb)) rank++;

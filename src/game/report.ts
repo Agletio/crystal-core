@@ -22,7 +22,7 @@ export interface ReportRow {
 }
 
 export interface RunReport {
-  /** `left` is walking out mid-descent: it banks like a death, without one. */
+  /** `left` is walking out mid-descent: it KEEPS the loot and buys no progress. */
   status: 'cleared' | 'died' | 'left';
   cleared: boolean;
   headline: string;
@@ -52,13 +52,13 @@ function currencyRows(currency: Record<string, number>): ReportRow[] {
     .map(([id, n]) => ({ label: id, value: `+${round(n)}` }));
 }
 
-/**
- * Loot only transfers on a CLEAR. Dying drops everything the run carried, and
- * so does walking out — but only for THIS descent: every clear before it
- * banked as it happened, and nothing reaches back for those.
- */
+/** Loot comes home unless you DIED holding it, and that is only ever THIS
+ *  descent: every clear before it banked as it happened. */
 export function buildReport(game: GameState, run: RunState, left = false): RunReport {
   const cleared = run.status === 'cleared' && !left;
+  // Only DYING banks nothing. What a walk does not buy is PROGRESS: no rung,
+  // no crystal, no levelling, no trial point.
+  const keeps = cleared || left;
   const hadLoot = Object.values(run.loot.currency).some((n) => round(n) > 0);
 
   const banked: Record<string, number> = {};
@@ -66,9 +66,7 @@ export function buildReport(game: GameState, run: RunState, left = false): RunRe
   let burnt: ModBurn[] = [];
   let filtered = { kept: [] as Item[], sold: 0, gold: 0 };
 
-  if (cleared) {
-    game.clears = (game.clears ?? 0) + 1; // before `giftWaiting` is asked
-
+  if (keeps) {
     for (const [id, amount] of Object.entries(run.loot.currency)) {
       const n = round(amount);
       if (n <= 0) continue;
@@ -80,6 +78,10 @@ export function buildReport(game: GameState, run: RunState, left = false): RunRe
     // descent that overfills the bag by three is a bag reading 35/32.
     filtered = bankLoot(game, run.loot.items);
     if (filtered.gold > 0) banked.gold = (banked.gold ?? 0) + filtered.gold;
+  }
+
+  if (cleared) {
+    game.clears = (game.clears ?? 0) + 1; // before `giftWaiting` is asked
 
     // The opening payout. Folded into the same banked/items shape so the
     // overlay shows it as loot rather than it appearing silently in the bag.
@@ -126,7 +128,7 @@ export function buildReport(game: GameState, run: RunState, left = false): RunRe
     rows.push({ label: 'skill levels', value: `+${skillLevels}` });
   }
 
-  if (cleared && filtered.kept.length > 0) {
+  if (keeps && filtered.kept.length > 0) {
     rows.push({ label: 'into your bags', value: String(filtered.kept.length) });
   }
   // What the filter did, said in what it paid: a screen you set once and then
@@ -165,13 +167,13 @@ export function buildReport(game: GameState, run: RunState, left = false): RunRe
   return {
     status: left ? 'left' : cleared ? 'cleared' : 'died',
     cleared,
-    headline: left ? 'You walked out' : cleared ? 'Fissure cleared' : 'You died',
+    headline: left ? 'Back at camp' : cleared ? 'Fissure cleared' : 'You died',
     rows,
     banked,
-    items: cleared ? [...filtered.kept] : [],
+    items: keeps ? [...filtered.kept] : [],
     levelled,
     burnt,
-    lostLoot: !cleared && hadLoot,
+    lostLoot: !keeps && hadLoot,
     bagsFull: bagsFull(game),
     filtered: { sold: filtered.sold, gold: filtered.gold },
     xp: Math.round(run.xpGained),

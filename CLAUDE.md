@@ -184,9 +184,12 @@ and no walk: eight hotspots — the crack, four sockets in the rock, the bench,
 the shelf, the tent — and what MOVES is light, wind and idling bodies on one
 canvas over the art. Everybody you have met stands about in it and clicking one
 goes to their room — a person's hotspot is their own body's grid, where that
-body was drawn. **The rail still reaches every screen** — the Fissure is one
-of them, and a screen you can only find by clicking a picture is a screen
-somebody will lose.
+body was drawn. **THE FISSURE AND THE SHOP ARE REACHED FROM THE CAMP AND
+NOWHERE ELSE** — *"remove the fissure button, the shop, from the ui in the
+bottom right rail, have that only be from camp"* — the crack and the shelf.
+Everything else is still on the rail, and a screen with neither a button nor a
+hotspot is a screen somebody will lose. The shelf is STOCK, so what you are not
+carrying moved into the TENT with the rest of your kit.
 
 **One place you go, at the RUNG you pick.** `LADDER` is three zones of 12, 14
 and 16 rungs; a rung is CHOSEN, one you have cleared stays open for the rest of
@@ -290,6 +293,16 @@ needs to be rare enough you need to wait to find an item that's good enough to
 start using it on."* **A lock pays TWICE the run's budget and no more**:
 `HOARD.drops` against `gearPerRun`, `VEIN.drops` against `CURRENCY_DROP.perRun`.
 
+**A LOCK IS MADE OF THE WORLD IT STANDS IN, and it OPENS.** `LOCKS` is three a
+world — two ordinary and one RARE — each a `shut` prop and the `open` frame of
+**the same generated object**, so the last guard falling swaps the picture
+rather than standing a second chest beside the first. A pair is cropped to ONE
+box (`PropSpec.with`), or the lid going back moves the box under it. **A rare
+one is never a bigger pile**: `LOCK.rareRarity` is what its ONE drop is worth
+extra, because rarity buys what a piece IS everywhere else in the game. A
+timber box in a gullet of meat read as furniture somebody carried down, which
+is the whole reason the table is per world.
+
 **A PERFECT BASE IS THE ENDGAME CHASE, and it is the only step above ordinary.**
 25% on the implicit, top tier only, three sockets minimum. Its rate is a SHARE
 of drops, which is why the count had to be flattened first — at 84 a clear the
@@ -329,8 +342,15 @@ takes.
 
 **You press Enter once.** A cleared descent launches the next by itself and
 keeps going until you die, your bag fills, someone is waiting at the mouth, a
-crystal roll runs out, or you say so. All six end on the same report and open
-the same dock.
+crystal roll runs out, or you say so. All of them end on the same report and
+open the same dock. **Saying so is ONE BUTTON — Return to camp — and it KEEPS
+what the descent found**: *"make it where all the loot on the floor just gets
+picked up when you return to camp… you can min max by doing a hard level for a
+bit and then returning before you die."* Only DYING banks nothing. What a walk
+does not buy is PROGRESS — no rung, no crystal out of the wall, no levelling of
+what is socketed, no trial point — so going deeper than you can finish is a
+decision rather than a punishment. "Leave after this run" is gone with it: it
+armed a stop one descent ahead, which is the same stop said early.
 
 **THERE ARE NO ROOMS, and a person is FOUND IN THEIR OWN ZONE.** *"Honestly just
 ditch all the rooms. I want to encounter them randomly in the maps and they

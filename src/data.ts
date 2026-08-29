@@ -3157,12 +3157,52 @@ export const WARDEN = { rank: 900 };
 /** A pack with something in it worth walking towards. Nothing is CLICKED, which
  *  is what makes it legal under universal automation: the last guard down. */
 export const HOARD = {
-  prop: 'cart', // no new art: a cart standing in the rock is already a hoard
   size: 1.6, // the guard, against an ordinary pack
   rank: 250, // `monsterRank`, on the guard alone
   drops: 1, // ONE thing when the last of them is down, never a pile
   goldChance: 0.3, // or coin instead, which makes opening one a small gamble
   gold: 90, // at the bare Fissure, lifted by the run's own danger
+};
+
+/**
+ * WHAT A LOCK LOOKS LIKE, and it is made of the world it stands in — a timber
+ * box in a gullet of meat reads as furniture somebody carried down.
+ *
+ * Two ordinary and one RARE per world, each a `shut` prop and the `open` frame
+ * of THE SAME generated object, so opening one is the picture changing rather
+ * than a second chest appearing. A rare one is never a bigger pile: it pays the
+ * same ONE thing at higher Rarity, which is what rarity buys everywhere else.
+ */
+export interface LockSet {
+  common: { shut: string; open: string }[];
+  rare: { shut: string; open: string };
+}
+
+const lock = (id: string) => ({ shut: `lock_${id}`, open: `lock_${id}_open` });
+
+export const LOCKS: Record<MapTheme, LockSet> = {
+  fissure: {
+    common: [lock('fissure_plain'), lock('fissure_iron')],
+    rare: lock('fissure_locked'),
+  },
+  demonic: {
+    common: [lock('rot_bound'), lock('rot_ribbed')],
+    rare: lock('rot_horned'),
+  },
+  prismatic: {
+    common: [lock('cavern_pane'), lock('cavern_teeth')],
+    rare: lock('cavern_gem'),
+  },
+  seam: {
+    common: [lock('seam_slab'), lock('seam_split')],
+    rare: lock('seam_crown'),
+  },
+};
+
+export const LOCK = {
+  rareChance: 0.16, // of the locks a run puts down, how many are the rare one
+  rareRarity: 140, // what its ONE drop is worth EXTRA, in Rarity
+  rareGold: 2.2, // and the coin, when it pays coin instead
 };
 
 /**

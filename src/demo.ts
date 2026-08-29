@@ -68,6 +68,7 @@ import {
   MONSTER_FAMILIES,
   depthsAt,
   rungsBelow,
+  LOCKS,
   MAP_THEMES,
   POWER,
   REWARD,
@@ -2008,6 +2009,29 @@ rule('SPRITES — is the pixel art well formed?');
   const WALL_SET = new Set(WALL_PROPS.map((w) => w.id));
   const dressedMap = (seed: number, theme: MapTheme = 'fissure') =>
     generateMap([], new Rng(seed), 1, 1, theme);
+  // THE LOCKS. Three a world, and BOTH frames of each — a shut one whose open
+  // frame is missing is a chest that cannot be opened, and nothing else asks.
+  {
+    const want = MAP_THEMES.flatMap((t) => {
+      const set = LOCKS[t.id as MapTheme];
+      return [...set.common, set.rare].flatMap((one) => [one.shut, one.open]);
+    });
+    const undrawn = want.filter((id) => !PROP_ART[id]);
+    check(
+      undrawn.length === 0,
+      `every world's three locks are drawn shut AND open: ${want.length} frames`,
+      undrawn.join(', ')
+    );
+    // One box, or the lid going back moves the box under it.
+    const jumps = MAP_THEMES.flatMap((t) => {
+      const set = LOCKS[t.id as MapTheme];
+      return [...set.common, set.rare]
+        .filter((one) => PROP_ART[one.shut]?.grid !== PROP_ART[one.open]?.grid)
+        .map((one) => one.shut);
+    });
+    check(jumps.length === 0, 'and a pair shares one grid, so opening one moves nothing', jumps.join(', '));
+  }
+
   {
     const map = dressedMap(11);
     const growth = map.props.filter((p) => WALL_SET.has(p.id));
@@ -10671,20 +10695,31 @@ rule('UNIQUES — is every named piece real, reachable and unbreakable?');
     );
     check(wrong.length === 0, 'and a run never drops one gated to a world it is not', `${wrong.length} out of place`);
 
-    // And they DO drop, or the whole table is decoration.
-    // At the LEVEL that end is for. A set rolled to the top of what four
-    // crystals hold kills a level 40 build in six seconds, and a character that
-    // dies before its first kill is not a reading on the drop table.
-    // SIXTEEN, not eight. A named piece is a share of DROPS, and the drop count
-    // fell twentyfold when loot went per-run — at eight descents this expects
-    // 2.8 and reads zero one run in sixteen, which is a flake, not a finding.
+    // And they are REACHABLE, or the whole table is decoration. Asked of the
+    // pool rather than played: measured, the deep end pays 0.11 named pieces a
+    // descent, so sixteen expects 1.8 and reads ZERO one run in six — a coin
+    // toss, not a finding, and sixty-four descents is nine minutes.
+    //
+    // What can actually go wrong is silent: a base whose item level climbs past
+    // what the top band drops takes its unique out of the game and nothing
+    // says so. That is what this asks, and it is deterministic.
+    const top = DROP_BANDS[DROP_BANDS.length - 1];
+    const gated = UNIQUES.filter((u) =>
+      MAP_THEMES.some((t) => opensHere(u.gate, POWER.max, t.id as MapTheme))
+    );
+    const tooDeep = gated.filter((u) => (GEAR_BASE_BY_ID[u.base]?.ilvl ?? 1) > top.ilvl);
+    check(
+      gated.length > 0 && tooDeep.length === 0,
+      `and every one of the ${gated.length} the deep end opens is inside what it drops`,
+      tooDeep.map((u) => `${u.id} needs ilvl ${GEAR_BASE_BY_ID[u.base]?.ilvl}`).join(', ')
+    );
     let found = 0;
     for (let i = 0; i < 16; i++) {
       const sim = new RunSim(set, ceiling(6, 'arc_lightning', LEVELLING.maxLevel), new Rng(600 + i));
       runToCompletion(sim, 600);
       found += sim.state.loot.items.filter((it) => it.meta.unique !== undefined).length;
     }
-    check(found > 0, `and the deep end actually hands them out — ${found} in 16 descents`, 'none dropped at all');
+    gauge(`and hands out ${found} in 16 descents at the deep end — 1.8 expected, so a zero is noise`);
   }
 
   // The bulk button takes every carried piece no currency has touched, which
