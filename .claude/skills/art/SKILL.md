@@ -249,6 +249,13 @@ of that and the BASE body's own states.
 - **`variant.mts write <sprite> --state <name>` rewrites ONE state.** A row's
   words are the words its shipped art was ASKED with, so rewriting five to
   change one makes four of them a lie about art nobody re-rolled.
+- **EVERY animation fault observed has been at the TAIL, seven for seven** — a
+  wand lost from frame 7 of 11, a second wand on the last frame, a shield
+  detaching from frame 5 and never coming back, a stray streak on a last idle
+  frame. So `from`/`to` is the WHOLE repair vocabulary and no interior-frame
+  surgery has ever been needed: a `drop` for a bad frame mid-run was built,
+  found to have no user, and reverted. **Read the SERVER's run before deciding
+  a fault is mid-run** — the shipped resample made a tail fault look like one.
 - **A CAST may be windowed at the tail; an attack may not.** Obreth's cast
   drifts into a spread-armed pair in its last frames — his own silhouette is a
   rogue's — so his two wand rows keep only the first 72% and 45% of the run. The

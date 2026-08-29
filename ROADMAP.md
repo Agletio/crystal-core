@@ -180,11 +180,12 @@ thing at a time"* — so what comes next is whatever playing it turns up.
   `carry` anchor ("exactly ONE shield… on that one arm") is present in 3 of the
   5 broken rows and absent from 4 of the 9 good ones, so it separates nothing.
   Assuming a vocabulary fix would have bought ~470 generations of the wrong
-  repair. **Three of the six landed on the re-roll**, `mahthar_shield` and
-  `obreth_shield` MISSED and were windowed at the tail instead, and
-  **`alchemist_dagger_shield` still drops its shield for ONE frame of five** —
-  mid-run, so it cannot be windowed, and it is the one thing this sweep leaves
-  visibly imperfect. **What is left besides it is the other 22 rows' WORDS**,
+  repair. **Three of the six landed on the re-roll** and the other three were
+  windowed at the tail — including `alchemist_dagger_shield`, whose shield looked
+  mid-run in the shipped resample and in fact leaves the arm at source frame 5 of
+  11 and never comes back. **Every fault this sweep found was at the TAIL, seven
+  for seven**, so a window was the whole repair vocabulary and nothing is left
+  visibly wrong. **What is left is the other 22 rows' WORDS**,
   which keep showing in `check` until somebody re-rolls art nobody has found
   anything wrong with — a decision, not a task.
 - **`obreth_mace2h`'s attack frame 4 is GONE from the store.** It answers 200

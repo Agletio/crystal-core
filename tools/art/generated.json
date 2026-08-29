@@ -1352,8 +1352,9 @@
      "group": "6ffea495-ac96-4741-850d-0df48bf74600"
     },
     "cast": {
-     "frames": 5,
-     "group": "5a9656c5-5226-4e1d-ac4a-dcea5a2e0872"
+     "frames": 4,
+     "group": "5a9656c5-5226-4e1d-ac4a-dcea5a2e0872",
+     "to": 0.45
     },
     "death": {
      "frames": 4,
