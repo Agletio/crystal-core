@@ -11,6 +11,7 @@ import { decodePng } from './png.mts';
 import type { Decoded } from './png.mts';
 import { apart, debackground, defloor, demound, deslab, fittedTogether, loose, rgb } from './convert.mts';
 import { callTool, download, urlsIn } from './mcp.mts';
+import { GENERATED as SHIPPED } from '../../src/render/generated-art';
 import { PROP_ART } from '../../src/render/generated-props';
 import { ZONES } from '../../src/render/generated-tiles';
 
@@ -588,17 +589,34 @@ const write = (name: string, text: string): void =>
   writeFileSync(new URL(`../../src/render/${name}`, import.meta.url).pathname, text);
 
 /** Which tables to write — `bodies`, `tiles`, `props`, or all. A generated
- *  character is NOT permanent: several came back `not found`, so insisting on
- *  all three writes none. The grid ships, so nothing is lost. */
+ *  character is NOT permanent, so insisting on all three writes none. */
 const want = process.argv.slice(2);
 const doing = (which: string): boolean => want.length === 0 || want.includes(which);
 
 // --- the bodies, and the one the hero is drawn as --------------------------
 const bodies: Record<string, Art> = {};
+const kept: string[] = []; // bodies whose server art could not be read
 if (doing('bodies'))
 for (const spec of [...manifest.bodies, ...(manifest.hero.character ? [manifest.hero] : [])]) {
   console.log(`${spec.sprite}:`);
-  bodies[spec.sprite] = await creature(spec);
+  try {
+    bodies[spec.sprite] = await creature(spec);
+  } catch (why) {
+    // THE STORE ROTS TOO, not just the character: one frame of obreth_mace2h
+    // answers 200 with a content length and then closes having sent no body.
+    // What SHIPPED is the durable artefact, so its row stands rather than 130
+    // bodies going unwritten — LOUD, or one somebody meant to REPLACE would
+    // quietly keep its old art.
+    const held = (SHIPPED as Record<string, Art>)[spec.sprite];
+    if (!held) throw why;
+    console.log(`  KEPT WHAT SHIPPED — ${String(why).slice(0, 140)}`);
+    bodies[spec.sprite] = held;
+    kept.push(spec.sprite);
+  }
+}
+if (kept.length) {
+  console.log(`\nKEPT WHAT SHIPPED for ${kept.length}: ${kept.join(', ')}`);
+  console.log('Their server art could not be read. Nothing about them changed.');
 }
 if (doing('bodies')) write(
   'generated-art.ts',

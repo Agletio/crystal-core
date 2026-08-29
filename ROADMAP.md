@@ -168,14 +168,24 @@ thing at a time"* — so what comes next is whatever playing it turns up.
 
 ### Live known issues
 
-- **The Aethermancer's WAND variant is drawn holding two wands, and the repair
-  is generated and waiting.** `weapons.json` already says "His other hand is
-  empty" and every other body's `_wand` is correct, so the shipped rotation is
-  one generation that drifted. A fresh dress landed clean —
-  `create_character_state` `ca653859-92dd-4dae-9ff3-938dd98b5aaa` off the
-  aethermancer base, frames in `tools/art/cache/designs/aeth_wand_v2-*.png`,
-  shown to the user. What is left is the five ANIMATIONS off that state
-  (~65 generations) and a re-import, and it waits on his word.
+- **THREE WAND VARIANTS ARE STILL ASKING FOR A CAST THEY WERE NOT GENERATED
+  WITH.** A base body's cast is a spell thrown from BOTH OPEN PALMS, and a hand
+  asked to open is a hand that lets go — the Aethermancer's wand was absent from
+  nine cast frames of eleven. `weapons.json` now gives the wand its own `cast`,
+  through a new `weapon.cast` seam in `variant.mts` beside the `attack` one that
+  already existed, and the Aethermancer's was re-rolled and re-imported.
+  **`variant.mts check` now reports `alchemist_wand`, `mahthar_wand` and
+  `obreth_wand` as asking for the new words**, which is true and is what that
+  tool is for. Each is one state to re-roll (~13 generations) plus an import,
+  and nobody has LOOKED at whether their casts have the same fault. The
+  `_wand_shield` and `_x_wand` pairs were not checked at all.
+- **`obreth_mace2h`'s attack frame 4 is GONE from the store.** It answers 200
+  with `Content-Length: 3234` and then closes having sent no body, every time,
+  from curl as well as from the importer. `tables.mts` now KEEPS what shipped
+  for a body it cannot read and says so loudly at the end; the grid in
+  `generated-art.ts` is the durable artefact and nothing about that body
+  changed. But it can never be re-imported, so **any future change to its words
+  is a re-generation of the whole variant, not an import.**
 
 - **The tier ladder the boss is meant to gate does not exist yet.** The fight
   itself now lands where it was asked to — full tier 1 answers it with speed or

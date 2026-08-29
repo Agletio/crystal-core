@@ -47,7 +47,8 @@
    "hands": 1,
    "say": "Put a short wand in his hand: he grips it near its base in one fist and holds it up in front of him with the tip pointing forward and slightly up. His other hand is empty. It is pale bone-white with a dark bound grip, and it is SHORT — no longer than his own forearm. It is NOT a staff, NOT a stave, NOT a sceptre, NOT a pole, NOT taller than he is, NOT resting on the ground, NOT held in two hands.",
    "attack": "a two-beat WAND CAST: he draws the wand hand in to his chest with the weight on the back foot, then flings it FORWARD and up to full arm's length and steps through onto the front foot, ending with the arm at its furthest forward",
-   "noun": "wand"
+   "noun": "wand",
+   "cast": "a three-beat SPELL THROW driven by the WAND: first he drops his weight onto the back foot and draws the wand hand in to his chest, the wand still gripped in that fist; then he steps through onto the front foot and thrusts the WAND hand forward and up to full arm’s length, the wand leading the throw with its tip pointing forward; then that arm falls and he settles back upright, the wand still in the same fist. His OTHER hand stays empty and low at his side throughout. He NEVER opens the wand hand, NEVER lets go of the wand, NEVER raises both palms, NEVER holds his hands out empty"
   },
   "bow": {
    "hands": 2,

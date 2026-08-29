@@ -7,6 +7,10 @@
  * which the REST spec has. The transport is one POST answering
  * `text/event-stream` with a single `data:` line, and holds no session.
  */
+import { createHash } from 'node:crypto';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname } from 'node:path';
+
 const URL_MCP = 'https://api.pixellab.ai/mcp';
 
 interface Rpc {
@@ -46,13 +50,82 @@ export async function callTool(name: string, args: Record<string, unknown>): Pro
   return (answer.result?.content ?? []).map((c) => c.text ?? '').join('\n');
 }
 
-/** Storage needs no key and REFUSES one — a bearer token on a backblaze URL is
- *  a 401. Only the API host is told who is asking. */
+/**
+ * Storage needs no key and REFUSES one — a bearer token on a backblaze URL is
+ * a 401. Only the API host is told who is asking.
+ *
+ * READ THROUGH DISK, keyed on the PATH: the query carries a per-request
+ * timestamp, where the path names an object the store never rewrites. A
+ * whole-table import is fifteen minutes of frames that one flaky object kills,
+ * so a rerun picks up where the last got to rather than starting over.
+ */
 export async function download(url: string): Promise<Buffer> {
+  const held = cached(url);
+  if (held && existsSync(held)) return readFileSync(held);
+  await take();
+  let got: Buffer;
+  try {
+    got = await fetchOnce(url);
+  } finally {
+    give();
+  }
+  if (held) {
+    mkdirSync(dirname(held), { recursive: true });
+    writeFileSync(held, got);
+  }
+  return got;
+}
+
+/** Where a frame is kept, or null for anything not worth keeping. */
+function cached(url: string): string | null {
+  const at = new URL(url);
+  if (!at.pathname.endsWith('.png')) return null;
+  const name = createHash('sha1').update(at.pathname).digest('hex');
+  return new URL(`./cache/frames/${name}.png`, import.meta.url).pathname;
+}
+
+/** IN FLIGHT AT ONCE, over every caller: `tables.mts` fans a whole roster out
+ *  through `Promise.all`, and 502, a 200 of HTML and a cut transfer are three
+ *  faces of one throttle that retrying alone does not answer. */
+const AT_ONCE = 6;
+let running = 0;
+const queue: (() => void)[] = [];
+function take(): Promise<void> {
+  if (running < AT_ONCE) {
+    running++;
+    return Promise.resolve();
+  }
+  return new Promise((go) => queue.push(go));
+}
+function give(): void {
+  // A waiter INHERITS the slot rather than freeing it, or the count drifts.
+  const next = queue.shift();
+  if (next) next();
+  else running--;
+}
+
+async function fetchOnce(url: string): Promise<Buffer> {
   const mine = new URL(url).hostname.endsWith('api.pixellab.ai');
-  const res = await fetch(url, mine ? { headers: { Authorization: `Bearer ${key()}` } } : {});
-  if (!res.ok) throw new Error(`${res.status} for ${url}`);
-  return Buffer.from(await res.arrayBuffer());
+  let last = '';
+  for (let go = 0; go < 8; go++) { // one object 502s a third of the time
+    if (go > 0) await new Promise((r) => setTimeout(r, Math.min(15_000, 1000 * 2 ** go)));
+    try {
+      const res = await fetch(url, mine ? { headers: { Authorization: `Bearer ${key()}` } } : {});
+      if (res.ok) {
+        const body = Buffer.from(await res.arrayBuffer());
+        // A 200 carrying an error page is the SAME throttle wearing a different
+        // hat, and it reaches the importer as `not a PNG` a hundred frames later.
+        if (!/\.png(\?|$)/.test(url) || body.subarray(0, 4).toString('hex') === '89504e47') return body;
+        last = `${body.length}B that is not a PNG`;
+      } else {
+        last = String(res.status);
+        if (res.status < 500 && res.status !== 429) break; // a 404 will not heal
+      }
+    } catch (why) {
+      last = String(why); // a cut transfer, which is the other shape of the same fault
+    }
+  }
+  throw new Error(`${last} for ${url}`);
 }
 
 /** Every `key: value` line of a tool's answer, first one wins. */

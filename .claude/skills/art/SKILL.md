@@ -233,7 +233,13 @@ of that and the BASE body's own states.
   in a row are the words its shipped art was ASKED with**, so a sweep would make
   every other row a lie.
 - A weapon row may carry a **`carry`** clause, appended to every state but the
-  attack: where the weapon RESTS. Only a weapon observed drifting earns one —
+  attack: where the weapon RESTS.
+- **A `cast` clause is the same seam as `attack`, and a one-handed weapon needs
+  one.** A base body's cast is a spell thrown from BOTH OPEN PALMS, and **a hand
+  asked to OPEN is a hand that lets go** — the Aethermancer's wand was absent
+  from nine cast frames of eleven while `He keeps hold of it in EVERY frame` sat
+  on the end of the same sentence. A trailing rule does not beat a described
+  pose; describe the pose you want instead. Only a weapon observed drifting earns one —
   the greatsword, asked upright, came back diagonal in the still and pointing at
   the floor by the third walk frame.
 - **A tall body has no headroom in a 96 frame.** A weapon held vertically with
@@ -276,6 +282,20 @@ none and reads as "never arrived" on a job that completed and billed.
 `tools/art/convert.mts`, no generations, re-runnable — so a re-import is the
 whole repair. Before re-generating anything to remove an artefact, ask whether
 the artefact has a SHAPE the import can name.
+
+- **THE STORE ROTS, and it rots as a 200.** One frame of `obreth_mace2h`
+  answers `Content-Length: 3234` and then closes having sent no body, every
+  time, from curl as well as from the importer. `tables.mts` KEEPS what shipped
+  for a body it cannot read and says so loudly at the end — the grid is the
+  durable artefact and that is the whole argument for the conversion step — but
+  such a body can never be re-imported, so a change to its words is a
+  re-generation of the whole variant.
+- **`download` caches to `tools/art/cache/frames/`, keyed on the URL PATH**
+  (the query carries a per-request timestamp). A whole-table import is fifteen
+  minutes of frames and one flaky object used to throw all of it away; a rerun
+  now picks up where the last got to. It also caps concurrency at 6 and retries
+  eight times — 502, a 200 carrying HTML, and a cut transfer are three faces of
+  one throttle, and only the first looks like an error.
 
 - **The ground is CUT by three rules seeing different halves.** `defloor` by
   COLOUR (what spills beside the body and is almost nowhere above it);

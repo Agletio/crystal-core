@@ -26,7 +26,7 @@ type Body = {
   off?: string;
   states: Record<string, State>;
 };
-type Weapon = { say: string; attack: string; carry?: string; noun: string; pair?: boolean };
+type Weapon = { say: string; attack: string; cast?: string; carry?: string; noun: string; pair?: boolean };
 
 const here = (f: string) => new URL(`./${f}`, import.meta.url).pathname;
 const words = JSON.parse(readFileSync(here('weapons.json'), 'utf8')) as {
@@ -75,11 +75,17 @@ export function compose(body: Body, name: string, from: State): string {
   const off = body.off && body.off !== body.weapon ? words.weapons[body.off] : undefined;
 
   // An ATTACK is the WEAPON's swing, never the body's: a maul does not jab and
-  // a bow does not smash, which is the whole reason a body holds its own.
+  // a bow does not smash, which is the whole reason a body holds its own. A
+  // CAST may be the weapon's too, and for the same reason: a base body throws
+  // a spell from BOTH OPEN PALMS, and a hand asked to open is a hand that lets
+  // go — the wand came back absent from nine frames of eleven.
+  const spell = name === 'cast' ? (weapon?.cast ?? off?.cast) : undefined;
   const middle =
     name === 'attack'
       ? `${weapon?.attack ?? off?.attack ?? from.say}, ${ONCE}`
-      : `${strip(from.say, lead)}${name === 'cast' || name === 'death' ? ', seen at a three-quarter angle.' : '.'}`;
+      : spell
+        ? `${spell}, seen at a three-quarter angle.`
+        : `${strip(from.say, lead)}${name === 'cast' || name === 'death' ? ', seen at a three-quarter angle.' : '.'}`;
 
   const carries = name === 'attack' ? [] : [weapon?.carry, off?.carry].filter(Boolean);
   return [
