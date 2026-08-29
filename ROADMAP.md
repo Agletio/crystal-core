@@ -62,7 +62,7 @@ to look:
 
 | | |
 |---|---|
-| a shard is a DECISION | `perRun` 0.9 → 0.18 and the counter 10× dearer; measured 0.25 a clear against 2.5 pieces of gear |
+| a shard is a DECISION | `perRun` 0.9 → 0.18 and the counter 10× dearer; measured 0.21 a clear against 1.3 pieces of gear |
 | the budget is WHOLE | a fractional `left / bodiesLeft` paid `left × H(bodies)`, so the table was never what arrived |
 | a lock is an OCCASION | `HOARD.mostPerRun` — per PACK the deep end put down 24 Veins a descent |
 | a counter is a PERSON'S | `SceneDef.keeps`; the shop is the Lampwright's, and clicking anybody asks what you want of them |
@@ -959,7 +959,7 @@ of that curve at about **two gear drops a clear** across 8 gear kinds.
   extend item level past 70 so both caps move together, or accept that
   difficulty ends at The Refraction. **Asked; not answered.**
 
-**Done when.** A clear pays two or three pieces at every band, each arriving
+**Done when.** A clear pays one or two pieces at every band, each arriving
 finished enough to judge; a Perfect base is an event; and adding a modifier
 costs a descent rather than five gold.
 

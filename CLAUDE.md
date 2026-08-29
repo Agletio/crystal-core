@@ -304,7 +304,7 @@ save currency for is one with good lines and room to add**, which is the whole
 of what makes scarce currency a decision rather than a tax — *"the currency
 needs to be rare enough you need to wait to find an item that's good enough to
 start using it on."* **A SHARD IS A DECISION ABOUT ONE PIECE**: measured, the
-bare Fissure pays 0.25 a clear against 2.5 pieces of gear, and the counter's
+bare Fissure pays 0.21 a clear against 1.3 pieces of gear, and the counter's
 first one is several descents of saving.
 
 **A BUDGET IS SETTLED TO A WHOLE NUMBER BEFORE IT IS SPREAD.**

@@ -3264,15 +3264,16 @@ export interface DropBand {
 }
 
 export const DROP_BANDS: DropBand[] = [
-  // TWO OR THREE A CLEAR AT EVERY BAND, and it is now the figure that ARRIVES.
-  { fill: [0.4, 0.5], currency: 'basic', gearPerRun: 2.4, ilvl: 10 },
-  { fill: [0.4, 0.55], currency: 'basic', gearPerRun: 2.5, ilvl: 10 },
-  { fill: [0.45, 0.6], currency: 'uncommon', gearPerRun: 2.5, ilvl: 22 },
-  { fill: [0.5, 0.65], currency: 'uncommon', gearPerRun: 2.6, ilvl: 34 },
+  // ONE OR TWO A CLEAR AT EVERY BAND — halved at the user's word, and it is
+  // the figure that ARRIVES rather than one a lock rides over.
+  { fill: [0.4, 0.5], currency: 'basic', gearPerRun: 1.2, ilvl: 10 },
+  { fill: [0.4, 0.55], currency: 'basic', gearPerRun: 1.25, ilvl: 10 },
+  { fill: [0.45, 0.6], currency: 'uncommon', gearPerRun: 1.25, ilvl: 22 },
+  { fill: [0.5, 0.65], currency: 'uncommon', gearPerRun: 1.3, ilvl: 34 },
   // Where a build becomes possible: tier 3 bases, six modifiers apiece.
-  { fill: [0.5, 0.7], currency: 'rare', gearPerRun: 2.6, ilvl: 46 },
-  { fill: [0.55, 0.75], currency: 'rare', gearPerRun: 2.7, ilvl: 58 },
-  { fill: [0.6, 0.85], currency: 'exotic', gearPerRun: 2.7, ilvl: 70 },
+  { fill: [0.5, 0.7], currency: 'rare', gearPerRun: 1.3, ilvl: 46 },
+  { fill: [0.55, 0.75], currency: 'rare', gearPerRun: 1.35, ilvl: 58 },
+  { fill: [0.6, 0.85], currency: 'exotic', gearPerRun: 1.35, ilvl: 70 },
 ];
 
 
