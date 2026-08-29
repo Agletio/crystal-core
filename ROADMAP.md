@@ -168,15 +168,25 @@ thing at a time"* — so what comes next is whatever playing it turns up.
 
 ### Live known issues
 
-- **THE OFF-HAND WAND PAIRS ARE STILL ASKING FOR WORDS THEY WERE NOT GENERATED
-  WITH, and it is NOT the cast fault.** `variant.mts check` reports
-  `<mahthar|obreth>_<sword|dagger|mace>_wand` on ALL FIVE states, which is drift
-  from earlier `carry` vocabulary edits that were never swept — it predates the
-  `weapon.cast` seam and none of those rows is wand-DRIVEN (their `off` is
-  `wand_off`, which has no `cast`). Nobody has looked at whether their art is
-  actually wrong. The same pre-existing drift sits on every `_shield` row and
-  every non-wand pair; a sweep is 36 rows and about 470 generations, and it
-  should start by LOOKING rather than by generating.
+- **THE VARIANT DRIFT HAS BEEN AUDITED, and it is mostly NOT a fault.** All 28
+  drifted sprites were LOOKED at with `audit.mts` (the runbook is in the `art`
+  skill). Twenty-two are fine: their words moved on and their art is right, so
+  they are left alone and `variant.mts check` reporting them is the tool doing
+  its job. **Six were bad DRAWS and were re-rolled** — `aethermancer_shield`,
+  `alchemist_dagger_shield` and `alchemist_sword_shield` lost the shield
+  mid-cast, `mahthar_shield` grew a second one, `obreth_shield` had it floating
+  detached, and `mahthar_dagger_wand` cast with both hands empty.
+  **The words were NOT the cause and the check proved it**: the shield's
+  `carry` anchor ("exactly ONE shield… on that one arm") is present in 3 of the
+  5 broken rows and absent from 4 of the 9 good ones, so it separates nothing.
+  Assuming a vocabulary fix would have bought ~470 generations of the wrong
+  repair. **Three of the six landed on the re-roll**, `mahthar_shield` and
+  `obreth_shield` MISSED and were windowed at the tail instead, and
+  **`alchemist_dagger_shield` still drops its shield for ONE frame of five** —
+  mid-run, so it cannot be windowed, and it is the one thing this sweep leaves
+  visibly imperfect. **What is left besides it is the other 22 rows' WORDS**,
+  which keep showing in `check` until somebody re-rolls art nobody has found
+  anything wrong with — a decision, not a task.
 - **`obreth_mace2h`'s attack frame 4 is GONE from the store.** It answers 200
   with `Content-Length: 3234` and then closes having sent no body, every time,
   from curl as well as from the importer. `tables.mts` now KEEPS what shipped

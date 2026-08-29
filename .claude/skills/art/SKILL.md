@@ -264,6 +264,42 @@ of that and the BASE body's own states.
   his shoulder" to buy room came back pointing DOWN and forward, because the
   generator hears *back* as trailing behind.
 
+### Auditing art that already shipped — the sweep runbook
+
+Do this whole loop before spending a generation. Steps 1–3 are free.
+
+1. **`npx tsx tools/art/audit.mts drift [state]`** — every state whose composed
+   words differ from what its row holds, grouped by state, ending in a list of
+   sprites you can paste straight back in. A row differs because somebody
+   changed the vocabulary and never re-rolled the art, so **a difference is a
+   SUSPICION, not a fault.**
+2. **LOOK.** `npx tsx tools/art/audit.mts <state> out.png <sprite…|--drift>`
+   draws that ONE state across every named body, one row each, off `GENERATED`
+   — what the game reads. Thirty bodies in one picture is the only way the odd
+   one out is visible; `shipped.mts` answers "is this body right", which is a
+   different question and thirty pictures nobody compares.
+3. **Decide per row, and write down which.** A fault that is really there, a
+   difference in WORDS with art that is fine, or a tail that drifts. **Most
+   drift is not a fault**: of 28 rows audited, 22 were right and were left
+   alone, and a `check` that keeps reporting them is the tool doing its job.
+4. **Ask whether the WORDS are the cause before believing they are.** Split the
+   rows into the ones that came out right and the ones that did not, and see
+   whether the clause you suspect actually separates them. The shield's own
+   `carry` anchor sat in 3 of 5 BROKEN rows and was missing from 4 of 9 GOOD
+   ones — it separates nothing, so those five were bad DRAWS and a vocabulary
+   fix would have been ~470 generations of the wrong repair. A re-roll of a bad
+   draw may miss again; that is normal and it is cheap.
+5. **Fix the WORDS first if they are wrong for some rows** — a weapon row that
+   speaks for the other hand is a lie on every row with something in it, and
+   generating before fixing it buys the wrong art at full price.
+6. **`variant.mts write <sprite…> --state <name>`** — one state, never the row.
+7. **`body.mts state <sprite> <name>`** per sprite, then `body.mts watch`.
+8. **Judge the SERVER's sheet** (`body.mts sheet`), set `frames`/`from`/`to`,
+   `tables.mts bodies`, then **look at what SHIPPED again with `audit.mts`** —
+   the window and the fitting happen at import and change what you get.
+9. **Diff the blast radius**: split `generated-art.ts` on its sprite keys and
+   list which changed. It must be exactly the rows you swept.
+
 ### Dressing a body
 
 `create_character_state` applies ONE edit across every rotation for one

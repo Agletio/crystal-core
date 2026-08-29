@@ -1316,7 +1316,7 @@
     },
     "cast": {
      "frames": 10,
-     "say": "Casting with his knife and his round shield, a three-beat OVERARM THROW seen at a three-quarter angle: first he cocks one arm back past his ear holding a small flask, weight on the back foot, then he strides through onto the front foot and slings the arm forward and down releasing it, torso twisting round after the arm, then he recovers upright with the arm hanging. Whole body turns into it, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Casting with his knife and his round shield, a three-beat OVERARM THROW seen at a three-quarter angle: first he cocks one arm back past his ear holding a small flask, weight on the back foot, then he strides through onto the front foot and slings the arm forward and down releasing it, torso twisting round after the arm, then he recovers upright with the arm hanging. Whole body turns into it, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down. There is exactly ONE shield in the picture, on that one arm, in every frame. There is no second shield anywhere, and nothing round is slung on his back or his shoulder."
     },
     "death": {
      "frames": 6,
@@ -1564,7 +1564,7 @@
     },
     "cast": {
      "frames": 10,
-     "say": "Casting with his round shield, a three-beat SPELL THROW seen at a three-quarter angle: first he drops his weight onto the back foot and draws both hands in to his chest with the fingers curling, then he steps through onto the front foot and hurls both open palms forward and up to full arm's length, head following the throw, then his arms fall and he settles back upright. Whole body turns into it, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Casting with his round shield, a three-beat SPELL THROW seen at a three-quarter angle: first he drops his weight onto the back foot and draws both hands in to his chest with the fingers curling, then he steps through onto the front foot and hurls both open palms forward and up to full arm's length, head following the throw, then his arms fall and he settles back upright. Whole body turns into it, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down. There is exactly ONE shield in the picture, on that one arm, in every frame. There is no second shield anywhere, and nothing round is slung on his back or his shoulder."
     },
     "death": {
      "frames": 6,
@@ -2855,7 +2855,7 @@
     },
     "cast": {
      "frames": 4,
-     "say": "Casting with his knife, strict side profile, planting both feet wide and hauling both fists in to the chest, then throwing the head back and roaring with the arms flung out, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down."
+     "say": "Casting with his knife and his wand in the other hand, strict side profile, planting both feet wide and hauling both fists in to the chest, then throwing the head back and roaring with the arms flung out, seen at a three-quarter angle. He keeps hold of it in EVERY frame and never lets go of it or puts it down. He holds one weapon in EACH hand in EVERY frame and never lets go of either. There is nothing slung on his back and nothing crossed over his chest."
     },
     "death": {
      "frames": 4,

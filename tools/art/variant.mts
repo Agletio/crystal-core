@@ -48,8 +48,7 @@ const LEAD: Record<string, string> = {
   death: 'Dying',
 };
 
-/** Said of an ATTACK, and of nothing else: the renderer holds a one-shot
- *  state's LAST frame, so a beat that settles back is the pose it ends in. */
+/** An ATTACK only: the renderer holds a one-shot state's LAST frame. */
 const ONCE =
   'seen at a three-quarter angle. He faces the same way in EVERY frame and never turns away '
   + 'from the viewer, and the animation ENDS at full extension with no recovery and no '
@@ -108,7 +107,24 @@ export function compose(body: Body, name: string, from: State): string {
 const strip = (say: string, lead: string): string =>
   say.toLowerCase().startsWith(`${lead.toLowerCase()} `) ? say.slice(lead.length + 1) : say;
 
-const [command, ...only] = process.argv.slice(2);
+/** Every state asking for art nobody generated with its words. */
+export function drifted(): Array<{ sprite: string; state: string; is: string; want: string }> {
+  const out: Array<{ sprite: string; state: string; is: string; want: string }> = [];
+  for (const body of variants) {
+    const from = base(body.sprite);
+    if (!from) continue;
+    for (const [state, held] of Object.entries(body.states)) {
+      const want = compose(body, state, from.states[state] ?? held);
+      if (want !== held.say) out.push({ sprite: body.sprite, state, is: held.say, want });
+    }
+  }
+  return out;
+}
+
+/** RUN ONLY AS AN ENTRY POINT: these are scripts with a top-level dispatch, so
+ *  importing one to reuse a function used to RUN it — `audit.mts write x` wrote. */
+const RUNNING = process.argv[1] && import.meta.url.endsWith(process.argv[1].split('/').pop() ?? '\0');
+const [command, ...only] = RUNNING ? process.argv.slice(2) : [];
 
 /** WHAT ONE HERO CARRIES: nine weapons, and the four one-handers with a shield
  *  strapped to the other arm. `dressbody.sh` walks this same list. */
@@ -194,19 +210,12 @@ if (command === 'manifest') {
 
 const variants = book.bodies.filter((b) => b.sprite.includes('_') && (b.weapon || b.off));
 
-if (command === 'check') {
-  let differ = 0;
-  for (const body of variants) {
-    const from = base(body.sprite);
-    if (!from) continue;
-    for (const [name, state] of Object.entries(body.states)) {
-      const want = compose(body, name, from.states[name] ?? state);
-      if (want === state.say) continue;
-      differ++;
-      console.log(`${body.sprite}/${name}\n  is:   ${state.say}\n  want: ${want}\n`);
-    }
-  }
-  console.log(`${variants.length} variants, ${differ} state(s) differ`);
+if (!RUNNING) {
+  void 0; // imported for `drifted`
+} else if (command === 'check') {
+  const off = drifted();
+  for (const d of off) console.log(`${d.sprite}/${d.state}\n  is:   ${d.is}\n  want: ${d.want}\n`);
+  console.log(`${variants.length} variants, ${off.length} state(s) differ`);
 } else if (command === 'write') {
   // `--state <name>` rewrites ONE and leaves the rest: a row's words are the
   // words its art was ASKED with, so rewriting five to change one lies about four.
