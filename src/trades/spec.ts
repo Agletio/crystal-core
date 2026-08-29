@@ -32,6 +32,7 @@ export interface TradeSpec {
   blurb: string; // the rule it changes, in one line: what the picker shows
   lore: string; // who he IS, where the blurb is the rule he changes
   prefix: string; // node ids start `${prefix}_`, and a save points at them
+  skill: string; // THE SKILL HE COMES DOWN HOLDING; the Skills screen swaps it
   sprite?: string; // the generated body he is DRAWN as; omitted, the base man
   dualWields?: boolean; // DUAL WIELDING IS ONE TRADE'S PRIVILEGE: this grants it
   spokes: Spoke[]; // five; buildTrade refuses anything else

@@ -11,12 +11,12 @@
  * than through the icon machinery — an icon is one frame, and a room of
  * statues reads as a menu.
  */
-import { TRADE } from '../data';
-import { TRADES } from '../trades';
+import { SKILL_BY_ID, TRADE } from '../data';
+import { TRADES, TRADE_BY_ID } from '../trades';
 import { GENERATED } from '../render/generated-art';
 import { HERO_SPRITE } from '../sim/appearance';
 import { IDLE_CYCLE } from '../render/sprites';
-import { takeUpTrade } from '../sim/character';
+import { equipSkill, takeUpTrade } from '../sim/character';
 import type { BuiltTrade } from '../trades';
 import type { GameState } from '../game/state';
 
@@ -161,6 +161,8 @@ function look(tradeId: string): void {
   box.append(el('h3', 'picksay__name', trade.spec.name));
   box.append(el('p', 'picksay__lore', trade.spec.lore));
   box.append(el('p', 'picksay__rule', trade.spec.blurb));
+  const opens = SKILL_BY_ID[trade.spec.skill];
+  if (opens) box.append(el('p', 'picksay__arms', `Comes down holding ${opens.name}.`));
   box.append(roads(trade));
   box.append(
     el(
@@ -179,8 +181,12 @@ function look(tradeId: string): void {
   box.hidden = false;
 }
 
+/** A trade comes with a way to FIGHT. Here rather than in `takeUpTrade`, which
+ *  a later trade CHANGE also runs — that must not swap what you are swinging. */
 function choose(tradeId: string): void {
   if (!takeUpTrade(game.character, tradeId)) return;
+  const skill = TRADE_BY_ID[tradeId]?.spec.skill;
+  if (skill) equipSkill(game.character, skill);
   closePick();
   onChosen?.();
 }

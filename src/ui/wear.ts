@@ -8,6 +8,8 @@
 import { equipItem, handClash } from '../game/state';
 import type { GameState } from '../game/state';
 import { EQUIP_SLOTS } from '../data';
+import { warnAtCamp } from './atcamp';
+import { inDescent } from './run';
 import { note } from './history';
 import { toast } from './toast';
 import type { Item } from '../types';
@@ -32,6 +34,7 @@ export function wear(game: GameState, item: Item, slotId: string): boolean {
   }
 
   const slot = EQUIP_SLOTS.find((s) => s.id === slotId);
+  if (inDescent()) warnAtCamp();
   note(`Equipped ${item.name}`);
   if (displaced) note(`${displaced.name} came off — ${item.name} takes both hands`);
   after?.();

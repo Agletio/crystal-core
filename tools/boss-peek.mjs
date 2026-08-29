@@ -41,7 +41,7 @@ async function makeCharacter() {
   await page.waitForTimeout(250);
   await page.evaluate(() => document.getElementById('pick-take')?.click());
   await page.waitForTimeout(250);
-  await page.evaluate(() => document.querySelector('#welcome-skills .welcomecard')?.click());
+  await page.evaluate(() => document.getElementById('welcome-go')?.click());
   await page.waitForTimeout(700);
 }
 

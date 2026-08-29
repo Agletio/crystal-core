@@ -111,11 +111,18 @@ assert($('pick').hidden === true, 'taking him closes the hall');
 // A slot can hold a game that was never asked what it swings, so playing one
 // still puts the question up rather than assuming a save answered it.
 assert($('welcome').hidden === false, 'and a game with no skill still asks for one');
-assert(all('#welcome-skills .welcomecard').length === 8, 'all 8 main skills offered');
+// The TRADE brings a skill with it, so the only question left is the name —
+// asking for a skill here was the cast hall's question a second time.
+assert(all('#welcome-skills .welcomecard').length === 0, 'and no longer offers a skill of its own');
 assert($('welcome-name') !== null, 'and asks who you are');
+assert(
+  /rimespike/i.test(text('welcome-arms')),
+  'saying what the trade you took is holding',
+  text('welcome-arms')
+);
 
 $('welcome-name').value = 'Vespera';
-all('#welcome-skills .welcomecard')[0].click();
+$('welcome-go').click();
 assert(text('run-name') === 'Vespera', 'the chosen name is kept', text('run-name'));
 assert($('welcome').hidden === true, 'choosing dismisses the prompt');
 assert($('craft').hidden === true, 'and drops you at the Fissure, not the bench');
@@ -2994,7 +3001,7 @@ assert(
   $('pick-rogue').click();
   $('pick-take').click();
   $('welcome-name').value = 'Sallow';
-  all('#welcome-skills .welcomecard')[0].click();
+  $('welcome-go').click();
 
   $('open-character').click();
   if ($('slot-offhand').classList.contains('slotcell__btn--worn')) $('slot-offhand').click();

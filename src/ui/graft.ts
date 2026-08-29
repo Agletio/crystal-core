@@ -17,7 +17,7 @@ import { describeStatLine } from '../mod-text';
 import { GRANT_BY_ID } from '../sim/grants';
 import type { Item } from '../types';
 import { note } from './history';
-import { itemIcon, portraitIcon } from './icons';
+import { FACE, itemIcon, portraitIcon } from './icons';
 import { itemCard } from './itemcard';
 import { attachTooltip, hideTooltip } from './tooltip';
 import { renderInventory, setInventoryHandler } from './inventory';
@@ -176,7 +176,7 @@ export function openGraft(def: SceneDef, held: Item): void {
 
   const face = $('graft-face');
   face.replaceChildren();
-  const portrait = portraitIcon(def.who, 52);
+  const portrait = portraitIcon(def.who, FACE.panel);
   if (portrait) face.append(portrait);
   $('graft-title').textContent = def.name;
 

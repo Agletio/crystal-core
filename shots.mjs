@@ -72,6 +72,51 @@ const overflowProbe = () => {
   return worst ? { past: Math.round(worst - cw), who: String(who).split(' ')[0] } : null;
 };
 
+/**
+ * Does the window frame's INTERIOR reach its art? A 9-slice's border is
+ * transparent wherever the art is thinner than the slice, and the world behind
+ * shows through the difference — a 1px line along the top and a 4px one along
+ * the bottom of every window, until the border was set to the art's own
+ * thickness. Measured off the fixture rather than written down, so a
+ * regenerated frame cannot quietly reopen it.
+ */
+const fitProbe = async () => {
+  const card = document.querySelector('.modal:not([hidden]) .modal__card');
+  if (!card) return null;
+  const cs = getComputedStyle(card);
+  const src = getComputedStyle(document.documentElement)
+    .getPropertyValue('--fix-win').trim().replace(/^url\(["']?|["']?\)$/g, '');
+  const img = new Image();
+  img.src = src;
+  await img.decode();
+  const c = document.createElement('canvas');
+  c.width = img.width;
+  c.height = img.height;
+  const ctx = c.getContext('2d');
+  ctx.drawImage(img, 0, 0);
+  const d = ctx.getImageData(0, 0, c.width, c.height).data;
+  const a = (x, y) => d[(y * c.width + x) * 4 + 3];
+
+  // Past the corner slices, which are solid and would swamp the reading.
+  const SLICE = parseFloat(cs.borderImageSlice);
+  const thinnest = (n, walk) => {
+    let least = Infinity;
+    for (let i = SLICE; i < n - SLICE; i++) least = Math.min(least, walk(i));
+    return least;
+  };
+  const art = {
+    Top: thinnest(c.width, (x) => { let t = 0; while (t < c.height && a(x, t) > 8) t++; return t; }),
+    Bottom: thinnest(c.width, (x) => { let b = 0; while (b < c.height && a(x, c.height - 1 - b) > 8) b++; return b; }),
+    Left: thinnest(c.height, (y) => { let l = 0; while (l < c.width && a(l, y) > 8) l++; return l; }),
+    Right: thinnest(c.height, (y) => { let r = 0; while (r < c.width && a(c.width - 1 - r, y) > 8) r++; return r; }),
+  };
+
+  const off = Object.entries(art)
+    .filter(([side, reach]) => parseFloat(cs[`border${side}Width`]) !== reach)
+    .map(([side, reach]) => `${side.toLowerCase()} border ${cs[`border${side}Width`]} against ${reach}px of art`);
+  return off.length ? `the window frame leaves a gap: ${off.join(', ')}` : null;
+};
+
 /** Can a drag still reach the map? It sits UNDER the shell, so a wrapper that
  *  forgets `pointer-events: none` kills the whole camera at once — and the page
  *  looks perfectly correct while it does. */
@@ -163,6 +208,8 @@ for (const vp of VIEWPORTS) {
     if (deaf) problems.push(`${vp.name}/${state}: ${deaf}`);
     const mute = await page.evaluate(hudProbe);
     if (mute) problems.push(`${vp.name}/${state}: ${mute}`);
+    const short = await page.evaluate(fitProbe);
+    if (short) problems.push(`${vp.name}/${state}: ${short}`);
   };
 
   // The only screen that is a PICTURE: two worlds meeting on a front.
@@ -188,12 +235,24 @@ for (const vp of VIEWPORTS) {
   await page.evaluate(() => document.getElementById('pick-take')?.click());
   await page.waitForTimeout(250);
   await shoot('welcome');
-  await page.evaluate(() => {
-    const cards = [...document.querySelectorAll('#welcome-skills .welcomecard')];
-    const blight = cards.find((c) => /blight/i.test(c.textContent ?? ''));
-    (blight ?? cards[0])?.click();
-  });
+  await page.evaluate(() => document.getElementById('welcome-go')?.click());
   await page.waitForTimeout(700);
+  // A trade brings its own skill now, so a shot that wants a particular one
+  // swaps it the way a player does — through the shelf, then Equip.
+  await page.evaluate(() => {
+    document.getElementById('open-skills')?.click();
+    for (const shelf of document.querySelectorAll('#skills-cats .catcard')) {
+      shelf.click();
+      const tile = [...document.querySelectorAll('#skills-list .skilltile')]
+        .find((t) => /blight/i.test(t.textContent ?? ''));
+      if (tile) return void tile.click();
+    }
+  });
+  await page.waitForTimeout(300);
+  await page.evaluate(() => document.getElementById('skills-equip')?.click());
+  await page.waitForTimeout(200);
+  await page.evaluate(() => document.getElementById('skills-close')?.click());
+  await page.waitForTimeout(400);
 
   // THE SCREEN THE GAME OPENS ON, straight off the welcome — *"It should just
   // be you pick character/name/skill and land in the town."* No room in
@@ -538,7 +597,7 @@ for (const vp of VIEWPORTS) {
   await page.evaluate(() => document.getElementById('pick-take')?.click());
   await page.evaluate(() => {
     document.getElementById('welcome-name').value = 'Vespera';
-    document.querySelector('#welcome-skills .welcomecard')?.click();
+    document.getElementById('welcome-go')?.click();
   });
   await page.waitForTimeout(500);
   // The tooltip below is a REAL hover, which a hidden slot refuses.

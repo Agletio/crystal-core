@@ -3627,7 +3627,7 @@ export const SKILLS: SkillDef[] = [
     requires: 'melee',
     name: 'Strike',
     category: 'attack',
-    description: 'A hard melee blow. One enemy, until its tree buys Echoes.',
+    description: 'A hard melee blow. One enemy.',
     tags: ['attack', 'melee'],
     behaviour: 'melee',
     damageTypes: ['physical'],
@@ -3650,7 +3650,7 @@ export const SKILLS: SkillDef[] = [
     category: 'attack',
     description:
       'You step through the room to behind one enemy and open on it. One ' +
-      'target, from 5.5 tiles, and it crits at 25% before anything you wear.',
+      'target, from 5.5 tiles, and it crits at 25%.',
     tags: ['attack', 'melee'],
     behaviour: 'ambush',
     damageTypes: ['physical'],
@@ -3723,7 +3723,7 @@ export const SKILLS: SkillDef[] = [
     name: 'Fireball',
     category: 'spell',
     description:
-      'A ball of fire at range. One target, until its tree says otherwise.',
+      'A ball of fire at range. One target.',
     tags: ['spell', 'projectile'],
     behaviour: 'projectile',
     damageTypes: ['fire'],

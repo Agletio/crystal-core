@@ -379,9 +379,13 @@ other hand instead. **A pair is ORDERLESS in art and ORDERED in stats** —
 `variants()` sorts it, so which hand you filled never asks for a second picture.
 
 **A character is a trade, a main skill, two more slots and a bag.** Making one
-is a trade, a name and a skill, and then you are STANDING IN THE CAMP holding
-the weapon that skill wants — *"It should just be you pick character/name/skill
-and land in the town."* There is no opening room; `armForSkill` is what puts it
+is a trade and a NAME, and then you are STANDING IN THE CAMP holding the weapon
+that skill wants — *"It should just be you pick character/name/skill and land in
+the town."* **A TRADE COMES DOWN HOLDING SOMETHING** (`TradeSpec.skill`, equipped
+where the trade is taken and never in `takeUpTrade`, which a later trade CHANGE
+also runs), so the welcome asks the one thing the cast hall cannot: eight skills
+offered before anybody has seen one work was the same question twice. There is
+no opening room; `armForSkill` is what puts the weapon
 in your hand. The trade is what the hero LOOKS like; it is funded
 by character level out of its own budget, so it survives every skill you swap.
 Four of them: potions as an engine, mana as one, **what is in your other hand**

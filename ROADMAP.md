@@ -62,6 +62,14 @@ to look:
 
 | | |
 |---|---|
+| a trade comes ARMED | `TradeSpec.skill`, equipped where the trade is TAKEN; the welcome is the name alone |
+| the Skills rail glows | `GameState.skillsSeen` / `cameBack`, `.railbtn--new` until it has been opened once |
+| change it at CAMP | `src/ui/atcamp.ts` — a change made mid-descent says where it takes effect |
+| the XP bar | ticks at 5% and 25%, layered gradients, and an edge |
+| the frame FITS | `--win-edge` is the art's own thickness — 29/28/26/30 inside a slice of 30, so no world shows through |
+| a face in a FRAME | `FACE.panel` is 78 against the bubble's 52; one table, three call sites |
+| the shelf holds still | `.skilllist` takes the window's height, the equipped tag's line is reserved, the gutter is stable |
+| the Bleed check | what it CLAIMS is an ailment landing, asserted off the bodies; the timing is a gauge, because a clear is walking |
 | crit on the SKILL | `SkillDef.critChance`; every gear crit line is INCREASED, the tree keeps flat, one seam in `heroStats` |
 | Ambush | the eighth main skill: the `ambush` behaviour, `SkillUse.blink`, `AMBUSH` in `src/data.ts`, `src/trees/ambush.ts` |
 | the Relay | a Critical teleports you into the next body and pays for it; `critChain`, `RunState.relays`, and `SIM` in `src/sim/grants.ts` |
@@ -893,10 +901,14 @@ of that curve at about **two gear drops a clear** across 8 gear kinds.
 - ~~**LOOT IS SOMETHING YOU WATCH ARRIVE.**~~ **DONE.** `RunState.ground`
   holds what dropped and WHERE, through one seam (`lay`) so a piece cannot
   enter a run without landing somewhere. `lootRank` is one answer the sim and
-  both renderers read; the name draws under the beam in its own colour; the
-  hero collects between fights, past `acquireTarget`, which is what "not
-  fighting" MEANS. A drop with no route is flagged `stuck` once and never
-  chased again — measured, 24 runs and none still running at the cap.
+  both renderers read, the name draws under the beam in its own colour, and a
+  drop wears its own INVENTORY icon — `bakedGearIcon` bakes the grid to a
+  canvas, since an SVG data URI does not resolve synchronously in Pixi.
+  **It is GATHERED, never walked to** — *"just before they walk into the stairs
+  at the end… a brief 1-2 second channel thing that happens and sucks up all
+  the loot"* — `GATHER` at the mouth, and **`elapsed` is HELD through it**,
+  because the clock is the fight's and the gather is presentation after it.
+  The walk to each drop is gone, and `Ground.stuck` with it.
 - **THE CHEST — BLOCKED ON GENERATIONS, and the pipeline is written down.**
   *"I want it to be a chest that will actually open and when you kill all the
   mobs your character walks up and opens it… the art needs to look open."*

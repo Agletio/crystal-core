@@ -24,6 +24,7 @@ export const WARRIOR_TRADE: TradeSpec = {
     'fight that was worth it, which is most of them. He wears no shirt because ' +
     'the rock is warm and because what is written on him is the only armour he ' +
     'trusts.',
+  skill: 'strike',
   prefix: 'mah',
   sprite: 'mahthar',
   needs: {},

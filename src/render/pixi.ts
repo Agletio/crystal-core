@@ -19,6 +19,7 @@ import { AURA, AURA_BY_ID,
 } from '../data';
 import { ENTRANCE, EXIT, WALL, wangKey } from '../sim/grid';
 import { tileNoise } from '../noise';
+import { bakedGearIcon } from '../ui/webicons';
 import { ATTACK_POSE, DEATH_FADE } from '../sim/run';
 import type { Entity, RunState } from '../sim/run';
 import type { GameMap } from '../sim/grid';
@@ -193,13 +194,16 @@ export async function createPixiRenderer(
   /** Effect art that lies ON the floor, under everything standing on it. */
   /** UNDER the bodies: a drop is on the floor and the hero walks in front. */
   const lootLayer = new Graphics();
+  /** The pieces themselves, each its own inventory icon. */
+  const lootArtLayer = new Container();
+  const lootArt: Sprite[] = [];
   const vfxGroundLayer = new Container();
   const vfxArtLayer = new Container();
   const entityLayer = new Container();
   const textLayer = new Container();
 
   world.addChild(
-    groundLayer, wallLayer, mapLayer, propLayer, auraLayer, lootLayer, vfxGroundLayer,
+    groundLayer, wallLayer, mapLayer, propLayer, auraLayer, lootLayer, lootArtLayer, vfxGroundLayer,
     entityLayer, vfxLayer, vfxArtLayer
   );
   app.stage.addChild(world, textLayer);
@@ -918,7 +922,7 @@ export async function createPixiRenderer(
    *  light out of it, in the item's own rank colour. Nothing is picked up. */
   function drawLoot(state: RunState): void {
     lootLayer.clear();
-    for (const drop of state.ground) {
+    state.ground.forEach((drop, i) => {
       const beam = lootBeam(palette, drop.rank);
       const colour = toHexNumber(beam.colour);
       const x = cx(drop.x);
@@ -927,16 +931,40 @@ export async function createPixiRenderer(
       // size — belongs nowhere in here; it is what hairline WIDTHS convert by.
       const pulse = 0.85 + 0.15 * Math.sin(state.elapsed * 2.2 + drop.x);
       lootLayer.ellipse(x, y, 0.3, 0.15).fill({ color: colour, alpha: beam.lit * 0.4 });
+      // THE PIECE ITSELF: the same icon the bag draws, baked transparent, so a
+      // drop is a thing you recognise rather than a light with a word on it.
+      const url = bakedGearIcon(String(drop.item.meta.art ?? 'body'));
+      let piece = lootArt[i];
+      if (url) {
+        if (!piece) {
+          piece = new Sprite();
+          piece.anchor.set(0.5, 0.85);
+          lootArtLayer.addChild(piece);
+          lootArt[i] = piece;
+        }
+        piece.texture = Texture.from(url);
+        piece.visible = true;
+        // Sized in TILES like everything else on this layer, off the icon's own
+        // shape so a tall piece is not squashed into a square.
+        const wide = 0.8;
+        piece.width = wide;
+        piece.height = piece.texture.height > 0
+          ? (wide * piece.texture.height) / Math.max(1, piece.texture.width)
+          : wide;
+        piece.x = x;
+        piece.y = y;
+      } else if (piece) piece.visible = false;
       // Narrowing bands, not one rectangle: fading as it rises reads as light.
       const bands = 6;
-      for (let i = 0; i < bands; i++) {
-        const up = (i / bands) * beam.tall * pulse;
-        const wide = 0.13 * (1 - (i / bands) * 0.6);
-        const fade = beam.lit * (1 - i / bands) * 0.5;
-        lootLayer.rect(x - wide, y - up - 0.1, wide * 2, beam.tall / bands + 0.02)
+      for (let b = 0; b < bands; b++) {
+        const up = (b / bands) * beam.tall * pulse;
+        const thin = 0.13 * (1 - (b / bands) * 0.6);
+        const fade = beam.lit * (1 - b / bands) * 0.5;
+        lootLayer.rect(x - thin, y - up - 0.1, thin * 2, beam.tall / bands + 0.02)
           .fill({ color: colour, alpha: fade });
       }
-    }
+    });
+    for (let i = state.ground.length; i < lootArt.length; i++) lootArt[i].visible = false;
   }
 
   function drawOverlays(state: RunState): void {

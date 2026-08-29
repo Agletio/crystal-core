@@ -147,7 +147,7 @@ import type { SceneDef } from './scenes';
 import { COVER_PROPS, COVER_SET, FACE_FOOT, FACE_HEAD, FOOT, HUNG_PROPS, VIGNETTES, WALL_PROPS } from './vignettes';
 import { PROP_ART } from './render/generated-props';
 import { ZONES } from './render/generated-tiles';
-import type { RunState } from './sim/run';
+import type { Entity, RunState } from './sim/run';
 import {
   declaredCapacity,
   baseTier,
@@ -10903,18 +10903,37 @@ rule('GRAFTS — do a corpse and a handful of dust buy what no drop can roll?');
     JSON.stringify(treeGrants(wearing.character))
   );
 
-  // And it does something: the same character, the same seeds, with and
-  // without. A clear is mostly WALKING, so one map where the exit lands
-  // further from the entrance swamps what a Bleed is worth — and the ailment
-  // is worth about 1%, measured. Five seeds cannot see that: at five it reads
-  // 0.3% the WRONG way, at twelve 0.5% the right way, at twenty-four 1.0%. The
-  // claim is about the ailment rather than about a map, so it takes the sample
-  // that measures one — and twenty-four stopped being enough the moment the
-  // hit itself got bigger, which is what the sample has to out-measure.
+  // And it does something. What it does is LAND AN AILMENT, so that is what is
+  // asserted — deterministically, off the bodies themselves.
+  //
+  // It used to be timed instead, and a clear is mostly WALKING: measured over
+  // 96 seeds the Bleed is worth 1.5% of the kills by 30s and the clear-time
+  // gap around it swings 5% either way, so the timing said whatever the maps
+  // said. It is printed below as a gauge and fails nothing.
   const BLEED_SEEDS = 48;
   const bare = createGame('fresh');
   bare.inventory.push(makeGear('skirmisher_body_t1', 20));
   equipItem(bare, bare.inventory[0], 'body');
+
+  const bleeding = (who: typeof bare.character, seed: number): number => {
+    const run = new RunSim([], who, new Rng(seed));
+    const marked = new Set<Entity>();
+    while (run.state.status === 'running') {
+      run.step(1 / 30);
+      for (const m of run.state.monsters) {
+        if (m.ailments.some((a) => a.id === 'bleed')) marked.add(m);
+      }
+    }
+    return marked.size;
+  };
+  const bit = bleeding(wearing.character, 21);
+  check(bit > 0, `and every hit leaves one: ${bit} bodies bleeding in one descent`, String(bit));
+  check(
+    bleeding(bare.character, 21) === 0,
+    'and nothing bleeds without it, so the line is the whole of what did it',
+    'a bare chest left a body bleeding'
+  );
+
   const clear = (who: typeof bare.character): number => {
     let total = 0;
     for (let seed = 21; seed < 21 + BLEED_SEEDS; seed++) {
@@ -10924,12 +10943,9 @@ rule('GRAFTS — do a corpse and a handful of dust buy what no drop can roll?');
     }
     return total / BLEED_SEEDS;
   };
-  const before = clear(bare.character);
-  const after = clear(wearing.character);
-  check(
-    after < before,
-    `a Bleed on every hit clears the same ${BLEED_SEEDS} seeds faster: ${after.toFixed(1)}s against ${before.toFixed(1)}s`,
-    `${after.toFixed(1)}s against ${before.toFixed(1)}s`
+  gauge(
+    `worth ${(((clear(bare.character) - clear(wearing.character)) / clear(bare.character)) * 100).toFixed(1)}% ` +
+      `of a clear over ${BLEED_SEEDS} seeds — a figure the maps swamp, which is why it is not a check`
   );
 
   // --- jewellery, which has no implicit to replace ----------------------

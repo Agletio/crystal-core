@@ -768,6 +768,28 @@ function armourIcon(family: string, slot: string, size: number): SVGSVGElement |
   return sprite(rows, art.palette, size, `${family}-${slot}`);
 }
 
+/** The GRID behind a gear icon, so the bag's SVG and the floor's bitmap are one
+ *  silhouette rather than two that drift. */
+export function gearGrid(art: string): { rows: string[]; palette: Record<string, string>; name: string } {
+  // Weapon bases carry their FAMILY as their art key, not the word "weapon",
+  // so every family needs its own case or it falls through to body armour.
+  switch (art) {
+    case 'wand': return { rows: WAND, palette: GEAR, name: 'wand' };
+    case 'sword':
+    case 'weapon': return { rows: BLADE, palette: GEAR, name: 'weapon' };
+    case 'dagger': return { rows: DAGGER, palette: GEAR, name: 'dagger' };
+    case 'mace': return { rows: MACE, palette: GEAR, name: 'mace' };
+    case 'bow': return { rows: BOW, palette: GEAR, name: 'bow' };
+    case 'shield': return { rows: SHIELD, palette: GEAR, name: 'shield' };
+    case 'helmet': return { rows: HELMET, palette: GEAR, name: 'helmet' };
+    case 'gloves': return { rows: GLOVE, palette: GEAR, name: 'gloves' };
+    case 'boots': return { rows: BOOT, palette: LEATHER, name: 'boots' };
+    case 'amulet': return { rows: AMULET, palette: GEAR, name: 'amulet' };
+    case 'ring': return { rows: RING, palette: GEAR, name: 'ring' };
+    default: return { rows: BODY, palette: GEAR, name: 'body' };
+  }
+}
+
 export function gearIcon(art: string, size = 26): SVGSVGElement {
   const made = drawn(`gear_${art}`, size);
   if (made) return made;
@@ -777,35 +799,8 @@ export function gearIcon(art: string, size = 26): SVGSVGElement {
     const worn = armourIcon(art.slice(0, cut), art.slice(cut + 1), size);
     if (worn) return worn;
   }
-  // Weapon bases carry their FAMILY as their art key, not the word "weapon",
-  // so every family needs its own case or it falls through to body armour.
-  switch (art) {
-    case 'wand':
-      return sprite(WAND, GEAR, size, 'wand');
-    case 'sword':
-    case 'weapon':
-      return sprite(BLADE, GEAR, size, 'weapon');
-    case 'dagger':
-      return sprite(DAGGER, GEAR, size, 'dagger');
-    case 'mace':
-      return sprite(MACE, GEAR, size, 'mace');
-    case 'bow':
-      return sprite(BOW, GEAR, size, 'bow');
-    case 'shield':
-      return sprite(SHIELD, GEAR, size, 'shield');
-    case 'helmet':
-      return sprite(HELMET, GEAR, size, 'helmet');
-    case 'gloves':
-      return sprite(GLOVE, GEAR, size, 'gloves');
-    case 'boots':
-      return sprite(BOOT, LEATHER, size, 'boots');
-    case 'amulet':
-      return sprite(AMULET, GEAR, size, 'amulet');
-    case 'ring':
-      return sprite(RING, GEAR, size, 'ring');
-    default:
-      return sprite(BODY, GEAR, size, 'body');
-  }
+  const grid = gearGrid(art)!;
+  return sprite(grid.rows, grid.palette, size, grid.name);
 }
 
 const CLASS_COLOURS: Record<string, string> = {
@@ -1095,6 +1090,11 @@ export function beastIcon(id: string, size = 34): SVGSVGElement | null {
  * back to the map sprite, so a speaker with no portrait drawn yet is a small
  * picture rather than an empty box.
  */
+/** How big a face is drawn, in the two places one appears. A bubble is 300px
+ *  of 13px prose and a head reads against it at 52; a FRAMED panel puts the
+ *  same head beside a display-face title and it read as an afterthought. */
+export const FACE = { bubble: 52, panel: 78 };
+
 export function portraitIcon(id: string, size = 96): SVGSVGElement | null {
   const art = portraitOf(id);
   if (!art) return beastIcon(id, size);

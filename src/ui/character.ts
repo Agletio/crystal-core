@@ -43,6 +43,8 @@ import type { GameState } from '../game/state';
 import type { Character } from '../sim/character';
 import { gearIcon } from './icons';
 import { note } from './history';
+import { warnAtCamp } from './atcamp';
+import { inDescent } from './run';
 import { attachTooltip, hideTooltip } from './tooltip';
 import { itemCard } from './itemcard';
 import { setInventoryHandler } from './inventory';
@@ -223,7 +225,10 @@ function renderAttributes(): void {
     buy.disabled = left <= 0;
     buy.title = `Put 1 point into ${attr.name}`;
     buy.onclick = () => {
-      if (spendAttribute(character, attr.id)) render();
+      if (spendAttribute(character, attr.id)) {
+        if (inDescent()) warnAtCamp();
+        render();
+      }
     };
     row.append(buy);
 

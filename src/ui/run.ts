@@ -100,6 +100,8 @@ let sim: RunSim | null = null;
 let renderer: Renderer | null = null;
 let phase: Phase = 'menu';
 let playing = false;
+
+export const inDescent = (): boolean => playing; // a change made NOW waits for it
 let accumulator = 0;
 let lastFrame = 0;
 let seed = 0;
@@ -538,6 +540,7 @@ function finish(left = false): void {
   if (!sim) return;
   const report = buildReport(game, sim.state, left);
   playing = false;
+  game.cameBack = true; // a death brings you back the same as a clear
   renderBadges(); // the level this descent bought has landed, so a point may have
 
   if (report.cleared) streak++;
@@ -1563,6 +1566,10 @@ function syncDebuffs(): void {
 
 function renderBadges(): void {
   badge('open-character', attributePointsLeft(game.character));
+  // AN ACCENT, not a badge and not a word. Once opened it never returns.
+  document
+    .getElementById('open-skills')
+    ?.classList.toggle('railbtn--new', game.cameBack && !game.skillsSeen);
   badge('open-skills', spareTreePoints(game.character, mainSkillId(game.character)));
   badge('open-trade', tradePointsLeft(game.character));
   badge('open-trials', trialPointsLeft(game.character));

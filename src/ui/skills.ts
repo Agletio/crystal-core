@@ -35,6 +35,8 @@ import { bakedArt, nodeGlyph } from './webicons';
 import { attachTooltip, hideTooltip } from './tooltip';
 import { ask } from './confirm';
 import { nodeCard } from './glossary';
+import { warnAtCamp } from './atcamp';
+import { inDescent } from './run';
 import { slotWorkings } from '../skill-text';
 import { ailmentLine } from '../damage-text';
 import type { SkillNodeDef } from '../skills-tree';
@@ -303,6 +305,7 @@ async function open(skillId: string): Promise<void> {
     return;
   }
   equipSkill(game.character, skillId, slot);
+  if (inDescent()) warnAtCamp();
   arming = null;
   render();
 }
@@ -436,7 +439,7 @@ function renderSkillList(): void {
       btn.append(skillIcon(skill.id, 44));
       btn.append(el('span', 'skilltile__name', skill.name));
       // Two marks and no prose: what is held, and what has a point waiting.
-      if (mine) btn.append(el('span', 'skilltile__tag', 'equipped'));
+      btn.append(el('span', 'skilltile__tag', mine ? 'equipped' : ''));
       if (spare > 0 && treeFor(skill.id).length > 0) {
         btn.append(el('span', 'skilltile__spare', String(spare)));
       }
@@ -478,6 +481,7 @@ function renderHeader(): void {
   equip.disabled = equipped || !slot;
   equip.onclick = () => {
     equipSkill(game.character, skillId, slot ?? undefined);
+    if (inDescent()) warnAtCamp();
     arming = null;
     render();
     renderWeb();
@@ -691,6 +695,7 @@ function renderWeb(): void {
         }
       } else if (open) {
         progress.allocated.push(node.id);
+        if (inDescent()) warnAtCamp();
       } else {
         return;
       }
@@ -739,6 +744,7 @@ function openChoice(node: SkillNodeDef, owned: boolean): void {
     progress.choices ??= {};
     progress.choices[node.id] = id;
     if (!owned) progress.allocated.push(node.id);
+    if (inDescent()) warnAtCamp();
     host.hidden = true;
     render();
     renderWeb();
@@ -825,6 +831,8 @@ function clearShelfFind(): void {
 }
 
 export function openSkills(): void {
+  // Seen once is seen forever: the rail's accent has done its whole job.
+  game.skillsSeen = true;
   $('skills').hidden = false;
   shelf = null;
   viewing = null;

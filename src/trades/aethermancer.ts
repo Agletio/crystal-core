@@ -23,6 +23,7 @@ export const AETHERMANCER: TradeSpec = {
     'spending it ever since — on damage, on hurts he should have taken, on ' +
     'the next hour. There is nothing left of him that is not the pool. He is ' +
     'starved, wired, and entirely certain he has the better end of it.',
+  skill: 'rimespike',
   prefix: 'aet',
   sprite: 'aethermancer',
   needs: { overchargeMore: 'aet_overcharge' },

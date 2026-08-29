@@ -57,7 +57,7 @@ async function makeCharacter() {
   await page.evaluate(() => {
     const name = document.getElementById('welcome-name');
     if (name) name.value = 'Probe';
-    document.querySelectorAll('#welcome-skills .welcomecard')[0]?.click();
+    document.getElementById('welcome-go')?.click();
   });
   await page.waitForTimeout(500);
 }

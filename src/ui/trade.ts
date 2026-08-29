@@ -27,6 +27,8 @@ import { CENTRE } from '../trees/node';
 import { allocateTrade, deallocateTrade, takeUpTrade, tradePointsLeft } from '../sim/character';
 import { attachTooltip, hideTooltip } from './tooltip';
 import { nodeCard } from './glossary';
+import { warnAtCamp } from './atcamp';
+import { inDescent } from './run';
 import { chain, frame, mount, svgEl } from './webart';
 import { WebFind } from './websearch';
 import { BUILD, Camera } from './webcam';
@@ -261,6 +263,7 @@ function renderWeb(): void {
       if (cam.dragged) return;
       if (owned) deallocateTrade(game.character, node.id);
       else if (!allocateTrade(game.character, node.id)) return;
+      if (inDescent()) warnAtCamp();
       render();
     };
     group.addEventListener('click', act);

@@ -7,7 +7,7 @@
  */
 import type { SceneBeat } from '../scenes';
 import type { Renderer } from '../render/renderer';
-import { portraitIcon } from './icons';
+import { FACE, portraitIcon } from './icons';
 
 const $ = (id: string) => document.getElementById(id)!;
 
@@ -66,7 +66,7 @@ export function startSpeech(
   $('speech-name').textContent = name;
   const face = $('speech-face');
   face.replaceChildren();
-  const portrait = portraitIcon(who, 52);
+  const portrait = portraitIcon(who, FACE.bubble);
   if (portrait) face.append(portrait);
   show();
 }

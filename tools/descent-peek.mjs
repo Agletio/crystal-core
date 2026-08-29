@@ -79,19 +79,31 @@ async function makeCharacter() {
   await page.waitForTimeout(250);
   await page.evaluate(() => document.getElementById('pick-take')?.click());
   await page.waitForTimeout(250);
-  const took = await page.evaluate((want) => {
-    const cards = [...document.querySelectorAll('#welcome-skills .welcomecard')];
-    const card = want
-      ? cards.find((c) => (c.textContent ?? '').toLowerCase().includes(want.toLowerCase()))
-      : cards[0];
-    card?.click();
-    return Boolean(card);
-  }, skill);
+  await page.evaluate(() => document.getElementById('welcome-go')?.click());
+  await page.waitForTimeout(700);
+  // A trade brings its own skill, so a named one is swapped in the way a
+  // player does it: the shelf, the tile, then Equip.
+  const took = !skill || (await page.evaluate((want) => {
+    document.getElementById('open-skills')?.click();
+    for (const shelf of document.querySelectorAll('#skills-cats .catcard')) {
+      shelf.click();
+      const tile = [...document.querySelectorAll('#skills-list .skilltile')]
+        .find((t) => (t.textContent ?? '').toLowerCase().includes(want.toLowerCase()));
+      if (tile) { tile.click(); return true; }
+    }
+    return false;
+  }, skill));
   if (!took) {
-    console.error(`descent-peek: no skill on the welcome reads as "${skill}"`);
+    console.error(`descent-peek: no skill on any shelf reads as "${skill}"`);
     process.exit(1);
   }
-  await page.waitForTimeout(700);
+  if (skill) {
+    await page.waitForTimeout(300);
+    await page.evaluate(() => document.getElementById('skills-equip')?.click());
+    await page.waitForTimeout(200);
+    await page.evaluate(() => document.getElementById('skills-close')?.click());
+    await page.waitForTimeout(400);
+  }
   await throughOpening();
 }
 

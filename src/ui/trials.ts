@@ -23,6 +23,8 @@ import { allocateTrial, deallocateTrial, trialPointsLeft } from '../sim/characte
 import { trialDone } from '../game/trials';
 import { attachTooltip, hideTooltip } from './tooltip';
 import { nodeCard } from './glossary';
+import { warnAtCamp } from './atcamp';
+import { inDescent } from './run';
 import { chain, frame, mount, svgEl } from './webart';
 import { BUILD, Camera } from './webcam';
 import { nodeGlyph } from './webicons';
@@ -230,6 +232,7 @@ function drawNode(
     }
     if (owned) deallocateTrial(game.character, node.id);
     else if (!allocateTrial(game.character, node.id)) return;
+    if (inDescent()) warnAtCamp();
     render();
   };
   group.addEventListener('click', act);

@@ -143,8 +143,8 @@ const FINALE_RANGE = 5;
 
 /** Close enough to be standing on the way out, and the descent is over. */
 const AT_EXIT = 0.5;
-/** Close enough to stoop for it. */
-const AT_DROP = 0.6;
+/** How long the gather at the mouth takes, in seconds. */
+const GATHER = 1.6;
 
 /** How far a pacing body walks from where it was standing, and back. */
 const PACE_STEP = 2;
@@ -319,8 +319,6 @@ export interface Ground {
   item: Item;
   rank: number;
   age: number;
-  /** No route. Set once and never chased again, or the run would hang. */
-  stuck?: boolean;
 }
 
 export interface Floater {
@@ -552,6 +550,8 @@ export class RunSim {
   private watchChance = 0;
   /** Where the thing that is dropping fell — a body, or a box. */
   private dropAt: { x: number; y: number } | null = null;
+  private gathering = 0;
+  private gatherFrom = 0;
   private gearLeft = 0;
   private currencyLeft = 0;
   private budgeted = false;
@@ -982,7 +982,8 @@ export class RunSim {
     const s = this.state;
     if (s.status !== 'running') return;
 
-    s.elapsed += dt;
+    // THE CLOCK IS THE FIGHT'S; the gather is presentation after it.
+    if (this.gathering <= 0) s.elapsed += dt;
 
     // On a TICK, before anything else: a press lands on the next one like
     // every other decision, or a seed stops replaying the same run.
@@ -1500,24 +1501,6 @@ export class RunSim {
       return;
     }
 
-    // PICKED UP BETWEEN FIGHTS, never during one: this is past `acquireTarget`,
-    // so nothing is on him. It changes no reward — the bag fills either way.
-    const lying = this.nearestDrop(hero);
-    if (lying) {
-      if (dist(hero, lying) <= AT_DROP) {
-        s.ground = s.ground.filter((g) => g !== lying);
-        s.floaters.push({
-          x: lying.x, y: lying.y, text: lying.item.name, age: 0, crit: false, on: 'hero',
-        });
-        return;
-      }
-      this.face(hero, lying.x, lying.y);
-      this.settleAction(hero, true);
-      if (this.advance(hero, lying, dt)) return;
-      // No route. Leave it where it fell rather than standing here wanting it.
-      lying.stuck = true;
-    }
-
     // Nothing reachable is left, and the way out is a place you walk to.
     const exit = s.map.exit;
     const out = dist(hero, exit);
@@ -1539,6 +1522,22 @@ export class RunSim {
     hero.targetId = null;
     // A route that does not exist is the same answer as being there already.
     if (out > AT_EXIT && this.advance(hero, exit, dt)) return;
+
+    // THE GATHER: at the mouth, everything he walked past comes to him at once.
+    if (s.ground.length > 0) {
+      if (this.gathering === 0) this.gatherFrom = s.ground.length;
+      this.gathering += dt;
+      this.settleAction(hero, false);
+      const took = Math.ceil((this.gathering / GATHER) * this.gatherFrom);
+      while (s.ground.length > Math.max(0, this.gatherFrom - took)) {
+        const drop = s.ground.shift()!;
+        s.floaters.push({
+          x: drop.x, y: drop.y, text: drop.item.name, age: 0, crit: false, on: 'hero',
+        });
+      }
+      if (this.gathering < GATHER) return;
+      s.ground = [];
+    }
 
     s.status = 'cleared';
     this.events.push({ kind: 'cleared', seconds: s.elapsed, killed: s.killed });
@@ -1998,20 +1997,6 @@ export class RunSim {
   /** The equipped skill's area in tiles, for aiming. */
   private areaRadiusFor(user: Entity): number {
     return this.areaRadius(user, (this.skill.params?.radius as number) ?? 0);
-  }
-
-  /** The nearest thing on the floor he can still get to. */
-  private nearestDrop(hero: Entity): Ground | null {
-    let best: Ground | null = null;
-    let near = Infinity;
-    for (const drop of this.state.ground) {
-      if (drop.stuck) continue;
-      const d = dist(hero, drop);
-      if (d >= near) continue;
-      near = d;
-      best = drop;
-    }
-    return best;
   }
 
   private acquireTarget(hero: Entity): Entity | null {

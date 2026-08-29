@@ -27,6 +27,7 @@ export const ROGUE_TRADE: TradeSpec = {
     'and he has been trading them up ever since, one hand at a time. He has ' +
     'never once been seen carrying a shield and he is unkind about people who ' +
     'are. What the Order wanted read, he has not said.',
+  skill: 'ambush',
   prefix: 'rog',
   sprite: 'obreth',
   dualWields: true,

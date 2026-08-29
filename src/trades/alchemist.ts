@@ -24,6 +24,7 @@ export const ALCHEMIST: TradeSpec = {
     'blood among them. He does not win a fight so much as outlast it, one ' +
     'mouthful at a time, and what is in the flask is the only part of him ' +
     'that has not been used up.',
+  skill: 'fireball',
   prefix: 'alc',
   sprite: 'alchemist',
   // Nothing here is useless without something else: every notable is worth its

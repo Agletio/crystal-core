@@ -103,8 +103,14 @@ export interface GameState {
    * the list, highlighted, and returning it is just dropping the reference.
    */
   craftId: string | null;
-  /** False until a skill has been chosen on the first run. */
+  /** False until a trade has been chosen on the first run. */
   onboarded: boolean;
+  /** False until the Skills screen has been opened once, ever, and false until
+   *  a descent has ENDED. The rail wears an accent while the first is false and
+   *  the second true — a death brings you back to camp the same as a clear, so
+   *  this cannot read off `clears`. */
+  skillsSeen: boolean;
+  cameBack: boolean;
   /** False until the Fissure has been cleared once. Gates the opening payout. */
   firstClearDone: boolean;
   /** Descents cleared, ever. What the opening's schedule is measured in. */
@@ -150,6 +156,8 @@ export function createGame(mode: StartMode = 'dev'): GameState {
     sockets: {},
     craftId: null,
     onboarded: false,
+    skillsSeen: false,
+    cameBack: false,
     firstClearDone: false,
     clears: 0,
     given: [],
@@ -205,6 +213,8 @@ export function resetGame(game: GameState, mode: StartMode): void {
 
   // A fresh game asks which skill you want; the dev kit assumes you know.
   game.onboarded = mode === 'dev';
+  game.skillsSeen = mode === 'dev';
+  game.cameBack = mode === 'dev';
   game.firstClearDone = mode === 'dev';
   game.clears = mode === 'dev' ? 1 : 0; // the same descent `firstClearDone` is
   // The dev kit is armed, holds every crystal, and has MET everybody: nothing
