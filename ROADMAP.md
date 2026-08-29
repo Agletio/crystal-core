@@ -909,20 +909,29 @@ of that curve at about **two gear drops a clear** across 8 gear kinds.
   the loot"* — `GATHER` at the mouth, and **`elapsed` is HELD through it**,
   because the clock is the fight's and the gather is presentation after it.
   The walk to each drop is gone, and `Ground.stuck` with it.
-- **THE CHEST — BLOCKED ON GENERATIONS, and the pipeline is written down.**
+- **THE CHEST — SIXTEEN DESIGNS ARE ASKED AND SHOWN; waiting on the pick.**
   *"I want it to be a chest that will actually open and when you kill all the
   mobs your character walks up and opens it… the art needs to look open."*
-  The generator is empty (`generations_remaining: 0`, 8761 of 8710 used,
-  refills **2026-09-13**), so the art is left undone rather than drawn by hand.
-  **Ask it as an OBJECT, not a pixflux still**: `create_1_direction_object`
-  takes `view: 'top-down'` as a real enum, where pixflux's `high top-down`
-  came back 3/4 isometric on all eight tries even with DIRECTLY ABOVE in
-  capitals. Then `create_object_state(object_id, 'lid thrown wide open')` —
-  a state OF THE SAME OBJECT, which is the only way the open frame is
-  guaranteed to be the same chest rather than one that merely resembles it.
-  `animate_object` could swing the lid rather than snapping between frames.
-  Eight rejected designs sit in `tools/art/cache/chest_*.png`.
-  The walk-up-and-open waits on this: the open frame is what it lands on.
+  The user put $30 of credits on the account and work bills to them
+  automatically; the plan's own allowance refills 2026-09-13.
+  `tools/art/chest.mts` is the whole pipeline. **Ask it as an OBJECT, not a
+  pixflux still**: `create_1_direction_object` takes `view: 'top-down'` as a
+  real enum, where pixflux's `high top-down` came back 3/4 isometric on all
+  eight tries even with DIRECTLY ABOVE in capitals.
+  **A 1-direction object returns a GRID of candidates in ONE job** — 16 at a
+  size of 85 or under, 4 up to 170, 64 at 42 — with `item_descriptions` giving
+  each its own words, so sixteen designs cost 25 generations rather than
+  sixteen asks. **The LARGEST style image sets that size**, so an 88px prop
+  silently drops the pack from 16 to 4; `styleImage` refuses one over 85.
+  Style is forced with the game's OWN props (`cart`, `brazier`, `plinth`,
+  `bench`) — the default style is cheerful beside near-black wet rock.
+  Next: `select_object_frames` on what the user picks, then
+  `create_object_state(id, 'lid thrown wide open')` — a state OF THE SAME
+  OBJECT, the only way the open frame is that chest rather than one that
+  resembles it — and `animate_object` to swing the lid rather than snap.
+  The walk-up-and-open waits on the open frame.
+  `tools/art/sheet.mts` lays candidates out over the floor colour they will
+  stand on, because anything reads on white.
 - **The named-piece check is thin.** 16 descents expects 5.5 and read 3; a zero
   is a 1-in-250 flake. Uniques are a share of drops like Perfect, and the count
   fell under them.
