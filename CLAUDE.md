@@ -319,7 +319,11 @@ arrived.
 what 100% chance buys and the roll buys a share of it. Per PACK it could not
 be: the pack count IS the difficulty, so the deep end's thirty packs turned an
 80% Vein chance into 24 Veins a descent against a run budget of 0.18, and gear
-rode eight Hoards while the band said 1.7.
+rode eight Hoards while the band said 1.7. **`HOARD.baseline` is what a run
+gets for NOTHING** — measured, a chest in one descent of 4.8 on blank crystals
+— because art nobody has spent a point on is art nobody ever sees. On the
+Hoard and never the Vein: a free lock paying currency hands a shard's scarcity
+straight back.
 
 **A LOCK IS MADE OF THE WORLD IT STANDS IN, and it OPENS.** `LOCKS` is three a
 world — two ordinary and one RARE — each a `shut` prop and the `open` frame of

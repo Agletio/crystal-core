@@ -38,6 +38,7 @@ import {
   CRYSTAL_DEPTHS,
   CRYSTAL_LEVELS,
   CRYSTAL_XP,
+  HOARD,
   INTRO,
   BOSSES,
   BOSS_BY_ID,
@@ -2030,6 +2031,22 @@ rule('SPRITES — is the pixel art well formed?');
         .map((one) => one.shut);
     });
     check(jumps.length === 0, 'and a pair shares one grid, so opening one moves nothing', jumps.join(', '));
+
+    // AND ONE TURNS UP FOR NOTHING. *"Add some chests randomly that spawn
+    // baseline… maybe 1/5 runs you get one with no points or anything."* Blank
+    // crystals buy no `hoardChance` at all, so without a baseline the art
+    // nobody has spent a point on is art nobody ever sees. Forty runs at 20%
+    // reads zero once in seven thousand.
+    const bare = ladderCharacter(0, new Rng(3));
+    let saw = 0;
+    for (let i = 0; i < 40; i++) {
+      saw += new RunSim([], bare, new Rng(2000 + i)).state.hoards.length > 0 ? 1 : 0;
+    }
+    check(
+      saw > 0,
+      `and one turns up on BLANK crystals — ${saw} of 40 runs, against ${HOARD.baseline} a run`,
+      'no chest ever appears without a point spent on it'
+    );
   }
 
   {
@@ -9971,10 +9988,13 @@ rule('THE COLLECTION — do crystals arrive, and do they grow?');
     );
     const mine = mainSkillId(g.character);
     const progress = skillProgress(g.character, mine);
+    // The gate and a COUNT of what is left, not which count: how far one
+    // opening descent gets you moves with every drop and pack change, and
+    // pinning it here fails on a balance number rather than on a sentence.
     check(
       giftWaiting(g) === null &&
         giftSchedule(g).includes(`level ${INTRO.crystalSkillLevel}`) &&
-        giftSchedule(g).includes('1 unspent'),
+        /\d+ unspent/.test(giftSchedule(g)),
       'and says what the first crystal is waiting on, in numbers',
       giftSchedule(g)
     );

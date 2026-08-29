@@ -880,11 +880,14 @@ export class RunSim {
     // **A LOCK IS AN OCCASION, AND THE RUN DECIDES HOW MANY.** Per PACK,
     // thirty packs turned an 80% chance into 24 Veins a descent; the chance
     // buys a share of `HOARD.mostPerRun` instead.
-    // Drawn ONLY when something bought it, or the same seed parts between a
-    // set carrying Hoards and one that does not.
-    const lockSlots = (chance: number) =>
-      chance > 0 ? this.whole((chance / 100) * HOARD.mostPerRun) : 0;
-    const wanted = { hoards: lockSlots(hoardChance), veins: lockSlots(veinChance) };
+    // A CHEST TURNS UP WITHOUT BEING BOUGHT, one run in five — on the Hoard and
+    // never the Vein, which would hand a shard's scarcity back.
+    const lockSlots = (chance: number, free = 0) =>
+      this.whole((chance / 100) * HOARD.mostPerRun + free);
+    const wanted = {
+      hoards: lockSlots(hoardChance, HOARD.baseline),
+      veins: lockSlots(veinChance),
+    };
     const order =
       wanted.hoards + wanted.veins > 0
         ? this.rng.shuffle(Array.from({ length: packCount }, (_, i) => i))
@@ -3417,7 +3420,8 @@ export class RunSim {
 
   private whole(budget: number): number {
     const floor = Math.floor(budget);
-    return floor + (this.rng.chance(budget - floor) ? 1 : 0);
+    const rest = budget - floor; // a WHOLE budget draws nothing: chance(0) spends one
+    return floor + (rest > 0 && this.rng.chance(rest) ? 1 : 0);
   }
 
   private bodiesLeft(): number {

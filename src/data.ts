@@ -3162,9 +3162,10 @@ export const WARDEN = { rank: 900 };
 /** A pack with something in it worth walking towards. Nothing is CLICKED, which
  *  is what makes it legal under universal automation: the last guard down. */
 export const HOARD = {
-  /** LOCKS A DESCENT AT 100% CHANCE — the pack count IS the difficulty, so a
-   *  per-pack roll paid the deep end 24 Veins a clear. */
+  // LOCKS A DESCENT AT 100% CHANCE — the pack count IS the difficulty, so a
+  // per-pack roll paid the deep end 24 Veins a clear.
   mostPerRun: 3,
+  baseline: 0.2, // and one every five descents for NOTHING, on blank crystals
   size: 1.6, // the guard, against an ordinary pack
   rank: 250, // `monsterRank`, on the guard alone
   drops: 1, // ONE thing when the last of them is down, never a pile
