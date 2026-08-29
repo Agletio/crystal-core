@@ -168,17 +168,15 @@ thing at a time"* — so what comes next is whatever playing it turns up.
 
 ### Live known issues
 
-- **THREE WAND VARIANTS ARE STILL ASKING FOR A CAST THEY WERE NOT GENERATED
-  WITH.** A base body's cast is a spell thrown from BOTH OPEN PALMS, and a hand
-  asked to open is a hand that lets go — the Aethermancer's wand was absent from
-  nine cast frames of eleven. `weapons.json` now gives the wand its own `cast`,
-  through a new `weapon.cast` seam in `variant.mts` beside the `attack` one that
-  already existed, and the Aethermancer's was re-rolled and re-imported.
-  **`variant.mts check` now reports `alchemist_wand`, `mahthar_wand` and
-  `obreth_wand` as asking for the new words**, which is true and is what that
-  tool is for. Each is one state to re-roll (~13 generations) plus an import,
-  and nobody has LOOKED at whether their casts have the same fault. The
-  `_wand_shield` and `_x_wand` pairs were not checked at all.
+- **THE OFF-HAND WAND PAIRS ARE STILL ASKING FOR WORDS THEY WERE NOT GENERATED
+  WITH, and it is NOT the cast fault.** `variant.mts check` reports
+  `<mahthar|obreth>_<sword|dagger|mace>_wand` on ALL FIVE states, which is drift
+  from earlier `carry` vocabulary edits that were never swept — it predates the
+  `weapon.cast` seam and none of those rows is wand-DRIVEN (their `off` is
+  `wand_off`, which has no `cast`). Nobody has looked at whether their art is
+  actually wrong. The same pre-existing drift sits on every `_shield` row and
+  every non-wand pair; a sweep is 36 rows and about 470 generations, and it
+  should start by LOOKING rather than by generating.
 - **`obreth_mace2h`'s attack frame 4 is GONE from the store.** It answers 200
   with `Content-Length: 3234` and then closes having sent no body, every time,
   from curl as well as from the importer. `tables.mts` now KEEPS what shipped

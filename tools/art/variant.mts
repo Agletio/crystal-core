@@ -31,6 +31,7 @@ type Weapon = { say: string; attack: string; cast?: string; carry?: string; noun
 const here = (f: string) => new URL(`./${f}`, import.meta.url).pathname;
 const words = JSON.parse(readFileSync(here('weapons.json'), 'utf8')) as {
   hold: string;
+  alone: string;
   quiet: string;
   quietPair: string;
   weapons: Record<string, Weapon>;
@@ -80,6 +81,9 @@ export function compose(body: Body, name: string, from: State): string {
   // a spell from BOTH OPEN PALMS, and a hand asked to open is a hand that lets
   // go — the wand came back absent from nine frames of eleven.
   const spell = name === 'cast' ? (weapon?.cast ?? off?.cast) : undefined;
+  // A weapon's cast speaks only for the hand HOLDING it: what the other one is
+  // doing is `alone` here, or a shield's or second weapon's own `carry` below.
+  const spare = spell && !body.off ? words.alone : '';
   const middle =
     name === 'attack'
       ? `${weapon?.attack ?? off?.attack ?? from.say}, ${ONCE}`
@@ -90,6 +94,7 @@ export function compose(body: Body, name: string, from: State): string {
   const carries = name === 'attack' ? [] : [weapon?.carry, off?.carry].filter(Boolean);
   return [
     `${lead} with his ${held}, ${middle}`,
+    spare,
     words.hold,
     ...carries,
     // The shared one forbids a SECOND weapon, which is the one thing a pair
@@ -203,15 +208,23 @@ if (command === 'check') {
   }
   console.log(`${variants.length} variants, ${differ} state(s) differ`);
 } else if (command === 'write') {
-  if (only.length === 0) throw new Error('name the sprites to rewrite');
-  for (const sprite of only) {
+  // `--state <name>` rewrites ONE and leaves the rest: a row's words are the
+  // words its art was ASKED with, so rewriting five to change one lies about four.
+  const at = only.indexOf('--state');
+  const oneState = at >= 0 ? only[at + 1] : null;
+  const sprites = at >= 0 ? only.slice(0, at) : only;
+  if (sprites.length === 0) throw new Error('name the sprites to rewrite');
+  for (const sprite of sprites) {
     const body = variants.find((b) => b.sprite === sprite);
     const from = body && base(sprite);
     if (!body || !from) throw new Error(`${sprite} is not a variant with a base body`);
-    for (const [name, state] of Object.entries(body.states)) {
+    const doing = oneState ? [oneState] : Object.keys(body.states);
+    for (const name of doing) {
+      const state = body.states[name];
+      if (!state) throw new Error(`${sprite} has no ${name} state`);
       state.say = compose(body, name, from.states[name] ?? state);
     }
-    console.log(`${sprite}: ${Object.keys(body.states).length} states`);
+    console.log(`${sprite}: ${doing.join(', ')}`);
   }
   writeFileSync(here('bodies.json'), `${JSON.stringify(book, null, 1)}\n`);
 } else {

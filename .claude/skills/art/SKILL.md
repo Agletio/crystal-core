@@ -236,10 +236,24 @@ of that and the BASE body's own states.
   attack: where the weapon RESTS.
 - **A `cast` clause is the same seam as `attack`, and a one-handed weapon needs
   one.** A base body's cast is a spell thrown from BOTH OPEN PALMS, and **a hand
-  asked to OPEN is a hand that lets go** — the Aethermancer's wand was absent
-  from nine cast frames of eleven while `He keeps hold of it in EVERY frame` sat
-  on the end of the same sentence. A trailing rule does not beat a described
-  pose; describe the pose you want instead. Only a weapon observed drifting earns one —
+  asked to OPEN is a hand that lets go** — the wand was absent from nine cast
+  frames of eleven while `He keeps hold of it in EVERY frame` sat on the end of
+  the same sentence. A trailing rule does not beat a described pose; describe
+  the pose you want instead.
+- **A weapon row's clause may not speak for the OTHER hand**, because the same
+  row dresses a hand beside a shield and a hand beside a second weapon. What is
+  in the other hand is the BODY's business: `words.alone` is appended only when
+  the row has no `off`, and a shield's or second weapon's own `carry` covers the
+  rest. Written into the weapon row, "his other hand stays empty" is a lie on
+  two thirds of the rows that use it.
+- **`variant.mts write <sprite> --state <name>` rewrites ONE state.** A row's
+  words are the words its shipped art was ASKED with, so rewriting five to
+  change one makes four of them a lie about art nobody re-rolled.
+- **A CAST may be windowed at the tail; an attack may not.** Obreth's cast
+  drifts into a spread-armed pair in its last frames — his own silhouette is a
+  rogue's — so his two wand rows keep only the first 72% and 45% of the run. The
+  renderer holds a one-shot state's LAST frame, so the same trim on an attack
+  would throw the blow away and sit on the wind-up. Only a weapon observed drifting earns one —
   the greatsword, asked upright, came back diagonal in the still and pointing at
   the floor by the third walk frame.
 - **A tall body has no headroom in a 96 frame.** A weapon held vertically with
