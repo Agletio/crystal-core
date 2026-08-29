@@ -72,7 +72,6 @@ import { badge } from './badge';
 import { openCharacter } from './character';
 import { openCraft } from './craft';
 import { openStash } from './stash';
-import { openShop } from './shop';
 import { drawn, portraitIcon, skillIcon } from './icons';
 import { itemIcon } from './icons';
 import { itemCard } from './itemcard';
@@ -251,8 +250,8 @@ function runHandler() {
 const OPENS: Record<Hotspot['opens'], (spot: Hotspot, at: DOMRect) => void> = {
   fissure: () => openFissure(),
   craft: () => openCraft(),
-  shop: () => openShop(),
   stash: () => openStash(),
+  character: () => openCharacter(),
   room: (spot, at) => {
     const def = SCENE_BY_ID[spot.room ?? ''];
     if (def) openTalk(def, at);

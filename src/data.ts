@@ -1890,7 +1890,12 @@ export const LAMPWRIGHT = {
   },
   again: {
     title: 'The Lampwright',
-    beats: [{ said: 'You went and got this one. I only carried it up.', act: 'work' }] as SceneBeat[],
+    // He KEEPS a counter, so the line that plays when he owes nothing has to
+    // say what clicking him does next.
+    beats: [
+      { said: 'You went and got this one. I only carried it up.', act: 'work' },
+      { said: 'I keep a shelf here. Shards, mostly. Come and look when you have the gold.', act: 'face' },
+    ] as SceneBeat[],
     button: 'Take it',
   },
 };
@@ -3157,6 +3162,9 @@ export const WARDEN = { rank: 900 };
 /** A pack with something in it worth walking towards. Nothing is CLICKED, which
  *  is what makes it legal under universal automation: the last guard down. */
 export const HOARD = {
+  /** LOCKS A DESCENT AT 100% CHANCE — the pack count IS the difficulty, so a
+   *  per-pack roll paid the deep end 24 Veins a clear. */
+  mostPerRun: 3,
   size: 1.6, // the guard, against an ordinary pack
   rank: 250, // `monsterRank`, on the guard alone
   drops: 1, // ONE thing when the last of them is down, never a pile
@@ -3164,15 +3172,9 @@ export const HOARD = {
   gold: 90, // at the bare Fissure, lifted by the run's own danger
 };
 
-/**
- * WHAT A LOCK LOOKS LIKE, and it is made of the world it stands in — a timber
- * box in a gullet of meat reads as furniture somebody carried down.
- *
- * Two ordinary and one RARE per world, each a `shut` prop and the `open` frame
- * of THE SAME generated object, so opening one is the picture changing rather
- * than a second chest appearing. A rare one is never a bigger pile: it pays the
- * same ONE thing at higher Rarity, which is what rarity buys everywhere else.
- */
+/** WHAT A LOCK LOOKS LIKE, and it is made of the world it stands in: two
+ *  ordinary and one RARE, each a `shut` prop and the `open` frame of THE SAME
+ *  generated object. A rare one pays Rarity, never a bigger pile. */
 export interface LockSet {
   common: { shut: string; open: string }[];
   rare: { shut: string; open: string };
@@ -3202,7 +3204,7 @@ export const LOCKS: Record<MapTheme, LockSet> = {
 export const LOCK = {
   rareChance: 0.16, // of the locks a run puts down, how many are the rare one
   rareRarity: 140, // what its ONE drop is worth EXTRA, in Rarity
-  rareGold: 2.2, // and the coin, when it pays coin instead
+  rareGold: 2.2,
 };
 
 /**
@@ -3233,8 +3235,10 @@ export const REWARD = {
  * `basic → uncommon → rare → exotic` is the only route to the scarce ones.
  */
 export const CURRENCY_DROP = {
-  /** Pieces of currency a CLEAR pays, before Currency Find and the crystals. */
-  perRun: 0.9,
+  /** Currency a CLEAR pays, before Currency Find. **A SHARD IS A DECISION
+   *  ABOUT ONE PIECE**: at 0.9 the bare Fissure paid 1.29 against 1.75 pieces
+   *  of gear — one per drop. At 0.18 it is one shard per ten. */
+  perRun: 0.18,
   /** Per-step chance to climb one class, before rarity is applied. */
   upgradeChance: 0.17,
 };
@@ -3260,15 +3264,15 @@ export interface DropBand {
 }
 
 export const DROP_BANDS: DropBand[] = [
-  // The bare Fissure: mostly junk, but enough that a free descent is not a tax.
-  { fill: [0.4, 0.5], currency: 'basic', gearPerRun: 1.3, ilvl: 10 },
-  { fill: [0.4, 0.55], currency: 'basic', gearPerRun: 1.4, ilvl: 10 },
-  { fill: [0.45, 0.6], currency: 'uncommon', gearPerRun: 1.4, ilvl: 22 },
-  { fill: [0.5, 0.65], currency: 'uncommon', gearPerRun: 1.5, ilvl: 34 },
+  // TWO OR THREE A CLEAR AT EVERY BAND, and it is now the figure that ARRIVES.
+  { fill: [0.4, 0.5], currency: 'basic', gearPerRun: 2.4, ilvl: 10 },
+  { fill: [0.4, 0.55], currency: 'basic', gearPerRun: 2.5, ilvl: 10 },
+  { fill: [0.45, 0.6], currency: 'uncommon', gearPerRun: 2.5, ilvl: 22 },
+  { fill: [0.5, 0.65], currency: 'uncommon', gearPerRun: 2.6, ilvl: 34 },
   // Where a build becomes possible: tier 3 bases, six modifiers apiece.
-  { fill: [0.5, 0.7], currency: 'rare', gearPerRun: 1.5, ilvl: 46 },
-  { fill: [0.55, 0.75], currency: 'rare', gearPerRun: 1.6, ilvl: 58 },
-  { fill: [0.6, 0.85], currency: 'exotic', gearPerRun: 1.7, ilvl: 70 },
+  { fill: [0.5, 0.7], currency: 'rare', gearPerRun: 2.6, ilvl: 46 },
+  { fill: [0.55, 0.75], currency: 'rare', gearPerRun: 2.7, ilvl: 58 },
+  { fill: [0.6, 0.85], currency: 'exotic', gearPerRun: 2.7, ilvl: 70 },
 ];
 
 
@@ -4241,14 +4245,14 @@ export const skillsInCategory = (category: SkillCategory): SkillDef[] =>
   SKILLS.filter((s) => s.category === category);
 
 export const RECIPES: Recipe[] = [
-  // The whole shelf: an ANTI-BRICK, not a supply. At 5 flat gold it was 6,072 a
-  // clear deep. The base fits `FISSURE.firstClear.gold` or a fresh bench shuts.
+  // An ANTI-BRICK, not a supply. At 22 a level-1 character banked 42 gold a
+  // clear and bought one and a half. TEN TIMES that, at the user's word.
   {
     id: 'make_shard_of_making',
     name: 'Shard of Making',
     level: 1,
-    inputs: { gold: 22 },
-    goldPerIlvl: 2.2,
+    inputs: { gold: 220 },
+    goldPerIlvl: 22,
     output: { type: 'currency', id: 'shard_of_making', qty: 1 },
   },
 ];

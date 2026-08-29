@@ -215,7 +215,7 @@ await page.waitForTimeout(300);
 
 // On top is what you touched last, and the rail is over the lot of it.
 {
-  await page.evaluate(() => document.getElementById('camp-tent')?.click());
+  await page.evaluate(() => document.getElementById('camp-shelf')?.click());
   await page.waitForTimeout(200);
   const z = (id) =>
     page.evaluate((n) => Number(getComputedStyle(document.getElementById(n)).zIndex), id);

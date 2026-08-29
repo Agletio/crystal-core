@@ -564,9 +564,12 @@ assert(rolled().length === 2, 'a second modifier was added', String(rolled().len
     'crafting a mod changes what the crystal says it does',
     `${headerBefore} → ${multRows().join(' ')}`
   );
+  // Danger, density, a drop group, or what it PAYS — a crystal roll that
+  // changes none of those is one the panel cannot report.
   assert(
-    danger() > 0 || multRows().some((r) => /^(weapons|armour|trinkets)=/.test(r)),
-    'and it is either more dangerous or pointed at something',
+    danger() > 0 ||
+      multRows().some((r) => /^(weapons|armour|trinkets|density|currency|gilded)=/.test(r)),
+    'and it is more dangerous, denser, pointed at something, or paying better',
     multRows().join(' ')
   );
   $('craft-return').click();
@@ -715,14 +718,23 @@ assert($('craft-empty').hidden === false, 'bench is empty again');
 assert(invItems().length === inventoryBefore, 'item is still in the dock');
 assert(all('.dock .slot--on').length === 0, 'nothing highlighted after closing');
 
+
+/** THE COUNTER IS A PERSON'S. Clicking him starts his lines, and the shelf is
+ *  what follows the last one — so a harness advances the beats the way a
+ *  player does rather than reaching for a button that no longer exists. */
+const openCounter = () => {
+  $('camp-who-workshop').click();
+  for (let i = 0; i < 8 && $('shop').hidden; i++) $('speech-next')?.click();
+};
+
 // --- the shop buys against gold -------------------------------------------
 // A separate window from crafting: one turns gold into stock, the other
 // spends stock on the item in front of you, and sharing a window meant that
 // item scrolled away exactly when you went to buy something for it.
 assert($('shop').hidden === true, 'the shop starts closed');
 assert(!$('craft').contains($('workshop')), 'the shop is not inside crafting');
-$('camp-shelf').click();
-assert($('shop').hidden === false, 'the shop opens');
+openCounter();
+assert($('shop').hidden === false, 'the shop opens — it is the Lampwright\'s shelf');
 
 const buys = all('#workshop button.buy');
 assert(buys.length >= 1, 'the shop lists recipes', String(buys.length));
@@ -2281,7 +2293,7 @@ const purse = () => Number(text('wallet').match(/\d+/)?.[0] ?? 0);
 // old bulk button could only take the heap nothing had been spent on, so the
 // pieces you actually wanted rid of still came out one right-click at a time.
 {
-  $('camp-shelf').click();
+  openCounter();
   const mode = () => $('shop-sell');
   assert(/sell mode/i.test(text('shop-sell')), 'the counter offers a sell mode', text('shop-sell'));
   assert(

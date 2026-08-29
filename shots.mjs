@@ -417,10 +417,25 @@ for (const vp of VIEWPORTS) {
   await page.waitForTimeout(250);
   await shoot('dock');
 
-  // The three piles and the ledger, empty — which is how a new player meets
+  // THE COUNTER IS A PERSON'S: the Lampwright's lines come first and the shelf
+  // is what follows the last one, so this walks the beats a player clicks.
+  await page.evaluate(() => {
+    document.getElementById('camp-who-workshop')?.click();
+    for (let i = 0; i < 8 && document.getElementById('shop')?.hidden; i++) {
+      document.getElementById('speech-next')?.click();
+    }
+  });
+  await page.waitForTimeout(400);
+  if (await page.evaluate(() => document.getElementById('shop')?.hidden !== false)) {
+    problems.push(`${vp.name}: the Lampwright never opened his shelf`);
+  }
+  await shoot('shop');
+  await page.evaluate(() => document.getElementById('shop-close')?.click());
+  await page.waitForTimeout(150);
+
+  // The two piles and the ledger, empty — which is how a new player meets
   // them. A rail button only ever OPENS, so each close id is named too.
   for (const [state, shut] of [
-    ['shop', 'shop-close'],
     ['stash', 'stash-close'],
     ['settings', 'settings-close'],
     ['history', 'history-close'],

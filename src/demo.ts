@@ -978,7 +978,7 @@ rule('DROPS — does the set decide what the map can give you?');
     const tiers = new Set<number>();
     let items = 0;
     let top = 99;
-    for (const seed of [11, 29, 47]) {
+    for (const seed of [11, 29, 47, 63, 71, 89, 97, 103, 117, 131]) {
       const set = ladderSet(band, new Rng(400 + seed + band), pool);
       const sim = new RunSim(set, ceiling(band), new Rng(seed * 31 + band));
       const f = runToCompletion(sim, 400);
@@ -2443,12 +2443,17 @@ rule('THE OPENING — is the first hour walkable with nothing explaining it?');
       `${game.inventory.length} items`
   );
 
+  // NOT off the counter — *"increase the cost of them in the store by like
+  // 10x"* puts the first shard several descents out of reach, so what stops a
+  // player meeting the bench with nothing to pour is the one he is HANDED.
   const making = RECIPES.find((r) => r.id === 'make_shard_of_making');
   const bill = making ? (recipeInputs(making, 1).gold ?? 0) : 0;
+  const handed = createGame('fresh');
+  const owed = takeHandover(handed, { weapon: false, crystal: true });
   check(
-    FISSURE.firstClear.gold >= bill,
-    `the first clear pays ${FISSURE.firstClear.gold} gold and the shard it can buy costs ${bill}`,
-    `it pays ${FISSURE.firstClear.gold} but the shard costs ${bill}`
+    (owed.currency[INTRO.scriptedCurrency] ?? 0) > 0,
+    `the opening HANDS you the craft — the counter's own is ${bill} gold, several descents off`,
+    `he handed over ${JSON.stringify(owed.currency)}`
   );
 
   // The mark on the gift. It is what tells the weapon he handed over from
@@ -7493,7 +7498,9 @@ rule('THE WARRIOR — does what is in your other hand change anything?');
     const took = (sim: any): number => {
       const hero = sim.state.hero;
       const before = hero.life;
-      sim.dealDamage(sim.state.monsters[0], hero, 1, undefined);
+      // FORTY, because a tower shield BLOCKS: one hit reads zero on both sides
+      // whenever the roll goes that way, which is the flake this replaces.
+      for (let i = 0; i < 40; i++) sim.dealDamage(sim.state.monsters[0], hero, 1, undefined);
       return before - hero.life;
     };
     const a = took(lessSim);
@@ -8660,6 +8667,9 @@ rule('WHERE THE GOLD COMES FROM — is selling worth the walk to the counter?');
 
   line('  band   gold banked   drops   sale value   share from selling');
   const shares: number[] = [];
+  /** What ONE piece fetches, band by band: the count is flat, so this is the
+   *  whole of what selling scales by. */
+  const each: number[] = [];
   for (let band = 0; band < DROP_BANDS.length; band += 2) {
     const runs = 6;
     let banked = 0;
@@ -8678,20 +8688,28 @@ rule('WHERE THE GOLD COMES FROM — is selling worth the walk to the counter?');
 
     const share = banked + sold > 0 ? sold / (banked + sold) : 0;
     shares.push(share);
+    each.push(drops > 0 ? sold / drops : 0);
     line(
       `   ${band}   ${banked.toFixed(0).padStart(11)}   ${(drops / runs).toFixed(1).padStart(5)}   ` +
         `${sold.toFixed(0).padStart(10)}   ${(share * 100).toFixed(0).padStart(17)}%`
     );
   }
 
-  // Neither tap may be noise. Selling is the larger of the two at every band
-  // measured — which is a curve for Phase 7 to settle, not a bug — so the
-  // bound here is only what catches one of them going to nothing.
-  const lopsided = shares.filter((s) => s < 0.05 || s > 0.95);
+  // Neither tap may be noise. **The SHARE has to fall** — the piece count is
+  // flat at two or three a clear by decision and gold climbs with danger, so
+  // selling is 40% of a bare descent and 3% of a deep one however good the
+  // drops are. What must not stop is a piece being worth MORE the deeper it
+  // came from, which is the claim under it.
+  const lopsided = shares.filter((s) => s < 0.02 || s > 0.98);
   check(
     lopsided.length === 0,
     'selling and killing both pay something at every band sampled',
     shares.map((s) => `${(s * 100).toFixed(0)}%`).join(' → ')
+  );
+  check(
+    each.length > 1 && each[each.length - 1] > each[0] * 2,
+    `and a deep piece sells for ${(each[each.length - 1] / Math.max(1, each[0])).toFixed(1)}x a shallow one`,
+    each.map((n) => n.toFixed(0)).join(' → ')
   );
 
   // The free descent has to fund the bench, or a fresh character watches the
@@ -8714,10 +8732,17 @@ rule('WHERE THE GOLD COMES FROM — is selling worth the walk to the counter?');
   );
   const perRun = (earned + sold) / descents;
   line(`  a bare descent pays ${(earned / descents).toFixed(1)} gold and ${(sold / descents).toFixed(1)} in sellable drops`);
+  // NOT IN ONE RUN, and that is the point now. *"Increase the cost of them in
+  // the store by like 10x. I want you, at least early on, to be deciding which
+  // piece of gear is worth using it on."* The one the Lampwright hands over is
+  // the opening's shard; the counter is several descents of saving. What must
+  // still hold is that saving WORKS — a shelf nobody can ever reach is a shelf
+  // that is not there.
+  const REACH = 12;
   check(
-    perRun >= bench,
-    `and covers the level-1 shelf (${bench} gold) in one run`,
-    `${perRun.toFixed(1)} gold a run against a ${bench} gold shelf`
+    perRun * REACH >= bench,
+    `and the level-1 shelf (${bench} gold) is ${Math.ceil(bench / perRun)} descents of saving`,
+    `${perRun.toFixed(1)} gold a run against a ${bench} gold shelf — over ${REACH} descents`
   );
 }
 
@@ -8830,11 +8855,13 @@ rule('WHAT A SET FARMS — is where you go a decision or a formality?');
   // all of it from selling makes killing things decoration.
   const shares = paid.map((r) => r.sale / r.total);
   line(`  share of income from selling: ${shares.map((s) => `${Math.round(s * 100)}%`).join(' ')}`);
-  // The floor is 5%, not 10%: at the BARE Fissure gold off corpses is supposed
-  // to dominate — that is the 'early' half of the sentence — and what this
-  // catches is a tap going to NOTHING rather than a tap being small.
+  // The floor is 2%: the piece count is FLAT at two or three a clear by
+  // decision and gold climbs with danger, so the share has to fall from a
+  // third to a twentyfifth however good the drops get. What this catches is a
+  // tap going to NOTHING; that a deep piece is worth 10x a shallow one is
+  // checked where it can be measured per piece.
   check(
-    shares.every((s) => s > 0.05 && s < 0.95),
+    shares.every((s) => s > 0.02 && s < 0.98),
     'gold comes off corpses early and out of selling late, and neither ever stops',
     shares.map((s) => `${Math.round(s * 100)}%`).join(' ')
   );

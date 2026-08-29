@@ -13,7 +13,7 @@ export interface Hotspot {
   y: number;
   w: number;
   h: number;
-  opens: 'fissure' | 'craft' | 'shop' | 'stash' | 'socket' | 'room';
+  opens: 'fissure' | 'craft' | 'stash' | 'character' | 'socket' | 'room';
   slot?: number; // which of `RUN_SLOTS`, for a socket in the rock
   room?: string; // which `SceneDef`, for somebody standing about
   says: string;
@@ -43,15 +43,15 @@ export const CAMP_HOTSPOTS: Hotspot[] = [
   {
     id: 'shelf',
     x: 618, y: 174, w: 68, h: 152,
-    opens: 'shop',
-    says: 'The shelf. Stock, not storage: what there is to buy and what it costs.',
+    opens: 'stash',
+    says: 'The shelf. What you are not carrying, and what you meant to come back for.',
   },
   // The FABRIC: a rectangle round the guy ropes reaches the socket and the shelf.
   {
     id: 'tent',
     x: 470, y: 136, w: 148, h: 166,
-    opens: 'stash',
-    says: 'Your tent. What you are not carrying, and what you meant to come back for.',
+    opens: 'character',
+    says: 'Your tent. What you are wearing, and what it comes to.',
   },
 ];
 

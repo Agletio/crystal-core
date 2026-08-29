@@ -11,6 +11,7 @@ import { gaveKey, keyOwed } from '../game/scenes';
 import { relicFor } from '../game/graft';
 import type { GameState } from '../game/state';
 import { openGraft } from './graft';
+import { openShop } from './shop';
 import { lampwrightWords, openMet } from './met';
 import { note } from './history';
 import { renderInventory } from './inventory';
@@ -92,5 +93,9 @@ function offer(def: SceneDef): void {
   if (waiting) {
     openMet(waiting);
     syncTalk();
+    return;
   }
+
+  // THEIR OWN COUNTER, last: what is owed is handed over first.
+  if (def.keeps === 'shop') openShop();
 }

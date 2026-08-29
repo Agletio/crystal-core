@@ -309,8 +309,8 @@ export interface Hoard {
   opened: boolean;
   /** A VEIN pays currency where a Hoard pays gear: same lock, different thing. */
   pays: 'gear' | 'currency';
-  /** Which of the world's three it is, where its PROP sits in `map.props`, and
-   *  whether it is the RARE one — which pays quality, never a bigger pile. */
+  /** Which of the world's three it is, where its PROP sits, and whether it is
+   *  the RARE one — which pays quality, never a bigger pile. */
   lock: { shut: string; open: string };
   at: number;
   rare: boolean;
@@ -877,11 +877,26 @@ export class RunSim {
     const carried = RELICS.filter((r) => opensHere(r.gate, this.set.power, this.set.theme));
     const bearerChance = carried.length > 0 ? percentStat(this.set.mods, 'bearerChance') : 0;
 
+    // **A LOCK IS AN OCCASION, AND THE RUN DECIDES HOW MANY.** Per PACK,
+    // thirty packs turned an 80% chance into 24 Veins a descent; the chance
+    // buys a share of `HOARD.mostPerRun` instead.
+    // Drawn ONLY when something bought it, or the same seed parts between a
+    // set carrying Hoards and one that does not.
+    const lockSlots = (chance: number) =>
+      chance > 0 ? this.whole((chance / 100) * HOARD.mostPerRun) : 0;
+    const wanted = { hoards: lockSlots(hoardChance), veins: lockSlots(veinChance) };
+    const order =
+      wanted.hoards + wanted.veins > 0
+        ? this.rng.shuffle(Array.from({ length: packCount }, (_, i) => i))
+        : [];
+    const hoardAt = new Set(order.slice(0, wanted.hoards));
+    const veinAt = new Set(order.slice(wanted.hoards, wanted.hoards + wanted.veins));
+
     for (let p = 0; p < packCount; p++) {
       const room = this.rng.pick(rooms) ?? rooms[0];
-      const hoarded = hoardChance > 0 && this.rng.chance(hoardChance / 100);
+      const hoarded = hoardAt.has(p);
       // One lock a pack: the last guard down answers for one thing.
-      const veined = !hoarded && veinChance > 0 && this.rng.chance(veinChance / 100);
+      const veined = !hoarded && veinAt.has(p);
       const locked = hoarded || veined;
       const hoard = locked ? ++this.nextHoard : 0;
       const lift = 1 + (rank0 + (locked ? HOARD.rank : 0)) / 100;
@@ -3379,11 +3394,14 @@ export class RunSim {
   }
 
   /**
-   * WHAT IS LEFT TO PAY, over WHAT IS LEFT TO KILL. Drawing the budget down as
-   * it lands is the one spread whose TOTAL is the band's figure however the
-   * floor behaves: a rule that puts bodies back raises the divisor and lowers
-   * every later draw, so the Welling and the Splitting cost the run nothing.
-   * Seeded on the first kill — rarity is read off gear and the crystals.
+   * WHAT IS LEFT TO PAY, over WHAT IS LEFT TO KILL — the one spread whose
+   * TOTAL is the band's figure however the floor behaves: a rule putting bodies
+   * back raises the divisor, so the Welling costs the run nothing.
+   *
+   * **SETTLED TO A WHOLE NUMBER FIRST.** `left / bodiesLeft` places exactly
+   * `left` only when it is an INTEGER; on a fraction the run pays
+   * `left × H(bodies)` — 3.5 over 33 bodies. Measured, 0.9 paid 1.29 and
+   * cutting it to 0.18 still paid 0.79.
    */
   private budgets(): void {
     if (this.budgeted) return;
@@ -3391,17 +3409,21 @@ export class RunSim {
     const hero = this.state.hero.stats;
     // RARITY IS NOT IN HERE: it buys what a piece IS, never how many arrive.
     // In the count it paid the deep end 17× its band. `yield` is run LENGTH.
-    this.gearLeft = this.set.band.gearPerRun * this.set.yield;
-    this.currencyLeft =
-      CURRENCY_DROP.perRun * (1 + hero.currencyFind / 100) * this.set.pays.currency;
+    this.gearLeft = this.whole(this.set.band.gearPerRun * this.set.yield);
+    this.currencyLeft = this.whole(
+      CURRENCY_DROP.perRun * (1 + hero.currencyFind / 100) * this.set.pays.currency
+    );
   }
 
-  /** Bodies still to come, this one included — `killed` is already counted. */
+  private whole(budget: number): number {
+    const floor = Math.floor(budget);
+    return floor + (this.rng.chance(budget - floor) ? 1 : 0);
+  }
+
   private bodiesLeft(): number {
     return Math.max(1, this.state.totalMonsters - this.state.killed + 1);
   }
 
-  /** WHERE IT FELL: one seam in, one place it lands. */
   private lay(item: Item): void {
     this.state.loot.items.push(item);
     const at = this.dropAt ?? this.state.hero;
@@ -3617,7 +3639,6 @@ export class RunSim {
     }
 
     box.opened = true;
-    // THE LID GOES BACK: the same object's own open frame, in place.
     const prop = this.state.map.props[box.at];
     if (prop && prop.id === box.lock.shut) prop.id = box.lock.open;
 
@@ -3634,8 +3655,7 @@ export class RunSim {
       return;
     }
     this.dropAt = box;
-    // A RARE lock buys QUALITY and never quantity — the same one piece, drawn
-    // against more Rarity, which is the only lever the rest of the game uses.
+    // A RARE lock buys QUALITY: the same one piece, against more Rarity.
     const lift = box.rare ? LOCK.rareRarity : 0;
     if (box.pays === 'currency') this.dropCurrency(lift);
     else this.dropGear(lift);

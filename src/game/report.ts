@@ -56,8 +56,6 @@ function currencyRows(currency: Record<string, number>): ReportRow[] {
  *  descent: every clear before it banked as it happened. */
 export function buildReport(game: GameState, run: RunState, left = false): RunReport {
   const cleared = run.status === 'cleared' && !left;
-  // Only DYING banks nothing. What a walk does not buy is PROGRESS: no rung,
-  // no crystal, no levelling, no trial point.
   const keeps = cleared || left;
   const hadLoot = Object.values(run.loot.currency).some((n) => round(n) > 0);
 

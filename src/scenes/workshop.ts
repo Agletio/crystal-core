@@ -14,4 +14,7 @@ export const WORKSHOP: SceneDef = {
   greets:
     'Do not put it out. Do NOT — thank you. That is eleven hours of lamp and I am not walking back up in the dark. I keep a bench at the top; come and find me.',
   encounter: null,
+  // HIS COUNTER. He is the first person you meet, so the shop is his: the
+  // handover plays first, and every visit after it is the shelf.
+  keeps: 'shop',
 };

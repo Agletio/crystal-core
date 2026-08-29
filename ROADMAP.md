@@ -62,8 +62,12 @@ to look:
 
 | | |
 |---|---|
+| a shard is a DECISION | `perRun` 0.9 → 0.18 and the counter 10× dearer; measured 0.25 a clear against 2.5 pieces of gear |
+| the budget is WHOLE | a fractional `left / bodiesLeft` paid `left × H(bodies)`, so the table was never what arrived |
+| a lock is an OCCASION | `HOARD.mostPerRun` — per PACK the deep end put down 24 Veins a descent |
+| a counter is a PERSON'S | `SceneDef.keeps`; the shop is the Lampwright's, asked last so what is owed comes first |
 | ONE way out | Return to camp, and it KEEPS the loot — only dying banks nothing; "leave after this run" is gone |
-| the crack and the shelf | the Fissure and the shop come off the rail; the shelf is stock and the stash moved into the tent |
+| the crack | the Fissure comes off the rail and is the camp's; the shop went to a person instead |
 | twelve LOCKS | `LOCKS` — three a world, shut and open frames of one object, the rare one paying Rarity and never a bigger pile |
 | a trade comes ARMED | `TradeSpec.skill`, equipped where the trade is TAKEN; the cast hall names it and hovers its card, and the welcome is the name alone |
 | the Skills rail glows | `GameState.skillsSeen` / `cameBack`, `.railbtn--new` until it has been opened once |

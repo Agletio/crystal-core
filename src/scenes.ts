@@ -44,6 +44,9 @@ export interface SceneDef {
   after?: SceneBeat[]; // and once the fight is down
   encounter: string | null; // a `BossDef` id; null is a quiet room
   gives?: string; // a `BossKeyDef` id handed over here, once and in person
+  /** WHAT THEY KEEP: a counter, opened once they owe you nothing. A bench a
+   *  RELIC buys is this shape already (`relicFor`). */
+  keeps?: 'shop';
 }
 
 // A person smaller than the things you kill reads as set dressing.

@@ -212,8 +212,15 @@ export function rewardRows(crystal: Item): Array<{ label: string; value: string 
     rows.push({ label: 'density', value: `${Math.round(density)}%` });
   }
 
-  // A finding modifier carries no danger at all, so without a row of its own
-  // it is the one thing you can craft onto a crystal that says nothing.
+  // WHAT IT PAYS IN, when what it pays in is not danger. `crystalRewards`
+  // knows only danger and the rarity that comes off it, so a roll of Currency
+  // Find or coin used to change the item and NOTHING on the panel — the one
+  // thing you could craft onto a crystal that said nothing at all.
+  const found = totalOf(crystal.mods, 'currencyFind');
+  if (found > 0) rows.push({ label: 'currency', value: `+${Math.round(found)}%` });
+  const gilt = totalOf(crystal.mods, 'giltChance');
+  if (gilt > 0) rows.push({ label: 'gilded', value: `${Math.round(gilt)}%` });
+
   const bias = dropBias(crystal.mods);
   for (const group of DROP_GROUPS) {
     const aimed = (bias[group.id] ?? 1) - 1;

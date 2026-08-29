@@ -184,12 +184,20 @@ and no walk: eight hotspots — the crack, four sockets in the rock, the bench,
 the shelf, the tent — and what MOVES is light, wind and idling bodies on one
 canvas over the art. Everybody you have met stands about in it and clicking one
 goes to their room — a person's hotspot is their own body's grid, where that
-body was drawn. **THE FISSURE AND THE SHOP ARE REACHED FROM THE CAMP AND
-NOWHERE ELSE** — *"remove the fissure button, the shop, from the ui in the
-bottom right rail, have that only be from camp"* — the crack and the shelf.
-Everything else is still on the rail, and a screen with neither a button nor a
-hotspot is a screen somebody will lose. The shelf is STOCK, so what you are not
-carrying moved into the TENT with the rest of your kit.
+body was drawn. **THE FISSURE IS REACHED FROM THE CAMP AND NOWHERE ELSE** —
+*"remove the fissure button, the shop, from the ui in the bottom right rail,
+have that only be from camp"* — the crack. Everything else is still on the
+rail, and a screen with neither a button nor a hotspot is one somebody will
+lose.
+
+**A COUNTER BELONGS TO A PERSON, and the shop is the Lampwright's.** *"The shop
+should exist in the first character you meet… he can have his little dialogue
+pop-up and then show you he has a shop. Then after that when you talk to him it
+can be a shop. Each character can have something similar to a shop or a just a
+different shop entirely."* `SceneDef.keeps` is what somebody runs without being
+handed anything, asked LAST in `offer` — what is owed comes first, so the
+handover plays on the first visit and the shelf is every visit after it. A
+bench a RELIC buys (the ossuary's, the orrery's) is the same shape already.
 
 **One place you go, at the RUNG you pick.** `LADDER` is three zones of 12, 14
 and 16 rungs; a rung is CHOSEN, one you have cleared stays open for the rest of
@@ -290,8 +298,23 @@ shelf sells was refused by almost everything the floor dropped. **The item you
 save currency for is one with good lines and room to add**, which is the whole
 of what makes scarce currency a decision rather than a tax — *"the currency
 needs to be rare enough you need to wait to find an item that's good enough to
-start using it on."* **A lock pays TWICE the run's budget and no more**:
-`HOARD.drops` against `gearPerRun`, `VEIN.drops` against `CURRENCY_DROP.perRun`.
+start using it on."* **A SHARD IS A DECISION ABOUT ONE PIECE**: measured, the
+bare Fissure pays 0.25 a clear against 2.5 pieces of gear, and the counter's
+first one is several descents of saving.
+
+**A BUDGET IS SETTLED TO A WHOLE NUMBER BEFORE IT IS SPREAD.**
+`left / bodiesLeft` places exactly `left` items only when `left` is an INTEGER;
+on a fraction the per-body chance climbs to the whole remainder by the last
+body and the run pays `left × H(bodies)` — the harmonic number, 3.5 over 33
+bodies and 7.4 over 850. A currency budget of 0.9 paid 1.29 a clear, and
+cutting it to 0.18 still paid 0.79: the number in the table was never what
+arrived.
+
+**A LOCK IS AN OCCASION, AND THE RUN DECIDES HOW MANY.** `HOARD.mostPerRun` is
+what 100% chance buys and the roll buys a share of it. Per PACK it could not
+be: the pack count IS the difficulty, so the deep end's thirty packs turned an
+80% Vein chance into 24 Veins a descent against a run budget of 0.18, and gear
+rode eight Hoards while the band said 1.7.
 
 **A LOCK IS MADE OF THE WORLD IT STANDS IN, and it OPENS.** `LOCKS` is three a
 world — two ordinary and one RARE — each a `shut` prop and the `open` frame of
