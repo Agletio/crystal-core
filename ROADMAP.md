@@ -65,7 +65,7 @@ to look:
 | a shard is a DECISION | `perRun` 0.9 → 0.18 and the counter 10× dearer; measured 0.25 a clear against 2.5 pieces of gear |
 | the budget is WHOLE | a fractional `left / bodiesLeft` paid `left × H(bodies)`, so the table was never what arrived |
 | a lock is an OCCASION | `HOARD.mostPerRun` — per PACK the deep end put down 24 Veins a descent |
-| a counter is a PERSON'S | `SceneDef.keeps`; the shop is the Lampwright's, asked last so what is owed comes first |
+| a counter is a PERSON'S | `SceneDef.keeps`; the shop is the Lampwright's, and clicking anybody asks what you want of them |
 | ONE way out | Return to camp, and it KEEPS the loot — only dying banks nothing; "leave after this run" is gone |
 | the crack | the Fissure comes off the rail and is the camp's; the shop went to a person instead |
 | twelve LOCKS | `LOCKS` — three a world, shut and open frames of one object, the rare one paying Rarity and never a bigger pile |

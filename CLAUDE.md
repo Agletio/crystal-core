@@ -191,13 +191,18 @@ rail, and a screen with neither a button nor a hotspot is one somebody will
 lose.
 
 **A COUNTER BELONGS TO A PERSON, and the shop is the Lampwright's.** *"The shop
-should exist in the first character you meet… he can have his little dialogue
-pop-up and then show you he has a shop. Then after that when you talk to him it
-can be a shop. Each character can have something similar to a shop or a just a
-different shop entirely."* `SceneDef.keeps` is what somebody runs without being
-handed anything, asked LAST in `offer` — what is owed comes first, so the
-handover plays on the first visit and the shelf is every visit after it. A
-bench a RELIC buys (the ossuary's, the orrery's) is the same shape already.
+should exist in the first character you meet… Each character can have something
+similar to a shop or a just a different shop entirely."* `SceneDef.keeps` is
+what somebody runs without being handed anything; a bench a RELIC buys (the
+ossuary's, the orrery's) is the same shape already.
+
+**CLICKING A PERSON ASKS WHAT YOU WANT OF THEM** — *"a menu that says like
+Dialogue option / Shop / Exit"* — `options()` in `src/ui/talk.ts`: their words,
+their counter, the way out, each with an id a harness names rather than its
+wording. A counter reached only after the last beat was one you got to by
+pressing Next four times. **Talk still leads where the LINES lead**: a key and
+a gift are scripted moments and stay on the end of them, which is what keeps
+the first meeting a scene rather than a menu entry.
 
 **One place you go, at the RUNG you pick.** `LADDER` is three zones of 12, 14
 and 16 rungs; a rung is CHOSEN, one you have cleared stays open for the rest of

@@ -30,7 +30,7 @@ import { initFilter } from './ui/filter';
 import { initMet, isMetOpen } from './ui/met';
 import { initGraft, isGraftOpen } from './ui/graft';
 import { initSpeech, isSpeaking } from './ui/speech';
-import { initTalk } from './ui/talk';
+import { closeParley, initTalk, isParleying } from './ui/talk';
 import { initCrystals, openCrystals, closeCrystals, isCrystalsOpen } from './ui/crystals';
 import {
   centreCamera,
@@ -166,6 +166,8 @@ globalThis.addEventListener('keydown', (event) => {
   // The crystal is already granted by the time a panel is on screen, so Escape
   // takes it rather than refusing it — and from a line before the panel it
   // skips the rest of them and takes it anyway.
+  // The list is a QUESTION about a person and Escape answers it "nobody".
+  else if (isParleying()) closeParley();
   else if (isSpeaking() || isMetOpen() || isGraftOpen()) skipToGift();
   // The item menu is above every window, so it is what Escape is aimed at
   // while one is open — closing the window under it loses your place.

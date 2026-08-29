@@ -1,8 +1,10 @@
 /**
  * TALKING TO SOMEBODY IN THE CAMP. *"Then they can be in the camp and you can
- * just talk to them."* Their lines come up in the same bubble a map used,
- * pinned over the body the camp drew rather than over a tile, and what follows
- * the last one is whatever they are FOR — a gift, a key, or their bench.
+ * just talk to them."* Clicking one puts up WHAT THEY ARE FOR as a list —
+ * *"a menu that says like Dialogue option / Shop / Exit"* — because a counter
+ * that opened only after the last line was one you reached by pressing Next
+ * four times. The lines themselves come up in the bubble a map used, pinned
+ * over the body the camp drew rather than over a tile.
  */
 import { BOSS_KEY_BY_ID, LAMPWRIGHT } from '../data';
 import type { SceneBeat, SceneDef } from '../scenes';
@@ -15,6 +17,7 @@ import { openShop } from './shop';
 import { lampwrightWords, openMet } from './met';
 import { note } from './history';
 import { renderInventory } from './inventory';
+import { FACE, portraitIcon } from './icons';
 import { pin, startSpeech } from './speech';
 
 const $ = (id: string) => document.getElementById(id)!;
@@ -38,18 +41,73 @@ function wordsFor(def: SceneDef): SceneBeat[] {
   return [{ said: def.idles ?? def.said }];
 }
 
+/** WHAT THEY ARE FOR, in the order you would ask for it: their words, their
+ *  counter, the way out. Somebody with no counter still gets a list — one
+ *  saying only Talk and Leave confuses nobody. */
+function options(def: SceneDef): Array<{ id: string; said: string; go: () => void }> {
+  const out = [{ id: 'talk', said: 'Talk', go: () => say(def) }];
+  const wanted = relicFor(game, def.id);
+  if (wanted) out.push({ id: 'bench', said: 'Give him what you found', go: () => bench(def) });
+  else if (def.keeps === 'shop') out.push({ id: 'shop', said: 'Look at his shelf', go: counter });
+  out.push({ id: 'leave', said: 'Leave', go: closeParley });
+  return out;
+}
+
 /** `at` is the person's own rectangle in the camp, in page pixels. */
 export function openTalk(def: SceneDef, at: DOMRect): void {
   over = { x: at.left + at.width / 2, y: at.top };
+  $('parley-name').textContent = def.name;
+  const face = $('parley-face');
+  face.replaceChildren();
+  const portrait = portraitIcon(def.who, FACE.bubble);
+  if (portrait) face.append(portrait);
+
+  const list = $('parley-list');
+  list.replaceChildren();
+  for (const choice of options(def)) {
+    const btn = document.createElement('button');
+    btn.className = 'mini';
+    btn.id = `parley-${choice.id}`; // what a harness names, not the wording
+    btn.textContent = choice.said;
+    btn.onclick = choice.go;
+    list.append(btn);
+  }
+  $('parley').hidden = false;
+  syncTalk();
+}
+
+export const isParleying = (): boolean => !$('parley').hidden;
+
+export function closeParley(): void {
+  $('parley').hidden = true;
+}
+
+/** Their lines, and then whatever the LINES lead to: a key or a gift is a
+ *  scripted moment and stays on the end of them. */
+function say(def: SceneDef): void {
+  closeParley();
   startSpeech(def.who, def.name, wordsFor(def), () => offer(def));
   syncTalk();
+}
+
+function bench(def: SceneDef): void {
+  const wanted = relicFor(game, def.id);
+  if (!wanted) return;
+  closeParley();
+  openGraft(def, wanted);
+  syncTalk();
+}
+
+function counter(): void {
+  closeParley();
+  openShop();
 }
 
 /** Pins whatever is on screen. Also on resize: the camp scales with the
  *  window, so the body moves under the bubble. */
 export function syncTalk(): void {
   if (!over) return;
-  for (const id of ['speech', 'met-card', 'graft-card']) {
+  for (const id of ['speech', 'parley', 'met-card', 'graft-card']) {
     const node = $(id);
     if (!node.hidden && !node.closest('[hidden]')) pin(node, over.x, over.y);
   }
@@ -58,15 +116,15 @@ export function syncTalk(): void {
 export const isTalking = (): boolean => !$('speech').hidden;
 
 /** WHETHER THEY WANT YOU. What the mark over their head is for: something to
- *  hand over, a key owed, or a bench you are carrying the relic for. The same
- *  question `offer` answers, asked before the conversation instead of after. */
+ *  hand over, a key owed, or a bench you are carrying the relic for. A counter
+ *  is NOT a want — every visit being a demand reads as a shop. */
 export function wants(def: SceneDef): boolean {
   if (def.id === LAMPWRIGHT.scene) return giftWaiting(game) !== null;
   if (def.gives) return keyOwed(game, def);
   return relicFor(game, def.id) !== null;
 }
 
-/** What they are FOR. At most one is ever true, so nothing chooses. */
+/** What the LINES lead to. At most one is ever true, so nothing chooses. */
 function offer(def: SceneDef): void {
   // A KEY, once and in person. What it opens is the fifth socket's business.
   if (keyOwed(game, def)) {
@@ -80,22 +138,10 @@ function offer(def: SceneDef): void {
     return;
   }
 
-  // A BENCH, if you carry what they want. Nothing is spent until the button.
-  const wanted = relicFor(game, def.id);
-  if (wanted) {
-    openGraft(def, wanted);
-    syncTalk();
-    return;
-  }
-
   // WHATEVER IS OWED. One person owes anything, and this is the whole schedule.
   const waiting = def.id === LAMPWRIGHT.scene ? giftWaiting(game) : null;
   if (waiting) {
     openMet(waiting);
     syncTalk();
-    return;
   }
-
-  // THEIR OWN COUNTER, last: what is owed is handed over first.
-  if (def.keeps === 'shop') openShop();
 }

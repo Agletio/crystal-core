@@ -32,6 +32,8 @@ import { showTooltip, hideTooltip } from './tooltip';
 import { syncTalk, wants } from './talk';
 import type { GameState } from '../game/state';
 
+import { closeParley } from './talk';
+
 const $ = (id: string) => document.getElementById(id)!;
 
 let game: GameState;
@@ -187,6 +189,8 @@ export function openCamp(): void {
 export function closeCamp(): void {
   $('camp').hidden = true;
   live = false;
+  // Anchored to a body in a picture that is no longer up.
+  closeParley();
 }
 
 // --- what moves -------------------------------------------------------------

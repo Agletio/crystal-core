@@ -719,12 +719,11 @@ assert(invItems().length === inventoryBefore, 'item is still in the dock');
 assert(all('.dock .slot--on').length === 0, 'nothing highlighted after closing');
 
 
-/** THE COUNTER IS A PERSON'S. Clicking him starts his lines, and the shelf is
- *  what follows the last one — so a harness advances the beats the way a
- *  player does rather than reaching for a button that no longer exists. */
+/** THE COUNTER IS A PERSON'S, and clicking him puts up what he is FOR. The
+ *  entry ids outlive their wording, which is what a harness names. */
 const openCounter = () => {
   $('camp-who-workshop').click();
-  for (let i = 0; i < 8 && $('shop').hidden; i++) $('speech-next')?.click();
+  $('parley-shop')?.click();
 };
 
 // --- the shop buys against gold -------------------------------------------
@@ -2912,8 +2911,19 @@ assert(
     marked.every((m) => window.getComputedStyle(m).pointerEvents === 'none'),
     'and the mark takes no pointer, so the click still lands on the person'
   );
+  // *"A menu that says like Dialogue option / Shop / Exit."* Clicking a person
+  // asks what you want of them; talking is one of the answers.
   who[0].click();
-  assert($('speech').hidden === false, 'and clicking one starts them talking');
+  assert($('parley').hidden === false, 'and clicking one asks what you want of them');
+  assert(
+    $('parley-talk') !== null && $('parley-leave') !== null,
+    'with their words and a way out on it',
+    text('parley-list')
+  );
+  assert($('speech').hidden === true, 'and it does not start talking at you');
+  $('parley-talk').click();
+  assert($('parley').hidden === true, 'picking one puts the list away');
+  assert($('speech').hidden === false, 'and Talk is what starts them talking');
   assert(
     $('speech-said').textContent.trim().length > 0,
     'with a line in the bubble',

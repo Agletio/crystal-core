@@ -293,6 +293,8 @@ for (const vp of VIEWPORTS) {
   await page.waitForTimeout(400);
   try {
     await page.click('#camp-who-workshop');
+    await page.waitForTimeout(300);
+    await page.evaluate(() => document.getElementById('parley-talk')?.click());
     await page.waitForFunction(() => document.getElementById('speech')?.hidden === false, null, {
       timeout: 10000,
     });
@@ -421,9 +423,7 @@ for (const vp of VIEWPORTS) {
   // is what follows the last one, so this walks the beats a player clicks.
   await page.evaluate(() => {
     document.getElementById('camp-who-workshop')?.click();
-    for (let i = 0; i < 8 && document.getElementById('shop')?.hidden; i++) {
-      document.getElementById('speech-next')?.click();
-    }
+    document.getElementById('parley-shop')?.click();
   });
   await page.waitForTimeout(400);
   if (await page.evaluate(() => document.getElementById('shop')?.hidden !== false)) {
@@ -681,20 +681,13 @@ for (const vp of VIEWPORTS) {
   await page.evaluate(() => document.getElementById('sheet-close')?.click());
   await page.waitForTimeout(150);
 
-  // The GRAFT bench: the last beat of a CONVERSATION IN THE CAMP, reached the
-  // one way there is — by clicking the man standing in it. The kit has met him
-  // and carries what he wants, which is the whole of what puts the bench up.
+  // The GRAFT bench, reached the one way there is: by clicking the man
+  // standing in the camp and picking it off the list he puts up. The kit has
+  // met him and carries what he wants, which is what offers the bench at all.
   await page.evaluate(() => document.getElementById('camp-who-ossuary')?.click());
+  await page.waitForTimeout(300);
+  await page.evaluate(() => document.getElementById('parley-bench')?.click());
   try {
-    await page.waitForFunction(() => document.getElementById('speech')?.hidden === false, null, {
-      timeout: 30000,
-    });
-    // Through the DOM: the bubble is anchored to a point on the page.
-    for (let i = 0; i < 12; i++) {
-      if (await page.evaluate(() => document.getElementById('graft')?.hidden === false)) break;
-      await page.evaluate(() => document.getElementById('speech-next')?.click());
-      await page.waitForTimeout(250);
-    }
     await page.waitForFunction(() => document.getElementById('graft')?.hidden === false, null, {
       timeout: 5000,
     });

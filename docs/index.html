@@ -1592,6 +1592,10 @@
   }
   .speech__said { margin: 0; line-height: 1.5; font-size: 13px; }
   .speech__next { align-self: flex-end; padding: 2px 10px; font-size: 11px; }
+  /* A LIST, not prose: the card is as wide as its longest verb. */
+  .speech--menu { width: max-content; max-width: min(260px, calc(100vw - 32px)); }
+  .parley__list { display: flex; flex-direction: column; gap: 4px; min-width: 132px; }
+  .parley__list .mini { text-align: left; padding: 5px 10px; font-size: 12px; }
   /* The panel is the LAST beat, so it hangs where the bubble hangs rather than
      in the middle of a room it is meant to be standing in. */
   .modal.modal--speech { display: block; padding: 0; }
@@ -2276,6 +2280,17 @@
     <p class="speech__name" id="speech-name"></p>
     <p class="speech__said" id="speech-said"></p>
     <button class="mini speech__next" id="speech-next">Next</button>
+  </div>
+</div>
+
+<!-- WHAT SOMEBODY IS FOR, as a list. Clicking a person used to start talking
+     at you; a counter that opens only after the last line is a counter you
+     reach by clicking Next four times. Same bubble, same anchor. -->
+<div class="speech speech--menu" id="parley" hidden>
+  <span class="speech__who" id="parley-face"></span>
+  <div class="speech__body">
+    <p class="speech__name" id="parley-name"></p>
+    <div class="parley__list" id="parley-list"></div>
   </div>
 </div>
 
