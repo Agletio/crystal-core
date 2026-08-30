@@ -15,7 +15,7 @@
  * thing you may enter rather than at somebody else's rung.
  */
 import { LADDER } from '../data';
-import { canEnter, climbed, furthest, zoneAt, zoneOpen } from '../ladder';
+import { campaignLine, canEnter, climbed, furthest, zoneAt, zoneOpen } from '../ladder';
 import type { Rung } from '../ladder';
 import { SCENE_ART } from '../render/generated-scene';
 import type { Character } from '../sim/character';
@@ -173,6 +173,7 @@ export function renderClimb(host: HTMLElement, character: Character, onPick: () 
   host.append(el('p', 'panel__title', 'The climb'));
   host.append(el('p', 'climb__where',
     `${rungLabel(character)} · ${totals.done} of ${totals.all} depths cleared`));
+  host.append(el('p', 'climb__prize', campaignLine(character)));
   tabs(host, character, z, () => renderClimb(host, character, onPick));
 
   const all = stations(zone.rungs);
@@ -211,7 +212,11 @@ export function renderClimb(host: HTMLElement, character: Character, onPick: () 
     pip.classList.toggle('pip--here', at.zone === z && at.rung === station.rung);
     pip.disabled = !can;
 
-    const what = boss ? ` The top of ${zone.name}: a fight in an arena of its own.` : '';
+    const last = boss && z === LADDER.zones.length - 1;
+    const what = !boss
+      ? ''
+      : ` The top of ${zone.name}: a fight in an arena of its own.` +
+        (last ? ' It is the end of the climb, and the whole of what pays for it.' : '');
     attachTooltip(pip, () =>
       (!can
         ? `${zone.name}, depth ${station.rung}. Clear depth ${cleared + 1} first.`

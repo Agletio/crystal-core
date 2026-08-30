@@ -275,17 +275,23 @@ world you walk into. Danger and socket
 count fold into one **run power**, and every reward reads that and nothing else.
 A fifth socket takes a **boss key**.
 
-**NOTHING IS PAID UNTIL THE CAMPAIGN IS WHOLE.** *"You shouldn't see any trial
-stuff or even receive any crystals until you've cleared the entire campaign."*
-`campaignDone` is every zone climbed to its own boss; `takeDepth` pays
-`CAMPAIGN_REWARD` — one crystal and 10 points — on the depth that finishes the
-last one, flagged by `Character.paidCampaign` so a re-grind pays nothing, and
-`trialPointsFor` returns 0 before it. The web is still on screen from the first
-descent, with nothing on it walkable: a plan you cannot see is a plan nobody
-makes.
+**NOTHING IS PAID UNTIL THE CAMPAIGN IS WHOLE, AND THE LAMPWRIGHT IS WHO PAYS
+IT.** *"You shouldn't see any trial stuff or even receive any crystals until
+you've cleared the entire campaign."* `campaignDone` is every zone climbed to
+its own boss, and finishing it pays NOTHING on the report: `CAMPAIGN_REWARD` —
+one crystal and 10 points — is a third thing `giftWaiting` puts in his hands,
+taken in his own scene in the camp, which is what makes him the person the
+campaign ends at. `Character.paidCampaign` is set by the HANDOVER and read by
+`trialPointsFor`, so the points and the crystal arrive together and a re-grind
+pays nothing. **The finish line is SAID before you get there** — `campaignLine`
+on the climb names the depth that ends it and quotes `campaignPrize`, because a
+reward nobody can see is a reward nobody is climbing toward. The web is on
+screen from the first descent, with nothing on it walkable: a plan you cannot
+see is a plan nobody makes.
 
-**The Lampwright owes the weapon and the FIRST crystal and nothing else**;
-there is no quest ladder any more, and `CRYSTAL_DEPTHS` is gone with it.
+**The Lampwright owes the weapon, the FIRST crystal and the campaign's reward,
+and nothing else**; there is no quest ladder any more, and `CRYSTAL_DEPTHS` is
+gone with it.
 
 **A CRYSTAL'S LEVEL IS THE WHOLE OF GEAR PROGRESSION.** *"Make it where tiers
 are just based on crystal level and make it take longer to level them."*

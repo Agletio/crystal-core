@@ -8,12 +8,12 @@
  */
 import { Rng } from '../rng';
 import { SCENES } from '../scenes';
-import { BOSS_BY_ID, INTRO, LADDER, THEME_BY_ID, TRIALS } from '../data';
+import { BOSS_BY_ID, CAMPAIGN_REWARD, INTRO, LADDER, THEME_BY_ID, TRIALS, TRIAL_POINTS } from '../data';
 import { ladderCharacter } from '../sim/loadout';
 import { mainSkillId, skillProgress } from '../sim/character';
 import { heal } from '../game/save';
 import { takeMet } from '../game/scenes';
-import { TRIAL_POINTS_MAX } from '../trials';
+import { campaignDone } from '../ladder';
 import { pathToNotable } from '../skills-tree';
 import type { GameState } from '../game/state';
 import { ask } from './confirm';
@@ -148,12 +148,13 @@ function render(): void {
   // can only be looked at on a save that has already done the work.
   const trials = group(
     'Trials',
-    'Points for the trials web. A point per trial and a point per rung cleared — so the climb buttons below are the other half of its budget.'
+    'Points for the trials web. Nothing pays one until the climb is whole and the Lampwright has handed the campaign\'s reward over, so the climb buttons below are the door to this.'
   );
   const paid = el('button', 'mini devbtn') as HTMLButtonElement;
   paid.id = 'dev-trials';
   paid.append(el('span', 'devbtn__name', `Do every trial`));
-  paid.append(el('span', 'devbtn__what', `${TRIALS.length} points; the rungs pay ${TRIAL_POINTS_MAX - TRIALS.length} more`));
+  paid.append(el('span', 'devbtn__what',
+    `${TRIALS.length * TRIAL_POINTS.perTrial} points, once the campaign has paid its ${CAMPAIGN_REWARD.points}`));
   paid.onclick = () => {
     game.character.trials = TRIALS.map((t) => t.id);
     hooks.refresh();
@@ -166,7 +167,7 @@ function render(): void {
   // reachable on a save that has already done it.
   const climb = group(
     'The climb',
-    'Rungs cleared. Normally one per cleared descent, and a zone opens when the one before it is whole.'
+    'Rungs cleared. Normally one per cleared descent, and a zone opens when the one before it is whole. Clearing the last one settles the Lampwright\'s handover too.'
   );
   LADDER.zones.forEach((zone, z) => {
     const button = el('button', 'mini devbtn') as HTMLButtonElement;
@@ -178,6 +179,9 @@ function render(): void {
       const done: Record<string, number> = { ...game.character.climbed };
       for (let i = 0; i <= z; i++) done[LADDER.zones[i].id] = LADDER.zones[i].rungs;
       game.character.climbed = done;
+      // The kit skips the meeting as well: a web nobody can spend a point on
+      // is a screen nobody tested.
+      if (campaignDone(game.character)) game.character.paidCampaign = true;
       hooks.refresh();
       note(`Dev: ${name} cleared.`);
       close();

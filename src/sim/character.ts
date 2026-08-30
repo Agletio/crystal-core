@@ -46,7 +46,7 @@ export interface Character {
   attributes: Record<string, number>;
   /** The trade taken up, or null before one is. Survives every skill swap. */
   trade: string | null;
-  paidCampaign?: boolean; // the campaign's reward, PAID once. Absent until then
+  paidCampaign?: boolean; // the Lampwright has handed the campaign over. Once
   /** Nodes walked on it, out of a budget character level funds. */
   tradeAllocated: string[];
   /** Trials done, in the order they were done. Its LENGTH is the point budget
@@ -134,8 +134,7 @@ export function makeCharacter(
 
 /** Points the trials done have paid, and what is left of them. */
 export const trialPointsLeft = (character: Character): number =>
-  trialPointsFor(character.trials ?? [], character.climbed ?? {}) -
-  (character.trialAllocated?.length ?? 0);
+  trialPointsFor(character) - (character.trialAllocated?.length ?? 0);
 
 /** One node, or nothing when it is not reachable or nothing is spare. */
 export function allocateTrial(character: Character, nodeId: string): boolean {

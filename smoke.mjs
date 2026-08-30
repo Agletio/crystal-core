@@ -298,6 +298,20 @@ assert(
 );
 $('climb-pip-0-1').click();
 $('run-menu-close').click();
+
+// THE WEB IS SHUT UNTIL THE LAMPWRIGHT HAS PAID. It is on screen from the first
+// descent — a plan you cannot see is a plan nobody makes — and every node on it
+// is dead until he hands the campaign's own reward over in the camp.
+$('camp-fire').click();
+assert($('trials-webwrap').hidden === false, 'a new character sees the whole trials web');
+assert(
+  all('#trials-web .web__node--open').length === 0,
+  'and not one node of it is walkable before the campaign has been paid for',
+  String(all('#trials-web .web__node--open').length)
+);
+assert(/^0\//.test(text('trials-sub')), 'because it holds no points at all', text('trials-sub'));
+$('trials-close').click();
+
 $('open-dev').click();
 $('dev-kit').click();
 $('confirm-yes').click();
@@ -970,10 +984,11 @@ assert(
 );
 // Nothing about a gift is a probability any more, so the screen states a fact.
 // A percentage here would be the one thing on it a player cannot act on. The
-// campaign pays the first crystal, so what is named is the zones still to clear.
+// Lampwright pays the whole campaign, so what is named is either the zones
+// still to clear, the meeting waiting on you, or that he is finished with you.
 assert(
-  /(talk to him in the camp|until the climb is finished)/i.test(text('crystals-npc')),
-  'the collection says what stands between you and the first crystal',
+  /(talk to him in the camp|once the climb is finished|has nothing else)/i.test(text('crystals-npc')),
+  'the collection says exactly where the next crystal stands',
   text('crystals-npc')
 );
 assert(
@@ -2816,21 +2831,11 @@ $('dev-kit').click();
     String(all('#trials-web .web__node').length)
   );
 
-  // NOTHING IS WALKABLE UNTIL THE CAMPAIGN IS WHOLE. The web is on screen from
-  // the first descent, and every node on it is shut until the climb is finished.
-  const openTrial = () => all('#trials-web .web__node--open');
-  assert(
-    openTrial().length === 0,
-    'and not one node of it is walkable before the campaign is cleared',
-    String(openTrial().length)
-  );
-  $('trials-close').click();
-  $('open-dev').click();
-  $('dev-climb-2').click();
-  $('camp-fire').click();
   // FOUR ways in, one per road off the middle — everything else is reached by
-  // walking, which is the whole of what makes a route a decision.
-  assert(openTrial().length === 4, 'four roads out of the middle, once it is', String(openTrial().length));
+  // walking, which is the whole of what makes a route a decision. The kit has
+  // been paid for the campaign, which is the whole of what opens any of them.
+  const openTrial = () => all('#trials-web .web__node--open');
+  assert(openTrial().length === 4, 'four roads out of the middle', String(openTrial().length));
   openTrial()[0].dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
   assert(
     all('#trials-web .web__node--on').length === 1,

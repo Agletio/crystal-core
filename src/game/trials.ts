@@ -60,7 +60,7 @@ export function healTrials(character: Character): number {
   const wanted = (Array.isArray(character.trialAllocated) ? character.trialAllocated : []).filter(
     (id) => typeof id === 'string'
   );
-  const kept = replayTrialNodes(wanted, trialPointsFor(character.trials, character.climbed ?? {}));
+  const kept = replayTrialNodes(wanted, trialPointsFor(character));
   character.trialAllocated = kept;
 
   // A choice on a node nobody walked, or an option that no longer exists, is a

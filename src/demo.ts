@@ -114,7 +114,8 @@ import {
 import { variants } from './sim/appearance';
 import type { GearBase } from './types';
 import {
-  arenaAt, campaignDone, canEnter, climbed, furthest, takeRung, zoneOpen,
+  arenaAt, campaignDone, campaignLine, campaignPrize, canEnter, climbed, furthest, takeRung,
+  zoneOpen,
 } from './ladder';
 import { canDualWield } from './sim/character';
 import {
@@ -344,7 +345,6 @@ import {
   crystalXp,
   giftWaiting,
   giftSchedule,
-  takeDepth,
   ownedCrystals,
   takeHandover,
   xpForClear,
@@ -2541,7 +2541,7 @@ rule('THE OPENING — is the first hour walkable with nothing explaining it?');
   const game = createGame('fresh');
   grantFirstClear(game);
   bankLoot(game, [makeGear('ash_wand', 1), makeGear('bulwark_helmet_t1', 8)]);
-  takeHandover(game, { weapon: true, crystal: false });
+  takeHandover(game, { weapon: true, crystal: false, campaign: false });
   line(
     `  after the first clear: ${balance(game.wallet, 'gold')} gold, ` +
       `${game.inventory.length} items`
@@ -2553,7 +2553,7 @@ rule('THE OPENING — is the first hour walkable with nothing explaining it?');
   const making = RECIPES.find((r) => r.id === 'make_shard_of_making');
   const bill = making ? (recipeInputs(making, 1).gold ?? 0) : 0;
   const handed = createGame('fresh');
-  const owed = takeHandover(handed, { weapon: false, crystal: true });
+  const owed = takeHandover(handed, { weapon: false, crystal: true, campaign: false });
   check(
     (owed.currency[INTRO.scriptedCurrency] ?? 0) > 0,
     `the opening HANDS you the craft — the counter's own is ${bill} gold, several descents off`,
@@ -2596,7 +2596,7 @@ rule('THE OPENING — is the first hour walkable with nothing explaining it?');
     'the bench reaches a weapon you are wearing',
     'wearing the benched item lost it — the bench resolves to nothing'
   );
-  takeHandover(game, { weapon: false, crystal: true });
+  takeHandover(game, { weapon: false, crystal: true, campaign: false });
   const crystal = crystalsIn(game)[0];
   selectForCraft(game, crystal);
   socketItem(game, crystal, socketFor(game, crystal)!);
@@ -3131,16 +3131,18 @@ rule('THE TRIALS WEB — is a harder descent actually harder, and paid for?');
   {
     const one = makeCharacter({}, 'strike');
     one.trials = TRIALS.map((t) => t.id);
-    // THE WHOLE CAMPAIGN, because nothing pays a point before it is finished.
+    // THE WHOLE CAMPAIGN, PAID, because nothing pays a point before the
+    // Lampwright has handed the climb's own reward over.
     one.climbed = Object.fromEntries(LADDER.zones.map((zone) => [zone.id, zone.rungs]));
+    one.paidCampaign = true;
     one.trialAllocated = [trialNodes()[0].id];
     const two = makeCharacter({}, 'strike');
     check(
-      trialPointsFor(two.trials ?? [], two.climbed ?? {}) === 0
+      trialPointsFor(two) === 0
         && (two.trialAllocated ?? []).length === 0
-        && trialPointsFor(one.trials, one.climbed) > 0,
+        && trialPointsFor(one) > 0,
       'the trials web is the CHARACTER\'s: a second one starts at nothing',
-      `${trialPointsFor(one.trials, one.climbed)} against ${trialPointsFor(two.trials ?? [], two.climbed ?? {})}`
+      `${trialPointsFor(one)} against ${trialPointsFor(two)}`
     );
     // And nothing gates LOOKING at it: a plan you cannot see is a plan nobody
     // makes. What a new character has is no points, which is not a door.
@@ -3364,6 +3366,7 @@ rule('THE TRIALS WEB — is a harder descent actually harder, and paid for?');
   // On a FINISHED campaign, since nothing pays a point before that.
   const save = createGame('dev');
   save.character.climbed = Object.fromEntries(LADDER.zones.map((z) => [z.id, z.rungs]));
+  save.character.paidCampaign = true;
   save.character.trialAllocated = [...walk];
   save.character.trials = [TRIALS[0].id, 'a_trial_nobody_wrote'];
   healTrials(save.character);
@@ -10436,8 +10439,10 @@ rule('THE COLLECTION — do crystals arrive, and do they grow?');
       made.ok ? String(made.item.meta.scripted) : '—'
     );
     check(
-      giftWaiting(g) === null && /until the climb is finished/.test(giftSchedule(g)),
-      'and everything after that waits on the CAMPAIGN, which the screen names',
+      giftWaiting(g) === null
+        && /once the climb is finished/.test(giftSchedule(g))
+        && giftSchedule(g).includes(campaignPrize()),
+      `and everything after that waits on the CAMPAIGN, which the screen names, for ${campaignPrize()}`,
       giftSchedule(g)
     );
   }
@@ -10743,62 +10748,96 @@ rule('THE COLLECTION — do crystals arrive, and do they grow?');
   }
 }
 
-// THE CAMPAIGN PAYS THE FIRST CRYSTAL, and nothing before it does. *"You
-// shouldn't see any trial stuff or even receive any crystals until you've
-// cleared the entire campaign."* `CRYSTAL_DEPTHS` is gone; what has to hold is
-// that the whole 42-depth climb is paid NOTHING and the last depth pays once.
+// THE CAMPAIGN PAYS THE FIRST CRYSTAL, and NOBODY BUT THE LAMPWRIGHT HANDS IT
+// OVER. *"You shouldn't see any trial stuff or even receive any crystals until
+// you've cleared the entire campaign."* So the whole 42-depth climb pays
+// nothing on its own, and what finishing it is worth waits in the camp — which
+// is what makes him the person the campaign ends at.
 {
   const game = createGame('fresh');
   game.character = ladderCharacter(1, new Rng(3));
   game.character.climbed = {};
+  game.given = ['weapon', 'crystal']; // his other two, already done
 
-  // EVERY DEPTH BUT THE LAST, walked in order, pays nothing at all.
-  let paid = 0;
+  // EVERY DEPTH BUT THE LAST, walked in order, puts nothing at the mouth.
+  let owed = 0;
+  let points = 0;
   LADDER.zones.forEach((zone, z) => {
     for (let rung = 1; rung <= zone.rungs; rung++) {
-      const at = { zone: z, rung };
-      paid += takeDepth(game, at).length;
-      takeRung(game.character, at);
+      takeRung(game.character, { zone: z, rung });
+      if (giftWaiting(game)) owed++;
+      points += trialPointsFor(game.character);
     }
   });
   check(
-    campaignDone(game.character) && paid === CAMPAIGN_REWARD.crystals,
-    `the whole ${LADDER_RUNGS}-depth climb pays ${paid} crystal, and it is the LAST depth that pays it`,
-    `${paid} paid across the climb`
+    campaignDone(game.character) && owed === 1 && points === 0,
+    `the whole ${LADDER_RUNGS}-depth climb owes you something ${owed} time — at the END of it — and pays 0 points on the way`,
+    `${owed} owed, ${points} points across the climb`
   );
   check(
-    ownedCrystals(game).length === CAMPAIGN_REWARD.crystals,
-    'and it is actually in your hands',
-    `${ownedCrystals(game).length} owned`
+    ownedCrystals(game).length === 0 && trialPointsFor(game.character) === 0,
+    'and the last depth alone still hands over NOTHING: it is waiting in the camp',
+    `${ownedCrystals(game).length} owned, ${trialPointsFor(game.character)} points`
   );
-  // ONCE. Re-grinding the last depth of the last zone pays nothing more.
-  const top = LADDER.zones.length - 1;
-  const again = takeDepth(game, { zone: top, rung: LADDER.zones[top].rungs });
-  check(again.length === 0, 'and re-grinding the last depth pays nothing more', `${again.length} paid`);
 
-  // AND NOTHING IS PAID EARLY. A character one depth short of the end has none.
+  // THE MEETING is the whole payment, crystal and points at once.
+  const waiting = giftWaiting(game);
+  check(
+    waiting?.campaign === true && waiting.weapon === false && waiting.crystal === false,
+    'what he is holding is the CAMPAIGN\'s reward and neither of his other two',
+    JSON.stringify(waiting)
+  );
+  const hand = takeHandover(game, waiting!);
+  check(
+    hand.items.length === CAMPAIGN_REWARD.crystals
+      && ownedCrystals(game).length === CAMPAIGN_REWARD.crystals
+      && trialPointsFor(game.character) === CAMPAIGN_REWARD.points,
+    `and taking it is ${CAMPAIGN_REWARD.crystals} crystal in your hands and ${CAMPAIGN_REWARD.points} trial points on the web`,
+    `${ownedCrystals(game).length} owned, ${trialPointsFor(game.character)} points`
+  );
+  check(
+    hand.says.some((said) => said.includes(String(CAMPAIGN_REWARD.points))),
+    'and the panel SAYS the points, which are the one thing in it you cannot hold',
+    JSON.stringify(hand.says)
+  );
+  // ONCE, and then he owes nothing at all — there is no second campaign.
+  check(
+    giftWaiting(game) === null && /nothing else/.test(giftSchedule(game)),
+    'and once it is handed over the Lampwright owes nothing at all',
+    `${JSON.stringify(giftWaiting(game))} · ${giftSchedule(game)}`
+  );
+
+  // AND NOTHING IS OWED EARLY. A character one depth short of the end has none.
+  const top = LADDER.zones.length - 1;
   const nearly = createGame('fresh');
   nearly.character = ladderCharacter(1, new Rng(4));
+  nearly.given = ['weapon', 'crystal'];
   nearly.character.climbed = Object.fromEntries(
     LADDER.zones.map((zone, z) => [zone.id, z === top ? zone.rungs - 1 : zone.rungs])
   );
-  const early = takeDepth(nearly, { zone: top, rung: LADDER.zones[top].rungs - 1 });
   check(
-    !campaignDone(nearly.character) && early.length === 0 && ownedCrystals(nearly).length === 0,
-    'one depth short of the end is still no crystal at all',
-    `${ownedCrystals(nearly).length} owned`
+    !campaignDone(nearly.character)
+      && giftWaiting(nearly) === null
+      && ownedCrystals(nearly).length === 0
+      && trialPointsFor(nearly.character) === 0,
+    'one depth short of the end is still no crystal and no point at all',
+    `${ownedCrystals(nearly).length} owned, ${trialPointsFor(nearly.character)} points`
   );
-}
 
-// THE LAMPWRIGHT OWES TWO THINGS. The quest ladder was his; it is the
-// campaign's now, so he has the weapon and the first crystal and nothing else.
-{
-  const met = createGame('fresh');
-  met.given = ['weapon', 'crystal'];
+  // THE FINISH LINE IS STATED BEFORE YOU GET THERE, on the screen the climb is
+  // picked from, with the reward in numbers and the depth that pays it named.
+  const last = LADDER.zones[top];
   check(
-    giftWaiting(met) === null,
-    'and once he has handed those over the Lampwright owes nothing at all',
-    JSON.stringify(giftWaiting(met))
+    campaignLine(nearly.character).includes(campaignPrize())
+      && campaignLine(nearly.character).includes(`${last.name}, depth ${last.rungs}`),
+    `and the climb names the finish line before you reach it — ${last.name}, depth ${last.rungs}, for ${campaignPrize()}`,
+    campaignLine(nearly.character)
+  );
+  check(
+    /holding/.test(campaignLine({ ...nearly.character, climbed: game.character.climbed }))
+      && /has paid/.test(campaignLine(game.character)),
+    'and it says he is HOLDING it once the climb is whole, and stops once he has let go',
+    `${campaignLine({ ...nearly.character, climbed: game.character.climbed })} · ${campaignLine(game.character)}`
   );
 }
 

@@ -1,6 +1,6 @@
 /**
- * What owning crystals turns into over time: they level while socketed, the
- * Lampwright gives you the Normal ones, and the other two worlds are quests.
+ * What owning crystals turns into over time: they level while socketed, and the
+ * Lampwright hands over every one the campaign pays for.
  *
  * A crystal is never spent, so this is the only thing that changes one without
  * a currency being poured on it — which is why the level, the base, the name
@@ -22,7 +22,7 @@ import { armForSkill, giveGift } from './state';
 import type { GameState } from './state';
 import { grant, makeCrystal } from '../economy';
 import { crystalFamily } from '../sim/crystal';
-import { campaignDone, climbed, zoneAt } from '../ladder';
+import { campaignDone, campaignPrize, climbed } from '../ladder';
 import type { RunSet } from '../sim/crystal';
 import type { Item, RolledMod } from '../types';
 
@@ -41,6 +41,8 @@ export function ownedCrystals(game: GameState): Item[] {
 export interface Waiting {
   weapon: boolean;
   crystal: boolean;
+  /** The whole campaign's reward. He holds it until you come and take it. */
+  campaign: boolean;
 }
 
 /** The ACTIVE skill at `INTRO.crystalSkillLevel` with every point of it spent:
@@ -53,15 +55,17 @@ export function crystalEarned(game: GameState): boolean {
   return pointsAvailable(skillId, progress) === 0;
 }
 
-/** THE LAMPWRIGHT OWES TWO THINGS AND NO MORE: the weapon your skill wants and
- *  your FIRST crystal. Every crystal after it comes out of the ground at a
- *  DEPTH, so there is nothing left for him to schedule. */
+/** THE LAMPWRIGHT OWES THREE THINGS AND NO MORE: the weapon your skill wants,
+ *  your FIRST crystal, and everything finishing the climb pays. **He is the
+ *  person the campaign ends at**, so its reward is handed over in his scene. */
 export function giftWaiting(game: GameState): Waiting | null {
   const given = game.given ?? [];
   const weapon = !given.includes('weapon');
   const crystal = !weapon && !given.includes('crystal') && crystalEarned(game);
-  if (!weapon && !crystal) return null;
-  return { weapon, crystal };
+  const campaign =
+    !weapon && !crystal && !game.character.paidCampaign && campaignDone(game.character);
+  if (!weapon && !crystal && !campaign) return null;
+  return { weapon, crystal, campaign };
 }
 
 /** What the collection screen says about the next meeting. */
@@ -87,23 +91,29 @@ export function giftSchedule(game: GameState): string {
   }
   // NAMING WHAT IS LEFT: "somewhere below" is what a player cannot act on.
   if (game.character.paidCampaign) return `${who} has nothing else.`;
+  if (campaignDone(game.character)) {
+    return `${who} is holding ${campaignPrize()} for finishing the climb. Go and talk to him in the camp.`;
+  }
   const left = LADDER.zones.filter((zone, z) => climbed(game.character, z) < zone.rungs);
   return (
-    `${who} has nothing else until the climb is finished. ` +
+    `${who} has ${campaignPrize()} for you once the climb is finished. ` +
     `${left.map((z) => z.name).join(', ')} still ${left.length === 1 ? 'stands' : 'stand'} ` +
-    `between you and the first crystal.`
+    `between you and it.`
   );
 }
 
-/** Everything one meeting puts in your hands. Currency has no slot. */
+/** Everything one meeting puts in your hands. Currency has no slot, and `says`
+ *  is what was handed over that is not a thing you can hold at all. */
 export interface Handover {
   items: Item[];
   currency: Record<string, number>;
+  says: string[];
 }
 
 export function takeHandover(game: GameState, waiting: Waiting): Handover {
   const items: Item[] = [];
   const currency: Record<string, number> = {};
+  const says: string[] = [];
 
   if (waiting.weapon) {
     const gift = armForSkill(game); // marks `given` itself
@@ -120,7 +130,18 @@ export function takeHandover(game: GameState, waiting: Waiting): Handover {
     currency[INTRO.scriptedCurrency] = 1;
     items.push(crystal);
   }
-  return { items, currency };
+  if (waiting.campaign) {
+    // The flag IS the points: `trialPointsFor` reads it, so the web fills the
+    // moment he lets go of them and never before.
+    game.character.paidCampaign = true;
+    for (let i = 0; i < CAMPAIGN_REWARD.crystals; i++) {
+      const crystal = makeCrystal(1, 'normal');
+      giveGift(game, crystal);
+      items.push(crystal);
+    }
+    says.push(`${CAMPAIGN_REWARD.points} trial points`);
+  }
+  return { items, currency, says };
 }
 
 // --- levelling --------------------------------------------------------------
@@ -235,7 +256,7 @@ export function advanceSocketed(game: GameState, set: RunSet): CrystalGain[] {
   return out;
 }
 
-// --- what a DEPTH pays ------------------------------------------------------
+// --- what a descent WAS -----------------------------------------------------
 
 /** What one cleared descent WAS, for a trial to be asked about it. */
 export interface QuestFacts {
@@ -247,27 +268,5 @@ export interface QuestFacts {
   hoards?: number; // opened during it; absent for a caller with no run behind it
   welled?: number; // welled bodies put down during it
   bearers?: number; // Bearers put down during it
-}
-
-/** THE CAMPAIGN PAYS NOTHING UNTIL IT IS WHOLE, and the depth that finishes the
- *  last zone pays the lot at once. Flagged on the character, so re-grinding it
- *  pays nothing; asked BEFORE `takeRung` records the depth. */
-export function takeDepth(game: GameState, at: { zone: number; rung: number }): Item[] {
-  const already = Number(game.character.climbed?.[zoneAt(at.zone)?.id ?? ''] ?? 0);
-  if (already >= at.rung || game.character.paidCampaign) return [];
-  // Asked as though this depth were already recorded, since it is about to be.
-  const after = { ...game.character, climbed: { ...(game.character.climbed ?? {}) } };
-  const key = zoneAt(at.zone)?.id;
-  if (key) after.climbed![key] = Math.max(already, at.rung);
-  if (!campaignDone(after)) return [];
-
-  game.character.paidCampaign = true;
-  const out: Item[] = [];
-  for (let i = 0; i < CAMPAIGN_REWARD.crystals; i++) {
-    const crystal = makeCrystal(1, 'normal');
-    giveGift(game, crystal);
-    out.push(crystal);
-  }
-  return out;
 }
 

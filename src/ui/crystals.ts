@@ -152,10 +152,8 @@ function renderRow(row: Row): HTMLElement {
   return card;
 }
 
-/** WHAT THE CLIMB PAYS, and where. A depth already behind you is marked taken,
- *  so the panel reads as a ladder you are partway up rather than a wishlist. */
 /** THE CLIMB, as the one thing standing between you and a crystal. Nothing is
- *  paid out of the wall any more — the campaign pays once, whole. */
+ *  paid out of the wall — the Lampwright pays the whole campaign, once. */
 function renderZone(zone: LadderZoneDef, z: number): HTMLElement {
   const done = climbed(game.character, z) >= zone.rungs;
   const card = el('div', `quest${done ? ' quest--done' : ''}`);

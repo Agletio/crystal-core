@@ -602,10 +602,12 @@ for (const vp of VIEWPORTS) {
   await page.evaluate(() => {
     document.getElementById('open-dev')?.click();
     document.getElementById('dev-trials')?.click();
-    // The web is SHUT until the Fissure is whole, so the kit clears it first —
-    // a screenshot of the gate is a screenshot of nothing being judged.
+    // NOTHING pays a point until the whole campaign is finished AND the
+    // Lampwright has handed its reward over, so the kit clears the last zone —
+    // a screenshot of an unwalkable web is a screenshot of nothing being judged.
     document.getElementById('open-dev')?.click();
-    document.getElementById('dev-climb-0')?.click();
+    const climbs = [...document.querySelectorAll('[id^="dev-climb-"]')];
+    climbs[climbs.length - 1]?.click();
     document.getElementById('camp-fire')?.click();
     for (let i = 0; i < 3; i++) {
       const open = document.querySelector('#trials-web .web__node--open');

@@ -40,7 +40,7 @@ import {
 import { spend } from '../economy';
 import { bagsFull, crystalsIn, socketed, unsocket } from '../game/state';
 import type { GameState } from '../game/state';
-import { crystalProgress, takeDepth } from '../game/crystals';
+import { crystalProgress } from '../game/crystals';
 import { bossBeaten, hasMet, takeBoss, takeMet } from '../game/scenes';
 import { takeTrials } from '../game/trials';
 import { SCENES, SCENE_BY_ID } from '../scenes';
@@ -48,7 +48,7 @@ import type { Hotspot } from '../scenes/camp';
 import { initCamp, openCamp, closeCamp, isCampOpen, renderCamp, setCampEmber } from './camp';
 import { openTalk } from './talk';
 import { advanceRung, climbLine, renderClimb, rungName, rungNow } from './climb';
-import { arenaAt, campaignDone, takeRung, zoneAt } from '../ladder';
+import { arenaAt, takeRung, zoneAt } from '../ladder';
 import type { Rung } from '../ladder';
 import type { SceneDef } from '../scenes';
 import { buildReport, lootRows } from '../game/report';
@@ -307,10 +307,10 @@ function syncClimb(): void {
 function renderMenu(): void {
   syncClimb();
   renderClimb($('run-climb'), game.character, () => renderMenu());
-  // NOTHING IS SOCKETED DURING THE CAMPAIGN, so that column is four empty boxes
-  // and the map takes its width instead. Enter and Deeper drop under it.
+  // NOTHING IS SOCKETED UNTIL THE LAMPWRIGHT HAS PAID, because until then you
+  // own no crystal: four empty boxes, so the map takes their width instead.
   const card = document.querySelector('.fissurecard');
-  card?.classList.toggle('fissurecard--bare', !campaignDone(game.character));
+  card?.classList.toggle('fissurecard--bare', !game.character.paidCampaign);
   const grid = $('run-sockets');
   grid.replaceChildren();
 
@@ -560,15 +560,11 @@ function finish(left = false): void {
 
   if (report.cleared) streak++;
 
-  // THE CLIMB. A rung already cleared records nothing — and what the DEPTH
-  // pays is asked first, because "newly cleared" is what `takeRung` writes.
+  // THE CLIMB. A rung already cleared records nothing, and what FINISHING it
+  // pays is the Lampwright's to hand over in the camp. CLIMBING: the rung just
+  // recorded is behind you, so forgetting the pick is the whole of "go deeper".
   if (report.cleared && !left && ran) {
-    for (const crystal of takeDepth(game, ran)) {
-      note(`${crystal.name} was in the wall at ${rungName(ran)}. It is yours.`, 'add');
-    }
     takeRung(game.character, ran);
-    // CLIMBING: the rung this clear just recorded is behind you, so forgetting
-    // the pick is the whole of "go one deeper" — `furthest` has already moved.
     if (climbing()) advanceRung();
   }
   // A DEATH stops the descent AND the climb: walking straight back into what
@@ -661,13 +657,7 @@ function endEncounter(): void {
   // Marked at the clear, so a room you died in is one you meet again. BEFORE
   // the trials are asked: the first rung is this boss being down.
   if (report.cleared && def?.encounter) takeBoss(game, def.encounter);
-  // And if the room WAS a rung, the climb records it — after the depth is paid.
-  if (report.cleared && ran) {
-    for (const crystal of takeDepth(game, ran)) {
-      note(`${crystal.name} was in the wall at ${rungName(ran)}. It is yours.`, 'add');
-    }
-    takeRung(game.character, ran);
-  }
+  if (report.cleared && ran) takeRung(game.character, ran); // a zone's arena IS a rung
   if (report.cleared) payTrials(state);
 
   const after = report.cleared && !revisit ? (def?.after ?? []) : [];

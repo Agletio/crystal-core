@@ -229,9 +229,11 @@ export function resetGame(game: GameState, mode: StartMode): void {
   // The dev kit is handed every crystal in the game, so its quests are already
   // answered — left open, the first dangerous descent pays out four duplicates.
   game.bosses = mode === 'dev' ? BOSSES.map((b) => b.id) : []; // handed the door too
-  // Every trial done, so the whole web is walkable: a screen nobody can reach
-  // holding points nobody has is a screen nobody tested.
+  // Every trial done, and the campaign's reward already TAKEN — never the climb
+  // itself, which the kit has walked none of. The flag is what opens the
+  // sockets and pays the points, so the kit's crystals have somewhere to go.
   game.character.trials = mode === 'dev' ? TRIALS.map((t) => t.id) : [];
+  if (mode === 'dev') game.character.paidCampaign = true;
   game.called = null;
   game.sold = [];
   // Zero, not the character's level, so the next open restocks rather than

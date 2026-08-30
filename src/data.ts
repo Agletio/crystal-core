@@ -1929,6 +1929,27 @@ export const LAMPWRIGHT = {
     ] as SceneBeat[],
     button: 'Take it',
   },
+  /** THE END OF THE CAMPAIGN, which is the one thing he has been waiting for.
+   *  Three bosses down and the climb whole; what he hands over is the first
+   *  crystal out of the wall and the first points on the web. */
+  campaign: {
+    title: 'The Lampwright',
+    beats: [
+      {
+        said: 'You went all the way down. Nobody has done that and come back up past me. I had stopped watching the stair.',
+        act: 'face',
+      },
+      {
+        said: 'So there is nothing under it after all. Only more of it, and it wants something else from you now.',
+        act: 'pace',
+      },
+      {
+        said: 'Here. I have been keeping these two for whoever finished it, and I had begun to think that was nobody.',
+        act: 'work',
+      },
+    ] as SceneBeat[],
+    button: 'Take them',
+  },
   again: {
     title: 'The Lampwright',
     // He KEEPS a counter, so the line that plays when he owes nothing has to

@@ -2,7 +2,7 @@
  * WHERE YOU ARE ON THE CLIMB, and where you may go. Nothing is ever taken away:
  * a depth you have beaten is open for the rest of that character's life.
  */
-import { LADDER } from './data';
+import { CAMPAIGN_REWARD, LADDER, LAMPWRIGHT } from './data';
 import type { Character } from './sim/character';
 
 export interface Rung {
@@ -50,6 +50,26 @@ export function arenaAt(at: Rung): string | null {
  *  bosses. Nothing pays a crystal or a trial point before it. */
 export const campaignDone = (character: Character): boolean =>
   LADDER.zones.every((zone, z) => climbed(character, z) >= zone.rungs);
+
+/** WHAT THE CLIMB PAYS, in one phrase, so no two screens quote two rewards. */
+export const campaignPrize = (): string =>
+  `${CAMPAIGN_REWARD.crystals} crystal${CAMPAIGN_REWARD.crystals === 1 ? '' : 's'} ` +
+  `and ${CAMPAIGN_REWARD.points} trial points`;
+
+/** THE FINISH LINE, SAID BEFORE YOU GET THERE: where the last boss is and what
+ *  he pays for it, on the screen the climb is picked from. */
+export function campaignLine(character: Character): string {
+  const last = LADDER.zones[LADDER.zones.length - 1];
+  if (character.paidCampaign) return `The climb is finished, and ${LAMPWRIGHT.name} has paid for it.`;
+  if (!campaignDone(character)) {
+    return (
+      `No crystal and no trial point is paid until the climb is whole. ` +
+      `${last.name}, depth ${last.rungs}, is the last of it, and ` +
+      `${LAMPWRIGHT.name} hands over ${campaignPrize()} for it.`
+    );
+  }
+  return `The climb is finished. ${LAMPWRIGHT.name} is holding ${campaignPrize()} for you in the camp.`;
+}
 
 /** Cleared, and never un-cleared: re-grinding an old rung records nothing. */
 export function takeRung(character: Character, at: Rung): void {

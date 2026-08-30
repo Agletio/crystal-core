@@ -6,10 +6,9 @@
  * and skill webs are. It opens FRAMED, because the shape of the web is the
  * decision: which four regions of twelve you can afford to walk.
  */
-import { LADDER, THEME_BY_ID, TRIALS, TRIAL_POINTS } from '../data';
+import { CAMPAIGN_REWARD, LADDER, THEME_BY_ID, TRIALS, TRIAL_POINTS } from '../data';
 import {
   TRIALS_WEB,
-  TRIAL_POINTS_MAX,
   trialPointsFor,
   canAllocateTrial,
   canDeallocateTrial,
@@ -304,16 +303,15 @@ function render(): void {
   closeChoice();
 
   const { character } = game;
-  const earned = trialPointsFor(character.trials ?? [], character.climbed ?? {});
+  const earned = trialPointsFor(character);
   const spent = (character.trialAllocated ?? []).length;
   // ALWAYS OPEN. It was shut until the Fissure was whole so a new character met
   // the climb first; the web is per-character and starts at nothing to spend,
   // which reads as a thing to work toward rather than a door.
   $('trials-sub').textContent =
-    `${spent}/${earned} points spent · ${TRIAL_POINTS_MAX} to earn · ` +
-    `${trialNodes().length} nodes`;
+    `${spent}/${earned} points spent · ${trialNodes().length} nodes`;
   $('trials-note').textContent =
-    `${TRIAL_POINTS.perTrial} points a trial and ${TRIAL_POINTS.perRung} a depth above the Fissure. ` +
+    `${CAMPAIGN_REWARD.points} points for finishing the climb and ${TRIAL_POINTS.perTrial} a trial. ` +
     'Most nodes make a descent worse, and worse is what pays.';
 
   $('trials-webwrap').hidden = false;

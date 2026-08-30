@@ -1391,7 +1391,9 @@
     padding: 8px 0 4px;
   }
   .climbcard .panel__title { font-size: 12px; margin-bottom: 1px; text-align: center; }
-  .climb__where { font-size: 11px; color: var(--citrine); margin-bottom: 6px; text-align: center; }
+  .climb__where { font-size: 11px; color: var(--citrine); margin-bottom: 3px; text-align: center; }
+  /* The finish line, said before you get there: nothing pays until it falls. */
+  .climb__prize { font-size: 10px; color: var(--text-dim); margin: 0 0 6px; text-align: center; }
   /* THE SEAM: one zone at a time, drawn down that zone's own cross-section.
      The picture is aspect-LOCKED and every station is placed in percent of it,
      so a rung cannot drift off the chamber it sits in. */
@@ -1484,6 +1486,7 @@
   .graft__line span { font-size: 12px; color: var(--text-dim); }
   .graft__line--on span { color: var(--bone); }
   .met__name { font-size: 13px; color: var(--citrine); }
+  .met__said { font-size: 13px; color: var(--citrine); padding-left: 4px; }
   /* The handover: dark at the swap, which is what hides one map becoming
      another. Never takes a click. */
   .fade { position: absolute; inset: 0; background: var(--ink); opacity: 0; pointer-events: none; }

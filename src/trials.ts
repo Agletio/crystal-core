@@ -1,12 +1,12 @@
 /**
  * The trials web: the fourth thing walked through `webgraph.ts`, and the only
- * one whose points are not bought by a level. It is funded by things DONE, and
- * nothing at all until the campaign is whole.
+ * one whose points are not bought by a level.
  */
 import { CAMPAIGN_REWARD, LADDER, TRIALS, TRIAL_POINTS } from './data';
 import { buildTrials } from './trials/layout';
 import { TRIAL_WEB } from './trials/web';
 import { canAllocateIn, canDeallocateIn, neighboursIn, replayWeb } from './webgraph';
+import type { Character } from './sim/character';
 import type { SkillNodeDef } from './trees/node';
 
 export type { BuiltTrials, TrialSpec, TrialWheel } from './trials/spec';
@@ -20,21 +20,17 @@ export const trialNodeById = (nodeId: string): SkillNodeDef | undefined =>
 
 export const trialRegionOf = (nodeId: string): string | undefined => TRIALS_WEB.regionOf[nodeId];
 
-/** TRIALS AND RUNGS, never a level. A trial pays a handful; a rung pays one,
- *  and the FISSURE pays nothing at all — the first zone is the climb being
- *  learnt, not a second web being filled in. */
-/** NOTHING UNTIL THE CAMPAIGN IS WHOLE, which then pays the first
- *  `CAMPAIGN_REWARD.points`; the rest is earned by grinding. */
-export const trialPointsFor = (
-  done: readonly string[],
-  climbed: Record<string, number> = {}
-): number => {
-  const whole = LADDER.zones.every((zone) => (climbed[zone.id] ?? 0) >= zone.rungs);
-  if (!whole) return 0;
-  return CAMPAIGN_REWARD.points + done.length * TRIAL_POINTS.perTrial;
+/** NOTHING UNTIL THE LAMPWRIGHT HANDS THE CAMPAIGN'S REWARD OVER. Gated on the
+ *  HANDOVER and not on the climb, so the points arrive in his hands beside the
+ *  crystal; the rest is earned by grinding. */
+export const trialPointsFor = (character: Character): number => {
+  if (!character.paidCampaign) return 0;
+  return CAMPAIGN_REWARD.points + (character.trials?.length ?? 0) * TRIAL_POINTS.perTrial;
 };
 
-export const TRIAL_POINTS_MAX = // every trial, and every rung that pays for one
+/** THE CEILING THE WEB IS SIZED FOR. `trialPointsFor` pays less; the shortfall
+ *  is the grinds nobody has written, which have to sum to exactly this. */
+export const TRIAL_POINTS_MAX =
   TRIALS.length * TRIAL_POINTS.perTrial +
   LADDER.zones.reduce(
     (n, z, i) => (i <= TRIAL_POINTS.freeZone ? n : n + z.rungs * TRIAL_POINTS.perRung),

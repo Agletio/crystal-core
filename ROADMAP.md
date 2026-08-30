@@ -157,10 +157,15 @@ retired phrasings.
       column, no sockets and no selection panel, so the climb takes the whole
       room until the campaign is whole. The sockets come back on the Proving
       Ground's own tab in step 5.
-- [ ] **Step 2 — what a campaign clear PAYS.** Clearing The Flowering's boss is
-      the finish line and it is stated before you get there. The Lampwright
-      hands over ONE crystal and the first 10 points, in his own scene, which is
-      what makes him the person the whole campaign ends at.
+- [x] **Step 2 — what a campaign clear PAYS. DONE.** `takeDepth` is gone: the
+      reward is a third thing `giftWaiting` puts in the Lampwright's hands,
+      taken in his own scene with `LAMPWRIGHT.campaign` on the end of it, and
+      `Handover.says` is what the panel prints for the points, which are not a
+      thing you can hold. `Character.paidCampaign` is set by the HANDOVER, and
+      `trialPointsFor` and the Fissure's socket column both read it — so a
+      column with nothing to put in it is never on screen. `campaignLine` and
+      `campaignPrize` in `src/ladder.ts` state the finish line on the climb
+      before you get there, and the last zone's boss pip says so too.
 - [ ] **Step 3 — the three crafting people, one a zone.** `SceneDef.theme`
       already places them: the Lampwright in the base world, one of the
       Cavern's two in the Cavern, the Osteomancer in the Rot. Each is met in
