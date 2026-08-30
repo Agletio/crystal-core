@@ -48,7 +48,7 @@ import type { Hotspot } from '../scenes/camp';
 import { initCamp, openCamp, closeCamp, isCampOpen, renderCamp, setCampEmber } from './camp';
 import { openTalk } from './talk';
 import { advanceRung, climbLine, renderClimb, rungName, rungNow } from './climb';
-import { arenaAt, takeRung, zoneAt } from '../ladder';
+import { arenaAt, campaignDone, takeRung, zoneAt } from '../ladder';
 import type { Rung } from '../ladder';
 import type { SceneDef } from '../scenes';
 import { buildReport, lootRows } from '../game/report';
@@ -307,6 +307,10 @@ function syncClimb(): void {
 function renderMenu(): void {
   syncClimb();
   renderClimb($('run-climb'), game.character, () => renderMenu());
+  // NOTHING IS SOCKETED DURING THE CAMPAIGN, so that column is four empty boxes
+  // and the map takes its width instead. Enter and Deeper drop under it.
+  const card = document.querySelector('.fissurecard');
+  card?.classList.toggle('fissurecard--bare', !campaignDone(game.character));
   const grid = $('run-sockets');
   grid.replaceChildren();
 

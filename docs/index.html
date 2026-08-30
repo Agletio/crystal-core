@@ -1369,6 +1369,16 @@
     background: none; border: 0; box-shadow: none;
   }
   .fissurecard__side { text-align: center; }
+  /* ONE COLUMN while the campaign runs: with nothing socketed the side is four
+     empty boxes, so the map takes its width and the way IN lies under it. */
+  .fissurecard--bare { grid-template-columns: minmax(0, 1fr); }
+  .fissurecard--bare .sockets, .fissurecard--bare #run-selected { display: none; }
+  .fissurecard--bare .fissurecard__side {
+    display: flex; align-items: center; justify-content: center;
+    gap: 14px; flex-wrap: wrap;
+  }
+  .fissurecard--bare .fissure { margin: 0; }
+  .fissurecard--bare .runbar--go { margin: 0; }
   /* Under a certain width the rail costs the map more than it is worth. */
   @media (max-width: 900px) {
     .fissurecard { grid-template-columns: minmax(0, 1fr); }

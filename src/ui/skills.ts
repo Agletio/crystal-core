@@ -83,6 +83,16 @@ let viewing: string | null = null;
  *  lives here and never in the save. */
 let arming: string | null = null;
 
+/** WHICH SLOT A PICK LANDS IN, the one answer both roads read. The slot you
+ *  CLICKED wins: with every fitting slot full `targetSlotFor` takes the first. */
+function slotFor(skillId: string): string | null {
+  const category = SKILL_BY_ID[skillId]?.category;
+  if (arming && category && SKILL_SLOT_BY_ID[arming]?.accepts.includes(category as never)) {
+    return arming;
+  }
+  return targetSlotFor(game.character, skillId);
+}
+
 /** What is DRAWN on a SHELF. Eight abilities is already a screen you scan;
  *  the filter reads a skill's own card, so "poison" finds Blight. */
 let shelfFind = '';
@@ -290,9 +300,7 @@ async function open(skillId: string): Promise<void> {
     return;
   }
 
-  const slot = (arming && SKILL_SLOT_BY_ID[arming]?.accepts.includes(SKILL_BY_ID[skillId]?.category as never)
-    ? arming
-    : targetSlotFor(game.character, skillId));
+  const slot = slotFor(skillId);
   if (!slot) return;
   const held = SKILL_BY_ID[equippedSkill(game.character, slot) ?? ''];
   if (held?.id === skillId) return;
@@ -347,13 +355,13 @@ function renderSlots(): void {
           : `${slot.name}\n${slot.blurb}`
     );
 
-    // A filled one goes to its web. An empty one ARMS itself and opens the
-    // shelf it accepts, so what you pick lands in the slot you clicked —
-    // without that, three passive slots would all be filled by the first.
+    // EVERY slot arms itself and opens the shelf it accepts, so a pick lands in
+    // the slot you clicked. A FILLED one arms too: it used to jump to its web,
+    // which made the second passive the one thing you could fill once and never
+    // change, since every later pick fell back to the first slot that fits.
     card.disabled = locked;
     card.onclick = () => {
-      if (held && treeFor(held.id).length > 0) return void open(held.id);
-      arming = held ? null : slot.id;
+      arming = slot.id;
       shelf = shelfForCategory((held ? SKILL_BY_ID[held.id]?.category : null) ?? slot.accepts[0]);
       viewing = null;
       render();
@@ -474,7 +482,7 @@ function renderHeader(): void {
     ` · ${progress.xp}/${xpToNext(progress.level)} xp`;
 
   const equip = $('skills-equip') as HTMLButtonElement;
-  const slot = targetSlotFor(game.character, skillId);
+  const slot = slotFor(skillId);
   const equipped = !!slot && equippedSkill(game.character, slot) === skillId;
   // Which of the three it goes in, said out loud: a skill that cannot displace
   // the one you are swinging is a skill nobody would guess is equippable.

@@ -214,6 +214,17 @@ assert(
   String(all('#run-climb .pip--spike').length)
 );
 assert($('climb-pip-1-1') === null, 'and the zone above is behind its own tab');
+// ONE COLUMN WHILE THE CAMPAIGN RUNS. Nothing is socketed until it is whole,
+// so the sockets stand down and the map takes their width; the way IN stays.
+assert(
+  document.querySelector('.fissurecard').classList.contains('fissurecard--bare'),
+  'the Fissure drops its socket column while the campaign is unfinished',
+  document.querySelector('.fissurecard').className
+);
+assert(
+  $('run-launch') !== null && $('run-deeper') !== null,
+  'and the way in is still on it'
+);
 assert(
   /^enter$/i.test($('run-launch').textContent.trim()),
   'and the way in just says Enter: the rung is picked on the climb beside it',
@@ -1771,6 +1782,7 @@ $('sheet-close').click();
     all('#skills-slots .slotcard').filter((c) => c.classList.contains('slotcard--empty')).length === 1,
     'and the slot row says so at the top'
   );
+
   $('skills-close').click();
   $('open-character').click();
   assert(
@@ -3114,6 +3126,55 @@ assert(
     (said.match(/swinging at[^.]*/i) ?? ['nothing'])[0]
   );
   $('sheet-close').click();
+}
+
+// A FILLED SLOT CAN BE CHANGED, and only a character with TWO open passive
+// slots can prove it. *"When trying to change your second passive it only ever
+// changes your first."* A filled card used to jump to its web rather than arm,
+// so with every fitting slot full `targetSlotFor` fell back to the first one
+// and the second passive was the one thing you could fill once and never swap.
+{
+  $('open-character').click();
+  for (let i = 0; i < 45 && Number(text('sheet-level')) < 40; i++) $('sheet-devlevel').click();
+  const level = Number(text('sheet-level'));
+  $('sheet-close').click();
+  $('open-skills').click();
+  const passives = () => all('#skills-slots .slotcard')
+    .filter((c) => /passive/i.test(c.querySelector('.slotcard__slot')?.textContent ?? ''));
+  assert(
+    passives().filter((c) => !c.classList.contains('slotcard--locked')).length === 3,
+    `every passive slot is open at level ${level}`,
+    passives().map((c) => c.className).join(' | ')
+  );
+
+  // Fill the SECOND one, then change what is in it.
+  const held = () => passives().map((c) => c.querySelector('.slotcard__name')?.textContent ?? '');
+  const fill = async (at) => {
+    passives()[at].click();
+    const tile = all('#skills-list .skilltile').find((t) =>
+      !held().includes(t.querySelector('.skilltile__name')?.textContent ?? ''));
+    tile.click();
+    await new Promise((r) => setTimeout(r, 0));
+    if ($('confirm').hidden === false) $('confirm-yes').click();
+    await new Promise((r) => setTimeout(r, 0));
+    $('skills-back').click();
+  };
+  await fill(0);
+  await fill(1);
+  const before = held();
+  assert(
+    before[1] !== 'empty' && before[0] !== before[1],
+    'two passive slots hold two different passives',
+    before.join(' | ')
+  );
+  await fill(1);
+  const after = held();
+  assert(
+    after[1] !== before[1] && after[0] === before[0],
+    'and changing the SECOND one changes the second one, not the first',
+    `${before.join(' | ')}  ->  ${after.join(' | ')}`
+  );
+  $('skills-close').click();
 }
 
 assert(pageErrors.length === 0, 'no console errors during interaction', pageErrors.join(' | '));
