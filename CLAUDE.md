@@ -55,14 +55,16 @@ Exactly three things end a session, and a finished phase is not one:
 | `npm run typecheck` | tsc, `src` only |
 | `npm run build` | bundle to `docs/app.js` — **committed**, Cloudflare runs no build |
 | `npm run mods` | every modifier rolls, does something, reads |
-| `npm run smoke` | ~10s: headless boot and interaction |
-| `npm run demo` | ~2min: sim, economy, trees, balance |
-| `npm run shots` | ~5min: all 30 screens against a checklist |
-| `npm run drag` | ~20s: the dock reorders, a window goes where you put it |
+| `npm run smoke` | ~7min: headless boot and interaction |
+| `npm run demo` | ~19min: sim, economy, trees, balance. `DEMO_TIME=1` times each section |
+| `npm run shots` | ~1min: all 30 screens against a checklist |
+| `npm run drag` | ~13s: the dock reorders, a window goes where you put it |
 | `npm run peek` | a descent, at a zoom, a pan, a crop, a skill, a burst of frames |
 
-**Run what the change can reach, not the whole suite** — the table is in the
-`harness` skill, along with every quirk and flake. Build before `smoke`,
+**These are MEASURED, and they were wrong by 10x in both directions** — smoke
+was written down as 10 seconds and takes seven minutes, demo as two minutes and
+takes nineteen. **Run what the change can reach, not the whole suite** — the
+table is in the `harness` skill, along with every quirk and flake. Build before `smoke`,
 `shots`, `drag` or `peek`; they load the bundle. Whole suite before a push.
 
 ## What holds, whatever you are changing

@@ -39,6 +39,14 @@ the source.
 
 ## Reading the demo
 
+**`npm run demo` is NINETEEN MINUTES**, measured, against the two the table used
+to claim. `DEMO_TIME=1` prints how long each section took: four of them are 72%
+of the run — TRADE RULES 253s, FLOOR AND CEILING 187s, WHAT A BAND IS WORTH
+155s, THE LADDER 128s — and every one of those is a CEILING measurement that
+plays real descents. There is no cheap version of that: a balance claim needs a
+measurement, and a measurement is a descent. Run it before a push, not between
+edits.
+
 `npm run demo` prints TWO kinds of `✗` and only one is a failure:
 
 - `✗ FAILED — <why>` is a check that did not hold. `grep '✗ FAILED'`.

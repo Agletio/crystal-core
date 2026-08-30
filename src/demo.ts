@@ -408,7 +408,17 @@ const line = (s = '') => console.log(s);
  *  anything for it. `moveSpeed` 0 is the whole test; the Spire is the first. */
 const rooted = (sprite: string): boolean =>
   MONSTERS.some((m) => m.sprite === sprite && m.moveSpeed === 0);
+/** `DEMO_TIME=1` prints how long each section took. The run is 19 minutes of
+ *  real descents and knowing WHICH is the difference between cutting a check
+ *  and cutting the wrong one. */
+let ruleAt = Date.now();
+let ruleWas = '';
 const rule = (t: string) => {
+  if (process.env.DEMO_TIME && ruleWas) {
+    line(`   ${((Date.now() - ruleAt) / 1000).toFixed(1)}s — ${ruleWas}`);
+  }
+  ruleAt = Date.now();
+  ruleWas = t;
   line();
   line(`── ${t} ${'─'.repeat(Math.max(0, 60 - t.length))}`);
 };
