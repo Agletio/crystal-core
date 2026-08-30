@@ -7,27 +7,37 @@ this file** — `git log` is where a session that has to undo one looks.
 
 ## Where this stands
 
-**PHASE 6 IS THE ACTIVE ONE, and step 1 is whole.** The campaign, the Proving
-Ground and the Seam. A zone is a world and a gear tier, nothing is paid until
-the campaign is whole, and the Fissure window is one column until it is. Steps
-2 through 7 are open. Both questions that BLOCKED it are answered; what is left
-of it in Open questions is naming and one figure.
+**THE ORDER IS SETTLED and it is the user's:** *"just finish phase 6, make the
+character walk to the chest, you can pick the names for phase 6 too. And then go
+to phase 7."* So:
 
-**PHASE 7 IS DESIGNED AND NOT STARTED** — gear becomes CRAFTED, the filter
-goes, and the camp grows work in it. Every design question is answered. What is
-left is a SEQUENCING decision, since Phase 6 and Phase 7 both rewrite drops and
-both rewrite the same demo sections: doing them interleaved writes those checks
-twice.
+1. **PHASE 6**, steps 2 through 7. Step 1 is whole.
+2. **THE CHEST WALK** — the one loose end with a task behind it.
+3. **PHASE 7**, in full.
+
+Nothing else is queued and nothing else may be promoted without being asked.
+
+**THE NAMES ARE PICKED**, at the user's word (*"you can pick the names for phase
+6 too"*), and they are in Phase 6's own step list. In one line: the base world
+is **THE DIGGINGS**, the points are **TALLIES**, the web they are spent on is
+**THE RECKONING**, and the list of grinds that pays them is **THE LEDGER**.
+**Identifiers do not move** — `trials.ts`, the `trial_` node prefix and
+`Character.trials` are what a save points at, exactly as `rung` stayed `rung`
+when a player started calling it a depth.
 
 **PHASE 3 — the quest log — is PARKED by the user's word** until a start with
 nothing explaining it has been played. Do not take it because it is in the file.
 
-**THE BALANCE PASS IS HELD.** It ran once and what it owes is below. It is not
-a phase and it does not change systems.
+**THE BALANCE PASS IS OUT OF THIS FILE.** *"Remove the balance pass from the
+list, I'll just tell you when to do it."* It is not work, not a phase and not
+something to pick up — **wait to be told.** Everything it had accumulated (the
+parked checks, the skills and off-hand look, the three things earlier phases
+handed it) is in `git log` at `977403c`, which is where to read it back from on
+the day he calls for it.
 
 **Phases 0, 1, 2, 4 and 5 are DONE and deleted** — the climb, four trades, the
-loop, and loot that is rare. What each of them left behind that is still a
-question is in the balance pass or in Open questions, not in a phase.
+loop, and loot that is rare. `git log` is where a session that has to undo one
+looks.
 
 **One ask has NOTHING to bind and was not invented.** *"Keybindings for flasks,
 and boss controls"* — the flasks are `potion_life` and `potion_mana` in
@@ -106,6 +116,28 @@ campaign that sentence has nothing left to mean, so the campaign's three zones
 carry a `world` of their own — Answering the base world, Refraction the Cavern,
 Flowering the Rot — and the SOCKETED world comes back in the Proving Ground
 where sockets exist. The difficulty curve does not move: `rungMod` is untouched.
+
+### The names, picked
+
+**At the user's word** — *"you can pick the names for phase 6 too."* Each is a
+PLAYER word; **no identifier moves**, because a save points at them. The same
+split the climb already ships: a player says depth, the code says `rung`.
+
+| the thing | the word | why, and what it does NOT collide with |
+|---|---|---|
+| the base WORLD | **The Diggings** | *"we really need a different name for the base fissure."* A place somebody dug and gave up on, which is what the art is. Not "The Workings" — `slotWorkings`, `damageWorkings`, `skillWorkings` and `potionWorkings` are all in `src/`, and Mahthar's own lore already says "older than the workings" as ordinary words. `MapTheme` stays `'fissure'`. |
+| the POINTS | **Tallies** | a scratch on a wall for a thing done again and again, which is exactly what a grind is, and it sits on a card at "7 Tallies". Not "Marks" — a MARK over a person's head already means they are holding something (`wants()` in `src/ui/talk.ts`). `Character.trials` stays. |
+| the WEB they are spent on | **The Reckoning** | a reckoning is a tallying-up, so it takes its name from what pays for it. The old name has to go with `TRIALS`: calling it the trials web after the trials are deleted is a word for a thing that no longer exists. `src/trials.ts` and the `trial_` prefix stay. |
+| the list of GRINDS | **The Ledger** | what is written down: `descents run 43 / 100`. It is the screen the counters live on. **The cheapest of the four to drop** — if it reads as one noun too many, the counters go on a tab of the Reckoning and this word never ships. |
+
+**The Fissure keeps its other two jobs**: the crack in the camp is still the
+Fissure, and so is the window it opens. Only the WORLD is renamed, because that
+is the one the user was naming when he asked — he was listing influences,
+*"base fissure, prismatic, or demonic."*
+
+**`CLAUDE.md` says all four old words and must be rewritten in the same breath
+as the step that lands them.** So must `KEYWORDS`, and `BANNED` takes the
+retired phrasings.
 
 ### The steps, each leaving the suite green
 
@@ -257,12 +289,52 @@ possible. Need to have relatively equal drop rates between materials."*
   **This needs a stat-power table**, hero-side, and `DANGER_STATS` is already
   the same shape: a weight per stat so "total power" is a number the demo can
   read rather than a claim.
+- **A PERFECT BASE IS CRAFTABLE AND STILL DROPS.** *"I'm fine with uniques and
+  perfect bases dropping, but I think there should also just be a way to get
+  perfect bases from crafting."* Two roads to the same item and neither closes
+  the other: the floor pays one as a rare share of a now-rare drop, and a craft
+  pays one on a chance that rides the profession LEVEL — so the endgame chase is
+  either luck or a hundred levels of work. **It stays out of the gamble**, which
+  is the only road that would make it buyable.
 - **GEAR STILL DROPS, RARELY, AND ANY BASE.** *"Since it's so much rarer and it
   can drop any base it'll be very unlikely it's what your character wants, so
   when you do finally get a piece it'll feel good and not make crafting the ONLY
   way to get gear."* Dismantle it for materials of its tier, or sell it.
 - **A DISMANTLE NEVER RETURNS MORE THAN THE RECIPE TOOK**, or craft → dismantle
   → craft is a material printer.
+
+### The professions and the materials, enumerated
+
+**SIX PROFESSIONS, SIX MATERIAL FAMILIES, one apiece.** Nothing here was in the
+file before and a fresh session cannot build the phase without it.
+
+| profession | its family | raw → processed | what it makes |
+|---|---|---|---|
+| **Blacksmithing** | metal | ore → bars, at the smelter | `melee` armour; most weapons |
+| **Weaving** | cloth | fibre → bolts, at the loom | `spell` armour |
+| **Leatherworking** | hide | skins → leather, at the tanning frame | `rogue` armour |
+| **Woodworking** | wood | logs → staves, at the bench | bows, staves, hafts |
+| **Jewelling** | gem | rough → cut, at the jeweller's | every ring and amulet |
+| **Cooking** | fish | catch → meal, at the kitchen | the buffs |
+
+**THE ARMOUR MAP IS ALREADY IN THE DATA and it is exact.**
+`ARMOUR_FAMILIES.archetypes` is `melee` / `spell` / `rogue`; six families carry
+ONE and six carry TWO. So `melee → Blacksmithing`, `spell → Weaving`,
+`rogue → Leatherworking`, and **a hybrid family's recipe names exactly the two
+professions its archetypes name.** `templar` (melee + spell) is Blacksmithing
+and Weaving; `bulwark` (melee) is Blacksmithing alone. No table special-cases
+anything and the six/six split the hybrid rule needs is what already ships.
+
+**THE COUNT: 24 versions and 4 uniques, 28 rows.** Four worlds — the Diggings,
+the Cavern, the Rot, the Seam — times six families, plus one zone-unique each,
+which is not tied to a profession and is what the best recipes ask for. The
+Seam's five are endgame by construction, since nothing reaches the Seam early.
+
+**A FAMILY IN EVERY WORLD IS A NAMING PROBLEM, and it is the user's rule.**
+*"They should all contain the normal ones."* Wood in a crystal cavern and fish
+in the Rot need words that are not a stretch — a mineral growth that saws like
+timber, a thing swimming in a warm pool. **This is where the flavour work is;
+do not solve it by dropping a family from a world.**
 
 ### Gold, and the shop that stops selling gear
 
@@ -275,7 +347,9 @@ that, and the shelf of buyable gear is pointless the moment crafting beats it.
 - **The shelf becomes a GAMBLE.** *"Instead of buying a set gear piece it gives
   a random piece of a certain type… each one has a chance of being a unique
   item. Make it really bad odds but just as a gold sink."* You buy "a ring", not
-  a named ring, and there are uniques only the gamble pays.
+  a named ring, and *"each one has a chance of being a unique item… really bad odds
+  but just as a gold sink."* **Whether any unique is gamble-ONLY is mine and not
+  his** — it would make the sink a chase; ask before building it that way.
 - **A gamble always costs more than any one piece sells for**, so it is a sink
   by construction and the demo can hold that arithmetic.
 - **No Perfect out of the gamble**, or it competes with the thing crafting owns.
@@ -320,6 +394,76 @@ long: load it, go down, come back to bars. That is genuinely idle — the idling
 is the descending, which already chains — and it cannot be farmed by an open
 browser, which is what "automation is universal" requires.
 
+### The steps, each leaving the suite green
+
+**Nine, and the ART one starts FIRST because it is the only one that waits on
+somebody.** A camp picture is a generation queue and a design the user has to
+approve; everything else is code that can be written while it renders.
+
+- [ ] **Step 0 — the camp DESIGN, started immediately and in parallel.** One
+      688×384 scene with a smelter, an anvil, a loom, a tanning frame, a
+      jeweller's bench and a kitchen, on top of the nine hotspots already there.
+      **Show the user candidates and get an approval before anything is rotated,
+      animated or dressed** — that rule is absolute. Nothing downstream blocks
+      on it until step 8.
+- [ ] **Step 1 — the tables, and nothing uses them yet.** `MATERIALS` (28 rows),
+      `PROFESSIONS` (6), `Character.professions` as `{ level, xp }` apiece, and
+      an `ItemKind` for a material so it stacks. `SAVE_VERSION` bumps here and
+      once only. The demo sweeps every row for a keyword violation and for an
+      icon that resolves. Green because nothing reads any of it.
+- [ ] **Step 2 — gathering, and gear gets rare.** Nodes placed and gathered the
+      way a lock opens: **when the room is clear**, which is both of the user's
+      constraints at once. On the per-run depleting budget, never a per-kill
+      rate. `DropBand.gearPerRun` falls hard in the same step, so the bag does
+      not hold both economies at full volume for a single commit.
+- [ ] **Step 3 — processing, in camp, ADVANCING ON DESCENTS.** A smelter job is
+      N clears long: load it, go down, come back to bars. Genuinely idle without
+      being farmable by an open browser, which is what "automation is universal"
+      demands. Processing pays profession XP.
+- [ ] **Step 4 — crafting.** `RECIPES` naming one or two professions and a level
+      in each; materials pick the BASE and its IMPLICIT; the level slides the
+      roll window and narrows it; a chance of PERFECT off the level. Dismantle
+      lands here too, and it may never return more than the recipe took.
+      Crafting pays XP, weighted so a higher recipe beats spamming the cheapest.
+- [ ] **Step 5 — jewellery.** Twenty `GearBase` rows — ten implicits × ring and
+      amulet — tinted rather than re-drawn, the amulet's implicit rolling
+      stronger than the ring's.
+- [ ] **Step 6 — the hybrid rule, and the table that makes it checkable.** A
+      hero-side stat-power weight per stat, shaped like `DANGER_STATS`. The demo
+      then asserts both halves: a hybrid piece totals MORE power than a
+      specialist, and a specialist beats it on its own one stat. Without the
+      table this rule is a claim.
+- [ ] **Step 7 — cooking.** Fish, meals, and a buff that burns down on
+      `RolledMod.uses` — the shape already ships. Applied in camp, never
+      mid-run; the level slides how many runs it lasts, exactly as it slides a
+      roll window.
+- [ ] **Step 8 — the shop becomes a GAMBLE and the filter GOES.** Delete the
+      Filter screen, `KEEP_GROUPS`, `GameState.junk`, the bulk sell and the
+      shelf of named gear. Gold buys materials at a bad rate. The camp picture
+      from step 0 lands here with its five new hotspots.
+
+**Done when.** A clear pays materials rather than a heap to sort; the gear you
+wear is gear you MADE; a profession level is felt in the roll you get; and there
+is no filter, because there is nothing to filter.
+
+### What must not break
+
+- **`heal()` is explicitly NOT a concern** — the `SAVE_VERSION` bump in step 1
+  refuses older saves and that is the point. Do not write a migration.
+- **Automation is universal, with no exception.** Gathering has a shipped
+  default policy that `runToCompletion` runs, and that policy is the only
+  implementation. A node nobody can gather headlessly is a broken node.
+- **A run must always END.** Gathering adds time to a descent; `runToCompletion`
+  is bounded at 600s and a run that does not finish is a mechanism failure.
+- **`s.totalMonsters` counts the whole encounter the moment it starts.**
+  Anything that adds bodies has to say so to the counter.
+- **A descent's dressing has its OWN rng.** Placing nodes must not move the
+  draws that pick a monster, a drop or anything else a seed replays.
+- **`Grid.walkable`, never `tiles`.** A gathering node that blocks is a
+  `SOLID_PROPS` and gives that up the moment it cuts anything off.
+- **The demo, `mods`, `smoke` and `shots`.** A new screen is a new shot; a rail
+  icon with no `ICONS` entry renders nothing and fails nowhere.
+
 ### What this DELETES
 
 The Filter screen, `KEEP_GROUPS`, `GameState.junk`, the bulk sell, the shelf of
@@ -331,12 +475,22 @@ named gear, and most of `DropBand.gearPerRun`.
 over."* It is a `SAVE_VERSION` bump that refuses older saves, which is what buys
 the freedom to rename and delete rather than migrate a system still moving.
 
-### Nothing is open
+### What is open, and it is two small things
 
-Every question this phase raised has been answered. What it needs before a line
-is written is the SEQUENCING call against Phase 6, and the numbers — the
-stat-power weights, the roll windows per level, the recipe costs — which are a
-balance pass and are measured rather than chosen.
+**The sequencing call is MADE** — Phase 6, then the chest walk, then this.
+Every design question the user raised is answered. Two things are not his:
+
+1. **Is "crafting quality" the SAME mechanic as the roll window?** He asked for
+   *"a crafting quality type mechanic"* early, and later described *"bases have
+   ranges of rolls… if you're 1 blacksmithing it's always 100–105."* **This file
+   reads them as one thing** — quality IS where in the range you land. If he
+   meant a separate quality figure ON the item, that is a second mechanic and a
+   card line. Cheap to ask, expensive to guess wrong.
+2. **Whether any unique is gamble-only** — see the gamble section.
+
+**The NUMBERS are measured, not chosen**: the stat-power weights, the roll
+windows per level, the recipe costs, what a node yields. None of them is a
+design question and none blocks a step.
 
 ## Phase 3 — A quest log instead of a pointing finger
 
@@ -413,93 +567,6 @@ still be satisfiable.
 
 ---
 
-## The balance pass — HELD, and what it owes
-
-**It RAN once and the user released it**; the numbers it produced are in
-`CLAUDE.md` and the `harness` skill. It is **not a phase and not a licence to
-change systems** — a balance pass moves numbers in tables; if it wants a
-mechanism changed, that is a phase. It is HELD again now, because Phase 6 and
-Phase 7 each move every number it would set.
-
-**What it READS.** The `gauge()` lines in `npm run demo` — measured, printed,
-never asserted, each carrying the figure that was wanted beside the figure it
-got. Read **FLOOR AND CEILING** first; it is the one that says whether any of
-the others mean anything.
-
-**What is crooked today, and each is a gauge rather than a task:**
-
-- **Band 3 is harder than band 6** for Strike and Fireball. Not the curve —
-  danger 124 against 404 — but the character: level 22 in band-2 gear is the
-  thinnest point on the ladder.
-- **Arc Lightning is barely touched anywhere**, sitting at 96% low at band 1 and
-  82% at band 6 where Blight reads 22%. A ranged chain skill does not stand in
-  anything.
-- **Strike at level 99 still dies at the deep end.** Melee with the most danger
-  four crystals can roll is the case nothing answers, which is the same finding
-  the parked wall check has been printing since Splash was removed.
-
-**Three things earlier phases handed it, and it owns them now:**
-
-- **Phase 4's step 6 — RE-DERIVE THE DANGER CURVE.** The rung is the only raw
-  ladder, so `DANGER.lifeAtTop` / `hitAtTop` and the rung ramp are set against
-  a run's power rather than against the climb. Nothing else in Phase 4 is left.
-- **Can well-rolled tier 1 clear The Flowering?** The ladder's `lifeAtTop` /
-  `damageAtTop` were set when a run's gear climbed with its power, and a first
-  cycle is now tier 1 for all 42 rungs. Never measured.
-- **Strike's `baseDamage` was calibrated against the boss grid** at 80 (95 let
-  thin tier 1 clear it 5 times in 8; 72 left full tier 1 plate at 4/8), and that
-  calibration is now against a grid whose plate row is parked — so it is worth
-  re-deriving rather than trusted.
-
-### It owes its parked checks
-
-Each is a `parkedCheck` in `src/demo.ts` printing its number and failing
-nothing; the pass puts them back to `check`. **The demo prints its own parked
-count and this list has to agree with it — check the print rather than this
-list, and fix whichever is wrong.**
-
-1. **"plate answers the boss a rung earlier than speed does"** — the PLATE half
-   is fixed and the other half is not. Weapons taking damage of their own put
-   full tier 1 plate back to **8/8** from 0/8, which is where it should be. But
-   thin tier 1 SPEED now clears **5/8 against a floor of 0**: a weapon carries
-   damage at every rung, so the rung below the gate got the same lift the gate
-   did. That is the half still parked.
-
-The boss grid's MECHANISM is still a real `check` and stays one — speed answers
-it at full tier 1, a build with neither answer never does, and t2 trivialises
-it. Only the rung PLATE comes good at is parked.
-
-2. **"every band pays more than the one below"** — passing again, **and it
-   flipped on NOISE rather than on a fix.** The loot round dipped it at band 0
-   into band 1 (`171 → 155 → …`); scattering a drop where it falls added two
-   rng draws apiece, the whole seed stream moved, and it came back up. Nothing
-   structural changed: **bands 0 and 1 share an item level (10) and differ by
-   0.1 of a piece a clear**, so what separates them is luck. Either band 1 buys
-   something band 0 does not, or the two collapse into one — until then this
-   check will keep flipping with any change that touches the rng.
-
-### It also owes the two newest skills and the off hand a look
-
-None of it is a check today.
-
-- **Lightning Arrow is the strongest main skill and Fireball the weakest** —
-  6.50 kills/s against 3.59 at the reference rung, Strike 5.19, Arc Lightning
-  5.34. A bow gives up a shield to get there, which the grid cannot see because
-  `ladderCharacter` never holds one.
-- **What a shield is worth is not measured against what a bow is worth.** Every
-  ladder character wears a shield, so every band gained armour and up to 22%
-  Block against grids recorded before it existed. The honest comparison needs a
-  measured character holding a bow, which `starterLoadout` deliberately refuses.
-- **`DEFENCE.blockCap` at 60% with a Block that stops the whole hit** is the
-  simplest rule that could work and has not been weighed against anything.
-
-**What must not break.** `CLAUDE.md`'s "Balance is NOT TUNED" inverts when this
-starts, and has to be rewritten in the same breath. The one difficulty check
-that is a `check()` — a brand new character clearing the bare Fissure — stays a
-failure throughout. And the per-skill numbers are five skills wide, still thin.
-
----
-
 ## Traps that outlive the phase that found them
 
 **Kept because they bite the NEXT thing, not because of what they came from.**
@@ -557,8 +624,6 @@ failure throughout. And the per-skill numbers are five skills wide, still thin.
   nowhere.
 - **Every phase puts itself in the dev kit** — `START_PRESETS.dev`, so the web
   is reachable without beating anything.
-
----
 
 ---
 
