@@ -20,9 +20,12 @@ is a SEQUENCING decision, since Phase 6 and Phase 7 both rewrite drops and both
 rewrite the same demo sections. Doing them interleaved writes those checks
 twice.
 
-**PHASE 6 IS THE ACTIVE ONE.** The campaign, the Proving Ground and the Seam —
-the user's restructure of what a run is for. Two of its questions BLOCK it and
-are at the top of Open questions.
+**PHASE 6 IS THE ACTIVE ONE, and step 1 is whole.** The campaign, the Proving
+Ground and the Seam — the user's restructure of what a run is for. A zone is a
+world and a gear tier, nothing is paid until the campaign is whole, and the
+Fissure window is one column until it is. Steps 2 through 7 are open. Both
+questions that BLOCKED it are answered; what is left in Open questions is
+naming and one figure.
 
 **PHASE 2 — MORE CHARACTERS — IS DONE.** Four trades: the Alchemist, the
 Aethermancer, Mahthar and Obreth, each with a body, thirteen weapon variants and
@@ -1117,8 +1120,10 @@ where sockets exist. The difficulty curve does not move: `rungMod` is untouched.
       the depth that finishes the last zone, once, flagged by
       `Character.paidCampaign`. `trialPointsFor` is 0 before that, so the web is
       visible from the first descent with nothing on it walkable.
-- [ ] **Step 1c — the Fissure window loses its socket column** for the campaign
-      tabs and the map takes the room. The sockets come back on the Proving
+- [x] **Step 1c — the Fissure window loses its socket column. DONE.**
+      `.fissurecard--bare`, toggled off `campaignDone` in `src/ui/run.ts`: one
+      column, no sockets and no selection panel, so the climb takes the whole
+      room until the campaign is whole. The sockets come back on the Proving
       Ground's own tab in step 5.
 - [ ] **Step 2 — what a campaign clear PAYS.** Clearing The Flowering's boss is
       the finish line and it is stated before you get there. The Lampwright
