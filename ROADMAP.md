@@ -348,8 +348,14 @@ that, and the shelf of buyable gear is pointless the moment crafting beats it.
   a random piece of a certain type… each one has a chance of being a unique
   item. Make it really bad odds but just as a gold sink."* You buy "a ring", not
   a named ring, and *"each one has a chance of being a unique item… really bad odds
-  but just as a gold sink."* **Whether any unique is gamble-ONLY is mine and not
-  his** — it would make the sink a chase; ask before building it that way.
+  but just as a gold sink."*
+- **SOME UNIQUES WILL BE GAMBLE-ONLY, and none of them is designed.** *"Yes
+  there will be some but we don't need to work out those yet."* **What that
+  costs while building is one seam and nothing else:** the gamble picks its item
+  through the SAME gated pool everything else does, with `DropGate` gaining a
+  SOURCE dimension beside `minPower` and `zone`. Do that and a gamble-only
+  unique is later a table row; hardcode the gamble a pool of its own and it is
+  a rewrite. **Build the seam, author nothing behind it.**
 - **A gamble always costs more than any one piece sells for**, so it is a sink
   by construction and the demo can hold that arithmetic.
 - **No Perfect out of the gamble**, or it competes with the thing crafting owns.
@@ -475,18 +481,20 @@ named gear, and most of `DropBand.gearPerRun`.
 over."* It is a `SAVE_VERSION` bump that refuses older saves, which is what buys
 the freedom to rename and delete rather than migrate a system still moving.
 
-### What is open, and it is two small things
+### Nothing is open
 
-**The sequencing call is MADE** — Phase 6, then the chest walk, then this.
-Every design question the user raised is answered. Two things are not his:
+**The sequencing call is MADE** — Phase 6, then the chest walk, then this — and
+both of the questions this file used to hold are answered.
 
-1. **Is "crafting quality" the SAME mechanic as the roll window?** He asked for
-   *"a crafting quality type mechanic"* early, and later described *"bases have
-   ranges of rolls… if you're 1 blacksmithing it's always 100–105."* **This file
-   reads them as one thing** — quality IS where in the range you land. If he
-   meant a separate quality figure ON the item, that is a second mechanic and a
-   card line. Cheap to ask, expensive to guess wrong.
-2. **Whether any unique is gamble-only** — see the gamble section.
+- **CRAFTING QUALITY AND THE ROLL WINDOW ARE ONE MECHANISM.** *"Yeah it's the
+  same as the roll window."* So there is no second figure, no quality stat on
+  the item and no extra card line: **quality IS where inside the base's range
+  the level lands you**, narrowing as it climbs. One thing to build, one thing
+  to learn, and cooking's run count is the same rule again.
+- **GAMBLE-ONLY UNIQUES WILL EXIST, and they are NOT designed yet.** *"Yes there
+  will be some but we don't need to work out those yet."* Do not invent one, do
+  not pick which, do not write a table of them. **The one thing it costs at
+  BUILD time is a seam** — see the gamble section.
 
 **The NUMBERS are measured, not chosen**: the stat-power weights, the roll
 windows per level, the recipe costs, what a node yields. None of them is a
