@@ -137,6 +137,10 @@
     /** The two pools, on the flask each fills. */
     --life:      #C4553F;
     --mana:      #58B4E0;
+    /** EXPERIENCE. A blue nothing else in the game is: the bar runs the width
+     *  of the floor across lamplit rock, and rust sank into it. Deeper than
+     *  `--mana` on purpose, because the mana vessel sits in the same corner. */
+    --xp:        #3E7FD4;
     /** The dark a letter is cut into. */
     --cut:       #000;
 
@@ -799,18 +803,19 @@
   /* TICKED: a short dash every 5%, a full-height one every 25%, as repeating
      gradients so nothing is measured and no mark can drift off the bar. On a
      LAYER OVER the fill — under it they vanished exactly where the bar had
-     filled, which is the half you are reading the marks against. */
+     filled, which is the half you are reading the marks against. Each mark is
+     CUT and then LIT, 1px apiece: black alone is invisible against the empty
+     track, which is `--ink`. */
   .hp.xpbar::after {
     content: ''; position: absolute; inset: 0; pointer-events: none;
     background-image:
       repeating-linear-gradient(90deg,
-        var(--citrine) 0 1px, transparent 1px 25%),
+        var(--ink) 0 1px, var(--edge-lit) 1px 2px, transparent 2px 25%),
       repeating-linear-gradient(90deg,
-        var(--edge-lit) 0 1px, transparent 1px 5%);
+        var(--ink) 0 1px, var(--edge) 1px 2px, transparent 2px 5%);
     background-size: 100% 100%, 100% 60%;
     background-position: 0 0, 0 100%;
     background-repeat: no-repeat, repeat-x;
-    opacity: .8;
   }
   .hp.xpbar .hp__fill { opacity: .92; }
   .hp.xpbar .hp__text { font-size: 8px; line-height: 11px; position: relative; z-index: 2; }
@@ -845,7 +850,7 @@
   .hp--mana.hp--dry { border-color: var(--rust); }
   .hp--mana.hp--dry .hp__text { color: var(--rust); }
   .hp--xp { height: 14px; margin-bottom: 14px; }
-  .hp__fill--xp { background: var(--rust); }
+  .hp__fill--xp { background: var(--xp); }
   .hp--xp .hp__text { font-size: 10px; color: var(--text-dim); }
   /* Life and mana are VESSELS: the fill inside a carved channel with brass
      caps. AFTER every base `.hp` rule, because the `border` shorthand in one

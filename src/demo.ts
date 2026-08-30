@@ -134,7 +134,7 @@ import {
   rollGear,
   sellPrice,
 } from './economy';
-import { hasArmourArt } from './ui/icons';
+import { hasGearArt } from './ui/icons';
 import { RunSim, TICK, runToCompletion, walkToMeeting } from './sim/run';
 import { findPath } from './sim/pathfind';
 import { folkMet, gaveKey, hasMet, keyOwed, takeBoss, takeMet } from './game/scenes';
@@ -942,13 +942,13 @@ rule('ARMOUR SETS — is a hybrid a redistribution or a discount?');
     'a family mix does not sum to 1'
   );
 
-  // A family with no art of its own falls through to the plain body sprite, so
-  // a whole set would wear plate silently. Nothing on screen would say so.
-  const artless = ARMOUR_BASES.filter(
-    (b) => !hasArmourArt(b.family ?? '', b.kind)
-  ).map((b) => b.id);
-  check(artless.length === 0, 'every armour family has its own art, in every slot',
-    `${artless.length} bases fall through to the generic sprite: ${artless.slice(0, 3).join(', ')}`);
+  // EVERY BASE IS DRAWN, and there is nothing behind it any more: the
+  // hand-drawn silhouettes are gone, so a base whose art nobody generated is a
+  // blank square in the bag AND on the floor rather than a wrong picture.
+  const artless = GEAR_BASES.filter((b) => !hasGearArt(b.art)).map((b) => b.id);
+  check(artless.length === 0,
+    `all ${new Set(GEAR_BASES.map((b) => b.art)).size} gear art keys are generated icons`,
+    `${artless.length} bases have no icon: ${artless.slice(0, 3).join(', ')}`);
   check(
     new Set(ARMOUR_FAMILIES.map((f) => f.id)).size === ARMOUR_FAMILIES.length
       && new Set(ARMOUR_BASES.map((b) => b.art)).size === ARMOUR_FAMILIES.length * 4,

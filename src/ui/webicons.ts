@@ -9,7 +9,6 @@
 import type { SkillNodeDef } from '../skills-tree';
 import { drawn } from './icons';
 import { GENERATED_ICONS } from '../render/generated-icons';
-import { gearGrid } from './icons';
 
 const NS = 'http://www.w3.org/2000/svg';
 
@@ -332,34 +331,35 @@ export function nodeGlyph(node: SkillNodeDef, size: number): SVGElement {
 }
 
 /**
- * THE INVENTORY ICON, as a CANVAS the map can draw. Gear art is not in
- * `GENERATED_ICONS` — all 59 ids are grids in `icons.ts` — so this bakes the
- * SAME grid the bag draws, through `gearGrid`, rather than keeping a second
- * copy of the silhouettes. A cell the grid does not name stays transparent.
+ * THE INVENTORY ICON, as a CANVAS the map can draw. It bakes the GENERATED row
+ * — the same one `gearIcon` puts in the bag — so a piece on the floor and the
+ * same piece in the bag cannot be two different pictures. It used to bake a
+ * hand-drawn silhouette instead, and those are gone.
  *
  * A CANVAS, never a data URI. `Texture.from(canvas)` is the path the renderer
  * already uses for every body; `Texture.from(string)` in Pixi v8 is a CACHE
  * LOOKUP rather than a loader, so a URL it has never seen comes back empty and
- * the floor stays bare. This handed over `canvas.toDataURL()` and every drop on
- * the ground was a beam with nothing under it.
+ * the floor stays bare.
  */
 const bakedGear = new Map<string, HTMLCanvasElement | null>();
 
 export function gearCanvas(art: string): HTMLCanvasElement | null {
   const held = bakedGear.get(art);
   if (held !== undefined) return held;
-  const grid = gearGrid(art);
+  const row = GENERATED_ICONS[`gear_${art}`];
   const canvas = document.createElement('canvas');
-  const ctx = canvas.getContext?.('2d') ?? null; // jsdom has none
+  const ctx = row ? canvas.getContext?.('2d') ?? null : null; // jsdom has none
   let made: HTMLCanvasElement | null = null;
-  if (ctx) {
-    const w = Math.max(...grid.rows.map((r) => r.length));
+  if (row && ctx) {
+    const w = Math.max(...row.rows.map((r) => r.length));
     canvas.width = w;
-    canvas.height = grid.rows.length;
-    const image = ctx.createImageData(w, grid.rows.length);
-    grid.rows.forEach((row, y) => {
-      for (let x = 0; x < row.length; x++) {
-        const hex = resolve(grid.palette[row[x]]);
+    canvas.height = row.rows.length;
+    const image = ctx.createImageData(w, row.rows.length);
+    // Generated art carries its OWN colours: the key maps a character straight
+    // to a hex, where a hand-drawn grid looked one up in the running palette.
+    row.rows.forEach((line, y) => {
+      for (let x = 0; x < line.length; x++) {
+        const hex = resolve(row.key[line[x]]);
         if (!hex) continue;
         const at = (y * w + x) * 4;
         image.data[at] = parseInt(hex.slice(1, 3), 16);

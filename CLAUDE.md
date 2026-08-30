@@ -129,9 +129,13 @@ Exactly three things end a session, and a finished phase is not one:
   body, `zoneset.mts` for a floor, `uikit.mts` for a fixture. **A DESIGN IS
   SHOWN TO THE USER AND APPROVED BY HIM BEFORE ANYTHING IS ROTATED, ANIMATED OR
   DRESSED** — *"you're supposed to give me sample images before you begin making
-  animations or additional generations for characters."* The grids already
-  in `src/ui/icons.ts` are what shipped before there was a generator; they are a
-  FALLBACK for an id nobody has drawn yet and **nothing new joins them.**
+  animations or additional generations for characters."* **GEAR HAS NO
+  FALLBACK AT ALL**: all 59 `GearBase.art` keys are generated rows, the
+  hand-drawn silhouettes behind them were deleted, and the demo fails a base
+  with no icon — *"delete all of that old self made crap and use the new
+  icons."* One source means the bag and the FLOOR cannot draw two pictures of
+  one item. The grids still in `src/ui/icons.ts` are the SKILL shelf's, for an
+  id nobody has drawn yet, and **nothing new joins them.**
 - **`GameState` is plain data**, `heal()` repairs it on every load, and
   allocations are REPLAYED rather than trusted. Adding a field costs nothing;
   renaming an id costs the player whatever pointed at it; `SAVE_VERSION` is only
@@ -493,7 +497,7 @@ other slots, the mover having a nine-node web of its own. **A passive changes a
 RULE and pays for it**, and the second and third slots open at levels 20 and 40
 of the 99 there are. **SIX ATTRIBUTES**, bought per level: Strength,
 Intelligence, Dexterity, Acuity, **Spirit** (life and mana regeneration) and
-**Constitution** (Armour, Occult and Prismatic Resistance). **A TRADE COMES DOWN
+**Constitution** (Armour, Elemental and Occult Resistance). **A TRADE COMES DOWN
 WITH A SPREAD OF ITS OWN** — `TradeSpec.attributes`, 6 to 15 an attribute and 57
 in all, so what separates two trades in the first hour is the SHAPE rather than
 the total. It is never in `Character.attributes`, which is what a respec hands

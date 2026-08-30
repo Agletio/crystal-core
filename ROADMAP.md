@@ -697,7 +697,7 @@ in the round before it.
 **SIX ATTRIBUTES, AND A TRADE COMES DOWN WITH A SPREAD.** *"give each class a
 spread of starting points that make sense for that class… between 6-15 points in
 each. Also add spirit: health and mana regen per point. Constitution: Armor and
-occult and prismatic resistance."* Two rows in `ATTRIBUTES` and one field on
+elemental and occult resistance."* Two rows in `ATTRIBUTES` and one field on
 `TradeSpec`; Mahthar leads on Strength 15 / Constitution 13, Obreth on Dexterity
 15, the Aethermancer on Intelligence 15 and the Alchemist on Spirit 15, each
 adding to 57 so the SHAPE is the difference. The spread is never in
@@ -994,7 +994,16 @@ of that curve at about **two gear drops a clear** across 8 gear kinds.
   `bakedGearIcon` became `gearCanvas`, returning the canvas, and `gearTexture`
   memoises it beside `heldTexture`. The same round fixed `gearGrid`, where all
   48 armour art keys fell through to the body-armour grid — a helmet on the
-  floor was a breastplate.
+  floor was a breastplate — and then the whole fallback went. All 59
+  `GearBase.art` keys are generated rows, so `gearIcon` and `gearCanvas` bake
+  the SAME one and 500 lines of hand-drawn silhouette came out of
+  `src/ui/icons.ts`. *"items are using the old icon art when dropped on the
+  ground… delete all of that old self made crap."*
+- ~~**THE XP BAR WAS RUST ON LAMPLIT ROCK.**~~ **DONE.** *"change xp bar color
+  to a blue or something that stands out better and the notches to black."*
+  `--xp` is its own token, deeper than `--mana` because the mana vessel sits in
+  the same corner. Each notch is CUT then LIT, 1px apiece: black alone is
+  invisible against the empty track, which is `--ink`.
 - **THE FLOWERING BUYS NO DIFFICULTY, and that is the open question.**
   `dangerStep` saturates at 330 danger and the rung alone reaches 338 by zone 1
   rung 14 — so 16 of the 42 rungs have monsters no harder than two zones down,

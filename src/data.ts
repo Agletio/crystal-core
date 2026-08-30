@@ -1574,8 +1574,8 @@ export const ATTRIBUTES: AttributeDef[] = [
     name: 'Constitution',
     per: [
       { stat: 'armour', form: 'inc', value: 1.5, tags: [] },
+      { stat: 'elementalRes', form: 'flat', value: 0.3, tags: [] },
       { stat: 'occultRes', form: 'flat', value: 0.3, tags: [] },
-      { stat: 'prismaticRes', form: 'flat', value: 0.3, tags: [] },
     ],
   },
 ];
