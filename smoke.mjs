@@ -958,11 +958,11 @@ assert(
   text('crystals-count')
 );
 // Nothing about a gift is a probability any more, so the screen states a fact.
-// A percentage here would be the one thing on it a player cannot act on — and
-// so would "somewhere below", which is why the next crystal is named by RUNG.
+// A percentage here would be the one thing on it a player cannot act on. The
+// campaign pays the first crystal, so what is named is the zones still to clear.
 assert(
-  /(talk to him in the camp|rung \d+)/i.test(text('crystals-npc')),
-  'the collection says where the next crystal is, by name and by rung',
+  /(talk to him in the camp|until the climb is finished)/i.test(text('crystals-npc')),
+  'the collection says what stands between you and the first crystal',
   text('crystals-npc')
 );
 assert(
@@ -971,8 +971,8 @@ assert(
   text('crystals-npc')
 );
 assert(
-  all('#crystals-quests .quest').length === 15,
-  'and every depth the climb pays a crystal at is listed under it',
+  all('#crystals-quests .quest').length === 3,
+  'and the three zones of the campaign are listed under it, since clearing them is what pays',
   String(all('#crystals-quests .quest').length)
 );
 // The panel tracks the CLIMB, never the collection. The dev kit hands over every
@@ -2804,10 +2804,21 @@ $('dev-kit').click();
     String(all('#trials-web .web__node').length)
   );
 
+  // NOTHING IS WALKABLE UNTIL THE CAMPAIGN IS WHOLE. The web is on screen from
+  // the first descent, and every node on it is shut until the climb is finished.
+  const openTrial = () => all('#trials-web .web__node--open');
+  assert(
+    openTrial().length === 0,
+    'and not one node of it is walkable before the campaign is cleared',
+    String(openTrial().length)
+  );
+  $('trials-close').click();
+  $('open-dev').click();
+  $('dev-climb-2').click();
+  $('camp-fire').click();
   // FOUR ways in, one per road off the middle — everything else is reached by
   // walking, which is the whole of what makes a route a decision.
-  const openTrial = () => all('#trials-web .web__node--open');
-  assert(openTrial().length === 4, 'four roads out of the middle', String(openTrial().length));
+  assert(openTrial().length === 4, 'four roads out of the middle, once it is', String(openTrial().length));
   openTrial()[0].dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
   assert(
     all('#trials-web .web__node--on').length === 1,

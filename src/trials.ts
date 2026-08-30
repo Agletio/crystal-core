@@ -1,11 +1,9 @@
 /**
  * The trials web: the fourth thing walked through `webgraph.ts`, and the only
- * one whose points are not bought by a level. A skill tree is funded by that
- * skill's level and a trade by the character's; this is funded by things DONE,
- * so its points cannot be ground for, and what it spends them on is the bargain
- * a crystal makes, in the same arithmetic.
+ * one whose points are not bought by a level. It is funded by things DONE, and
+ * nothing at all until the campaign is whole.
  */
-import { LADDER, TRIALS, TRIAL_POINTS } from './data';
+import { CAMPAIGN_REWARD, LADDER, TRIALS, TRIAL_POINTS } from './data';
 import { buildTrials } from './trials/layout';
 import { TRIAL_WEB } from './trials/web';
 import { canAllocateIn, canDeallocateIn, neighboursIn, replayWeb } from './webgraph';
@@ -25,18 +23,16 @@ export const trialRegionOf = (nodeId: string): string | undefined => TRIALS_WEB.
 /** TRIALS AND RUNGS, never a level. A trial pays a handful; a rung pays one,
  *  and the FISSURE pays nothing at all — the first zone is the climb being
  *  learnt, not a second web being filled in. */
+/** NOTHING UNTIL THE CAMPAIGN IS WHOLE, which then pays the first
+ *  `CAMPAIGN_REWARD.points`; the rest is earned by grinding. */
 export const trialPointsFor = (
   done: readonly string[],
   climbed: Record<string, number> = {}
-): number =>
-  done.length * TRIAL_POINTS.perTrial +
-  LADDER.zones.reduce(
-    (n, zone, z) =>
-      z <= TRIAL_POINTS.freeZone
-        ? n
-        : n + Math.min(zone.rungs, climbed[zone.id] ?? 0) * TRIAL_POINTS.perRung,
-    0
-  );
+): number => {
+  const whole = LADDER.zones.every((zone) => (climbed[zone.id] ?? 0) >= zone.rungs);
+  if (!whole) return 0;
+  return CAMPAIGN_REWARD.points + done.length * TRIAL_POINTS.perTrial;
+};
 
 export const TRIAL_POINTS_MAX = // every trial, and every rung that pays for one
   TRIALS.length * TRIAL_POINTS.perTrial +

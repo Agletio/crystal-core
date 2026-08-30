@@ -7,8 +7,9 @@
  * what separates two of them is danger, family and how far they have levelled,
  * and none of that is a silhouette.
  */
-import { CRYSTAL_DEPTHS, FAMILY_BY_ID, LADDER, RUN_SLOTS } from '../data';
-import type { CrystalDepth } from '../data';
+import { FAMILY_BY_ID, LADDER, RUN_SLOTS } from '../data';
+import { climbed } from '../ladder';
+import type { LadderZoneDef } from '../types';
 import { crystalsIn, socketFor, socketItem, unsocket } from '../game/state';
 import type { GameState } from '../game/state';
 import { crystalProgress, giftSchedule } from '../game/crystals';
@@ -153,20 +154,15 @@ function renderRow(row: Row): HTMLElement {
 
 /** WHAT THE CLIMB PAYS, and where. A depth already behind you is marked taken,
  *  so the panel reads as a ladder you are partway up rather than a wishlist. */
-function renderDepth(depth: CrystalDepth): HTMLElement {
-  const zone = LADDER.zones[depth.zone];
-  const cleared = Number(game.character.climbed?.[zone?.id ?? ''] ?? 0) >= depth.rung;
-  const family = FAMILY_BY_ID[depth.family];
-  const card = el('div', `quest${cleared ? ' quest--done' : ''}`);
-  card.append(el('div', 'crystal__name', `${zone?.name ?? '?'}, depth ${depth.rung}`));
-  card.append(el('div', 'quest__detail', cleared ? 'Cleared.' : 'Clear it and it is yours.'));
-  card.append(
-    el(
-      'div',
-      `socket__family socket__family--${family.id}`,
-      cleared ? `${family.name} crystal — taken` : `Pays a ${family.name} crystal`
-    )
-  );
+/** THE CLIMB, as the one thing standing between you and a crystal. Nothing is
+ *  paid out of the wall any more — the campaign pays once, whole. */
+function renderZone(zone: LadderZoneDef, z: number): HTMLElement {
+  const done = climbed(game.character, z) >= zone.rungs;
+  const card = el('div', `quest${done ? ' quest--done' : ''}`);
+  card.append(el('div', 'crystal__name', zone.name));
+  card.append(el('div', 'quest__detail', done
+    ? 'Cleared, top to bottom.'
+    : `${climbed(game.character, z)} of ${zone.rungs} depths cleared.`));
   return card;
 }
 
@@ -181,7 +177,7 @@ export function render(): void {
 
   const quests = $('crystals-quests');
   quests.replaceChildren();
-  for (const depth of CRYSTAL_DEPTHS) quests.append(renderDepth(depth));
+  LADDER.zones.forEach((zone, z) => quests.append(renderZone(zone, z)));
 
   $('crystals-count').textContent = `${all.length} owned · ${
     all.filter((r) => r.held === 'socket').length

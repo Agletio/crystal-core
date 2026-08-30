@@ -35,7 +35,8 @@ import {
   AURA_BY_ID,
   CURRENCIES,
   CURRENCY_BY_ID,
-  CRYSTAL_DEPTHS,
+  CAMPAIGN_REWARD,
+  LADDER_RUNGS,
   CRYSTAL_LEVELS,
   CRYSTAL_XP,
   HOARD,
@@ -67,7 +68,6 @@ import {
   MONSTERS,
   MONSTERS_BY_FAMILY,
   MONSTER_FAMILIES,
-  depthsAt,
   rungsBelow,
   LOCKS,
   MAP_THEMES,
@@ -114,7 +114,7 @@ import {
 import { variants } from './sim/appearance';
 import type { GearBase } from './types';
 import {
-  arenaAt, canEnter, climbed, furthest, takeRung, zoneOpen,
+  arenaAt, campaignDone, canEnter, climbed, furthest, takeRung, zoneOpen,
 } from './ladder';
 import { canDualWield } from './sim/character';
 import {
@@ -345,7 +345,6 @@ import {
   giftWaiting,
   giftSchedule,
   takeDepth,
-  depthsOwed,
   ownedCrystals,
   takeHandover,
   xpForClear,
@@ -3099,7 +3098,8 @@ rule('THE TRIALS WEB — is a harder descent actually harder, and paid for?');
   {
     const one = makeCharacter({}, 'strike');
     one.trials = TRIALS.map((t) => t.id);
-    one.climbed = { fissure: 12 };
+    // THE WHOLE CAMPAIGN, because nothing pays a point before it is finished.
+    one.climbed = Object.fromEntries(LADDER.zones.map((zone) => [zone.id, zone.rungs]));
     one.trialAllocated = [trialNodes()[0].id];
     const two = makeCharacter({}, 'strike');
     check(
@@ -3328,14 +3328,16 @@ rule('THE TRIALS WEB — is a harder descent actually harder, and paid for?');
   );
 
   // A trial deleted refunds the point it bought rather than stranding the walk.
+  // On a FINISHED campaign, since nothing pays a point before that.
   const save = createGame('dev');
+  save.character.climbed = Object.fromEntries(LADDER.zones.map((z) => [z.id, z.rungs]));
   save.character.trialAllocated = [...walk];
   save.character.trials = [TRIALS[0].id, 'a_trial_nobody_wrote'];
   healTrials(save.character);
+  const owed = CAMPAIGN_REWARD.points + TRIAL_POINTS.perTrial;
   check(
-    save.character.trials.length === 1 &&
-      save.character.trialAllocated.length === TRIAL_POINTS.perTrial,
-    `and heal() cuts a walk back to what one surviving trial pays for — ${TRIAL_POINTS.perTrial}`,
+    save.character.trials.length === 1 && save.character.trialAllocated.length === Math.min(walk.length, owed),
+    `and heal() cuts a walk back to what the campaign and one surviving trial pay for — ${owed}`,
     `${save.character.trials.length} trials, ${save.character.trialAllocated.length} nodes`
   );
 }
@@ -10401,8 +10403,8 @@ rule('THE COLLECTION — do crystals arrive, and do they grow?');
       made.ok ? String(made.item.meta.scripted) : '—'
     );
     check(
-      giftWaiting(g) === null && /rung \d+/.test(giftSchedule(g)),
-      'and everything after that is a DEPTH, named by rung rather than scheduled',
+      giftWaiting(g) === null && /until the climb is finished/.test(giftSchedule(g)),
+      'and everything after that waits on the CAMPAIGN, which the screen names',
       giftSchedule(g)
     );
   }
@@ -10708,79 +10710,56 @@ rule('THE COLLECTION — do crystals arrive, and do they grow?');
   }
 }
 
-// THE CLIMB PAYS THE CRYSTALS — *"the entire Crystal handout should be
-// scratched and it should just be at certain depths instead."* What has to hold
-// is that the ladder is walkable: enough of each family to compose every world,
-// a set of four inside the first zone, and nothing paid twice.
+// THE CAMPAIGN PAYS THE FIRST CRYSTAL, and nothing before it does. *"You
+// shouldn't see any trial stuff or even receive any crystals until you've
+// cleared the entire campaign."* `CRYSTAL_DEPTHS` is gone; what has to hold is
+// that the whole 42-depth climb is paid NOTHING and the last depth pays once.
 {
-  const named = CRYSTAL_DEPTHS.filter((d) => !LADDER.zones[d.zone]);
-  const past = CRYSTAL_DEPTHS.filter((d) => d.rung > (LADDER.zones[d.zone]?.rungs ?? 0));
-  check(
-    named.length === 0 && past.length === 0,
-    `all ${CRYSTAL_DEPTHS.length} depths name a rung that exists`,
-    `${named.length} in no zone, ${past.length} past the top of theirs`
-  );
-
-  // A SET OF FOUR early, or the sockets sit empty through the whole first zone.
-  const byRung = [...CRYSTAL_DEPTHS].sort(
-    (a, b) => rungsBelow(a.zone, a.rung) - rungsBelow(b.zone, b.rung)
-  );
-  const fourth = byRung[RUN_SLOTS.length - 2]; // the opening hands you the first
-  line(`  the climb pays ${CRYSTAL_DEPTHS.length} crystals; the ${RUN_SLOTS.length}th socket fills at ` +
-    `${LADDER.zones[fourth.zone].name} rung ${fourth.rung}`);
-  check(
-    fourth.zone === 0,
-    `every socket is filled inside ${LADDER.zones[0].name}`,
-    `the last one waits until zone ${fourth.zone}`
-  );
-
-  // EVERY WORLD REACHABLE. `mapTheme` wants half of one family, and the Seam
-  // exactly two of each — so a family nobody is paid four of is a world with
-  // no way in.
-  const paid: Record<string, number> = {};
-  for (const d of CRYSTAL_DEPTHS) paid[d.family] = (paid[d.family] ?? 0) + 1;
-  paid.normal = (paid.normal ?? 0) + 1; // the Lampwright's
-  line(`  by family: ${Object.entries(paid).map(([f, n]) => `${f} ${n}`).join(' · ')}`);
-  const worlds = MONSTER_FAMILIES.map((f) =>
-    mapTheme(composition(Array.from({ length: RUN_SLOTS.length }, () => makeCrystal(1, f.id))))
-  );
-  check(
-    MONSTER_FAMILIES.every((f) => (paid[f.id] ?? 0) >= RUN_SLOTS.length)
-      && new Set(worlds).size === MONSTER_FAMILIES.length,
-    `the climb pays ${RUN_SLOTS.length} of every family, so every world has a way in`,
-    JSON.stringify(paid)
-  );
-
-  // The first CHANGE of world: a climb whose whole first zone is one opponent
-  // is a climb that never shows you what the sockets are for.
-  const swap = byRung.find((d) => d.family !== 'normal');
-  check(
-    swap !== undefined && swap.zone === 0,
-    `the first crystal of another world is ${LADDER.zones[swap?.zone ?? 0].name} rung ${swap?.rung}`,
-    JSON.stringify(swap)
-  );
-
-  // PAID ONCE, on a NEWLY cleared rung. Grinding an old one pays nothing, which
-  // is the same rule the climb records by.
   const game = createGame('fresh');
   game.character = ladderCharacter(1, new Rng(3));
-  const at = { zone: fourth.zone, rung: fourth.rung };
-  const first = takeDepth(game, at);
-  takeRung(game.character, at);
-  const again = takeDepth(game, at);
+  game.character.climbed = {};
+
+  // EVERY DEPTH BUT THE LAST, walked in order, pays nothing at all.
+  let paid = 0;
+  LADDER.zones.forEach((zone, z) => {
+    for (let rung = 1; rung <= zone.rungs; rung++) {
+      const at = { zone: z, rung };
+      paid += takeDepth(game, at).length;
+      takeRung(game.character, at);
+    }
+  });
   check(
-    first.length === depthsAt(at.zone, at.rung).length && again.length === 0,
-    'a rung pays its crystal once and re-grinding it pays nothing',
-    `${first.length} then ${again.length}`
+    campaignDone(game.character) && paid === CAMPAIGN_REWARD.crystals,
+    `the whole ${LADDER_RUNGS}-depth climb pays ${paid} crystal, and it is the LAST depth that pays it`,
+    `${paid} paid across the climb`
   );
   check(
-    ownedCrystals(game).length === first.length,
-    'and what it paid is actually in your hands',
+    ownedCrystals(game).length === CAMPAIGN_REWARD.crystals,
+    'and it is actually in your hands',
     `${ownedCrystals(game).length} owned`
   );
+  // ONCE. Re-grinding the last depth of the last zone pays nothing more.
+  const top = LADDER.zones.length - 1;
+  const again = takeDepth(game, { zone: top, rung: LADDER.zones[top].rungs });
+  check(again.length === 0, 'and re-grinding the last depth pays nothing more', `${again.length} paid`);
 
-  // THE LAMPWRIGHT OWES TWO THINGS. The quest ladder was his; it is the
-  // ground's now, so he has the weapon and the first crystal and nothing else.
+  // AND NOTHING IS PAID EARLY. A character one depth short of the end has none.
+  const nearly = createGame('fresh');
+  nearly.character = ladderCharacter(1, new Rng(4));
+  nearly.character.climbed = Object.fromEntries(
+    LADDER.zones.map((zone, z) => [zone.id, z === top ? zone.rungs - 1 : zone.rungs])
+  );
+  const early = takeDepth(nearly, { zone: top, rung: LADDER.zones[top].rungs - 1 });
+  check(
+    !campaignDone(nearly.character) && early.length === 0 && ownedCrystals(nearly).length === 0,
+    'one depth short of the end is still no crystal at all',
+    `${ownedCrystals(nearly).length} owned`
+  );
+}
+
+// THE LAMPWRIGHT OWES TWO THINGS. The quest ladder was his; it is the
+// campaign's now, so he has the weapon and the first crystal and nothing else.
+{
   const met = createGame('fresh');
   met.given = ['weapon', 'crystal'];
   check(

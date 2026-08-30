@@ -273,15 +273,17 @@ world you walk into. Danger and socket
 count fold into one **run power**, and every reward reads that and nothing else.
 A fifth socket takes a **boss key**.
 
-**A CRYSTAL COMES OUT OF THE GROUND AT A DEPTH.** *"The entire Crystal handout
-should be scratched and it should just be at certain depths instead."*
-`CRYSTAL_DEPTHS` is one row per rung that pays one, and the FAMILY is what that
-depth is FOR. Paid on a rung being NEWLY cleared, asked before `takeRung`
-records it, so grinding an old rung pays nothing. Fifteen across the climb plus
-the Lampwright's — four of every family, so every world has a way in, the fourth
-socket fills at The Answering rung 6 and the first crystal of another world is
-rung 8. **The Lampwright owes the weapon and the FIRST crystal and nothing
-else**; there is no quest ladder any more.
+**NOTHING IS PAID UNTIL THE CAMPAIGN IS WHOLE.** *"You shouldn't see any trial
+stuff or even receive any crystals until you've cleared the entire campaign."*
+`campaignDone` is every zone climbed to its own boss; `takeDepth` pays
+`CAMPAIGN_REWARD` — one crystal and 10 points — on the depth that finishes the
+last one, flagged by `Character.paidCampaign` so a re-grind pays nothing, and
+`trialPointsFor` returns 0 before it. The web is still on screen from the first
+descent, with nothing on it walkable: a plan you cannot see is a plan nobody
+makes.
+
+**The Lampwright owes the weapon and the FIRST crystal and nothing else**;
+there is no quest ladder any more, and `CRYSTAL_DEPTHS` is gone with it.
 
 **A CRYSTAL'S LEVEL IS THE WHOLE OF GEAR PROGRESSION.** *"Make it where tiers
 are just based on crystal level and make it take longer to level them."*

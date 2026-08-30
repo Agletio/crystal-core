@@ -1100,13 +1100,20 @@ where sockets exist. The difficulty curve does not move: `rungMod` is untouched.
 
 ### The steps, each leaving the suite green
 
-- [ ] **Step 1 — the campaign is crystal-free and trial-free.** `LadderZone`
-      gains a `world: MapTheme`; `mapTheme` reads it when a descent is a
-      campaign depth and the socketed set when it is not. `CRYSTAL_DEPTHS` is
-      deleted — no crystal comes out of the wall any more. The Fissure window
-      loses its socket column for the campaign tabs and the map takes the room.
-      The trials hotspot (the camp fire) is dark until the campaign is done, and
-      it says why rather than being missing.
+- [x] **Step 1a — a campaign zone is a WORLD and a gear TIER. DONE.**
+      `LadderZoneDef.world` and `.tier`, read by `runSet` whenever a descent
+      names a depth: The Answering is the Fissure at tier 1, The Refraction the
+      Cavern at 2, The Flowering the Rot at 3. Off the climb the sockets answer
+      both, which is what the Proving Ground is made of. `rungMod` untouched.
+- [x] **Step 1b — nothing is PAID until the campaign is whole. DONE.**
+      `campaignDone` in `src/ladder.ts`; `CRYSTAL_DEPTHS` and `CrystalDepth`
+      deleted. `takeDepth` pays `CAMPAIGN_REWARD` — 1 crystal, 10 points — on
+      the depth that finishes the last zone, once, flagged by
+      `Character.paidCampaign`. `trialPointsFor` is 0 before that, so the web is
+      visible from the first descent with nothing on it walkable.
+- [ ] **Step 1c — the Fissure window loses its socket column** for the campaign
+      tabs and the map takes the room. The sockets come back on the Proving
+      Ground's own tab in step 5.
 - [ ] **Step 2 — what a campaign clear PAYS.** Clearing The Flowering's boss is
       the finish line and it is stated before you get there. The Lampwright
       hands over ONE crystal and the first 10 points, in his own scene, which is

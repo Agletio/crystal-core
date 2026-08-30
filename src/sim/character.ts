@@ -46,6 +46,7 @@ export interface Character {
   attributes: Record<string, number>;
   /** The trade taken up, or null before one is. Survives every skill swap. */
   trade: string | null;
+  paidCampaign?: boolean; // the campaign's reward, PAID once. Absent until then
   /** Nodes walked on it, out of a budget character level funds. */
   tradeAllocated: string[];
   /** Trials done, in the order they were done. Its LENGTH is the point budget

@@ -7,23 +7,22 @@
  * and the capacity are all rewritten together.
  */
 import {
-  CRYSTAL_DEPTHS,
+  CAMPAIGN_REWARD,
+  LADDER,
   CRYSTAL_LEVELS,
   CRYSTAL_XP,
   INTRO,
   LAMPWRIGHT,
-  depthsAt,
   RUN_SLOTS,
   SKILL_BY_ID,
   crystalName,
 } from '../data';
-import type { CrystalDepth } from '../data';
 import { mainSkillId, pointsAvailable } from '../sim/character';
 import { armForSkill, giveGift } from './state';
 import type { GameState } from './state';
 import { grant, makeCrystal } from '../economy';
 import { crystalFamily } from '../sim/crystal';
-import { zoneAt } from '../ladder';
+import { campaignDone, climbed, zoneAt } from '../ladder';
 import type { RunSet } from '../sim/crystal';
 import type { Item, RolledMod } from '../types';
 
@@ -86,14 +85,13 @@ export function giftSchedule(game: GameState): string {
       `${name} is level ${progress?.level ?? 1}, with ${spare} unspent.`
     );
   }
-  // NAMING THE NEXT ONE, because "somewhere below" is the one thing on this
-  // screen a player cannot act on. The Lampwright is done after the first.
-  const next = depthsOwed(game)[0];
-  if (!next) return `Every crystal in the ground is yours. ${who} has nothing else.`;
-  const zone = zoneAt(next.zone);
+  // NAMING WHAT IS LEFT: "somewhere below" is what a player cannot act on.
+  if (game.character.paidCampaign) return `${who} has nothing else.`;
+  const left = LADDER.zones.filter((zone, z) => climbed(game.character, z) < zone.rungs);
   return (
-    `${who} has nothing else. The next crystal is in the wall at ` +
-    `${zone?.name ?? '?'} rung ${next.rung} — clear it and it is yours.`
+    `${who} has nothing else until the climb is finished. ` +
+    `${left.map((z) => z.name).join(', ')} still ${left.length === 1 ? 'stands' : 'stand'} ` +
+    `between you and the first crystal.`
   );
 }
 
@@ -251,23 +249,25 @@ export interface QuestFacts {
   bearers?: number; // Bearers put down during it
 }
 
-/** WHAT A RUNG HANDS OVER, asked BEFORE `takeRung` records it — so grinding an
- *  old rung pays nothing and the two cannot disagree about "newly". */
+/** THE CAMPAIGN PAYS NOTHING UNTIL IT IS WHOLE, and the depth that finishes the
+ *  last zone pays the lot at once. Flagged on the character, so re-grinding it
+ *  pays nothing; asked BEFORE `takeRung` records the depth. */
 export function takeDepth(game: GameState, at: { zone: number; rung: number }): Item[] {
   const already = Number(game.character.climbed?.[zoneAt(at.zone)?.id ?? ''] ?? 0);
-  if (already >= at.rung) return [];
+  if (already >= at.rung || game.character.paidCampaign) return [];
+  // Asked as though this depth were already recorded, since it is about to be.
+  const after = { ...game.character, climbed: { ...(game.character.climbed ?? {}) } };
+  const key = zoneAt(at.zone)?.id;
+  if (key) after.climbed![key] = Math.max(already, at.rung);
+  if (!campaignDone(after)) return [];
+
+  game.character.paidCampaign = true;
   const out: Item[] = [];
-  for (const depth of depthsAt(at.zone, at.rung)) {
-    const crystal = makeCrystal(1, depth.family);
+  for (let i = 0; i < CAMPAIGN_REWARD.crystals; i++) {
+    const crystal = makeCrystal(1, 'normal');
     giveGift(game, crystal);
     out.push(crystal);
   }
   return out;
 }
-
-/** Every depth still ahead of this character, in climb order. */
-export const depthsOwed = (game: GameState): CrystalDepth[] =>
-  CRYSTAL_DEPTHS.filter(
-    (d) => Number(game.character.climbed?.[zoneAt(d.zone)?.id ?? ''] ?? 0) < d.rung
-  );
 

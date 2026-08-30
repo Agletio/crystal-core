@@ -1967,37 +1967,8 @@ export interface QuestNeed {
   [param: string]: unknown;
 }
 
-/** WHAT A DEPTH HANDS OVER — *"scratched… just be at certain depths instead."*
- *  The FAMILY is what a depth is FOR, since what you socket is where you go.
- *  Paid on a rung being NEWLY cleared; rung 8 is the first change of world. */
-export interface CrystalDepth {
-  zone: number; // index into LADDER.zones
-  rung: number;
-  family: MonsterFamily;
-}
-
-export const CRYSTAL_DEPTHS: CrystalDepth[] = [
-  { zone: 0, rung: 2, family: 'normal' },
-  { zone: 0, rung: 4, family: 'normal' },
-  { zone: 0, rung: 6, family: 'normal' },
-  { zone: 0, rung: 8, family: 'demonic' },
-  { zone: 0, rung: 10, family: 'prismatic' },
-  { zone: 0, rung: 12, family: 'demonic' },
-
-  { zone: 1, rung: 3, family: 'prismatic' },
-  { zone: 1, rung: 6, family: 'demonic' },
-  { zone: 1, rung: 9, family: 'prismatic' },
-  { zone: 1, rung: 12, family: 'normal' },
-  { zone: 1, rung: 14, family: 'demonic' },
-
-  { zone: 2, rung: 4, family: 'prismatic' },
-  { zone: 2, rung: 8, family: 'demonic' },
-  { zone: 2, rung: 12, family: 'normal' },
-  { zone: 2, rung: 16, family: 'prismatic' },
-];
-
-export const depthsAt = (zone: number, rung: number): CrystalDepth[] =>
-  CRYSTAL_DEPTHS.filter((d) => d.zone === zone && d.rung === rung);
+/** WHAT CLEARING THE CAMPAIGN PAYS: *"1 crystal and 10 trial points."* */
+export const CAMPAIGN_REWARD = { crystals: 1, points: 10 };
 
 export const CRYSTAL_ILVL = 70;
 

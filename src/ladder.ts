@@ -46,6 +46,11 @@ export function arenaAt(at: Rung): string | null {
   return zone && at.rung === zone.rungs ? (zone.arena ?? null) : null;
 }
 
+/** THE CAMPAIGN IS OVER when every zone is climbed whole, which is the three
+ *  bosses. Nothing pays a crystal or a trial point before it. */
+export const campaignDone = (character: Character): boolean =>
+  LADDER.zones.every((zone, z) => climbed(character, z) >= zone.rungs);
+
 /** Cleared, and never un-cleared: re-grinding an old rung records nothing. */
 export function takeRung(character: Character, at: Rung): void {
   const key = zoneAt(at.zone)?.id;
