@@ -213,7 +213,8 @@ and 16 rungs; a rung is CHOSEN, one you have cleared stays open for the rest of
 that character's life, and a zone opens when the one below it is whole. Its
 difficulty rides the crystal seam as ONE synthetic mod (`rungMod`, beside
 `trialMod` and `treeMod`), so `crystalRewards` pays a harder rung more with
-nothing written twice. **A ZONE IS DEPTH AND NEVER A WORLD** — The Answering,
+nothing written twice. **A DEPTH is what a player calls a rung** — the identifiers stay `rung`,
+because `climbed` is a save key. **A ZONE IS DEPTH AND NEVER A WORLD** — The Answering,
 The Refraction, The Flowering, named for the halls at their tops. What world you
 walk into is what you SOCKETED (`mapTheme`), and the two used to be the same
 thing, which made the crystals a second ladder. `LadderZone.id` is still spelt
@@ -380,10 +381,11 @@ takes.
 climb beside it, so naming it there said it twice. A cleared descent launches
 the next by itself and keeps going until you die, your bag fills, someone is
 waiting at the mouth, a crystal roll runs out, or you say so. All of them end on
-the same report and open the same dock. **REPEAT is the one toggle that says
-whether**, under the button — `GameState.repeating`, a preference like Hide,
-absent meaning ON. It is not "Leave after this run" in a new coat: that armed a
-stop one descent AHEAD, where this is a standing answer you give once.
+the same report and open the same dock. **DEEPER is the one toggle that says how far**,
+under the button — `GameState.climbing`, a preference like Hide, absent meaning
+OFF, and a DEATH clears it. On, every clear takes the next depth by forgetting
+the pick (`advanceRung`) so `furthest` answers; off, a depth can be ground until
+the gear is there. The chain itself is not a choice.
 **Saying so is ONE BUTTON — Return to camp — and it KEEPS what the descent
 found**: *"make it where all the loot on the floor just gets
 picked up when you return to camp… you can min max by doing a hard level for a

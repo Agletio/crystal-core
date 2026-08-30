@@ -70,7 +70,12 @@ const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const name = process.argv[2];
 const description = OUTFITS[name];
 if (!description) throw new Error(`name an outfit: ${Object.keys(OUTFITS).join(', ')}`);
-const frames = process.argv.slice(3);
+// A RE-DRESS MUST BE A DIFFERENT DRAW: one came back facing backwards.
+const seedAt = process.argv.indexOf('--seed');
+const seed = seedAt > 0 ? Number(process.argv[seedAt + 1]) : 7;
+const frames = process.argv.slice(3).filter((a, i, all) =>
+  a !== '--seed' && all[i - 1] !== '--seed'
+);
 if (!frames.length) throw new Error('name at least one image in tools/art/cache/designs');
 
 function path(f: string): string {
@@ -92,7 +97,7 @@ if (frames[0] === '--state') {
     character_id: source,
     state_name: label,
     edit_description: description,
-    seed: 7,
+    seed,
   });
   const id = fields(made).id;
   if (!id) throw new Error(`${name}: refused — ${made.slice(0, 300)}`);
@@ -129,7 +134,7 @@ for (let from = 0; from < frames.length; from += chunk) {
   const out = await callTool('edit_image', {
     images_base64: images.slice(from, from + chunk),
     description,
-    seed: 7,
+    seed,
   });
   const job = fields(out).job_id ?? /([0-9a-f-]{36})/.exec(out)?.[1];
   if (!job) throw new Error(`${name}: refused — ${out.slice(0, 300)}`);

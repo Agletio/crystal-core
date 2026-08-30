@@ -316,9 +316,9 @@ function render(): void {
   $('trials-sub').textContent = open
     ? `${spent}/${earned} points spent · ${TRIAL_POINTS_MAX} to earn · ` +
       `${trialNodes().length} nodes`
-    : `Shut. ${cleared} of ${first.rungs} rungs of ${first.name} cleared`;
+    : `Shut. ${cleared} of ${first.rungs} depths of ${first.name} cleared`;
   $('trials-note').textContent = open
-    ? `${TRIAL_POINTS.perTrial} points a trial and ${TRIAL_POINTS.perRung} a rung above the Fissure. ` +
+    ? `${TRIAL_POINTS.perTrial} points a trial and ${TRIAL_POINTS.perRung} a depth above the Fissure. ` +
       'Most nodes make a descent worse, and worse is what pays.'
     : `The web opens when the Fissure is whole. Trials done before then keep their ${TRIAL_POINTS.perTrial} points.`;
 

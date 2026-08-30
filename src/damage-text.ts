@@ -8,27 +8,47 @@ import type { CombatStats, DamagePart, DamageStep } from './sim/stats';
 const round = (n: number) => Math.round(n).toString();
 const trim = (n: number): string => String(Math.round(n * 100) / 100);
 
-/** WHAT A DAMAGE TYPE LEAVES BEHIND at this build's numbers: how often, and
- *  what one stack is worth in the ailment's OWN units. "Applies Chill" is the
- *  sentence this game does not write. Here because TWO screens ask. */
-export function ailmentLine(type: string, stats: CombatStats): string {
+/** WHAT A DAMAGE TYPE LEAVES BEHIND at this build's numbers, as a HEAD and the
+ *  facts under it. One fact a line and no sentences: a paragraph in a column
+ *  four words wide is a wall nobody reads. `chance` is 0 for a type this build
+ *  cannot apply, and the sheet leaves those out entirely. */
+export interface AilmentReading {
+  chance: number;
+  head: string;
+  facts: Array<[string, string]>;
+}
+
+export function ailmentReading(type: string, stats: CombatStats): AilmentReading | null {
   const def = AILMENT_OF_TYPE[type];
-  const named = DAMAGE_TYPE_BY_ID[type]?.name ?? type;
-  if (!def) return `${named}: no Ailment`;
+  if (!def) return null;
 
   const chance = Math.round(stats.ailmentChance?.[def.id] ?? def.chance);
   const dps = Math.round(stats.ailmentDps?.[def.id] ?? def.dps ?? 0);
-  const worth =
-    def.kind === 'chill'
-      ? `${def.slowPer}% slower a stack, Frozen at ${def.freezeAt} for ${def.freezeSeconds}s`
-      : def.kind === 'curse'
-        ? `${trim(def.burstShare ?? 0)}% of its maximum life a stack, ${trim(def.burstRadius ?? 0)} tiles across`
-        : def.kind === 'exposure'
-          ? `${def.takenPer}% increased damage taken a stack`
-          : def.kind === 'shock'
-            ? `${dps}/s a stack, and ${Math.round((def.arcShare ?? 0) * 100)}% of it to ${def.arcTargets} nearby`
-            : `${dps}/s a stack`;
-  return `${def.name}: ${chance}% a hit, ${worth}, for ${def.seconds}s`;
+  const facts: Array<[string, string]> = [];
+  if (def.kind === 'chill') {
+    facts.push(['Slow', `${def.slowPer}% per application`]);
+    facts.push(['Frozen at', `${def.freezeAt} stacks, for ${def.freezeSeconds}s`]);
+  } else if (def.kind === 'curse') {
+    facts.push(['Damage on death', `${trim(def.burstShare ?? 0)}% of maximum life`]);
+    facts.push(['Area of effect', `${trim(def.burstRadius ?? 0)} tiles`]);
+  } else if (def.kind === 'exposure') {
+    facts.push(['Damage taken', `+${def.takenPer}% per application`]);
+  } else if (def.kind === 'shock') {
+    facts.push(['DPS', String(dps)]);
+    facts.push(['Arcs', `${Math.round((def.arcShare ?? 0) * 100)}% to ${def.arcTargets} nearby`]);
+  } else {
+    facts.push(['DPS', String(dps)]);
+  }
+  facts.push(['Duration', `${def.seconds}s`]);
+  return { chance, head: `${def.name} Chance`, facts };
+}
+
+/** The same reading on ONE line, for a tooltip and for the demo's check. */
+export function ailmentLine(type: string, stats: CombatStats): string {
+  const read = ailmentReading(type, stats);
+  const named = DAMAGE_TYPE_BY_ID[type]?.name ?? type;
+  if (!read) return `${named}: no Ailment`;
+  return `${read.head}: ${read.chance}%, ${read.facts.map(([k, v]) => `${k} ${v}`).join(', ')}`;
 }
 
 /** Every factor behind one damage type, in the order it was applied. */

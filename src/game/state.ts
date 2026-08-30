@@ -131,7 +131,7 @@ export interface GameState {
   potions: Record<string, number>;
   /** Panels away, map alone. A preference like `keys`, so a wipe keeps it. */
   parked: boolean;
-  repeating: boolean; // a CLEAR launches the next descent; absent is on
+  climbing: boolean; // a CLEAR takes the next RUNG down; absent is off, and dying clears it
 
   bosses: string[]; // put down: stops one being scheduled twice, opens its key
   called: string | null; // a fight a socketed key has paid for: the next entry is it
@@ -170,7 +170,7 @@ export function createGame(mode: StartMode = 'dev'): GameState {
     keys: {},
     potions: {},
     parked: false,
-    repeating: true,
+    climbing: false,
     bosses: [],
     called: null,
   };

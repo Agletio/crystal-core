@@ -39,6 +39,13 @@ export function rungNow(character: Character): Rung {
   return furthest(character);
 }
 
+/** ADVANCE: forget the rung you picked, so the next descent takes the deepest
+ *  one open. The clear that calls this has just recorded the rung, so
+ *  `furthest` has already moved — there is no second idea of "next". */
+export function advanceRung(): void {
+  chosen = null;
+}
+
 export function pickRung(character: Character, at: Rung): boolean {
   if (!canEnter(character, at)) return false;
   chosen = at;
@@ -58,7 +65,7 @@ export function climbTotals(character: Character): { done: number; all: number }
 
 /** A rung named: what it IS, rather than which one anybody is pointed at. */
 export const rungName = (at: Rung): string =>
-  `${zoneAt(at.zone)?.name ?? '?'}, rung ${at.rung}`;
+  `${zoneAt(at.zone)?.name ?? '?'}, depth ${at.rung}`;
 
 /** What the Enter button says: the rung you are about to walk into. */
 export const rungLabel = (character: Character): string => rungName(rungNow(character));
@@ -71,11 +78,11 @@ export function climbLine(character: Character, at: Rung | null, cleared: boolea
   const name = zone.name;
   const done = Math.min(zone.rungs, climbed(character, at.zone));
   if (!cleared) {
-    return `${name}, rung ${at.rung}. ${done} of ${zone.rungs} cleared — drop back a rung or two and grind if you need to.`;
+    return `${name}, depth ${at.rung}. ${done} of ${zone.rungs} cleared — drop back a depth or two and grind if you need to.`;
   }
-  if (at.rung < zone.rungs) return `${name}, rung ${at.rung} cleared. Rung ${at.rung + 1} is open.`;
+  if (at.rung < zone.rungs) return `${name}, depth ${at.rung} cleared. Depth ${at.rung + 1} is open.`;
   const after = zoneAt(at.zone + 1);
-  if (!after) return `${name}, rung ${at.rung} cleared. That is the whole climb.`;
+  if (!after) return `${name}, depth ${at.rung} cleared. That is the whole climb.`;
   return `${name} is finished. ${after.name} is open.`;
 }
 
@@ -91,7 +98,7 @@ interface Station {
   y: number; // percent down it
 }
 
-/** One zone's rungs, laid down the picture the way the picture itself goes:
+/** One zone's depths, laid down the picture the way the picture itself goes:
  *  top left to bottom right, with a wobble so it reads as a seam rather than a
  *  ruler. BOTH axes are percentages of the art, so a station cannot drift off
  *  the chamber it sits in whatever the card is doing. */
@@ -139,7 +146,7 @@ function tabs(host: HTMLElement, character: Character, at: number, redraw: () =>
     tab.append(el('span', 'climbtab__done', ` ${done}/${zone.rungs}`));
     attachTooltip(tab, () =>
       open
-        ? `${zone.name}. ${done} of ${zone.rungs} rungs cleared. ${zone.blurb}`
+        ? `${zone.name}. ${done} of ${zone.rungs} depths cleared. ${zone.blurb}`
         : `${zone.name}. Shut until ${shutBy(z)} is cleared whole.`);
     tab.onclick = () => {
       shown = z;
@@ -165,7 +172,7 @@ export function renderClimb(host: HTMLElement, character: Character, onPick: () 
 
   host.append(el('p', 'panel__title', 'The climb'));
   const where = el('p', 'climb__where',
-    `${rungLabel(character)} · ${totals.done} of ${totals.all} rungs cleared`);
+    `${rungLabel(character)} · ${totals.done} of ${totals.all} depths cleared`);
   if (isChallenge(at.zone, at.rung)) {
     where.append(el('span', 'climb__spike', ' · a challenge floor'));
   }
@@ -216,10 +223,10 @@ export function renderClimb(host: HTMLElement, character: Character, onPick: () 
         : '';
     attachTooltip(pip, () =>
       (!can
-        ? `${zone.name}, rung ${station.rung}. Clear rung ${cleared + 1} first.`
+        ? `${zone.name}, depth ${station.rung}. Clear depth ${cleared + 1} first.`
         : station.rung <= cleared
-          ? `${zone.name}, rung ${station.rung}. Cleared. Go back and grind it any time.`
-          : `${zone.name}, rung ${station.rung}. The furthest you may go.`) + what
+          ? `${zone.name}, depth ${station.rung}. Cleared. Go back and grind it any time.`
+          : `${zone.name}, depth ${station.rung}. The furthest you may go.`) + what
     );
     pip.onclick = () => {
       if (pickRung(character, here)) onPick();

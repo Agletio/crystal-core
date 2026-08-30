@@ -7,7 +7,7 @@
  */
 import { Rng } from '../rng';
 import { RunSim, TICK } from '../sim/run';
-import type { RunEvent, RunState } from '../sim/run';
+import type { Buff, RunEvent, RunState } from '../sim/run';
 import { characterStats, treeGrants, trialMod } from '../sim/stats';
 import {
   attributePointsLeft,
@@ -45,9 +45,9 @@ import { bossBeaten, hasMet, takeBoss, takeMet } from '../game/scenes';
 import { takeTrials } from '../game/trials';
 import { SCENES, SCENE_BY_ID } from '../scenes';
 import type { Hotspot } from '../scenes/camp';
-import { initCamp, openCamp, closeCamp, isCampOpen, renderCamp } from './camp';
+import { initCamp, openCamp, closeCamp, isCampOpen, renderCamp, setCampEmber } from './camp';
 import { openTalk } from './talk';
-import { climbLine, renderClimb, rungName, rungNow } from './climb';
+import { advanceRung, climbLine, renderClimb, rungName, rungNow } from './climb';
 import { arenaAt, isChallenge, takeRung, zoneAt } from '../ladder';
 import type { Rung } from '../ladder';
 import type { SceneDef } from '../scenes';
@@ -285,25 +285,27 @@ export function goHome(): boolean {
 // WHO IS ABOUT is the CAMP's — *"that's what the camp is for."* A list of the
 // same people here was a second route to one conversation.
 
-/** WHETHER A CLEAR GOES STRAIGHT BACK DOWN. A preference like Hide is, so it
- *  survives a reload; absent it is ON, which is what every save written before
- *  the toggle holds and what *"you press Enter once"* has always meant. */
-const repeating = (): boolean => game.repeating !== false;
+/** WHETHER A CLEAR TAKES THE NEXT RUNG DOWN, rather than the same one again.
+ *  The chain itself is not a choice — *"you press Enter once"* — so this is
+ *  about DEPTH: grind a rung until the gear is there, then turn it on and let
+ *  the clears carry you. A DEATH turns it off, because a loop that keeps
+ *  walking you into what just killed you is a loop nobody asked for. */
+const climbing = (): boolean => game.climbing === true;
 
-function syncRepeat(): void {
-  const btn = $('run-repeat') as HTMLButtonElement;
-  const on = repeating();
+function syncClimb(): void {
+  const btn = $('run-deeper') as HTMLButtonElement;
+  const on = climbing();
   btn.classList.toggle('mini--on', on);
   btn.setAttribute('aria-pressed', String(on));
   attachTooltip(btn, () =>
     on
-      ? 'Repeat — on.\nA cleared descent launches the next one by itself, and keeps going until you die, your bag fills, somebody is waiting at the mouth, a crystal roll runs out, or you press Return to camp.'
-      : 'Repeat — off.\nA cleared descent ends on its report and puts you back in the camp.'
+      ? 'Deeper — on.\nEvery clear takes the next depth instead of this one again. Dying turns it off and leaves you where you are.'
+      : 'Deeper — off.\nEvery clear goes back into the depth you picked, so one can be ground until the gear is there.'
   );
 }
 
 function renderMenu(): void {
-  syncRepeat();
+  syncClimb();
   renderClimb($('run-climb'), game.character, () => renderMenu());
   const grid = $('run-sockets');
   grid.replaceChildren();
@@ -561,7 +563,13 @@ function finish(left = false): void {
       note(`${crystal.name} was in the wall at ${rungName(ran)}. It is yours.`, 'add');
     }
     takeRung(game.character, ran);
+    // CLIMBING: the rung this clear just recorded is behind you, so forgetting
+    // the pick is the whole of "go one deeper" — `furthest` has already moved.
+    if (climbing()) advanceRung();
   }
+  // A DEATH stops the descent AND the climb: walking straight back into what
+  // killed you is not a loop anybody turned on.
+  if (!report.cleared) game.climbing = false;
 
   if (report.cleared) payTrials(sim.state);
 
@@ -577,7 +585,7 @@ function finish(left = false): void {
           ? 'dry'
           : 'once';
 
-  if (report.cleared && !report.bagsFull && !dry && repeating()) {
+  if (report.cleared && !report.bagsFull && !dry) {
     // Drop into the hole first. The next descent is built at the bottom of it.
     handover = 0.0001;
     banked = report;
@@ -670,7 +678,7 @@ function enterScene(
   def: SceneDef,
   crowd: { sprite: string; at: Vec2 }[] = [],
   dressing: { id: string; x: number; y: number }[] = [],
-  /** The rung this room IS when it is a zone's arena; any other is not one. */
+  /** The depth this room IS when it is a zone's arena; any other is not one. */
   at: Rung | null = null
 ): void {
   visiting = false;
@@ -1248,9 +1256,9 @@ export function initRun(state: GameState): void {
       launch();
   };
 
-  ($('run-repeat') as HTMLButtonElement).onclick = () => {
-    game.repeating = !repeating();
-    syncRepeat();
+  ($('run-deeper') as HTMLButtonElement).onclick = () => {
+    game.climbing = !climbing();
+    syncClimb();
   };
 
   // *"Change abandon to return to camp and make it where all the loot on the
@@ -1485,7 +1493,7 @@ function syncBossBar(): void {
   $('run-boss-fill').style.width = `${(frac * 100).toFixed(1)}%`;
 }
 
-/** WHICH RUNG IS UNDER YOU. `ran` is the rung being run rather than the one
+/** WHICH RUNG IS UNDER YOU. `ran` is the depth being run rather than the one
  *  picked, so a chained descent keeps saying the rung it stayed on, and a room
  *  that is not a rung says nothing at all. */
 function syncRung(): void {
@@ -1494,7 +1502,7 @@ function syncRung(): void {
   host.hidden = !at || (phase !== 'running' && phase !== 'scene');
   if (host.hidden || !at) return;
   $('run-rung-zone').textContent = zoneAt(at.zone)?.name ?? '';
-  $('run-rung-n').textContent = `Rung ${at.rung}`;
+  $('run-rung-n').textContent = `Depth ${at.rung}`;
   const what = $('run-rung-what');
   what.textContent = arenaAt(at) ? 'Boss' : isChallenge(at.zone, at.rung) ? 'Challenge floor' : '';
   what.hidden = what.textContent === '';
@@ -1549,6 +1557,34 @@ function syncDebuffs(): void {
       left.textContent = debuff.id === 'stun' ? `${debuff.left.toFixed(1)}s` : `×${debuff.left}`;
     }
   }
+  renderBuffs(state?.buffs ?? []);
+}
+
+/** WHAT IS ON YOU, beside what is being done TO you and read the same way. The
+ *  sim gathers them; this only draws. Rebuilt only when the SET changes, so a
+ *  timer ticking sixty times a second never tears down a node under the cursor. */
+function renderBuffs(on: Buff[]): void {
+  const host = $('run-buffs');
+  const key = on.map((b) => b.id).join(',');
+  if (host.dataset.on !== key) {
+    host.dataset.on = key;
+    host.replaceChildren();
+    for (const buff of on) {
+      const box = el('div', 'debuff debuff--good');
+      box.id = `run-buff-${buff.id}`;
+      const art = SKILL_BY_ID[buff.by] ? skillIcon(buff.by, 22) : drawn(`dbf_${buff.by}`, 22);
+      const mark = art ?? el('span', 'debuff__art', buff.name.slice(0, 1));
+      mark.classList.add('debuff__art');
+      box.append(mark);
+      box.append(el('span', 'debuff__left', ''));
+      attachTooltip(box, () => `${buff.name}\n${buff.says}`);
+      host.append(box);
+    }
+  }
+  for (const buff of on) {
+    const left = document.getElementById(`run-buff-${buff.id}`)?.lastElementChild;
+    if (left) left.textContent = `${buff.left.toFixed(1)}s`;
+  }
 }
 
 function renderBadges(): void {
@@ -1559,6 +1595,6 @@ function renderBadges(): void {
     ?.classList.toggle('railbtn--new', game.cameBack && !game.skillsSeen);
   badge('open-skills', spareTreePoints(game.character, mainSkillId(game.character)));
   badge('open-trade', tradePointsLeft(game.character));
-  badge('camp-fire', trialPointsLeft(game.character));
+  setCampEmber(trialPointsLeft(game.character) > 0);
 }
 

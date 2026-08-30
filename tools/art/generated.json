@@ -1261,7 +1261,7 @@
   },
   {
    "sprite": "aethermancer_wand",
-   "character": "ca653859-92dd-4dae-9ff3-938dd98b5aaa",
+   "character": "10a24d2d-8fdf-45f0-89ba-69c5e9da78eb",
    "dirs": [
     "south-east"
    ],
@@ -1271,25 +1271,23 @@
    "states": {
     "idle": {
      "frames": 2,
-     "group": "fbff68b9-bb66-4539-b728-967c91fb50e9",
-     "to": 0.8
+     "group": "c3c02737-b776-4648-8ac8-a2e84c9b2ff1"
     },
     "walk": {
      "frames": 6,
-     "group": "f728dae8-378e-4f0b-bab0-9ba1c52684ff"
+     "group": "cd93034a-a91a-42b1-a82e-e79951aa97f6"
     },
     "attack": {
      "frames": 4,
-     "group": "7b678cfc-277c-4381-8af0-98f5e6dfca7d",
-     "from": 0.34
+     "group": "fcacfa6c-9731-4f13-8afd-4fab5a5b3a40"
     },
     "cast": {
      "frames": 5,
-     "group": "8a05b874-5dcc-435a-8473-a641d16b3423"
+     "group": "1a245fff-337f-4228-b284-07b1342386e8"
     },
     "death": {
      "frames": 4,
-     "group": "56b95a51-03f8-4af1-b48d-f2344a0ebbf0"
+     "group": "36ec3dfc-3711-4d6e-adfb-5cab4f2da7e1"
     }
    }
   },

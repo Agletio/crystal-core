@@ -766,7 +766,7 @@
     position: fixed; left: 16px; bottom: 26px; z-index: 19;
     width: max-content; display: grid; gap: 3px 8px;
     grid-template-columns: 232px auto;
-    grid-template-areas: 'marks marks' 'who slots' 'life slots' 'mana slots';
+    grid-template-areas: 'marks marks' 'buffs buffs' 'who slots' 'life slots' 'mana slots';
     align-items: center;
   }
   body.mapfull #run-hud .skillrow-icons { grid-area: slots; margin: 0; }
@@ -774,6 +774,7 @@
   body.mapfull #run-hud .hp--slim:nth-of-type(1) { grid-area: life; }
   body.mapfull #run-hud .hp--slim:nth-of-type(2) { grid-area: mana; }
   body.mapfull #run-hud .debuffs { grid-area: marks; }
+  body.mapfull #run-hud #run-buffs { grid-area: buffs; }
   .hud__who {
     display: flex; justify-content: space-between; align-items: baseline; font-size: 10px;
     padding: 3px 9px; margin-bottom: 2px;
@@ -792,24 +793,27 @@
   .hp.xpbar {
     position: fixed; left: 0; right: 0; bottom: 0; z-index: 2;
     height: 11px; margin: 0; border: 0; pointer-events: none;
-    /* TICKED: a short dash every 5%, a full-height one every 25%. Both are
-       repeating gradients over the whole bar rather than elements, so nothing
-       is measured and the marks cannot drift off the fill under them. The
-       hairline along the top is what stops it reading as a bare block. */
-    background-image:
-      repeating-linear-gradient(90deg,
-        var(--edge-lit) 0 1px, transparent 1px 25%),
-      repeating-linear-gradient(90deg,
-        var(--edge) 0 1px, transparent 1px 5%),
-      var(--grit);
-    background-size: 100% 100%, 100% 55%, auto;
-    background-position: 0 0, 0 100%, 0 0;
-    background-repeat: no-repeat, repeat-x, repeat;
+    background-image: var(--grit);
     box-shadow: inset 0 1px 0 var(--edge-lit), inset 0 -1px 0 rgba(0, 0, 0, .5);
   }
-  /* Over the ticks, under the text: the fill is the thing being read. */
+  /* TICKED: a short dash every 5%, a full-height one every 25%, as repeating
+     gradients so nothing is measured and no mark can drift off the bar. On a
+     LAYER OVER the fill — under it they vanished exactly where the bar had
+     filled, which is the half you are reading the marks against. */
+  .hp.xpbar::after {
+    content: ''; position: absolute; inset: 0; pointer-events: none;
+    background-image:
+      repeating-linear-gradient(90deg,
+        var(--citrine) 0 1px, transparent 1px 25%),
+      repeating-linear-gradient(90deg,
+        var(--edge-lit) 0 1px, transparent 1px 5%);
+    background-size: 100% 100%, 100% 60%;
+    background-position: 0 0, 0 100%;
+    background-repeat: no-repeat, repeat-x;
+    opacity: .8;
+  }
   .hp.xpbar .hp__fill { opacity: .92; }
-  .hp.xpbar .hp__text { font-size: 8px; line-height: 11px; position: relative; }
+  .hp.xpbar .hp__text { font-size: 8px; line-height: 11px; position: relative; z-index: 2; }
   /* The column now holds only the numbers, so it stops reserving the HUD's
      height and lets the map have it. */
   body.mapfull #run-stagewrap .runside { align-self: flex-start; }
@@ -978,6 +982,8 @@
     color: var(--citrine); margin-top: 1px;
   }
   .debuff--bad .debuff__left { color: var(--ember); }
+  .debuff--good { border-color: var(--edge-lit); }
+  .debuff--good .debuff__left { color: var(--citrine); }
   /* A skill that is WAITING: the socket darkens from the bottom up as it comes
      back, and the seconds left sit over it. Both are written per frame, so
      nothing here is rebuilt to count down. */
@@ -1825,10 +1831,17 @@
   /* The ladder beside the web: the order is the story, so it is read down. */
   .trialsplit { display: grid; grid-template-columns: minmax(220px, 1fr) 2fr; gap: 12px; align-items: start; }
   .trialsplit .webwrap--trade { margin-top: 0; }
-  /* A hundred and fifty-six nodes want the height: at the trade web's the
-     regions are a smudge and the whole point of the web is its shape. */
-  .webwrap--trials { height: min(56vh, 500px, calc(100vh - var(--dock-h, 0px) - 300px)); }
-  .trialladder { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; }
+  /* A HUNDRED AND FIFTY-SIX NODES want the room the Fissure's map got. At the
+     trade web's size the regions are a smudge and the SHAPE is the whole point,
+     so the ladder gives up its share of the width and scrolls on its own. */
+  .modal__card--atlas { width: min(1480px, 100%); }
+  .trialsplit--atlas { grid-template-columns: minmax(250px, 0.85fr) 2.6fr; }
+  .webwrap--trials { height: min(74vh, calc(100vh - var(--dock-h, 0px) - 195px)); }
+  .trialladder {
+    display: flex; flex-direction: column; gap: 6px; margin-top: 0;
+    max-height: min(74vh, calc(100vh - var(--dock-h, 0px) - 195px));
+    overflow-y: auto; scrollbar-gutter: stable;
+  }
   .trialrow { border: 1px solid var(--edge); border-radius: var(--r); background-color: var(--panel); background-clip: padding-box; padding: 5px 9px; }
   .trialrow--done { filter: brightness(1.12); }
   .trialrow__head { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
@@ -2106,6 +2119,9 @@
           <!-- What is ON you: a picture, what is left of it, and a tooltip
                saying what it does. Empty and gone when nothing is. -->
           <div class="debuffs" id="run-debuffs"></div>
+          <!-- And what is ON you: the same strip, over the name, so a window a
+               build paid points for is something you can watch run down. -->
+          <div class="debuffs" id="run-buffs"></div>
           <!-- What you ARE, over what you are made of: the three slots sit on
                the HUD rather than on the rail, which is for screens. -->
           <div class="skillrow-icons" id="run-skills"></div>
@@ -2350,7 +2366,7 @@
             <button class="mini mini--go mini--enter" id="run-launch">Enter</button>
           </div>
           <div class="runbar runbar--go">
-            <button class="mini" id="run-repeat">Repeat</button>
+            <button class="mini" id="run-deeper">Deeper</button>
           </div>
           <p class="runblocked" id="run-blocked"></p>
         </div>
@@ -2515,7 +2531,7 @@
 <!-- The trade: the part of a character that is not the skill. Twenty nodes fit
      on a screen, so this web is drawn to fit and has no map controls. -->
 <div class="modal" id="trials" hidden>
-  <div class="modal__card modal__card--wide">
+  <div class="modal__card modal__card--wide modal__card--atlas">
     <div class="modal__head">
       <h2 class="modal__title">Trials</h2>
       <div class="seedbar">
@@ -2529,7 +2545,7 @@
           <div class="skillhead__sub" id="trials-note"></div>
         </div>
       </div>
-      <div class="trialsplit">
+      <div class="trialsplit trialsplit--atlas">
         <div class="trialladder" id="trials-ladder"></div>
         <div class="webwrap webwrap--trade webwrap--trials" id="trials-webwrap">
           <svg class="web web--roam" id="trials-web" role="img" aria-label="trials web"></svg>

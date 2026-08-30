@@ -227,23 +227,23 @@ assert(
 
 assert($('run-launch').disabled === false, 'the Fissure is enterable with nothing');
 
-// REPEAT: whether a clear goes straight back down. On by default, and a
-// preference, so it is one click and it survives a reload.
-assert($('run-repeat') !== null, 'there is a Repeat toggle under the way in');
+// CLIMB: whether a clear takes the next RUNG down or the same one again. OFF
+// until you turn it on — grinding a rung is the default — and a preference.
+assert($('run-deeper') !== null, 'there is a Deeper toggle under the way in');
 assert(
-  $('run-repeat').getAttribute('aria-pressed') === 'true',
-  'and a clear launches the next descent until you say otherwise',
-  $('run-repeat').getAttribute('aria-pressed')
+  $('run-deeper').getAttribute('aria-pressed') === 'false',
+  'and a clear goes back into the rung you picked until you say otherwise',
+  $('run-deeper').getAttribute('aria-pressed')
 );
-$('run-repeat').click();
+$('run-deeper').click();
 assert(
-  $('run-repeat').getAttribute('aria-pressed') === 'false'
-    && !$('run-repeat').classList.contains('mini--on'),
-  'clicking it turns the chain off, and it reads as off',
-  $('run-repeat').getAttribute('aria-pressed')
+  $('run-deeper').getAttribute('aria-pressed') === 'true'
+    && $('run-deeper').classList.contains('mini--on'),
+  'clicking it arms the climb, and it reads as on',
+  $('run-deeper').getAttribute('aria-pressed')
 );
-$('run-repeat').click();
-assert($('run-repeat').getAttribute('aria-pressed') === 'true', 'and back on again');
+$('run-deeper').click();
+assert($('run-deeper').getAttribute('aria-pressed') === 'false', 'and off again');
 const beforeFissure = dockItems().length;
 $('run-launch').click();
 assert($('run-stagewrap').hidden === false, 'the Fissure starts');
@@ -2788,7 +2788,7 @@ $('dev-kit').click();
     String($('trials-webwrap').hidden)
   );
   assert(
-    /Shut/.test(text('trials-sub')) && /rungs/.test(text('trials-sub')),
+    /Shut/.test(text('trials-sub')) && /depths/.test(text('trials-sub')),
     'and the screen says how far off it is',
     text('trials-sub')
   );
@@ -2829,11 +2829,11 @@ $('dev-kit').click();
   assert($('trials').hidden === true, 'and it closes again');
 }
 
-// --- keeping going, and the one toggle that says whether -------------------
-// Chaining descents is what this game is and it is still what Enter does. What
-// the user asked for is a way to say otherwise ONCE rather than every descent:
-// "Leave after this run" armed a stop one descent ahead and is still gone.
-assert($('run-repeat') !== null, 'one toggle says whether a clear goes back down');
+// --- keeping going, and the one toggle that says how DEEP ------------------
+// Chaining descents is what this game is and it is still unconditional. The
+// toggle is about depth: grind a rung, then turn Climb on and let the clears
+// carry you. "Leave after this run" armed a stop one descent ahead and is gone.
+assert($('run-deeper') !== null, 'one toggle says whether a clear goes DEEPER');
 assert(
   $('run-leave') === null && $('run-abandon') !== null,
   'and the one button that stops the loop mid-descent is still there'

@@ -158,7 +158,7 @@ function renderDepth(depth: CrystalDepth): HTMLElement {
   const cleared = Number(game.character.climbed?.[zone?.id ?? ''] ?? 0) >= depth.rung;
   const family = FAMILY_BY_ID[depth.family];
   const card = el('div', `quest${cleared ? ' quest--done' : ''}`);
-  card.append(el('div', 'crystal__name', `${zone?.name ?? '?'}, rung ${depth.rung}`));
+  card.append(el('div', 'crystal__name', `${zone?.name ?? '?'}, depth ${depth.rung}`));
   card.append(el('div', 'quest__detail', cleared ? 'Cleared.' : 'Clear it and it is yours.'));
   card.append(
     el(

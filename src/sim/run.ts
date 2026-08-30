@@ -167,6 +167,15 @@ const SLOWED = 'slowed';
 /** A Stun: while it runs the body neither swings nor closes. */
 const STUNNED = 'stunned';
 
+/** `by` names what to draw it with: a skill id, a potion id, or a bare word. */
+export interface Buff {
+  id: string;
+  by: string;
+  name: string;
+  says: string;
+  left: number;
+}
+
 /** Ordered worst-to-best, so rarity climbs the list. */
 const CURRENCY_CLASSES = ['basic', 'uncommon', 'rare', 'exotic'] as const;
 
@@ -466,6 +475,10 @@ export interface RunState {
   /** Charges a trade handed back mid-descent. Zero without one. */
   regained: number;
   stunned: number; // counting one your hit killed outright, which always Stuns
+  /** WHAT IS ON YOU and how long it has left, rebuilt every tick. One list, so
+   *  the HUD reads a single thing rather than four clocks the sim keeps private
+   *  — a window nobody can see is a build working with nothing to show for it. */
+  buffs: Buff[];
   /** Uses that spent a share of the pool for damage. Zero without the node. */
   overcharges: number;
   /** Follow-ups a Critical bought, teleport and all. Zero without the node. */
@@ -681,6 +694,7 @@ export class RunSim {
       drunk: 0,
       regained: 0,
       stunned: 0,
+      buffs: [],
       overcharges: 0,
       relays: 0,
       absorbed: 0,
@@ -1025,6 +1039,7 @@ export class RunSim {
     // On a TICK, before anything else: a press lands on the next one like
     // every other decision, or a seed stops replaying the same run.
     this.stepPotions(dt);
+    this.readBuffs();
 
     for (const f of s.floaters) f.age += dt;
     if (s.floaters.length > 0 && s.floaters[0].age >= FLOATER_LIFE) {
@@ -2312,6 +2327,60 @@ export class RunSim {
       else hero.mana = Math.min(max, hero.mana + gain);
     }
     hero.effects = hero.effects.filter((e) => e.remaining > 0);
+  }
+
+  /**
+   * EVERYTHING ON THE HERO, gathered where the clocks are rather than guessed
+   * at from outside: three of these are private fields and a screen cannot see
+   * them. A window a build paid points for and nobody can watch is the same
+   * fault as a node that does nothing.
+   */
+  private readBuffs(): void {
+    const out: Buff[] = [];
+    for (const e of this.state.hero.effects) {
+      const potion = POTION_BY_ID[e.id];
+      if (potion) {
+        out.push({
+          id: e.id, by: e.id, name: potion.name,
+          says: `Pouring. ${potion.percentPerSecond}% of your maximum ${potion.pool} a second.`,
+          left: e.remaining,
+        });
+      } else if (e.id === CRIT_BUFF) {
+        const buff = critBuff(this.grants);
+        out.push({
+          id: e.id, by: 'surge', name: SKILL_BY_ID.surge?.name ?? 'Killing Surge',
+          says: `A Critical landed. ${buff?.more ?? 0}% more damage until it falls.`,
+          left: e.remaining,
+        });
+      }
+    }
+    // The three the sim keeps as bare seconds. Each is shown only where the
+    // build actually bought something off it, or every hero carries three
+    // pictures that mean nothing.
+    const kill = ['killGuard', 'killHaste', 'killMove'].filter((g) => this.grants[g]);
+    if (this.sinceKill > 0 && kill.length > 0) {
+      out.push({
+        id: 'kill', by: 'kill', name: 'On the kill',
+        says: `What the last kill bought: ${kill.length} of guard, pace and swing.`,
+        left: this.sinceKill,
+      });
+    }
+    const paint = (this.grants.struckMore as number) ?? (this.grants.struckLess as number) ?? 0;
+    if (paint > 0 && this.sinceHit <= WARRIOR.paintSeconds) {
+      out.push({
+        id: 'paint', by: 'paint', name: 'War Paint',
+        says: 'A blow landed on you, and it is answered until this falls.',
+        left: WARRIOR.paintSeconds - this.sinceHit,
+      });
+    }
+    if (this.riposte > 0) {
+      out.push({
+        id: 'riposte', by: 'riposte', name: 'The Answer',
+        says: `You blocked. Your hits deal ${(this.grants.blockRiposte as number) ?? 0}% more until it falls.`,
+        left: this.riposte,
+      });
+    }
+    this.state.buffs = out;
   }
 
   /** A monster's own clock: it runs down and what it was doing stops. The

@@ -22,7 +22,8 @@ import {
 import { characterStats, damageDetail, offWeapon, skillBase, treeGrants, weaponRates } from '../sim/stats';
 import { slotWorkings } from '../skill-text';
 import { starvedMultiplier } from '../sim/grants';
-import { ailmentLine, damageWorkings } from '../damage-text';
+import { ailmentReading, damageWorkings } from '../damage-text';
+import type { AilmentReading } from '../damage-text';
 import { describeStatLine } from '../mod-text';
 import {
   addXp,
@@ -317,20 +318,30 @@ function damagePanel(): HTMLElement {
   );
   box.append(total);
 
-  // WHAT IT LEAVES BEHIND. One row per type this build actually deals, in the
-  // ailment's own units: a Burn is damage a second, a Chill is a share off
-  // speed and a count that Freezes. Prismatic deliberately leaves nothing and
-  // says so rather than being left off.
+  // AILMENTS, one fact a line: this column is four words wide and a sentence in
+  // it wraps into a wall. An ailment this build has NO chance to apply is left
+  // out entirely rather than printed as 0% — a row that can never happen is a
+  // row you read past every time.
   const stats = characterStats(game.character);
-  const dealt = breakdown.parts.filter((p) => p.total > 0);
-  if (dealt.length > 0) {
+  const readings = breakdown.parts
+    .filter((p) => p.total > 0)
+    .map((p) => ailmentReading(p.type, stats))
+    .filter((r): r is AilmentReading => r !== null && r.chance > 0);
+  if (readings.length > 0) {
     const after = el('div', 'statdetail__note');
-    after.textContent = 'What it leaves behind';
+    after.textContent = 'Ailments';
     box.append(after);
-    for (const part of dealt) {
-      const row = el('div', 'dmgrow dmgrow--ail');
-      row.append(el('span', 'dmgrow__how', ailmentLine(part.type, stats)));
-      box.append(row);
+    for (const read of readings) {
+      const head = el('div', 'stat stat--ail');
+      head.append(el('span', 'stat__k', read.head));
+      head.append(el('span', 'stat__v', `${read.chance}%`));
+      box.append(head);
+      for (const [k, v] of read.facts) {
+        const row = el('div', 'stat stat--under');
+        row.append(el('span', 'stat__k', k));
+        row.append(el('span', 'stat__v', v));
+        box.append(row);
+      }
     }
   }
   return box;

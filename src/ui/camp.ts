@@ -236,6 +236,14 @@ function frame(now: number): void {
   requestAnimationFrame(frame);
 }
 
+/** WHETHER THE FIRE IS BANKED: points waiting on the web it opens. A COUNT sat
+ *  in mid-air over a hotspot nobody can see, so the fire IS the badge — it
+ *  burns harder and faster, which is a thing the picture can say. */
+let banked = false;
+export function setCampEmber(on: boolean): void {
+  banked = on;
+}
+
 function draw(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, at: number): void {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -243,12 +251,13 @@ function draw(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, at: numb
   // already drew instead of laying a coloured sheet over it.
   ctx.globalCompositeOperation = 'lighter';
   for (const glow of CAMP_GLOW) {
-    const swell = (1 + Math.sin((at / glow.period) * Math.PI * 2)) / 2;
+    const up = banked && glow.id === 'fire';
+    const swell = (1 + Math.sin((at / (glow.period * (up ? 0.45 : 1))) * Math.PI * 2)) / 2;
     const cx = glow.x + glow.w / 2;
     const cy = glow.y + glow.h / 2;
-    const r = Math.max(glow.w, glow.h) / 2;
+    const r = (Math.max(glow.w, glow.h) / 2) * (up ? 1.5 : 1);
     const paint = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
-    paint.addColorStop(0, tint(glow.hue, glow.depth * (0.45 + swell * 0.55)));
+    paint.addColorStop(0, tint(glow.hue, glow.depth * (up ? 2.1 : 1) * (0.45 + swell * 0.55)));
     paint.addColorStop(1, tint(glow.hue, 0));
     ctx.fillStyle = paint;
     ctx.fillRect(glow.x - r, glow.y - r, glow.w + r * 2, glow.h + r * 2);
