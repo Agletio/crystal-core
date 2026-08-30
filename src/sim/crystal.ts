@@ -15,7 +15,7 @@ import {
   bandFor,
   tierForLevel,
 } from '../data';
-import { challengeMod, dropBias, rungMod } from './stats';
+import { dropBias, rungMod } from './stats';
 import { dangerScore } from '../mods';
 import type { DropBand } from '../data';
 import type { Item, MapTheme, MonsterFamily, RolledMod } from '../types';
@@ -149,14 +149,10 @@ export function runSet(
   // The trials web and the RUNG, each as one mod. Both optional: a measured SET
   // carries no walked web and sits at the bottom of the climb.
   const rung = at ? rungMod(at.zone, at.rung) : null;
-  // A CHALLENGE FLOOR is a second synthetic mod, not a bigger rung: what it
-  // does is a spike nobody walked up to, and it pays through the same seam.
-  const spike = at ? challengeMod(at.zone, at.rung) : null;
   const mods = [
     ...crystals.flatMap((c) => c.mods),
     ...(standing ? [standing] : []),
     ...(rung ? [rung] : []),
-    ...(spike ? [spike] : []),
   ];
   const rewards = crystalRewards(mods);
   const power = Math.min(

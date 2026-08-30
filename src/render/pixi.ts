@@ -19,10 +19,10 @@ import { AURA, AURA_BY_ID,
 } from '../data';
 import { ENTRANCE, EXIT, WALL, wangKey } from '../sim/grid';
 import { tileNoise } from '../noise';
-import { bakedGearIcon } from '../ui/webicons';
+import { gearCanvas } from '../ui/webicons';
 import { ATTACK_POSE, DEATH_FADE } from '../sim/run';
 import type { Entity, RunState } from '../sim/run';
-import type { GameMap } from '../sim/grid';
+import type { GameMap, MapProp } from '../sim/grid';
 import type { FirePixel, Palette, Renderer } from './renderer';
 import type { Cel } from './sprites';
 import { HANDS_DRAWN, HELD, handAt } from './held';
@@ -210,6 +210,11 @@ export async function createPixiRenderer(
 
   let builtMap: GameMap | null = null;
   let livingFloor: ReturnType<typeof floorPalette> | null = null;
+  /** A LOCK OPENS MID-RUN — `openHoard` swaps the prop's id for the open frame
+   *  of the same object — and the map is built once, so the picture follows the
+   *  ID rather than the build. Cover is left out: it is jittered off its tile at
+   *  build time and nothing ever changes it. */
+  const swappable: Array<{ prop: MapProp; sprite: Sprite; id: string }> = [];
   let zoom = 1;
   let tile = 1;
   /** Where the camera is pointed, in tiles. Null while it follows the hero. */
@@ -370,6 +375,19 @@ export async function createPixiRenderer(
     const made = canvas ? Texture.from(canvas) : null;
     if (made) made.source.scaleMode = 'nearest';
     props.set(id, made);
+    return made;
+  }
+
+  const pieces = new Map<string, Texture | null>();
+
+  /** A DROP's own inventory icon, uploaded on first use like everything else. */
+  function gearTexture(art: string): Texture | null {
+    const already = pieces.get(art);
+    if (already !== undefined) return already;
+    const canvas = gearCanvas(art);
+    const made = canvas ? Texture.from(canvas) : null;
+    if (made) made.source.scaleMode = 'nearest';
+    pieces.set(art, made);
     return made;
   }
 
@@ -562,6 +580,7 @@ export async function createPixiRenderer(
         sprite.scale.set(sprite.scale.x * (0.82 + roll * 0.36));
         sprite.alpha = COVER_ALPHA;
       }
+      if (!COVER_SET.has(prop.id)) swappable.push({ prop, sprite, id: prop.id });
       // What grows ON the rock rides the rock's own layer, drawn after its tiles.
       (map.grid.at(prop.x, prop.y) === WALL ? wallLayer : groundLayer).addChild(sprite);
     }
@@ -597,6 +616,7 @@ export async function createPixiRenderer(
     // only the band you could see from a room and black behind THAT is a
     // chamber floating in nothing.
     const bare = !!map.bare;
+    swappable.length = 0;
     buildProps(map);
     // A hole reads by CONTRAST, and a generated ground is PALE where every
     // hand-drawn zone is dark — so the rim that stood out on stone is a white
@@ -933,16 +953,16 @@ export async function createPixiRenderer(
       lootLayer.ellipse(x, y, 0.3, 0.15).fill({ color: colour, alpha: beam.lit * 0.4 });
       // THE PIECE ITSELF: the same icon the bag draws, baked transparent, so a
       // drop is a thing you recognise rather than a light with a word on it.
-      const url = bakedGearIcon(String(drop.item.meta.art ?? 'body'));
+      const texture = gearTexture(String(drop.item.meta.art ?? 'body'));
       let piece = lootArt[i];
-      if (url) {
+      if (texture) {
         if (!piece) {
           piece = new Sprite();
           piece.anchor.set(0.5, 0.85);
           lootArtLayer.addChild(piece);
           lootArt[i] = piece;
         }
-        piece.texture = Texture.from(url);
+        piece.texture = texture;
         piece.visible = true;
         // Sized in TILES like everything else on this layer, off the icon's own
         // shape so a tall piece is not squashed into a square.
@@ -1319,6 +1339,20 @@ export async function createPixiRenderer(
    * The zone's moving parts. Only what is on screen: a whole map of tendrils
    * every frame is most of a frame spent on rock nobody can see.
    */
+  /** The picture a changed prop id asks for. A pair is cropped to ONE box, so
+   *  the open frame hangs off the same foot and only the texture moves. */
+  function swapProps(): void {
+    for (const row of swappable) {
+      if (row.prop.id === row.id) continue;
+      const art = PROP_ART[row.prop.id];
+      const texture = art ? propTextures(row.prop.id) : null;
+      if (!art || !texture) continue;
+      row.id = row.prop.id;
+      row.sprite.texture = texture;
+      row.sprite.scale.set(art.tiles / texture.width);
+    }
+  }
+
   function drawProps(state: RunState): void {
     propLayer.clear();
     const floor = livingFloor;
@@ -1388,6 +1422,7 @@ export async function createPixiRenderer(
     told = look && boss && !boss.dead ? { on: boss, look } : null;
 
     camera(state.map, state.hero);
+    swapProps();
     drawProps(state);
     drawAuras(state);
 

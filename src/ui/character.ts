@@ -19,7 +19,9 @@ import {
   WEAPON_SLOT,
   DUAL,
 } from '../data';
-import { characterStats, damageDetail, offWeapon, skillBase, treeGrants, weaponRates } from '../sim/stats';
+import {
+  attributeTotals, characterStats, damageDetail, offWeapon, skillBase, treeGrants, weaponRates,
+} from '../sim/stats';
 import { slotWorkings } from '../skill-text';
 import { starvedMultiplier } from '../sim/grants';
 import { ailmentReading, damageWorkings } from '../damage-text';
@@ -31,13 +33,12 @@ import {
   forgetAttributes,
   equippedSkill,
   openSlots,
-  attributeSteps,
   spendAttribute,
   weaponRefusal,
   xpToNext,
 } from '../sim/character';
 import { fitsSlot, unequipItem } from '../game/state';
-import { respecCost } from '../trades';
+import { TRADE_BY_ID, respecCost } from '../trades';
 import { ask } from './confirm';
 import { wear } from './wear';
 import type { GameState } from '../game/state';
@@ -215,12 +216,18 @@ function renderAttributes(): void {
     onChanged?.();
   };
 
+  // THE TOTAL, not the points spent: the sheet prints what the sim buys off,
+  // so a ring of the Spirit shows up here the way a level does.
+  const totals = attributeTotals(character);
+  const spread = character.trade ? TRADE_BY_ID[character.trade]?.spec.attributes : undefined;
   for (const attr of ATTRIBUTES) {
     const held = character.attributes?.[attr.id] ?? 0;
-    const steps = attributeSteps(character, attr.id);
+    const from = spread?.[attr.id] ?? 0;
+    const total = totals[attr.id] ?? 0;
+    const steps = total;
     const row = el('div', 'attr');
     row.append(el('span', 'attr__k', attr.name));
-    row.append(el('span', 'attr__v', String(held)));
+    row.append(el('span', 'attr__v', String(total)));
 
     const buy = el('button', 'mini attr__buy', '+') as HTMLButtonElement;
     buy.disabled = left <= 0;
@@ -238,13 +245,17 @@ function renderAttributes(): void {
     const each = attr.per.map((s) => describeStatLine(s));
     const bought = attr.per.map((s) => describeStatLine({ ...s, value: s.value * steps }));
     row.append(el('span', 'attr__how', `${each.join(', ')} per point`));
+    const worn = total - from - held;
+    const where = [
+      from > 0 ? `${from} from the trade` : '',
+      `${held} spent`,
+      worn !== 0 ? `${worn} worn` : '',
+    ].filter(Boolean);
     attachTooltip(
       row,
       () =>
         `${attr.name}\nPer point: ${each.join(', ')}.\n` +
-        (held > 0
-          ? `${held} spent: ${bought.join(', ')}.\n`
-          : 'Nothing spent here yet.\n') +
+        `${total} in all — ${where.join(', ')}: ${bought.join(', ')}.\n` +
         `A level hands you ${LEVELLING.attributePointsPerLevel}.`
     );
     host.append(row);

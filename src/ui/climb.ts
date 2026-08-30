@@ -15,7 +15,7 @@
  * thing you may enter rather than at somebody else's rung.
  */
 import { LADDER } from '../data';
-import { canEnter, climbed, furthest, isChallenge, zoneAt, zoneOpen } from '../ladder';
+import { canEnter, climbed, furthest, zoneAt, zoneOpen } from '../ladder';
 import type { Rung } from '../ladder';
 import { SCENE_ART } from '../render/generated-scene';
 import type { Character } from '../sim/character';
@@ -171,12 +171,8 @@ export function renderClimb(host: HTMLElement, character: Character, onPick: () 
   const zone = LADDER.zones[z];
 
   host.append(el('p', 'panel__title', 'The climb'));
-  const where = el('p', 'climb__where',
-    `${rungLabel(character)} · ${totals.done} of ${totals.all} depths cleared`);
-  if (isChallenge(at.zone, at.rung)) {
-    where.append(el('span', 'climb__spike', ' · a challenge floor'));
-  }
-  host.append(where);
+  host.append(el('p', 'climb__where',
+    `${rungLabel(character)} · ${totals.done} of ${totals.all} depths cleared`));
   tabs(host, character, z, () => renderClimb(host, character, onPick));
 
   const all = stations(zone.rungs);
@@ -208,7 +204,6 @@ export function renderClimb(host: HTMLElement, character: Character, onPick: () 
     pip.id = `climb-pip-${z}-${station.rung}`;
     pip.style.left = `${station.x}%`;
     pip.style.top = `${station.y}%`;
-    pip.classList.toggle('pip--spike', isChallenge(z, station.rung));
     pip.classList.toggle('pip--boss', boss);
     pip.classList.toggle('pip--done', station.rung <= cleared);
     pip.classList.toggle('pip--next', can && station.rung > cleared);
@@ -216,11 +211,7 @@ export function renderClimb(host: HTMLElement, character: Character, onPick: () 
     pip.classList.toggle('pip--here', at.zone === z && at.rung === station.rung);
     pip.disabled = !can;
 
-    const what = boss
-      ? ` The top of ${zone.name}: a fight in an arena of its own.`
-      : isChallenge(z, station.rung)
-        ? ' A challenge floor: the room fills with rares.'
-        : '';
+    const what = boss ? ` The top of ${zone.name}: a fight in an arena of its own.` : '';
     attachTooltip(pip, () =>
       (!can
         ? `${zone.name}, depth ${station.rung}. Clear depth ${cleared + 1} first.`

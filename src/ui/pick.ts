@@ -11,7 +11,7 @@
  * than through the icon machinery — an icon is one frame, and a room of
  * statues reads as a menu.
  */
-import { SKILL_BY_ID, TRADE } from '../data';
+import { ATTRIBUTES, SKILL_BY_ID, TRADE } from '../data';
 import { TRADES, TRADE_BY_ID } from '../trades';
 import { GENERATED } from '../render/generated-art';
 import { HERO_SPRITE } from '../sim/appearance';
@@ -168,6 +168,16 @@ function look(tradeId: string): void {
   free.append(el('span', 'picksay__freelabel', 'Comes with: '));
   free.append(el('span', 'picksay__freesaid', trade.spec.baseline.short));
   box.append(free);
+  // HIS SPREAD, highest first. A trade's attributes are the trade's, so what
+  // separates two of them in the first hour is on the card you pick off.
+  const spread = el('p', 'picksay__free');
+  spread.append(el('span', 'picksay__freelabel', 'Attributes: '));
+  spread.append(el('span', 'picksay__freesaid', ATTRIBUTES
+    .map((a) => [a, trade.spec.attributes[a.id] ?? 0] as const)
+    .sort((x, y) => y[1] - x[1])
+    .map(([a, n]) => `${a.name} ${n}`)
+    .join(' · ')));
+  box.append(spread);
   // What he comes down holding, NAMED — and the card is the same one the
   // Skills screen raises, so the description is written in one place.
   const opens = SKILL_BY_ID[trade.spec.skill];

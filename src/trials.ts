@@ -38,13 +38,6 @@ export const trialPointsFor = (
     0
   );
 
-/** SHUT until the Fissure is whole: a new character has the climb, the shelf
- *  and a trade to read before a hundred and fifty-six more nodes arrive. */
-export const trialsOpen = (climbed: Record<string, number> = {}): boolean => {
-  const first = LADDER.zones[TRIAL_POINTS.freeZone];
-  return (climbed[first.id] ?? 0) >= first.rungs;
-};
-
 export const TRIAL_POINTS_MAX = // every trial, and every rung that pays for one
   TRIALS.length * TRIAL_POINTS.perTrial +
   LADDER.zones.reduce(

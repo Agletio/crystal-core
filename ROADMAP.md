@@ -7,8 +7,8 @@ in order to do one, it is in the wrong file.
 ## Where this stands
 
 **PHASE 1 — THE LADDER — IS DONE.** The CLIMB (42 rungs, three zones, a rung as
-ONE mod on the crystal seam), PERFECT bases, wards by FAMILY, CHALLENGE FLOORS
-every fourth rung, a BOSS at the top of each zone, and crystals as TIER TOKENS.
+ONE mod on the crystal seam), PERFECT bases, wards by FAMILY, a BOSS at the top
+of each zone, and crystals as TIER TOKENS.
 All three of its questions were answered and every piece of it has landed. What
 it leaves behind is a balance question for the balance pass: a first cycle is
 now tier 1 gear for all 42 rungs, and nobody has measured whether that clears
@@ -594,14 +594,11 @@ clickable for the rest of that character's life.
    levels one until all four are held and the endgame zone is open. So
    `crystalRewards`, the crystal bench and every finding modifier are DARK for
    the whole of the first three cycles, deliberately — the ladder's difficulty
-   is `rungMod` and the challenge floors, and a socket is a TIER, not a roll.
+   is `rungMod` alone, and a socket is a TIER, not a roll.
 
-2. **One boss at the end of each zone, and CHALLENGE FLOORS in between.** *"Let's
-   just do one at the end of each zone which will be a unique boss each time.
-   And then I also want to add like challenge floors for each zone where it's
-   just a spike in difficulty like a bunch of rares or something."* So: three
-   bosses, one per zone, each its own; plus a rung KIND that is a spike rather
-   than a step.
+2. **One boss at the end of each zone.** *"Let's just do one at the end of each
+   zone which will be a unique boss each time."* Three bosses, one per zone,
+   each its own.
 
 3. **Generic means EVERY BUILD CARES.** *"I just don't want it to be like 90% of
    mods are irrelevant to specific builds. So the resistance one is good to
@@ -631,13 +628,13 @@ and never in the bulk heap. The card says it with its figure in it.
       because taking five weak modifiers out of the pool made the average roll
       worth more. A crystal rolled before the pass keeps its retired ward and it
       still works — a `RolledMod` carries its own lines.
-- [x] **Phase 1b — challenge floors. DONE.** `CHALLENGE` in `src/data.ts` and
-      `isChallenge` in `src/ladder.ts`: every 4th rung, never a zone's last —
-      that one is the boss's. `challengeMod` is a second synthetic mod beside
-      `rungMod`, so it pays through the seam everything else pays through.
-      Measured on The Fissure: rung 3 is 20 common / 1 magic / 0 rare at danger
-      3; rung 4 is 11 / 12 / 5 at danger 102, 28 bodies against 21, 74% rarity
-      against 3%. Marked on the pip in ember BEFORE you walk into it.
+- [x] **Phase 1b — challenge floors. BUILT, THEN REMOVED.** *"I changed my mind
+      on the challenge levels… it should be a more linear line between the
+      levels."* Every 4th depth spiking made 2 and 3 free (danger 1.7 and 3.4),
+      4 five times the fight (102) and 5 easier than 4 had been (13). `CHALLENGE`,
+      `challengeMod` and `isChallenge` are gone and `LADDER.curve` with them:
+      the ramp is straight, every depth 20 danger above the one below it, and
+      the top of the climb is unmoved at 822.
 - [x] **Phase 1c — a boss at the end of each zone. DONE.** THE REFRACTION (a
       crystal crab, the Cavern) and THE FLOWERING (a fungal thing, the Rot) join
       The Answering, each with its own body, seven states, arena and phase
@@ -696,6 +693,18 @@ the whole web — `src/trades/warrior.ts` asks it five ways and fifteen new
 switches in `GRANTS` answer it, none of which writes `blockChance`. His body,
 his portrait and all thirteen weapon variants were drawn, animated and shipped
 in the round before it.
+
+**SIX ATTRIBUTES, AND A TRADE COMES DOWN WITH A SPREAD.** *"give each class a
+spread of starting points that make sense for that class… between 6-15 points in
+each. Also add spirit: health and mana regen per point. Constitution: Armor and
+occult and prismatic resistance."* Two rows in `ATTRIBUTES` and one field on
+`TradeSpec`; Mahthar leads on Strength 15 / Constitution 13, Obreth on Dexterity
+15, the Aethermancer on Intelligence 15 and the Alchemist on Spirit 15, each
+adding to 57 so the SHAPE is the difference. The spread is never in
+`Character.attributes` — that is what a respec hands back — and `attributeTotals`
+is the one seam adding the trade, the points spent and what is worn, so **the
+sheet prints the total rather than the points bought**. The cast hall card lists
+the spread beside what the trade gives for nothing.
 
 **Question 9 is ANSWERED and no longer blocks anything** — the user specified
 the rework himself (*"slightly more nodes… you get 2 points at a time and need 2
@@ -977,6 +986,15 @@ of that curve at about **two gear drops a clear** across 8 gear kinds.
 - **The named-piece check is thin.** 16 descents expects 5.5 and read 3; a zero
   is a 1-in-250 flake. Uniques are a share of drops like Perfect, and the count
   fell under them.
+- ~~**A DROP ON THE FLOOR IS INVISIBLE.**~~ **DONE.** *"items on the ground
+  still aren't visible you just see the loot beam not an actual item."*
+  `Texture.from(string)` in Pixi 8 is a CACHE LOOKUP, not a loader, so the
+  piece's data URI resolved to an empty texture — every other texture in the
+  file is `Texture.from(canvas)` and the file's own comment already said so.
+  `bakedGearIcon` became `gearCanvas`, returning the canvas, and `gearTexture`
+  memoises it beside `heldTexture`. The same round fixed `gearGrid`, where all
+  48 armour art keys fell through to the body-armour grid — a helmet on the
+  floor was a breastplate.
 - **THE FLOWERING BUYS NO DIFFICULTY, and that is the open question.**
   `dangerStep` saturates at 330 danger and the rung alone reaches 338 by zone 1
   rung 14 — so 16 of the 42 rungs have monsters no harder than two zones down,
@@ -985,7 +1003,9 @@ of that curve at about **two gear drops a clear** across 8 gear kinds.
   saturation is deliberate ("it saturates where the hero's item level does"),
   so fixing it changes a stated rule: decouple `dangerStep` from run power,
   extend item level past 70 so both caps move together, or accept that
-  difficulty ends at The Refraction. **Asked; not answered.**
+  difficulty ends at The Refraction. **Asked; not answered.** The straight ramp
+  moved the numbers without moving the question: danger is now 20 a depth and
+  330 is reached at depth 17 of 42 rather than 26.
 
 **Done when.** A clear pays one or two pieces at every band, each arriving
 finished enough to judge; a Perfect base is an event; and adding a modifier

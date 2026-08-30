@@ -29,6 +29,7 @@ export const ALCHEMIST: TradeSpec = {
     short: 'Kills put flask Charges back, so the flasks are never a descent’s whole budget.',
     grants: { chargeOnKill: TRADE_BASE.alchemistChargePerKill },
   },
+  attributes: { strength: 6, intelligence: 12, dexterity: 7, acuity: 9, spirit: 15, constitution: 8 },
   skill: 'fireball',
   prefix: 'alc',
   sprite: 'alchemist',

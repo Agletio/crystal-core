@@ -3,10 +3,8 @@
  * Five spokes: one minor, a GATE everybody on that spoke takes, then a fork
  * into two branches of minor, notable, minor, notable. Ten a spoke, fifty.
  *
- * EVERY NOTABLE SITS AT AN EVEN DEPTH, which is the whole geometry: points come
- * two at a time, so a grant is a minor and the notable behind it and the last
- * pair finishes a branch. SIX points against fifty — one branch whole, three
- * notables, and the fork is still a choice at the cap.
+ * EVERY NOTABLE SITS AT AN EVEN DEPTH: points come two at a time, so a grant is
+ * a minor and the notable behind it and the last pair finishes a branch.
  */
 import type { Minor, Notable } from '../trees/spec';
 import type { SkillNodeDef } from '../trees/node';
@@ -40,6 +38,9 @@ export interface TradeSpec {
   blurb: string; // the rule it changes, in one line: what the picker shows
   lore: string; // who he IS, where the blurb is the rule he changes
   baseline: TradeBase;
+  // 6 to 15 an attribute, 57 in all. Never in `Character.attributes`, which is
+  // what a respec hands back: a trade's spread changes with the trade.
+  attributes: Record<string, number>;
   prefix: string; // node ids start `${prefix}_`, and a save points at them
   skill: string; // THE SKILL HE COMES DOWN HOLDING; the Skills screen swaps it
   sprite?: string; // the generated body he is DRAWN as; omitted, the base man

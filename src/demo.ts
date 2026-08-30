@@ -95,7 +95,6 @@ import {
   armourBudget,
   implicitSpend,
   RECIPES,
-  CHALLENGE,
   LADDER,
   ORDER,
   SKILLS,
@@ -115,7 +114,7 @@ import {
 import { variants } from './sim/appearance';
 import type { GearBase } from './types';
 import {
-  arenaAt, canEnter, challengesIn, climbed, furthest, isChallenge, takeRung, zoneOpen,
+  arenaAt, canEnter, climbed, furthest, takeRung, zoneOpen,
 } from './ladder';
 import { canDualWield } from './sim/character';
 import {
@@ -140,7 +139,8 @@ import { RunSim, TICK, runToCompletion, walkToMeeting } from './sim/run';
 import { findPath } from './sim/pathfind';
 import { folkMet, gaveKey, hasMet, keyOwed, takeBoss, takeMet } from './game/scenes';
 import { TRIAL_CONDITIONS, healTrials } from './game/trials';
-import { TRIAL_POINTS_MAX, canAllocateTrial, canDeallocateTrial, trialNodes } from './trials';
+import { TRIAL_POINTS_MAX, canAllocateTrial, canDeallocateTrial, trialNodes, trialPointsFor } from './trials';
+import * as trialsModule from './trials';
 import { TRIAL_POINTS } from './data';
 import { forgedFor, graft, graftRefusal, graftableKinds, relicFor, spendRelic } from './game/graft';
 import {SCENES, SCENE_BY_ID } from './scenes';
@@ -201,6 +201,7 @@ import {
   treeGrants,
   trialMod,
   ailmentChances,
+  attributeTotals,
   retag,
 } from './sim/stats';
 import { ailmentLine, damageWorkings, readWorkings } from './damage-text';
@@ -2051,6 +2052,26 @@ rule('SPRITES — is the pixel art well formed?');
       `and one turns up on BLANK crystals — ${saw} of 40 runs, against ${HOARD.baseline} a run`,
       'no chest ever appears without a point spent on it'
     );
+
+    // AND THE PICTURE FOLLOWS. The prop the box sits on wears the OPEN frame
+    // once its guards are down; the renderer reads that id per frame, so a lid
+    // that stayed shut on screen was a map built once and never re-read.
+    let opened = 0;
+    let shut = 0;
+    for (let i = 0; i < 40 && opened === 0; i++) {
+      const sim = new RunSim([], ladderCharacter(0, new Rng(4)), new Rng(2000 + i));
+      runToCompletion(sim, 400);
+      for (const box of sim.state.hoards) {
+        if (!box.opened) continue;
+        if (sim.state.map.props[box.at]?.id === box.lock.open) opened++;
+        else shut++;
+      }
+    }
+    check(
+      opened > 0 && shut === 0,
+      `a lock that pays wears its open frame: ${opened} opened`,
+      `${shut} paid out still drawn shut`
+    );
   }
 
   {
@@ -2981,6 +3002,32 @@ rule('THE TRIALS WEB — is a harder descent actually harder, and paid for?');
   );
   check(strays.length === 0, `all ${TRIALS.length} trials ask conditions that exist`, strays.join(', '));
 
+  // PER CHARACTER, and always OPEN. Everything the web is made of hangs off the
+  // character — the trials done, the depths cleared, the nodes walked and the
+  // choices on them — so a second character starts at nothing with the web in
+  // front of it. Shared, one character's grind would spend another's points.
+  {
+    const one = makeCharacter({}, 'strike');
+    one.trials = TRIALS.map((t) => t.id);
+    one.climbed = { fissure: 12 };
+    one.trialAllocated = [trialNodes()[0].id];
+    const two = makeCharacter({}, 'strike');
+    check(
+      trialPointsFor(two.trials ?? [], two.climbed ?? {}) === 0
+        && (two.trialAllocated ?? []).length === 0
+        && trialPointsFor(one.trials, one.climbed) > 0,
+      'the trials web is the CHARACTER\'s: a second one starts at nothing',
+      `${trialPointsFor(one.trials, one.climbed)} against ${trialPointsFor(two.trials ?? [], two.climbed ?? {})}`
+    );
+    // And nothing gates LOOKING at it: a plan you cannot see is a plan nobody
+    // makes. What a new character has is no points, which is not a door.
+    check(
+      trialNodes().length > 0 && !('trialsOpen' in trialsModule),
+      'and nothing gates opening it — a new character sees the whole web',
+      'something still shuts the web'
+    );
+  }
+
   // Every line here is either DANGER — which is the bargain, since reward is
   // derived from danger — or REWARD, which is the other half of it. A reward
   // line is not free: the POINT is what it costs, and a web of a hundred and
@@ -3694,12 +3741,18 @@ rule('DUAL WIELDING — is a pair two weapons or an average of one?');
     rates.join(', ')
   );
   // Two swings take 1/a + 1/b seconds. The sheet prints one number and the sim
-  // alternates; this is the arithmetic that makes them the same answer.
-  const over = 2 / (1 / rates[0] + 1 / rates[1]);
+  // alternates; this is the arithmetic that makes them the same answer. Read as
+  // a RATIO against the same character holding one weapon, so whatever his
+  // attributes buy in attack speed is on both sides of it.
+  const lift = characterStats(alone).attacksPerSecond / weaponRates(alone)[0];
+  const over = (2 / (1 / rates[0] + 1 / rates[1])) * lift;
+  const mean = ((rates[0] + rates[1]) / 2) * lift;
   check(
-    Math.abs(stats.attacksPerSecond - over) < 1e-6 && stats.handRates.length === 2,
+    Math.abs(stats.attacksPerSecond - over) < 1e-6
+      && Math.abs(stats.attacksPerSecond - mean) > 1e-6
+      && stats.handRates.length === 2,
     'and the sheet says what a run of alternating swings comes to, not their average',
-    `${stats.attacksPerSecond.toFixed(4)} against ${over.toFixed(4)}`
+    `${stats.attacksPerSecond.toFixed(4)} against ${over.toFixed(4)}, mean ${mean.toFixed(4)}`
   );
   // A pair is ORDERLESS in art and ORDERED in stats. Asked of the KEY rather
   // than of the resolved sprite: with no pair drawn yet both fall back to the
@@ -6334,9 +6387,48 @@ rule('ATTRIBUTES — does a level buy anything, and only what it paid for?');
   const spread = ladderCharacter(DROP_BANDS.length - 1, new Rng(11));
   line(
     `  a top-band ladder character is level ${spread.level} with ` +
-      `${attributesSpent(spread)} points spread four ways: ` +
+      `${attributesSpent(spread)} points spread ${ATTRIBUTES.length} ways: ` +
       ATTRIBUTES.map((a) => `${a.name.slice(0, 3).toLowerCase()} ${spread.attributes[a.id]}`).join(', ')
   );
+
+  // A TRADE COMES DOWN WITH A SPREAD, and it is never in `Character.attributes`
+  // — that is what a respec hands back, and a trade's own points are not the
+  // player's to move. 6 to 15 an attribute so no trade is blank anywhere, and
+  // the same total each so what separates two of them is the SHAPE.
+  line('  trade          attributes');
+  const totals = TRADES.map((t) => {
+    const own = ATTRIBUTES.map((a) => t.spec.attributes[a.id] ?? 0);
+    gauge(`${t.spec.name.padEnd(14)} ${ATTRIBUTES.map((a, i) =>
+      `${a.name.slice(0, 3).toLowerCase()} ${String(own[i]).padStart(2)}`).join('  ')}`);
+    return own;
+  });
+  const outside = TRADES.filter((t, i) => totals[i].some((n) => n < 6 || n > 15)).map((t) => t.spec.name);
+  check(
+    outside.length === 0,
+    `every trade holds 6 to 15 of each of the ${ATTRIBUTES.length} attributes`,
+    outside.join(', ')
+  );
+  const sums = totals.map((own) => own.reduce((a, b) => a + b, 0));
+  check(
+    new Set(sums).size === 1,
+    `and the same ${sums[0]} in all, so the SHAPE is the difference`,
+    sums.join(', ')
+  );
+  // The sheet's number is the sim's: `attributeTotals` is the one seam, so a
+  // spread cannot show on the sheet and land nowhere.
+  {
+    const c = ladderCharacter(0, new Rng(12));
+    c.attributes = {};
+    c.trade = TRADES[0].spec.id;
+    const shown = attributeTotals(c);
+    const off = ATTRIBUTES.filter((a) => shown[a.id] !== (TRADES[0].spec.attributes[a.id] ?? 0));
+    check(
+      off.length === 0,
+      `and it is what the sheet reads with nothing spent — ${TRADES[0].spec.name} at ` +
+        ATTRIBUTES.map((a) => shown[a.id]).join('/'),
+      off.map((a) => a.name).join(', ')
+    );
+  }
 }
 
 // ===========================================================================
@@ -6792,8 +6884,8 @@ rule('TRADE RULES — does each one actually change what the sim does?');
     who.tradeAllocated = nodes;
     return who;
   };
-  const descend = (who: Character, seed = 9091) => {
-    const sim = new RunSim(ladderSet(2, new Rng(4), pool), who, new Rng(seed));
+  const descend = (who: Character, seed = 9091, band = 2) => {
+    const sim = new RunSim(ladderSet(band, new Rng(4), pool), who, new Rng(seed));
     const final = runToCompletion(sim, 900);
     return { sim, final };
   };
@@ -6898,7 +6990,14 @@ rule('TRADE RULES — does each one actually change what the sim does?');
 
   // Charges as a cooldown rather than a budget, and a flask that carries a buff.
   {
-    const still = descend(armed(['alc_condensate_m0', 'alc_still', 'alc_condensate_m1', 'alc_cascade']));
+    // Deep enough that he is actually hurt: his own Spirit regenerates a
+    // level-50 hero through a shallow set without a mouthful being drunk, and
+    // a flask nobody drinks says nothing about the Still.
+    const still = descend(
+      armed(['alc_condensate_m0', 'alc_still', 'alc_condensate_m1', 'alc_cascade']),
+      9091,
+      4
+    );
     line(
       `  the Still over one descent: ${still.sim.state.drunk} charges drunk, ` +
         `${still.sim.state.regained} handed back`
@@ -9532,42 +9631,36 @@ rule('THE CLIMB — does a rung open, stay open, and get harder?');
     sent.join(', ')
   );
 
-  // DANGER RISES, every single rung, and the very first one is untouched: the
-  // bare Fissure a new character walks into is the game's floor.
-  // The STEPS only. A challenge floor is deliberately out of line — the rung
-  // after one is easier than it was, and that is what makes it a spike rather
-  // than a rung — so the curve is read across the rungs that step.
+  // DANGER RISES, every single depth, and the very first one is untouched: the
+  // bare Fissure a new character walks into is the game's floor. The ramp is
+  // STRAIGHT — *"it should be a more linear line between the levels"* — so what
+  // is checked is that no depth costs wildly more than the one before it. A
+  // spike every fourth floor is exactly what that forbids.
   const steps: number[] = [];
-  const spiked: string[] = [];
   LADDER.zones.forEach((zone, z) => {
     for (let rung = 1; rung <= zone.rungs; rung++) {
-      const danger = runSet([], null, { zone: z, rung }).rewards.danger;
-      if (isChallenge(z, rung)) spiked.push(`${z}:${rung}`);
-      else steps.push(danger);
+      steps.push(runSet([], null, { zone: z, rung }).rewards.danger);
     }
   });
   check(
     Math.round(steps[0]) === 0,
-    'the first rung of the first zone is danger 0 — the bare Fissure is untouched',
-    `the first rung arrives at danger ${steps[0].toFixed(1)}`
+    'the first depth of the first zone is danger 0 — the bare Fissure is untouched',
+    `the first depth arrives at danger ${steps[0].toFixed(1)}`
   );
   const dips = steps.filter((d, i) => i > 0 && d <= steps[i - 1]).length;
   check(
     dips === 0,
-    `and danger rises on every one of the ${steps.length} rungs that STEP, to ${Math.round(steps[steps.length - 1])}`,
-    `${dips} rungs are no harder than the one below them`
+    `and danger rises on every one of the ${steps.length} depths, to ${Math.round(steps[steps.length - 1])}`,
+    `${dips} depths are no harder than the one below them`
   );
-  // And every SPIKE stands above both its neighbours, which is the whole of
-  // what makes it one.
-  const flat = spiked.filter((id) => {
-    const [z, rung] = id.split(':').map(Number);
-    const danger = (r: number) => runSet([], null, { zone: z, rung: r }).rewards.danger;
-    return danger(rung) <= danger(rung - 1) || danger(rung) <= danger(rung + 1);
-  });
+  const gaps = steps.slice(1).map((d, i) => d - steps[i]);
+  const mean = gaps.reduce((a, b) => a + b, 0) / gaps.length;
+  const worst = Math.max(...gaps.map((g) => Math.abs(g - mean)));
+  line(`  a depth costs ${mean.toFixed(1)} danger, and the most any one is off that line is ${worst.toFixed(1)}`);
   check(
-    flat.length === 0 && spiked.length > 0,
-    `and each of the ${spiked.length} challenge floors stands above both its neighbours`,
-    flat.join(', ') || 'there are no challenge floors at all'
+    worst < mean,
+    `and the ramp is a LINE: no depth is off the ${mean.toFixed(1)} step by a whole step`,
+    `one depth is ${worst.toFixed(1)} off, which is a spike rather than a step`
   );
 
   // What a rung actually DOES to a body, read through a real sim rather than
@@ -9606,66 +9699,6 @@ rule('THE CLIMB — does a rung open, stay open, and get harder?');
     `the top rung's bodies carry ${(high / Math.max(1, low)).toFixed(1)}× the life of the first rung's`,
     `top rung life ${Math.round(high)} against ${Math.round(low)}`
   );
-
-  // CHALLENGE FLOORS. *"A spike in difficulty like a bunch of rares."* A spike
-  // is not a bigger rung: it is a room that fills with things that are normally
-  // rare, on a rung you can see coming.
-  {
-    const spikes = LADDER.zones.map((_, z) => challengesIn(z));
-    line(`  challenge floors: ${LADDER.zones.map((zone, z) =>
-      `${zone.name} ${spikes[z].join('/')}`).join(' · ')}`);
-    check(
-      spikes.every((list) => list.length > 0),
-      'every zone has challenge floors on it',
-      spikes.map((l) => l.length).join(', ')
-    );
-    // NEVER THE LAST RUNG of a zone: that one is the boss's, and two things
-    // asking for one rung is one of them lost.
-    check(
-      LADDER.zones.every((zone, z) => !isChallenge(z, zone.rungs)),
-      'and never the last rung of one, which belongs to the boss',
-      LADDER.zones.map((zone, z) => `${z}:${isChallenge(z, zone.rungs)}`).join(' ')
-    );
-
-    // WHAT IT DOES, read off real rooms rather than off the table.
-    line('  zone   rung   danger   monsters   common/magic/rare');
-    const ranksAt = (z: number, rung: number) => {
-      const sim = new RunSim([], ladderCharacter(3, new Rng(11)), new Rng(700 + rung), {
-        rung: { zone: z, rung },
-      });
-      const by: Record<string, number> = {};
-      for (const m of sim.state.monsters) by[m.rank] = (by[m.rank] ?? 0) + 1;
-      return { sim, by, uncommon: sim.state.monsters.filter((m) => m.rank !== 'common').length };
-    };
-    const step = ranksAt(0, CHALLENGE.every - 1);
-    const spike = ranksAt(0, CHALLENGE.every);
-    for (const [rung, at] of [[CHALLENGE.every - 1, step], [CHALLENGE.every, spike]] as const) {
-      gauge(
-        `The Fissure ${String(rung).padStart(4)}   ` +
-          `${Math.round(at.sim.set.rewards.danger).toString().padStart(6)}   ` +
-          `${String(at.sim.state.totalMonsters).padStart(8)}   ` +
-          `${['common', 'magic', 'rare'].map((r) => at.by[r] ?? 0).join('/')}`
-      );
-    }
-    check(
-      spike.uncommon > step.uncommon * 3,
-      `a challenge floor is ${spike.uncommon} bodies above common against ${step.uncommon} on the rung below it`,
-      `${spike.uncommon} against ${step.uncommon}`
-    );
-    check(
-      spike.sim.set.rewards.danger > step.sim.set.rewards.danger,
-      `and it is worth more danger — ${Math.round(spike.sim.set.rewards.danger)} against ${Math.round(step.sim.set.rewards.danger)}`,
-      `${spike.sim.set.rewards.danger} against ${step.sim.set.rewards.danger}`
-    );
-    // It pays through the SEAM everything else pays through, so nothing about
-    // what a spike is worth is written a second time.
-    const paidFor = (rung: number) => runSet([], null, { zone: 0, rung }).rewards;
-    check(
-      paidFor(CHALLENGE.every).rarity > paidFor(CHALLENGE.every - 1).rarity,
-      `and pays for itself off the same seam — ${Math.round(paidFor(CHALLENGE.every).rarity)}% rarity against ${Math.round(paidFor(CHALLENGE.every - 1).rarity)}%`,
-      'a spike pays no more than the rung under it'
-    );
-  }
 
   // A BOSS AT THE TOP OF EACH ZONE. *"One at the end of each zone which will be
   // a unique boss each time."* The last rung is a fight rather than a descent,

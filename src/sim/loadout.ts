@@ -78,7 +78,7 @@ export function ladderCharacter(
   );
   character.level = 4 + rung * 6;
 
-  // Split four ways. A measured character with no attributes at all is a
+  // Split evenly. A measured character with no attributes at all is a
   // character nobody plays, and half of what these attributes buy is tagged
   // for the skill this one is not — so a spread is the floor, not the build.
   const points = attributePointsFor(character.level);
@@ -209,7 +209,7 @@ const FOCUS: Array<((stat: string) => boolean) | null> = [
 /**
  * The strongest character the search can find at this band — the CEILING, where
  * `ladderCharacter` is the floor. Tuning against a floor is tuning against a
- * strawman: a random tree walk with its attributes split four ways is not what
+ * strawman: a random tree walk with its attributes split evenly is not what
  * anybody plays, so a difficulty that stops one says nothing about the game.
  *
  * Everything a player decides is searched — plate, the lines the set is rolled

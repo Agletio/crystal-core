@@ -206,17 +206,12 @@ assert(all('#run-climb .climbseam__rock').length === 1, 'as one winding stretch'
   String(all('#run-climb .climbseam__rock').length));
 assert($('climb-pip-0-1').classList.contains('pip--here'), 'a new character stands on the first');
 assert($('climb-pip-0-2').disabled === true, 'the rung above it is shut');
-// A CHALLENGE FLOOR is marked BEFORE you walk into it: a rung that is suddenly
-// four times the fight, unannounced, reads as the game breaking.
+// EVERY DEPTH IS A STEP. The ramp is straight, so nothing on the seam is
+// marked as costing more than the one under it — a spike is what was removed.
 assert(
-  all('#run-climb .pip--spike').length > 0,
-  'the challenge floors are marked on the seam',
+  all('#run-climb .pip--spike').length === 0,
+  'no depth on the seam is marked a spike: the climb is a line',
   String(all('#run-climb .pip--spike').length)
-);
-assert(
-  $('climb-pip-0-4').classList.contains('pip--spike')
-    && !$('climb-pip-0-3').classList.contains('pip--spike'),
-  'and only the rungs that are one'
 );
 assert($('climb-pip-1-1') === null, 'and the zone above is behind its own tab');
 assert(
@@ -286,8 +281,8 @@ assert(
   $('run-launch').textContent
 );
 assert(
-  /challenge floor/i.test(text('run-climb')),
-  'and picking a challenge floor says so before you enter it',
+  !/challenge floor/i.test(text('run-climb')),
+  'and no depth calls itself a challenge floor any more',
   text('run-climb').slice(0, 120)
 );
 $('climb-pip-0-1').click();
@@ -1633,7 +1628,15 @@ assert(
 // Level 1 has none, which is the state the dev kit starts in — so the first
 // thing to prove is that nothing is offered before a level pays for one.
 const attrRows = all('#sheet-attrs .attr');
-assert(attrRows.length === 4, 'four attributes on the sheet', String(attrRows.length));
+assert(attrRows.length === 6, 'six attributes on the sheet', String(attrRows.length));
+// THE TOTAL, not the points spent. The dev kit's character has taken no trade
+// and worn nothing, so every one of them is honestly 0 here — the trade's own
+// spread is checked where a trade has been taken.
+assert(
+  attrRows.every((r) => /^\d+$/.test(r.querySelector('.attr__v')?.textContent ?? '')),
+  'and each reads a whole number: the TOTAL, not the points spent',
+  attrRows.map((r) => r.querySelector('.attr__v')?.textContent).join('/')
+);
 assert(
   attrRows.every((r) => r.querySelector('.attr__buy')?.disabled === true),
   'a level 1 character is offered nothing to spend'
@@ -1665,10 +1668,12 @@ assert(
 // Re-queried, not reused: every spend re-renders the block, so a row held
 // from before the level landed is a node no longer on the page.
 const granted = Number(text('sheet-attr-left').split(' ')[0]);
+const firstWas = Number(all('#sheet-attrs .attr')[0].querySelector('.attr__v')?.textContent ?? '0');
 all('#sheet-attrs .attr')[0].querySelector('.attr__buy').click();
 assert(
-  all('#sheet-attrs .attr')[0].querySelector('.attr__v')?.textContent === '1',
-  'clicking + puts one point in'
+  Number(all('#sheet-attrs .attr')[0].querySelector('.attr__v')?.textContent ?? '0') === firstWas + 1,
+  'clicking + puts one point in',
+  `${firstWas} → ${all('#sheet-attrs .attr')[0].querySelector('.attr__v')?.textContent}`
 );
 assert(
   text('sheet-attr-left') === `${granted - 1} to spend`,
@@ -2780,26 +2785,18 @@ $('dev-kit').click();
     'and the dev kit has done all of them, so the web can be walked',
     String(all('#trials-ladder .trialrow--done').length)
   );
-  // SHUT until the Fissure is whole: a new character meets the climb before it
-  // meets a hundred and fifty-six more nodes.
+  // ALWAYS OPEN. It used to wait on the Fissure being whole; a web nobody can
+  // look at is a plan nobody can make.
   assert(
-    $('trials-webwrap').hidden === true,
-    'the web is shut until the Fissure is cleared',
+    $('trials-webwrap').hidden === false,
+    'the web is open from the first descent',
     String($('trials-webwrap').hidden)
   );
   assert(
-    /Shut/.test(text('trials-sub')) && /depths/.test(text('trials-sub')),
-    'and the screen says how far off it is',
+    /points spent/.test(text('trials-sub')) && /nodes/.test(text('trials-sub')),
+    'and says what is spent, what is left to earn, and how big it is',
     text('trials-sub')
   );
-
-  // The dev kit clears it, which is the only way a headless check reaches the
-  // other side of a gate that is twelve real descents wide.
-  $('trials-close').click();
-  $('open-dev').click();
-  $('dev-climb-0').click();
-  $('camp-fire').click();
-  assert($('trials-webwrap').hidden === false, 'clearing the Fissure opens the web');
 
   assert(
     all('#trials-web .web__node').length === 156,
@@ -3011,6 +3008,17 @@ assert(
   // The kit wears a shield, and a full off hand makes the second weapon offer
   // to SWAP the main one instead. Clicking a worn slot is how it comes off.
   $('open-character').click();
+  // A TRADE COMES DOWN WITH A SPREAD, and the sheet reads the total, so the
+  // rogue's own attributes are on it before a single point has been spent.
+  {
+    const rows = all('#sheet-attrs .attr');
+    const shown = rows.map((r) => Number(r.querySelector('.attr__v')?.textContent ?? '0'));
+    assert(
+      shown.every((n) => n >= 6) && Math.max(...shown) >= 15,
+      'a trade comes down with its own attribute spread, and the sheet totals it',
+      shown.join('/')
+    );
+  }
   if ($('slot-offhand').classList.contains('slotcell__btn--worn')) $('slot-offhand').click();
   assert(
     !$('slot-offhand').classList.contains('slotcell__btn--worn'),
@@ -3058,6 +3066,17 @@ assert(
   $('welcome-go').click();
 
   $('open-character').click();
+  // A TRADE COMES DOWN WITH A SPREAD, and the sheet reads the total, so the
+  // rogue's own attributes are on it before a single point has been spent.
+  {
+    const rows = all('#sheet-attrs .attr');
+    const shown = rows.map((r) => Number(r.querySelector('.attr__v')?.textContent ?? '0'));
+    assert(
+      shown.every((n) => n >= 6) && Math.max(...shown) >= 15,
+      'a trade comes down with its own attribute spread, and the sheet totals it',
+      shown.join('/')
+    );
+  }
   if ($('slot-offhand').classList.contains('slotcell__btn--worn')) $('slot-offhand').click();
   $('sheet-close').click();
   $('open-inventory').click();

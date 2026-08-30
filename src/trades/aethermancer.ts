@@ -33,6 +33,7 @@ export const AETHERMANCER: TradeSpec = {
       manaShield: TRADE_BASE.aethermancerShield,
     },
   },
+  attributes: { strength: 6, intelligence: 15, dexterity: 6, acuity: 12, spirit: 11, constitution: 7 },
   skill: 'rimespike',
   prefix: 'aet',
   sprite: 'aethermancer',

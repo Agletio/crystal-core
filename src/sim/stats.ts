@@ -31,7 +31,6 @@ import {
   OFF_SLOT,
   DUAL,
   UNIQUE_BY_ID,
-  CHALLENGE,
   LADDER,
   LADDER_RUNGS,
   rungsBelow,
@@ -39,11 +38,10 @@ import {
 import { attributeSteps, equippedItems, equippedSkill, mainSkillId } from './character';
 import type { Character } from './character';
 import { nodeById } from '../skills-tree';
-import { tradeGrants } from '../trades';
+import { TRADE_BY_ID, tradeGrants } from '../trades';
 import { trialNodeById } from '../trials';
 import { critBuff, mergeGrants } from './grants';
 import { isTwoHanded } from '../economy';
-import { isChallenge } from '../ladder';
 import type { Item, MonsterAbilityDef, MonsterDef, RolledMod, SkillDef, StatRoll } from '../types';
 
 export interface CombatStats {
@@ -476,9 +474,8 @@ export function treeMod(character: Character): RolledMod | null {
   };
 }
 
-/** The trials web as one synthetic mod, bound for `RunSet.mods` rather than for
- *  `statMods`: every line on it is monster-facing, so it goes where a crystal's
- *  modifiers go and is weighed for danger by the same `crystalRewards`. */
+/** The trials web as one synthetic mod, bound for `RunSet.mods`: every line on
+ *  it is monster-facing, so it is weighed by `crystalRewards`. */
 export function trialMod(character: Character): RolledMod | null {
   const stats = (character.trialAllocated ?? []).flatMap((id) => {
     const node = trialNodeById(id);
@@ -498,34 +495,11 @@ export function trialMod(character: Character): RolledMod | null {
   };
 }
 
-/** A RUNG as ONE synthetic mod, beside `trialMod` and `treeMod` — the whole of
- *  where difficulty comes from before anything is socketed. It rides the
- *  crystal seam on purpose: `crystalRewards` scores these like any other stats,
- *  so a harder rung pays more and drops better with nothing written twice. */
-/** THE SPIKE, as its own mod beside `rungMod` — separate so a readout can name
- *  it and so what a challenge floor costs is one table nobody has to hunt for.
- *  Null on every ordinary rung, which is most of them. */
-export function challengeMod(zone: number, rung: number): RolledMod | null {
-  if (!isChallenge(zone, rung)) return null;
-  return {
-    entryId: 'challenge',
-    defId: 'challenge',
-    group: 'rung',
-    slot: 'rung',
-    name: 'A challenge floor',
-    tier: 1,
-    tags: [],
-    stats: (
-      [['monsterRank', CHALLENGE.rank], ['packSize', CHALLENGE.packSize],
-       ['monsterLife', CHALLENGE.life], ['monsterDamage', CHALLENGE.damage]] as const
-    ).map(([stat, value]) => ({ stat, form: 'inc' as const, value, tags: [] })),
-  };
-}
-
+/** A DEPTH as ONE synthetic mod, a STRAIGHT scaling of `*AtTop` so every step
+ *  costs the same. It rides the crystal seam, so deeper pays more. */
 export function rungMod(zone: number, rung: number): RolledMod | null {
   if (rung <= 0) return null;
-  const at = LADDER_RUNGS > 1 ? rungsBelow(zone, rung) / (LADDER_RUNGS - 1) : 0;
-  const up = Math.pow(at, LADDER.curve);
+  const up = LADDER_RUNGS > 1 ? rungsBelow(zone, rung) / (LADDER_RUNGS - 1) : 0;
   const stats: RolledMod['stats'] = (
     [
       ['monsterLife', LADDER.lifeAtTop],
@@ -572,20 +546,28 @@ export function attributePointsMod(points: Record<string, number>): RolledMod | 
   };
 }
 
-/** What WORN mods are worth in attributes, for gear measured with no character. */
+/** Worn mods alone, for gear measured with no character. */
 export function wornAttributeMod(mods: RolledMod[]): RolledMod | null {
   return attributePointsMod(
     Object.fromEntries(ATTRIBUTES.map((a) => [a.id, aggregate(mods, a.id).flat]))
   );
 }
 
-export function attributeMod(character: Character): RolledMod | null {
+/** EVERY SOURCE OF EVERY ATTRIBUTE — the trade's spread, the points spent on
+ *  levels, what is worn. The sheet prints these and the sim buys off them. */
+export function attributeTotals(character: Character): Record<string, number> {
   const worn = equippedItems(character).flatMap((i) => [...i.mods, ...i.implicits]);
-  return attributePointsMod(
-    Object.fromEntries(
-      ATTRIBUTES.map((a) => [a.id, attributeSteps(character, a.id) + aggregate(worn, a.id).flat])
-    )
+  const trade = character.trade ? TRADE_BY_ID[character.trade]?.spec.attributes : undefined;
+  return Object.fromEntries(
+    ATTRIBUTES.map((a) => [
+      a.id,
+      (trade?.[a.id] ?? 0) + attributeSteps(character, a.id) + aggregate(worn, a.id).flat,
+    ])
   );
+}
+
+export function attributeMod(character: Character): RolledMod | null {
+  return attributePointsMod(attributeTotals(character));
 }
 
 /** What ONE skill's own web has been walked to, whichever slot it is in. */

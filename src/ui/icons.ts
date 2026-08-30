@@ -776,9 +776,14 @@ export function gearGrid(art: string): { rows: string[]; palette: Record<string,
   switch (art) {
     case 'wand': return { rows: WAND, palette: GEAR, name: 'wand' };
     case 'sword':
+    case 'sword2h':
     case 'weapon': return { rows: BLADE, palette: GEAR, name: 'weapon' };
     case 'dagger': return { rows: DAGGER, palette: GEAR, name: 'dagger' };
-    case 'mace': return { rows: MACE, palette: GEAR, name: 'mace' };
+    case 'mace':
+    case 'mace2h': return { rows: MACE, palette: GEAR, name: 'mace' };
+    // No staff grid was ever drawn; the wand is the same silhouette longer, and
+    // a staff falling through to BODY ARMOUR was the alternative.
+    case 'staff': return { rows: WAND, palette: GEAR, name: 'staff' };
     case 'bow': return { rows: BOW, palette: GEAR, name: 'bow' };
     case 'shield': return { rows: SHIELD, palette: GEAR, name: 'shield' };
     case 'helmet': return { rows: HELMET, palette: GEAR, name: 'helmet' };
@@ -786,6 +791,15 @@ export function gearGrid(art: string): { rows: string[]; palette: Record<string,
     case 'boots': return { rows: BOOT, palette: LEATHER, name: 'boots' };
     case 'amulet': return { rows: AMULET, palette: GEAR, name: 'amulet' };
     case 'ring': return { rows: RING, palette: GEAR, name: 'ring' };
+    default: break;
+  }
+  // ARMOUR carries its FAMILY in front of the slot — `bulwark_helmet`,
+  // `arcanist_body` — so matching the whole key sent every one of the 48 to the
+  // body-armour grid and a helmet on the floor was a breastplate.
+  switch (art.split('_').pop()) {
+    case 'helmet': return { rows: HELMET, palette: GEAR, name: 'helmet' };
+    case 'gloves': return { rows: GLOVE, palette: GEAR, name: 'gloves' };
+    case 'boots': return { rows: BOOT, palette: LEATHER, name: 'boots' };
     default: return { rows: BODY, palette: GEAR, name: 'body' };
   }
 }

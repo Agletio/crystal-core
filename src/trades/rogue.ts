@@ -37,6 +37,7 @@ export const ROGUE_TRADE: TradeSpec = {
         'this swing at the main hand’s, the next at the off hand’s.',
     ],
   },
+  attributes: { strength: 11, intelligence: 6, dexterity: 15, acuity: 8, spirit: 9, constitution: 8 },
   skill: 'ambush',
   prefix: 'rog',
   sprite: 'obreth',

@@ -11,7 +11,6 @@ import {
   TRIALS_WEB,
   TRIAL_POINTS_MAX,
   trialPointsFor,
-  trialsOpen,
   canAllocateTrial,
   canDeallocateTrial,
   neighboursOfTrial,
@@ -307,24 +306,19 @@ function render(): void {
   const { character } = game;
   const earned = trialPointsFor(character.trials ?? [], character.climbed ?? {});
   const spent = (character.trialAllocated ?? []).length;
-  // SHUT until the Fissure is whole. The ladder still shows, so what is coming
-  // is legible from the first descent — it is the web that waits.
-  const open = trialsOpen(character.climbed ?? {});
-  const first = LADDER.zones[TRIAL_POINTS.freeZone];
-  const cleared = Math.min(first.rungs, character.climbed?.[first.id] ?? 0);
+  // ALWAYS OPEN. It was shut until the Fissure was whole so a new character met
+  // the climb first; the web is per-character and starts at nothing to spend,
+  // which reads as a thing to work toward rather than a door.
+  $('trials-sub').textContent =
+    `${spent}/${earned} points spent · ${TRIAL_POINTS_MAX} to earn · ` +
+    `${trialNodes().length} nodes`;
+  $('trials-note').textContent =
+    `${TRIAL_POINTS.perTrial} points a trial and ${TRIAL_POINTS.perRung} a depth above the Fissure. ` +
+    'Most nodes make a descent worse, and worse is what pays.';
 
-  $('trials-sub').textContent = open
-    ? `${spent}/${earned} points spent · ${TRIAL_POINTS_MAX} to earn · ` +
-      `${trialNodes().length} nodes`
-    : `Shut. ${cleared} of ${first.rungs} depths of ${first.name} cleared`;
-  $('trials-note').textContent = open
-    ? `${TRIAL_POINTS.perTrial} points a trial and ${TRIAL_POINTS.perRung} a depth above the Fissure. ` +
-      'Most nodes make a descent worse, and worse is what pays.'
-    : `The web opens when the Fissure is whole. Trials done before then keep their ${TRIAL_POINTS.perTrial} points.`;
-
-  $('trials-webwrap').hidden = !open;
+  $('trials-webwrap').hidden = false;
   renderLadder();
-  if (open) renderWeb();
+  renderWeb();
   onChanged?.();
 }
 

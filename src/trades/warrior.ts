@@ -29,6 +29,7 @@ export const WARRIOR_TRADE: TradeSpec = {
     short: 'A hit big enough for the body it lands on Stuns it.',
     grants: { stunSeconds: TRADE_BASE.warriorStunSeconds },
   },
+  attributes: { strength: 15, intelligence: 6, dexterity: 8, acuity: 6, spirit: 9, constitution: 13 },
   skill: 'strike',
   prefix: 'mah',
   sprite: 'mahthar',

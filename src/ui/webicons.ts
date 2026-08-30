@@ -332,24 +332,26 @@ export function nodeGlyph(node: SkillNodeDef, size: number): SVGElement {
 }
 
 /**
- * THE INVENTORY ICON, as a bitmap the map can draw. Gear art is not in
+ * THE INVENTORY ICON, as a CANVAS the map can draw. Gear art is not in
  * `GENERATED_ICONS` — all 59 ids are grids in `icons.ts` — so this bakes the
  * SAME grid the bag draws, through `gearGrid`, rather than keeping a second
  * copy of the silhouettes. A cell the grid does not name stays transparent.
  *
- * A canvas, never an SVG data URI: `Texture.from(canvas)` is the path the
- * renderer already uses for every body, and Pixi will not take a serialised
- * SVG synchronously — tried, and the floor stayed empty.
+ * A CANVAS, never a data URI. `Texture.from(canvas)` is the path the renderer
+ * already uses for every body; `Texture.from(string)` in Pixi v8 is a CACHE
+ * LOOKUP rather than a loader, so a URL it has never seen comes back empty and
+ * the floor stays bare. This handed over `canvas.toDataURL()` and every drop on
+ * the ground was a beam with nothing under it.
  */
-const bakedGear = new Map<string, string | null>();
+const bakedGear = new Map<string, HTMLCanvasElement | null>();
 
-export function bakedGearIcon(art: string): string | null {
+export function gearCanvas(art: string): HTMLCanvasElement | null {
   const held = bakedGear.get(art);
   if (held !== undefined) return held;
   const grid = gearGrid(art);
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext?.('2d') ?? null; // jsdom has none
-  let url: string | null = null;
+  let made: HTMLCanvasElement | null = null;
   if (ctx) {
     const w = Math.max(...grid.rows.map((r) => r.length));
     canvas.width = w;
@@ -367,10 +369,10 @@ export function bakedGearIcon(art: string): string | null {
       }
     });
     ctx.putImageData(image, 0, 0);
-    url = canvas.toDataURL();
+    made = canvas;
   }
-  bakedGear.set(art, url);
-  return url;
+  bakedGear.set(art, made);
+  return made;
 }
 
 /** A grid's palette may name a CSS token; the canvas needs the hex behind it. */

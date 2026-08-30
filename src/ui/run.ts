@@ -48,7 +48,7 @@ import type { Hotspot } from '../scenes/camp';
 import { initCamp, openCamp, closeCamp, isCampOpen, renderCamp, setCampEmber } from './camp';
 import { openTalk } from './talk';
 import { advanceRung, climbLine, renderClimb, rungName, rungNow } from './climb';
-import { arenaAt, isChallenge, takeRung, zoneAt } from '../ladder';
+import { arenaAt, takeRung, zoneAt } from '../ladder';
 import type { Rung } from '../ladder';
 import type { SceneDef } from '../scenes';
 import { buildReport, lootRows } from '../game/report';
@@ -1504,7 +1504,7 @@ function syncRung(): void {
   $('run-rung-zone').textContent = zoneAt(at.zone)?.name ?? '';
   $('run-rung-n').textContent = `Depth ${at.rung}`;
   const what = $('run-rung-what');
-  what.textContent = arenaAt(at) ? 'Boss' : isChallenge(at.zone, at.rung) ? 'Challenge floor' : '';
+  what.textContent = arenaAt(at) ? 'Boss' : '';
   what.hidden = what.textContent === '';
 }
 

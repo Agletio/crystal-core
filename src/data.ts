@@ -1561,6 +1561,23 @@ export const ATTRIBUTES: AttributeDef[] = [
       { stat: 'castSpeed', form: 'inc', value: 0.4, tags: [] },
     ],
   },
+  {
+    id: 'spirit',
+    name: 'Spirit',
+    per: [
+      { stat: 'lifeRegen', form: 'inc', value: 2, tags: [] },
+      { stat: 'manaRegen', form: 'inc', value: 2, tags: [] },
+    ],
+  },
+  {
+    id: 'constitution',
+    name: 'Constitution',
+    per: [
+      { stat: 'armour', form: 'inc', value: 1.5, tags: [] },
+      { stat: 'occultRes', form: 'flat', value: 0.3, tags: [] },
+      { stat: 'prismaticRes', form: 'flat', value: 0.3, tags: [] },
+    ],
+  },
 ];
 
 export const ATTRIBUTE_BY_ID: Record<string, AttributeDef> = Object.fromEntries(
@@ -2122,7 +2139,8 @@ export const socketPackSize = (filled: number): number => rung(filled, SOCKET_SC
 
 /** THE LADDER, in order. A RUNG is CHOSEN, one cleared stays open, and its
  *  difficulty rides the crystal seam through `rungMod`. `*AtTop` is the LAST
- *  rung of the LAST zone, so the climb is one curve rather than three. */
+ *  depth of the LAST zone, and the ramp to it is STRAIGHT — every step costs
+ *  the same, so the climb is one line rather than three. */
 export const LADDER = {
   // `arena` is the zone's LAST RUNG: a fight rather than a descent.
   // A zone is DEPTH, never a world: what you walk into is what you SOCKETED.
@@ -2147,17 +2165,6 @@ export const LADDER = {
   lifeAtTop: 520,
   damageAtTop: 430,
   packAtTop: 55,
-  curve: 1.8,
-};
-
-/** A CHALLENGE FLOOR: a rung that SPIKES rather than steps, never a zone's
- *  last — that one is the boss's. */
-export const CHALLENGE = {
-  every: 4,
-  rank: 1600, // percent on every rank above common: the room fills with rares
-  packSize: 20,
-  life: 25,
-  damage: 15,
 };
 
 /** Rungs below this one across the WHOLE ladder. */

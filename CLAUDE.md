@@ -219,8 +219,11 @@ The Refraction, The Flowering, named for the halls at their tops. What world you
 walk into is what you SOCKETED (`mapTheme`), and the two used to be the same
 thing, which made the crystals a second ladder. `LadderZone.id` is still spelt
 the way the worlds were, because it is the save key under `character.climbed`.
-**Every fourth rung is a CHALLENGE FLOOR** — `challengeMod`, a second mod on the
-same seam — and the room fills with rares instead of stepping. **A zone's LAST
+**THE RAMP IS A STRAIGHT LINE**: `rungMod` reads how far up the 42 you are and
+scales `LADDER.*AtTop` by exactly that, so every depth costs the same 20 danger
+as the one before it. There is no exponent and no spike — a challenge floor
+every fourth rung made 2 and 3 free, 4 five times the fight and 5 easier again.
+**A zone's LAST
 rung is its BOSS**, in an arena of its own (`LADDER.zones[z].arena`, read through
 `arenaAt`), and clearing that is the whole of what opens the zone above: The
 Answering, The Refraction, The Flowering. **THE CLIMB IS DRAWN ONE ZONE AT A
@@ -488,7 +491,15 @@ branch whole, three notables, and the fork is still a decision at the cap.
 Eight main skills, each with its own tree; a mover and THREE passives fill the
 other slots, the mover having a nine-node web of its own. **A passive changes a
 RULE and pays for it**, and the second and third slots open at levels 20 and 40
-of the 99 there are. Attributes are bought per level. Every use costs mana; out
+of the 99 there are. **SIX ATTRIBUTES**, bought per level: Strength,
+Intelligence, Dexterity, Acuity, **Spirit** (life and mana regeneration) and
+**Constitution** (Armour, Occult and Prismatic Resistance). **A TRADE COMES DOWN
+WITH A SPREAD OF ITS OWN** — `TradeSpec.attributes`, 6 to 15 an attribute and 57
+in all, so what separates two trades in the first hour is the SHAPE rather than
+the total. It is never in `Character.attributes`, which is what a respec hands
+back. `attributeTotals` adds the three sources — the trade, the points spent,
+what is worn — and **the sheet prints that total**, so the number shown is the
+number that lands. Every use costs mana; out
 of mana you are STARVED, not stopped — unless a passive took the pool away, and
 then life pays.
 
