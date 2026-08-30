@@ -135,6 +135,7 @@ import {
   sellPrice,
 } from './economy';
 import { hasGearArt } from './ui/icons';
+import { lootSpan } from './render/renderer';
 import { RunSim, TICK, runToCompletion, walkToMeeting } from './sim/run';
 import { findPath } from './sim/pathfind';
 import { folkMet, gaveKey, hasMet, keyOwed, takeBoss, takeMet } from './game/scenes';
@@ -941,6 +942,35 @@ rule('ARMOUR SETS — is a hybrid a redistribution or a discount?');
     'every family splits exactly one budget, never more',
     'a family mix does not sum to 1'
   );
+
+  // AND EVERY BASE HAS A SIZE ON THE FLOOR. Drawn at one width, a ring was as
+  // big as a greatsword. Jewellery is only SLIGHTLY smaller than the smallest
+  // gear — the user's call — so a ring is still a thing rather than a speck.
+  {
+    const span = (id: string) => {
+      const b = GEAR_BASE_BY_ID[id];
+      return lootSpan(b?.kind ?? 'weapon', b?.hands ?? 1);
+    };
+    const spans = GEAR_BASES.map((b) => [b.id, span(b.id)] as const);
+    const unsized = spans.filter(([, n]) => !(n > 0)).map(([id]) => id);
+    check(unsized.length === 0, 'every base has a size to lie on the floor at', unsized.join(', '));
+    const smallestGear = Math.min(
+      ...GEAR_BASES.filter((b) => !['ring', 'amulet'].includes(b.kind)).map((b) => span(b.id))
+    );
+    const jewels = GEAR_BASES.filter((b) => ['ring', 'amulet'].includes(b.kind)).map((b) => span(b.id));
+    const twoHand = Math.max(...GEAR_BASES.map((b) => span(b.id)));
+    line(`  on the floor: a two-hander spans ${twoHand} tiles, the smallest gear ${smallestGear}, jewellery ${Math.min(...jewels)}`);
+    check(
+      Math.max(...jewels) < smallestGear && Math.min(...jewels) > smallestGear * 0.75,
+      'and jewellery is only SLIGHTLY under the smallest gear, never a speck',
+      `${Math.min(...jewels)} against ${smallestGear}`
+    );
+    check(
+      twoHand > smallestGear * 1.5,
+      'while a two-handed weapon is the biggest thing that drops',
+      `${twoHand} against ${smallestGear}`
+    );
+  }
 
   // EVERY BASE IS DRAWN, and there is nothing behind it any more: the
   // hand-drawn silhouettes are gone, so a base whose art nobody generated is a
@@ -2939,6 +2969,25 @@ for (const web of MOVE_WEBS) {
   check(held.length === 0, 'and every one of them refunded again', `${held.length} stuck`);
 }
 
+/** Every node between a tree's middle and one named, in order. Nothing else
+ *  reaches a particular enabler, and the enabler is the whole point. */
+function walkTo(skillId: string, goal: string): string[] {
+  const from = new Map<string, string | null>([[CENTRE, null]]);
+  const queue: string[] = [CENTRE];
+  while (queue.length > 0) {
+    const at = queue.shift()!;
+    if (at === goal) break;
+    for (const next of neighboursOf(skillId, at)) {
+      if (from.has(next)) continue;
+      from.set(next, at);
+      queue.push(next);
+    }
+  }
+  const route: string[] = [];
+  for (let at = goal; at && at !== CENTRE; at = from.get(at) ?? '') route.unshift(at);
+  return route;
+}
+
 // ===========================================================================
 rule('AILMENTS — does dealing the type, and only that, apply the ailment?');
 
@@ -2986,6 +3035,47 @@ rule('AILMENTS — does dealing the type, and only that, apply the ailment?');
     'while an ailment the skill never dealt is left exactly where it was',
     retag('bleed', fire, 'cold')
   );
+
+  // AN UNTAGGED CHANCE NODE IS ITS OWN TREE'S. *"I have no source of curse (i
+  // do have dark damage) but im still applying curse. Running strike and taking
+  // the bleed chance node."* Rend grants a bare `ailmentChance`; spread across
+  // every type in the hit it also cursed whatever a dark line on a ring added,
+  // so a Bleed node bought six ailments. It rides the skill's OWN type and
+  // follows a Conversion there.
+  {
+    const rend = ailmentChances([], 'physical', 55);
+    const byType = AILMENTS.filter((a) => !a.bySource); // Poison is a SKILL's, never a type's
+    const spilt = byType.filter((a) => a.type !== 'physical' && rend[a.id] > 0);
+    check(
+      rend.bleed === 55 && spilt.length === 0,
+      `a bare chance node buys the skill's OWN ailment alone — Bleed ${rend.bleed}%`,
+      `it also bought ${spilt.map((a) => a.name).join(', ')}`
+    );
+    // And a Conversion moves it whole: the node is still worth its point.
+    const turned = ailmentChances([], 'cold', 55);
+    check(
+      turned.chill === 55 && turned.bleed === 0,
+      'and a Conversion carries it to what the skill lands as instead',
+      `bleed ${turned.bleed}%, chill ${turned.chill}%`
+    );
+    // The SIM reads these stats rather than adding the grant a second time, so
+    // a hero carrying added Dark damage cannot Curse off a Bleed node. Read as
+    // the DELTA of walking to Rend: a rolled Curse line on a ring is a real
+    // source and says nothing about the node.
+    const who = ladderCharacter(2, new Rng(77), 'strike');
+    who.tradeAllocated = [];
+    const bare = characterStats(who).ailmentChance;
+    skillProgress(who, 'strike').allocated = walkTo('strike', 'st_rend');
+    const rent = characterStats(who).ailmentChance;
+    const moved = byType
+      .map((a) => [a, (rent[a.id] ?? 0) - (bare[a.id] ?? 0)] as const)
+      .filter(([, d]) => Math.abs(d) > 0.001);
+    check(
+      moved.length === 1 && moved[0][0].id === 'bleed' && moved[0][1] >= 55,
+      `and the SHEET says the same: walking to Rend moved Bleed alone, by ${Math.round(moved[0]?.[1] ?? 0)}%`,
+      moved.map(([a, d]) => `${a.name} ${Math.round(d)}%`).join(', ') || 'nothing moved at all'
+    );
+  }
 }
 
 // ===========================================================================
@@ -3857,25 +3947,6 @@ rule('THE RELAY — does a Critical carry you into the next body?');
 // a descent can. What has to hold is that it FIRES, that it chains past one
 // follow-up, and that a room full of bodies at 100% crit still ends.
 {
-  /** Every node between the middle and one named, in order. Nothing else
-   *  reaches a particular enabler, and the enabler is the whole point. */
-  const walkTo = (skillId: string, goal: string): string[] => {
-    const from = new Map<string, string | null>([[CENTRE, null]]);
-    const queue: string[] = [CENTRE];
-    while (queue.length > 0) {
-      const at = queue.shift()!;
-      if (at === goal) break;
-      for (const next of neighboursOf(skillId, at)) {
-        if (from.has(next)) continue;
-        from.set(next, at);
-        queue.push(next);
-      }
-    }
-    const route: string[] = [];
-    for (let at = goal; at && at !== CENTRE; at = from.get(at) ?? '') route.unshift(at);
-    return route;
-  };
-
   const descend = (relay: boolean) => {
     const character = ladderCharacter(3, new Rng(88), 'ambush');
     const progress = skillProgress(character, 'ambush');

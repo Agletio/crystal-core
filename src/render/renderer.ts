@@ -203,6 +203,28 @@ export function vfxColour(palette: Palette, kind: string, damageType: string): s
   return damageColour(palette, damageType);
 }
 
+/** HOW BIG A DROP LIES ON THE FLOOR, as its LONGEST side in tiles — the long
+ *  side rather than the width, so a sword drawn tall and a shield drawn wide
+ *  both land at the size they should look. JEWELLERY IS ONLY SLIGHTLY SMALLER
+ *  THAN THE SMALLEST GEAR, the user's call, so a ring is not a speck. */
+export const LOOT_SPAN: Record<string, number> = {
+  weapon: 0.92,
+  weapon2h: 1.2, // a two-hander is the biggest thing that drops
+  shield: 0.86,
+  body: 0.88,
+  helmet: 0.62,
+  boots: 0.62,
+  gloves: 0.56,
+  amulet: 0.52,
+  ring: 0.5,
+};
+
+/** The span for one base. `weapon` is the fallback for an unsized kind. */
+export function lootSpan(kind: string, hands = 1): number {
+  if (kind === 'weapon' && hands > 1) return LOOT_SPAN.weapon2h;
+  return LOOT_SPAN[kind] ?? LOOT_SPAN.weapon;
+}
+
 /** A DROP'S BEAM: colour and reach, off `lootRank` so a card and the floor
  *  cannot disagree. An ordinary piece gets a low dull column rather than none —
  *  the point is seeing that something LANDED, then how good it is. */

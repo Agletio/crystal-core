@@ -3020,10 +3020,10 @@ export class RunSim {
       const def = AILMENT_OF_TYPE[type];
       if (!def || def.bySource) continue; // Poison is applied BY a skill, never by its type
 
-      // A tree's own element is what its chance node raises: the grant is
-      // untagged and the type it lands on is the one the skill actually dealt.
-      const bought = attacker.kind === 'hero' ? ((this.grants.ailmentChance as number) ?? 0) : 0;
-      const chance = (attacker.stats.ailmentChance?.[def.id] ?? def.chance) + bought;
+      // ONE SEAM: `ailmentChances` folds what a chance node bought into the
+      // stats, against the skill's OWN type alone, so the sheet prints the
+      // number rolled here. Added by hand it landed on every type in the hit.
+      const chance = attacker.stats.ailmentChance?.[def.id] ?? def.chance;
       if (chance <= 0) continue;
       let count = Math.floor(chance / 100);
       const over = chance - count * 100; // rolled only when there IS one, or the seed parts

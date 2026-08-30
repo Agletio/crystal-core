@@ -16,6 +16,7 @@ import { Application, Container, Graphics, Sprite, Text, Texture } from 'pixi.js
 import { AURA, AURA_BY_ID,
   AILMENTS,
   AILMENT_BY_ID,
+  GEAR_BASE_BY_ID,
 } from '../data';
 import { ENTRANCE, EXIT, WALL, wangKey } from '../sim/grid';
 import { tileNoise } from '../noise';
@@ -64,6 +65,7 @@ import {
   tileSize,
   toHexNumber,
   lootBeam,
+  lootSpan,
   vfxColour,
   ZOOM_MIN,
 } from './renderer';
@@ -964,13 +966,16 @@ export async function createPixiRenderer(
         }
         piece.texture = texture;
         piece.visible = true;
-        // Sized in TILES like everything else on this layer, off the icon's own
-        // shape so a tall piece is not squashed into a square.
-        const wide = 0.8;
-        piece.width = wide;
-        piece.height = piece.texture.height > 0
-          ? (wide * piece.texture.height) / Math.max(1, piece.texture.width)
-          : wide;
+        // Sized in TILES like everything else on this layer, at the span its
+        // KIND is worth and along its LONGEST side, so a greatsword and a ring
+        // are not the same size and neither is squashed into a square.
+        const base = GEAR_BASE_BY_ID[drop.item.base];
+        const span = lootSpan(base?.kind ?? 'weapon', base?.hands ?? 1);
+        const w = Math.max(1, piece.texture.width);
+        const h = Math.max(1, piece.texture.height);
+        const per = span / Math.max(w, h);
+        piece.width = w * per;
+        piece.height = h * per;
         piece.x = x;
         piece.y = y;
       } else if (piece) piece.visible = false;

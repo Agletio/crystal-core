@@ -796,7 +796,7 @@
      carries 14px of it. */
   .hp.xpbar {
     position: fixed; left: 0; right: 0; bottom: 0; z-index: 2;
-    height: 11px; margin: 0; border: 0; pointer-events: none;
+    height: 14px; margin: 0; border: 0; pointer-events: none;
     background-image: var(--grit);
     box-shadow: inset 0 1px 0 var(--edge-lit), inset 0 -1px 0 rgba(0, 0, 0, .5);
   }
@@ -818,7 +818,16 @@
     background-repeat: no-repeat, repeat-x;
   }
   .hp.xpbar .hp__fill { opacity: .92; }
-  .hp.xpbar .hp__text { font-size: 8px; line-height: 11px; position: relative; z-index: 2; }
+  /* WHAT YOU HAVE AND WHAT IT TAKES, read off a bar one line tall: the shadow
+     is what carries it over both the blue fill and the black track behind it.
+     It keeps the base rule's `position: absolute`, which is the whole of how it
+     lies OVER the fill — turned relative it was laid out after the fill in
+     normal flow and drew 14px below the bar, off the bottom of the window. */
+  .hp.xpbar .hp__text {
+    font-size: 10px; line-height: 14px; z-index: 2;
+    font-family: var(--display); letter-spacing: .06em; color: var(--text);
+    text-shadow: 0 1px 0 var(--ink), 0 -1px 0 var(--ink), 1px 0 0 var(--ink), -1px 0 0 var(--ink);
+  }
   /* The column now holds only the numbers, so it stops reserving the HUD's
      height and lets the map have it. */
   body.mapfull #run-stagewrap .runside { align-self: flex-start; }

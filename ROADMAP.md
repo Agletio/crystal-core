@@ -14,6 +14,10 @@ it leaves behind is a balance question for the balance pass: a first cycle is
 now tier 1 gear for all 42 rungs, and nobody has measured whether that clears
 the deep end.
 
+**PHASE 6 IS THE ACTIVE ONE.** The campaign, the Proving Ground and the Seam —
+the user's restructure of what a run is for. Two of its questions BLOCK it and
+are at the top of Open questions.
+
 **PHASE 2 — MORE CHARACTERS — IS DONE.** Four trades: the Alchemist, the
 Aethermancer, Mahthar and Obreth, each with a body, thirteen weapon variants and
 a web that changes rules the others do not. Obreth also holds the ten PAIRS
@@ -1026,6 +1030,117 @@ the level-1 shelf, which is now 46 gold rather than 5. `mods`, `demo`, `smoke`,
 
 ---
 
+## Phase 6 — THE CAMPAIGN, THE PROVING GROUND AND THE SEAM
+
+**THE ACTIVE PHASE.** Everything below is the user's own restructure of what a
+run is FOR. It moves the crystals and the trials out of the first hundred hours
+entirely, gives the climb a finish line, and puts a second, endless game behind
+it — the one the crystals and the points were always for.
+
+### The ask, in the user's words
+
+*"I think you shouldn't see any trial stuff or even receive any crystals until
+you've cleared the entire campaign 'story mode'. Keep the same difficulty curve
+that stands but give no crystals/ or trial unlocks at all until you complete the
+loop below and clearly states when to receive them."*
+
+*"The Answering is the same. Refraction can be the prismatic zone instead of
+base zone but otherwise the same difficulty curve. Flowering is the rot but
+otherwise the same. Encounter each npc for crafting in each zone respectively."*
+
+*"After completing all three of these you are awarded 1 crystal from lampwright
+and 10 trial points which we will rename to something else that thematically
+fits with this system because I want to remove all of the existing trials.
+Instead they will all be revolving around doing grinds. For example, just
+running the fissure a certain amount of times can be one of the easy ones but im
+thinking a lot like 100 runs or something gets you 5 points. open 100 hordes,
+swell 1000 enemies, kill 2500 wardens stuff like that. Runs with demonic and
+prismatic influence."*
+
+*"Once you finish the first three runs of each zone you end in a 4th tab that
+only has one area and its where you can socket the crystals. The other menu can
+just remove the crystal sockets and take up more screen with the map and the 4th
+screen can have the crystal sockets laid out like the fissure entrance in the
+camp on top of the map though. This one is just a set difficulty even harder
+than the final 'story mode' level which you can scale with more crystals and
+more trial points or whatever we call them."*
+
+*"But just make normal crystals pay out at 25/50/75/100 runs of this new zone.
+Prismatic crystal pays out and full lvl 4 normal crystals, then another at level
+2 prismatic crystal, another at level 3, and another at lvl 4, and then the same
+thing for demonic. Have this zone allow you to select your 'influence' so you
+can have it be base fissure, prismatic, or demonic (we really need a different
+name for the base fissure idk waht to call it) which will decide what the area
+looks like and add that type of mobs to the zone. As you mix and match crystals
+you can still get the other types to join by that method but the zone will stay
+what your influence is with the exception of socketing 2 lvl 4 prismatic and 2
+lvl 4 demonic gives you the seam which will be the final zone."*
+
+### What this changes about the shape of the game
+
+Today the game is ONE loop: socket crystals, pick a depth, descend. After this
+it is TWO, and the first is finite.
+
+| | THE CAMPAIGN | THE PROVING GROUND |
+|---|---|---|
+| what picks the fight | a DEPTH on the climb, 42 of them | your INFLUENCE and what is socketed |
+| difficulty | `rungMod` alone — the straight 20-a-depth line, unchanged | a set floor above depth 42, scaled by crystals and points |
+| crystals | NONE. No sockets, no rolls, no levelling | the whole of it |
+| the trials web | NOT SHOWN. It does not exist yet | earned by grinding, spent here |
+| the world you walk into | the ZONE's own: Answering, Refraction, Flowering | your influence, plus whatever you socket |
+| it ends | when The Flowering's boss falls | never |
+
+**The zones stop being depth-only and become WORLDS again**, which is the one
+rule this reverses: `CLAUDE.md` says "A ZONE IS DEPTH AND NEVER A WORLD… what
+world you walk into is what you SOCKETED". With nothing socketed for the whole
+campaign that sentence has nothing left to mean, so the campaign's three zones
+carry a `world` of their own — Answering the base world, Refraction the Cavern,
+Flowering the Rot — and the SOCKETED world comes back in the Proving Ground
+where sockets exist. The difficulty curve does not move: `rungMod` is untouched.
+
+### The steps, each leaving the suite green
+
+- [ ] **Step 1 — the campaign is crystal-free and trial-free.** `LadderZone`
+      gains a `world: MapTheme`; `mapTheme` reads it when a descent is a
+      campaign depth and the socketed set when it is not. `CRYSTAL_DEPTHS` is
+      deleted — no crystal comes out of the wall any more. The Fissure window
+      loses its socket column for the campaign tabs and the map takes the room.
+      The trials hotspot (the camp fire) is dark until the campaign is done, and
+      it says why rather than being missing.
+- [ ] **Step 2 — what a campaign clear PAYS.** Clearing The Flowering's boss is
+      the finish line and it is stated before you get there. The Lampwright
+      hands over ONE crystal and the first 10 points, in his own scene, which is
+      what makes him the person the whole campaign ends at.
+- [ ] **Step 3 — the three crafting people, one a zone.** `SceneDef.theme`
+      already places them: the Lampwright in the base world, one of the
+      Cavern's two in the Cavern, the Osteomancer in the Rot. Each is met in
+      that zone's own stretch of the campaign rather than at `MEET_CHANCE` in
+      whatever you socketed.
+- [ ] **Step 4 — the trials web becomes GRINDS.** Every one of the 156 nodes
+      goes. What replaces them is a list of counters — descents run, locks
+      opened, Welled bodies killed, Wardens killed, descents under each
+      influence — each with a threshold and a point value. `GameState` grows
+      the counters; the demo holds every one of them to actually ticking in a
+      real descent.
+- [ ] **Step 5 — the Proving Ground.** A fourth tab, one area, the sockets laid
+      out over the map the way the camp's crack lays them out. Influence is
+      picked here and decides the world and the pack. Difficulty is a floor
+      above depth 42, raised by what is socketed and by points spent.
+- [ ] **Step 6 — the crystal ladder.** 25/50/75/100 clears pay the four normal
+      crystals. Four level-4 normals pay the first Prismatic; a level 2, 3 and 4
+      Prismatic each pay the next. Four level-4 Prismatics open the same ladder
+      for Demonic.
+- [ ] **Step 7 — THE SEAM.** Two level-4 Prismatic and two level-4 Demonic
+      socketed at once opens the Seam — the `seam` theme is already drawn and
+      already has its three locks. The last world, and the only one you cannot
+      pick.
+
+### What must not break
+
+`heal()` — every existing save has crystals, trial allocations and `climbed`
+under the old rules, and none of it may throw away a character. The straight
+20-a-depth ramp. `SAVE_VERSION` stays put unless a save must be REFUSED.
+
 ## Phase 3 — A quest log instead of a pointing finger
 
 **Not next, and deliberately.** The tutorial was deleted outright so the opening
@@ -1084,6 +1199,40 @@ still be satisfiable.
 
 **Do not guess at these.** None ever blocked a phase and none is work waiting to
 be picked up — they are decisions the user has not made. Ask before acting.
+
+**PHASE 6'S OWN, ASKED AND NOT YET ANSWERED.** Two of these BLOCK the phase and
+are marked so; the rest have a proposed default that will be taken unless the
+user says otherwise.
+
+- **BLOCKING — what do the points BUY?** The grinds are how they are EARNED and
+  that is stated. What is not is where they are SPENT. Either (a) the 156-node
+  web survives with new content and the points walk it as they do today, or (b)
+  the web goes entirely and points are a bare number that raises the Proving
+  Ground's difficulty and its pay. *"you can scale with more crystals and more
+  trial points"* reads like (b), and (b) is what "remove all of the existing
+  trials" implies — but (a) is the whole of what one screen and 156 nodes of
+  content currently are.
+- **BLOCKING — what buys gear TIER during the campaign?** `tierForSet` reads the
+  MEAN crystal level socketed, and with no crystals at all the whole 42-depth
+  campaign is capped at tier 1 bases. That is already a flagged risk with
+  crystals in it (*"a first cycle is now tier 1 gear for all 42 rungs, and nobody
+  has measured whether that clears the deep end"*); with them out it is
+  certain. The obvious answer is that the DEPTH buys tier during the campaign
+  the way a crystal does after it, but that is a rule the user has not stated.
+- **What is the base world called?** *"we really need a different name for the
+  base fissure idk waht to call it."* The clash is that The Fissure is the crack
+  in camp, the whole descent system AND one of three worlds. Proposed, in order:
+  **The Workings** (a place somebody dug and gave up on, which is what the art
+  is), The Diggings, The Old Cut.
+- **What are the points called?** Proposed: **Marks** — earned by doing a thing
+  enough times that the rock remembers it, and short enough to sit on a card.
+  Alternatives: Tallies, Reckonings, Proofs.
+- **How many grinds, and what does one pay?** *"100 runs or something gets you
+  5 points"* is the only figure given. Proposed: about 20 counters across four
+  families (descents, locks, floor rules, influences), paying 1 to 5 apiece.
+- **Does the Seam have a boss?** It is *"the final zone"* and every other zone's
+  last depth is one. Proposed: yes, but it is Phase 7 — a boss was a whole phase
+  each of the three times.
 
 1. **Does kiting come back as a PASSIVE that pays for it?** The user's own
    shape, after having it removed: *"I think later we can make a passive that

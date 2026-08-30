@@ -52,8 +52,8 @@ export interface CombatStats {
    * a cold ring on a fire spell resist as fire. What the sim delivers. */
   damageByType: Record<string, number>;
   attacksPerSecond: number;
-  /** Each hand's SHARE of `attacksPerSecond`, in hand order, when a pair is
-   *  held: the sim swings alternately between them. Empty otherwise. */
+  /** Each hand's SHARE of `attacksPerSecond`, in hand order; the sim swings
+   *  alternately. Empty unless a pair is held. */
   handRates: number[];
   critChance: number;
   moveSpeed: number;
@@ -88,14 +88,14 @@ export interface CombatStats {
 }
 
 /** Curved on POINTS rather than on the size of the hit, so it prints as one
- *  honest number. A linear conversion has no good divisor. */
+ *  honest number. */
 export function armourReduction(armour: number): number {
   if (armour <= 0) return 0;
   const raw = (100 * armour) / (armour + DEFENCE.armourHalfPoint);
   return Math.min(DEFENCE.armourCap, raw);
 }
 
-/** Own plus group, capped together. Typeless is absent: nothing resists it. */
+/** Own plus group, capped. Typeless is absent: nothing resists it. */
 export function resistancesFrom(mods: RolledMod[]): Record<string, number> {
   const out: Record<string, number> = {};
   for (const type of DAMAGE_TYPES) {
@@ -106,8 +106,8 @@ export function resistancesFrom(mods: RolledMod[]): Record<string, number> {
   return out;
 }
 
-/** An ailment's damage a second at one stack, under ITS tags — the whole of why
- *  Spell, Attack and Critical never scale a Burn. */
+/** An ailment's damage a second at one stack, under ITS tags: Spell, Attack
+ *  and Critical never scale a Burn. */
 export function ailmentDamage(mods: RolledMod[], skill?: SkillDef): Record<string, number> {
   const out: Record<string, number> = {};
   for (const def of AILMENTS) {
@@ -119,11 +119,21 @@ export function ailmentDamage(mods: RolledMod[], skill?: SkillDef): Record<strin
   return out;
 }
 
-/** Tagged by damage TYPE, so a line aimed at Fire raises the Burn alone. */
-export function ailmentChances(mods: RolledMod[]): Record<string, number> {
+/** Tagged by damage TYPE, so a line aimed at Fire raises the Burn alone, and
+ *  `own` — what the skill lands as after Conversion — is what an UNTAGGED
+ *  chance node raises. Rend is Bleed because Strike is physical; spread over
+ *  every type in a hit it cursed whatever a dark line on a ring added. */
+export function ailmentChances(
+  mods: RolledMod[],
+  own: string | null = null,
+  bought = 0
+): Record<string, number> {
   const out: Record<string, number> = {};
   for (const def of AILMENTS) {
-    out[def.id] = def.chance + percentStat(mods, 'ailmentChance', [def.type, def.id]);
+    out[def.id] =
+      def.chance +
+      percentStat(mods, 'ailmentChance', [def.type, def.id]) +
+      (def.type === own ? bought : 0);
   }
   return out;
 }
@@ -156,7 +166,7 @@ export interface DamageBreakdown {
   byType: Record<string, number>;
 }
 
-/** The skill's own damage at a level. Nothing worn is in here. */
+/** The skill's own damage at a level; nothing worn. */
 export function skillBase(skill: SkillDef, level: number): number {
   const steps = Math.max(0, level - 1);
   return skill.baseDamage * (1 + (steps * LEVELLING.damagePerLevel) / 100);
@@ -385,7 +395,7 @@ export function heroStats(
     rarity: percentStat(mods, 'rarity'),
     currencyFind: percentStat(mods, 'currencyFind'),
     ailmentDps: ailmentDamage(mods, skill),
-    ailmentChance: ailmentChances(mods),
+    ailmentChance: ailmentChances(mods, breakdown.baseType, (grants.ailmentChance as number) ?? 0),
     damage: breakdown.total,
     damageByType: breakdown.byType,
     // A spell has no business getting faster for a sharper sword, so it keeps
@@ -424,10 +434,8 @@ export function heroStats(
   };
 }
 
-/**
- * The allocated nodes as one synthetic mod, so they go through the same
- * aggregation as gear rather than a second parallel system that drifts.
- */
+/** The allocated nodes as one synthetic mod, aggregated like gear rather than
+ *  through a second system that drifts. */
 /** One tag under a conversion: a damage type becomes the converted type, and
  *  the AILMENT of a type becomes that type's ailment — which is what keeps
  *  "+18% chance to Burn" worth its point on a Fireball turned cold. */
@@ -760,11 +768,8 @@ export function statMods(
 }
 
 /** Stats for a character, resolving its selected skill, gear and tree. */
-/**
- * THE SPECIALIST, as one synthetic mod — the way `treeMod` and `attributeMod`
- * are. Per WEAPON HELD, so a matched pair is its family's line twice, and it
- * goes through the same aggregation as gear rather than a second pipeline.
- */
+/** THE SPECIALIST, as one synthetic mod like `treeMod`. Per WEAPON HELD, so a
+ *  matched pair is its family's line twice. */
 /** TWO OF ONE FAMILY. A dagger beside a dagger, not a dagger beside a shiv —
  *  the FAMILY is what the Specialist reads, so it is what this reads too. */
 export function matchedPair(character: Character): boolean {
