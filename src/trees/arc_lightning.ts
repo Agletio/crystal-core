@@ -136,9 +136,7 @@ const BRANCHES: Branch[] = [
     enabler: {
       id: 'al_ionise',
       name: 'Ionise',
-      description:
-        'Arc Lightning cannot Critically strike; a cast that would have leaves ' +
-        'an Ailment worth 240% of the hit over 4s.',
+      description: '+55% chance to apply Shock.',
       grants: { ailmentChance: 55 },
     },
     twigs: [
@@ -166,8 +164,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'al_staticcling',
           name: 'Static Cling',
-          description:
-            'An Ailment ticking Critically lays the same Ailment on everything within 2 tiles.',
+          description: '+45% chance to apply Shock.',
           grants: { ailmentChance: 45, manaMultiplier: 1.15 },
         },
       },

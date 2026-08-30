@@ -24,6 +24,8 @@ export interface Palette {
   chalk: string;
   dust: string;
   amethyst: string;
+  /** A wound floated over the hero: darker than `ember`, which is fire. */
+  hurt: string;
   citrine: string;
   tier1: string;
   tier2: string;
@@ -142,6 +144,7 @@ const VARS: Array<[keyof Palette, string]> = [
   ['quartz', '--quartz'],
   ['verdite', '--verdite'],
   ['ember', '--ember'],
+  ['hurt', '--hurt'],
   ['flame', '--flame'],
   ['flameCore', '--flame-core'],
   ['rust', '--rust'],
@@ -203,6 +206,25 @@ export function vfxColour(palette: Palette, kind: string, damageType: string): s
   return damageColour(palette, damageType);
 }
 
+/** WHAT A FLOATING NUMBER IS INKED IN, and the EDGE under it — *"the white
+ *  blends in"* — so it reads over lamplit stone instead of washing out. One
+ *  seam, so a colour cannot mean two things: green is life arriving, `hurt` is
+ *  life leaving, citrine is coin and a critical, dark is damage dealt. */
+export function floaterInk(
+  palette: Palette,
+  f: { crit: boolean; on: string; tick?: string; kind?: string },
+  ailmentColour?: string
+): { fill: string; edge: string } {
+  const lit = { edge: palette.void };
+  if (f.kind === 'loot' || f.kind === 'heal') return { fill: palette.verdite, ...lit };
+  if (f.kind === 'gold') return { fill: palette.citrine, ...lit };
+  if (f.tick && ailmentColour) return { fill: ailmentColour, ...lit };
+  if (f.kind === 'note') return { fill: palette.chalk, ...lit };
+  if (f.on === 'hero') return { fill: palette.hurt, edge: palette.chalk };
+  if (f.crit) return { fill: palette.citrine, ...lit };
+  return { fill: palette.void, edge: palette.chalk };
+}
+
 /** HOW BIG A DROP LIES ON THE FLOOR, as its LONGEST side in tiles — the long
  *  side rather than the width, so a sword drawn tall and a shield drawn wide
  *  both land at the size they should look. JEWELLERY IS ONLY SLIGHTLY SMALLER
@@ -226,8 +248,7 @@ export function lootSpan(kind: string, hands = 1): number {
 }
 
 /** A DROP'S BEAM: colour and reach, off `lootRank` so a card and the floor
- *  cannot disagree. An ordinary piece gets a low dull column rather than none —
- *  the point is seeing that something LANDED, then how good it is. */
+ *  cannot disagree. An ordinary piece gets a low dull column rather than none. */
 export function lootBeam(palette: Palette, rank: number): { colour: string; tall: number; lit: number } {
   if (rank >= 3) return { colour: palette.tier3, tall: 3.2, lit: 0.85 };
   if (rank === 2) return { colour: palette.amethyst, tall: 2.4, lit: 0.7 };

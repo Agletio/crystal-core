@@ -173,7 +173,7 @@ import { GENERATED } from './render/generated-art';
 import { GENERATED_ICONS } from './render/generated-icons';
 import { HELD, HERO_HANDS } from './render/held';
 import { heldFor } from './sim/appearance';
-import { animates, generatedFrame } from './render/sprites';
+import { IDLE_CALM, animates, generatedFrame, idleTravel } from './render/sprites';
 import { HERO_SCALE } from './sim/appearance';
 import type { Cel } from './render/sprites';
 
@@ -1856,11 +1856,34 @@ rule('SPRITES — is the pixel art well formed?');
     );
 
     // Every frame that ships is one something can actually reach. A window
-    // that keeps a frame no state names is a generation nobody sees.
-    const stranded = Object.entries(GENERATED).flatMap(([id, art]) =>
-      art.frames.map((_, at) => `${id}:${at}`).filter((k) => !reached.has(k))
+    // that keeps a frame no state names is a generation nobody sees. THE ONE
+    // EXCEPTION IS A RESTLESS IDLE: past `IDLE_CALM` the run holds its first
+    // frame, so the rest of it is stood down on purpose — *"make the idle
+    // animations way more chill."* Counted out loud, since a stand-down nobody
+    // can see is the same as a frame nobody noticed was dead.
+    const calmed = new Set(
+      Object.entries(GENERATED).flatMap(([id, art]) =>
+        idleTravel(id) > IDLE_CALM
+          ? (art.states.idle ?? []).slice(1).map((at) => `${id}:${at}`)
+          : []
+      )
     );
+    const stranded = Object.entries(GENERATED).flatMap(([id, art]) =>
+      art.frames.map((_, at) => `${id}:${at}`)
+        .filter((k) => !reached.has(k) && !calmed.has(k))
+    );
+    const restless = Object.keys(GENERATED).filter((id) => idleTravel(id) > IDLE_CALM);
+    line(`  ${restless.length} idles shift their box past ${IDLE_CALM} cells and hold one frame instead`);
     check(stranded.length === 0, 'and every frame that ships is one something reaches', stranded.join(', '));
+    // AND A CALM IDLE IS STILL AN IDLE: the median must stay under the line, or
+    // the rule is holding the whole roster still rather than the loud few.
+    const travels = Object.keys(GENERATED).map((id) => idleTravel(id)).sort((a, b) => a - b);
+    const median = travels[Math.floor(travels.length / 2)];
+    check(
+      median <= IDLE_CALM && restless.length < Object.keys(GENERATED).length / 3,
+      `and the median idle shifts ${median} cells, so it is the loud few that stand down`,
+      `${restless.length} of ${Object.keys(GENERATED).length}, median ${median}`
+    );
 
     // The three thrown abilities are three ANIMATIONS, or a body that spits
     // fire, frost and lightning plays one pose for all three.

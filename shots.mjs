@@ -159,6 +159,25 @@ const hudProbe = () => {
   return dead.length ? `falls through to the map: ${[...new Set(dead)].join(', ')}` : null;
 };
 
+/** WORDS INSIDE THEIR OWN CARD. A speech bubble hangs its PORTRAIT out of the
+ *  corner on purpose; nothing else may leave. The empty portrait slot kept its
+ *  lean and dragged the body 26px out through the side, which reads as a name
+ *  printed on the floor beside the box. */
+const bubbleProbe = () => {
+  const out = [];
+  for (const card of document.querySelectorAll('.speech:not([hidden]), .modal__card--bubble')) {
+    const box = card.getBoundingClientRect();
+    if (box.width === 0) continue;
+    for (const part of card.querySelectorAll('.speech__body, .speech__name, .speech__said, .modal__body')) {
+      const r = part.getBoundingClientRect();
+      if (r.width === 0) continue;
+      const past = Math.max(box.left - r.left, r.right - box.right);
+      if (past > 1) out.push(`${part.className.split(' ')[0]} by ${Math.round(past)}px`);
+    }
+  }
+  return out.length ? `words outside their bubble: ${[...new Set(out)].join(', ')}` : null;
+};
+
 /** EVERY screen the game has, as a CHECKLIST: a state here with no file at the
  *  end fails the run, so one nobody opened cannot quietly keep the old look. */
 const STATES = [
@@ -210,6 +229,8 @@ for (const vp of VIEWPORTS) {
     if (mute) problems.push(`${vp.name}/${state}: ${mute}`);
     const short = await page.evaluate(fitProbe);
     if (short) problems.push(`${vp.name}/${state}: ${short}`);
+    const spill = await page.evaluate(bubbleProbe);
+    if (spill) problems.push(`${vp.name}/${state}: ${spill}`);
   };
 
   // The only screen that is a PICTURE: two worlds meeting on a front.

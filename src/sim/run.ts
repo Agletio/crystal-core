@@ -227,6 +227,9 @@ export const DEATH_FADE = 0.6;
 /** How long an entity holds the swing. Exported because the renderer
  *  divides by it: a frame has to come off how far through its OWN attack a
  *  thing is, or a fast swing and a slow one look the same. */
+/** How often banked healing is floated. A second reads as a heartbeat. */
+const HEAL_FLOAT = 1;
+
 export const ATTACK_POSE = 0.22;
 const HURT_POSE = 0.16;
 
@@ -349,6 +352,10 @@ export interface Floater {
   crit: boolean;
   on: EntityKind;
   tick?: string; // an ailment id: a TICK, drawn smaller and in its own colour
+  /** WHAT KIND OF NUMBER it is, where `on` only says who it happened to. A
+   *  pickup and a wound both land on the hero and are not the same colour.
+   *  Absent means damage, which is nearly all of them. */
+  kind?: 'loot' | 'heal' | 'gold' | 'note';
 }
 
 /**
@@ -1045,6 +1052,12 @@ export class RunSim {
     if (s.floaters.length > 0 && s.floaters[0].age >= FLOATER_LIFE) {
       s.floaters = s.floaters.filter((f) => f.age < FLOATER_LIFE);
     }
+    // What was put back over the last second, as ONE number.
+    this.healClock += dt;
+    if (this.healClock >= HEAL_FLOAT) {
+      this.healClock -= HEAL_FLOAT;
+      this.flushHeal();
+    }
 
     for (const v of s.vfx) v.age += dt;
     if (s.vfx.length > 0) s.vfx = s.vfx.filter((v) => v.age < v.ttl);
@@ -1585,6 +1598,7 @@ export class RunSim {
         const drop = s.ground.shift()!;
         s.floaters.push({
           x: drop.x, y: drop.y, text: drop.item.name, age: 0, crit: false, on: 'hero',
+          kind: 'loot',
         });
       }
       if (this.gathering < GATHER) return;
@@ -2323,8 +2337,11 @@ export class RunSim {
       if (!potion) continue;
       const max = potion.pool === 'life' ? hero.stats.maxLife : hero.stats.maxMana;
       const gain = ((max * potion.percentPerSecond * potency) / 100) * dt;
-      if (potion.pool === 'life') hero.life = Math.min(max, hero.life + gain);
-      else hero.mana = Math.min(max, hero.mana + gain);
+      if (potion.pool === 'life') {
+        const was = hero.life;
+        hero.life = Math.min(max, hero.life + gain);
+        this.bankHeal(was, hero.life);
+      } else hero.mana = Math.min(max, hero.mana + gain);
     }
     hero.effects = hero.effects.filter((e) => e.remaining > 0);
   }
@@ -2411,6 +2428,27 @@ export class RunSim {
       );
       this.state.regained += whole;
     }
+  }
+
+  /** LIFE PUT BACK, banked rather than floated per tick: a flask pours sixty
+   *  times a second and sixty numbers on one spot is a smear. Regeneration is
+   *  deliberately out of it — a number that never stops is not an event. */
+  private healed = 0;
+  private healClock = 0;
+
+  private bankHeal(before: number, after: number): void {
+    if (after > before) this.healed += after - before;
+  }
+
+  /** One number per second, at the hero, in the green nothing else uses. */
+  private flushHeal(): void {
+    if (this.healed < 1) return;
+    const hero = this.state.hero;
+    this.state.floaters.push({
+      x: hero.x, y: hero.y, text: `+${Math.round(this.healed)}`, age: 0,
+      crit: false, on: 'hero', kind: 'heal',
+    });
+    this.healed = 0;
   }
 
   /** True while any flask is pouring. What every `potion*` grant is waiting on. */
@@ -2659,7 +2697,7 @@ export class RunSim {
     // THE WARDEN, asked before anything rolls so a sheltered hit costs no draw
     // and the seed still replays. The warden itself is always hurtable.
     if (defender.kind === 'monster' && this.sheltered(defender)) {
-      s.floaters.push({ x: defender.x, y: defender.y, text: 'warded', age: 0, crit: false, on: 'monster' });
+      s.floaters.push({ x: defender.x, y: defender.y, text: 'warded', age: 0, crit: false, on: 'monster', kind: 'note' });
       return;
     }
 
@@ -2669,7 +2707,7 @@ export class RunSim {
     if (defender.kind === 'hero' && defender.stats.blockChance > 0) {
       if (this.rng.chance(defender.stats.blockChance / 100)) {
         s.blocked++;
-        s.floaters.push({ x: defender.x, y: defender.y, text: 'block', age: 0, crit: false, on: 'hero' });
+        s.floaters.push({ x: defender.x, y: defender.y, text: 'block', age: 0, crit: false, on: 'hero', kind: 'note' });
         this.wake(defender, true);
         this.afterBlock(defender, attacker);
         return;
@@ -2680,7 +2718,7 @@ export class RunSim {
     if (defender.kind === 'hero' && defender.stats.dodgeChance > 0) {
       if (this.rng.chance(defender.stats.dodgeChance / 100)) {
         s.dodged++;
-        s.floaters.push({ x: defender.x, y: defender.y, text: 'dodge', age: 0, crit: false, on: 'hero' });
+        s.floaters.push({ x: defender.x, y: defender.y, text: 'dodge', age: 0, crit: false, on: 'hero', kind: 'note' });
         this.wake(defender, true);
         return;
       }
@@ -3373,7 +3411,11 @@ export class RunSim {
       }
     }
     const heal = (this.grants.blockHeal as number) ?? 0;
-    if (heal > 0) hero.life = Math.min(hero.stats.maxLife, hero.life + hero.stats.maxLife * heal);
+    if (heal > 0) {
+      const was = hero.life;
+      hero.life = Math.min(hero.stats.maxLife, hero.life + hero.stats.maxLife * heal);
+      this.bankHeal(was, hero.life);
+    }
     if (((this.grants.blockRiposte as number) ?? 0) > 0) this.riposte = WARRIOR.riposteSeconds;
 
     const stagger = (this.grants.blockStagger as number) ?? 0;
@@ -3402,7 +3444,9 @@ export class RunSim {
     }
     const life = (this.grants.lifeLeech as number) ?? 0;
     if (life > 0 && damage > 0) {
+      const wasLeeched = hero.life;
       hero.life = Math.min(hero.stats.maxLife, hero.life + damage * life);
+      this.bankHeal(wasLeeched, hero.life);
     }
   }
 
@@ -3492,7 +3536,9 @@ export class RunSim {
     const fed = (this.grants.killHeal as number) ?? 0;
     if (fed > 0) {
       const hero = s.hero;
+      const wasFed = hero.life;
       hero.life = Math.min(hero.stats.maxLife, hero.life + hero.stats.maxLife * fed);
+      this.bankHeal(wasFed, hero.life);
     }
     s.xpGained += this.xpPerKill * victim.bounty;
     s.loot.currency.gold =
@@ -3724,6 +3770,7 @@ export class RunSim {
     this.state.loot.currency.gold = (this.state.loot.currency.gold ?? 0) + paid;
     this.state.floaters.push({
       x: victim.x, y: victim.y, text: `+${Math.round(paid)}`, age: 0, crit: false, on: 'monster',
+      kind: 'gold',
     });
   }
 
@@ -3787,6 +3834,7 @@ export class RunSim {
       this.state.loot.currency.gold = (this.state.loot.currency.gold ?? 0) + paid;
       this.state.floaters.push({
         x: box.x, y: box.y, text: `+${Math.round(paid)}`, age: 0, crit: false, on: 'monster',
+        kind: 'gold',
       });
       return;
     }

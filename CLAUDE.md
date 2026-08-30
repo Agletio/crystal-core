@@ -432,6 +432,14 @@ crit line on a piece of gear is *increased* Critical Chance, so 10% base and
 100% increased is 20%. FLAT crit stays a tree and trade line, which is what
 keeps a web able to change what a build is capable of rather than nudging it.
 
+**A FLOATING NUMBER IS DARK WITH A LIT EDGE** — pale text washed out over
+lamplit stone. `floaterInk` in `render/renderer.ts` is the one seam: green is
+life arriving (a pickup, a heal), `--hurt` is life leaving, citrine is coin and
+a Critical, and ordinary damage is the ink of the rock. **An IDLE is a breath,
+never a gesture**: `idleTravel` measures how far a body's inked box shifts
+between idle frames and anything past `IDLE_CALM` holds its first frame, so the
+loud few stand still while the calm majority still moves.
+
 **Every damage type leaves something behind.** `AILMENTS` in `src/data.ts` is
 one row per type — Burn, Bleed, Chill, Shock, Poison, Curse, Exposure, and
 Prismatic deliberately none. Dealing the type applies it, at a chance you BUY

@@ -198,9 +198,7 @@ const BRANCHES: Branch[] = [
     enabler: {
       id: 'la_takeaim',
       name: 'Live Shaft',
-      description:
-        'Lightning Arrow cannot Critically strike; a shot that would have ' +
-        'leaves an Ailment worth 260% of the hit over 4s.',
+      description: '+55% chance to apply Shock.',
       grants: { ailmentChance: 55 },
     },
     twigs: [
@@ -228,8 +226,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'la_earthingfield',
           name: 'Earthing Field',
-          description:
-            'An Ailment ticking Critically lays the same Ailment on everything within 2 tiles.',
+          description: '+45% chance to apply Shock.',
           grants: { ailmentChance: 45, manaMultiplier: 1.15 },
         },
       },

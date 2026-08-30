@@ -64,6 +64,7 @@ import {
   tileDecals,
   tileSize,
   toHexNumber,
+  floaterInk,
   lootBeam,
   lootSpan,
   vfxColour,
@@ -1276,8 +1277,7 @@ export async function createPixiRenderer(
     for (let i = groundDrawn; i < groundArt.length; i++) groundArt[i].visible = false;
   }
 
-  /** WHAT IT IS, under its own beam. Screen space like every other label, so a
-   *  name stays legible however far out the map is zoomed. */
+  /** WHAT IT IS, under its own beam, in screen space so any zoom reads. */
   function drawLootNames(state: RunState): void {
     state.ground.forEach((drop, i) => {
       let label = dropNames[i];
@@ -1290,11 +1290,14 @@ export async function createPixiRenderer(
       const beam = lootBeam(palette, drop.rank);
       label.visible = true;
       label.text = drop.item.name;
-      label.style.fontSize = Math.max(8, Math.min(18, tile * 0.4));
-      label.style.fill = toHexNumber(beam.colour);
-      // Dimmer than a damage number: it is standing there to be read when you
-      // look, not to be shouted over the fight.
-      label.alpha = 0.55 + beam.lit * 0.45;
+      const px = Math.max(8, Math.min(18, tile * 0.4));
+      label.style.fontSize = px;
+      // INK, with the RANK in the edge rather than in the letter: pale on pale
+      // stone washed out, and the beam over it already says how good it is.
+      label.style.fill = toHexNumber(palette.void);
+      label.style.stroke = { color: toHexNumber(beam.colour), width: Math.max(1, px * 0.16) };
+      // Dimmer than a damage number: read when you look, not shouted.
+      label.alpha = 0.62 + beam.lit * 0.38;
       label.x = sx(drop.x);
       label.y = sy(drop.y) + tile * 0.25;
     });
@@ -1321,16 +1324,13 @@ export async function createPixiRenderer(
       // reads as the poison working rather than as the swing landing.
       const ticked = f.tick ? AILMENT_BY_ID[f.tick] : undefined;
       const size = f.crit ? 0.75 : ticked ? 0.42 : 0.6;
-      label.style.fontSize = Math.max(9, Math.min(28, tile * size));
-      label.style.fill = toHexNumber(
-        ticked
-          ? damageColour(palette, ticked.type)
-          : f.on === 'hero'
-            ? palette.ember
-            : f.crit
-              ? palette.citrine
-              : palette.chalk
-      );
+      const px = Math.max(9, Math.min(28, tile * size));
+      const ink = floaterInk(palette, f, ticked ? damageColour(palette, ticked.type) : undefined);
+      label.style.fontSize = px;
+      label.style.fill = toHexNumber(ink.fill);
+      // THE EDGE lifts it off the floor, scaled with the glyph: fixed, a
+      // zoomed-out number is all outline with no letter left inside it.
+      label.style.stroke = { color: toHexNumber(ink.edge), width: Math.max(1, px * 0.14) };
       label.alpha = Math.max(0, 1 - t);
       label.x = sx(f.x);
       label.y = sy(f.y) - tile * (0.5 + t * 1.2);

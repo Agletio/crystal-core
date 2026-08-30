@@ -210,6 +210,47 @@ export interface Beat {
 const holdAt = (run: number[], through: number): number =>
   Math.min(run.length - 1, Math.max(0, Math.floor(through * run.length)));
 
+/** HOW FAR AN IDLE MOVES, in cells of the body's own grid: the worst shift of
+ *  its inked box between frames. Measured off the ART, never judged. */
+export function idleTravel(sprite: string): number {
+  const held = idleShift.get(sprite);
+  if (held !== undefined) return held;
+  const art = GENERATED[sprite];
+  const run = art?.states?.idle ?? [];
+  let worst = 0;
+  for (let i = 1; i < run.length; i++) {
+    const a = inkBox(art!.frames[run[i - 1]]);
+    const b = inkBox(art!.frames[run[i]]);
+    worst = Math.max(worst, Math.abs(a.w - b.w), Math.abs(a.h - b.h),
+      Math.abs(a.x0 - b.x0), Math.abs(a.x1 - b.x1));
+  }
+  idleShift.set(sprite, worst);
+  return worst;
+}
+
+const idleShift = new Map<string, number>();
+
+function inkBox(rows: string[]): { x0: number; x1: number; w: number; h: number } {
+  let x0 = Infinity, x1 = -1, y0 = Infinity, y1 = -1;
+  rows.forEach((row, y) => {
+    for (let x = 0; x < row.length; x++) {
+      if (row[x] === '.') continue;
+      if (x < x0) x0 = x;
+      if (x > x1) x1 = x;
+      if (y < y0) y0 = y;
+      if (y > y1) y1 = y;
+    }
+  });
+  return { x0, x1, w: x1 - x0, h: y1 - y0 };
+}
+
+/** AN IDLE IS A BREATH, never a gesture — *"make the idle animations way more
+ *  chill, just barely moving."* Measured, the median idle shifts its box ONE
+ *  cell and a handful shift 5 to 12; past this the run holds its first frame
+ *  instead of flapping between two poses that disagree. Idles alone: a walk and
+ *  a swing ARE gestures. */
+export const IDLE_CALM = 3;
+
 export function generatedBeat(sprite: string, e: Cel): Beat {
   const states = GENERATED[sprite]?.states;
   if (!states) return { state: 'idle', at: 0 };
@@ -230,7 +271,10 @@ export function generatedBeat(sprite: string, e: Cel): Beat {
     };
   }
   const idle = states.idle;
-  if (idle) return { state: 'idle', at: Math.floor(e.elapsed * IDLE_CYCLE) % idle.length };
+  if (idle) {
+    if (idleTravel(sprite) > IDLE_CALM) return { state: 'idle', at: 0 };
+    return { state: 'idle', at: Math.floor(e.elapsed * IDLE_CYCLE) % idle.length };
+  }
   return { state: 'walk', at: 0 };
 }
 

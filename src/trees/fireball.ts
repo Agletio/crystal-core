@@ -34,9 +34,7 @@ const BRANCHES: Branch[] = [
     enabler: {
       id: 'fb_kindling',
       name: 'Kindling',
-      description:
-        'Fireball cannot Critically strike; a cast that would have leaves a ' +
-        'Burn worth 260% of the hit over 4s.',
+      description: '+55% chance to apply Burn.',
       grants: { ailmentChance: 55 },
     },
     twigs: [
@@ -64,8 +62,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'fb_wildfire',
           name: 'Wildfire',
-          description:
-            'A Burn ticking Critically lays the same Burn on everything within 2 tiles.',
+          description: '+45% chance to apply Burn.',
           grants: { ailmentChance: 45, manaMultiplier: 1.15 },
         },
       },
