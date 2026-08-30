@@ -218,11 +218,14 @@ that character's life, and a zone opens when the one below it is whole. Its
 difficulty rides the crystal seam as ONE synthetic mod (`rungMod`, beside
 `trialMod` and `treeMod`), so `crystalRewards` pays a harder rung more with
 nothing written twice. **A DEPTH is what a player calls a rung** — the identifiers stay `rung`,
-because `climbed` is a save key. **A ZONE IS DEPTH AND NEVER A WORLD** — The Answering,
-The Refraction, The Flowering, named for the halls at their tops. What world you
-walk into is what you SOCKETED (`mapTheme`), and the two used to be the same
-thing, which made the crystals a second ladder. `LadderZone.id` is still spelt
-the way the worlds were, because it is the save key under `character.climbed`.
+because `climbed` is a save key. **A CAMPAIGN ZONE IS A WORLD AND A GEAR TIER**,
+because the campaign is run with NOTHING SOCKETED: `LadderZoneDef.world` and
+`.tier`, read by `runSet` whenever a descent names a depth. The Answering is the
+Fissure at tier 1, The Refraction the Cavern at tier 2, The Flowering the Rot at
+tier 3 — *"T2 in the second area t3 in the third."* Off the climb, WHAT YOU
+SOCKETED IS WHERE YOU GO (`mapTheme`, `tierForSet`), and that is the whole of
+the Proving Ground. `LadderZoneDef.id` is the save key under
+`character.climbed`, still spelt the way the worlds were.
 **THE RAMP IS A STRAIGHT LINE**: `rungMod` reads how far up the 42 you are and
 scales `LADDER.*AtTop` by exactly that, so every depth costs the same 20 danger
 as the one before it. There is no exponent and no spike — a challenge floor

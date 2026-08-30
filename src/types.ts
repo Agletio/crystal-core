@@ -242,6 +242,19 @@ export interface MapThemeDef {
   blurb: string;
 }
 
+/** ONE ZONE OF THE CAMPAIGN, which is run with NOTHING SOCKETED — so the zone
+ *  carries the two things a crystal would otherwise decide. */
+export interface LadderZoneDef {
+  id: string; // the save key under `character.climbed`
+  name: string;
+  blurb: string;
+  rungs: number;
+  arena?: string; // its LAST depth: a fight in a room of its own
+  art?: string; // the generated cross-section the climb is drawn on
+  world: MapTheme; // the rock you walk into for every depth of it
+  tier: number; // the best base TIER its depths may drop
+}
+
 /** A monster that makes its neighbours worse. One family adds a fixed amount,
  *  the other multiplies — a room with both multiplies what the other added. */
 export interface AuraDef {

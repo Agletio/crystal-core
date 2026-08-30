@@ -180,7 +180,7 @@ export function renderClimb(host: HTMLElement, character: Character, onPick: () 
   const trail = el('div', 'climbseam');
   // The zone's own generated cross-section, or the bare panel until one is
   // drawn for it — a missing picture may not take the rungs with it.
-  const art = SCENE_ART[zone.art];
+  const art = zone.art ? SCENE_ART[zone.art] : null;
   if (art) trail.style.backgroundImage = `url(${art.png})`;
 
   const svg = svgEl('svg', {

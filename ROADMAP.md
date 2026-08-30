@@ -1200,25 +1200,18 @@ still be satisfiable.
 **Do not guess at these.** None ever blocked a phase and none is work waiting to
 be picked up — they are decisions the user has not made. Ask before acting.
 
-**PHASE 6'S OWN, ASKED AND NOT YET ANSWERED.** Two of these BLOCK the phase and
-are marked so; the rest have a proposed default that will be taken unless the
-user says otherwise.
+**PHASE 6'S OWN. THE TWO THAT BLOCKED IT ARE ANSWERED.**
 
-- **BLOCKING — what do the points BUY?** The grinds are how they are EARNED and
-  that is stated. What is not is where they are SPENT. Either (a) the 156-node
-  web survives with new content and the points walk it as they do today, or (b)
-  the web goes entirely and points are a bare number that raises the Proving
-  Ground's difficulty and its pay. *"you can scale with more crystals and more
-  trial points"* reads like (b), and (b) is what "remove all of the existing
-  trials" implies — but (a) is the whole of what one screen and 156 nodes of
-  content currently are.
-- **BLOCKING — what buys gear TIER during the campaign?** `tierForSet` reads the
-  MEAN crystal level socketed, and with no crystals at all the whole 42-depth
-  campaign is capped at tier 1 bases. That is already a flagged risk with
-  crystals in it (*"a first cycle is now tier 1 gear for all 42 rungs, and nobody
-  has measured whether that clears the deep end"*); with them out it is
-  certain. The obvious answer is that the DEPTH buys tier during the campaign
-  the way a crystal does after it, but that is a rule the user has not stated.
+- ~~**What do the points BUY?**~~ **ANSWERED: *"Tree survives."*** The 156-node
+  web stays exactly as it is and points walk it as they do today. What is
+  REMOVED is `TRIALS` — the six conditions that AWARD points — and the grinds
+  replace those. The trials web and the trial *conditions* were one word for two
+  things, which is what made the ask read as deleting the web.
+- ~~**What buys gear TIER during the campaign?**~~ **ANSWERED: *"T2 in the
+  second area t3 in the third."*** The ZONE buys it — tier 1 through The
+  Answering, tier 2 through The Refraction, tier 3 through The Flowering — so a
+  crystal-free campaign is still a gear ladder. `tierForSet` keeps its meaning
+  once crystals exist again, in the Proving Ground.
 - **What is the base world called?** *"we really need a different name for the
   base fissure idk waht to call it."* The clash is that The Fissure is the crack
   in camp, the whole descent system AND one of three worlds. Proposed, in order:

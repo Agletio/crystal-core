@@ -13,6 +13,7 @@ import type {
   DropGate,
   GearKind,
   MapTheme,
+  LadderZoneDef,
   MapThemeDef,
   MonsterFamilyDef,
   MonsterRankDef,
@@ -2142,26 +2143,27 @@ export const socketPackSize = (filled: number): number => rung(filled, SOCKET_SC
  *  depth of the LAST zone, and the ramp to it is STRAIGHT — every step costs
  *  the same, so the climb is one line rather than three. */
 export const LADDER = {
-  // `arena` is the zone's LAST RUNG: a fight rather than a descent.
-  // A zone is DEPTH, never a world: what you walk into is what you SOCKETED.
-  // `id` is the save key, still spelt the way the worlds were.
+  // THE CAMPAIGN, run with NOTHING SOCKETED, so each zone carries the two things
+  // a crystal would otherwise decide: the WORLD you walk into and the best base
+  // TIER its depths drop. `arena` is its LAST depth, a fight rather than a
+  // descent; `id` is the save key, still spelt the way the worlds were.
   zones: [
     {
       id: 'fissure', name: 'The Answering', art: 'climb_act1',
       blurb: 'Shallow workings, shored and square. Somebody came back out of these.',
-      rungs: 12, arena: 'answering_hall',
+      rungs: 12, arena: 'answering_hall', world: 'fissure', tier: 1,
     },
     {
       id: 'prismatic', name: 'The Refraction', art: 'climb_act2',
       blurb: 'Below daylight, where the rock has started closing what was cut.',
-      rungs: 14, arena: 'refraction_hall',
+      rungs: 14, arena: 'refraction_hall', world: 'prismatic', tier: 2,
     },
     {
       id: 'demonic', name: 'The Flowering', art: 'climb_act3',
       blurb: 'Older than anybody who dug toward it. Nothing down here was worked.',
-      rungs: 16, arena: 'flowering_hall',
+      rungs: 16, arena: 'flowering_hall', world: 'demonic', tier: 3,
     },
-  ],
+  ] as LadderZoneDef[],
   lifeAtTop: 520,
   damageAtTop: 430,
   packAtTop: 55,

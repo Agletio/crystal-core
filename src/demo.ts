@@ -9686,21 +9686,54 @@ rule('THE CLIMB — does a rung open, stay open, and get harder?');
     `re-grinding rung 3 moved the count to ${climbed(walker, 0)}`
   );
 
-  // WHAT YOU SOCKETED IS WHERE YOU GO, and the rung is depth alone. It used to
-  // be the other way round, which made the crystals a second ladder.
-  const bare = LADDER.zones.map((_, z) => runSet([], null, { zone: z, rung: 1 }).theme);
-  check(
-    bare.every((theme) => theme === 'fissure'),
-    `with nothing socketed every rung is the bare Fissure — ${[...new Set(bare)].join(', ')}`,
-    bare.join(', ')
-  );
+  // A CAMPAIGN DEPTH IS ITS ZONE'S WORLD, socketed or not: the campaign is run
+  // with nothing in the sockets at all, so there is no crystal left to name one.
+  // WHAT YOU SOCKETED IS STILL WHERE YOU GO everywhere else, which is the
+  // Proving Ground — where the sockets are the only thing there is.
   const rot = [makeCrystal(1, 'demonic'), makeCrystal(1, 'demonic')];
-  const sent = LADDER.zones.map((_, z) => runSet(rot, null, { zone: z, rung: 1 }).theme);
+  const held = LADDER.zones.map((zone, z) => runSet(rot, null, { zone: z, rung: 1 }).theme === zone.world);
   check(
-    sent.every((theme) => theme === 'demonic'),
-    'and two Demonic crystals send every one of them to the Rot instead',
-    sent.join(', ')
+    held.every(Boolean),
+    'a campaign depth is its ZONE\u2019s world however the sockets are filled',
+    LADDER.zones.map((zone, z) => `${zone.name} ${runSet(rot, null, { zone: z, rung: 1 }).theme}`).join(', ')
   );
+  check(
+    runSet(rot).theme === 'demonic' && runSet([]).theme === 'fissure',
+    'and off the climb it is what you SOCKETED, which is the whole of the Proving Ground',
+    `${runSet(rot).theme} against ${runSet([]).theme}`
+  );
+
+  // A ZONE IS A WORLD AND A TIER AGAIN, because the campaign is run with
+  // NOTHING SOCKETED. *"Refraction can be the prismatic zone instead of base
+  // zone… T2 in the second area t3 in the third."* Off the sockets alone every
+  // one of the 42 depths would be tier 1 bases in one world.
+  {
+    line('  zone            world        best base');
+    const seen = LADDER.zones.map((zone, z) => {
+      const first = runSet([], null, { zone: z, rung: 1 });
+      const last = runSet([], null, { zone: z, rung: zone.rungs });
+      gauge(`${zone.name.padEnd(16)}${THEME_BY_ID[first.theme]?.name.padEnd(13)}tier ${first.maxTier}`);
+      return { zone, first, last };
+    });
+    const drifts = seen.filter((r) => r.first.theme !== r.last.theme || r.first.maxTier !== r.last.maxTier);
+    check(
+      drifts.length === 0,
+      'every depth of a zone is the SAME world and the same base tier',
+      drifts.map((r) => r.zone.name).join(', ')
+    );
+    const worlds = seen.map((r) => r.first.theme);
+    check(
+      new Set(worlds).size === worlds.length && !worlds.includes('seam'),
+      `and the three are three different worlds — ${worlds.join(', ')}`,
+      worlds.join(', ')
+    );
+    const tiers = seen.map((r) => r.first.maxTier);
+    check(
+      tiers.every((t, i) => i === 0 || t > tiers[i - 1]),
+      `and the base tier climbs with them: ${tiers.join(' → ')}`,
+      tiers.join(', ')
+    );
+  }
 
   // DANGER RISES, every single depth, and the very first one is untouched: the
   // bare Fissure a new character walks into is the game's floor. The ramp is
@@ -10639,13 +10672,15 @@ rule('THE COLLECTION — do crystals arrive, and do they grow?');
         [0, 200, 400, 822].map((d) => `${d} danger ${clears(d, 2)}`).join(' · ')
     );
 
-    // Played out: what a real run at the top of the climb can actually hand you.
+    // Played out, and in THE ANSWERING, whose own floor is tier 1: past it the
+    // zone floors the tier itself, so a level read at The Flowering would be
+    // measuring the zone rather than the crystal.
     const dropped = (level: number): Set<number> => {
       const out = new Set<number>();
       const crystals = Array.from({ length: 4 }, () => makeCrystal(level));
       for (let seed = 0; seed < 60; seed++) {
         const sim = new RunSim(crystals, ladderCharacter(6, new Rng(seed)), new Rng(900 + seed), {
-          rung: { zone: 2, rung: 15 },
+          rung: { zone: 0, rung: 11 },
         });
         runToCompletion(sim, 900);
         for (const item of sim.state.loot.items) {
@@ -10656,11 +10691,19 @@ rule('THE COLLECTION — do crystals arrive, and do they grow?');
     };
     const blank = dropped(1);
     const full = dropped(4);
-    line(`  tiers actually dropped: four blanks ${[...blank].sort().join('/')} · four at level 4 ${[...full].sort().join('/')}`);
+    line(`  tiers actually dropped in The Answering: four blanks ${[...blank].sort().join('/')} · four at level 4 ${[...full].sort().join('/')}`);
     check(
       blank.size > 0 && Math.max(...blank) === 1 && Math.max(...full) === 3,
-      'and the deepest rung drops tier 1 on blank crystals, tier 3 on levelled ones',
+      'a levelled crystal drops tier 3 where a blank one drops tier 1',
       `${[...blank].join(',')} against ${[...full].join(',')}`
+    );
+    // AND THE ZONE FLOORS IT with nothing socketed at all, which is what makes
+    // the campaign a gear ladder rather than 42 depths of tier 1.
+    const byZone = LADDER.zones.map((zone, z) => runSet([], null, { zone: z, rung: 1 }).maxTier);
+    check(
+      byZone.join(',') === LADDER.zones.map((zone) => zone.tier).join(','),
+      `and with EMPTY sockets the zone alone buys tier ${byZone.join(' → ')}`,
+      byZone.join(',')
     );
   }
 }

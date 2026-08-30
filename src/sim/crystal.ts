@@ -149,6 +149,7 @@ export function runSet(
   // The trials web and the RUNG, each as one mod. Both optional: a measured SET
   // carries no walked web and sits at the bottom of the climb.
   const rung = at ? rungMod(at.zone, at.rung) : null;
+  const zone = at ? LADDER.zones[at.zone] : null;
   const mods = [
     ...crystals.flatMap((c) => c.mods),
     ...(standing ? [standing] : []),
@@ -168,11 +169,12 @@ export function runSet(
     rewards,
     power,
     band: bandFor(power),
-    maxTier: tierForSet(crystals),
+    // THE CAMPAIGN IS RUN WITH NOTHING SOCKETED, so its ZONE decides both the
+    // world and the best base — off the sockets alone the whole 42-depth climb
+    // would be tier 1 in one world. Past it the sockets answer again.
+    maxTier: zone ? Math.max(zone.tier, tierForSet(crystals)) : tierForSet(crystals),
     composition: share,
-    // WHAT YOU SOCKETED IS WHERE YOU GO. The rung is depth and nothing else —
-    // it used to name the world too, which made the crystals a second ladder.
-    theme: mapTheme(share),
+    theme: zone ? zone.world : mapTheme(share),
     mix,
     yield: 1 + mix * REWARD.mixYield,
     pays: familyPays(share),
