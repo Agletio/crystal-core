@@ -1191,10 +1191,15 @@ possible. Need to have relatively equal drop rates between materials."*
   version of the right family, t2 two, t3 every one there is plus more of
   everything. Depth matters because ACCESS to worlds is gated, not because deep
   ore is better ore — and nothing ever becomes obsolete.
-- **A WORLD DOES NOT PRODUCE EVERY FAMILY.** No wood in a crystal cavern, no
-  hide where nothing has skin. Cross-zone farming then falls out of the fiction
-  rather than out of a rule, and it keeps the id count near the 12–16 the user
-  set rather than the 24 six families across four worlds would cost.
+- **EVERY WORLD CARRIES EVERY FAMILY, plus ONE of its own.** *"They should all
+  contain the normal ones but maybe just a single 'unique' material per zone
+  that's not inherently tied to a single crafting style, just a rare material
+  used in crafting really powerful stuff."* So four worlds × six families is
+  twenty-four versions and four zone-uniques on top — **past the 12–16 first
+  floated, deliberately**: *"it's fine if it's more than 16, they should just
+  exist as single line items with a little icon next to them so we can fit a
+  lot."* The cross-zone requirement comes from the TIER rule and the four
+  uniques rather than from a world missing a family.
 - **EVERYTHING IS ACQUIRED IN A DESCENT AND PROCESSED IN CAMP.** Ore is mined,
   hide is skinned, cloth comes off what wore it, gems are rare from any of them,
   wood is cut, fish come out of pools. Camp is smelting, tanning, weaving,
@@ -1213,20 +1218,36 @@ possible. Need to have relatively equal drop rates between materials."*
   picks the BASE and its IMPLICIT — `GearBase.implicit` already exists, so this
   is choosing which row to make, not a restructure. Every modifier is still the
   bench's. Two economies, two decisions, and neither is a slot machine.
-- **CRAFTING LEVEL IS QUALITY, not access.** Materials decide which tier you may
-  attempt; the profession's level decides how well it comes out — the implicit
-  roll, and the chance of a PERFECT base. That is what keeps crafting relevant
-  at the top instead of going obsolete once the floor drops Perfects.
+- **A LEVEL SLIDES THE WINDOW, and it is ONE mechanism for every profession.**
+  The BASE names the range and the LEVEL decides where inside it you land,
+  narrowing as it climbs: *"a plate helm can get between 100–150 armour, where
+  if you're 1 blacksmithing it's always 100–105 and if you're 99 it's always
+  145–150."* Materials decide which tier you may ATTEMPT; the level decides how
+  well the attempt comes out, and the chance of a PERFECT base. Cooking uses the
+  identical rule for how long a meal lasts, so there is one thing to learn.
 - **A RECIPE NAMES ONE OR TWO PROFESSIONS AND A LEVEL IN EACH.** Hybrid armour
   already needs two by construction: `ARMOUR_FAMILIES.archetypes` is melee /
   spell / rogue, six families single and six hybrid. Weapons work the same way —
   a sword is mostly Blacksmithing, a bow mostly Woodworking, a staff between.
   No table special-cases weapons.
+- **XP COMES FROM PROCESSING AND FROM CRAFTING, both.** Weighted so a higher
+  recipe beats spamming the cheapest one — *"I am ok with some spamming though
+  to level"* — which is the difference between a curve and a wall.
 - **NOTHING CAPS THE PROFESSIONS.** *"You can freely level them all but it just
   costs your time… I don't like forcing you to pick, I think it should just be
   you need to choose early and eventually can out grind any walls."* So the
   early choice is real and the late one is not: hybrids become the endgame
   default rather than a sidegrade, deliberately.
+- **A HYBRID IS MORE TOTAL POWER; A SPECIALIST IS MORE OF ONE THING.** *"The
+  hybrids can be strictly more overall stat power so for most builds they can be
+  better, but you can get more of one stat going specific."* Worked through: if
+  5 armour and 5 attack speed are each one POWER, a specialist helm is 50 armour
+  — ten power — and a hybrid is 30 armour and 30 attack speed, twelve. The
+  hybrid wins on total and loses to a build that stacks the one stat, so the two
+  professions a hybrid costs buy breadth rather than a bigger number.
+  **This needs a stat-power table**, hero-side, and `DANGER_STATS` is already
+  the same shape: a weight per stat so "total power" is a number the demo can
+  read rather than a claim.
 - **GEAR STILL DROPS, RARELY, AND ANY BASE.** *"Since it's so much rarer and it
   can drop any base it'll be very unlikely it's what your character wants, so
   when you do finally get a piece it'll feel good and not make crafting the ONLY
@@ -1251,6 +1272,17 @@ that, and the shelf of buyable gear is pointless the moment crafting beats it.
 - **No Perfect out of the gamble**, or it competes with the thing crafting owns.
 - **Buy-back survives, for what you SOLD only** — it is there for a mis-click,
   never a re-roll of a gamble.
+
+### Cooking, and the buff that burns down
+
+**A MEAL IS A BUFF THAT LASTS RUNS, and that shape already ships**:
+`RolledMod.uses` is descents left, set at the roll and spent one per CLEAR. A
+meal is the same thing pointed at the hero.
+
+**How many runs is the level sliding the window again** — *"maybe one buff can
+give 5–15 runs, and at level 1 you can only get it to land on 5–8 and it goes up
+until level 99 cooking is always 14–15."* Fish are caught in a descent and
+cooked in camp like everything else; a meal is APPLIED in camp, never mid-run.
 
 ### Jewellery
 
@@ -1290,17 +1322,12 @@ named gear, and most of `DropBand.gearPerRun`.
 over."* It is a `SAVE_VERSION` bump that refuses older saves, which is what buys
 the freedom to rename and delete rather than migrate a system still moving.
 
-### Still open
+### Nothing is open
 
-- **WHICH WORLDS CARRY WHICH FAMILIES.** Six families — ore, cloth, hide, gem,
-  wood, fish — against four worlds is 24 versions, past the 12–16 the user set.
-  The table that skips families is what brings it back, and it is the user's to
-  write, not one to invent.
-- **Does COOKING level like the others, or is it just recipes?**
-- **Does processing give the profession XP rather than crafting?** Levelling by
-  crafting spams the cheapest recipe — 500 t1 daggers — so XP has to scale with
-  what the recipe COST, or move to processing and let crafting be where
-  materials are spent rather than where levels come from.
+Every question this phase raised has been answered. What it needs before a line
+is written is the SEQUENCING call against Phase 6, and the numbers — the
+stat-power weights, the roll windows per level, the recipe costs — which are a
+balance pass and are measured rather than chosen.
 
 ## Phase 3 — A quest log instead of a pointing finger
 
