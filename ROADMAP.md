@@ -14,6 +14,12 @@ it leaves behind is a balance question for the balance pass: a first cycle is
 now tier 1 gear for all 42 rungs, and nobody has measured whether that clears
 the deep end.
 
+**PHASE 7 IS DESIGNED AND NOT STARTED** — gear becomes CRAFTED, the filter goes,
+and the camp grows work in it. Every design question is answered; what is left
+is a SEQUENCING decision, since Phase 6 and Phase 7 both rewrite drops and both
+rewrite the same demo sections. Doing them interleaved writes those checks
+twice.
+
 **PHASE 6 IS THE ACTIVE ONE.** The campaign, the Proving Ground and the Seam —
 the user's restructure of what a run is for. Two of its questions BLOCK it and
 are at the top of Open questions.
@@ -1147,6 +1153,154 @@ where sockets exist. The difficulty curve does not move: `rungMod` is untouched.
 `heal()` — every existing save has crystals, trial allocations and `climbed`
 under the old rules, and none of it may throw away a character. The straight
 20-a-depth ramp. `SAVE_VERSION` stays put unless a save must be REFUSED.
+
+## Phase 7 — GEAR IS CRAFTED: materials, professions, and a camp with work in it
+
+**Decided in conversation, every question answered.** The filter was never the
+problem — it was the symptom. A clear pays 1.3 to 84 finished pieces and almost
+none of it is looked at, so the filter exists to throw away noise, and every
+knob added to it is another knob for managing garbage. The fix is to drop FEWER,
+more meaningful things: materials that stack, and gear you MAKE.
+
+### The ask, in the user's words
+
+*"I think I want to do another change to gear because the filter system is just
+not cutting it and making it more complex is just going to become too
+complicated… mobs drop crafting items like the currency items we have currently
+along with ores, cloths, leathers, gems etc. Using those items along with the
+currency items crafts bases of different tiers."*
+
+*"I don't want there to be tiers of any materials, I want there to be different
+versions that aren't inherently stronger than others. Like demonic cloth,
+rotting leather, prismatic cloth… probably a couple versions per zone but they
+should all be generically useful and probably require all of them to make the
+best gear."*
+
+*"It's weird to get ore from enemies… should there be ore to mine in the area
+and your character just goes up and mines it?"*
+
+*"Needs to be smooth, no just tanking mobs and minimize back tracking as much as
+possible. Need to have relatively equal drop rates between materials."*
+
+### The rules this settles
+
+- **MATERIALS HAVE VERSIONS, NEVER TIERS.** Demonic cloth is not better than
+  prismatic cloth. Tiered materials kill every zone you outgrow; versions mean
+  the shallow end is still an ingredient at the deep end.
+- **A TIER IS HOW MANY DIFFERENT VERSIONS THE RECIPE DEMANDS.** t1 takes one
+  version of the right family, t2 two, t3 every one there is plus more of
+  everything. Depth matters because ACCESS to worlds is gated, not because deep
+  ore is better ore — and nothing ever becomes obsolete.
+- **A WORLD DOES NOT PRODUCE EVERY FAMILY.** No wood in a crystal cavern, no
+  hide where nothing has skin. Cross-zone farming then falls out of the fiction
+  rather than out of a rule, and it keeps the id count near the 12–16 the user
+  set rather than the 24 six families across four worlds would cost.
+- **EVERYTHING IS ACQUIRED IN A DESCENT AND PROCESSED IN CAMP.** Ore is mined,
+  hide is skinned, cloth comes off what wore it, gems are rare from any of them,
+  wood is cut, fish come out of pools. Camp is smelting, tanning, weaving,
+  cutting and cooking. Nothing can be farmed by leaving a tab open.
+- **GATHERING HAPPENS WHEN THE ROOM IS CLEAR**, the way a Hoard opens when its
+  last guard falls. That is both constraints at once: no channel while something
+  is hitting you (*"no just tanking mobs"*), and no node is ever a detour
+  because you already fought there (*"minimize back tracking"*). It is the same
+  behaviour the roadmap already owes for walking to a chest.
+- **MATERIALS RIDE THE PER-RUN BUDGET, never a per-kill rate.** The per-kill
+  mistake is already documented: kills run 26 at the bare Fissure against 847 at
+  the deep end, so a flat rate paid 1.5 a clear at one end and 84 at the other.
+  *"Relatively equal drop rates"* is only sayable as a budget drawn down against
+  what is left to kill.
+- **MATERIALS DECIDE WHAT AN ITEM IS; CURRENCY DECIDES WHAT IS ON IT.** Crafting
+  picks the BASE and its IMPLICIT — `GearBase.implicit` already exists, so this
+  is choosing which row to make, not a restructure. Every modifier is still the
+  bench's. Two economies, two decisions, and neither is a slot machine.
+- **CRAFTING LEVEL IS QUALITY, not access.** Materials decide which tier you may
+  attempt; the profession's level decides how well it comes out — the implicit
+  roll, and the chance of a PERFECT base. That is what keeps crafting relevant
+  at the top instead of going obsolete once the floor drops Perfects.
+- **A RECIPE NAMES ONE OR TWO PROFESSIONS AND A LEVEL IN EACH.** Hybrid armour
+  already needs two by construction: `ARMOUR_FAMILIES.archetypes` is melee /
+  spell / rogue, six families single and six hybrid. Weapons work the same way —
+  a sword is mostly Blacksmithing, a bow mostly Woodworking, a staff between.
+  No table special-cases weapons.
+- **NOTHING CAPS THE PROFESSIONS.** *"You can freely level them all but it just
+  costs your time… I don't like forcing you to pick, I think it should just be
+  you need to choose early and eventually can out grind any walls."* So the
+  early choice is real and the late one is not: hybrids become the endgame
+  default rather than a sidegrade, deliberately.
+- **GEAR STILL DROPS, RARELY, AND ANY BASE.** *"Since it's so much rarer and it
+  can drop any base it'll be very unlikely it's what your character wants, so
+  when you do finally get a piece it'll feel good and not make crafting the ONLY
+  way to get gear."* Dismantle it for materials of its tier, or sell it.
+- **A DISMANTLE NEVER RETURNS MORE THAN THE RECIPE TOOK**, or craft → dismantle
+  → craft is a material printer.
+
+### Gold, and the shop that stops selling gear
+
+Gold has two sources in the sim and one outside it — SELLING. Rare gear breaks
+that, and the shelf of buyable gear is pointless the moment crafting beats it.
+
+- **Gold buys MATERIALS at a bad rate**, which is the smoothing mechanism for
+  "equal drop rates": short of one thing, you buy it rather than grind a zone
+  you do not want to run.
+- **The shelf becomes a GAMBLE.** *"Instead of buying a set gear piece it gives
+  a random piece of a certain type… each one has a chance of being a unique
+  item. Make it really bad odds but just as a gold sink."* You buy "a ring", not
+  a named ring, and there are uniques only the gamble pays.
+- **A gamble always costs more than any one piece sells for**, so it is a sink
+  by construction and the demo can hold that arithmetic.
+- **No Perfect out of the gamble**, or it competes with the thing crafting owns.
+- **Buy-back survives, for what you SOLD only** — it is there for a mis-click,
+  never a re-roll of a gamble.
+
+### Jewellery
+
+Its own profession, using every material. **Ten base types**, each one an
+implicit: Elemental Resistance, Occult Resistance, % Life, % Mana, and one per
+attribute — Strength, Intelligence, Dexterity, Acuity, Spirit, Constitution.
+
+- Both a RING and an AMULET of each, so twenty `GearBase` rows and **no new
+  icons**: `gear_ring` and `gear_amulet` are recoloured per implicit — occult
+  purple, elemental tri-colour, Strength solid red, and so on.
+- **The amulet's implicit rolls stronger than a ring's.** Two ring slots and one
+  amulet: without that split the answer is always "wear the three best" and the
+  slot is not contested.
+
+### The camp
+
+A smelter, an anvil, a loom, a jeweller's bench and a kitchen. **That is a new,
+larger GENERATED scene**, not a code change: the camp is one 688×384 picture and
+every hotspot is a rectangle measured in that picture's own pixels, so a new
+picture invalidates all nine. It needs the generator and it needs the user to
+approve the design before anything is dressed. **It is the long pole of this
+whole arc.**
+
+**PROCESSING ADVANCES ON DESCENTS, never on a clock.** A smelter job is N clears
+long: load it, go down, come back to bars. That is genuinely idle — the idling
+is the descending, which already chains — and it cannot be farmed by an open
+browser, which is what "automation is universal" requires.
+
+### What this DELETES
+
+The Filter screen, `KEEP_GROUPS`, `GameState.junk`, the bulk sell, the shelf of
+named gear, and most of `DropBand.gearPerRun`.
+
+### Saves
+
+**`heal()` is not a concern for this arc** — *"I'd rather just start my test
+over."* It is a `SAVE_VERSION` bump that refuses older saves, which is what buys
+the freedom to rename and delete rather than migrate a system still moving.
+
+### Still open
+
+- **WHICH WORLDS CARRY WHICH FAMILIES.** Six families — ore, cloth, hide, gem,
+  wood, fish — against four worlds is 24 versions, past the 12–16 the user set.
+  The table that skips families is what brings it back, and it is the user's to
+  write, not one to invent.
+- **Does COOKING level like the others, or is it just recipes?**
+- **Does processing give the profession XP rather than crafting?** Levelling by
+  crafting spams the cheapest recipe — 500 t1 daggers — so XP has to scale with
+  what the recipe COST, or move to processing and let crafting be where
+  materials are spent rather than where levels come from.
 
 ## Phase 3 — A quest log instead of a pointing finger
 
