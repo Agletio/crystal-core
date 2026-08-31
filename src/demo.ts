@@ -92,6 +92,10 @@ import {
   tierKeepId,
   keepGroupFor,
   BASE_TIER_MODS,
+  MATERIALS,
+  MATERIAL_FAMILIES,
+  MATERIAL_FAMILY_BY_ID,
+  PROFESSIONS,
   PROVING,
   RUN_SLOTS,
   armourBudget,
@@ -3114,6 +3118,110 @@ rule('AILMENTS — does dealing the type, and only that, apply the ailment?');
       moved.map(([a, d]) => `${a.name} ${Math.round(d)}%`).join(', ') || 'nothing moved at all'
     );
   }
+}
+
+// ===========================================================================
+rule('MATERIALS AND PROFESSIONS — is the table a thing a recipe could read?');
+
+// STEP 1 OF THE CRAFTING ARC: the tables exist and NOTHING reads them yet, so
+// what can be wrong is the table itself — a world with a hole in it, two rows
+// sharing a name, a profession working a family nothing drops, or an icon that
+// resolves to nothing and renders as a blank square nobody notices.
+{
+  line(`  ${MATERIALS.length} materials, ${MATERIAL_FAMILIES.length} families, ${PROFESSIONS.length} professions`);
+
+  // EVERY WORLD CARRIES EVERY FAMILY, plus ONE of its own. *"They should all
+  // contain the normal ones but maybe just a single unique material per zone."*
+  // A world short a family is a world whose recipes cannot be finished there.
+  const holes: string[] = [];
+  for (const theme of MAP_THEMES) {
+    const mine = MATERIALS.filter((m) => m.world === theme.id);
+    for (const fam of MATERIAL_FAMILIES) {
+      const n = mine.filter((m) => m.family === fam.id).length;
+      if (n !== 1) holes.push(`${theme.id} has ${n} ${fam.id}`);
+    }
+    const uniques = mine.filter((m) => m.family === null).length;
+    if (uniques !== 1) holes.push(`${theme.id} has ${uniques} uniques`);
+  }
+  check(
+    holes.length === 0,
+    `every one of the ${MAP_THEMES.length} worlds carries all ${MATERIAL_FAMILIES.length} families and exactly one unique of its own`,
+    holes.join(', ')
+  );
+  check(
+    MATERIALS.length === MAP_THEMES.length * (MATERIAL_FAMILIES.length + 1),
+    `which is ${MAP_THEMES.length} × ${MATERIAL_FAMILIES.length + 1} = ${MATERIALS.length} rows and no others`,
+    String(MATERIALS.length)
+  );
+
+  // A ZONE-UNIQUE IS TIED TO NO PROFESSION, which is the whole of what makes it
+  // the thing the best recipes ask for rather than a seventh family.
+  const owned = MATERIALS.filter((m) => m.family !== null && !MATERIAL_FAMILY_BY_ID[m.family]);
+  check(owned.length === 0, 'and every family named is one that exists', owned.map((m) => m.id).join(', '));
+
+  // ONE PROFESSION PER FAMILY, both ways round: a family nobody works is a
+  // material nobody can spend, and two professions on one family is a choice
+  // with no difference in it.
+  const worked = PROFESSIONS.map((p) => p.family);
+  check(
+    new Set(worked).size === worked.length
+      && MATERIAL_FAMILIES.every((f) => worked.includes(f.id)),
+    `and each of the ${PROFESSIONS.length} professions works exactly one family, with none left unworked`,
+    worked.join(', ')
+  );
+
+  // IDS AND NAMES ARE BOTH UNIQUE. An id collision is a save pointing at the
+  // wrong material; a NAME collision is two rows a player cannot tell apart.
+  const dupId = MATERIALS.map((m) => m.id).filter((id, i, a) => a.indexOf(id) !== i);
+  const dupName = MATERIALS.map((m) => m.name).filter((n, i, a) => a.indexOf(n) !== i);
+  check(
+    dupId.length === 0 && dupName.length === 0,
+    'and no two materials share an id or a name',
+    [...dupId, ...dupName].join(', ')
+  );
+
+  // AN ICON THAT RESOLVES. *"They should just exist as single line items with a
+  // little icon next to them so we can fit a lot"* — so the icon IS how a
+  // material is read, and one that resolves to nothing renders a blank square
+  // and fails nowhere.
+  const blind = MATERIALS.filter((m) => !GENERATED_ICONS[m.icon]).map((m) => `${m.id}→${m.icon}`);
+  check(
+    blind.length === 0,
+    `and all ${MATERIALS.length} of them draw a generated icon`,
+    blind.join(', ')
+  );
+
+  // THE VOCABULARY. Every other authored table is swept for a retired phrasing
+  // and these are no different: a material that says it in the old words is a
+  // second vocabulary the player has to learn.
+  const said = MATERIALS.flatMap((m) => [
+    { where: `material/${m.id}`, text: m.name },
+    { where: `material/${m.id}`, text: m.description },
+  ]).concat(
+    PROFESSIONS.flatMap((p) => [
+      { where: `profession/${p.id}`, text: p.name },
+      { where: `profession/${p.id}`, text: p.makes },
+    ]),
+    MATERIAL_FAMILIES.flatMap((f) => [
+      { where: `family/${f.id}`, text: f.raw },
+      { where: `family/${f.id}`, text: f.processed },
+    ])
+  );
+  const wrongWord = said.flatMap(({ where, text }) =>
+    bannedIn(text).map((b) => `${where} says "${b.said}" — use ${b.use}`)
+  );
+  check(wrongWord.length === 0, 'and not one of them says a thing the old way', wrongWord.join('; '));
+
+  // NOTHING READS ANY OF IT YET, and that is the step. A material that already
+  // dropped would be a bag full of rows before there is a bench to spend them
+  // at — the whole point of landing the tables first is that this stays true.
+  const g = createGame('dev');
+  const held = [...g.inventory, ...g.stash].filter((i) => i.kind === 'material');
+  check(
+    held.length === 0,
+    'and nothing hands one out yet: the tables are landed and unread, which is what this step is',
+    `${held.length} materials already in a bag`
+  );
 }
 
 // ===========================================================================

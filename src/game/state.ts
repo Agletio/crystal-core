@@ -44,7 +44,8 @@ import { metMark } from './scenes';
 import type { Character } from '../sim/character';
 import type { Item, ItemKind, Wallet } from '../types';
 
-export const SAVE_VERSION = 1;
+// BUMPED ONCE for the whole crafting arc; nothing later in it may bump again.
+export const SAVE_VERSION = 2;
 
 /** What you can carry. The dock draws exactly this many and never scrolls, so
  *  the limit is visible rather than discovered. Crystals are not in here: one

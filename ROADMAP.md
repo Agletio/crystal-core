@@ -299,11 +299,20 @@ approve; everything else is code that can be written while it renders.
         because they have no screens to open. That is step 8's, and the boxes
         are measurable off `camp_ground.png` when it gets there.
 
-- [ ] **Step 1 — the tables, and nothing uses them yet.** `MATERIALS` (28 rows),
-      `PROFESSIONS` (6), `Character.professions` as `{ level, xp }` apiece, and
-      an `ItemKind` for a material so it stacks. `SAVE_VERSION` bumps here and
-      once only. The demo sweeps every row for a keyword violation and for an
-      icon that resolves. Green because nothing reads any of it.
+- [x] **Step 1 — the tables, and nothing uses them yet. DONE.**
+      `MATERIAL_FAMILIES` (6), `MATERIALS` (28 = 4 worlds × 6 families + one
+      unique each), `PROFESSIONS` (6, one per family), `PROFESSION.maxLevel`,
+      `Character.professions`, and `'material'` on `ItemKind`. `SAVE_VERSION` is
+      2 — **bumped for the whole arc, and nothing later in it may bump again.**
+      The demo holds: no world short a family, exactly one unique a world, one
+      profession per family both ways, no shared id or name, every row's icon
+      RESOLVING in `GENERATED_ICONS`, no banned phrasing anywhere in the three
+      tables, and that nothing hands a material out yet — which is the step.
+      **The 28 icons are generated and imported.** Three still fight their noun
+      — `clearheart` wants to be purple, `rotsilk` keeps coming back a bag,
+      `joinstone` will not split down the middle — and they are legible at the
+      24–40px an icon is read at, so they were ACCEPTED rather than re-rolled a
+      third time. Re-roll them if they ever look wrong in the dock.
 - [ ] **Step 2 — gathering, and gear gets rare.** Nodes placed and gathered the
       way a lock opens: **when the room is clear**, which is both of the user's
       constraints at once. On the per-run depleting budget, never a per-kill

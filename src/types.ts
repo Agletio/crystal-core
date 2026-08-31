@@ -5,7 +5,8 @@
  */
 
 export type StatForm = 'flat' | 'inc' | 'more';
-export type ItemKind = 'gear' | 'crystal' | 'relic';
+/** A MATERIAL stacks: `Item.meta.n` is how many, so a bag holds one row. */
+export type ItemKind = 'gear' | 'crystal' | 'relic' | 'material';
 
 /** Declared per base, so a new base can invent its own layout. */
 export type ModSlot = string;

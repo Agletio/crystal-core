@@ -1,7 +1,7 @@
 {
  "_": "What to SAY to the generator for a UI ICON, one row per id. `tools/art/icon.mts` reads it and `portrait.mts <id> <png> 48 icons` puts the result in `src/render/generated-icons.ts`, which `skillIcon` and `categoryIcon` merge OVER their hand-drawn grids.",
  "_how": "An icon is read at 24-40px in a socket, so: ONE object, centred, filling the frame, hard silhouette, no scene and no ground. Asked at 64 and shipped at 48.",
- "_inks": "Lamplit stone, oiled timber and tarnished brass, with fire, frost, lightning and poison the ONLY saturated inks \u2014 so an element reads at socket size and everything else stays furniture.",
+ "_inks": "Lamplit stone, oiled timber and tarnished brass, with fire, frost, lightning and poison the ONLY saturated inks — so an element reads at socket size and everything else stays furniture.",
  "size": 64,
  "grid": 48,
  "how": " A single ICON: ONE object centred and filling the frame, seen straight on, BOLD readable silhouette with a hard dark outline, chunky shapes and few colours, dramatic lighting off the object itself. NOT a scene, NOT a landscape, NOT a character, NOT a background, NOT text, NOT a border, NOT a frame, NOT multiple objects. Transparent background.",
@@ -48,7 +48,7 @@
   },
   {
    "id": "cat_passive",
-   "say": "a closed iron sigil-ring set with one dull amber stone, still and unlit \u2014 a thing that is always ON rather than cast."
+   "say": "a closed iron sigil-ring set with one dull amber stone, still and unlit — a thing that is always ON rather than cast."
   },
   {
    "id": "cat_movement",
@@ -528,7 +528,7 @@
   },
   {
    "id": "gear_sword2h",
-   "say": "a single huge two-handed greatsword standing point up and filling the whole frame, its blade VERY BROAD and WIDE \u2014 as wide across as a man's hand \u2014 running the full height of the frame, with a long leather-wrapped grip below a heavy straight crossguard. The blade is a WIDE slab of steel. NOT slim, NOT narrow, NOT thin, NOT a rapier, NOT a one-handed sword, NOT curved."
+   "say": "a single huge two-handed greatsword standing point up and filling the whole frame, its blade VERY BROAD and WIDE — as wide across as a man's hand — running the full height of the frame, with a long leather-wrapped grip below a heavy straight crossguard. The blade is a WIDE slab of steel. NOT slim, NOT narrow, NOT thin, NOT a rapier, NOT a one-handed sword, NOT curved."
   },
   {
    "id": "gear_mace2h",
@@ -536,7 +536,119 @@
   },
   {
    "id": "gear_staff",
-   "say": "a single heavy wooden quarterstaff standing straight upright and filling the whole frame, a THICK dark pole \u2014 as thick as a man's wrist \u2014 the SAME WIDTH all the way up, with three or four FLAT RINGS of pale iron banding wrapped round the top and a pale iron shoe at the foot. NOT thin, NOT a twig, NOT a stick, NOT a wand, NOT a spear, NOT a blade, NOT a mace, NOT wider at the top, NOT a crystal on a pole."
+   "say": "a single heavy wooden quarterstaff standing straight upright and filling the whole frame, a THICK dark pole — as thick as a man's wrist — the SAME WIDTH all the way up, with three or four FLAT RINGS of pale iron banding wrapped round the top and a pale iron shoe at the foot. NOT thin, NOT a twig, NOT a stick, NOT a wand, NOT a spear, NOT a blade, NOT a mace, NOT wider at the top, NOT a crystal on a pole."
+  },
+  {
+   "id": "mat_pale_iron",
+   "say": "a rough chunk of dull grey iron ore flecked with rust, freshly hacked from a mine wall"
+  },
+  {
+   "id": "mat_wickcloth",
+   "say": "a tight roll of coarse pale lamp-wick cloth, sooty at one frayed end"
+  },
+  {
+   "id": "mat_sump_hide",
+   "say": "a folded piece of thick grey animal hide, damp and stiff at its cut edges"
+  },
+  {
+   "id": "mat_propwood",
+   "say": "a short length of split rotted pit-prop timber, dark and soft with damp, one end splintered"
+  },
+  {
+   "id": "mat_lampstone",
+   "say": "a small rough amber-yellow stone holding a faint warm light in its centre"
+  },
+  {
+   "id": "mat_blindfish",
+   "say": "a small pale eyeless cave fish, wet and colourless with fine bones showing through"
+  },
+  {
+   "id": "mat_deadlight",
+   "say": "a stub of black candle still burning with a small cold flame that gives off no glow"
+  },
+  {
+   "id": "mat_lattice_ore",
+   "say": "a chunk of dark ore shot through with a lattice of thin pale crystal veins"
+  },
+  {
+   "id": "mat_glassweave",
+   "say": "a folded bolt of shimmering pale cloth woven from fine glass thread"
+  },
+  {
+   "id": "mat_shardhide",
+   "say": "a curved plate of hard pale shell-like hide edged with small crystal facets"
+  },
+  {
+   "id": "mat_quartzwood",
+   "say": "a short sawn LENGTH OF TIMBER cut square at both ends, pale grey-lilac and crystalline, with a straight lengthwise grain running end to end. NOT a disc, NOT a coin, NOT round, NOT a plate."
+  },
+  {
+   "id": "mat_clearheart",
+   "say": "a single faceted gemstone, COLOURLESS and clear as water with a hard white highlight. NOT red, NOT purple, NOT violet, NOT pink, NOT a cluster, NOT several stones."
+  },
+  {
+   "id": "mat_palefin",
+   "say": "a slender pale fish with translucent fins, faintly lilac along its back"
+  },
+  {
+   "id": "mat_measured_dust",
+   "say": "a small heap of fine glittering pale dust, poured out in a precise cone"
+  },
+  {
+   "id": "mat_bloodiron",
+   "say": "a lump of dark red-brown iron ore, wet-looking and streaked darker"
+  },
+  {
+   "id": "mat_rotsilk",
+   "say": "a loose HANK OF THREAD wound in a long coil, dark red and greasy, with loose ends hanging. NOT a fruit, NOT a pumpkin, NOT a pouch, NOT a bag, NOT round."
+  },
+  {
+   "id": "mat_rotting_leather",
+   "say": "a folded piece of dark leather gone soft and blotched at its edges"
+  },
+  {
+   "id": "mat_gallwood",
+   "say": "a split LENGTH OF TIMBER cut square at both ends, dark and knotted, with one swollen lump bulging from its side. NOT a rock, NOT a mound, NOT a lump of earth."
+  },
+  {
+   "id": "mat_marrowstone",
+   "say": "a rough porous bone-coloured stone with a dull red glow deep inside it"
+  },
+  {
+   "id": "mat_sumpfish",
+   "say": "a fat dark eel-like fish, slick and blotched, hauled out of warm water"
+  },
+  {
+   "id": "mat_quick_marrow",
+   "say": "ONE short hollow BONE, a single cut section standing on end, pale outside and dark red inside its hollow. NOT a skeleton, NOT a skull, NOT a body, NOT a figure, NOT several bones."
+  },
+  {
+   "id": "mat_seamsteel",
+   "say": "a thick rectangular BAR of dark grey metal lying flat, with one bright silver stripe running the whole length of it. NOT a sword, NOT a blade, NOT a gem, NOT jewellery."
+  },
+  {
+   "id": "mat_weldcloth",
+   "say": "a folded bolt of cloth woven half dark red and half pale, joined down a hard line"
+  },
+  {
+   "id": "mat_fusedhide",
+   "say": "a piece of hide that is scaled on one half and furred on the other, joined down the middle"
+  },
+  {
+   "id": "mat_knitwood",
+   "say": "a length of timber grown from two different woods knitted together along a visible join"
+  },
+  {
+   "id": "mat_joinstone",
+   "say": "ONE faceted gemstone split down a hard straight VERTICAL line, its left half deep red and its right half colourless and clear. NOT two stones, NOT a cluster."
+  },
+  {
+   "id": "mat_riftfin",
+   "say": "a long two-toned fish, dark along one flank and pale along the other, split down its spine"
+  },
+  {
+   "id": "mat_fault_glass",
+   "say": "a jagged shard of dark glass with a hairline crack of white light running through it"
   }
  ]
 }

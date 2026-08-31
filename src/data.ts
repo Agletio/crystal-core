@@ -2198,6 +2198,150 @@ export const LADDER = {
   packAtTop: 55,
 };
 
+// --- what gear is MADE of -------------------------------------------------
+//
+// *"Mobs drop crafting items… along with ores, cloths, leathers, gems etc.
+// Using those items along with the currency items crafts bases of different
+// tiers."* MATERIALS HAVE VERSIONS, NEVER TIERS: demonic cloth is not better
+// than prismatic cloth, so the shallow end stays an ingredient at the deep end
+// and a tier is how many DIFFERENT versions a recipe demands.
+
+/** One of the six things gear is made OF, and the one profession that works
+ *  it. `raw` is what comes out of a descent and `processed` what camp turns it
+ *  into — two words because the bench and the station are different places. */
+export interface MaterialFamilyDef {
+  id: string;
+  name: string;
+  raw: string;
+  processed: string;
+  station: string;
+}
+
+export const MATERIAL_FAMILIES: MaterialFamilyDef[] = [
+  { id: 'metal', name: 'Metal', raw: 'ore', processed: 'bars', station: 'the smelter' },
+  { id: 'cloth', name: 'Cloth', raw: 'fibre', processed: 'bolts', station: 'the loom' },
+  { id: 'hide', name: 'Hide', raw: 'skins', processed: 'leather', station: 'the tanning frame' },
+  { id: 'wood', name: 'Wood', raw: 'logs', processed: 'staves', station: 'the bench' },
+  { id: 'gem', name: 'Gem', raw: 'rough', processed: 'cut stones', station: "the jeweller's" },
+  { id: 'fish', name: 'Fish', raw: 'a catch', processed: 'meals', station: 'the kitchen' },
+];
+
+export const MATERIAL_FAMILY_BY_ID: Record<string, MaterialFamilyDef> = Object.fromEntries(
+  MATERIAL_FAMILIES.map((f) => [f.id, f])
+);
+
+/** A material is a FAMILY in a WORLD, or a world's own `unique` — which belongs
+ *  to no family, is tied to no profession, and is what the best recipes ask
+ *  for. `icon` is a row in `icons.json`; the demo holds every one to resolving. */
+export interface MaterialDef {
+  id: string;
+  name: string;
+  world: MapTheme;
+  family: string | null;
+  icon: string;
+  description: string;
+}
+
+/**
+ * TWENTY-FOUR VERSIONS AND FOUR UNIQUES. *"They should all contain the normal
+ * ones but maybe just a single unique material per zone."* Every world carries
+ * every family, so wood in a crystal cavern and fish in the Rot are a NAMING
+ * problem and never a reason to drop a family from a world.
+ */
+export const MATERIALS: MaterialDef[] = [
+  { id: 'pale_iron', name: 'Pale Iron', world: 'fissure', family: 'metal', icon: 'mat_pale_iron',
+    description: 'Ore out of the old workings, more rust than iron.' },
+  { id: 'wickcloth', name: 'Wickcloth', world: 'fissure', family: 'cloth', icon: 'mat_wickcloth',
+    description: 'Coarse lamp-wick, spun for burning rather than wearing.' },
+  { id: 'sump_hide', name: 'Sump Hide', world: 'fissure', family: 'hide', icon: 'mat_sump_hide',
+    description: 'Skinned off something that drowned in the low workings.' },
+  { id: 'propwood', name: 'Propwood', world: 'fissure', family: 'wood', icon: 'mat_propwood',
+    description: 'Pit props, pulled before the roof needed them.' },
+  { id: 'lampstone', name: 'Lampstone', world: 'fissure', family: 'gem', icon: 'mat_lampstone',
+    description: 'Holds a light it was never given.' },
+  { id: 'blindfish', name: 'Blindfish', world: 'fissure', family: 'fish', icon: 'mat_blindfish',
+    description: 'Pale and eyeless. It has never needed either.' },
+  { id: 'deadlight', name: 'Deadlight', world: 'fissure', family: null, icon: 'mat_deadlight',
+    description: 'A candle still burning that warms nothing and lights nothing.' },
+
+  { id: 'lattice_ore', name: 'Lattice Ore', world: 'prismatic', family: 'metal', icon: 'mat_lattice_ore',
+    description: 'Ore the crystal grew through instead of round.' },
+  { id: 'glassweave', name: 'Glassweave', world: 'prismatic', family: 'cloth', icon: 'mat_glassweave',
+    description: 'Thread drawn fine enough from crystal to be tied.' },
+  { id: 'shardhide', name: 'Shardhide', world: 'prismatic', family: 'hide', icon: 'mat_shardhide',
+    description: 'What grew a shell down here instead of a skin.' },
+  { id: 'quartzwood', name: 'Quartzwood', world: 'prismatic', family: 'wood', icon: 'mat_quartzwood',
+    description: 'A mineral growth with a grain. It saws like timber.' },
+  { id: 'clearheart', name: 'Clearheart', world: 'prismatic', family: 'gem', icon: 'mat_clearheart',
+    description: 'Cut once, a long way down, and never clouded.' },
+  { id: 'palefin', name: 'Palefin', world: 'prismatic', family: 'fish', icon: 'mat_palefin',
+    description: 'Out of the warm pools the crystal keeps.' },
+  { id: 'measured_dust', name: 'Measured Dust', world: 'prismatic', family: null, icon: 'mat_measured_dust',
+    description: 'What is left when the rock has finished deciding.' },
+
+  { id: 'bloodiron', name: 'Bloodiron', world: 'demonic', family: 'metal', icon: 'mat_bloodiron',
+    description: 'Ore that stays wet however long it is left out.' },
+  { id: 'rotsilk', name: 'Rotsilk', world: 'demonic', family: 'cloth', icon: 'mat_rotsilk',
+    description: 'Spun by something that had a use for it first.' },
+  { id: 'rotting_leather', name: 'Rotting Leather', world: 'demonic', family: 'hide', icon: 'mat_rotting_leather',
+    description: 'It was going to rot anyway. Tanned, it takes longer.' },
+  { id: 'gallwood', name: 'Gallwood', world: 'demonic', family: 'wood', icon: 'mat_gallwood',
+    description: 'A swelling that hardened. Nothing planted it.' },
+  { id: 'marrowstone', name: 'Marrowstone', world: 'demonic', family: 'gem', icon: 'mat_marrowstone',
+    description: 'Porous, warm, and it keeps a red light inside.' },
+  { id: 'sumpfish', name: 'Sumpfish', world: 'demonic', family: 'fish', icon: 'mat_sumpfish',
+    description: 'Hauled out of water warmer than it has any right to be.' },
+  { id: 'quick_marrow', name: 'Quick Marrow', world: 'demonic', family: null, icon: 'mat_quick_marrow',
+    description: 'The bone stopped. What is in it did not.' },
+
+  { id: 'seamsteel', name: 'Seamsteel', world: 'seam', family: 'metal', icon: 'mat_seamsteel',
+    description: 'Two metals fused at a join neither one made.' },
+  { id: 'weldcloth', name: 'Weldcloth', world: 'seam', family: 'cloth', icon: 'mat_weldcloth',
+    description: 'Woven from both sides at once, and it meets.' },
+  { id: 'fusedhide', name: 'Fusedhide', world: 'seam', family: 'hide', icon: 'mat_fusedhide',
+    description: 'Scaled along one flank and furred along the other.' },
+  { id: 'knitwood', name: 'Knitwood', world: 'seam', family: 'wood', icon: 'mat_knitwood',
+    description: 'Two growths that met and carried on as one.' },
+  { id: 'joinstone', name: 'Joinstone', world: 'seam', family: 'gem', icon: 'mat_joinstone',
+    description: 'Red on one side of the line and clear on the other.' },
+  { id: 'riftfin', name: 'Riftfin', world: 'seam', family: 'fish', icon: 'mat_riftfin',
+    description: 'Dark down one flank, pale down the other, split at the spine.' },
+  { id: 'fault_glass', name: 'Fault Glass', world: 'seam', family: null, icon: 'mat_fault_glass',
+    description: 'The join itself, broken off and carried out.' },
+];
+
+export const MATERIAL_BY_ID: Record<string, MaterialDef> = Object.fromEntries(
+  MATERIALS.map((m) => [m.id, m])
+);
+
+/** SIX PROFESSIONS, ONE PER FAMILY. `makes` is what it is FOR, in the game's
+ *  own words — `ARMOUR_FAMILIES.archetypes` is what an armour recipe names, so
+ *  a hybrid family asks for exactly the two professions its archetypes do. */
+export interface ProfessionDef {
+  id: string;
+  name: string;
+  family: string;
+  makes: string;
+}
+
+export const PROFESSIONS: ProfessionDef[] = [
+  { id: 'blacksmithing', name: 'Blacksmithing', family: 'metal', makes: 'melee armour, and most weapons' },
+  { id: 'weaving', name: 'Weaving', family: 'cloth', makes: 'spell armour' },
+  { id: 'leatherworking', name: 'Leatherworking', family: 'hide', makes: 'rogue armour' },
+  { id: 'woodworking', name: 'Woodworking', family: 'wood', makes: 'bows, staves and hafts' },
+  { id: 'jewelling', name: 'Jewelling', family: 'gem', makes: 'every ring and amulet' },
+  { id: 'cooking', name: 'Cooking', family: 'fish', makes: 'the meals a buff comes out of' },
+];
+
+export const PROFESSION_BY_ID: Record<string, ProfessionDef> = Object.fromEntries(
+  PROFESSIONS.map((p) => [p.id, p])
+);
+
+/** NOTHING CAPS A PROFESSION — *"you can freely level them all but it just
+ *  costs your time"* — so the ceiling is the same for each and the early choice
+ *  is what is real. */
+export const PROFESSION = { maxLevel: 99 };
+
 /** THE PROVING GROUND: one area past the climb, at a set floor. *"A set
  *  difficulty even harder than the final 'story mode' level which you can scale
  *  with more crystals and more trial points."* `rungMod` is 1 at depth 42, so

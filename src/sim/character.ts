@@ -52,6 +52,7 @@ export interface Character {
   /** THE LEDGER'S COUNTS, per counter, and PER CHARACTER so a second one starts
    *  the Reckoning at nothing. What they PAID for is derived, never stored. */
   grinds: Record<string, number>;
+  professions?: Record<string, { level: number; xp: number }>; // absent is level 1
   /** Rungs CLEARED per zone, keyed by theme. See `src/ladder.ts`. */
   climbed: Record<string, number>;
   /** Nodes walked on the Reckoning. */
