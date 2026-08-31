@@ -1857,6 +1857,38 @@ export const MOD_TIER_LIFT = [1, 1.2, 2, 3.6];
 export const tierForLevel = (level: number): number =>
   CRYSTAL_LEVELS.find((l) => l.level === Math.round(level))?.tier ?? 1;
 
+/** ONE STEP OF THE CRYSTAL LADDER: a crystal, and the one thing true before it
+ *  is handed over. *"Normal crystals pay out at 25/50/75/100 runs of this new
+ *  zone. Prismatic crystal pays out and full lvl 4 normal crystals, then
+ *  another at level 2 prismatic, another at level 3, another at lvl 4, and then
+ *  the same thing for demonic."* */
+export interface CrystalStep {
+  id: string;
+  family: MonsterFamily;
+  clears?: number; // PROVING GROUND clears, which is what buys the Normal four
+  hold?: { family: MonsterFamily; count: number; level: number };
+}
+
+/** IN ORDER: nothing is skipped, so the step you are on is the only one owed. */
+export const CRYSTAL_LADDER: CrystalStep[] = [
+  { id: 'normal_1', family: 'normal', clears: 25 },
+  { id: 'normal_2', family: 'normal', clears: 50 },
+  { id: 'normal_3', family: 'normal', clears: 75 },
+  { id: 'normal_4', family: 'normal', clears: 100 },
+  { id: 'prismatic_1', family: 'prismatic', hold: { family: 'normal', count: 4, level: 4 } },
+  { id: 'prismatic_2', family: 'prismatic', hold: { family: 'prismatic', count: 1, level: 2 } },
+  { id: 'prismatic_3', family: 'prismatic', hold: { family: 'prismatic', count: 1, level: 3 } },
+  { id: 'prismatic_4', family: 'prismatic', hold: { family: 'prismatic', count: 1, level: 4 } },
+  { id: 'demonic_1', family: 'demonic', hold: { family: 'prismatic', count: 4, level: 4 } },
+  { id: 'demonic_2', family: 'demonic', hold: { family: 'demonic', count: 1, level: 2 } },
+  { id: 'demonic_3', family: 'demonic', hold: { family: 'demonic', count: 1, level: 3 } },
+  { id: 'demonic_4', family: 'demonic', hold: { family: 'demonic', count: 1, level: 4 } },
+];
+
+export const CRYSTAL_STEP_BY_ID: Record<string, CrystalStep> = Object.fromEntries(
+  CRYSTAL_LADDER.map((c) => [c.id, c])
+);
+
 /** What a clear is worth to every SOCKETED crystal. Danger multiplies; the flat
  *  term is why it is `1 + danger`, or four blanks would never level. */
 export const CRYSTAL_XP = {
@@ -1945,6 +1977,16 @@ export const LAMPWRIGHT = {
       },
     ] as SceneBeat[],
     button: 'Take them',
+  },
+  /** EVERY CRYSTAL AFTER THE CAMPAIGN'S. Said each time, so it is short and it
+   *  does not pretend to be an occasion the way the first two were. */
+  deeper: {
+    title: 'The Lampwright',
+    beats: [
+      { said: 'Another one. They come up out of the wall down there faster than I can carry them.', act: 'work' },
+      { said: 'Take it. I have stopped asking what it is I am handing you.', act: 'face' },
+    ] as SceneBeat[],
+    button: 'Take it',
   },
   again: {
     title: 'The Lampwright',

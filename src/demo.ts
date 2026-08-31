@@ -59,6 +59,7 @@ import {
   DANGER_STATS,
   DROP_GROUPS,
   MONSTER_RANKS,
+  CRYSTAL_LADDER,
   GRINDS,
   DAMAGE_TYPE_BY_ID,
   MONSTER_ABILITIES,
@@ -347,6 +348,8 @@ import {
   crystalXp,
   giftWaiting,
   giftSchedule,
+  ladderOwed,
+  ladderSchedule,
   ownedCrystals,
   takeHandover,
   xpForClear,
@@ -2543,7 +2546,7 @@ rule('THE OPENING — is the first hour walkable with nothing explaining it?');
   const game = createGame('fresh');
   grantFirstClear(game);
   bankLoot(game, [makeGear('ash_wand', 1), makeGear('bulwark_helmet_t1', 8)]);
-  takeHandover(game, { weapon: true, crystal: false, campaign: false });
+  takeHandover(game, { weapon: true, crystal: false, campaign: false, ladder: null });
   line(
     `  after the first clear: ${balance(game.wallet, 'gold')} gold, ` +
       `${game.inventory.length} items`
@@ -2555,7 +2558,7 @@ rule('THE OPENING — is the first hour walkable with nothing explaining it?');
   const making = RECIPES.find((r) => r.id === 'make_shard_of_making');
   const bill = making ? (recipeInputs(making, 1).gold ?? 0) : 0;
   const handed = createGame('fresh');
-  const owed = takeHandover(handed, { weapon: false, crystal: true, campaign: false });
+  const owed = takeHandover(handed, { weapon: false, crystal: true, campaign: false, ladder: null });
   check(
     (owed.currency[INTRO.scriptedCurrency] ?? 0) > 0,
     `the opening HANDS you the craft — the counter's own is ${bill} gold, several descents off`,
@@ -2598,7 +2601,7 @@ rule('THE OPENING — is the first hour walkable with nothing explaining it?');
     'the bench reaches a weapon you are wearing',
     'wearing the benched item lost it — the bench resolves to nothing'
   );
-  takeHandover(game, { weapon: false, crystal: true, campaign: false });
+  takeHandover(game, { weapon: false, crystal: true, campaign: false, ladder: null });
   const crystal = crystalsIn(game)[0];
   selectForCraft(game, crystal);
   socketItem(game, crystal, socketFor(game, crystal)!);
@@ -10910,10 +10913,79 @@ rule('THE COLLECTION — do crystals arrive, and do they grow?');
   );
   // ONCE, and then he owes nothing at all — there is no second campaign.
   check(
-    giftWaiting(game) === null && /nothing else/.test(giftSchedule(game)),
-    'and once it is handed over the Lampwright owes nothing at all',
+    giftWaiting(game) === null && /The next crystal is/.test(giftSchedule(game)),
+    'and once it is handed over what he owes next is the LADDER, which the screen names',
     `${JSON.stringify(giftWaiting(game))} · ${giftSchedule(game)}`
   );
+
+  // THE CRYSTAL LADDER, which is the whole of what the endless half pays.
+  // *"Normal crystals pay out at 25/50/75/100 runs of this new zone. Prismatic
+  // crystal pays out and full lvl 4 normal crystals, then another at level 2
+  // prismatic, another at level 3, another at lvl 4, and then the same for
+  // demonic."* Walked here end to end, since a step nobody can reach is a
+  // crystal nobody gets and no table check can see it.
+  {
+    const walk = createGame('fresh');
+    walk.given = ['weapon', 'crystal'];
+    walk.character.paidCampaign = true;
+    walk.crystals = [];
+    check(
+      ladderOwed(walk) === null && (ladderSchedule(walk) ?? '').includes(String(CRYSTAL_LADDER[0].clears)),
+      `nothing is owed at 0 clears, and the screen names the ${CRYSTAL_LADDER[0].clears} it waits on`,
+      String(ladderSchedule(walk))
+    );
+
+    const took: string[] = [];
+    // At the Proving Ground's OWN per-clear rate, so the clear count printed
+    // below is a real one. Everything you hold is socketed and grinding, which
+    // is the only way a crystal ever levels.
+    const pays = xpForClear(runSet([], null, { proving: true, influence: 'fissure' }).rewards.danger);
+    for (let round = 0; round < 4000 && took.length < CRYSTAL_LADDER.length; round++) {
+      walk.provingClears = (walk.provingClears ?? 0) + 1;
+      for (const crystal of ownedCrystals(walk)) addCrystalXp(crystal, pays);
+      const owed = ladderOwed(walk);
+      if (!owed) continue;
+      const hand = takeHandover(walk, giftWaiting(walk)!);
+      took.push(owed.id);
+      check(
+        hand.items.length === 1 && crystalFamily(hand.items[0]) === owed.family,
+        `  ${owed.id} pays one ${owed.family} crystal`,
+        `${hand.items.length} items, ${hand.items.map((i) => crystalFamily(i)).join(', ')}`
+      );
+    }
+    check(
+      took.join(',') === CRYSTAL_LADDER.map((c) => c.id).join(','),
+      `all ${CRYSTAL_LADDER.length} steps of the ladder are reachable, IN ORDER, by playing`,
+      took.join(', ')
+    );
+    check(
+      ownedCrystals(walk).length === CRYSTAL_LADDER.length,
+      `and every one of them is in your hands — ${ownedCrystals(walk).length} crystals`,
+      String(ownedCrystals(walk).length)
+    );
+    const byFamily = MONSTER_FAMILIES.map(
+      (f) => `${f.id} ${ownedCrystals(walk).filter((c) => crystalFamily(c) === f.id).length}`
+    );
+    line(`  the ladder pays ${byFamily.join(', ')}, over ${walk.provingClears} clears`);
+    // AND NEVER TWICE. Every step is marked, so re-running pays nothing more.
+    check(
+      ladderOwed(walk) === null && giftWaiting(walk) === null,
+      'and once the last one is taken the Lampwright owes nothing at all',
+      JSON.stringify(giftWaiting(walk))
+    );
+    // A STEP IS NEVER SKIPPED. Holding four level-4 Normals does not pay the
+    // Prismatic before the four Normals themselves have been taken.
+    const jumped = createGame('fresh');
+    jumped.given = ['weapon', 'crystal'];
+    jumped.character.paidCampaign = true;
+    jumped.crystals = Array.from({ length: 4 }, () => makeCrystal(4, 'normal'));
+    jumped.provingClears = 0;
+    check(
+      ladderOwed(jumped) === null,
+      'and a step further up the ladder cannot pay before the ones under it',
+      String(ladderOwed(jumped)?.id)
+    );
+  }
 
   // AND NOTHING IS OWED EARLY. A character one depth short of the end has none.
   const top = LADDER.zones.length - 1;

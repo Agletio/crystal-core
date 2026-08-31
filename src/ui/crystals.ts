@@ -7,8 +7,9 @@
  * what separates two of them is danger, family and how far they have levelled,
  * and none of that is a silhouette.
  */
-import { FAMILY_BY_ID, LADDER, RUN_SLOTS } from '../data';
+import { CRYSTAL_LADDER, FAMILY_BY_ID, LADDER, PROVING, RUN_SLOTS } from '../data';
 import { climbed } from '../ladder';
+import type { CrystalStep } from '../data';
 import type { LadderZoneDef } from '../types';
 import { crystalsIn, socketFor, socketItem, unsocket } from '../game/state';
 import type { GameState } from '../game/state';
@@ -164,6 +165,22 @@ function renderZone(zone: LadderZoneDef, z: number): HTMLElement {
   return card;
 }
 
+/** THE CRYSTAL LADDER, once the campaign has paid: twelve steps in order, each
+ *  saying what it is waiting on. A step past the one you are on is drawn too —
+ *  the whole ladder is the plan, and a plan you cannot see is one nobody makes. */
+function renderStep(step: CrystalStep, at: number, now: number): HTMLElement {
+  const done = at < now;
+  const card = el('div', `quest${done ? ' quest--done' : ''}`);
+  const family = FAMILY_BY_ID[step.family];
+  card.append(el('div', 'crystal__name', `${family?.name ?? step.family} crystal`));
+  const said = step.clears !== undefined
+    ? `${Math.min(step.clears, game.provingClears ?? 0)} of ${step.clears} ${PROVING.name} clears.`
+    : `${step.hold!.count} ${FAMILY_BY_ID[step.hold!.family]?.name ?? step.hold!.family} ` +
+      `${step.hold!.count === 1 ? 'crystal' : 'crystals'} at level ${step.hold!.level}.`;
+  card.append(el('div', 'quest__detail', done ? 'Taken.' : said));
+  return card;
+}
+
 export function render(): void {
   const host = $('crystals-list');
   host.replaceChildren();
@@ -173,9 +190,18 @@ export function render(): void {
     host.append(el('p', 'empty', 'None yet. Clear a descent and the Lampwright will find you.'));
   }
 
+  // THE CAMPAIGN'S three zones until it is paid for, and the LADDER after —
+  // one list, saying the only thing between you and the next crystal.
   const quests = $('crystals-quests');
   quests.replaceChildren();
-  LADDER.zones.forEach((zone, z) => quests.append(renderZone(zone, z)));
+  if (game.character.paidCampaign) {
+    const given = game.given ?? [];
+    const now = CRYSTAL_LADDER.findIndex((step) => !given.includes(`crystal:${step.id}`));
+    const at = now === -1 ? CRYSTAL_LADDER.length : now;
+    CRYSTAL_LADDER.forEach((step, i) => quests.append(renderStep(step, i, at)));
+  } else {
+    LADDER.zones.forEach((zone, z) => quests.append(renderZone(zone, z)));
+  }
 
   $('crystals-count').textContent = `${all.length} owned · ${
     all.filter((r) => r.held === 'socket').length

@@ -309,9 +309,18 @@ reward nobody can see is a reward nobody is climbing toward. The web is on
 screen from the first descent, with nothing on it walkable: a plan you cannot
 see is a plan nobody makes.
 
-**The Lampwright owes the weapon, the FIRST crystal and the campaign's reward,
-and nothing else**; there is no quest ladder any more, and `CRYSTAL_DEPTHS` is
-gone with it.
+**The Lampwright owes the weapon, the FIRST crystal, the campaign's reward and
+every step of the CRYSTAL LADDER**, and nothing else. **THE LADDER IS THE WHOLE
+OF WHAT THE ENDLESS HALF PAYS**: *"Normal crystals pay out at 25/50/75/100 runs
+of this new zone. Prismatic crystal pays out and full lvl 4 normal crystals,
+then another at level 2 prismatic, another at level 3, another at lvl 4, and
+then the same thing for demonic."* `CRYSTAL_LADDER` is those twelve steps IN
+ORDER — a step further up can never pay before the ones under it — each holding
+either a count of `GameState.provingClears` or a number of crystals you already
+hold at a level. Levelling one is the only way past the fourth, so the ladder is
+the Proving Ground and the sockets pulling on each other. Measured, the twelve
+come to 184 Proving Ground clears. Taken in person like every other crystal,
+with `gaveStep` in `given` as the one cursor.
 
 **A CRYSTAL'S LEVEL IS THE WHOLE OF GEAR PROGRESSION.** *"Make it where tiers
 are just based on crystal level and make it take longer to level them."*

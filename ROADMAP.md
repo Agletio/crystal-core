@@ -203,10 +203,15 @@ retired phrasings.
       lines** rather than a second term — counting them here would pay for one
       web twice, and the roadmap's "and by points spent" is satisfied by the
       seam that already exists.
-- [ ] **Step 6 — the crystal ladder.** 25/50/75/100 clears pay the four normal
-      crystals. Four level-4 normals pay the first Prismatic; a level 2, 3 and 4
-      Prismatic each pay the next. Four level-4 Prismatics open the same ladder
-      for Demonic.
+- [x] **Step 6 — the crystal ladder. DONE.** `CRYSTAL_LADDER` is twelve steps
+      IN ORDER, each holding either a count of `GameState.provingClears` or a
+      number of crystals already held at a level — so a step further up can
+      never pay before the ones under it, and the demo walks all twelve end to
+      end by playing. Handed over by the LAMPWRIGHT like every other crystal
+      (`Waiting.ladder`, `gaveStep` in `given` as the one cursor), with
+      `LAMPWRIGHT.deeper` on the end of it. The collection screen swaps the
+      campaign's three zones for the whole ladder once the campaign is paid.
+      Measured at the Proving Ground's own XP rate: 184 clears for the lot.
 - [ ] **Step 7 — THE SEAM.** Two level-4 Prismatic and two level-4 Demonic
       socketed at once opens the Seam — the `seam` theme is already drawn and
       already has its three locks. The last world, and the only one you cannot

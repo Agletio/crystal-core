@@ -134,6 +134,7 @@ export interface GameState {
   parked: boolean;
   climbing: boolean; // a CLEAR takes the next RUNG down; absent is off, and dying clears it
   influence?: MapTheme; // WHICH WORLD the Proving Ground runs in; a preference
+  provingClears?: number; // what the crystal ladder's first four are bought with
 
   bosses: string[]; // put down: stops one being scheduled twice, opens its key
   called: string | null; // a fight a socketed key has paid for: the next entry is it

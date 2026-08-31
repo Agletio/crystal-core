@@ -530,6 +530,10 @@ export function heal(game: GameState): Healed {
     out.points += replayTree(game.character, skillId);
   }
 
+  // A COUNT that is not one would pay the ladder's first four at once.
+  const clears = Number(game.provingClears);
+  game.provingClears = Number.isFinite(clears) ? Math.max(0, Math.floor(clears)) : 0;
+
   // A PREFERENCE naming no world sends you somewhere that does not exist.
   if (game.influence && !PROVING.influences.includes(game.influence)) {
     game.influence = PROVING.influences[0];

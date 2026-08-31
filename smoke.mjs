@@ -975,7 +975,7 @@ assert(
 // Lampwright pays the whole campaign, so what is named is either the zones
 // still to clear, the meeting waiting on you, or that he is finished with you.
 assert(
-  /(talk to him in the camp|once the climb is finished|has nothing else)/i.test(text('crystals-npc')),
+  /(talk to him in the camp|once the climb is finished|has nothing else|the next crystal is)/i.test(text('crystals-npc')),
   'the collection says exactly where the next crystal stands',
   text('crystals-npc')
 );
@@ -984,20 +984,26 @@ assert(
   'and never as odds',
   text('crystals-npc')
 );
+// THE LADDER, once the campaign is paid for — which the dev kit is. Twelve
+// steps in order, every one of them drawn: the whole ladder is the plan, and a
+// plan you cannot see is a plan nobody makes.
 assert(
-  all('#crystals-quests .quest').length === 3,
-  'and the three zones of the campaign are listed under it, since clearing them is what pays',
+  all('#crystals-quests .quest').length === 12,
+  'and the whole crystal ladder is listed under it, every step of it',
   String(all('#crystals-quests .quest').length)
 );
-// The panel tracks the CLIMB, never the collection. The dev kit hands over every
-// crystal in the game and walks no rung for any of them, so nothing here reads
-// as taken — which is the whole distinction worth holding: what pays a crystal
-// is the ground, and owning one says nothing about having been there.
+// The panel tracks what has been TAKEN, never what you own. The dev kit is
+// handed every crystal in the game and has walked no step for any of them, so
+// nothing here reads as taken — which is the distinction worth holding.
 assert(
-  all('#crystals-quests .quest').length > 0
-    && all('#crystals-quests .quest--done').length === 0,
-  'and a depth reads as taken only where the CLIMB passed it, never off the kit',
+  all('#crystals-quests .quest--done').length === 0,
+  'and a step reads as taken only where it was taken, never off the kit',
   String(all('#crystals-quests .quest--done').length)
+);
+assert(
+  /\d+ of \d+ .*clears/i.test(text('crystals-quests')),
+  'and the first of them says how many clears it waits on, in figures',
+  text('crystals-quests').slice(0, 90)
 );
 // A crystal levels only while socketed, which is the reason to socket a blank
 // one at all — so the row has to say where it stands.

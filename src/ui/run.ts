@@ -570,6 +570,10 @@ function finish(left = false): void {
     takeRung(game.character, ran);
     if (climbing()) advanceRung();
   }
+  // THE LADDER'S OWN COUNT. Never on a walk: a walk buys no progress anywhere.
+  if (report.cleared && !left && isProving(ran)) {
+    game.provingClears = (game.provingClears ?? 0) + 1;
+  }
   // A DEATH stops the descent AND the climb: walking straight back into what
   // killed you is not a loop anybody turned on.
   if (!report.cleared) game.climbing = false;

@@ -8,7 +8,11 @@
  */
 import {
   CAMPAIGN_REWARD,
+  CRYSTAL_LADDER,
+  CRYSTAL_STEP_BY_ID,
+  FAMILY_BY_ID,
   LADDER,
+  PROVING,
   CRYSTAL_LEVELS,
   CRYSTAL_XP,
   INTRO,
@@ -24,7 +28,8 @@ import { grant, makeCrystal } from '../economy';
 import { crystalFamily } from '../sim/crystal';
 import { campaignDone, campaignPrize, climbed } from '../ladder';
 import type { RunSet } from '../sim/crystal';
-import type { Item, RolledMod } from '../types';
+import type { CrystalStep } from '../data';
+import type { Item, MonsterFamily, RolledMod } from '../types';
 
 /** Every crystal you own: socketed, or in the collection. */
 export function ownedCrystals(game: GameState): Item[] {
@@ -43,6 +48,55 @@ export interface Waiting {
   crystal: boolean;
   /** The whole campaign's reward. He holds it until you come and take it. */
   campaign: boolean;
+  /** A `CRYSTAL_LADDER` step id, once its one condition is true. */
+  ladder: string | null;
+}
+
+/** A step already handed over, as a `given` entry. */
+const gaveStep = (id: string): string => `crystal:${id}`;
+
+/** HOW MANY YOU HOLD of a family at or past a level. Socketed counts: a crystal
+ *  in the wall is one you own, and it is the only one that levels. */
+const holding = (game: GameState, family: MonsterFamily, level: number): number =>
+  ownedCrystals(game).filter(
+    (c) => crystalFamily(c) === family && crystalLevel(c) >= level
+  ).length;
+
+/** WHETHER A STEP IS DUE. `clears` is the Proving Ground's own count; `hold` is
+ *  what the crystals you already have must have grown into. */
+export function stepMet(game: GameState, step: CrystalStep): boolean {
+  if (step.clears !== undefined) return (game.provingClears ?? 0) >= step.clears;
+  if (step.hold) return holding(game, step.hold.family, step.hold.level) >= step.hold.count;
+  return false;
+}
+
+/** THE NEXT STEP OWED, or null. IN ORDER and never out of it, so a crystal you
+ *  have not taken cannot be skipped by one further up. */
+export function ladderOwed(game: GameState): CrystalStep | null {
+  const given = game.given ?? [];
+  const next = CRYSTAL_LADDER.find((step) => !given.includes(gaveStep(step.id)));
+  return next && stepMet(game, next) ? next : null;
+}
+
+/** What the NEXT step is waiting on, in words a player can act on. */
+export function ladderSchedule(game: GameState): string | null {
+  const given = game.given ?? [];
+  const next = CRYSTAL_LADDER.find((step) => !given.includes(gaveStep(step.id)));
+  if (!next) return null;
+  const word = FAMILY_BY_ID[next.family]?.name ?? next.family;
+  if (next.clears !== undefined) {
+    return (
+      `The next crystal is ${word}, out of the wall at ${next.clears} clears of ` +
+      `${PROVING.name}. You have ${game.provingClears ?? 0}.`
+    );
+  }
+  const hold = next.hold!;
+  const held = FAMILY_BY_ID[hold.family]?.name ?? hold.family;
+  return (
+    `The next crystal is ${word}, and it waits on ${hold.count} ` +
+    `${held} ${hold.count === 1 ? 'crystal' : 'crystals'} at level ${hold.level}. ` +
+    `You have ${holding(game, hold.family, hold.level)}.`
+  );
 }
 
 /** The ACTIVE skill at `INTRO.crystalSkillLevel` with every point of it spent:
@@ -64,8 +118,14 @@ export function giftWaiting(game: GameState): Waiting | null {
   const crystal = !weapon && !given.includes('crystal') && crystalEarned(game);
   const campaign =
     !weapon && !crystal && !game.character.paidCampaign && campaignDone(game.character);
-  if (!weapon && !crystal && !campaign) return null;
-  return { weapon, crystal, campaign };
+  // THE LADDER IS LAST: everything the campaign owes lands before the endless
+  // half of the game starts paying.
+  const ladder =
+    !weapon && !crystal && !campaign && game.character.paidCampaign
+      ? (ladderOwed(game)?.id ?? null)
+      : null;
+  if (!weapon && !crystal && !campaign && !ladder) return null;
+  return { weapon, crystal, campaign, ladder };
 }
 
 /** What the collection screen says about the next meeting. */
@@ -90,7 +150,10 @@ export function giftSchedule(game: GameState): string {
     );
   }
   // NAMING WHAT IS LEFT: "somewhere below" is what a player cannot act on.
-  if (game.character.paidCampaign) return `${who} has nothing else.`;
+  if (game.character.paidCampaign) {
+    if (ladderOwed(game)) return `${who} has one for you. Go and talk to him in the camp.`;
+    return ladderSchedule(game) ?? `${who} has nothing else.`;
+  }
   if (campaignDone(game.character)) {
     return `${who} is holding ${campaignPrize()} for finishing the climb. Go and talk to him in the camp.`;
   }
@@ -140,6 +203,17 @@ export function takeHandover(game: GameState, waiting: Waiting): Handover {
       items.push(crystal);
     }
     says.push(`${CAMPAIGN_REWARD.points} Tallies`);
+  }
+  if (waiting.ladder) {
+    const step = CRYSTAL_STEP_BY_ID[waiting.ladder];
+    // Marked BEFORE the crystal is made, so a step can never pay twice even if
+    // making one throws — the ladder is in order and this is its only cursor.
+    if (step && !(game.given ?? []).includes(gaveStep(step.id))) {
+      game.given = [...(game.given ?? []), gaveStep(step.id)];
+      const crystal = makeCrystal(1, step.family);
+      giveGift(game, crystal);
+      items.push(crystal);
+    }
   }
   return { items, currency, says };
 }
