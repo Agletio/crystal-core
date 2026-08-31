@@ -47,14 +47,14 @@ export function arenaAt(at: Rung): string | null {
 }
 
 /** THE CAMPAIGN IS OVER when every zone is climbed whole, which is the three
- *  bosses. Nothing pays a crystal or a trial point before it. */
+ *  bosses. Nothing pays a crystal or a Tally before it. */
 export const campaignDone = (character: Character): boolean =>
   LADDER.zones.every((zone, z) => climbed(character, z) >= zone.rungs);
 
 /** WHAT THE CLIMB PAYS, in one phrase, so no two screens quote two rewards. */
 export const campaignPrize = (): string =>
   `${CAMPAIGN_REWARD.crystals} crystal${CAMPAIGN_REWARD.crystals === 1 ? '' : 's'} ` +
-  `and ${CAMPAIGN_REWARD.points} trial points`;
+  `and ${CAMPAIGN_REWARD.points} Tallies`;
 
 /** THE FINISH LINE, SAID BEFORE YOU GET THERE: where the last boss is and what
  *  he pays for it, on the screen the climb is picked from. */
@@ -63,7 +63,7 @@ export function campaignLine(character: Character): string {
   if (character.paidCampaign) return `The climb is finished, and ${LAMPWRIGHT.name} has paid for it.`;
   if (!campaignDone(character)) {
     return (
-      `No crystal and no trial point is paid until the climb is whole. ` +
+      `No crystal and no Tally is paid until the climb is whole. ` +
       `${last.name}, depth ${last.rungs}, is the last of it, and ` +
       `${LAMPWRIGHT.name} hands over ${campaignPrize()} for it.`
     );

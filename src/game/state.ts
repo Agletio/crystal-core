@@ -16,7 +16,7 @@ import {
   SKILL_BY_ID,
   WEAPON_SLOT,
   START_PRESETS,
-  TRIALS,
+  GRINDS,
   CRYSTAL_ILVL,
   UNIQUE_BY_ID,
   keepGroupFor,
@@ -178,6 +178,14 @@ export function createGame(mode: StartMode = 'dev'): GameState {
   return game;
 }
 
+/** EVERY LINE OF THE LEDGER at its threshold, off the table rather than a list,
+ *  so a grind added later is in the kit with no second edit. */
+const devGrinds = (): Record<string, number> => {
+  const out: Record<string, number> = {};
+  for (const grind of GRINDS) out[grind.counter] = Math.max(out[grind.counter] ?? 0, grind.need);
+  return out;
+};
+
 /** IN PLACE: every view captured this object at init. */
 export function resetGame(game: GameState, mode: StartMode): void {
   const preset = START_PRESETS[mode];
@@ -229,10 +237,10 @@ export function resetGame(game: GameState, mode: StartMode): void {
   // The dev kit is handed every crystal in the game, so its quests are already
   // answered — left open, the first dangerous descent pays out four duplicates.
   game.bosses = mode === 'dev' ? BOSSES.map((b) => b.id) : []; // handed the door too
-  // Every trial done, and the campaign's reward already TAKEN — never the climb
-  // itself, which the kit has walked none of. The flag is what opens the
-  // sockets and pays the points, so the kit's crystals have somewhere to go.
-  game.character.trials = mode === 'dev' ? TRIALS.map((t) => t.id) : [];
+  // THE WHOLE LEDGER ground out, and the campaign's reward already TAKEN —
+  // never the climb itself, which the kit has walked none of. Between them
+  // that is every Tally there is, and sockets for the crystals to go in.
+  game.character.grinds = mode === 'dev' ? devGrinds() : {};
   if (mode === 'dev') game.character.paidCampaign = true;
   game.called = null;
   game.sold = [];

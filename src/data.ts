@@ -927,13 +927,11 @@ export const CRYSTAL_MODS: ModDef[] = [
       { ilvl: 1, weight: 800, stats: [{ stat: 'packCount', form: 'inc', range: [12, 27] }] },
     ],
   },
-  // Reward is derived from danger, so no crystal modifier is pure upside: a mod
-  // that only gave you something would be a mod with no decision in it.
+  // Reward is derived from danger, so no crystal modifier is pure upside.
   // --- what the ROCK DOES, never what a monster's numbers are -------------
   //
-  // *"Change all the mods to be effectively just powerful nodes from the trials
-  // tree."* Eleven rows here were a bigger number on a body; raw scaling is the
-  // RUNG's now, so every row under this is a rule the sim runs.
+  // *"Change all the mods to be effectively just powerful nodes."* Raw scaling
+  // is the RUNG's, so every row under this is a rule the sim runs.
 
   {
     id: 'crystal_watch',
@@ -1986,14 +1984,8 @@ export const INTRO = {
   bossRoom: 'answering_hall',
 };
 
-/** One clause of a TRIAL's objective: `kind` names an entry in
- *  `TRIAL_CONDITIONS` and the rest is that condition's own parameters. */
-export interface QuestNeed {
-  kind: string;
-  [param: string]: unknown;
-}
-
-/** WHAT CLEARING THE CAMPAIGN PAYS: *"1 crystal and 10 trial points."* */
+/** WHAT CLEARING THE CAMPAIGN PAYS: *"1 crystal and 10 trial points"* — one
+ *  crystal and the first 10 TALLIES. */
 export const CAMPAIGN_REWARD = { crystals: 1, points: 10 };
 
 export const CRYSTAL_ILVL = 70;
@@ -2844,61 +2836,47 @@ export const BOSS_KEY_BY_ID: Record<string, BossKeyDef> = Object.fromEntries(
   BOSS_KEYS.map((k) => [k.id, k])
 );
 
-/** WHAT THE WEB IS PAID IN: a HANDFUL a trial, so finishing one is an event
- *  rather than a tick. `perRung` only sizes `TRIAL_POINTS_MAX` — no rung pays. */
-export const TRIAL_POINTS = { perTrial: 5, perRung: 1, freeZone: 0 };
+/** WHAT THE RECKONING IS SIZED FOR: the campaign's handout and the whole
+ *  Ledger, held to summing to exactly this. A LINE of it is a thing done over
+ *  and over, paying Tallies at the count — *"100 runs gets you 5 points."* */
+export const TALLIES = { max: 60 };
 
-/** Something done once, paying `TRIAL_POINTS.perTrial` into the trials web. */
-export interface TrialDef {
+export interface GrindDef {
   id: string;
   name: string;
   detail: string; // the objective, in words a player can act on
-  need: Array<Record<string, unknown> & { kind: string }>; // ANDed; `kind` is in TRIAL_CONDITIONS
+  counter: string; // an entry in `GRIND_COUNTERS`: what one descent adds
+  need: number;
+  pays: number; // Tallies, once
 }
 
-/** In ORDER, and the order is the story. These three are what a descent already
- *  knows how to prove; a rung that is a ROOM comes with the phase authoring it. */
-export const TRIALS: TrialDef[] = [
-  {
-    id: 'the_answering',
-    name: 'The Answering',
-    detail: 'Put down the thing in the rock that knows its own name.',
-    need: [{ kind: 'boss', boss: 'answering' }],
-  },
-  {
-    id: 'full_wall',
-    name: 'A Full Wall',
-    detail: 'Clear a descent with all four sockets holding a crystal.',
-    need: [{ kind: 'sockets', value: 4 }],
-  },
-  {
-    id: 'deep_water',
-    name: 'Deep Water',
-    detail: 'Clear a descent worth 400 danger.',
-    need: [{ kind: 'danger', value: 400 }],
-  },
-  {
-    id: 'carried_out',
-    name: 'Carried Out',
-    detail: 'Put down a Bearer and take what it was carrying.',
-    need: [{ kind: 'bearers', value: 1 }],
-  },
-  {
-    id: 'nothing_stays_down',
-    name: 'Nothing Stays Down',
-    detail: 'Put down something that welled up out of a body you had already killed.',
-    need: [{ kind: 'welled', value: 1 }],
-  },
-  {
-    id: 'what_they_carried',
-    name: 'What They Carried',
-    detail: 'Open a Hoard, by killing everything standing over it.',
-    need: [{ kind: 'hoards', value: 1 }],
-  },
+/** THE LEDGER: what a descent is, locks, meets, and where — each a LADDER. */
+export const GRINDS: GrindDef[] = [
+  { id: 'run_25', name: 'A Habit', detail: 'Clear 25 descents.', counter: 'descents', need: 25, pays: 1 },
+  { id: 'run_100', name: 'A Trade', detail: 'Clear 100 descents.', counter: 'descents', need: 100, pays: 2 },
+  { id: 'run_400', name: 'A Life Down Here', detail: 'Clear 400 descents.', counter: 'descents', need: 400, pays: 4 },
+
+  { id: 'hoard_50', name: 'Prising', detail: 'Open 50 Hoards.', counter: 'hoards', need: 50, pays: 1 },
+  { id: 'hoard_250', name: 'Everything Shut', detail: 'Open 250 Hoards.', counter: 'hoards', need: 250, pays: 3 },
+  { id: 'vein_50', name: 'Following the Lode', detail: 'Open 50 Veins.', counter: 'veins', need: 50, pays: 2 },
+  { id: 'vein_250', name: 'The Whole Seam', detail: 'Open 250 Veins.', counter: 'veins', need: 250, pays: 4 },
+
+  { id: 'welled_250', name: 'Nothing Stays Down', detail: 'Put down 250 bodies that welled up out of another.', counter: 'welled', need: 250, pays: 2 },
+  { id: 'welled_1000', name: 'And Nothing Ever Will', detail: 'Put down 1000 bodies that welled up out of another.', counter: 'welled', need: 1000, pays: 4 },
+  { id: 'warden_250', name: 'Past the Keeper', detail: 'Put down 250 Wardens.', counter: 'wardens', need: 250, pays: 2 },
+  { id: 'warden_2500', name: 'Nobody Left Watching', detail: 'Put down 2500 Wardens.', counter: 'wardens', need: 2500, pays: 5 },
+  { id: 'bearer_50', name: 'Carried Out', detail: 'Put down 50 Bearers and take what they carried.', counter: 'bearers', need: 50, pays: 2 },
+  { id: 'bearer_250', name: 'Everything They Held', detail: 'Put down 250 Bearers.', counter: 'bearers', need: 250, pays: 4 },
+
+  { id: 'demonic_50', name: 'A Taste for Rot', detail: 'Clear 50 descents under Demonic influence.', counter: 'demonic', need: 50, pays: 2 },
+  { id: 'demonic_200', name: 'At Home in It', detail: 'Clear 200 descents under Demonic influence.', counter: 'demonic', need: 200, pays: 3 },
+  { id: 'prismatic_50', name: 'Reading the Light', detail: 'Clear 50 descents under Prismatic influence.', counter: 'prismatic', need: 50, pays: 2 },
+  { id: 'prismatic_200', name: 'Every Angle of It', detail: 'Clear 200 descents under Prismatic influence.', counter: 'prismatic', need: 200, pays: 3 },
+  { id: 'seam_25', name: 'Where It Meets', detail: 'Clear 25 descents in the Seam.', counter: 'seam', need: 25, pays: 4 },
 ];
 
-export const TRIAL_BY_ID: Record<string, TrialDef> = Object.fromEntries(
-  TRIALS.map((t) => [t.id, t])
+export const GRIND_BY_ID: Record<string, GrindDef> = Object.fromEntries(
+  GRINDS.map((g) => [g.id, g])
 );
 
 /**
@@ -3550,7 +3528,7 @@ export const BINDINGS: BindingDef[] = [
   { id: 'character', what: 'Open the character sheet', key: 'c' },
   { id: 'skills', what: 'Open the skills and their webs', key: 's' },
   { id: 'trade', what: 'Open your trade', key: 't' },
-  { id: 'trials', what: 'Open the trials and their web', key: 'r' },
+  { id: 'trials', what: 'Open the Reckoning and its Ledger', key: 'r' },
   { id: 'settings', what: 'Open settings, the auto-sell filter and the book', key: 'j' },
   { id: 'craft', what: 'Open the bench', key: 'b' },
   { id: 'shop', what: 'Open the shop', key: 'v' },

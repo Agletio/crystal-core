@@ -18,9 +18,10 @@ to phase 7."* So:
 Nothing else is queued and nothing else may be promoted without being asked.
 
 **THE NAMES ARE PICKED**, at the user's word (*"you can pick the names for phase
-6 too"*), and they are in Phase 6's own step list. In one line: the base world
-is **THE DIGGINGS**, the points are **TALLIES**, the web they are spent on is
-**THE RECKONING**, and the list of grinds that pays them is **THE LEDGER**.
+6 too"*). **Three of the four have LANDED in step 4** — the points are
+**TALLIES**, the web is **THE RECKONING**, the list of grinds is **THE LEDGER**.
+The fourth is step 5's, because it is only said where an influence is picked:
+the base world is **THE DIGGINGS**.
 **Identifiers do not move** — `trials.ts`, the `trial_` node prefix and
 `Character.trials` are what a save points at, exactly as `rung` stayed `rung`
 when a player started calling it a depth.
@@ -174,16 +175,20 @@ retired phrasings.
       The Flowering 2. `MEET_CHANCE` is gone; the demo walks all 42 depths in
       order and holds every person to turning up, in their own world and off an
       arena depth, and to never standing there twice.
-- [ ] **Step 4 — what AWARDS the points becomes GRINDS. The WEB SURVIVES.**
-      *The user's call: "Tree survives."* All 156 nodes stay exactly as they
-      are and points walk them as they do today; what is deleted is `TRIALS`,
-      the six conditions that AWARD points. **The trials web and the trial
-      CONDITIONS were one word for two things** — do not delete the web.
-      What replaces the six is a list of counters — descents run, locks opened,
-      Welled bodies killed, Wardens killed, descents under each influence —
-      each with a threshold and a point value. `GameState` grows the counters;
-      the demo holds every one of them to actually ticking in a real descent.
-      The 60-point cap holds, so the counters must sum to it.
+- [x] **Step 4 — what AWARDS the points becomes GRINDS. DONE, and the WEB
+      SURVIVED.** All 156 nodes are untouched; `TRIALS`, `TrialDef`,
+      `TRIAL_CONDITIONS` and `QuestNeed` are deleted. `GRINDS` is 18 lines in
+      four ladders — descents, Hoards and Veins, Welled bodies and Wardens and
+      Bearers, and descents under each influence — each naming a
+      `GRIND_COUNTERS` entry that says what one clear ADDS, counted through the
+      one `descentFacts`. `RunState.wardens` is new; Hoards and Veins count
+      apart off `Hoard.pays`. **The counts are `Character.grinds`, PER
+      CHARACTER and not `GameState`** — global, a second character would start
+      the web full, which the demo already forbade. The campaign's 10 plus the
+      Ledger's 50 come to `TALLIES.max` exactly and the demo holds it; the demo
+      also PLAYS a descent for every counter and fails one that never moves.
+      **The names landed with it**: Tallies, the Reckoning, the Ledger, in
+      `KEYWORDS.BANNED`, `CLAUDE.md` and every screen. Identifiers did not move.
 - [ ] **Step 5 — the Proving Ground.** A fourth tab, one area, the sockets laid
       out over the map the way the camp's crack lays them out. Influence is
       picked here and decides the world and the pack. Difficulty is a floor

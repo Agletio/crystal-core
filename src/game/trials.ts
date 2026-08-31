@@ -1,61 +1,97 @@
 /**
- * What a TRIAL asks, and when it is paid. `QUEST_CONDITIONS` is the same shape
- * and this mirrors it: a new objective is one registry entry and one `TRIALS`
- * row. Taken at the CLEAR, never at the door, exactly as a boss is.
+ * THE LEDGER: what one descent adds to each counter, and which lines of it that
+ * count has paid for. A new grind is one registry entry and one `GRINDS` row —
+ * the shape `TRIAL_CONDITIONS` had, asking how MANY rather than whether.
+ * Counted at the CLEAR, never at the door, exactly as a boss is marked.
  */
-import { TRIALS, TRIAL_BY_ID } from '../data';
+import { GRINDS, GRIND_BY_ID } from '../data';
 import { replayTrialNodes, trialNodeById, trialPointsFor } from '../trials';
-import type { TrialDef } from '../data';
+import type { GrindDef } from '../data';
 import type { QuestFacts } from './crystals';
 import type { Character } from '../sim/character';
+import type { RunState } from '../sim/run';
+import type { Item } from '../types';
 import type { GameState } from './state';
 
-export type TrialConditionImpl = (
-  game: GameState,
-  facts: QuestFacts,
-  params: any
-) => boolean;
+/** What one cleared descent adds. A counter nothing adds to never pays. */
+export type GrindCount = (facts: QuestFacts) => number;
 
-/** A kind not in here is never met; the demo holds the table to the registry. */
-export const TRIAL_CONDITIONS: Record<string, TrialConditionImpl> = {
-  boss: (game, _f, p) => (game.bosses ?? []).includes(String(p.boss)),
+export const GRIND_COUNTERS: Record<string, GrindCount> = {
+  descents: () => 1,
 
-  sockets: (_g, f, p) => f.set.filled >= Number(p.value),
+  hoards: (f) => f.hoards ?? 0,
 
-  danger: (_g, f, p) => f.set.rewards.danger >= Number(p.value),
+  veins: (f) => f.veins ?? 0,
 
-  hoards: (_g, f, p) => (f.hoards ?? 0) >= Number(p.value),
+  welled: (f) => f.welled ?? 0,
 
-  welled: (_g, f, p) => (f.welled ?? 0) >= Number(p.value),
+  wardens: (f) => f.wardens ?? 0,
 
-  bearers: (_g, f, p) => (f.bearers ?? 0) >= Number(p.value),
+  bearers: (f) => f.bearers ?? 0,
+
+  // INFLUENCE is the world the descent was actually run in, which is what a
+  // crystal's family buys. The Fissure has no line: it is where you start.
+  demonic: (f) => (f.set.theme === 'demonic' ? 1 : 0),
+
+  prismatic: (f) => (f.set.theme === 'prismatic' ? 1 : 0),
+
+  seam: (f) => (f.set.theme === 'seam' ? 1 : 0),
 };
 
-export const trialMet = (trial: TrialDef, game: GameState, facts: QuestFacts): boolean =>
-  trial.need.every((c) => TRIAL_CONDITIONS[c.kind]?.(game, facts, c) === true);
-
-export const trialDone = (game: GameState, id: string): boolean =>
-  (game.character.trials ?? []).includes(id);
-
-/** Still open, in table order: the screen shows them as a ladder. */
-export const openTrials = (game: GameState): TrialDef[] =>
-  TRIALS.filter((t) => !trialDone(game, t.id));
-
-/** IN PLACE, at the end of a clear; returns what was newly done, since a point
- *  earned in silence is a point nobody spends. EVERY open trial is asked, not
- *  just the next: the ladder is an order to read it in, never a gate. */
-export function takeTrials(game: GameState, facts: QuestFacts): TrialDef[] {
-  const won = openTrials(game).filter((t) => trialMet(t, game, facts));
-  if (won.length === 0) return [];
-  game.character.trials = [...(game.character.trials ?? []), ...won.map((t) => t.id)];
-  return won;
+/** WHAT ONE CLEARED DESCENT ADDS, read off the run's own state and NOWHERE
+ *  ELSE, so what a harness counts is what a clear counts. */
+export function descentFacts(state: RunState, socketed: Item[] = []): QuestFacts {
+  const opened = state.hoards.filter((h) => h.opened);
+  return {
+    set: state.set,
+    elapsed: state.elapsed,
+    socketed,
+    hoards: opened.filter((h) => h.pays === 'gear').length,
+    veins: opened.filter((h) => h.pays === 'currency').length,
+    welled: state.welled,
+    wardens: state.wardens,
+    bearers: state.bearers,
+  };
 }
 
-/** A dead trial id costs its point, so the walk is replayed and not trusted.
- *  Returns what it refunded, the way every other replay reports itself. */
+export const grindCount = (character: Character, counter: string): number =>
+  Number(character.grinds?.[counter]) || 0;
+
+export const grindDone = (character: Character, grind: GrindDef): boolean =>
+  grindCount(character, grind.counter) >= grind.need;
+
+/** Every line the counts have already paid for. */
+export const grindsDone = (character: Character): GrindDef[] =>
+  GRINDS.filter((g) => grindDone(character, g));
+
+/** IN PLACE, at the end of a clear; returns what the count just finished, since
+ *  a Tally earned in silence is a Tally nobody spends. */
+export function takeGrinds(game: GameState, facts: QuestFacts): GrindDef[] {
+  const character = game.character;
+  const before = new Set(grindsDone(character).map((g) => g.id));
+  const counts = { ...(character.grinds ?? {}) };
+  for (const [counter, of] of Object.entries(GRIND_COUNTERS)) {
+    const add = of(facts);
+    if (add > 0) counts[counter] = (Number(counts[counter]) || 0) + add;
+  }
+  character.grinds = counts;
+  return grindsDone(character).filter((g) => !before.has(g.id));
+}
+
+/** A dead counter costs whatever it paid, so the walk is replayed and not
+ *  trusted. Returns what it refunded, the way every other replay reports. */
 export function healTrials(character: Character): number {
-  const held = Array.isArray(character.trials) ? character.trials : [];
-  character.trials = held.filter((id) => TRIAL_BY_ID[id]);
+  const held = character.grinds;
+  const counts: Record<string, number> = {};
+  if (held && typeof held === 'object') {
+    for (const [counter, n] of Object.entries(held)) {
+      // A counter no line of the Ledger reads is a number nothing can spend.
+      if (GRIND_COUNTERS[counter] && Number.isFinite(Number(n))) {
+        counts[counter] = Math.max(0, Math.floor(Number(n)));
+      }
+    }
+  }
+  character.grinds = counts;
 
   const wanted = (Array.isArray(character.trialAllocated) ? character.trialAllocated : []).filter(
     (id) => typeof id === 'string'
@@ -74,3 +110,5 @@ export function healTrials(character: Character): number {
 
   return wanted.length - kept.length;
 }
+
+export { GRIND_BY_ID };

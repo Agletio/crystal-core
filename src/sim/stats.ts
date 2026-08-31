@@ -496,7 +496,7 @@ export function trialMod(character: Character): RolledMod | null {
     defId: 'trials',
     group: 'trials',
     slot: 'trials',
-    name: 'Trials',
+    name: 'The Reckoning',
     tier: 1,
     tags: [],
     stats: stats.map((s) => ({ ...s, tags: s.tags ?? [] })),

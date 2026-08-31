@@ -131,15 +131,15 @@ export function takeHandover(game: GameState, waiting: Waiting): Handover {
     items.push(crystal);
   }
   if (waiting.campaign) {
-    // The flag IS the points: `trialPointsFor` reads it, so the web fills the
-    // moment he lets go of them and never before.
+    // The flag IS the Tallies: `trialPointsFor` reads it, so the Reckoning
+    // fills the moment he lets go of them and never before.
     game.character.paidCampaign = true;
     for (let i = 0; i < CAMPAIGN_REWARD.crystals; i++) {
       const crystal = makeCrystal(1, 'normal');
       giveGift(game, crystal);
       items.push(crystal);
     }
-    says.push(`${CAMPAIGN_REWARD.points} trial points`);
+    says.push(`${CAMPAIGN_REWARD.points} Tallies`);
   }
   return { items, currency, says };
 }
@@ -258,15 +258,17 @@ export function advanceSocketed(game: GameState, set: RunSet): CrystalGain[] {
 
 // --- what a descent WAS -----------------------------------------------------
 
-/** What one cleared descent WAS, for a trial to be asked about it. */
+/** What one cleared descent WAS, for the Ledger to be counted off it. */
 export interface QuestFacts {
   set: RunSet;
   /** Seconds it took. */
   elapsed: number;
   /** The crystals it was launched with, already paid their experience. */
   socketed: Item[];
-  hoards?: number; // opened during it; absent for a caller with no run behind it
+  hoards?: number; // Hoards OPENED during it; absent for a caller with no run
+  veins?: number; // Veins opened during it — a lock that pays currency
   welled?: number; // welled bodies put down during it
+  wardens?: number; // Wardens put down during it
   bearers?: number; // Bearers put down during it
 }
 

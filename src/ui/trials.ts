@@ -1,14 +1,15 @@
 /**
- * The Trials screen: the ladder on the left, the web on the right.
+ * THE RECKONING: the Ledger on the left, the web on the right.
  *
  * A HUNDRED AND FIFTY-SIX nodes, so it ROAMS — built once at `BUILD` pixels per
  * unit with the camera a transform over the whole thing, exactly as the trade
  * and skill webs are. It opens FRAMED, because the shape of the web is the
  * decision: which four regions of twelve you can afford to walk.
  */
-import { CAMPAIGN_REWARD, LADDER, THEME_BY_ID, TRIALS, TRIAL_POINTS } from '../data';
+import { CAMPAIGN_REWARD, GRINDS, LADDER, THEME_BY_ID } from '../data';
 import {
   TRIALS_WEB,
+  TRIAL_POINTS_MAX,
   trialPointsFor,
   canAllocateTrial,
   canDeallocateTrial,
@@ -18,7 +19,7 @@ import {
 import { CENTRE } from '../trees/node';
 import { WebFind } from './websearch';
 import { allocateTrial, deallocateTrial, trialPointsLeft } from '../sim/character';
-import { trialDone } from '../game/trials';
+import { grindCount, grindDone } from '../game/trials';
 import { attachTooltip, hideTooltip } from './tooltip';
 import { nodeCard } from './glossary';
 import { warnAtCamp } from './atcamp';
@@ -54,25 +55,32 @@ const MARGIN = 0.7;
 export const trialNodeId = (nodeId: string): string => `trial-node-${nodeId}`;
 
 // ---------------------------------------------------------------------------
-// The ladder
+// The Ledger
 // ---------------------------------------------------------------------------
 
-/** In table order, done or not — the order IS the story, so a rung that is
- *  still open never hides the ones past it. */
+/** IN TABLE ORDER, done or not, and every one of them showing its COUNT — a
+ *  grind you are 43 of 100 through is a thing to be partway into, where "open"
+ *  is a switch. The bar is that count, so progress is read rather than parsed. */
 function renderLadder(): void {
   const host = $('trials-ladder');
   host.replaceChildren();
 
-  for (const trial of TRIALS) {
-    const done = trialDone(game, trial.id);
+  for (const grind of GRINDS) {
+    const done = grindDone(game.character, grind);
+    const at = Math.min(grind.need, grindCount(game.character, grind.counter));
     const row = el('div', `trialrow${done ? ' trialrow--done' : ''}`);
+    row.id = `grind-${grind.id}`;
     const head = el('div', 'trialrow__head');
-    head.append(el('span', 'trialrow__name', trial.name));
-    head.append(
-      el('span', 'trialrow__state', done ? `done — ${TRIAL_POINTS.perTrial} points` : 'open')
-    );
+    head.append(el('span', 'trialrow__name', grind.name));
+    head.append(el('span', 'trialrow__state',
+      `${at} / ${grind.need} — ${grind.pays} ${grind.pays === 1 ? 'Tally' : 'Tallies'}`));
     row.append(head);
-    row.append(el('div', 'trialrow__detail', trial.detail));
+    row.append(el('div', 'trialrow__detail', grind.detail));
+    const bar = el('div', 'trialrow__bar');
+    const fill = el('div', 'trialrow__fill');
+    fill.style.width = `${(100 * at) / grind.need}%`;
+    bar.append(fill);
+    row.append(bar);
     host.append(row);
   }
 }
@@ -215,7 +223,7 @@ function drawNode(
         ? 'not connected to anything you own'
         : spare > 0
           ? 'available'
-          : 'no trial points left';
+          : 'no Tallies left';
     return nodeCard(node.name, state, [node.description]);
   });
 
@@ -309,10 +317,10 @@ function render(): void {
   // the climb first; the web is per-character and starts at nothing to spend,
   // which reads as a thing to work toward rather than a door.
   $('trials-sub').textContent =
-    `${spent}/${earned} points spent · ${trialNodes().length} nodes`;
+    `${spent}/${earned} Tallies spent · ${TRIAL_POINTS_MAX} to earn · ${trialNodes().length} nodes`;
   $('trials-note').textContent =
-    `${CAMPAIGN_REWARD.points} points for finishing the climb and ${TRIAL_POINTS.perTrial} a trial. ` +
-    'Most nodes make a descent worse, and worse is what pays.';
+    `${CAMPAIGN_REWARD.points} Tallies for finishing the climb; every one after that ` +
+    'is ground out of the Ledger. Most nodes make a descent worse, and worse is what pays.';
 
   $('trials-webwrap').hidden = false;
   renderLadder();

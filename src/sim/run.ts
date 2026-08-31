@@ -432,6 +432,7 @@ export interface RunState {
   hoards: Hoard[];
   /** Bodies that welled up out of another and were then put down. */
   welled: number;
+  wardens: number; // Wardens put down; nothing else could tell one apart
   bearers: number; // Bearers put down, and so relics actually taken
   elapsed: number;
   status: RunStatus;
@@ -685,6 +686,7 @@ export class RunSim {
       vfx: [],
       hoards: this.putDown,
       welled: 0,
+      wardens: 0,
       bearers: 0,
       elapsed: 0,
       status: 'running',
@@ -3523,6 +3525,7 @@ export class RunSim {
 
     s.killed++;
     if (victim.welled) s.welled++;
+    if (victim.warden) s.wardens++;
     const back = (this.grants.manaOnKill as number) ?? 0;
     if (back > 0) {
       const hero = s.hero;

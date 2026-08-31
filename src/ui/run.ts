@@ -42,7 +42,7 @@ import { bagsFull, crystalsIn, socketed, unsocket } from '../game/state';
 import type { GameState } from '../game/state';
 import { crystalProgress } from '../game/crystals';
 import { bossBeaten, hasMet, takeBoss, takeMet, whoIsDown } from '../game/scenes';
-import { takeTrials } from '../game/trials';
+import { descentFacts, takeGrinds } from '../game/trials';
 import { SCENES, SCENE_BY_ID } from '../scenes';
 import type { Hotspot } from '../scenes/camp';
 import { initCamp, openCamp, closeCamp, isCampOpen, renderCamp, setCampEmber } from './camp';
@@ -524,18 +524,14 @@ function launch(): void {
   renderInventory();
 }
 
-/** Trials pay at the CLEAR, on the same rule a boss is marked by, and every
- *  open one is asked. Says what was won: an unspent point is a wasted room. */
+/** THE LEDGER counts at the CLEAR, on the same rule a boss is marked by, and
+ *  says what a count just finished: a Tally earned in silence is one nobody
+ *  spends. A DEATH counts nothing, like everything else a descent pays. */
 function payTrials(state: RunState): void {
-  const won = takeTrials(game, {
-    set: state.set,
-    elapsed: state.elapsed,
-    socketed: socketed(game),
-    hoards: state.hoards.filter((h) => h.opened).length,
-    welled: state.welled,
-    bearers: state.bearers,
-  });
-  for (const trial of won) note(`${trial.name}. One trial point.`, 'add');
+  const won = takeGrinds(game, descentFacts(state, socketed(game)));
+  for (const grind of won) {
+    note(`${grind.name}. ${grind.pays} ${grind.pays === 1 ? 'Tally' : 'Tallies'}.`, 'add');
+  }
   if (won.length > 0) renderBadges();
 }
 
@@ -1250,7 +1246,7 @@ export function initRun(state: GameState): void {
 
   // *"Change abandon to return to camp and make it where all the loot on the
   // floor just gets picked up when you return to camp."* It costs the DESCENT
-  // — no rung, no crystal, no trial point — and nothing else.
+  // — no rung, no crystal, no Tally — and nothing else.
   ($('run-abandon') as HTMLButtonElement).onclick = () => {
     if (visiting) return sceneEnded();
     if (!sim || phase === 'scene') return;

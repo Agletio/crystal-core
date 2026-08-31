@@ -51,7 +51,7 @@ export const CAMP_HOTSPOTS: Hotspot[] = [
     id: 'fire',
     x: 188, y: 304, w: 100, h: 78,
     opens: 'trials',
-    says: 'The fire. What you have promised the rock, and what it is costing you.',
+    says: 'The fire. The Reckoning: what the rock owes you, and what it is costing.',
   },
   // The FABRIC: a rectangle round the guy ropes reaches the socket and the shelf.
   {

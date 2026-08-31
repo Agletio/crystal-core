@@ -8,7 +8,7 @@
  */
 import { Rng } from '../rng';
 import { SCENES } from '../scenes';
-import { BOSS_BY_ID, CAMPAIGN_REWARD, INTRO, LADDER, THEME_BY_ID, TRIALS, TRIAL_POINTS } from '../data';
+import { BOSS_BY_ID, CAMPAIGN_REWARD, GRINDS, INTRO, LADDER, THEME_BY_ID } from '../data';
 import { ladderCharacter } from '../sim/loadout';
 import { mainSkillId, skillProgress } from '../sim/character';
 import { heal } from '../game/save';
@@ -144,21 +144,26 @@ function render(): void {
     gear.append(button);
   }
 
-  // A trial is normally a room and a boss, so without this the web behind them
-  // can only be looked at on a save that has already done the work.
+  // The Ledger is hundreds of descents, so without this the Reckoning behind it
+  // can only be looked at on a save that has already put the hours in.
   const trials = group(
-    'Trials',
-    'Points for the trials web. Nothing pays one until the climb is whole and the Lampwright has handed the campaign\'s reward over, so the climb buttons below are the door to this.'
+    'The Ledger',
+    'Tallies for the Reckoning. None of them pays until the Lampwright has handed the campaign\'s reward over, so the climb buttons below are the door to this.'
   );
+  const ground = GRINDS.reduce((n, g) => n + g.pays, 0);
   const paid = el('button', 'mini devbtn') as HTMLButtonElement;
   paid.id = 'dev-trials';
-  paid.append(el('span', 'devbtn__name', `Do every trial`));
+  paid.append(el('span', 'devbtn__name', 'Grind out the whole Ledger'));
   paid.append(el('span', 'devbtn__what',
-    `${TRIALS.length * TRIAL_POINTS.perTrial} points, once the campaign has paid its ${CAMPAIGN_REWARD.points}`));
+    `${ground} Tallies, on top of the campaign's ${CAMPAIGN_REWARD.points}`));
   paid.onclick = () => {
-    game.character.trials = TRIALS.map((t) => t.id);
+    const counts: Record<string, number> = { ...game.character.grinds };
+    for (const grind of GRINDS) {
+      counts[grind.counter] = Math.max(counts[grind.counter] ?? 0, grind.need);
+    }
+    game.character.grinds = counts;
     hooks.refresh();
-    note(`Dev: ${TRIALS.length} trial points.`);
+    note(`Dev: ${ground} Tallies.`);
     close();
   };
   trials.append(paid);

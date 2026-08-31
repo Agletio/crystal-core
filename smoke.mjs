@@ -303,13 +303,13 @@ $('run-menu-close').click();
 // descent — a plan you cannot see is a plan nobody makes — and every node on it
 // is dead until he hands the campaign's own reward over in the camp.
 $('camp-fire').click();
-assert($('trials-webwrap').hidden === false, 'a new character sees the whole trials web');
+assert($('trials-webwrap').hidden === false, 'a new character sees the whole Reckoning');
 assert(
   all('#trials-web .web__node--open').length === 0,
   'and not one node of it is walkable before the campaign has been paid for',
   String(all('#trials-web .web__node--open').length)
 );
-assert(/^0\//.test(text('trials-sub')), 'because it holds no points at all', text('trials-sub'));
+assert(/^0\//.test(text('trials-sub')), 'because it holds no Tallies at all', text('trials-sub'));
 $('trials-close').click();
 
 $('open-dev').click();
@@ -2795,22 +2795,31 @@ $('dev-kit').click();
   assert($('trade').hidden === true, 'and it closes again');
 }
 
-// --- the trials: the one web a level never pays for -----------------------
+// --- the Reckoning: the one web a level never pays for --------------------
 {
   // NOT ON THE RAIL any more: the fire in the camp is the only way in.
-  assert($('open-trials') === null, 'the rail has no Trials button');
+  assert($('open-trials') === null, 'the rail has no button for it');
   $('camp-fire').click();
   assert($('trials').hidden === false, 'and the fire opens a screen of its own');
 
+  const ledger = () => all('#trials-ladder .trialrow');
+  assert(ledger().length >= 12, 'the Ledger lists every grind there is, done or not', String(ledger().length));
   assert(
-    all('#trials-ladder .trialrow').length === 6,
-    'the ladder lists every trial there is, done or not',
-    String(all('#trials-ladder .trialrow').length)
+    all('#trials-ladder .trialrow--done').length === ledger().length,
+    'and the dev kit has ground all of them out, so the web can be walked',
+    String(all('#trials-ladder .trialrow--done').length)
+  );
+  // EVERY LINE SHOWS ITS COUNT. A grind is a thing to be partway through, so
+  // the row says how far and draws it — "open" is a switch and says nothing.
+  assert(
+    ledger().every((row) => /\d+ \/ \d+/.test(row.textContent)),
+    'and every one of them says its count, not just whether it is done',
+    ledger()[0]?.textContent?.slice(0, 60)
   );
   assert(
-    all('#trials-ladder .trialrow--done').length === 6,
-    'and the dev kit has done all of them, so the web can be walked',
-    String(all('#trials-ladder .trialrow--done').length)
+    all('#trials-ladder .trialrow__fill').length === ledger().length,
+    'and draws that count as a bar',
+    String(all('#trials-ladder .trialrow__fill').length)
   );
   // ALWAYS OPEN. It used to wait on the Fissure being whole; a web nobody can
   // look at is a plan nobody can make.
@@ -2820,7 +2829,7 @@ $('dev-kit').click();
     String($('trials-webwrap').hidden)
   );
   assert(
-    /points spent/.test(text('trials-sub')) && /nodes/.test(text('trials-sub')),
+    /Tallies spent/.test(text('trials-sub')) && /nodes/.test(text('trials-sub')),
     'and says what is spent, what is left to earn, and how big it is',
     text('trials-sub')
   );
@@ -2839,7 +2848,7 @@ $('dev-kit').click();
   openTrial()[0].dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
   assert(
     all('#trials-web .web__node--on').length === 1,
-    'a trial point spends on the node you clicked',
+    'a Tally spends on the node you clicked',
     String(all('#trials-web .web__node--on').length)
   );
   all('#trials-web .web__node--on')[0].dispatchEvent(

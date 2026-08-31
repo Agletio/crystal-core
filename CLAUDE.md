@@ -196,7 +196,7 @@ have that only be from camp"* — the crack. **FOUR MORE SCREENS ARE THE
 PICTURE'S ALONE**: the STASH is the shelf, the CRYSTALS are the four sockets
 (which open that screen whether or not one is in them — taking a crystal back
 is the Fissure card's own sockets' job, and a filled socket that unsocketed
-instead would leave no door at all), and the TRIALS are the FIRE, the one lit
+instead would leave no door at all), and THE RECKONING is the FIRE, the one lit
 thing in the art nothing else claimed. Everything else is still on the rail,
 and a screen with neither a button nor a hotspot is one somebody will lose.
 
@@ -253,7 +253,7 @@ because failing a rung already costs nothing but time. Gear never carries one.
 A roll running out is the sixth thing that ends an Enter-chain.
 
 **A CRYSTAL ROLLS A RULE, NEVER A NUMBER ON A BODY.** *"Change all the mods to
-be effectively just powerful nodes from the trials tree. Like for example it
+be effectively just powerful nodes from the web. Like for example it
 could be 50% chance for enemies guarding a box to all respawn once they die."*
 Eleven modifiers used to be monster life, damage, armour, crit, three added
 elements, speed and three wards; raw scaling is the RUNG's now and every one of
@@ -279,10 +279,10 @@ A fifth socket takes a **boss key**.
 IT.** *"You shouldn't see any trial stuff or even receive any crystals until
 you've cleared the entire campaign."* `campaignDone` is every zone climbed to
 its own boss, and finishing it pays NOTHING on the report: `CAMPAIGN_REWARD` —
-one crystal and 10 points — is a third thing `giftWaiting` puts in his hands,
+one crystal and the first 10 Tallies — is a third thing `giftWaiting` holds,
 taken in his own scene in the camp, which is what makes him the person the
 campaign ends at. `Character.paidCampaign` is set by the HANDOVER and read by
-`trialPointsFor`, so the points and the crystal arrive together and a re-grind
+`trialPointsFor`, so the Tallies and the crystal arrive together and a re-grind
 pays nothing. **The finish line is SAID before you get there** — `campaignLine`
 on the climb names the depth that ends it and quotes `campaignPrize`, because a
 reward nobody can see is a reward nobody is climbing toward. The web is on
@@ -374,18 +374,27 @@ PRICE CANNOT THROTTLE ANYTHING**: a clear banks 54 gold at the bare Fissure
 against 30,359 at the deep end, so one number tuned to cost a clear at the top
 is 560 clears at the bottom and a new character could never buy one.
 
-**Twelve modifiers was the whole ceiling, and the TRIALS WEB is how it rises.**
+**Twelve modifiers was the whole ceiling, and THE RECKONING is how it rises.**
 Four sockets of three is all the difficulty a crystal can ever hold, so the web
 is a standing set of modifiers on top. **It is a MAP, not a fan**: TWELVE
 WHEELS on three rings, 156 nodes, joined by ROADS of generic nodes, so reaching
 a thing is a route you worked out. A wheel's ring of six is one idea said six
 ways with its MAJOR at the middle, hung off the ring point FURTHEST from the
-road — half the ring is what the major costs.
+road — half the ring is what the major costs. Its identifiers stay `trial_` and
+`Character.trialAllocated`, because a save points at them.
 
-**60 points: five a TRIAL, one a RUNG, and the Fissure pays nothing** — the web
-is SHUT until the Fissure is whole (`trialsOpen`), so a new character meets the
-climb before it meets a hundred and fifty-six nodes. Never a level, so it cannot
-be ground for. Its lines merge into `RunSet.mods` beside the crystals' own and
+**60 TALLIES, and every one of them is GROUND OUT.** *"Instead they will all be
+revolving around doing grinds… open 100 hordes, swell 1000 enemies, kill 2500
+wardens stuff like that."* `TALLIES.max` is what the web is sized for, and the
+campaign's 10 plus **THE LEDGER** come to exactly it — 18 lines in `GRINDS`,
+four families of ladders: descents cleared, Hoards and Veins opened, Welled
+bodies and Wardens and Bearers put down, and descents run under each influence.
+A line is one row and one `GRIND_COUNTERS` entry saying what a clear ADDS to it,
+counted through the one `descentFacts`; the demo plays a real descent for every
+counter, because a counter nothing ticks is a grind nobody can finish. The
+counts are `Character.grinds`, PER CHARACTER, and **what they have paid for is
+DERIVED** — a stored list is one that can disagree. Never a level, so it cannot
+be levelled for. Its lines merge into `RunSet.mods` beside the crystals' own and
 are weighed by the same `crystalRewards`, so harder is what pays. **Every one
 of its 156 nodes is a RULE, the same vocabulary the crystals roll** — no
 monster life, no damage, no armour, no crit, no added element and no ward
@@ -411,7 +420,7 @@ found**: *"make it where all the loot on the floor just gets
 picked up when you return to camp… you can min max by doing a hard level for a
 bit and then returning before you die."* Only DYING banks nothing. What a walk
 does not buy is PROGRESS — no rung, no crystal out of the wall, no levelling of
-what is socketed, no trial point — so going deeper than you can finish is a
+what is socketed, no Tally — so going deeper than you can finish is a
 decision rather than a punishment. "Leave after this run" is gone with it: it
 armed a stop one descent ahead, which is the same stop said early.
 
@@ -550,7 +559,8 @@ src/trades.ts      the character's own web; src/trades/* the three trades
 src/ui/webcam.ts   how ANY web is panned and zoomed, and why it is built once
 src/moves/         the movement webs
 src/ladder.ts      the CLIMB: which rung is open, and what a clear records
-src/trials.ts      the web a TRIAL pays for; src/trials/* its six arms
+src/trials.ts      the RECKONING and what a Tally buys; src/trials/* its arms
+src/game/trials.ts the LEDGER: what a clear counts, and what that has paid for
 src/scenes.ts      the PEOPLE and the one arena; src/scenes/camp.ts the picture
 src/vignettes.ts   what the rock does: cover, growth, solidity
 src/sim/           the deterministic simulation

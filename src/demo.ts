@@ -59,7 +59,7 @@ import {
   DANGER_STATS,
   DROP_GROUPS,
   MONSTER_RANKS,
-  TRIALS,
+  GRINDS,
   DAMAGE_TYPE_BY_ID,
   MONSTER_ABILITIES,
   abilitiesFor,
@@ -140,10 +140,11 @@ import { lootSpan } from './render/renderer';
 import { RunSim, TICK, runToCompletion, walkToMeeting } from './sim/run';
 import { findPath } from './sim/pathfind';
 import { folkMet, gaveKey, hasMet, keyOwed, takeBoss, takeMet, whoIsDown } from './game/scenes';
-import { TRIAL_CONDITIONS, healTrials } from './game/trials';
-import { TRIAL_POINTS_MAX, canAllocateTrial, canDeallocateTrial, trialNodes, trialPointsFor } from './trials';
+import { GRIND_COUNTERS, descentFacts, healTrials, takeGrinds } from './game/trials';
+import {
+  TALLY_CAP, TRIAL_POINTS_MAX, canAllocateTrial, canDeallocateTrial, trialNodes, trialPointsFor,
+} from './trials';
 import * as trialsModule from './trials';
-import { TRIAL_POINTS } from './data';
 import { forgedFor, graft, graftRefusal, graftableKinds, relicFor, spendRelic } from './game/graft';
 import {SCENES, SCENE_BY_ID } from './scenes';
 import { CAMP_ART, CAMP_HOTSPOTS, CAMP_SPOTS, CAMP_STAND } from './scenes/camp';
@@ -3111,26 +3112,36 @@ rule('AILMENTS — does dealing the type, and only that, apply the ailment?');
 }
 
 // ===========================================================================
-rule('THE TRIALS WEB — is a harder descent actually harder, and paid for?');
+rule('THE RECKONING — is a harder descent actually harder, and paid for?');
 
 {
   const nodes = trialNodes();
   const bare = [makeCrystal(2), makeCrystal(2)];
 
-  // Every clause has to name a condition that exists, or the trial is one
-  // nobody can ever finish and the point behind it never arrives.
-  const strays = TRIALS.flatMap((t) =>
-    t.need.filter((c) => !TRIAL_CONDITIONS[c.kind]).map((c) => `${t.id}: ${c.kind}`)
+  // THE LEDGER. Every line has to name a counter something actually adds to,
+  // or it is a grind nobody can ever finish and the Tallies never arrive.
+  const strays = GRINDS.filter((g) => !GRIND_COUNTERS[g.counter]).map((g) => `${g.id}: ${g.counter}`);
+  check(strays.length === 0, `all ${GRINDS.length} lines of the Ledger count something that exists`, strays.join(', '));
+  // AND THE BUDGET IS EXACT. The web is built for `TALLIES.max`; the campaign
+  // and the Ledger between them have to come to it, or the Reckoning is sized
+  // for points nothing pays or holds points nothing can spend.
+  check(
+    TRIAL_POINTS_MAX === TALLY_CAP,
+    `the campaign's ${CAMPAIGN_REWARD.points} and the Ledger's ${TRIAL_POINTS_MAX - CAMPAIGN_REWARD.points} come to exactly the ${TALLY_CAP} the web is built for`,
+    `${TRIAL_POINTS_MAX} against ${TALLY_CAP}`
   );
-  check(strays.length === 0, `all ${TRIALS.length} trials ask conditions that exist`, strays.join(', '));
+  // Nothing is bigger than the campaign's own handout, which is the ONE thing
+  // paid without grinding: a single line worth more would beat the finish line.
+  const outsized = GRINDS.filter((g) => g.pays > CAMPAIGN_REWARD.points).map((g) => g.id);
+  check(outsized.length === 0, 'and no one line of it outpays finishing the campaign', outsized.join(', '));
 
   // PER CHARACTER, and always OPEN. Everything the web is made of hangs off the
-  // character — the trials done, the depths cleared, the nodes walked and the
-  // choices on them — so a second character starts at nothing with the web in
-  // front of it. Shared, one character's grind would spend another's points.
+  // character — the Ledger's counts, the nodes walked and the choices on them —
+  // so a second one starts at nothing with the web in front of it. Shared, one
+  // character's grind would spend another's Tallies.
   {
     const one = makeCharacter({}, 'strike');
-    one.trials = TRIALS.map((t) => t.id);
+    one.grinds = Object.fromEntries(GRINDS.map((g) => [g.counter, g.need]));
     // THE WHOLE CAMPAIGN, PAID, because nothing pays a point before the
     // Lampwright has handed the climb's own reward over.
     one.climbed = Object.fromEntries(LADDER.zones.map((zone) => [zone.id, zone.rungs]));
@@ -3141,7 +3152,7 @@ rule('THE TRIALS WEB — is a harder descent actually harder, and paid for?');
       trialPointsFor(two) === 0
         && (two.trialAllocated ?? []).length === 0
         && trialPointsFor(one) > 0,
-      'the trials web is the CHARACTER\'s: a second one starts at nothing',
+      'the Reckoning is the CHARACTER\'s: a second one starts at nothing',
       `${trialPointsFor(one)} against ${trialPointsFor(two)}`
     );
     // And nothing gates LOOKING at it: a plan you cannot see is a plan nobody
@@ -3183,7 +3194,7 @@ rule('THE TRIALS WEB — is a harder descent actually harder, and paid for?');
   const aimed = (pick: string): number => {
     const who: Character = {
       ...ladderCharacter(4, new Rng(7)),
-      trials: TRIALS.map((t) => t.id),
+      grinds: Object.fromEntries(GRINDS.map((g) => [g.counter, g.need])),
       trialAllocated: [asked.id],
       trialChoices: { [asked.id]: pick },
     };
@@ -3196,7 +3207,7 @@ rule('THE TRIALS WEB — is a harder descent actually harder, and paid for?');
     bent.join(', ')
   );
 
-  // Walked in, and out again, at the full budget the trials can ever pay.
+  // Walked in, and out again, at the full budget the Ledger can ever pay.
   const walk: string[] = [];
   const spendRng = new Rng(4141);
   while (walk.length < TRIAL_POINTS_MAX) {
@@ -3204,7 +3215,7 @@ rule('THE TRIALS WEB — is a harder descent actually harder, and paid for?');
     if (open.length === 0) break;
     walk.push(spendRng.pick(open)!.id);
   }
-  check(walk.length === TRIAL_POINTS_MAX, `all ${TRIAL_POINTS_MAX} trial points can be spent`, String(walk.length));
+  check(walk.length === TRIAL_POINTS_MAX, `all ${TRIAL_POINTS_MAX} Tallies can be spent`, String(walk.length));
   let held = [...walk];
   while (held.length > 0) {
     const loose = held.find((id) => canDeallocateTrial(id, held));
@@ -3215,7 +3226,11 @@ rule('THE TRIALS WEB — is a harder descent actually harder, and paid for?');
 
   // The whole web on one character, against the same crystals: what it does to
   // a descent has to be visible in the SET, or none of the rest of this matters.
-  const walked = { ...ladderCharacter(4, new Rng(7)), trials: TRIALS.map((t) => t.id), trialAllocated: nodes.map((n) => n.id) };
+  const walked = {
+    ...ladderCharacter(4, new Rng(7)),
+    grinds: Object.fromEntries(GRINDS.map((g) => [g.counter, g.need])),
+    trialAllocated: nodes.map((n) => n.id),
+  };
   const before = runSet(bare);
   const after = runSet(bare, trialMod(walked));
   check(
@@ -3238,7 +3253,7 @@ rule('THE TRIALS WEB — is a harder descent actually harder, and paid for?');
   const plain = ranked(ladderCharacter(4, new Rng(7)));
   const lifted = ranked({
     ...ladderCharacter(4, new Rng(7)),
-    trials: TRIALS.map((t) => t.id),
+    grinds: Object.fromEntries(GRINDS.map((g) => [g.counter, g.need])),
     trialAllocated: nodes.filter((n) => (n.stats ?? []).some((s) => s.stat === 'monsterRank')).map((n) => n.id),
   });
   check(lifted > plain, 'and the Watch really does put more Rares in a room', `${plain} -> ${lifted}`);
@@ -3247,7 +3262,7 @@ rule('THE TRIALS WEB — is a harder descent actually harder, and paid for?');
   // a player: it is put down, it is guarded, and killing the guard opens it.
   const hoarder: Character = {
     ...ladderCharacter(4, new Rng(7)),
-    trials: TRIALS.map((t) => t.id),
+    grinds: Object.fromEntries(GRINDS.map((g) => [g.counter, g.need])),
     trialAllocated: nodes
       .filter((n) => (n.stats ?? []).some((s) => s.stat === 'hoardChance'))
       .map((n) => n.id),
@@ -3291,7 +3306,7 @@ rule('THE TRIALS WEB — is a harder descent actually harder, and paid for?');
   // and a run that does not finish is a mechanism failure rather than a number.
   const welling: Character = {
     ...ladderCharacter(4, new Rng(7)),
-    trials: TRIALS.map((t) => t.id),
+    grinds: Object.fromEntries(GRINDS.map((g) => [g.counter, g.need])),
     trialAllocated: nodes
       .filter((n) => (n.stats ?? []).some((s) => s.stat === 'wellChance'))
       .map((n) => n.id),
@@ -3334,7 +3349,7 @@ rule('THE TRIALS WEB — is a harder descent actually harder, and paid for?');
   const bearing = (crystals: Item[]): RunState => {
     const who: Character = {
       ...ladderCharacter(4, new Rng(7)),
-      trials: TRIALS.map((t) => t.id),
+      grinds: Object.fromEntries(GRINDS.map((g) => [g.counter, g.need])),
       trialAllocated: nodes
         .filter((n) => (n.stats ?? []).some((s) => s.stat === 'bearerChance'))
         .map((n) => n.id),
@@ -3362,19 +3377,22 @@ rule('THE TRIALS WEB — is a harder descent actually harder, and paid for?');
     [...new Set(borne.map((m) => m.rank))].join(', ')
   );
 
-  // A trial deleted refunds the point it bought rather than stranding the walk.
-  // On a FINISHED campaign, since nothing pays a point before that.
+  // A COUNTER NOBODY READS refunds whatever it paid rather than stranding the
+  // walk. On a PAID campaign, since nothing pays a Tally before that.
   const save = createGame('dev');
-  save.character.climbed = Object.fromEntries(LADDER.zones.map((z) => [z.id, z.rungs]));
   save.character.paidCampaign = true;
   save.character.trialAllocated = [...walk];
-  save.character.trials = [TRIALS[0].id, 'a_trial_nobody_wrote'];
+  save.character.grinds = {
+    [GRINDS[0].counter]: GRINDS[0].need,
+    a_counter_nobody_wrote: 9999,
+  };
   healTrials(save.character);
-  const owed = CAMPAIGN_REWARD.points + TRIAL_POINTS.perTrial;
+  const owed = CAMPAIGN_REWARD.points + GRINDS[0].pays;
   check(
-    save.character.trials.length === 1 && save.character.trialAllocated.length === Math.min(walk.length, owed),
-    `and heal() cuts a walk back to what the campaign and one surviving trial pay for — ${owed}`,
-    `${save.character.trials.length} trials, ${save.character.trialAllocated.length} nodes`
+    !('a_counter_nobody_wrote' in save.character.grinds)
+      && save.character.trialAllocated.length === Math.min(walk.length, owed),
+    `and heal() drops a counter nothing reads and cuts the walk back to ${owed}`,
+    `${JSON.stringify(save.character.grinds)}, ${save.character.trialAllocated.length} nodes`
   );
 }
 
@@ -10975,6 +10993,73 @@ rule('THE ROCK\'S OWN RULES — does a crystal DO something, or just add up?');
         .reduce((n, [, v]) => n + v, 0);
     line(`  a Vein pays ${coin(vein)} currency and ${vein.end.loot.items.length} pieces; ` +
       `a Hoard ${coin(hoard)} and ${hoard.end.loot.items.length}`);
+
+    // EVERY LINE OF THE LEDGER IS COUNTED OFF A REAL DESCENT. A counter nothing
+    // ever adds to is a grind nobody can finish and Tallies nobody can spend,
+    // and no table check can see that — so each one is PLAYED here, through the
+    // same `descentFacts` the run loop counts with.
+    const ticked: string[] = [];
+    const dead: string[] = [];
+    const force: Record<string, () => Item[]> = {
+      descents: () => [makeCrystal(4)],
+      hoards: () => carrying('hoardChance', 100),
+      veins: () => carrying('veinChance', 100),
+      welled: () => carrying('wellChance', 100),
+      wardens: () => carrying('wardenChance', 100),
+      // A Bearer carries a RELIC and the Fissure owns none, so the gate keeps
+      // one out of a bare run whatever the chance: it has to be the Rot.
+      bearers: () => {
+        const set = [makeCrystal(4, 'demonic'), makeCrystal(4, 'demonic')];
+        set[0].mods = carrying('bearerChance', 100)[0].mods;
+        return set;
+      },
+      // INFLUENCE is composition, so these are the crystals themselves rather
+      // than a modifier: the Seam is exactly two of each of the other two.
+      demonic: () => [makeCrystal(4, 'demonic'), makeCrystal(4, 'demonic')],
+      prismatic: () => [makeCrystal(4, 'prismatic'), makeCrystal(4, 'prismatic')],
+      seam: () => [
+        makeCrystal(4, 'demonic'), makeCrystal(4, 'demonic'),
+        makeCrystal(4, 'prismatic'), makeCrystal(4, 'prismatic'),
+      ],
+    };
+    for (const counter of Object.keys(GRIND_COUNTERS)) {
+      const build = force[counter];
+      if (!build) { dead.push(`${counter}: nothing in the demo makes it happen`); continue; }
+      const { sim } = play(build(), 8484);
+      const added = GRIND_COUNTERS[counter](descentFacts(sim.state));
+      if (added > 0) ticked.push(`${counter} +${added}`);
+      else dead.push(`${counter} never moved`);
+    }
+    check(
+      dead.length === 0,
+      `all ${Object.keys(GRIND_COUNTERS).length} of the Ledger's counters tick in a descent actually played`,
+      dead.join(', ')
+    );
+    line(`  ${ticked.join(', ')}`);
+
+    // AND THE COUNT IS WHAT PAYS. One descent through `takeGrinds`, on a
+    // character one short of a threshold, has to finish that line and no other.
+    {
+      const first = GRINDS.find((g) => g.counter === 'descents')!;
+      const nearly = createGame('fresh');
+      nearly.character.paidCampaign = true;
+      nearly.character.grinds = { descents: first.need - 1 };
+      const was = trialPointsFor(nearly.character);
+      const won = takeGrinds(nearly, descentFacts(play([makeCrystal(4)], 8484).sim.state));
+      check(
+        won.length === 1 && won[0].id === first.id
+          && trialPointsFor(nearly.character) === was + first.pays,
+        `and the descent that reaches ${first.need} pays ${first.name} its ${first.pays}, and nothing else`,
+        `${won.map((g) => g.id).join(', ')} — ${was} to ${trialPointsFor(nearly.character)}`
+      );
+      // NEVER TWICE. A line already paid is not paid again by the next clear.
+      const twice = takeGrinds(nearly, descentFacts(play([makeCrystal(4)], 8484).sim.state));
+      check(
+        twice.length === 0 && trialPointsFor(nearly.character) === was + first.pays,
+        'and the clear after it pays nothing more for the same line',
+        `${twice.length} won, ${trialPointsFor(nearly.character)} Tallies`
+      );
+    }
     check(
       vein.sim.state.hoards.every((h) => h.pays === 'currency')
         && hoard.sim.state.hoards.every((h) => h.pays === 'gear'),

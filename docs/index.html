@@ -1861,7 +1861,7 @@
     transform-origin: 0 0; will-change: transform;
   }
   .web--drag { cursor: grabbing; }
-  /* The trials web shares its row with the ladder, so it is the shorter one. */
+  /* The Reckoning shares its row with the Ledger, so it is the shorter one. */
   .webwrap--trade { height: min(44vh, 380px, calc(100vh - var(--dock-h, 0px) - 205px)); margin-top: 12px; }
   /* The ladder beside the web: the order is the story, so it is read down. */
   .trialsplit { display: grid; grid-template-columns: minmax(220px, 1fr) 2fr; gap: 12px; align-items: start; }
@@ -1884,6 +1884,9 @@
   .trialrow--done .trialrow__name { color: var(--citrine); }
   .trialrow__state { color: var(--text-dim); font-size: 11px; }
   .trialrow__detail { color: var(--text-dim); font-size: 11px; margin-top: 2px; }
+  /* The COUNT, drawn: a grind is a thing to be partway through. */
+  .trialrow__bar { height: 3px; margin-top: 4px; background: var(--edge); border-radius: 2px; overflow: hidden; }
+  .trialrow__fill { height: 100%; background: var(--citrine); }
   .settabs { display: flex; gap: 6px; margin-bottom: 10px; }
   .keyrows, .bookrows { display: flex; flex-direction: column; gap: 4px; max-height: min(52vh, 440px); overflow-y: auto; }
   .keyrow { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 3px 2px; }
@@ -2568,7 +2571,7 @@
 <div class="modal" id="trials" hidden>
   <div class="modal__card modal__card--wide modal__card--atlas">
     <div class="modal__head">
-      <h2 class="modal__title">Trials</h2>
+      <h2 class="modal__title">The Reckoning</h2>
       <div class="seedbar">
         <button class="mini" id="trials-close">Close</button>
       </div>
@@ -2583,7 +2586,7 @@
       <div class="trialsplit trialsplit--atlas">
         <div class="trialladder" id="trials-ladder"></div>
         <div class="webwrap webwrap--trade webwrap--trials" id="trials-webwrap">
-          <svg class="web web--roam" id="trials-web" role="img" aria-label="trials web"></svg>
+          <svg class="web web--roam" id="trials-web" role="img" aria-label="the Reckoning"></svg>
           <div class="webmenu" id="trials-choice" hidden></div>
           <div class="webhud">
             <button class="mini" id="trials-fit">Fit</button>

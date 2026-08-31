@@ -2,7 +2,7 @@
  * The trials web: the fourth thing walked through `webgraph.ts`, and the only
  * one whose points are not bought by a level.
  */
-import { CAMPAIGN_REWARD, LADDER, TRIALS, TRIAL_POINTS } from './data';
+import { CAMPAIGN_REWARD, GRINDS, TALLIES } from './data';
 import { buildTrials } from './trials/layout';
 import { TRIAL_WEB } from './trials/web';
 import { canAllocateIn, canDeallocateIn, neighboursIn, replayWeb } from './webgraph';
@@ -21,21 +21,24 @@ export const trialNodeById = (nodeId: string): SkillNodeDef | undefined =>
 export const trialRegionOf = (nodeId: string): string | undefined => TRIALS_WEB.regionOf[nodeId];
 
 /** NOTHING UNTIL THE LAMPWRIGHT HANDS THE CAMPAIGN'S REWARD OVER. Gated on the
- *  HANDOVER and not on the climb, so the points arrive in his hands beside the
- *  crystal; the rest is earned by grinding. */
+ *  HANDOVER and not on the climb, so the Tallies arrive in his hands beside the
+ *  crystal; every one after them is ground out of the Ledger. */
 export const trialPointsFor = (character: Character): number => {
   if (!character.paidCampaign) return 0;
-  return CAMPAIGN_REWARD.points + (character.trials?.length ?? 0) * TRIAL_POINTS.perTrial;
-};
-
-/** THE CEILING THE WEB IS SIZED FOR. `trialPointsFor` pays less; the shortfall
- *  is the grinds nobody has written, which have to sum to exactly this. */
-export const TRIAL_POINTS_MAX =
-  TRIALS.length * TRIAL_POINTS.perTrial +
-  LADDER.zones.reduce(
-    (n, z, i) => (i <= TRIAL_POINTS.freeZone ? n : n + z.rungs * TRIAL_POINTS.perRung),
+  const counts = character.grinds ?? {};
+  const ground = GRINDS.reduce(
+    (n, g) => n + ((Number(counts[g.counter]) || 0) >= g.need ? g.pays : 0),
     0
   );
+  return CAMPAIGN_REWARD.points + ground;
+};
+
+/** EVERY TALLY THERE IS: the campaign's, and the whole Ledger ground out. */
+export const TRIAL_POINTS_MAX = CAMPAIGN_REWARD.points + GRINDS.reduce((n, g) => n + g.pays, 0);
+
+/** What the web is SIZED for. `TRIAL_POINTS_MAX` has to come to this, or the
+ *  Reckoning is built for a budget nothing can pay — the demo holds it. */
+export const TALLY_CAP = TALLIES.max;
 
 export const neighboursOfTrial = (nodeId: string): Set<string> =>
   neighboursIn(trialNodes(), nodeId);

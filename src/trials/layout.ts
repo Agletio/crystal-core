@@ -1,5 +1,5 @@
 /**
- * Geometry for the trials web: a MAP of wheels joined by roads.
+ * Geometry for the Reckoning: a MAP of wheels joined by roads.
  *
  * A ROAD is a straight run of generic nodes between two anchors. Anchors sit on
  * concentric rings and a road only ever joins one ring to the next, so two
@@ -29,7 +29,7 @@ const jitter = (a: number, b: number, salt: number): number => {
 };
 
 export function buildTrials(spec: TrialSpec): BuiltTrials {
-  if (spec.wheels.length === 0) throw new Error('the trials web has no wheels');
+  if (spec.wheels.length === 0) throw new Error('the Reckoning has no wheels');
 
   const nodes: SkillNodeDef[] = [];
   const regionOf: Record<string, string> = {};

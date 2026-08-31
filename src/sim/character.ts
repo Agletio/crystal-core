@@ -49,12 +49,12 @@ export interface Character {
   paidCampaign?: boolean; // the Lampwright has handed the campaign over. Once
   /** Nodes walked on it, out of a budget character level funds. */
   tradeAllocated: string[];
-  /** Trials done, in the order they were done. Its LENGTH is the point budget
-   *  for the trials web — a second counter is a number that can disagree. */
-  trials: string[];
+  /** THE LEDGER'S COUNTS, per counter, and PER CHARACTER so a second one starts
+   *  the Reckoning at nothing. What they PAID for is derived, never stored. */
+  grinds: Record<string, number>;
   /** Rungs CLEARED per zone, keyed by theme. See `src/ladder.ts`. */
   climbed: Record<string, number>;
-  /** Nodes walked on the trials web. */
+  /** Nodes walked on the Reckoning. */
   trialAllocated: string[];
   /** Trials node id -> the option taken on it, for nodes that offer one. */
   trialChoices?: Record<string, string>;
@@ -126,7 +126,7 @@ export function makeCharacter(
     attributes: {},
     trade: null,
     tradeAllocated: [],
-    trials: [],
+    grinds: {},
     climbed: {},
     trialAllocated: [],
   };
