@@ -350,6 +350,29 @@ is no filter, because there is nothing to filter.
 - **The demo, `mods`, `smoke` and `shots`.** A new screen is a new shot; a rail
   icon with no `ICONS` entry renders nothing and fails nowhere.
 
+### Which harness each step can actually reach
+
+**MEASURED: `demo` is 19 minutes and `smoke` is 7.** *The user's standing word:
+"remember demo runs are long, only run them fully if necessary."* So a step runs
+what it can REACH, and the whole suite goes before a PUSH and not before every
+commit. `typecheck` (seconds), `comments` and `theme` are free and run always.
+
+| step | what it can reach | what it cannot |
+|---|---|---|
+| 0 camp art | nothing — it is a picture until step 8 wires it | all of it |
+| 1 tables | `mods`, `typecheck`. A row nothing reads cannot move a sim number | `demo`, `smoke` |
+| 2 gathering | **`demo`** — it changes what a descent PAYS and what a seed replays | |
+| 3 processing | `smoke` (a camp screen), `shots`. Camp-side only, so no descent moves | `demo`, unless a job touches a run |
+| 4 crafting | `mods` (a currency still rolls), `demo` for the drop/craft split only | |
+| 5 jewellery | `mods`, `shots`. Twenty rows and a tint; nothing in the sim | `demo` |
+| 6 stat power | **`demo`** — the whole point is a number it asserts | |
+| 7 cooking | `demo` only if a meal reaches a descent, which it does. `smoke` for the camp screen | |
+| 8 gamble, filter out | `smoke`, `shots`, `drag` — screens and the rail | `demo`, unless selling moved |
+
+**Build before `smoke`, `shots`, `drag` or `peek`** — they load the committed
+`docs/app.js`, and running one against a stale bundle has already produced a
+false "the fix does not work" once.
+
 ### What this DELETES
 
 The Filter screen, `KEEP_GROUPS`, `GameState.junk`, the bulk sell, the shelf of
