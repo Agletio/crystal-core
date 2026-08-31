@@ -26,62 +26,64 @@ export const CAMP_ART = 'camp';
 export const CAMP_HOTSPOTS: Hotspot[] = [
   {
     id: 'crack',
-    x: 300, y: 0, w: 80, h: 250,
+    x: 308, y: 0, w: 64, h: 215,
     opens: 'fissure',
     says: 'The crack. It goes down a long way, and it is always open.',
   },
-  { id: 'socket0', x: 222, y: 30, w: 76, h: 76, opens: 'socket', slot: 0, says: 'A socket cut into the rock.' },
-  { id: 'socket1', x: 392, y: 30, w: 76, h: 76, opens: 'socket', slot: 1, says: 'A socket cut into the rock.' },
-  { id: 'socket2', x: 220, y: 118, w: 76, h: 76, opens: 'socket', slot: 2, says: 'A socket cut into the rock.' },
-  { id: 'socket3', x: 392, y: 120, w: 76, h: 76, opens: 'socket', slot: 3, says: 'A socket cut into the rock.' },
+  // FOUR of the SIX hollows drawn: the spare pair has nothing pointing at it.
+  { id: 'socket0', x: 212, y: 39, w: 42, h: 51, opens: 'socket', slot: 0, says: 'A socket cut into the rock.' },
+  { id: 'socket1', x: 430, y: 37, w: 42, h: 53, opens: 'socket', slot: 1, says: 'A socket cut into the rock.' },
+  { id: 'socket2', x: 254, y: 72, w: 50, h: 46, opens: 'socket', slot: 2, says: 'A socket cut into the rock.' },
+  { id: 'socket3', x: 380, y: 72, w: 49, h: 47, opens: 'socket', slot: 3, says: 'A socket cut into the rock.' },
   {
     id: 'bench',
-    x: 14, y: 186, w: 172, h: 116,
+    x: 176, y: 120, w: 78, h: 54,
     opens: 'craft',
     says: 'Your bench. Somewhere to pour a currency over a piece and see what it does.',
   },
   {
     id: 'shelf',
-    x: 618, y: 174, w: 68, h: 152,
+    x: 122, y: 88, w: 54, h: 84,
     opens: 'stash',
     says: 'The shelf. What you are not carrying, and what you meant to come back for.',
   },
-  // THE FIRE, the one lit thing in the picture nothing else claims.
   {
     id: 'fire',
-    x: 188, y: 304, w: 100, h: 78,
+    x: 308, y: 222, w: 76, h: 52,
     opens: 'trials',
     says: 'The fire. The Reckoning: what the rock owes you, and what it is costing.',
   },
-  // The FABRIC: a rectangle round the guy ropes reaches the socket and the shelf.
   {
     id: 'tent',
-    x: 470, y: 136, w: 148, h: 166,
+    x: 532, y: 106, w: 98, h: 86,
     opens: 'character',
     says: 'Your tent. What you are wearing, and what it comes to.',
   },
 ];
 
-/** Where the hero stands: his FEET, on the open grass in front of the split. */
-export const CAMP_STAND = { x: 344, y: 306 };
+/** Where the hero stands: his FEET, on the beaten ground below the split. */
+export const CAMP_STAND = { x: 344, y: 300 };
 
-/** Art pixels a sprite pixel: measured against the tent, not chosen. */
-export const CAMP_HERO_SCALE = 2;
+/** Art pixels a sprite pixel, measured against the TENT: the wider camera took
+ *  it from 166 tall to 86, so this halved with it. */
+export const CAMP_HERO_SCALE = 1;
 
-/** Where somebody you have MET stands, in the order you met them. */
+/** Where somebody MET stands, in order. All open ground. */
 export const CAMP_SPOTS = [
-  { x: 214, y: 302 },
-  { x: 474, y: 322 },
-  { x: 150, y: 332 },
-  { x: 566, y: 300 },
-  { x: 402, y: 348 },
+  { x: 250, y: 202 },
+  { x: 430, y: 210 },
+  { x: 120, y: 252 },
+  { x: 560, y: 250 },
+  { x: 300, y: 330 },
 ];
 
-/** WHAT MOVES: light breathing over what burns. `period` is a cycle, seconds. */
+/** WHAT MOVES: light breathing over what burns, `period` a cycle in seconds.
+ *  The furnace is drawn lit, so still light on it would read painted. */
 export const CAMP_GLOW = [
-  { id: 'crack', x: 292, y: 0, w: 96, h: 272, hue: '#fcde6f', period: 5.2, depth: 0.2 },
-  { id: 'fire', x: 166, y: 292, w: 120, h: 92, hue: '#ff9a3c', period: 1.7, depth: 0.32 },
+  { id: 'crack', x: 304, y: 0, w: 72, h: 205, hue: '#fcde6f', period: 5.2, depth: 0.2 },
+  { id: 'fire', x: 300, y: 214, w: 92, h: 68, hue: '#ff9a3c', period: 1.7, depth: 0.32 },
+  { id: 'furnace', x: 42, y: 143, w: 48, h: 44, hue: '#ff9a3c', period: 2.9, depth: 0.26 },
 ];
 
-/** The band the gusts blow across: the grass, and never the rock above it. */
-export const CAMP_WIND = { x: 0, y: 232, w: 688, h: 152 };
+/** The band the gusts blow across: the ground, and never the rock above it. */
+export const CAMP_WIND = { x: 0, y: 150, w: 688, h: 234 };

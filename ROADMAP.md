@@ -263,48 +263,41 @@ browser, which is what "automation is universal" requires.
 somebody.** A camp picture is a generation queue and a design the user has to
 approve; everything else is code that can be written while it renders.
 
-- [ ] **Step 0 — the camp DESIGN, started immediately and in parallel.** A
-      smelter, an anvil, a loom, a tanning frame, a jeweller's bench and a
-      kitchen, on top of the nine hotspots already there. **Show the user
-      candidates and get an approval before anything is rotated, animated or
-      dressed** — that rule is absolute. Nothing downstream blocks on it until
-      step 8. Three things the user asked for, and what each turns out to cost:
-      - **"Sized so it can be full screen"** — **it already is, and bigger is
-        not on offer.** `create_image_pro`'s ceiling is 688×384 at 16:9
-        (512² square, 600×448 at 4:3; the axis maxes cannot be combined), and
-        the game scales the picture over the whole window on both axes already.
-        Confirmed against the API docs, not assumed.
-      - **"Much more zoomed out, a lot more area to work with"** — **free, and
-        it is a COMPOSITION change rather than a size one.** Same canvas, the
-        camera pulled well back so the camp is a small part of a wide shelf with
-        open ground around it. That is the whole of what buys room for five new
-        stations and room to add more later.
-      - **"A way to upgrade your town" — ASKED FOR, THEN SCRATCHED.** *"Scrap
-        the upgrade thing, just have it built in the picture."* It had been
-        designed and started as a ground scene plus one generated object per
-        station, with `create_object_state` making a level a picture swap of
-        THAT building. **Do not rebuild it without being asked**; what it cost
-        is written at the bottom of this step.
-      - **SO THE CAMP STAYS ONE PICTURE**, the way it already is: everything
-        painted in, and every hotspot a rectangle measured in that picture's own
-        pixels. `camp_full` in `scenes.json` is the ask — the proven cliff,
-        split, light and sockets wording verbatim, the camera pulled well back,
-        and the furniture named BY POSITION.
-      - **FIFTEEN NAMED OBJECTS IS MORE THAN THE GENERATOR WILL PLACE.** The ask
-        that worked names four things by where they stand. So the new one groups
-        them: a furnace and anvil at the far left, bench and shelf nearer, the
-        fire at the centre, loom and hide rack to its right, pot and tool table
-        at the far right, and a row of FIVE shelters along the right edge for
-        the people. Hotspots are then measured onto whatever it actually drew —
-        which is the existing rule, not a new one.
-      - **A NEW PICTURE INVALIDATES ALL NINE HOTSPOTS.** `src/scenes/camp.ts` is
-        every rectangle in the current picture's pixels; none of them survives a
-        recompose, and that re-measuring is the real work of this step.
-
-      **WHAT THE SCRAPPED SHAPE COST: 25 generations** on a sixteen-candidate
-      object pack (`e6e66268-abda-4234-a1a7-85db13b08cae`), plus three
-      empty-ground scenes now superseded. Not all waste — the zoomed-out cliff
-      and socket wording came back right and is reused verbatim in `camp_full`.
+- [x] **Step 0 — the camp PICTURE. DONE, and approved.** `camp_full`'s worn
+      ground, emitted as `camp`. What it took, so nobody pays for it twice:
+      - **688×384 is the ceiling and the camp was already full screen.**
+        `create_image_pro` caps at 688×384 for 16:9 (512² square, 600×448 at
+        4:3, axis maxes not combinable), checked against the API docs. More room
+        was a COMPOSITION change — camera pulled back — and it was free.
+      - **THE "SET ON TOP" FAULT WAS THE GROUND, NOT THE OBJECTS.** *"Everything
+        looks artificial like it's been just set on top of… maybe add some paths
+        in grass to where someone's been walking."* The repair is in the ask:
+        the grass is TRODDEN AWAY to bare earth in irregular patches, many
+        uneven branching paths are beaten from the split to every object and
+        between them, and every object sits in its own patch with grass against
+        its base. One pass fixed it. **Do not ask for a camp on unbroken grass.**
+      - **A description over ~1930 characters is REFUSED** by
+        `create_image_pro`, as a pydantic `string_too_long` before it bills.
+        The shipped `camp` say is 1907. Budget for it.
+      - **HOTSPOTS ARE MEASURED FROM THE PIXELS, never by eye.** Four rounds of
+        eyeballing put two sockets on bare rock; a connected-component pass over
+        the cliff band (luminance < 30, blobs > 250px) gave the four hollows
+        exactly and symmetric about the split. `tools/art/cache/camp_spots3.png`
+        is the overlay that proves each box lands on its thing.
+      - **THE DEMO'S CAMP CHECKS ARE ARITHMETIC AND RUN IN SECONDS.** Importing
+        `CAMP_HOTSPOTS` and re-running its overlap test caught a 2px socket1
+        over socket3 without paying for a 19-minute demo.
+      - **The crack's CENTRE is what gets clicked**, and shortening the box
+        moved it up into something that intercepted the press — `shots` caught
+        it as "clicking the crack never opened it". It reaches down over the
+        light spill now.
+      - **SIX HOLLOWS ARE DRAWN AND FOUR ARE WIRED.** *"6 sockets is fine, don't
+        change anything about the socket system, still 4 crystals, but 6 leaves
+        us room to add other things later."* Nothing points at the spare pair.
+      - **STILL OWED**: the five new stations in the picture — furnace, anvil,
+        loom, tannery, cooking tripod, tool table — have no hotspots yet,
+        because they have no screens to open. That is step 8's, and the boxes
+        are measurable off `camp_ground.png` when it gets there.
 
 - [ ] **Step 1 — the tables, and nothing uses them yet.** `MATERIALS` (28 rows),
       `PROFESSIONS` (6), `Character.professions` as `{ level, xp }` apiece, and
