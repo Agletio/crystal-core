@@ -2881,6 +2881,22 @@ $('dev-kit').click();
     'and a row you cannot make says what it wanted, in numbers',
     stopped[0]?.querySelector('button')?.textContent
   );
+  // JEWELLERY IS TWENTY IMPLICITS OVER TWO DRAWINGS. What tells two rings
+  // apart is the COLOUR, so a shared silhouette is the point rather than a gap.
+  $('forge-tab-ring').click();
+  const rings = all('#forge-list .crystal');
+  assert(rings.length >= 30, 'the rings tab lists a ring of every implicit at every rung', String(rings.length));
+  const shapes = new Set(rings.map((r) => r.querySelector('.icon')?.dataset.sprite));
+  assert(
+    shapes.size >= 10,
+    'and every implicit draws the ring in a colour of its own, off one shape',
+    String(shapes.size)
+  );
+  assert(
+    rings.every((row) => /at level \d/.test(row.textContent ?? '')),
+    'each saying the window its implicit would land in',
+    rings[0]?.textContent?.slice(0, 70)
+  );
   $('forge-close').click();
   assert($('forge').hidden === true, 'and it closes again');
 }

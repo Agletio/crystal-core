@@ -445,6 +445,17 @@ minted. **XP IS FLAT AND NEVER BY WORLD**, or the no-tiers rule breaks in the
 easiest place: measured, level 2 is one batch and 99 is 1,972 of them, 1,315
 descents with every slot full. A zone-unique is worked by nothing at all.
 
+**JEWELLERY IS TEN IMPLICITS, and it is JEWELLING's whole output.**
+`JEWEL_IMPLICITS` — Elemental and Occult Resistance, % Life, % Mana and one per
+attribute — with a RING and an AMULET of each at three rungs. **THE AMULET'S
+LINE BEATS THE RING'S** (`JEWEL.amuletLift`): two ring slots against one amulet,
+and without the split the answer is always "wear the three best" and the amulet
+slot is contested by nothing. **A RUNG BUYS THE LINE**, because every rung of
+jewellery holds the same modifiers. **NO NEW ICONS** — `tintedGearIcon` washes
+every ink of `gear_ring` / `gear_amulet` toward the implicit's own hue at that
+ink's OWN brightness, so the SHAPE says which slot and the COLOUR says what is
+on it.
+
 **MATERIALS DECIDE WHAT AN ITEM IS; CURRENCY DECIDES WHAT IS ON IT.** A craft
 picks the BASE and its IMPLICIT and every modifier is still the bench's — two
 economies, two decisions, neither a slot machine. **A RECIPE IS DERIVED, NEVER

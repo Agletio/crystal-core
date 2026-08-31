@@ -425,8 +425,7 @@ line('\n── THE WEBS — does a node\'s stat line reach the sheet? ───�
 // The same question this file asks of a modifier, asked of every web: a tree
 // minor, a trade minor, a movement node, an attribute step and a base implicit
 // are all stat lines, and nothing else checks that the engine reads one. A
-// notable is covered by the demo (it must change the CAST); a minor was not
-// covered anywhere, and a minor that moves no number is a point spent on air.
+// minor that moves no number is a point spent on air.
 {
   // One flat point of everything a percentage could scale: an "increased
   // Armour" line is waiting for armour, not broken.
@@ -454,10 +453,19 @@ line('\n── THE WEBS — does a node\'s stat line reach the sheet? ───�
   const bare = print([floor]);
   const inert: string[] = [];
   let audited = 0;
+  // AN ATTRIBUTE REACHES THE SHEET THROUGH `attributeTotals`, the CHARACTER's
+  // path, so a line granting one is read as what that attribute BUYS.
+  const spent = (stats: Array<{ stat: string; form: string; value: number; tags?: string[] }>) =>
+    stats.flatMap((line) => {
+      const attr = ATTRIBUTES.find((a) => a.id === line.stat);
+      if (!attr) return [line];
+      return attr.per.map((s) => ({ ...s, value: s.value * line.value }));
+    });
+
   const reaches = (where: string, what: string, stats?: Array<{ stat: string; form: string; value: number; tags?: string[] }>) => {
     if (!stats?.length) return;
     audited++;
-    if (print([floor, asRolled('web_probe', stats)]) === bare) inert.push(`${where}: ${what}`);
+    if (print([floor, asRolled('web_probe', spent(stats))]) === bare) inert.push(`${where}: ${what}`);
   };
 
   for (const [skillId, nodes] of Object.entries(SKILL_TREES)) {

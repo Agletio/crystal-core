@@ -8,7 +8,7 @@ import { portraitOf } from '../render/portraits';
 import { readPalette } from '../render/renderer';
 import { GENERATED_ICONS } from '../render/generated-icons';
 import type { CurrencyDef, Item } from '../types';
-import { MATERIAL_BY_ID } from '../data';
+import { GEAR_BASE_BY_ID, JEWEL_IMPLICIT_BY_ID, MATERIAL_BY_ID } from '../data';
 
 const NS = 'http://www.w3.org/2000/svg';
 
@@ -337,6 +337,58 @@ const ARROW = [
  */
 export function gearIcon(art: string, size = 26): SVGSVGElement {
   return drawn(`gear_${art}`, size) ?? sprite(['.'], { '.': INK }, size, art);
+}
+
+/**
+ * ONE RING DRAWING, TWENTY IMPLICITS. *"No new icons: `gear_ring` and
+ * `gear_amulet` are recoloured per implicit."* Every ink is pulled toward the
+ * implicit's own hue, keeping its own brightness — so the SHAPE still says
+ * which slot and the COLOUR says what is on it, which is the split every other
+ * icon in the game already makes.
+ */
+export function tintedGearIcon(art: string, size: number, hue: string): SVGSVGElement {
+  const drawing = GENERATED_ICONS[`gear_${art}`];
+  if (!drawing) return gearIcon(art, size);
+  const to = resolve(hue);
+  const key: Record<string, string> = {};
+  for (const [ch, colour] of Object.entries(drawing.key)) {
+    key[ch] = washed(colour, to);
+  }
+  return sprite(drawing.rows, key, size, `gear_${art}_${hue}`);
+}
+
+/** A CSS variable read off the live document, since a generated key is hex and
+ *  cannot hold one. Falls back to the token's own name doing nothing. */
+function resolve(colour: string): [number, number, number] {
+  const m = /^var\((--[\w-]+)\)$/.exec(colour);
+  const hex = m
+    ? getComputedStyle(document.documentElement).getPropertyValue(m[1]).trim() || '#888888'
+    : colour;
+  const at = hex.replace('#', '');
+  return [
+    parseInt(at.slice(0, 2), 16),
+    parseInt(at.slice(2, 4), 16),
+    parseInt(at.slice(4, 6), 16),
+  ];
+}
+
+/** How far a tint pulls an ink toward the hue. Under a half and a red ring is
+ *  a grey ring; over it, twenty icons are twenty flat blobs. */
+const TINT = 0.55;
+
+/** One ink, washed toward a hue at its OWN brightness — a highlight stays a
+ *  highlight and an outline stays near black. */
+function washed(from: string, to: [number, number, number]): string {
+  const at = from.replace('#', '');
+  if (at.length < 6) return from;
+  const rgb = [
+    parseInt(at.slice(0, 2), 16),
+    parseInt(at.slice(2, 4), 16),
+    parseInt(at.slice(4, 6), 16),
+  ];
+  const luma = (0.299 * rgb[0] + 0.587 * rgb[1] + 0.114 * rgb[2]) / 255;
+  const out = to.map((c, i) => Math.round(rgb[i] + (c * luma - rgb[i]) * TINT));
+  return `#${out.map((c) => Math.max(0, Math.min(255, c)).toString(16).padStart(2, '0')).join('')}`;
 }
 
 /** Whether a base's art has been drawn. Pure, so the demo can hold the line. */
@@ -704,5 +756,9 @@ export function itemIcon(item: Item, size = 26): SVGSVGElement {
     const own = drawn(MATERIAL_BY_ID[item.base]?.icon ?? '', size);
     if (own) return own;
   }
-  return gearIcon((item.meta.art as string) ?? 'body', size);
+  const art = (item.meta.art as string) ?? 'body';
+  // JEWELLERY IS ONE DRAWING PER SLOT, washed with its implicit's own hue.
+  const hue = JEWEL_IMPLICIT_BY_ID[GEAR_BASE_BY_ID[item.base]?.family ?? '']?.hue;
+  if (hue && (art === 'ring' || art === 'amulet')) return tintedGearIcon(art, size, hue);
+  return gearIcon(art, size);
 }

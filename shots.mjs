@@ -187,7 +187,7 @@ const STATES = [
   'handover', 'descent', 'results',
   'scene', 'speech', 'lampwright',
   'skills', 'skill-list', 'skill-web', 'move-web', 'trade', 'trials', 'proving',
-  'bench', 'tooltip', 'glossary', 'graft', 'stations', 'anvil',
+  'bench', 'tooltip', 'glossary', 'graft', 'stations', 'anvil', 'jewellery',
 ];
 
 const browser = await chromium.launch();
@@ -682,6 +682,11 @@ for (const vp of VIEWPORTS) {
   await page.evaluate(() => document.getElementById('camp-anvil')?.click());
   await page.waitForTimeout(300);
   await shoot('anvil');
+  // AND ITS RINGS: twenty implicits over two drawings, so the shot that judges
+  // the recolour is the one that puts ten of them side by side.
+  await page.evaluate(() => document.getElementById('forge-tab-ring')?.click());
+  await page.waitForTimeout(250);
+  await shoot('jewellery');
   await page.evaluate(() => document.getElementById('forge-close')?.click());
   await page.waitForTimeout(200);
 

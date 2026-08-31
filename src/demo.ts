@@ -83,6 +83,7 @@ import {
   WEAPON_BASES,
   BASE_TIER_ILVL,
   GEAR_BASES,
+  JEWEL_IMPLICITS,
   GEAR_BASE_BY_ID,
   KEEP_GROUPS,
   KEEP_TIERS,
@@ -566,7 +567,7 @@ line(describeItem(small));
 // ===========================================================================
 rule('THE GAMBLES LOCK THE ITEM');
 
-let trinket = makeGear('gold_band', 40, 'Band of Ash');
+let trinket = makeGear('ring_life_t3', 40, 'Band of Ash');
 for (let i = 0; i < 6; i++) trinket = apply(trinket, 'shard_of_making');
 trinket = apply(trinket, 'sigil_of_upheaval');
 line();
@@ -641,7 +642,7 @@ rule('CAPACITY — does the base actually restrict anything?');
 
   // Jewellery carries no implicit at all, so its rungs differ in exactly one
   // way. If that ladder ever breaks, two of the eight slots stop progressing.
-  const rings = ['ring', 'silver_band', 'gold_band'].map((b) => modCapacity(makeGear(b, 60)));
+  const rings = ['ring_life_t1', 'ring_life_t2', 'ring_life_t3'].map((b) => modCapacity(makeGear(b, 60)));
   check(
     rings.join(',') === BASE_TIER_MODS.join(','),
     'and so does jewellery, which has nothing else to tell the rungs apart',
@@ -3786,6 +3787,99 @@ rule('THE ANVIL — does a level slide the window, and can a dismantle print?');
     'and it really does come out of a craft at the cap, not only out of the table',
     `${perfects} in ${runs}`
   );
+}
+
+// ===========================================================================
+rule('JEWELLERY — is the amulet slot contested, and is a ring a decision?');
+
+// STEP 5: *"Ten base types, each one an implicit... both a RING and an AMULET
+// of each."* Jewellery used to differ from rung to rung in exactly one way —
+// how many modifiers it held — which made it the least interesting pair of
+// slots in the game. The implicit is what it is FOR now.
+{
+  const jewels = GEAR_BASES.filter((b) => b.kind === 'ring' || b.kind === 'amulet');
+  check(
+    JEWEL_IMPLICITS.length === 10 && jewels.length === JEWEL_IMPLICITS.length * 2 * 3,
+    `${JEWEL_IMPLICITS.length} implicits, a ring and an amulet of each, at three rungs — ${jewels.length} rows`,
+    String(jewels.length)
+  );
+
+  // EVERY ONE OF THE TEN REACHES A NUMBER. An implicit naming a stat nothing
+  // computes is a line on a card that changes nothing at all.
+  // BOTH HALVES OF THE ROSTER: Acuity buys spell crit and cast speed, which an
+  // attack character's sheet cannot see at all, so one probe would call it
+  // inert and it is the opposite — it is the line a caster wants most.
+  const sheet = (skill: string, amulet?: string): string => {
+    const worn = makeCharacter({}, skill);
+    if (amulet) worn.equipment.amulet = makeGear(amulet, 60);
+    return JSON.stringify(characterStats(worn));
+  };
+  const dead = JEWEL_IMPLICITS.filter(
+    (line) =>
+      sheet('strike', `amulet_${line.id}_t3`) === sheet('strike') &&
+      sheet('fireball', `amulet_${line.id}_t3`) === sheet('fireball')
+  );
+  check(
+    dead.length === 0,
+    'and every one of them moves a number on the sheet',
+    dead.map((l) => l.id).join(', ')
+  );
+
+  // **THE AMULET'S IMPLICIT ROLLS STRONGER THAN A RING'S.** Two ring slots
+  // against one amulet: without the split the answer is always "wear the three
+  // best" and the amulet slot is contested by nothing.
+  const weaker = JEWEL_IMPLICITS.filter((line) => {
+    const ring = GEAR_BASE_BY_ID[`ring_${line.id}_t3`];
+    const amulet = GEAR_BASE_BY_ID[`amulet_${line.id}_t3`];
+    return (amulet?.implicit?.[0].range[0] ?? 0) <= (ring?.implicit?.[0].range[0] ?? 0);
+  });
+  check(
+    weaker.length === 0,
+    `and an amulet's line beats a ring's at every one of the ${JEWEL_IMPLICITS.length}`,
+    weaker.map((l) => l.id).join(', ')
+  );
+
+  // A RUNG BUYS THE LINE, since every rung holds the same modifiers: without
+  // that, jewellery has no ladder at all.
+  const flat = JEWEL_IMPLICITS.filter((line) => {
+    const at = [1, 2, 3].map((t) => GEAR_BASE_BY_ID[`ring_${line.id}_t${t}`]?.implicit?.[0].range[0] ?? 0);
+    return !(at[0] < at[1] && at[1] < at[2]);
+  });
+  check(flat.length === 0, 'and a rung buys a bigger line, which is the whole of what a rung is here', flat.map((l) => l.id).join(', '));
+
+  // NO NEW ICONS. *"`gear_ring` and `gear_amulet` are recoloured per
+  // implicit"* — so the twenty of them draw two shapes and twenty colours.
+  const undrawn = jewels.filter((b) => !hasGearArt(b.art)).map((b) => b.id);
+  check(
+    undrawn.length === 0 && new Set(jewels.map((b) => b.art)).size === 2,
+    'and all of them draw ONE of two shapes, recoloured — no new icons',
+    undrawn.join(', ') || String(new Set(jewels.map((b) => b.art)).size)
+  );
+  const hues = new Set(JEWEL_IMPLICITS.map((l) => l.hue));
+  check(
+    hues.size === JEWEL_IMPLICITS.length,
+    'each with a hue of its own, so two rings side by side are told apart',
+    `${hues.size} hues over ${JEWEL_IMPLICITS.length} lines`
+  );
+
+  // JEWELLING MAKES ALL OF THEM AND NOTHING ELSE MAKES ANY.
+  const wrongHands = jewels.filter((b) => makersOf(b).join() !== 'jewelling').map((b) => b.id);
+  check(
+    wrongHands.length === 0,
+    `and Jewelling makes every one of the ${jewels.length}, which is its whole output`,
+    wrongHands.slice(0, 4).join(', ')
+  );
+
+  // WHAT ONE IS WORTH, printed: these are balance numbers and the pass reads
+  // them rather than a check failing on a figure nobody has tuned.
+  for (const jewel of JEWEL_IMPLICITS) {
+    const ring = GEAR_BASE_BY_ID[`ring_${jewel.id}_t1`]?.implicit?.[0].range[0] ?? 0;
+    const amulet = GEAR_BASE_BY_ID[`amulet_${jewel.id}_t3`]?.implicit?.[0].range[0] ?? 0;
+    line(
+      `  ${jewel.name.padEnd(22)} ${String(ring).padStart(3)} on a tier 1 ring, ` +
+        `${String(amulet).padStart(3)} on a tier 3 amulet`
+    );
+  }
 }
 
 // ===========================================================================
@@ -12439,21 +12533,21 @@ rule('GRAFTS — do a corpse and a handful of dust buy what no drop can roll?');
       `of a clear over ${BLEED_SEEDS} seeds — a figure the maps swamp, which is why it is not a check`
   );
 
-  // --- jewellery, which has no implicit to replace ----------------------
-  // Decided: the graft ADDS where there is nothing, so a ring is the one slot
-  // where it costs no base line. The one that changes the DELIVERY charges
-  // mana for it instead, which is the rule the trees already follow.
+  // --- jewellery, which HAS an implicit to replace now ------------------
+  // A graft used to cost a ring nothing, since jewellery carried no line. Every
+  // ring and amulet is an implicit now, so the trade is the same on all of them
+  // and the one slot where a graft was free is gone.
   {
     const jewels = ['ring', 'amulet'];
     const has = jewels.filter((k) => graftableKinds().includes(k));
     check(has.length === jewels.length, 'a ring and an amulet are both worked on', has.join(', '));
 
     const bare = GEAR_BASES.filter((b) => jewels.includes(b.kind));
-    const withLine = bare.filter((b) => (b.implicit?.length ?? 0) > 0).map((b) => b.id);
+    const blank = bare.filter((b) => (b.implicit?.length ?? 0) === 0).map((b) => b.id);
     check(
-      withLine.length === 0,
-      `none of the ${bare.length} jewellery bases has a line of its own to lose`,
-      withLine.join(', ')
+      blank.length === 0,
+      `and all ${bare.length} of them carry a line to LOSE, so a graft costs the same here as anywhere`,
+      blank.join(', ')
     );
 
     // Each person writes their OWN lines. The man who takes bodies has no
@@ -12464,7 +12558,7 @@ rule('GRAFTS — do a corpse and a handful of dust buy what no drop can roll?');
     check(barren.length === 0, 'and every relic buys something where it is taken', barren.join(', '));
 
     const at = createGame('fresh');
-    const ring = makeGear('silver_band', 40);
+    const ring = makeGear('ring_life_t2', 40);
     check(
       graftRefusal(ring, 'ossuary') !== null && graftRefusal(ring, 'orrery') === null,
       'a ring taken to the man who wants bodies is a piece he refuses',

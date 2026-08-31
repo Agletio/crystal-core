@@ -9,6 +9,7 @@
 import {
   CRAFT,
   GEAR_BASES,
+  JEWEL_IMPLICITS,
   MATERIAL_FAMILY_BY_ID,
   PROFESSION_BY_ID,
 } from '../data';
@@ -97,13 +98,28 @@ function saysRecipe(recipe: CraftRecipe): string[] {
  *  a profession level matters, and a number nowhere else says. */
 function saysWindow(recipe: CraftRecipe, base: GearBase): string {
   const level = craftLevel(game, recipe);
-  const share = base.armour ?? base.damage ?? 0;
+  // The armour, the damage, or — on jewellery, where the implicit is the whole
+  // of what the piece is FOR — the implicit's own first line.
+  const line = base.implicit?.[0];
+  const share = base.armour ?? base.damage ?? line?.range[0] ?? 0;
+  const what = base.armour
+    ? 'armour'
+    : base.damage
+      ? 'damage'
+      : line
+        ? `${line.form === 'inc' ? '% ' : ''}${STAT_WORD[line.stat] ?? line.stat}`
+        : '';
   if (share <= 0) return `at level ${level}`;
   const lo = Math.ceil(share * liftFor(windowLow(level)));
   const hi = Math.ceil(share * liftFor(windowHigh(level)));
-  const what = base.armour ? 'armour' : 'damage';
   return `${lo}–${hi} ${what} at level ${level}`;
 }
+
+/** What a jewellery implicit's stat is CALLED. Off the table, so a new one is
+ *  a row and never a second word for the same thing. */
+const STAT_WORD: Record<string, string> = Object.fromEntries(
+  JEWEL_IMPLICITS.map((j) => [j.stat, j.name])
+);
 
 const windowShare = (level: number): number =>
   Math.max(0, Math.min(1, (level - 1) / 98));

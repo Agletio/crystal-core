@@ -741,29 +741,98 @@ export const SHIELD_BASES: GearBase[] = [
   shield('tower_shield', 'Graven Tower Shield', 3, 96, 30),
 ];
 
-/**
- * Jewellery carries no implicit, so a rung differs from the one below in
- * exactly one way: how many modifiers it holds. The first rung keeps the ids
- * `amulet` and `ring` — a save points at them.
- */
+/** Every rung holds the same modifiers, so what a rung buys on jewellery is the
+ *  IMPLICIT's own size. `amulet` and `ring` stay the ids a save points at. */
 const TRINKET_SLOTS = { offence: 3, defence: 2, utility: 1 };
 
-const trinket = (id: string, name: string, kind: GearKind, tier: number): GearBase => ({
-  id, name, kind, art: kind, tier,
-  ilvl: BASE_TIER_ILVL[tier - 1],
-  slots: { ...TRINKET_SLOTS },
-});
+/**
+ * TEN IMPLICITS, and JEWELLERY IS WHAT CARRIES THEM. A ring and an amulet of
+ * each, at three rungs, so the choice between two slots is a choice about what
+ * you are short of rather than about which is the bigger number.
+ *
+ * `per` is what one POINT of the budget buys, which is the one place a
+ * resistance point and a Strength point are priced against each other. `hue`
+ * is what the icon is washed toward — *"no new icons"*, so `gear_ring` and
+ * `gear_amulet` are RECOLOURED and the shape stays the slot's.
+ */
+export interface JewelImplicit {
+  id: string;
+  name: string;
+  /** The base's own noun, so a ring of Life is not "Ring of life". */
+  word: string;
+  stat: string;
+  form: 'flat' | 'inc';
+  per: number;
+  hue: string;
+}
+
+export const JEWEL_IMPLICITS: JewelImplicit[] = [
+  { id: 'elemental', name: 'Elemental Resistance', word: 'Bulwark',
+    stat: 'elementalRes', form: 'flat', per: 0.5, hue: 'var(--flame)' },
+  { id: 'occult', name: 'Occult Resistance', word: 'Veil',
+    stat: 'occultRes', form: 'flat', per: 0.5, hue: 'var(--amethyst)' },
+  { id: 'life', name: 'Life', word: 'Quick', stat: 'life', form: 'inc', per: 0.4,
+    hue: 'var(--hurt)' },
+  { id: 'mana', name: 'Mana', word: 'Well', stat: 'mana', form: 'inc', per: 0.7,
+    hue: 'var(--mana)' },
+  { id: 'strength', name: 'Strength', word: 'Ox', stat: 'strength', form: 'flat',
+    per: 0.6, hue: 'var(--rust)' },
+  { id: 'intelligence', name: 'Intelligence', word: 'Lens', stat: 'intelligence',
+    form: 'flat', per: 0.6, hue: 'var(--quartz)' },
+  { id: 'dexterity', name: 'Dexterity', word: 'Hare', stat: 'dexterity', form: 'flat',
+    per: 0.6, hue: 'var(--verdite)' },
+  { id: 'acuity', name: 'Acuity', word: 'Hawk', stat: 'acuity', form: 'flat',
+    per: 0.6, hue: 'var(--citrine)' },
+  { id: 'spirit', name: 'Spirit', word: 'Ember', stat: 'spirit', form: 'flat',
+    per: 0.6, hue: 'var(--flame-core)' },
+  { id: 'constitution', name: 'Constitution', word: 'Stone', stat: 'constitution',
+    form: 'flat', per: 0.6, hue: 'var(--bone)' },
+];
+
+export const JEWEL_IMPLICIT_BY_ID: Record<string, JewelImplicit> = Object.fromEntries(
+  JEWEL_IMPLICITS.map((j) => [j.id, j])
+);
+
+/** **THE AMULET'S IMPLICIT ROLLS STRONGER THAN A RING'S.** Two ring slots and
+ *  one amulet: without the split the answer is always "wear the three best"
+ *  and the amulet slot is not contested by anything. */
+export const JEWEL = {
+  ring: [12, 22, 34], // budget POINTS a ring's implicit gets, by rung
+  amuletLift: 1.5,
+  words: { ring: ['Band', 'Ring', 'Signet'], amulet: ['Pendant', 'Amulet', 'Torc'] },
+};
+
+const jewellery = (): GearBase[] => {
+  const out: GearBase[] = [];
+  for (const kind of ['ring', 'amulet'] as const) {
+    for (const line of JEWEL_IMPLICITS) {
+      for (let tier = 1; tier <= 3; tier++) {
+        const points = JEWEL.ring[tier - 1] * (kind === 'amulet' ? JEWEL.amuletLift : 1);
+        const value = Math.round(points * line.per);
+        out.push({
+          id: `${kind}_${line.id}_t${tier}`,
+          name: `${JEWEL.words[kind][tier - 1]} of the ${line.word}`,
+          kind,
+          art: kind,
+          family: line.id,
+          ilvl: BASE_TIER_ILVL[tier - 1],
+          tier,
+          slots: { ...TRINKET_SLOTS },
+          implicit: [{ stat: line.stat, form: line.form, range: [value, value] }],
+        });
+      }
+    }
+  }
+  return out;
+};
+
+export const JEWEL_BASES: GearBase[] = jewellery();
 
 export const GEAR_BASES: GearBase[] = [
   ...WEAPON_BASES,
   ...SHIELD_BASES,
   ...ARMOUR_BASES,
-  trinket('amulet', 'Bone Amulet', 'amulet', 1),
-  trinket('jade_amulet', 'Jade Amulet', 'amulet', 2),
-  trinket('onyx_amulet', 'Onyx Amulet', 'amulet', 3),
-  trinket('ring', 'Copper Band', 'ring', 1),
-  trinket('silver_band', 'Silver Band', 'ring', 2),
-  trinket('gold_band', 'Gold Band', 'ring', 3),
+  ...JEWEL_BASES,
 ];
 
 export const GEAR_BASE_BY_ID: Record<string, GearBase> = Object.fromEntries(
@@ -840,13 +909,13 @@ export const KEEP_GROUPS: KeepGroup[] = [
   {
     id: 'amulet',
     name: 'Amulets',
-    detail: 'Bone, Jade and Onyx',
+    detail: 'Pendants, Amulets and Torcs',
     holds: (base) => base.kind === 'amulet',
   },
   {
     id: 'ring',
     name: 'Rings',
-    detail: 'Copper, Silver and Gold',
+    detail: 'Bands, Rings and Signets',
     holds: (base) => base.kind === 'ring',
   },
 ];
@@ -3610,7 +3679,7 @@ export const UNIQUES: UniqueDef[] = [
   {
     id: 'second_mouth',
     name: 'The Second Mouth',
-    base: 'jade_amulet',
+    base: 'amulet_life_t2',
     flavour: 'One of them is yours.',
     stats: [
       { stat: 'attackSpeed', form: 'inc', range: [-25, -18] },
@@ -3898,8 +3967,12 @@ export const DEV_GEAR = ([
       (b, i) => WEAPON_BASES.findIndex((o) => o.family === b.family) === i
     ).map((b) => b.id),
     'banded_kite',
-    'amulet',
-    'ring',
+    // One RING and one AMULET of two implicits: the kit is for looking at the
+    // mechanism — the split between the two slots — rather than owning every
+    // row of it, and thirty of them would be the whole bag and the stash.
+    ...JEWEL_BASES.filter(
+      (b) => b.tier === 2 && ['life', 'elemental'].includes(b.family ?? '')
+    ).map((b) => b.id),
   ]),
   // A SECOND of every one-handed family: one of each makes no matched pair.
   ...ONE_HANDED.map((b) => b.id),

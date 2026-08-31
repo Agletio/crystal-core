@@ -426,9 +426,30 @@ approve; everything else is code that can be written while it renders.
         may quietly take it from the other.
       - **THE DEV KIT CARRIES RAW AND WORKED**, or half the arc is unreachable
         from it. Sixteen hotspots now.
-- [ ] **Step 5 — jewellery.** Twenty `GearBase` rows — ten implicits × ring and
-      amulet — tinted rather than re-drawn, the amulet's implicit rolling
-      stronger than the ring's.
+- [x] **Step 5 — jewellery. DONE.** `JEWEL_IMPLICITS` and `JEWEL`:
+      - **TWENTY BASE TYPES, SIXTY ROWS.** The file said twenty `GearBase` rows,
+        and that was written before the tier interaction was worked out: every
+        rung of jewellery holds the SAME modifiers, so without three rungs a
+        ring has no ladder at all and `CRAFT.versions` would never ask a ring
+        for a deep material. Ten implicits × ring and amulet × three rungs, the
+        same shape armour already ships (12 × 4 × 3 = 144). **What a rung buys
+        on jewellery is the implicit's own size** — the demo holds that.
+      - **NO NEW ICONS.** `tintedGearIcon` washes every ink of `gear_ring` /
+        `gear_amulet` toward the implicit's own hue at that ink's OWN
+        brightness, so a highlight stays a highlight. TINT is 0.55 — under a
+        half and a red ring is a grey ring; over it, twenty icons are twenty
+        flat blobs.
+      - **THE OLD SIX IDS ARE GONE**, which `SAVE_VERSION` 2 already paid for.
+        `second_mouth` moved from `jade_amulet` to `amulet_life_t2`.
+      - **THE GRAFT ANOMALY IS FIXED, not leaned on.** The backlog said a graft
+        cost a ring nothing, since jewellery carried no line; every ring and
+        amulet is an implicit now, so the trade is the same on all of them.
+      - **`npm run mods` COULD NOT SEE AN ATTRIBUTE.** Its probe hands rolled
+        mods straight to `heroStats`, and an attribute reaches the sheet through
+        `attributeTotals`, which is the CHARACTER's path — so all 36 attribute
+        jewellery bases read as inert. The probe now substitutes what an
+        attribute BUYS, off `ATTRIBUTES.per`, which is what it really does. **A
+        gear line granting an attribute was untested until this step.**
 - [ ] **Step 6 — the hybrid rule, and the table that makes it checkable.** A
       hero-side stat-power weight per stat, shaped like `DANGER_STATS`. The demo
       then asserts both halves: a hybrid piece totals MORE power than a
@@ -808,12 +829,6 @@ without being asked.**
   UNANSWERABLE until the roster is wider, so the demo prints what each trade is
   worth per skill and asserts nothing. **Do not tune to that print and do not
   add a check that fails on it.**
-- **Jewellery has three rungs but no implicit.** The amulet and ring bases
-  differ in exactly one way — how many modifiers they hold — which is the
-  clearest statement of what a base tier is and also the least interesting pair
-  of slots in the game. Implicits would fix it, and they are a balance change:
-  the Astral-Geometer leans on the gap rather than fixing it, since a graft ADDS
-  on jewellery and the line that changes the delivery charges mana instead.
 - **No gear line reduces a movement skill's cooldown.** The user's own aside —
   *"a movement skill thats buffed with some CDR (i know we dont have this yet)"*.
   `moveCooldown` is a declared grant with a product merge and `say` already
