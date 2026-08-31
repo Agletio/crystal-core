@@ -14,10 +14,20 @@
  * every read, so swapping character or reloading points you at the deepest
  * thing you may enter rather than at somebody else's rung.
  */
-import { LADDER } from '../data';
-import { campaignLine, canEnter, climbed, furthest, zoneAt, zoneOpen } from '../ladder';
-import type { Rung } from '../ladder';
+import { LADDER, PROVING, THEME_BY_ID } from '../data';
+import {
+  campaignLine, canEnter, climbed, furthest, isProving, provingOpen, zoneAt, zoneOpen,
+} from '../ladder';
+import type { Rung, RunWhere } from '../ladder';
 import { SCENE_ART } from '../render/generated-scene';
+import type { MapTheme } from '../types';
+import type { GameState } from '../game/state';
+
+/** WHAT THE PROVING GROUND LOOKS LIKE: the influence's own act, since each of
+ *  the three cross-sections already IS one of the three worlds. */
+const GROUND_ART: Record<string, string> = {
+  fissure: 'climb_act1', prismatic: 'climb_act2', demonic: 'climb_act3',
+};
 import type { Character } from '../sim/character';
 import { attachTooltip } from './tooltip';
 
@@ -29,14 +39,26 @@ function el(tag: string, cls?: string, text?: string): HTMLElement {
 }
 
 let chosen: Rung | null = null;
+/** THE PROVING GROUND is picked instead of a depth, so it is its own flag: a
+ *  place is not a rung and could never be one. */
+let ground = false;
 /** The tab you are looking at, null until you click one: left alone it follows
- *  the rung you are pointed at, so a clear opens the zone above and shows it. */
+ *  the rung you are pointed at, so a clear opens the zone above and shows it.
+ *  `PROVING_TAB` is the fourth, past every zone. */
 let shown: number | null = null;
+export const PROVING_TAB = LADDER.zones.length;
 
-/** Where the next descent goes. */
-export function rungNow(character: Character): Rung {
+/** WHERE THE NEXT DESCENT GOES: a depth on the climb, or the Proving Ground. */
+export function whereNow(character: Character): RunWhere {
+  if (ground && provingOpen(character)) return { proving: true, influence: influenceNow() };
   if (chosen && canEnter(character, chosen)) return chosen;
   return furthest(character);
+}
+
+/** The depth it goes to, or null in the Proving Ground, which is not one. */
+export function rungNow(character: Character): Rung | null {
+  const at = whereNow(character);
+  return isProving(at) ? null : at;
 }
 
 /** ADVANCE: forget the rung you picked, so the next descent takes the deepest
@@ -49,6 +71,7 @@ export function advanceRung(): void {
 export function pickRung(character: Character, at: Rung): boolean {
   if (!canEnter(character, at)) return false;
   chosen = at;
+  ground = false;
   return true;
 }
 
@@ -63,16 +86,27 @@ export function climbTotals(character: Character): { done: number; all: number }
   return { done, all };
 }
 
-/** A rung named: what it IS, rather than which one anybody is pointed at. */
-export const rungName = (at: Rung): string =>
-  `${zoneAt(at.zone)?.name ?? '?'}, depth ${at.rung}`;
+/** WHERE A DESCENT WENT, named: what it IS rather than what is picked. */
+export const rungName = (at: RunWhere): string =>
+  isProving(at)
+    ? `${PROVING.name}, ${THEME_BY_ID[at.influence]?.name ?? at.influence}`
+    : `${zoneAt(at.zone)?.name ?? '?'}, depth ${at.rung}`;
 
-/** What the Enter button says: the rung you are about to walk into. */
-export const rungLabel = (character: Character): string => rungName(rungNow(character));
+/** What the readout says: where you are about to walk. */
+export const rungLabel = (character: Character): string => rungName(whereNow(character));
 
 /** The report's line about the climb: what a clear opened, or where a death
  *  leaves you. The report is the one screen every descent ends on. */
-export function climbLine(character: Character, at: Rung | null, cleared: boolean): string | null {
+export function climbLine(
+  character: Character,
+  at: RunWhere | null,
+  cleared: boolean
+): string | null {
+  if (isProving(at)) {
+    return cleared
+      ? `${rungName(at)} cleared. It does not end, and nothing about it changes.`
+      : `${rungName(at)}. Nothing is lost but the run — take a crystal out if it is too much.`;
+  }
   const zone = at ? zoneAt(at.zone) : null;
   if (!at || !zone) return null;
   const name = zone.name;
@@ -131,8 +165,35 @@ const svgEl = (tag: string, attrs: Record<string, string>): SVGElement => {
   return node;
 };
 
-/** A tab per zone, shut ones included: three tabs is the whole shape of the
- *  climb, and a zone you cannot reach yet is worth knowing about. */
+/** THE INFLUENCE, which is the Proving Ground's alone. *"Have this zone allow
+ *  you to select your influence… which will decide what the area looks like and
+ *  add that type of mobs to the zone."* A PREFERENCE, so it is SAVED. */
+let game: GameState | null = null;
+
+export function initClimb(state: GameState): void {
+  game = state;
+}
+
+export const influenceNow = (): MapTheme => {
+  const held = game?.influence;
+  return held && PROVING.influences.includes(held) ? held : PROVING.influences[0];
+};
+
+export function setInfluence(theme: MapTheme): void {
+  if (game && PROVING.influences.includes(theme)) game.influence = theme;
+}
+
+/** Where the sockets are drawn, which is over the Proving Ground's own map and
+ *  nowhere else. `run.ts` fills it; this only says where it goes. */
+let sockets: ((host: HTMLElement) => void) | null = null;
+
+export function socketsInClimb(render: (host: HTMLElement) => void): void {
+  sockets = render;
+}
+
+/** A tab per zone, shut ones included, and the Proving Ground past all three:
+ *  four tabs is the whole shape of where a descent can go, and a place you
+ *  cannot reach yet is worth knowing about. */
 function tabs(host: HTMLElement, character: Character, at: number, redraw: () => void): void {
   const row = el('div', 'climbtabs');
   LADDER.zones.forEach((zone, z) => {
@@ -154,7 +215,51 @@ function tabs(host: HTMLElement, character: Character, at: number, redraw: () =>
     };
     row.append(tab);
   });
+
+  const open = provingOpen(character);
+  const tab = el('button', 'mini climbtab', PROVING.name) as HTMLButtonElement;
+  tab.id = `climb-tab-${PROVING_TAB}`;
+  tab.classList.toggle('climbtab--on', at === PROVING_TAB);
+  tab.classList.toggle('climbtab--shut', !open);
+  tab.disabled = !open;
+  attachTooltip(tab, () =>
+    open
+      ? `${PROVING.name}. ${PROVING.blurb}`
+      : `${PROVING.name}. Shut until the climb is finished and paid for.`);
+  tab.onclick = () => {
+    shown = PROVING_TAB;
+    redraw();
+  };
+  row.append(tab);
   host.append(row);
+}
+
+/** THE PROVING GROUND: the world you PICKED, drawn as that world's own
+ *  cross-section, with the four sockets over it the way the camp's crack lays
+ *  them out. There are no stations — it is one area, and it does not end. */
+function renderProving(host: HTMLElement, character: Character, onPick: () => void): void {
+  const row = el('div', 'influences');
+  for (const id of PROVING.influences) {
+    const def = THEME_BY_ID[id];
+    const button = el('button', 'mini influence', def?.name ?? id) as HTMLButtonElement;
+    button.id = `climb-influence-${id}`;
+    button.classList.toggle('influence--on', influenceNow() === id);
+    attachTooltip(button, () => `${def?.name ?? id}. ${def?.blurb ?? ''}`);
+    button.onclick = () => {
+      setInfluence(id);
+      onPick();
+    };
+    row.append(button);
+  }
+  host.append(row);
+
+  const trail = el('div', 'climbseam climbseam--ground');
+  const art = SCENE_ART[GROUND_ART[influenceNow()] ?? ''];
+  if (art) trail.style.backgroundImage = `url(${art.png})`;
+  const wall = el('div', 'groundsockets');
+  sockets?.(wall);
+  trail.append(wall);
+  host.append(trail);
 }
 
 /**
@@ -164,18 +269,32 @@ function tabs(host: HTMLElement, character: Character, at: number, redraw: () =>
  */
 export function renderClimb(host: HTMLElement, character: Character, onPick: () => void): void {
   host.replaceChildren();
-  const at = rungNow(character);
   const totals = climbTotals(character);
-  if (shown === null || !zoneOpen(character, shown)) shown = at.zone;
+  const shut = shown === PROVING_TAB && !provingOpen(character);
+  if (shown === null || shut || (shown !== PROVING_TAB && !zoneOpen(character, shown))) {
+    shown = ground && provingOpen(character) ? PROVING_TAB : furthest(character).zone;
+  }
   const z = shown;
-  const zone = LADDER.zones[z];
+  // THE TAB IS THE PICK. Looking at the Proving Ground IS choosing it, the way
+  // clicking a station is choosing a depth — so this is set before anything
+  // asks where the next descent goes.
+  ground = z === PROVING_TAB;
+  const at = whereNow(character);
 
-  host.append(el('p', 'panel__title', 'The climb'));
+  host.append(el('p', 'panel__title', ground ? PROVING.name : 'The climb'));
   host.append(el('p', 'climb__where',
     `${rungLabel(character)} · ${totals.done} of ${totals.all} depths cleared`));
   host.append(el('p', 'climb__prize', campaignLine(character)));
   tabs(host, character, z, () => renderClimb(host, character, onPick));
 
+  if (ground) {
+    return renderProving(host, character, () => {
+      renderClimb(host, character, onPick);
+      onPick();
+    });
+  }
+
+  const zone = LADDER.zones[z];
   const all = stations(zone.rungs);
   const cleared = Math.min(zone.rungs, climbed(character, z));
   const trail = el('div', 'climbseam');
@@ -209,7 +328,7 @@ export function renderClimb(host: HTMLElement, character: Character, onPick: () 
     pip.classList.toggle('pip--done', station.rung <= cleared);
     pip.classList.toggle('pip--next', can && station.rung > cleared);
     pip.classList.toggle('pip--shut', !can);
-    pip.classList.toggle('pip--here', at.zone === z && at.rung === station.rung);
+    pip.classList.toggle('pip--here', !isProving(at) && at.zone === z && at.rung === station.rung);
     pip.disabled = !can;
 
     const last = boss && z === LADDER.zones.length - 1;

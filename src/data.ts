@@ -779,11 +779,9 @@ export const GEAR_BASE_BY_ID: Record<string, GearBase> = Object.fromEntries(
 
 // --- what the filter is clicked in -----------------------------------------
 //
-// A group is a SET somebody builds toward — every mage piece, every bow — and
-// never one base at a time: 66 bases is a spreadsheet, where what you are
-// keeping is a build. Both halves are DERIVED from the tables above, so a
-// family or a weapon rung added there lands in a group without being listed
-// twice.
+// A group is a SET somebody builds toward — every mage piece, every bow — never
+// one base at a time. Both halves are DERIVED from the tables above, so a
+// family added there lands in a group without being listed twice.
 
 export interface KeepGroup {
   id: string;
@@ -2156,6 +2154,19 @@ export const LADDER = {
   lifeAtTop: 520,
   damageAtTop: 430,
   packAtTop: 55,
+};
+
+/** THE PROVING GROUND: one area past the climb, at a set floor. *"A set
+ *  difficulty even harder than the final 'story mode' level which you can scale
+ *  with more crystals and more trial points."* `rungMod` is 1 at depth 42, so
+ *  `overTop` is a MULTIPLE of it; Tallies scale it through the Reckoning. */
+export const PROVING = {
+  name: 'The Proving Ground',
+  blurb: 'Past the last of the climb, and it does not end. What you socket is where you go.',
+  overTop: 1.25,
+  perSocket: 0.15,
+  tier: 3, // the best gear BASE it drops, floored as a campaign zone floors it
+  influences: ['fissure', 'prismatic', 'demonic'] as MapTheme[], // never the Seam
 };
 
 /** Rungs below this one across the WHOLE ladder. */

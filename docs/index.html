@@ -1363,26 +1363,36 @@
   /* NO FRAME OF ITS OWN. The window is already carved, and a second `win` inside
      the first is a border inside a border — nothing is being separated by it. */
   .fissurecard {
-    display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 18px;
-    align-items: stretch;
+    display: grid; gap: 18px; align-items: stretch;
     width: 100%; margin: 0; padding: 0; text-align: center;
     background: none; border: 0; box-shadow: none;
   }
-  .fissurecard__side { text-align: center; }
-  /* ONE COLUMN while the campaign runs: with nothing socketed the side is four
-     empty boxes, so the map takes its width and the way IN lies under it. */
-  .fissurecard--bare { grid-template-columns: minmax(0, 1fr); }
-  .fissurecard--bare .sockets, .fissurecard--bare #run-selected { display: none; }
-  .fissurecard--bare .fissurecard__side {
-    display: flex; align-items: center; justify-content: center;
+  /* ONE COLUMN, always: the sockets lie over the Proving Ground's own tab, so
+     the map takes the whole width and the way IN stands in a row under it. */
+  .fissurecard { grid-template-columns: minmax(0, 1fr); }
+  .fissurecard__side {
+    text-align: center; display: flex; align-items: center; justify-content: center;
     gap: 14px; flex-wrap: wrap;
   }
-  .fissurecard--bare .fissure { margin: 0; }
-  .fissurecard--bare .runbar--go { margin: 0; }
-  /* Under a certain width the rail costs the map more than it is worth. */
-  @media (max-width: 900px) {
-    .fissurecard { grid-template-columns: minmax(0, 1fr); }
+  .fissurecard__side .fissure { margin: 0; }
+  .fissurecard__side .runbar--go { margin: 0; }
+  /* THE INFLUENCE: three worlds, one picked, and it decides both the picture
+     and which pack joins whatever you socketed. */
+  .influences { display: flex; justify-content: center; gap: 6px; margin-bottom: 8px; }
+  .influence--on { border-color: var(--citrine); color: var(--citrine); }
+  /* THE SOCKETS, over the map the way the camp's crack lays them out —
+     POSITIONED, never in flow, exactly as a station on the climb is. In flow
+     the panel became the seam's content height and squashed the picture it is
+     supposed to be standing on. */
+  .groundsockets {
+    position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px; text-align: left;
+    width: min(560px, 88%); max-height: 90%; overflow-y: auto;
+    padding: 10px; border-radius: var(--r);
+    background: color-mix(in srgb, var(--ink) 74%, transparent);
+    border: 1px solid var(--edge);
   }
+  .groundset { grid-column: 1 / -1; text-align: center; }
   /* The climb, ruled off inside the Fissure's own card rather than framed
      again — a third frame put Enter below the fold. */
   .climbcard {
@@ -1442,7 +1452,6 @@
   .pip:hover:not(:disabled) { background: var(--panel-lit); }
   /* THE WINDOW IS THE SCREEN, near enough: the map is the whole point of it. */
   #run-menu .modal__card { width: min(1240px, 100%); }
-  .fissurecard .sockets { grid-template-columns: 1fr 1fr; gap: 10px; text-align: left; }
   .fissurecard .panel__title { font-size: 15px; }
   .fissurecard .fissure { font-size: 13px; margin-bottom: 18px; }
   .mini--go:hover:not(:disabled) { background: var(--edge); }
@@ -2387,18 +2396,17 @@
       </div>
     </div>
     <div class="modal__body">
-      <!-- TWO COLUMNS AND NOTHING SCROLLS. The map is the screen — *"I am
-           imaging the map being much larger almost the entire screen and the
-           sockets on the right side"* — so the climb takes the width it can and
-           everything you PRESS stands in a column beside it. -->
+      <!-- ONE COLUMN AND NOTHING SCROLLS. The map is the screen, and the
+           sockets are not beside it any more: they lie OVER the Proving
+           Ground's own tab — *"the crystal sockets laid out like the fissure
+           entrance in the camp on top of the map"* — so every tab gets the
+           whole width and the way IN stands under all four. -->
       <div class="panel fissurecard">
         <div class="fissurecard__map">
           <div class="climbcard" id="run-climb"></div>
         </div>
         <div class="fissurecard__side">
           <p class="fissure">A thin place in the rock. Always open, always free.</p>
-          <div class="sockets" id="run-sockets"></div>
-          <div id="run-selected"></div>
 
           <div class="runbar runbar--go">
             <button class="mini mini--go mini--enter" id="run-launch">Enter</button>

@@ -224,10 +224,8 @@ because `climbed` is a save key. **A CAMPAIGN ZONE IS A WORLD AND A GEAR TIER**,
 because the campaign is run with NOTHING SOCKETED: `LadderZoneDef.world` and
 `.tier`, read by `runSet` whenever a descent names a depth. The Answering is the
 Fissure at tier 1, The Refraction the Cavern at tier 2, The Flowering the Rot at
-tier 3 — *"T2 in the second area t3 in the third."* Off the climb, WHAT YOU
-SOCKETED IS WHERE YOU GO (`mapTheme`, `tierForSet`), and that is the whole of
-the Proving Ground. `LadderZoneDef.id` is the save key under
-`character.climbed`, still spelt the way the worlds were.
+tier 3 — *"T2 in the second area t3 in the third."* `LadderZoneDef.id` is the
+save key under `character.climbed`, still spelt the way the worlds were.
 **THE RAMP IS A STRAIGHT LINE**: `rungMod` reads how far up the 42 you are and
 scales `LADDER.*AtTop` by exactly that, so every depth costs the same 20 danger
 as the one before it. There is no exponent and no spike — a challenge floor
@@ -238,11 +236,33 @@ rung is its BOSS**, in an arena of its own (`LADDER.zones[z].arena`, read throug
 Answering, The Refraction, The Flowering. **THE CLIMB IS DRAWN ONE ZONE AT A
 TIME, on a TAB**, as a seam descending that act's own generated cross-section
 (`LadderZone.art`) with a station on every rung, lit as far as you have
-cleared. **The Fissure window is TWO COLUMNS and nothing on it scrolls** —
-*"the map being much larger almost the entire screen and the sockets on the
-right side"* — so the seam is sized off the room LEFT rather than off the
-viewport, and `shots` fails the screen if it needs scrolling. Every station is placed in PERCENT of the picture, so a rung cannot
-drift off the chamber it sits in.
+cleared. **The Fissure window is ONE COLUMN and nothing on it scrolls** — the
+map is the screen, so the seam is sized off the room LEFT rather than off the
+viewport, and `shots` fails the screen if it needs scrolling. Every station is
+placed in PERCENT of the picture, so a rung cannot drift off the chamber it
+sits in.
+
+**THE PROVING GROUND IS THE FOURTH TAB, and the sockets are ITS.** *"Once you
+finish the first three runs of each zone you end in a 4th tab that only has one
+area and its where you can socket the crystals. The other menu can just remove
+the crystal sockets and take up more screen with the map and the 4th screen can
+have the crystal sockets laid out like the fissure entrance in the camp on top
+of the map."* So the socket column is gone from every other tab and the four
+lie OVER this one's picture, positioned rather than in flow. It is one AREA and
+not a depth — `Proving` beside `Rung` in `RunWhere`, and `isProving` is the only
+read — so nothing about it is climbed, recorded or advanced. **THE INFLUENCE IS
+PICKED HERE AND IT WINS**: it decides the world and the picture (that world's
+own act art), while what you SOCKETED still decides the packs — *"as you mix and
+match crystals you can still get the other types to join by that method but the
+zone will stay what your influence is."* `GameState.influence` is a preference,
+healed against `PROVING.influences`, which are three and never the Seam.
+**Its difficulty is a FLOOR above the whole climb**: `provingMod` scales the same
+`LADDER.*AtTop` a depth does, by `PROVING.overTop` plus `perSocket` a filled
+socket — measured, 1028 danger empty against the deep end's 822, and 1520 on
+four blanks. **Tallies scale it through the Reckoning's own lines**, which
+already merge into the seam; counting them again here would pay for one web
+twice. It opens on `paidCampaign`, so the tab and the first crystal arrive
+together.
 
 **A CRYSTAL ROLL BURNS DOWN.** *"You roll a mod and it lasts for a certain
 amount runs and then it's gone."* `RolledMod.uses` is descents left, set at the

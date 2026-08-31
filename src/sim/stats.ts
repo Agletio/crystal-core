@@ -33,6 +33,7 @@ import {
   UNIQUE_BY_ID,
   LADDER,
   LADDER_RUNGS,
+  PROVING,
   rungsBelow,
 } from '../data';
 import { attributeSteps, equippedItems, equippedSkill, mainSkillId } from './character';
@@ -524,6 +525,33 @@ export function rungMod(zone: number, rung: number): RolledMod | null {
     group: 'rung',
     slot: 'rung',
     name: 'The climb',
+    tier: 1,
+    tags: [],
+    stats,
+  };
+}
+
+/** THE PROVING GROUND as one synthetic mod, on the same three stats a DEPTH
+ *  scales and by the same arithmetic — so its floor is readable as "so many
+ *  times the deep end" rather than as a table of its own. */
+export function provingMod(sockets: number): RolledMod | null {
+  const up = PROVING.overTop + Math.max(0, sockets) * PROVING.perSocket;
+  const stats: RolledMod['stats'] = (
+    [
+      ['monsterLife', LADDER.lifeAtTop],
+      ['monsterDamage', LADDER.damageAtTop],
+      ['packSize', LADDER.packAtTop],
+    ] as const
+  )
+    .map(([stat, top]) => ({ stat, form: 'inc' as const, value: Math.round(top * up), tags: [] }))
+    .filter((line) => line.value > 0);
+  if (stats.length === 0) return null;
+  return {
+    entryId: 'proving',
+    defId: 'proving',
+    group: 'rung', // the same seam a depth rides: one place, one difficulty
+    slot: 'rung',
+    name: PROVING.name,
     tier: 1,
     tags: [],
     stats,

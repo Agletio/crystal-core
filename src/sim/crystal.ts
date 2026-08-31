@@ -9,13 +9,16 @@ import {
   FAMILY_BY_ID,
   FAMILY_YIELD,
   LADDER,
+  PROVING,
   MONSTER_FAMILIES,
   POWER,
   REWARD,
   bandFor,
   tierForLevel,
 } from '../data';
-import { dropBias, rungMod } from './stats';
+import { dropBias, provingMod, rungMod } from './stats';
+import { isProving } from '../ladder';
+import type { RunWhere } from '../ladder';
 import { dangerScore } from '../mods';
 import type { DropBand } from '../data';
 import type { Item, MapTheme, MonsterFamily, RolledMod } from '../types';
@@ -144,16 +147,18 @@ export interface RunSet {
 export function runSet(
   crystals: Item[],
   standing?: RolledMod | null,
-  at?: { zone: number; rung: number } | null
+  at?: RunWhere | null
 ): RunSet {
-  // The trials web and the RUNG, each as one mod. Both optional: a measured SET
-  // carries no walked web and sits at the bottom of the climb.
-  const rung = at ? rungMod(at.zone, at.rung) : null;
-  const zone = at ? LADDER.zones[at.zone] : null;
+  // The Reckoning and WHERE THIS GOES, each as one mod. Both optional: a
+  // measured SET carries no walked web and sits at the bottom of the climb.
+  const ground = isProving(at) ? provingMod(crystals.length) : null;
+  const rung = at && !isProving(at) ? rungMod(at.zone, at.rung) : null;
+  const zone = at && !isProving(at) ? LADDER.zones[at.zone] : null;
   const mods = [
     ...crystals.flatMap((c) => c.mods),
     ...(standing ? [standing] : []),
     ...(rung ? [rung] : []),
+    ...(ground ? [ground] : []),
   ];
   const rewards = crystalRewards(mods);
   const power = Math.min(
@@ -172,9 +177,15 @@ export function runSet(
     // THE CAMPAIGN IS RUN WITH NOTHING SOCKETED, so its ZONE decides both the
     // world and the best base — off the sockets alone the whole 42-depth climb
     // would be tier 1 in one world. Past it the sockets answer again.
-    maxTier: zone ? Math.max(zone.tier, tierForSet(crystals)) : tierForSet(crystals),
+    maxTier: isProving(at)
+      ? Math.max(PROVING.tier, tierForSet(crystals))
+      : zone
+        ? Math.max(zone.tier, tierForSet(crystals))
+        : tierForSet(crystals),
     composition: share,
-    theme: zone ? zone.world : mapTheme(share),
+    // THE INFLUENCE WINS in the Proving Ground: *"the zone will stay what your
+    // influence is."* What you mixed still decides the PACKS.
+    theme: isProving(at) ? at.influence : zone ? zone.world : mapTheme(share),
     mix,
     yield: 1 + mix * REWARD.mixYield,
     pays: familyPays(share),
@@ -232,7 +243,7 @@ export function rewardRows(crystal: Item): Array<{ label: string; value: string 
 export function setRows(
   crystals: Item[],
   standing?: RolledMod | null,
-  at?: { zone: number; rung: number } | null
+  at?: RunWhere | null
 ): Array<{ label: string; value: string }> {
   const set = runSet(crystals, standing, at);
   return [
@@ -248,7 +259,7 @@ export function setRows(
 export function farmingText(
   crystals: Item[],
   standing?: RolledMod | null,
-  at?: { zone: number; rung: number } | null
+  at?: RunWhere | null
 ): string {
   const set = runSet(crystals, standing, at);
   const said: string[] = [];

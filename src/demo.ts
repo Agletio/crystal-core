@@ -91,6 +91,7 @@ import {
   tierKeepId,
   keepGroupFor,
   BASE_TIER_MODS,
+  PROVING,
   RUN_SLOTS,
   armourBudget,
   implicitSpend,
@@ -9822,6 +9823,51 @@ rule('THE CLIMB — does a rung open, stay open, and get harder?');
     `and the ramp is a LINE: no depth is off the ${mean.toFixed(1)} step by a whole step`,
     `one depth is ${worst.toFixed(1)} off, which is a spike rather than a step`
   );
+
+  // THE PROVING GROUND is one area PAST the whole climb, and its whole claim is
+  // that it is harder than the deep end however you got there. *"A set
+  // difficulty even harder than the final 'story mode' level which you can
+  // scale with more crystals."* So: harder empty than depth 42 is, and harder
+  // again for every socket filled.
+  {
+    const top = LADDER.zones.length - 1;
+    const deepest = { zone: top, rung: LADDER.zones[top].rungs };
+    const deep = runSet([], null, deepest).rewards.danger;
+    const bare = runSet([], null, { proving: true, influence: 'fissure' }).rewards.danger;
+    const filled = Array.from({ length: RUN_SLOTS.length }, () => makeCrystal(1));
+    const full = runSet(filled, null, { proving: true, influence: 'fissure' }).rewards.danger;
+    line(
+      `  the deep end is ${Math.round(deep)} danger; ${PROVING.name} is ` +
+        `${Math.round(bare)} empty and ${Math.round(full)} on ${filled.length} blank crystals`
+    );
+    check(
+      bare > deep,
+      `${PROVING.name} is harder than the last depth of the climb with NOTHING socketed`,
+      `${Math.round(bare)} against ${Math.round(deep)}`
+    );
+    check(
+      full > bare,
+      'and every socket filled makes it harder again, which is what a socket is FOR here',
+      `${Math.round(full)} against ${Math.round(bare)}`
+    );
+    // THE INFLUENCE WINS. *"The zone will stay what your influence is."* So a
+    // set of one world does not drag the map into that world down here.
+    const rot = Array.from({ length: 2 }, () => makeCrystal(1, 'demonic'));
+    const themes = PROVING.influences.map(
+      (influence) => runSet(rot, null, { proving: true, influence }).theme
+    );
+    check(
+      themes.join(',') === PROVING.influences.join(','),
+      `and the INFLUENCE decides the world, not the crystals: ${themes.join(', ')}`,
+      themes.join(', ')
+    );
+    // AND IT FLOORS THE GEAR TIER, the way a campaign zone does.
+    check(
+      runSet([], null, { proving: true, influence: 'fissure' }).maxTier >= PROVING.tier,
+      `and it floors the base tier at ${PROVING.tier} however little is socketed`,
+      String(runSet([], null, { proving: true, influence: 'fissure' }).maxTier)
+    );
+  }
 
   // What a rung actually DOES to a body, read through a real sim rather than
   // off the table: the mod has to reach the monsters or the pips are a lie.

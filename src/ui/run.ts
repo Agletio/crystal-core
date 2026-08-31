@@ -31,6 +31,7 @@ import {
   POTIONS,
   BOSS_FIGHT,
   BOSS_SHOUTS,
+  PROVING,
   RUN_SLOTS,
   MAIN_SLOT,
   SKILL_BY_ID,
@@ -47,8 +48,11 @@ import { SCENES, SCENE_BY_ID } from '../scenes';
 import type { Hotspot } from '../scenes/camp';
 import { initCamp, openCamp, closeCamp, isCampOpen, renderCamp, setCampEmber } from './camp';
 import { openTalk } from './talk';
-import { advanceRung, climbLine, renderClimb, rungName, rungNow } from './climb';
-import { arenaAt, takeRung, zoneAt } from '../ladder';
+import {
+  advanceRung, climbLine, initClimb, renderClimb, rungName, rungNow, socketsInClimb, whereNow,
+} from './climb';
+import { arenaAt, isProving, takeRung, zoneAt } from '../ladder';
+import type { RunWhere } from '../ladder';
 import type { Rung } from '../ladder';
 import type { SceneDef } from '../scenes';
 import { buildReport, lootRows } from '../game/report';
@@ -112,7 +116,7 @@ let streak = 0;
 let halt: 'died' | 'full' | 'once' | 'left' | 'chose' | 'met' | 'dry' = 'once';
 /** THE RUNG THIS DESCENT IS, set at the launch: a clear records what was
  *  walked rather than what is picked by the time it ends. */
-let ran: Rung | null = null;
+let ran: RunWhere | null = null;
 /** Whether the room being stood in is a REPEAT of a beaten boss: the speech
  *  played once, so a bought rematch goes straight to the fight. */
 let revisit = false;
@@ -301,14 +305,10 @@ function syncClimb(): void {
   );
 }
 
-function renderMenu(): void {
-  syncClimb();
-  renderClimb($('run-climb'), game.character, () => renderMenu());
-  // NOTHING IS SOCKETED UNTIL THE LAMPWRIGHT HAS PAID, because until then you
-  // own no crystal: four empty boxes, so the map takes their width instead.
-  const card = document.querySelector('.fissurecard');
-  card?.classList.toggle('fissurecard--bare', !game.character.paidCampaign);
-  const grid = $('run-sockets');
+/** THE FOUR SOCKETS, drawn wherever the Proving Ground's own tab puts them —
+ *  *"the crystal sockets laid out like the fissure entrance in the camp on top
+ *  of the map"* — and nowhere else, so the climb keeps the whole window. */
+function renderSockets(grid: HTMLElement): void {
   grid.replaceChildren();
 
   for (const slot of RUN_SLOTS) {
@@ -356,15 +356,20 @@ function renderMenu(): void {
     grid.append(button);
   }
   renderKeySocket(grid);
+  renderSelected(grid);
+}
 
-  const host = $('run-selected');
-  host.replaceChildren();
+/** WHAT THE SET COMES TO, under the sockets that made it. */
+function renderSelected(grid: HTMLElement): void {
+  const host = el('div', 'groundset');
+  host.id = 'run-selected';
 
   const set = socketed(game);
   const chips = el('div', 'setrows');
   const standing = trialMod(game.character);
-  // Read AT THE RUNG, or the danger printed is not the danger you walk into.
-  const at = rungNow(game.character);
+  // Read WHERE YOU ARE GOING, or the danger printed is not the danger you
+  // walk into: the Proving Ground's floor is not a depth's.
+  const at = whereNow(game.character);
   for (const row of setRows(set, standing, at)) {
     const chip = el('span', 'mult');
     chip.append(el('span', 'mult__k', row.label));
@@ -396,6 +401,13 @@ function renderMenu(): void {
           : 'Click an empty socket to choose a crystal.'
     )
   );
+
+  grid.append(host);
+}
+
+function renderMenu(): void {
+  syncClimb();
+  renderClimb($('run-climb'), game.character, () => renderMenu());
 
   // The two things that can shut the Fissure, and neither is a dead end: gear
   // sells from anywhere, and a weapon is one click on the sheet.
@@ -476,26 +488,28 @@ function launch(): void {
   // running out of crystals a setback rather than an end.
   const set = socketed(game);
 
-  // WHICH RUNG: read at the launch, so a chained descent stays on one rung.
-  ran = rungNow(game.character);
+  // WHERE: read at the launch, so a chained descent stays where it started.
+  ran = whereNow(game.character);
+  const depth = isProving(ran) ? null : ran;
 
   // THE TOP OF A ZONE IS A FIGHT, and clearing it opens the zone above.
-  const arena = SCENE_BY_ID[arenaAt(ran) ?? ''];
-  if (arena) {
+  const arena = depth ? SCENE_BY_ID[arenaAt(depth) ?? ''] : undefined;
+  if (arena && depth) {
     seed = Math.floor(Math.random() * 1e9);
-    enterScene(arena, [], [], ran);
+    enterScene(arena, [], [], depth);
     return;
   }
 
   seed = Math.floor(Math.random() * 1e9);
-  // WHO IS DOWN THERE. *"I want to encounter them randomly in the maps."*
-  // Rolled HERE and not in the sim, off its own draw, so whether somebody is
-  // waiting cannot move a single roll of the descent itself.
+  // WHO IS DOWN THERE, scheduled off the DEPTH. The Proving Ground is past the
+  // whole campaign, which is where everybody who lives down here was met.
   sim = new RunSim(set, game.character, new Rng(seed), {
     potionThresholds: game.potions,
     beaten: game.bosses ?? [],
-    rung: ran,
-    meets: meetsIn(runSet(set, trialMod(game.character), ran).theme, ran.rung),
+    rung: depth ?? undefined,
+    meets: depth
+      ? meetsIn(runSet(set, trialMod(game.character), ran).theme, depth.rung)
+      : undefined,
   });
 
   note(
@@ -552,7 +566,7 @@ function finish(left = false): void {
   // THE CLIMB. A rung already cleared records nothing, and what FINISHING it
   // pays is the Lampwright's to hand over in the camp. CLIMBING: the rung just
   // recorded is behind you, so forgetting the pick is the whole of "go deeper".
-  if (report.cleared && !left && ran) {
+  if (report.cleared && !left && ran && !isProving(ran)) {
     takeRung(game.character, ran);
     if (climbing()) advanceRung();
   }
@@ -646,7 +660,8 @@ function endEncounter(): void {
   // Marked at the clear, so a room you died in is one you meet again. BEFORE
   // the trials are asked: the first rung is this boss being down.
   if (report.cleared && def?.encounter) takeBoss(game, def.encounter);
-  if (report.cleared && ran) takeRung(game.character, ran); // a zone's arena IS a rung
+  // A zone's ARENA is a rung; the Proving Ground never is.
+  if (report.cleared && ran && !isProving(ran)) takeRung(game.character, ran);
   if (report.cleared) payTrials(state);
 
   const after = report.cleared && !revisit ? (def?.after ?? []) : [];
@@ -1218,6 +1233,10 @@ async function upgradeRenderer(host: HTMLElement, palette: Palette): Promise<voi
 
 export function initRun(state: GameState): void {
   game = state;
+  // The sockets belong to the Proving Ground's tab, which is `climb.ts`'s to
+  // lay out. This is the only place they are ever drawn.
+  initClimb(game);
+  socketsInClimb(renderSockets);
 
   // Drawn from the very first paint, so the room they take is not something
   // the canvas discovers when a descent starts — and so the threshold is set
@@ -1484,10 +1503,15 @@ function syncRung(): void {
   const at = ran;
   host.hidden = !at || (phase !== 'running' && phase !== 'scene');
   if (host.hidden || !at) return;
-  $('run-rung-zone').textContent = zoneAt(at.zone)?.name ?? '';
-  $('run-rung-n').textContent = `Depth ${at.rung}`;
+  if (isProving(at)) {
+    $('run-rung-zone').textContent = PROVING.name;
+    $('run-rung-n').textContent = THEME_BY_ID[at.influence]?.name ?? at.influence;
+  } else {
+    $('run-rung-zone').textContent = zoneAt(at.zone)?.name ?? '';
+    $('run-rung-n').textContent = `Depth ${at.rung}`;
+  }
   const what = $('run-rung-what');
-  what.textContent = arenaAt(at) ? 'Boss' : '';
+  what.textContent = !isProving(at) && arenaAt(at) ? 'Boss' : '';
   what.hidden = what.textContent === '';
 }
 

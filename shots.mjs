@@ -186,7 +186,7 @@ const STATES = [
   'toast', 'itemmenu', 'confirm',
   'handover', 'descent', 'results',
   'scene', 'speech', 'lampwright',
-  'skills', 'skill-list', 'skill-web', 'move-web', 'trade', 'trials',
+  'skills', 'skill-list', 'skill-web', 'move-web', 'trade', 'trials', 'proving',
   'bench', 'tooltip', 'glossary', 'graft',
 ];
 
@@ -619,6 +619,32 @@ for (const vp of VIEWPORTS) {
   await page.waitForTimeout(300);
   await shoot('trials');
   await page.evaluate(() => document.getElementById('trials-close')?.click());
+
+  // THE PROVING GROUND, which the climb above has just opened: one area, the
+  // influence picked over it, and the four sockets laid over the map the way
+  // the camp's crack lays them out. The only screen where a control sits ON
+  // the picture, so it is the one that can bury the map under its own verbs.
+  // The dock's own window takes the lower half of the screen, and the Fissure
+  // is sized off the room LEFT — so this is shot with it shut, the way the
+  // climb's own screen is.
+  await page.evaluate(() => document.getElementById('inv-close')?.click());
+  await page.evaluate(() => document.getElementById('camp-crack')?.click());
+  await page.waitForTimeout(350);
+  await page.evaluate(() => document.getElementById('climb-tab-3')?.click());
+  await page.waitForTimeout(350);
+  const ground = await page.evaluate(() => ({
+    sockets: document.querySelectorAll('.groundsockets .socket').length,
+    influences: document.querySelectorAll('.influences .influence').length,
+  }));
+  if (ground.sockets < 4 || ground.influences !== 3) {
+    problems.push(
+      `${vp.name}: the Proving Ground drew ${ground.sockets} sockets and ` +
+        `${ground.influences} influences`
+    );
+  }
+  await shoot('proving');
+  await page.evaluate(() => document.getElementById('run-menu-close')?.click());
+  await page.waitForTimeout(250);
 
   // The bench, stocked. It is the widest thing in the game — a crystals
   // column, a worn column and the item — and the only screen where three

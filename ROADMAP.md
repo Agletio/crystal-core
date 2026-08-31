@@ -189,10 +189,20 @@ retired phrasings.
       also PLAYS a descent for every counter and fails one that never moves.
       **The names landed with it**: Tallies, the Reckoning, the Ledger, in
       `KEYWORDS.BANNED`, `CLAUDE.md` and every screen. Identifiers did not move.
-- [ ] **Step 5 — the Proving Ground.** A fourth tab, one area, the sockets laid
-      out over the map the way the camp's crack lays them out. Influence is
-      picked here and decides the world and the pack. Difficulty is a floor
-      above depth 42, raised by what is socketed and by points spent.
+- [x] **Step 5 — the Proving Ground. DONE.** A fourth tab past the three zones,
+      open on `paidCampaign`. `Proving` sits beside `Rung` in `RunWhere` and
+      `isProving` is the only read, so nothing about it is climbed or recorded.
+      The socket column is DELETED from the window — one column now — and the
+      four lie over this tab's own picture, POSITIONED rather than in flow (in
+      flow the panel became the seam's content height and squashed the map).
+      `GameState.influence` is a preference, three worlds and never the Seam,
+      and it wins over composition for the world and the picture while the
+      packs stay what you socketed. `provingMod` scales the same `LADDER.*AtTop`
+      a depth does: measured 1028 danger empty against the deep end's 822, and
+      1520 on four blanks. **Tallies scale it through the Reckoning's own
+      lines** rather than a second term — counting them here would pay for one
+      web twice, and the roadmap's "and by points spent" is satisfied by the
+      seam that already exists.
 - [ ] **Step 6 — the crystal ladder.** 25/50/75/100 clears pay the four normal
       crystals. Four level-4 normals pay the first Prismatic; a level 2, 3 and 4
       Prismatic each pay the next. Four level-4 Prismatics open the same ladder

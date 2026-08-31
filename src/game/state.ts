@@ -17,13 +17,14 @@ import {
   WEAPON_SLOT,
   START_PRESETS,
   GRINDS,
+  PROVING,
   CRYSTAL_ILVL,
   UNIQUE_BY_ID,
   keepGroupFor,
   starterWeapon,
   tierKeepId,
 } from '../data';
-import type { EquipSlotDef, RunSlotDef } from '../types';
+import type { EquipSlotDef, MapTheme, RunSlotDef } from '../types';
 import {
   canSell,
   grant,
@@ -132,6 +133,7 @@ export interface GameState {
   /** Panels away, map alone. A preference like `keys`, so a wipe keeps it. */
   parked: boolean;
   climbing: boolean; // a CLEAR takes the next RUNG down; absent is off, and dying clears it
+  influence?: MapTheme; // WHICH WORLD the Proving Ground runs in; a preference
 
   bosses: string[]; // put down: stops one being scheduled twice, opens its key
   called: string | null; // a fight a socketed key has paid for: the next entry is it
@@ -171,6 +173,7 @@ export function createGame(mode: StartMode = 'dev'): GameState {
     potions: {},
     parked: false,
     climbing: false,
+    influence: PROVING.influences[0],
     bosses: [],
     called: null,
   };

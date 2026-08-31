@@ -32,6 +32,7 @@ import {
   PLAYER_SKILLS,
   SKILL_SLOTS,
   POTION_BY_ID,
+  PROVING,
   RELIC_BY_ID,
   RUN_SLOTS,
   SKILL_BY_ID,
@@ -527,6 +528,11 @@ export function heal(game: GameState): Healed {
       continue;
     }
     out.points += replayTree(game.character, skillId);
+  }
+
+  // A PREFERENCE naming no world sends you somewhere that does not exist.
+  if (game.influence && !PROVING.influences.includes(game.influence)) {
+    game.influence = PROVING.influences[0];
   }
 
   out.points += replayAttributes(game.character);

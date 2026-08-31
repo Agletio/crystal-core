@@ -4,11 +4,29 @@
  */
 import { CAMPAIGN_REWARD, LADDER, LAMPWRIGHT } from './data';
 import type { Character } from './sim/character';
+import type { MapTheme } from './types';
 
 export interface Rung {
   zone: number; // index into LADDER.zones; `rung` is 1-based within it
   rung: number;
 }
+
+/** THE PROVING GROUND, which is a place rather than a depth: one area past the
+ *  whole climb, at `PROVING`'s own floor, in the world you PICKED. */
+export interface Proving {
+  proving: true;
+  influence: MapTheme;
+}
+
+/** WHERE A DESCENT GOES. Nothing else picks a fight. */
+export type RunWhere = Rung | Proving;
+
+export const isProving = (at: RunWhere | null | undefined): at is Proving =>
+  !!at && 'proving' in at;
+
+/** OPEN once the Lampwright has paid for the climb, which is when you first own
+ *  a crystal — sockets with nothing to put in them are a screen with no verb. */
+export const provingOpen = (character: Character): boolean => !!character.paidCampaign;
 
 export const zoneAt = (zone: number) => LADDER.zones[zone];
 
