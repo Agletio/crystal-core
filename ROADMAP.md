@@ -279,49 +279,33 @@ approve; everything else is code that can be written while it renders.
         camera pulled well back so the camp is a small part of a wide shelf with
         open ground around it. That is the whole of what buys room for five new
         stations and room to add more later.
-      - **"A way to upgrade your town"** — **yes, and the shape already ships.**
-        Do NOT generate three whole camps: three asks come back as three
-        different places, and the hotspots are measured in the picture's own
-        pixels so every version would need its own set. Instead the camp becomes
-        **a GROUND scene plus one generated OBJECT per station**, and an upgrade
-        swaps that station's picture — exactly what `LOCKS` does with a `shut`
-        prop and the `open` frame of the same object, through
-        `create_object_state`. So an upgrade is a picture swap, a hotspot is the
-        station's own rectangle and cannot drift, and a station added later
-        costs one object rather than a new camp.
-      - **The cost of that shape is TONE.** A prop generated apart from its
-        ground comes back polished and lit its own way; `tone` and `dull` toward
-        the ground's mean is the existing repair and it is not optional.
+      - **"A way to upgrade your town" — ASKED FOR, THEN SCRATCHED.** *"Scrap
+        the upgrade thing, just have it built in the picture."* It had been
+        designed and started as a ground scene plus one generated object per
+        station, with `create_object_state` making a level a picture swap of
+        THAT building. **Do not rebuild it without being asked**; what it cost
+        is written at the bottom of this step.
+      - **SO THE CAMP STAYS ONE PICTURE**, the way it already is: everything
+        painted in, and every hotspot a rectangle measured in that picture's own
+        pixels. `camp_full` in `scenes.json` is the ask — the proven cliff,
+        split, light and sockets wording verbatim, the camera pulled well back,
+        and the furniture named BY POSITION.
+      - **FIFTEEN NAMED OBJECTS IS MORE THAN THE GENERATOR WILL PLACE.** The ask
+        that worked names four things by where they stand. So the new one groups
+        them: a furnace and anvil at the far left, bench and shelf nearer, the
+        fire at the centre, loom and hide rack to its right, pot and tool table
+        at the far right, and a row of FIVE shelters along the right edge for
+        the people. Hotspots are then measured onto whatever it actually drew —
+        which is the existing rule, not a new one.
+      - **A NEW PICTURE INVALIDATES ALL NINE HOTSPOTS.** `src/scenes/camp.ts` is
+        every rectangle in the current picture's pixels; none of them survives a
+        recompose, and that re-measuring is the real work of this step.
 
-      **THE SHAPE, SETTLED, and it is the user's:** *"make every object you
-      click on something we drop in — loom, anvil, furnace, crafting bench,
-      shelf, fire, tent. Also make spots for buildings/tents for each of the NPC
-      characters and make those upgradeable as well."* So:
+      **WHAT THE SCRAPPED SHAPE COST: 25 generations** on a sixteen-candidate
+      object pack (`e6e66268-abda-4234-a1a7-85db13b08cae`), plus three
+      empty-ground scenes now superseded. Not all waste — the zoomed-out cliff
+      and socket wording came back right and is reused verbatim in `camp_full`.
 
-      - **The GROUND is `camp_wide` in `scenes.json`** — the same 688×384, the
-        camera pulled well back, the cliff in the top quarter and the bottom
-        three quarters open empty grass. Its ask EXCLUDES every piece of
-        furniture by name, because anything painted in is a thing that can
-        never be upgraded and a second copy of an object standing on it.
-      - **`tools/art/camp.mts` asks all FIFTEEN objects as ONE job.** At 85px
-        `create_1_direction_object` returns sixteen candidates for 25
-        generations and `item_descriptions` makes each one a different object,
-        so the whole camp costs one ask rather than fifteen. `view` is
-        `sidescroller` — the enum is only that or `top-down`, and a front
-        elevation is what stands on a ground plane.
-      - **The fifteen**: bench, shelf, fire, tent (the four that exist), then
-        furnace, anvil, loom, tannery, sawbench, jeweller, kitchen (one per
-        profession, the smelter and the anvil both Blacksmithing's), then a
-        shelter each for the Lampwright, the Glasswright, the Osteomancer and
-        the Astral-Geometer.
-      - **AN UPGRADE IS `create_object_state`**, whose whole contract is *the
-        same object, nothing else changes* — `chest.mts open` is the proven use.
-        A level is a picture swap of THAT building.
-      - **THE FOUR SOCKETS STAY IN THE CLIFF for now** and are pack two. They
-        are recesses in a rock face rather than things standing on ground, and
-        fifteen already fills a sixteen-candidate job. Written down because the
-        user's rule says every clickable is dropped in, and these are the
-        exception still owed.
 - [ ] **Step 1 — the tables, and nothing uses them yet.** `MATERIALS` (28 rows),
       `PROFESSIONS` (6), `Character.professions` as `{ level, xp }` apiece, and
       an `ItemKind` for a material so it stacks. `SAVE_VERSION` bumps here and
