@@ -263,12 +263,35 @@ browser, which is what "automation is universal" requires.
 somebody.** A camp picture is a generation queue and a design the user has to
 approve; everything else is code that can be written while it renders.
 
-- [ ] **Step 0 — the camp DESIGN, started immediately and in parallel.** One
-      688×384 scene with a smelter, an anvil, a loom, a tanning frame, a
-      jeweller's bench and a kitchen, on top of the nine hotspots already there.
-      **Show the user candidates and get an approval before anything is rotated,
-      animated or dressed** — that rule is absolute. Nothing downstream blocks
-      on it until step 8.
+- [ ] **Step 0 — the camp DESIGN, started immediately and in parallel.** A
+      smelter, an anvil, a loom, a tanning frame, a jeweller's bench and a
+      kitchen, on top of the nine hotspots already there. **Show the user
+      candidates and get an approval before anything is rotated, animated or
+      dressed** — that rule is absolute. Nothing downstream blocks on it until
+      step 8. Three things the user asked for, and what each turns out to cost:
+      - **"Sized so it can be full screen"** — **it already is, and bigger is
+        not on offer.** `create_image_pro`'s ceiling is 688×384 at 16:9
+        (512² square, 600×448 at 4:3; the axis maxes cannot be combined), and
+        the game scales the picture over the whole window on both axes already.
+        Confirmed against the API docs, not assumed.
+      - **"Much more zoomed out, a lot more area to work with"** — **free, and
+        it is a COMPOSITION change rather than a size one.** Same canvas, the
+        camera pulled well back so the camp is a small part of a wide shelf with
+        open ground around it. That is the whole of what buys room for five new
+        stations and room to add more later.
+      - **"A way to upgrade your town"** — **yes, and the shape already ships.**
+        Do NOT generate three whole camps: three asks come back as three
+        different places, and the hotspots are measured in the picture's own
+        pixels so every version would need its own set. Instead the camp becomes
+        **a GROUND scene plus one generated OBJECT per station**, and an upgrade
+        swaps that station's picture — exactly what `LOCKS` does with a `shut`
+        prop and the `open` frame of the same object, through
+        `create_object_state`. So an upgrade is a picture swap, a hotspot is the
+        station's own rectangle and cannot drift, and a station added later
+        costs one object rather than a new camp.
+      - **The cost of that shape is TONE.** A prop generated apart from its
+        ground comes back polished and lit its own way; `tone` and `dull` toward
+        the ground's mean is the existing repair and it is not optional.
 - [ ] **Step 1 — the tables, and nothing uses them yet.** `MATERIALS` (28 rows),
       `PROFESSIONS` (6), `Character.professions` as `{ level, xp }` apiece, and
       an `ItemKind` for a material so it stacks. `SAVE_VERSION` bumps here and
