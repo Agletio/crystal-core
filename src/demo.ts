@@ -120,6 +120,7 @@ import {
   zoneOpen,
 } from './ladder';
 import { canDualWield } from './sim/character';
+import { seamSocketed } from './sim/crystal';
 import {
   balance,
   grant,
@@ -5034,13 +5035,15 @@ rule('FAMILIES — a different fight, or a harder one?');
   // couple of percent, and at six seeds the run-to-run noise is bigger than
   // that — the ORDER of the two came out differently on consecutive runs.
   const seeds = [3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41];
-  const room = (families: MonsterFamily[]) => {
+  // LEVEL matters to one of these and one only: the Seam is the world a level
+  // buys, so its set is socketed at the top and every other set is blank.
+  const room = (families: MonsterFamily[], level = 1) => {
     let time = 0;
     let taken = 0;
     let deaths = 0;
     for (const seed of seeds) {
       const hero = ladderCharacter(2, new Rng(99));
-      const set = families.map((f) => makeCrystal(1, f));
+      const set = families.map((f) => makeCrystal(level, f));
       const s = runToCompletion(new RunSim(set, hero, new Rng(seed * 37)));
       time += s.elapsed;
       taken += Object.values(s.damageTaken).reduce((a, b) => a + b, 0);
@@ -5060,7 +5063,7 @@ rule('FAMILIES — a different fight, or a harder one?');
         `${String(r.deaths).padStart(6)}`
     );
   }
-  lived.seam = room(['demonic', 'demonic', 'prismatic', 'prismatic']);
+  lived.seam = room(['demonic', 'demonic', 'prismatic', 'prismatic'], 4);
   line(
     `  seam       ${lived.seam.time.toFixed(0).padStart(4)}s   ` +
       `${Math.round(lived.seam.taken).toString().padStart(5)}   ` +
@@ -5252,8 +5255,11 @@ rule('THEMES — does the composition change the rock you stand on?');
 // worlds are actually distinguishable — a tileset that renders identically to
 // another one is a tileset nobody added.
 {
+  // AT THE TOP LEVEL, because the Seam is the one world a LEVEL buys — every
+  // other line here is decided by the share alone and level 4 changes none.
+  const top = CRYSTAL_LEVELS[CRYSTAL_LEVELS.length - 1].level;
   const of = (...families: MonsterFamily[]) =>
-    mapTheme(composition(families.map((f) => makeCrystal(1, f))));
+    mapTheme(families.map((f) => makeCrystal(top, f)));
 
   const cases: Array<[MapTheme, MonsterFamily[]]> = [
     ['fissure', []],
@@ -5263,10 +5269,10 @@ rule('THEMES — does the composition change the rock you stand on?');
     ['demonic', ['demonic', 'demonic', 'demonic', 'prismatic']],
     ['demonic', ['demonic']],
     ['prismatic', ['prismatic', 'prismatic', 'normal', 'normal']],
-    ['seam', ['demonic', 'prismatic']],
     ['seam', ['demonic', 'demonic', 'prismatic', 'prismatic']],
-    // One of each is a quarter Normal, so the join is not clean and the rock
-    // stays the Fissure's. The Seam takes exactly two and two.
+    // TWO AND TWO AND NOTHING ELSE. One of each is half a wall, and a wall
+    // half spent is not the last world.
+    ['demonic', ['demonic', 'prismatic']],
     ['fissure', ['demonic', 'prismatic', 'normal', 'normal']],
   ];
   const wrong = cases.filter(([want, set]) => of(...set) !== want);
@@ -5356,7 +5362,12 @@ rule('THEMES — does the composition change the rock you stand on?');
   // Both renderers read the same pure functions, so a themed map cannot be one
   // world in canvas and another in WebGL — but the map has to CARRY the theme
   // for that to mean anything.
-  const set = [makeCrystal(1, 'demonic'), makeCrystal(1, 'prismatic')];
+  // The SEAM, since it is the world nothing but a socketed set can reach.
+  const seamTop = CRYSTAL_LEVELS[CRYSTAL_LEVELS.length - 1].level;
+  const set = [
+    makeCrystal(seamTop, 'demonic'), makeCrystal(seamTop, 'demonic'),
+    makeCrystal(seamTop, 'prismatic'), makeCrystal(seamTop, 'prismatic'),
+  ];
   const sim = new RunSim(set, makeCharacter({}, 'strike'), new Rng(19));
   check(
     sim.state.map.theme === 'seam' && sim.state.set.theme === 'seam',
@@ -9864,6 +9875,50 @@ rule('THE CLIMB — does a rung open, stay open, and get harder?');
       `and the INFLUENCE decides the world, not the crystals: ${themes.join(', ')}`,
       themes.join(', ')
     );
+    // THE SEAM IS THE ONE THING THAT OVERRIDES THE INFLUENCE, and it is
+    // SOCKETED FOR rather than picked. *"With the exception of socketing 2 lvl
+    // 4 prismatic and 2 lvl 4 demonic gives you the seam."*
+    {
+      const top = CRYSTAL_LEVELS[CRYSTAL_LEVELS.length - 1].level;
+      const seamSet = [
+        ...Array.from({ length: PROVING.seamOf }, () => makeCrystal(top, 'demonic')),
+        ...Array.from({ length: PROVING.seamOf }, () => makeCrystal(top, 'prismatic')),
+      ];
+      const anywhere = PROVING.influences.map(
+        (influence) => runSet(seamSet, null, { proving: true, influence }).theme
+      );
+      check(
+        anywhere.every((t) => t === 'seam'),
+        `${PROVING.seamOf} Demonic and ${PROVING.seamOf} Prismatic at level ${top} is the Seam whatever the influence says`,
+        anywhere.join(', ')
+      );
+      // AND THE LEVEL IS THE PRICE. The same four one level down is not it.
+      const under = [
+        ...Array.from({ length: PROVING.seamOf }, () => makeCrystal(top - 1, 'demonic')),
+        ...Array.from({ length: PROVING.seamOf }, () => makeCrystal(top - 1, 'prismatic')),
+      ];
+      check(
+        runSet(under, null, { proving: true, influence: 'fissure' }).theme === 'fissure'
+          && seamSocketed(seamSet) && !seamSocketed(under),
+        `and level ${top} is the whole price of it — the same four at ${top - 1} is not the Seam`,
+        runSet(under, null, { proving: true, influence: 'fissure' }).theme
+      );
+      // AND THE WHOLE WALL. Three of the four is not a Seam either, so the
+      // last world costs every socket you have.
+      const partial = seamSet.slice(0, PROVING.seamOf * 2 - 1);
+      check(
+        !seamSocketed(partial) && !seamSocketed([...seamSet, makeCrystal(top, 'normal')]),
+        'and it takes the WHOLE wall: neither three of the four nor a fifth crystal opens it',
+        `${seamSocketed(partial)} / ${seamSocketed([...seamSet, makeCrystal(top, 'normal')])}`
+      );
+      // AND IT IS NEVER PICKABLE. The influence row offers three worlds.
+      check(
+        !PROVING.influences.includes('seam'),
+        'and it is never on the influence list: the last world is the only one you cannot pick',
+        PROVING.influences.join(', ')
+      );
+    }
+
     // AND IT FLOORS THE GEAR TIER, the way a campaign zone does.
     check(
       runSet([], null, { proving: true, influence: 'fissure' }).maxTier >= PROVING.tier,

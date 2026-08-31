@@ -25,7 +25,7 @@ import { mainSkillId, pointsAvailable } from '../sim/character';
 import { armForSkill, giveGift } from './state';
 import type { GameState } from './state';
 import { grant, makeCrystal } from '../economy';
-import { crystalFamily } from '../sim/crystal';
+import { crystalFamily, crystalLevel, crystalXp, levelForXp } from '../sim/crystal';
 import { campaignDone, campaignPrize, climbed } from '../ladder';
 import type { RunSet } from '../sim/crystal';
 import type { CrystalStep } from '../data';
@@ -220,20 +220,9 @@ export function takeHandover(game: GameState, waiting: Waiting): Handover {
 
 // --- levelling --------------------------------------------------------------
 
-export const crystalXp = (crystal: Item): number => Number(crystal.meta.xp) || 0;
-
-/** The highest level that much experience has paid for. */
-export function levelForXp(xp: number): number {
-  let level = CRYSTAL_LEVELS[0].level;
-  for (const def of CRYSTAL_LEVELS) {
-    if (xp >= def.xp) level = def.level;
-  }
-  return level;
-}
-
-/** The level a crystal is standing at, whatever its stored fields say. */
-export const crystalLevel = (crystal: Item): number =>
-  Number(crystal.meta.level) || levelForXp(crystalXp(crystal));
+// The three reads a crystal's LEVEL is made of live beside `crystalFamily`,
+// which is what the world rules ask, so nothing in `src/sim` has to reach up.
+export { crystalLevel, crystalXp, levelForXp } from '../sim/crystal';
 
 export interface CrystalProgress {
   level: number;

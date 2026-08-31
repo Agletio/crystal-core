@@ -291,7 +291,11 @@ swinging at a body taking nothing.
 Four sockets hold crystals permanently. Their COUNT is how long a run is, their
 MODIFIERS how hard it is; a crystal's LEVEL buys capacity and tier, and its
 FAMILY (Normal / Demonic / Prismatic) picks which monsters spawn and which
-world you walk into. Danger and socket
+world you walk into. **THE SEAM IS THE ONE WORLD A LEVEL BUYS OUTRIGHT**:
+`seamSocketed` is `PROVING.seamOf` of each aura world at the TOP level and
+NOTHING else in the wall — *"socketing 2 lvl 4 prismatic and 2 lvl 4 demonic
+gives you the seam which will be the final zone."* It is the only thing that
+overrides the Proving Ground's influence, and the only world you cannot pick. Danger and socket
 count fold into one **run power**, and every reward reads that and nothing else.
 A fifth socket takes a **boss key**.
 

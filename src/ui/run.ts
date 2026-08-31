@@ -21,7 +21,9 @@ import {
   xpToNext,
 } from '../sim/character';
 import { describeMod } from '../crafting';
-import { compositionText, crystalFamily, farmingText, runSet, setRows } from '../sim/crystal';
+import {
+  compositionText, crystalFamily, farmingText, runSet, seamSocketed, setRows,
+} from '../sim/crystal';
 import type { MapTheme } from '../types';
 import {
   BOSS_BY_ID,
@@ -1240,7 +1242,7 @@ export function initRun(state: GameState): void {
   // The sockets belong to the Proving Ground's tab, which is `climb.ts`'s to
   // lay out. This is the only place they are ever drawn.
   initClimb(game);
-  socketsInClimb(renderSockets);
+  socketsInClimb(renderSockets, () => seamSocketed(socketed(game)));
 
   // Drawn from the very first paint, so the room they take is not something
   // the canvas discovers when a descent starts — and so the threshold is set

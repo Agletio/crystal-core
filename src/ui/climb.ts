@@ -14,7 +14,7 @@
  * every read, so swapping character or reloading points you at the deepest
  * thing you may enter rather than at somebody else's rung.
  */
-import { LADDER, PROVING, THEME_BY_ID } from '../data';
+import { CRYSTAL_LEVELS, LADDER, PROVING, THEME_BY_ID } from '../data';
 import {
   campaignLine, canEnter, climbed, furthest, isProving, provingOpen, zoneAt, zoneOpen,
 } from '../ladder';
@@ -27,6 +27,9 @@ import type { GameState } from '../game/state';
  *  the three cross-sections already IS one of the three worlds. */
 const GROUND_ART: Record<string, string> = {
   fissure: 'climb_act1', prismatic: 'climb_act2', demonic: 'climb_act3',
+  // THE SEAM has no cross-section of its own yet, so it borrows the deepest
+  // one drawn rather than the bare panel: the last world reading as nothing.
+  seam: 'climb_act3',
 };
 import type { Character } from '../sim/character';
 import { attachTooltip } from './tooltip';
@@ -186,9 +189,16 @@ export function setInfluence(theme: MapTheme): void {
 /** Where the sockets are drawn, which is over the Proving Ground's own map and
  *  nowhere else. `run.ts` fills it; this only says where it goes. */
 let sockets: ((host: HTMLElement) => void) | null = null;
+/** Whether what is in the wall has opened the Seam. `run.ts` knows what is
+ *  socketed; this only asks. */
+let seamHere: (() => boolean) | null = null;
 
-export function socketsInClimb(render: (host: HTMLElement) => void): void {
+export function socketsInClimb(
+  render: (host: HTMLElement) => void,
+  seamOpen: () => boolean
+): void {
   sockets = render;
+  seamHere = seamOpen;
 }
 
 /** A tab per zone, shut ones included, and the Proving Ground past all three:
@@ -238,12 +248,16 @@ function tabs(host: HTMLElement, character: Character, at: number, redraw: () =>
  *  cross-section, with the four sockets over it the way the camp's crack lays
  *  them out. There are no stations — it is one area, and it does not end. */
 function renderProving(host: HTMLElement, character: Character, onPick: () => void): void {
+  // THE SEAM OVERRIDES THE PICK, so the pick has to say so rather than lying
+  // about where the next descent goes.
+  const seam = seamHere?.() ?? false;
   const row = el('div', 'influences');
   for (const id of PROVING.influences) {
     const def = THEME_BY_ID[id];
     const button = el('button', 'mini influence', def?.name ?? id) as HTMLButtonElement;
     button.id = `climb-influence-${id}`;
-    button.classList.toggle('influence--on', influenceNow() === id);
+    button.classList.toggle('influence--on', !seam && influenceNow() === id);
+    button.classList.toggle('influence--over', seam);
     attachTooltip(button, () => `${def?.name ?? id}. ${def?.blurb ?? ''}`);
     button.onclick = () => {
       setInfluence(id);
@@ -252,9 +266,15 @@ function renderProving(host: HTMLElement, character: Character, onPick: () => vo
     row.append(button);
   }
   host.append(row);
+  if (seam) {
+    const said = THEME_BY_ID.seam;
+    host.append(el('p', 'climb__prize', `${PROVING.seamOf} Prismatic and ` +
+      `${PROVING.seamOf} Demonic at level ${CRYSTAL_LEVELS[CRYSTAL_LEVELS.length - 1].level} ` +
+      `is ${said?.name ?? 'The Seam'}, and it takes the influence off you. ${said?.blurb ?? ''}`));
+  }
 
   const trail = el('div', 'climbseam climbseam--ground');
-  const art = SCENE_ART[GROUND_ART[influenceNow()] ?? ''];
+  const art = SCENE_ART[GROUND_ART[seam ? 'seam' : influenceNow()] ?? ''];
   if (art) trail.style.backgroundImage = `url(${art.png})`;
   const wall = el('div', 'groundsockets');
   sockets?.(wall);

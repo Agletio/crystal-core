@@ -2209,6 +2209,7 @@ export const PROVING = {
   perSocket: 0.15,
   tier: 3, // the best gear BASE it drops, floored as a campaign zone floors it
   influences: ['fissure', 'prismatic', 'demonic'] as MapTheme[], // never the Seam
+  seamOf: 2, // of EACH aura world, at the top level, and nothing else socketed
 };
 
 /** Rungs below this one across the WHOLE ladder. */

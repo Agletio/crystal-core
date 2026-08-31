@@ -212,10 +212,15 @@ retired phrasings.
       `LAMPWRIGHT.deeper` on the end of it. The collection screen swaps the
       campaign's three zones for the whole ladder once the campaign is paid.
       Measured at the Proving Ground's own XP rate: 184 clears for the lot.
-- [ ] **Step 7 — THE SEAM.** Two level-4 Prismatic and two level-4 Demonic
-      socketed at once opens the Seam — the `seam` theme is already drawn and
-      already has its three locks. The last world, and the only one you cannot
-      pick.
+- [x] **Step 7 — THE SEAM. DONE.** `seamSocketed` is `PROVING.seamOf` of each
+      aura world at the TOP level and nothing else in the wall — so a level is
+      the price and the whole wall is the price. It is the ONE thing that
+      overrides the Proving Ground's influence, and it is never on the influence
+      list. `mapTheme` takes the crystals rather than a composition now, so
+      there is one Seam rule rather than two, and `crystalLevel`/`levelForXp`
+      moved beside `crystalFamily` in `src/sim/crystal.ts` to make that possible
+      without a cycle. **It borrows The Flowering's cross-section**: the Seam
+      has no picture of its own, and the bare panel read as nothing.
 
 ### What must not break
 

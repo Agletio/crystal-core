@@ -8,6 +8,7 @@ import {
   DROP_GROUPS,
   FAMILY_BY_ID,
   FAMILY_YIELD,
+  CRYSTAL_LEVELS,
   LADDER,
   PROVING,
   MONSTER_FAMILIES,
@@ -85,9 +86,41 @@ export function dominantFamily(share: Composition): MonsterFamily {
 
 /** Half of one family takes the rock; two halves and no Normal is the Seam,
  *  so it takes exactly two of each and cannot be stumbled into. */
-export function mapTheme(share: Composition): MapTheme {
+export const crystalXp = (crystal: Item): number => Number(crystal.meta.xp) || 0;
+
+/** The highest level that much experience has paid for. */
+export function levelForXp(xp: number): number {
+  let level = CRYSTAL_LEVELS[0].level;
+  for (const def of CRYSTAL_LEVELS) {
+    if (xp >= def.xp) level = def.level;
+  }
+  return level;
+}
+
+/** The level a crystal is standing at, whatever its stored fields say. */
+export const crystalLevel = (crystal: Item): number =>
+  Number(crystal.meta.level) || levelForXp(crystalXp(crystal));
+
+/** THE SEAM IS SOCKETED FOR, never picked. *"Socketing 2 lvl 4 prismatic and 2
+ *  lvl 4 demonic gives you the seam."* `PROVING.seamOf` of each aura world at
+ *  the TOP level and nothing else: the last world is the whole wall spent. */
+export function seamSocketed(crystals: Item[]): boolean {
+  const top = CRYSTAL_LEVELS[CRYSTAL_LEVELS.length - 1].level;
+  const at = (family: MonsterFamily): number =>
+    crystals.filter((c) => crystalFamily(c) === family && crystalLevel(c) >= top).length;
+  return (
+    crystals.length === PROVING.seamOf * 2 &&
+    at('demonic') === PROVING.seamOf &&
+    at('prismatic') === PROVING.seamOf
+  );
+}
+
+/** WHICH WORLD a set opens onto: a majority share, or the SEAM, which is the
+ *  one exception and the one thing a level buys outright. */
+export function mapTheme(crystals: Item[]): MapTheme {
+  if (seamSocketed(crystals)) return 'seam';
+  const share = composition(crystals);
   const half = 0.5 - 1e-6;
-  if (share.normal <= 1e-6 && share.demonic >= half && share.prismatic >= half) return 'seam';
   if (share.demonic >= half) return 'demonic';
   if (share.prismatic >= half) return 'prismatic';
   return 'fissure';
@@ -185,7 +218,10 @@ export function runSet(
     composition: share,
     // THE INFLUENCE WINS in the Proving Ground: *"the zone will stay what your
     // influence is."* What you mixed still decides the PACKS.
-    theme: isProving(at) ? at.influence : zone ? zone.world : mapTheme(share),
+    // THE SEAM OVERRIDES EVEN THE INFLUENCE, and it is the only thing that does.
+    theme: isProving(at)
+      ? (seamSocketed(crystals) ? 'seam' : at.influence)
+      : zone ? zone.world : mapTheme(crystals),
     mix,
     yield: 1 + mix * REWARD.mixYield,
     pays: familyPays(share),
