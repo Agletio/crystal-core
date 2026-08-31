@@ -116,13 +116,10 @@ still be satisfiable.
 
 ## Loose ends — real, small, and belonging to no phase
 
-**Left over from finished phases. Each is a task, not a question.**
-
-- **The named-piece check is thin.** 16 descents expects 5.5 and read 3; a zero
-  is a 1-in-250 flake. Uniques are a share of drops like Perfect, and the count
-  fell under them — either widen the sample or make it a `gauge()`.
-- **Dialogue pass: cut the rambling qualifiers.** Never scheduled, never
-  cancelled. Every `beats` line in `src/scenes/*` reads long.
+**Empty. Both are done** — the named-piece check is a `gauge()` with a
+deterministic reachability `check` beside it, and the dialogue pass has been
+made: every clause that restated the one before it is cut, and every voice tic
+is kept.
 
 ---
 

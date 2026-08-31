@@ -19,7 +19,7 @@ export const READING_ROOM: SceneDef = {
   greets:
     'Do not touch the wall. You are standing in the middle of a sentence and you cannot read it. Come and find me above and I will tell you whose it is.',
   idles:
-    'Set more of them in the wall. I want you to have read a little further before I hand you the rest of it.',
+    'Set more of them in the wall. Read a little further, and then I will hand you the rest of it.',
   beats: [
     {
       said: 'Stop. Before you set another one of those in the wall — do you know what he has you doing?',
@@ -30,7 +30,7 @@ export const READING_ROOM: SceneDef = {
       act: 'pace',
     },
     {
-      said: `Everything down here has a true name and everything down here can be told. That is ${ORDER.name}, and I am the last of us that came down this far. This one I have written out for you — three marks, copied off a wall nobody was meant to reach.`,
+      said: `Everything down here has a true name and can be told. That is ${ORDER.name}, and I am the last of us this far down. This one I have written out for you — three marks, copied off a wall nobody was meant to reach.`,
       act: 'work',
     },
     {

@@ -1934,7 +1934,7 @@ export const LAMPWRIGHT = {
         act: 'face',
       },
       {
-        said: 'It does not end where you think it ends. There is always another way further in, and the things in it get their opinions from somewhere deeper than you.',
+        said: 'It does not end where you think it ends. There is always another way further in, and the things in it take their opinions from somewhere deeper than you.',
         act: 'pace',
       },
       {
@@ -3179,11 +3179,11 @@ export const OSTEOMANCER = {
       act: 'face' as const,
     },
     {
-      said: 'They come apart wrong down here. Everything does. This one came apart RIGHT, which means something was still deciding when it stopped, and a thing that was still deciding can be asked what it decided.',
+      said: 'They come apart wrong down here. Everything does. This one came apart RIGHT — something was still deciding when it stopped, and a thing still deciding can be asked.',
       act: 'pace' as const,
     },
     {
-      said: 'I will put it in something of yours. Not on top of — into. Whatever the smith meant that piece to be, it will stop being, and it will be this instead. You choose which. I do not care which. Choose.',
+      said: 'I will put it in something of yours. Not on top of — into. Whatever the smith meant that piece to be, it stops being, and it is this instead. You choose which. I do not care which.',
       act: 'work' as const,
     },
   ],
@@ -3203,15 +3203,15 @@ export const ASTRAL_GEOMETER = {
   seen: 'Something turning, slowly, and a long way in. Somebody hung it there.',
   beats: [
     {
-      said: 'Do not put that down. Hold it where the light is — there, you see the angle it makes. It makes that angle everywhere. I have measured it in nine rooms and it has never once been wrong.',
+      said: 'Do not put that down. Hold it where the light is — there, you see the angle it makes. It makes that angle everywhere. Nine rooms, and never once wrong.',
       act: 'face' as const,
     },
     {
-      said: 'The other one takes bodies. I take the dust, which is what is left when the rock has finished deciding, and it is the only honest thing down here. A body is an opinion. Dust is a measurement.',
+      said: 'The other one takes bodies. I take the dust, which is what is left when the rock has finished deciding. A body is an opinion. Dust is a measurement.',
       act: 'pace' as const,
     },
     {
-      said: 'I will set it into something small of yours. Small, because the angle does not care how much of it there is. Give me a ring, or the thing you wear at your throat, and I will show you what it does.',
+      said: 'I will set it into something small of yours. Small, because the angle does not care how much of it there is. Give me a ring, or the thing at your throat, and I will show you.',
       act: 'work' as const,
     },
   ],

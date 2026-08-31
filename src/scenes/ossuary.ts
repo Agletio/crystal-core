@@ -14,7 +14,7 @@ export const OSSUARY: SceneDef = {
   greets:
     'Mind your feet. MIND — thank you. Half of that was still in order and I have been at it since the lamp was lit. Bring me something that came apart right and I will be up top.',
   idles:
-    'Nothing on you. Nothing at all. Go down and bring me something that came apart RIGHT, and then we will talk.',
+    'Nothing on you. Nothing at all. Go down, bring me something that came apart RIGHT, and then we will talk.',
   beats: OSTEOMANCER.beats,
   encounter: null,
 };

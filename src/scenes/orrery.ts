@@ -14,7 +14,7 @@ export const ORRERY: SceneDef = {
   greets:
     'Stand still. No — exactly there, you are holding the angle. Right. It reads the same here as it does in nine other rooms. Bring me dust and find me above.',
   idles:
-    'No dust? Then there is nothing to measure and we are both standing here wasting the light.',
+    'No dust? Then there is nothing to measure, and we are both wasting the light.',
   beats: ASTRAL_GEOMETER.beats,
   encounter: null,
 };
