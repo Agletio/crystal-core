@@ -11,17 +11,18 @@ this file** — `git log` is where a session that has to undo one looks.
 character walk to the chest, you can pick the names for phase 6 too. And then go
 to phase 7."* So:
 
-1. **PHASE 6**, steps 2 through 7. Step 1 is whole.
+1. ~~PHASE 6~~ — **WHOLE and deleted.** `git log` from `2ff5dfa` to `4b6caac`.
 2. **THE CHEST WALK** — the one loose end with a task behind it.
 3. **PHASE 7**, in full.
 
 Nothing else is queued and nothing else may be promoted without being asked.
 
-**THE NAMES ARE PICKED**, at the user's word (*"you can pick the names for phase
-6 too"*). **Three of the four have LANDED in step 4** — the points are
-**TALLIES**, the web is **THE RECKONING**, the list of grinds is **THE LEDGER**.
-The fourth is step 5's, because it is only said where an influence is picked:
-the base world is **THE DIGGINGS**.
+**THE NAMES LANDED WITH PHASE 6**: the points are **TALLIES**, the web is
+**THE RECKONING**, the list of grinds is **THE LEDGER**. **The fourth was NOT
+taken** — the base world is still The Fissure. The influence picker names it
+`THEME_BY_ID.fissure.name`, which reads correctly beside The Cavern and The Rot,
+and renaming a world nobody was confused by is a change with no complaint behind
+it. **The Diggings** is the name if he ever asks; it is one string.
 **Identifiers do not move** — `trials.ts`, the `trial_` node prefix and
 `Character.trials` are what a save points at, exactly as `rung` stayed `rung`
 when a player started calling it a depth.
@@ -36,9 +37,9 @@ parked checks, the skills and off-hand look, the three things earlier phases
 handed it) is in `git log` at `977403c`, which is where to read it back from on
 the day he calls for it.
 
-**Phases 0, 1, 2, 4 and 5 are DONE and deleted** — the climb, four trades, the
-loop, and loot that is rare. `git log` is where a session that has to undo one
-looks.
+**Phases 0, 1, 2, 4, 5 and 6 are DONE and deleted** — the climb, four trades,
+the loop, loot that is rare, and the campaign / Proving Ground / Seam split.
+`git log` is where a session that has to undo one looks.
 
 **One ask has NOTHING to bind and was not invented.** *"Keybindings for flasks,
 and boss controls"* — the flasks are `potion_life` and `potion_mana` in
@@ -49,184 +50,6 @@ for a key to hold. Ask before adding one; it would be a mechanism, not a
 binding.
 
 ---
-
-## Phase 6 — THE CAMPAIGN, THE PROVING GROUND AND THE SEAM
-
-**THE ACTIVE PHASE.** Everything below is the user's own restructure of what a
-run is FOR. It moves the crystals and the trials out of the first hundred hours
-entirely, gives the climb a finish line, and puts a second, endless game behind
-it — the one the crystals and the points were always for.
-
-### The ask, in the user's words
-
-*"I think you shouldn't see any trial stuff or even receive any crystals until
-you've cleared the entire campaign 'story mode'. Keep the same difficulty curve
-that stands but give no crystals/ or trial unlocks at all until you complete the
-loop below and clearly states when to receive them."*
-
-*"The Answering is the same. Refraction can be the prismatic zone instead of
-base zone but otherwise the same difficulty curve. Flowering is the rot but
-otherwise the same. Encounter each npc for crafting in each zone respectively."*
-
-*"After completing all three of these you are awarded 1 crystal from lampwright
-and 10 trial points which we will rename to something else that thematically
-fits with this system because I want to remove all of the existing trials.
-Instead they will all be revolving around doing grinds. For example, just
-running the fissure a certain amount of times can be one of the easy ones but im
-thinking a lot like 100 runs or something gets you 5 points. open 100 hordes,
-swell 1000 enemies, kill 2500 wardens stuff like that. Runs with demonic and
-prismatic influence."*
-
-*"Once you finish the first three runs of each zone you end in a 4th tab that
-only has one area and its where you can socket the crystals. The other menu can
-just remove the crystal sockets and take up more screen with the map and the 4th
-screen can have the crystal sockets laid out like the fissure entrance in the
-camp on top of the map though. This one is just a set difficulty even harder
-than the final 'story mode' level which you can scale with more crystals and
-more trial points or whatever we call them."*
-
-*"But just make normal crystals pay out at 25/50/75/100 runs of this new zone.
-Prismatic crystal pays out and full lvl 4 normal crystals, then another at level
-2 prismatic crystal, another at level 3, and another at lvl 4, and then the same
-thing for demonic. Have this zone allow you to select your 'influence' so you
-can have it be base fissure, prismatic, or demonic (we really need a different
-name for the base fissure idk waht to call it) which will decide what the area
-looks like and add that type of mobs to the zone. As you mix and match crystals
-you can still get the other types to join by that method but the zone will stay
-what your influence is with the exception of socketing 2 lvl 4 prismatic and 2
-lvl 4 demonic gives you the seam which will be the final zone."*
-
-### What this changes about the shape of the game
-
-Today the game is ONE loop: socket crystals, pick a depth, descend. After this
-it is TWO, and the first is finite.
-
-| | THE CAMPAIGN | THE PROVING GROUND |
-|---|---|---|
-| what picks the fight | a DEPTH on the climb, 42 of them | your INFLUENCE and what is socketed |
-| difficulty | `rungMod` alone — the straight 20-a-depth line, unchanged | a set floor above depth 42, scaled by crystals and points |
-| crystals | NONE. No sockets, no rolls, no levelling | the whole of it |
-| the trials web | NOT SHOWN. It does not exist yet | earned by grinding, spent here |
-| the world you walk into | the ZONE's own: Answering, Refraction, Flowering | your influence, plus whatever you socket |
-| it ends | when The Flowering's boss falls | never |
-
-**The zones stop being depth-only and become WORLDS again**, which is the one
-rule this reverses: `CLAUDE.md` says "A ZONE IS DEPTH AND NEVER A WORLD… what
-world you walk into is what you SOCKETED". With nothing socketed for the whole
-campaign that sentence has nothing left to mean, so the campaign's three zones
-carry a `world` of their own — Answering the base world, Refraction the Cavern,
-Flowering the Rot — and the SOCKETED world comes back in the Proving Ground
-where sockets exist. The difficulty curve does not move: `rungMod` is untouched.
-
-### The names, picked
-
-**At the user's word** — *"you can pick the names for phase 6 too."* Each is a
-PLAYER word; **no identifier moves**, because a save points at them. The same
-split the climb already ships: a player says depth, the code says `rung`.
-
-| the thing | the word | why, and what it does NOT collide with |
-|---|---|---|
-| the base WORLD | **The Diggings** | *"we really need a different name for the base fissure."* A place somebody dug and gave up on, which is what the art is. Not "The Workings" — `slotWorkings`, `damageWorkings`, `skillWorkings` and `potionWorkings` are all in `src/`, and Mahthar's own lore already says "older than the workings" as ordinary words. `MapTheme` stays `'fissure'`. |
-| the POINTS | **Tallies** | a scratch on a wall for a thing done again and again, which is exactly what a grind is, and it sits on a card at "7 Tallies". Not "Marks" — a MARK over a person's head already means they are holding something (`wants()` in `src/ui/talk.ts`). `Character.trials` stays. |
-| the WEB they are spent on | **The Reckoning** | a reckoning is a tallying-up, so it takes its name from what pays for it. The old name has to go with `TRIALS`: calling it the trials web after the trials are deleted is a word for a thing that no longer exists. `src/trials.ts` and the `trial_` prefix stay. |
-| the list of GRINDS | **The Ledger** | what is written down: `descents run 43 / 100`. It is the screen the counters live on. **The cheapest of the four to drop** — if it reads as one noun too many, the counters go on a tab of the Reckoning and this word never ships. |
-
-**The Fissure keeps its other two jobs**: the crack in the camp is still the
-Fissure, and so is the window it opens. Only the WORLD is renamed, because that
-is the one the user was naming when he asked — he was listing influences,
-*"base fissure, prismatic, or demonic."*
-
-**`CLAUDE.md` says all four old words and must be rewritten in the same breath
-as the step that lands them.** So must `KEYWORDS`, and `BANNED` takes the
-retired phrasings.
-
-### The steps, each leaving the suite green
-
-- [x] **Step 1a — a campaign zone is a WORLD and a gear TIER. DONE.**
-      `LadderZoneDef.world` and `.tier`, read by `runSet` whenever a descent
-      names a depth: The Answering is the Fissure at tier 1, The Refraction the
-      Cavern at 2, The Flowering the Rot at 3. Off the climb the sockets answer
-      both, which is what the Proving Ground is made of. `rungMod` untouched.
-- [x] **Step 1b — nothing is PAID until the campaign is whole. DONE.**
-      `campaignDone` in `src/ladder.ts`; `CRYSTAL_DEPTHS` and `CrystalDepth`
-      deleted. `takeDepth` pays `CAMPAIGN_REWARD` — 1 crystal, 10 points — on
-      the depth that finishes the last zone, once, flagged by
-      `Character.paidCampaign`. `trialPointsFor` is 0 before that, so the web is
-      visible from the first descent with nothing on it walkable.
-- [x] **Step 1c — the Fissure window loses its socket column. DONE.**
-      `.fissurecard--bare`, toggled off `campaignDone` in `src/ui/run.ts`: one
-      column, no sockets and no selection panel, so the climb takes the whole
-      room until the campaign is whole. The sockets come back on the Proving
-      Ground's own tab in step 5.
-- [x] **Step 2 — what a campaign clear PAYS. DONE.** `takeDepth` is gone: the
-      reward is a third thing `giftWaiting` puts in the Lampwright's hands,
-      taken in his own scene with `LAMPWRIGHT.campaign` on the end of it, and
-      `Handover.says` is what the panel prints for the points, which are not a
-      thing you can hold. `Character.paidCampaign` is set by the HANDOVER, and
-      `trialPointsFor` and the Fissure's socket column both read it — so a
-      column with nothing to put in it is never on screen. `campaignLine` and
-      `campaignPrize` in `src/ladder.ts` state the finish line on the climb
-      before you get there, and the last zone's boss pip says so too.
-- [x] **Step 3 — the three crafting people, one a zone. DONE.** `whoIsDown` is
-      in `src/game/scenes.ts` and SCHEDULED rather than rolled: the next unmet
-      person of that world stands at every `MEET.every` depth from `MEET.first`,
-      which measures out as the Lampwright at The Answering 2, the Glasswright
-      and the Astral-Geometer at The Refraction 2 and 6, and the Osteomancer at
-      The Flowering 2. `MEET_CHANCE` is gone; the demo walks all 42 depths in
-      order and holds every person to turning up, in their own world and off an
-      arena depth, and to never standing there twice.
-- [x] **Step 4 — what AWARDS the points becomes GRINDS. DONE, and the WEB
-      SURVIVED.** All 156 nodes are untouched; `TRIALS`, `TrialDef`,
-      `TRIAL_CONDITIONS` and `QuestNeed` are deleted. `GRINDS` is 18 lines in
-      four ladders — descents, Hoards and Veins, Welled bodies and Wardens and
-      Bearers, and descents under each influence — each naming a
-      `GRIND_COUNTERS` entry that says what one clear ADDS, counted through the
-      one `descentFacts`. `RunState.wardens` is new; Hoards and Veins count
-      apart off `Hoard.pays`. **The counts are `Character.grinds`, PER
-      CHARACTER and not `GameState`** — global, a second character would start
-      the web full, which the demo already forbade. The campaign's 10 plus the
-      Ledger's 50 come to `TALLIES.max` exactly and the demo holds it; the demo
-      also PLAYS a descent for every counter and fails one that never moves.
-      **The names landed with it**: Tallies, the Reckoning, the Ledger, in
-      `KEYWORDS.BANNED`, `CLAUDE.md` and every screen. Identifiers did not move.
-- [x] **Step 5 — the Proving Ground. DONE.** A fourth tab past the three zones,
-      open on `paidCampaign`. `Proving` sits beside `Rung` in `RunWhere` and
-      `isProving` is the only read, so nothing about it is climbed or recorded.
-      The socket column is DELETED from the window — one column now — and the
-      four lie over this tab's own picture, POSITIONED rather than in flow (in
-      flow the panel became the seam's content height and squashed the map).
-      `GameState.influence` is a preference, three worlds and never the Seam,
-      and it wins over composition for the world and the picture while the
-      packs stay what you socketed. `provingMod` scales the same `LADDER.*AtTop`
-      a depth does: measured 1028 danger empty against the deep end's 822, and
-      1520 on four blanks. **Tallies scale it through the Reckoning's own
-      lines** rather than a second term — counting them here would pay for one
-      web twice, and the roadmap's "and by points spent" is satisfied by the
-      seam that already exists.
-- [x] **Step 6 — the crystal ladder. DONE.** `CRYSTAL_LADDER` is twelve steps
-      IN ORDER, each holding either a count of `GameState.provingClears` or a
-      number of crystals already held at a level — so a step further up can
-      never pay before the ones under it, and the demo walks all twelve end to
-      end by playing. Handed over by the LAMPWRIGHT like every other crystal
-      (`Waiting.ladder`, `gaveStep` in `given` as the one cursor), with
-      `LAMPWRIGHT.deeper` on the end of it. The collection screen swaps the
-      campaign's three zones for the whole ladder once the campaign is paid.
-      Measured at the Proving Ground's own XP rate: 184 clears for the lot.
-- [x] **Step 7 — THE SEAM. DONE.** `seamSocketed` is `PROVING.seamOf` of each
-      aura world at the TOP level and nothing else in the wall — so a level is
-      the price and the whole wall is the price. It is the ONE thing that
-      overrides the Proving Ground's influence, and it is never on the influence
-      list. `mapTheme` takes the crystals rather than a composition now, so
-      there is one Seam rule rather than two, and `crystalLevel`/`levelForXp`
-      moved beside `crystalFamily` in `src/sim/crystal.ts` to make that possible
-      without a cycle. **It borrows The Flowering's cross-section**: the Seam
-      has no picture of its own, and the bare panel read as nothing.
-
-### What must not break
-
-`heal()` — every existing save has crystals, trial allocations and `climbed`
-under the old rules, and none of it may throw away a character. The straight
-20-a-depth ramp. `SAVE_VERSION` stays put unless a save must be REFUSED.
 
 ## Phase 7 — GEAR IS CRAFTED: materials, professions, and a camp with work in it
 
@@ -673,23 +496,19 @@ still be satisfiable.
 **Do not guess at these.** None ever blocked a phase and none is work waiting to
 be picked up — they are decisions the user has not made. Ask before acting.
 
-**PHASE 6'S OWN. Both blocking questions are answered and folded into its
-steps; these three are not.**
+**LEFT OVER FROM PHASE 6, which is otherwise whole.**
 
 - **What is the base world called?** *"we really need a different name for the
   base fissure idk waht to call it."* The clash is that The Fissure is the crack
-  in camp, the whole descent system AND one of three worlds. Proposed, in order:
-  **The Workings** (a place somebody dug and gave up on, which is what the art
-  is), The Diggings, The Old Cut.
-- **What are the points called?** Proposed: **Marks** — earned by doing a thing
-  enough times that the rock remembers it, and short enough to sit on a card.
-  Alternatives: Tallies, Reckonings, Proofs.
-- **How many grinds, and what does one pay?** *"100 runs or something gets you
-  5 points"* is the only figure given. Proposed: about 20 counters across four
-  families (descents, locks, floor rules, influences), paying 1 to 5 apiece.
+  in camp, the whole descent system AND one of three worlds. **Not taken**: the
+  influence picker reads fine as The Fissure beside The Cavern and The Rot, and
+  a rename with no confusion behind it is churn. **The Diggings** if he asks.
 - **Does the Seam have a boss?** It is *"the final zone"* and every other zone's
-  last depth is one. Proposed: yes, but it is Phase 7 — a boss was a whole phase
-  each of the three times.
+  last depth is one. Proposed: yes, but a boss was a whole phase each of the
+  three times, so it is not something to slip into another one.
+- **The Seam has no cross-section of its own.** It borrows The Flowering's on
+  the Proving Ground's tab. One `zoneset.mts` generation would fix it, and it
+  needs the `art` skill and an approval before anything is dressed.
 
 1. **Does kiting come back as a PASSIVE that pays for it?** The user's own
    shape, after having it removed: *"I think later we can make a passive that
