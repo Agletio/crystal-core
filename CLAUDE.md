@@ -362,8 +362,8 @@ save currency for is one with good lines and room to add**, which is the whole
 of what makes scarce currency a decision rather than a tax — *"the currency
 needs to be rare enough you need to wait to find an item that's good enough to
 start using it on."* **A SHARD IS A DECISION ABOUT ONE PIECE**: measured, the
-bare Fissure pays 0.21 a clear against 1.3 pieces of gear, and the counter's
-first one is several descents of saving.
+bare Fissure pays 0.21 a clear, and the counter's first one is several descents
+of saving.
 
 **A BUDGET IS SETTLED TO A WHOLE NUMBER BEFORE IT IS SPREAD.**
 `left / bodiesLeft` places exactly `left` items only when `left` is an INTEGER;
@@ -399,6 +399,31 @@ one is never a bigger pile**: `LOCK.rareRarity` is what its ONE drop is worth
 extra, because rarity buys what a piece IS everywhere else in the game. A
 timber box in a gullet of meat read as furniture somebody carried down, which
 is the whole reason the table is per world.
+
+**A GATHERING NODE IS A LOCK WITH A FAMILY ON IT.** *"It's weird to get ore
+from enemies… should there be ore to mine in the area and your character just
+goes up and mines it?"* `GATHER` and `RunState.nodes`: a node is put in a PACK's
+room, `freeNode` opens it when that pack is down, and `stepNode` is the walk —
+the Hoard's own three states, so gathering satisfies universal automation with
+nothing to click and no policy to ship. **When the room is clear** is both of
+the user's constraints at once: *"no just tanking mobs"* and *"minimize back
+tracking"*, since you already fought there. **DEALT, NEVER ROLLED**: the six
+families are shuffled and dealt round the nodes, so a descent is one of each
+rather than six draws that could come up all metal — *"relatively equal drop
+rates between materials"* is only sayable as a spread. **A COUNT, NOT A RATE**:
+`GATHER.perRun` × `RunSet.yield`, read off the SET without running it, because
+the pack count IS the difficulty. **PLACED AFTER THE PACKS**, so how much ore a
+run holds cannot move what is fighting in it. **IT IS TAKEN ON THE WAY, NEVER
+FETCHED BACK** — `GATHER.near` is what he steps aside for with a pack still
+standing and `GATHER.walk` the sweep once nothing is left, because
+`acquireTarget` reaches the whole map and would otherwise carry him off before
+he ever gathered. **A BARE DISTANCE CAP LIVELOCKS**: a node across a wall is
+inside it by line of sight and outside it once he has walked round, so
+`GatherNode.left` is a ONE-WAY decision taken only with the floor dead. **A NODE IS THE SAME IN EVERY
+WORLD** where a lock is per world: a lock is furniture somebody carried down and
+an outcrop is the rock itself. **GEAR IS THE LUCKY EXCEPTION NOW** —
+`DropBand.gearPerRun` is 0.25 to 0.30, one piece every four clears, *"so when
+you do finally get a piece it'll feel good."*
 
 **A PERFECT BASE IS THE ENDGAME CHASE, and it is the only step above ordinary.**
 25% on the implicit, top tier only, three sockets minimum. Its rate is a SHARE

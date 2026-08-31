@@ -5,7 +5,7 @@
  * made it. `GameState` is plain data, so `version` is the entire compatibility
  * story — a save from another one is refused rather than half-read.
  */
-import { SAVE_VERSION, createGame, findAnywhere, giftWeapon, wornItems } from './state';
+import { SAVE_VERSION, addItem, createGame, findAnywhere, giftWeapon, wornItems } from './state';
 import { takeMet } from './scenes';
 import { ownedCrystals } from './crystals';
 import { healTrials } from './trials';
@@ -39,6 +39,7 @@ import {
   UNIQUE_BY_ID,
   crystalName,
   tierKeepId,
+  MATERIAL_BY_ID,
 } from '../data';
 import { nodeById, replayTreeNodes, treeFor, treePointsFor } from '../skills-tree';
 import { TRADE_BY_ID, replayTradeNodes, tradePointsFor } from '../trades';
@@ -226,6 +227,7 @@ const baseExists = (item: Item): boolean => {
     return CRYSTAL_LEVELS.some((t) => item.base === `crystal_t${t.level}`);
   }
   if (item.kind === 'relic') return RELIC_BY_ID[item.base] !== undefined;
+  if (item.kind === 'material') return MATERIAL_BY_ID[item.base] !== undefined;
   if (item.meta.unique !== undefined && !UNIQUE_BY_ID[String(item.meta.unique)]) return false;
   return GEAR_BASE_BY_ID[item.base] !== undefined;
 };
@@ -355,6 +357,17 @@ export function heal(game: GameState): Healed {
   delete (game as unknown as { haul?: Item[] }).haul;
   game.crystals = keep(Array.isArray(game.crystals) ? game.crystals : []);
   game.relics = keep(Array.isArray(game.relics) ? game.relics : []);
+  game.materials = keep(Array.isArray(game.materials) ? game.materials : []);
+  // ONE ROW A KIND is the invariant the whole crafting arc reads, so a save
+  // that somehow holds two of a material is merged rather than trusted.
+  const stacks = new Map<string, Item>();
+  for (const row of game.materials) {
+    const n = Math.max(1, Math.floor(Number(row.meta.n) || 1));
+    const held = stacks.get(row.base);
+    if (held) held.meta.n += n;
+    else stacks.set(row.base, { ...row, meta: { ...row.meta, n } });
+  }
+  game.materials = [...stacks.values()];
   // Same rule as every other container: a base that is gone takes its entry.
   game.sold = (Array.isArray(game.sold) ? game.sold : []).filter((e) => {
     const ok = e && e.item && baseExists(e.item) && Number.isFinite(e.price);
@@ -369,6 +382,7 @@ export function heal(game: GameState): Healed {
     const stays = list.filter((i) => i.kind === 'gear');
     game.crystals.push(...list.filter((i) => i.kind === 'crystal'));
     game.relics.push(...list.filter((i) => i.kind === 'relic'));
+    for (const row of list.filter((i) => i.kind === 'material')) addItem(game, row);
     return stays;
   };
   game.inventory = container(game.inventory);

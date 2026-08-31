@@ -94,6 +94,7 @@ import {
   BASE_TIER_MODS,
   MATERIALS,
   MATERIAL_FAMILIES,
+  MATERIAL_BY_ID,
   MATERIAL_FAMILY_BY_ID,
   PROFESSIONS,
   PROVING,
@@ -1375,6 +1376,11 @@ rule('THE COUNTER — can a sale be taken back, and can it be farmed?');
 // A real loop, measured rather than asserted: run the same set repeatedly and
 // see where it actually stops. Either terminus is fine; silently running
 // forever is not, and neither is stopping on the first clear.
+//
+// THE BOUND IS 200 BECAUSE GEAR IS RARE. At 0.27 pieces a clear a 32-slot bag
+// is roughly ninety descents of chaining, where it used to be a dozen — so a
+// bound of 60 stopped measuring the terminus and started asserting that gear
+// is common.
 {
   const game = createGame('fresh');
   game.character = ladderCharacter(2, new Rng(31));
@@ -1382,7 +1388,7 @@ rule('THE COUNTER — can a sale be taken back, and can it be farmed?');
   let runs = 0;
   let stop = 'never';
 
-  while (runs < 60) {
+  while (runs < 200) {
     const final = runToCompletion(new RunSim(set, game.character, new Rng(9000 + runs)), 400);
     runs++;
     const report = buildReport(game, final);
@@ -3212,15 +3218,170 @@ rule('MATERIALS AND PROFESSIONS — is the table a thing a recipe could read?');
   );
   check(wrongWord.length === 0, 'and not one of them says a thing the old way', wrongWord.join('; '));
 
-  // NOTHING READS ANY OF IT YET, and that is the step. A material that already
-  // dropped would be a bag full of rows before there is a bench to spend them
-  // at — the whole point of landing the tables first is that this stays true.
+  // A DESCENT IS THE ONLY SOURCE. Nothing is handed one at creation, so what a
+  // player holds is exactly what they went down and dug up.
   const g = createGame('dev');
-  const held = [...g.inventory, ...g.stash].filter((i) => i.kind === 'material');
+  const held = [...g.inventory, ...g.stash, ...(g.materials ?? [])];
   check(
-    held.length === 0,
-    'and nothing hands one out yet: the tables are landed and unread, which is what this step is',
-    `${held.length} materials already in a bag`
+    held.filter((i) => i.kind === 'material').length === 0,
+    'and nobody starts holding one: a descent is the only place a material comes from',
+    `${held.length} materials in a fresh bag`
+  );
+
+  // A NODE IS A PICTURE, and one that resolves to nothing draws an invisible
+  // thing the hero walks to — the worst possible version of this bug.
+  const unseen = MATERIAL_FAMILIES.flatMap((f) =>
+    [f.node, f.spent].filter((id) => !PROP_ART[id]).map((id) => `${f.id}→${id}`)
+  );
+  check(unseen.length === 0, 'and every family has a node and a worked-out frame that draw', unseen.join(', '));
+}
+
+// ===========================================================================
+rule('GATHERING — is a node free, guarded, walked to and equally spread?');
+
+// STEP 2: *"Should there be ore to mine in the area and your character just
+// goes up and mines it?"* — as a LOCK with a family on it, which is the one
+// shape that satisfies universal automation without a policy to ship.
+{
+  const bareSet = [makeCrystal(1), makeCrystal(1), makeCrystal(1), makeCrystal(1)];
+  const digger = ladderCharacter(6, new Rng(11));
+
+  // FREE, AND NOT BOUGHT. A Hoard needs a walked arm; gathering is what every
+  // descent pays, or a new character has no road into crafting at all.
+  const first = new RunSim(bareSet, digger, new Rng(4242));
+  check(
+    first.state.nodes.length > 0,
+    'a bare set puts nodes down: gathering is what a descent pays, never what a web buys',
+    String(first.state.nodes.length)
+  );
+
+  // GUARDED, and by a pack that really exists — a node whose pack was never
+  // spawned is a node nothing can ever free.
+  const orphan = first.state.nodes.filter(
+    (n) => !first.state.monsters.some((m) => m.pack === n.pack)
+  );
+  check(
+    orphan.length === 0 && first.state.nodes.every((n) => !n.free),
+    'and every one of them starts shut behind a pack that is actually standing there',
+    `${orphan.length} unguarded`
+  );
+
+  // THE RUN'S OWN WORLD. Cross-world recipes come from the TIER rule, never
+  // from a node handing out a material the descent could not have held.
+  const wrongWorld = first.state.nodes.filter(
+    (n) => MATERIAL_BY_ID[n.material]?.world !== first.state.set.theme
+  );
+  check(
+    wrongWorld.length === 0,
+    'and each hands over this world\'s own version of its family, never another world\'s',
+    wrongWorld.map((n) => n.material).join(', ')
+  );
+
+  // WALKED TO AND WORKED, HEADLESS. Automation is universal and has no
+  // exception: `runToCompletion` runs the shipped policy and there is no other.
+  runToCompletion(first, 600);
+  const worked = first.state.nodes.filter((n) => n.taken).length;
+  const rows = first.state.loot.items.filter((i) => i.kind === 'material');
+  check(
+    first.state.status === 'cleared' && worked === first.state.nodes.length && rows.length > 0,
+    'and a headless run walks to every one of them, with no policy to ship',
+    `${worked}/${first.state.nodes.length} worked, ${rows.length} rows, ${first.state.status}`
+  );
+
+  // A NODE IS TAKEN ON THE WAY, NEVER FETCHED BACK. `GATHER.near` is what he
+  // steps aside for with a pack still standing; a node he has walked three
+  // chambers past is LEFT, one way, which is what stops him crossing a
+  // distance boundary for ever on a map where the way round is long.
+  const settled = first.state.nodes.every((n) => n.taken || n.left);
+  check(
+    settled,
+    'and nothing is left half-decided: every node is worked or passed over for good',
+    String(first.state.nodes.filter((n) => !n.taken && !n.left).length)
+  );
+
+  // A MATERIAL STACKS: `meta.n` is how many, so a bag holds one row a kind.
+  const kinds = new Set(rows.map((i) => i.base));
+  check(
+    kinds.size === rows.length && rows.every((i) => ((i.meta.n as number) ?? 0) > 0),
+    'and it arrives STACKED — one row a kind, however many the run dug up',
+    `${rows.length} rows over ${kinds.size} kinds`
+  );
+
+  // A RUN NUMBER, NEVER A PER-KILL RATE. What a descent puts down is read off
+  // the SET without running it, which is the whole claim: kills triple between
+  // the two ends and the nodes do not move at all.
+  const deepSet = deepestSet(new Rng(4242), pool);
+  const laid = (crystals: Item[], seed: number) => {
+    const sim = new RunSim(crystals, digger, new Rng(seed));
+    return {
+      units: sim.state.nodes.reduce((n, x) => n + x.n, 0),
+      bodies: sim.state.monsters.length,
+    };
+  };
+  let shallow = { units: 0, bodies: 0 };
+  let deep = { units: 0, bodies: 0 };
+  for (let i = 0; i < 6; i++) {
+    const a = laid(bareSet, 900 + i);
+    const b = laid(deepSet, 900 + i);
+    shallow = { units: shallow.units + a.units, bodies: shallow.bodies + a.bodies };
+    deep = { units: deep.units + b.units, bodies: deep.bodies + b.bodies };
+  }
+  const ratio = shallow.units > 0 ? deep.units / shallow.units : Infinity;
+  const bodyRatio = shallow.bodies > 0 ? deep.bodies / shallow.bodies : Infinity;
+  line(
+    `  materials a descent: ${(shallow.units / 6).toFixed(1)} at the bare Fissure ` +
+      `(${Math.round(shallow.bodies / 6)} bodies), ${(deep.units / 6).toFixed(1)} deep ` +
+      `(${Math.round(deep.bodies / 6)} bodies) — ${ratio.toFixed(2)}× against ${bodyRatio.toFixed(1)}×`
+  );
+  check(
+    ratio < bodyRatio / 2,
+    'and what a descent digs up rides the RUN, not the body count',
+    `${ratio.toFixed(2)}× the materials against ${bodyRatio.toFixed(1)}× the bodies`
+  );
+
+  // *"RELATIVELY EQUAL DROP RATES BETWEEN MATERIALS."* Dealt round rather than
+  // rolled, so a hundred descents cannot starve one profession.
+  const spread = new Map<string, number>(MATERIAL_FAMILIES.map((f) => [f.id, 0]));
+  for (let i = 0; i < 12; i++) {
+    const sim = new RunSim(bareSet, digger, new Rng(1300 + i));
+    for (const node of sim.state.nodes) {
+      spread.set(node.family, (spread.get(node.family) ?? 0) + 1);
+    }
+  }
+  const counts = [...spread.values()];
+  const least = Math.min(...counts);
+  const most = Math.max(...counts);
+  line(`  nodes a family over 12 descents: ${[...spread].map(([f, n]) => `${f} ${n}`).join(', ')}`);
+  check(
+    least > 0 && most <= least * 1.6,
+    'and the six families come out level, because they are DEALT and not rolled',
+    `${least} at the least, ${most} at the most`
+  );
+
+  // GEAR GOT RARE IN THE SAME STEP, or the bag holds both economies at once.
+  // Cleared runs only: a death banks nothing, so a run that ends in one is not
+  // a measurement of what a clear pays.
+  let clears = 0;
+  let gear = 0;
+  let units = 0;
+  for (let i = 0; i < 8; i++) {
+    const sim = new RunSim(bareSet, digger, new Rng(1700 + i));
+    runToCompletion(sim, 600);
+    if (sim.state.status !== 'cleared') continue;
+    clears++;
+    gear += sim.state.loot.items.filter((i2) => i2.kind === 'gear').length;
+    units += sim.state.loot.items
+      .filter((i2) => i2.kind === 'material')
+      .reduce((n, i2) => n + ((i2.meta.n as number) ?? 0), 0);
+  }
+  line(
+    `  a bare Fissure clear pays ${(units / Math.max(1, clears)).toFixed(1)} materials ` +
+      `and ${(gear / Math.max(1, clears)).toFixed(2)} pieces of gear, over ${clears} clears`
+  );
+  check(
+    clears > 0 && gear / clears < 1 && units / clears > gear / clears,
+    'and GEAR is the lucky exception now, not the heap you sort',
+    `${(gear / Math.max(1, clears)).toFixed(2)} pieces against ${(units / Math.max(1, clears)).toFixed(1)} materials`
   );
 }
 
@@ -3404,10 +3565,11 @@ rule('THE RECKONING — is a harder descent actually harder, and paid for?');
     `${plainA.state.monsters.length} vs ${plainB.state.monsters.length}`
   );
 
-  const heldBefore = withHoards.state.loot.items.length;
   runToCompletion(withHoards, 400);
   const opened = withHoards.state.hoards.filter((h) => h.opened).length;
-  const paid = withHoards.state.loot.items.length - heldBefore;
+  // Materials come out of the same list and out of a NODE, so they are not
+  // evidence about a lock.
+  const paid = withHoards.state.loot.items.filter((i) => i.kind !== 'material').length;
   check(
     opened > 0 && paid > 0,
     'and a headless run opens one and is paid for it, with no policy to ship',

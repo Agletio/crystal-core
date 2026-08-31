@@ -2451,7 +2451,13 @@ assert($('history').hidden === true, 'history closes');
   };
 
   assert(stored(1) !== null, 'the game writes a save');
-  assert(stored(1).version === 1, 'stamped with the format it was written in');
+  // The FORMAT it was written in, whatever that number is today: what must
+  // hold is that the stamp is there and is a whole one, not that it is 1.
+  assert(
+    Number.isInteger(stored(1).version) && stored(1).version >= 1,
+    'stamped with the format it was written in',
+    `version ${stored(1).version}`
+  );
   assert(stored(2) === null, 'and only into the slot being played', 'slot 2 was written');
 
   $('open-save').click();

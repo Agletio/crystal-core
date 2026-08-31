@@ -313,11 +313,61 @@ approve; everything else is code that can be written while it renders.
       `joinstone` will not split down the middle — and they are legible at the
       24–40px an icon is read at, so they were ACCEPTED rather than re-rolled a
       third time. Re-roll them if they ever look wrong in the dock.
-- [ ] **Step 2 — gathering, and gear gets rare.** Nodes placed and gathered the
-      way a lock opens: **when the room is clear**, which is both of the user's
-      constraints at once. On the per-run depleting budget, never a per-kill
-      rate. `DropBand.gearPerRun` falls hard in the same step, so the bag does
-      not hold both economies at full volume for a single commit.
+- [x] **Step 2 — gathering, and gear gets rare. DONE.** `GATHER` and
+      `RunState.nodes`: a node is **a lock with a family on it** — put in a
+      pack's room, freed by that pack going down, walked to by `stepNode` the
+      way `stepHoard` walks to a chest. What it cost, so nobody pays twice:
+      - **A COUNT, NOT A BUDGET, and that is the honest reading of the rule.**
+        `GATHER.perRun` × `RunSet.yield` nodes, each handing over 2–5, so a
+        descent is read off the SET without running it. Measured: 6 nodes and
+        ~25 units at both ends against 3× the bodies, where a per-kill rate
+        would have paid 3×. `whole()` settles it before it is spread, exactly
+        as the gear budget does.
+      - **DEALT, NEVER ROLLED.** *"Relatively equal drop rates."* The six
+        families are shuffled and dealt round the nodes: measured 12/12/12/12/
+        12/12 over twelve descents. Six independent draws could come up all
+        metal and no assertion could have caught it.
+      - **PLACED AFTER THE PACKS, deliberately.** Every draw a node spends comes
+        after the one that decided a body, so how much ore a run holds cannot
+        move what is fighting in it. `packRoom[]` is how a node knows whose
+        room it is standing in.
+      - **THE WALK IS THE WHOLE OF THE DIFFICULTY, and it took three tries.**
+        `acquireTarget` returns a body ANYWHERE on the map, so after clearing a
+        room the hero sets off for the next pack and never reaches `stepNode` —
+        a node freed 5 tiles away goes untaken and is 30 tiles behind by the
+        time the floor is dead. What works is TWO reaches: `GATHER.near` (9
+        tiles) is checked INSIDE the target branch, before he travels, so a node
+        underfoot is taken on the way; `GATHER.walk` (22) is the sweep once
+        nothing is left. Measured 6/6 worked and every band back to 10/10.
+      - **A BARE DISTANCE CAP LIVELOCKS, and it cost a run 300 seconds.** A node
+        across a wall is inside the cap by line of sight and outside it once he
+        has walked round, so he crosses the boundary for ever. `GatherNode.left`
+        is the one-way decision that fixes it, and it is only ever taken with
+        the floor already dead.
+      - **AN UNBOUNDED WALK BROKE TWO DEMO CHECKS, and the evidence came from a
+        worktree at HEAD.** *"A monster is worth more at every band"* inverted
+        at band 3, and one band-6 seed went 235s → over the 400s budget. Both
+        were run-LENGTH, not payment. A `git worktree` at the last commit plus a
+        70-run probe settled it in six minutes where a second demo is nineteen.
+      - **THE ENTER-CHAIN'S BOUND WAS ASSERTING THAT GEAR IS COMMON.** 60
+        descents no longer fill a 32-slot bag at 0.27 pieces a clear; measured,
+        it takes 81. The bound is 200.
+      - **`GATHER` CLASHED WITH A LOCAL.** `src/sim/run.ts` already had a
+        `GATHER` — the seconds the sweep-up at the mouth takes. It is `SWEEP`
+        now, with `sweeping`/`sweptFrom` beside it.
+      - **A MATERIAL STACKS AND HAS ITS OWN CONTAINER.** `GameState.materials`,
+        one row a kind with `meta.n` the count, uncapped like relics; `heal`
+        merges any save that holds two rows of one kind. Its own dock column,
+        drawn only when you hold something, on the relic column's pattern.
+      - **`gearPerRun` IS 0.25–0.30**, down from 1.2–1.35. Measured, a bare
+        Fissure clear pays 0.13 pieces and 25 materials.
+      - **FOUR NODE OBJECTS, ONE PER FAMILY AND THE SAME IN EVERY WORLD.**
+        `tools/art/node.mts`, the lock's own pipeline: sixteen candidates in one
+        `create_1_direction_object` job, four promoted, a `Spent` state apiece.
+        Cloth and gem needed nothing — `cocoon`→`web` and
+        `geode_amber`→`geode_split` were already drawn and already a pair.
+        **A lock is per world and a node is not**, because an outcrop is the
+        rock itself; per-world nodes are 24 objects and nobody has asked.
 - [ ] **Step 3 — processing, in camp, ADVANCING ON DESCENTS.** A smelter job is
       N clears long: load it, go down, come back to bars. Genuinely idle without
       being farmable by an open browser, which is what "automation is universal"

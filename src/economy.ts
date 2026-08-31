@@ -26,6 +26,7 @@ import type {
   UniqueDef,
   Wallet,
 } from './types';
+import type { MaterialDef } from './data';
 
 let nextId = 1;
 const uid = (p: string) => `${p}_${nextId++}`;
@@ -295,6 +296,22 @@ export function makeRelic(def: RelicDef): Item {
     mods: [],
     implicits: [],
     meta: {},
+  };
+}
+
+/** A STACK of one material: `meta.n` is how many, so a bag holds one row. */
+export function makeMaterial(def: MaterialDef, n = 1): Item {
+  return {
+    id: uid('material'),
+    kind: 'material',
+    base: def.id,
+    name: def.name,
+    tags: ['material', def.id, def.world, ...(def.family ? [def.family] : ['unique'])],
+    ilvl: 1,
+    slots: {},
+    mods: [],
+    implicits: [],
+    meta: { n },
   };
 }
 

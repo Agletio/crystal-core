@@ -8,6 +8,7 @@ import { portraitOf } from '../render/portraits';
 import { readPalette } from '../render/renderer';
 import { GENERATED_ICONS } from '../render/generated-icons';
 import type { CurrencyDef, Item } from '../types';
+import { MATERIAL_BY_ID } from '../data';
 
 const NS = 'http://www.w3.org/2000/svg';
 
@@ -699,5 +700,9 @@ export function itemIcon(item: Item, size = 26): SVGSVGElement {
     return crystalIcon((item.meta.level as number) ?? 1, size, (item.meta.family as string) ?? 'normal');
   }
   if (item.kind === 'relic') return relicIcon(item.base, size);
+  if (item.kind === 'material') {
+    const own = drawn(MATERIAL_BY_ID[item.base]?.icon ?? '', size);
+    if (own) return own;
+  }
   return gearIcon((item.meta.art as string) ?? 'body', size);
 }

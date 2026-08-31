@@ -9,7 +9,17 @@ import { baseTier, fullUses, modCapacity, slotTypes, tierName } from '../mods';
 import { statParts } from '../mod-text';
 import { crystalFamily, rewardRows } from '../sim/crystal';
 import { crystalProgress } from '../game/crystals';
-import { FAMILY_BY_ID, GEAR_BASE_BY_ID, MOD_BY_ID, PERFECT, RELIC_BY_ID, UNIQUE_BY_ID } from '../data';
+import {
+  FAMILY_BY_ID,
+  GEAR_BASE_BY_ID,
+  MATERIAL_BY_ID,
+  MATERIAL_FAMILY_BY_ID,
+  MOD_BY_ID,
+  PERFECT,
+  RELIC_BY_ID,
+  THEME_BY_ID,
+  UNIQUE_BY_ID,
+} from '../data';
 import { isPerfect } from '../economy';
 import { GRANT_BY_ID } from '../sim/grants';
 import { weaponSwing } from '../sim/stats';
@@ -108,6 +118,21 @@ export function itemCard(item: Item, notes: string[] = []): HTMLElement {
     const def = RELIC_BY_ID[item.base];
     card.append(el('div', 'tip__sub', 'Relic'));
     if (def) card.append(el('div', 'tip__flavour', def.flavour));
+    for (const note of notes) card.append(el('div', 'tip__note', `— ${note}`));
+    return card;
+  }
+
+  // A material has no ladder either: what it IS is a family and a world, and
+  // how many you hold. It has NO tier — a version, never a better version.
+  if (item.kind === 'material') {
+    const def = MATERIAL_BY_ID[item.base];
+    const family = def?.family ? MATERIAL_FAMILY_BY_ID[def.family] : undefined;
+    const world = def ? THEME_BY_ID[def.world]?.name : undefined;
+    card.append(
+      el('div', 'tip__sub', [family?.name ?? 'Rare material', world].filter(Boolean).join(' · '))
+    );
+    card.append(el('div', 'tip__note', `${(item.meta.n as number) ?? 1} held`));
+    if (def) card.append(el('div', 'tip__flavour', def.description));
     for (const note of notes) card.append(el('div', 'tip__note', `— ${note}`));
     return card;
   }

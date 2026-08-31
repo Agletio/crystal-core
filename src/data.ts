@@ -2208,22 +2208,34 @@ export const LADDER = {
 
 /** One of the six things gear is made OF, and the one profession that works
  *  it. `raw` is what comes out of a descent and `processed` what camp turns it
- *  into — two words because the bench and the station are different places. */
+ *  into — two words because the bench and the station are different places.
+ *  `node` is what it looks like on a floor and `spent` the same object worked
+ *  out; `verb` is the one word for taking it. *"Ore is mined, hide is
+ *  skinned"* is flavour on ONE mechanism, never six of them. */
 export interface MaterialFamilyDef {
   id: string;
   name: string;
   raw: string;
   processed: string;
   station: string;
+  verb: string;
+  node: string;
+  spent: string;
 }
 
 export const MATERIAL_FAMILIES: MaterialFamilyDef[] = [
-  { id: 'metal', name: 'Metal', raw: 'ore', processed: 'bars', station: 'the smelter' },
-  { id: 'cloth', name: 'Cloth', raw: 'fibre', processed: 'bolts', station: 'the loom' },
-  { id: 'hide', name: 'Hide', raw: 'skins', processed: 'leather', station: 'the tanning frame' },
-  { id: 'wood', name: 'Wood', raw: 'logs', processed: 'staves', station: 'the bench' },
-  { id: 'gem', name: 'Gem', raw: 'rough', processed: 'cut stones', station: "the jeweller's" },
-  { id: 'fish', name: 'Fish', raw: 'a catch', processed: 'meals', station: 'the kitchen' },
+  { id: 'metal', name: 'Metal', raw: 'ore', processed: 'bars', station: 'the smelter',
+    verb: 'Mined', node: 'node_ore', spent: 'node_ore_spent' },
+  { id: 'cloth', name: 'Cloth', raw: 'fibre', processed: 'bolts', station: 'the loom',
+    verb: 'Stripped', node: 'cocoon', spent: 'web' },
+  { id: 'hide', name: 'Hide', raw: 'skins', processed: 'leather', station: 'the tanning frame',
+    verb: 'Skinned', node: 'node_carcass', spent: 'node_carcass_spent' },
+  { id: 'wood', name: 'Wood', raw: 'logs', processed: 'staves', station: 'the bench',
+    verb: 'Cut', node: 'node_stump', spent: 'node_stump_spent' },
+  { id: 'gem', name: 'Gem', raw: 'rough', processed: 'cut stones', station: "the jeweller's",
+    verb: 'Prised', node: 'geode_amber', spent: 'node_geode_spent' },
+  { id: 'fish', name: 'Fish', raw: 'a catch', processed: 'meals', station: 'the kitchen',
+    verb: 'Netted', node: 'node_pool', spent: 'node_pool_spent' },
 ];
 
 export const MATERIAL_FAMILY_BY_ID: Record<string, MaterialFamilyDef> = Object.fromEntries(
@@ -3403,10 +3415,30 @@ export const LOCK = {
 };
 
 /**
- * What each world pays in, on top of what every world pays, read off the SHARE
- * of the run it holds. Three different currencies deliberately: they cannot be
- * compared, so no world is strictly best and what you want decides where to go.
+ * GATHERING, and it is A LOCK WITH A FAMILY ON IT: a node stands in a pack's
+ * room and frees when that pack is down, so nothing is channelled while
+ * something is hitting you. A RUN NUMBER AND NEVER A PER-KILL RATE — the pack
+ * count IS the difficulty. SPREAD, NOT ROLLED, or six draws could come up all
+ * metal.
  */
+export const GATHER = {
+  perRun: 6, // one of each family at the bare Fissure, riding run LENGTH
+  yield: [2, 5] as [number, number], // what one node hands over
+  reach: 1.2, // the lock's own: it is the same walk
+  /** HOW FAR HE WILL GO OUT OF HIS WAY for one, in tiles. Unbounded, the
+   *  nearest free node outranks advancing whenever nothing is in range, and a
+   *  deep map's far corner cost one descent 165 seconds — the backtracking the
+   *  ask forbids. */
+  walk: 22,
+  near: 9, // and how far he steps aside for one with a pack still standing
+  /** A world's UNIQUE belongs to no family, so it is never one of the six the
+   *  run spreads — it rides ON TOP of a node, at this chance, for one. */
+  uniqueChance: 0.07,
+};
+
+/** What each world pays in, on top of what every world pays, read off the SHARE
+ *  of the run it holds. Three different currencies deliberately: they cannot be
+ *  compared, so no world is strictly best. */
 export const FAMILY_YIELD: Record<MonsterFamily, { gold: number; currency: number; rarity: number }> = {
   normal: { gold: 0.6, currency: 0, rarity: 0 },
   demonic: { gold: 0, currency: 1.1, rarity: 0 },
@@ -3417,22 +3449,17 @@ export const FAMILY_YIELD: Record<MonsterFamily, { gold: number; currency: numbe
 export const REWARD = {
   /** Rarity percent gained per danger point. */
   rarityPerDanger: 0.8,
-  /**
-   * What a set fully MIXED between the two other worlds pays over one made of
-   * a single world. Not difficulty and not access: the same monsters, the same
-   * item level, more of what they carry — so it can never skip a rung.
-   */
+  /** What a set fully MIXED between the two other worlds pays over one made of
+   *  a single world. Not difficulty and not access: the same monsters at the
+   *  same item level carrying more, so it can never skip a rung. */
   mixYield: 0.25,
 };
 
-/**
- * A drop picks a class first, then a currency within it, so rarity climbing
- * `basic → uncommon → rare → exotic` is the only route to the scarce ones.
- */
+/** A drop picks a class first, then a currency within it, so rarity climbing
+ *  `basic → uncommon → rare → exotic` is the only route to the scarce ones. */
 export const CURRENCY_DROP = {
   /** Currency a CLEAR pays, before Currency Find. **A SHARD IS A DECISION
-   *  ABOUT ONE PIECE**: at 0.9 the bare Fissure paid 1.29 against 1.75 pieces
-   *  of gear — one per drop. At 0.18 it is one shard per ten. */
+   *  ABOUT ONE PIECE**: at 0.18 it is one shard per ten clears. */
   perRun: 0.18,
   /** Per-step chance to climb one class, before rarity is applied. */
   upgradeChance: 0.17,
@@ -3459,16 +3486,17 @@ export interface DropBand {
 }
 
 export const DROP_BANDS: DropBand[] = [
-  // ONE OR TWO A CLEAR AT EVERY BAND — halved at the user's word, and it is
-  // the figure that ARRIVES rather than one a lock rides over.
-  { fill: [0.4, 0.5], currency: 'basic', gearPerRun: 1.2, ilvl: 10 },
-  { fill: [0.4, 0.55], currency: 'basic', gearPerRun: 1.25, ilvl: 10 },
-  { fill: [0.45, 0.6], currency: 'uncommon', gearPerRun: 1.25, ilvl: 22 },
-  { fill: [0.5, 0.65], currency: 'uncommon', gearPerRun: 1.3, ilvl: 34 },
+  // ONE PIECE EVERY FOUR CLEARS, AND IT MAY BE ANY BASE — *"it'll be very
+  // unlikely it's what your character wants, so when you do finally get a piece
+  // it'll feel good."* The gear you WEAR is gear you MADE.
+  { fill: [0.4, 0.5], currency: 'basic', gearPerRun: 0.25, ilvl: 10 },
+  { fill: [0.4, 0.55], currency: 'basic', gearPerRun: 0.26, ilvl: 10 },
+  { fill: [0.45, 0.6], currency: 'uncommon', gearPerRun: 0.27, ilvl: 22 },
+  { fill: [0.5, 0.65], currency: 'uncommon', gearPerRun: 0.28, ilvl: 34 },
   // Where a build becomes possible: tier 3 bases, six modifiers apiece.
-  { fill: [0.5, 0.7], currency: 'rare', gearPerRun: 1.3, ilvl: 46 },
-  { fill: [0.55, 0.75], currency: 'rare', gearPerRun: 1.35, ilvl: 58 },
-  { fill: [0.6, 0.85], currency: 'exotic', gearPerRun: 1.35, ilvl: 70 },
+  { fill: [0.5, 0.7], currency: 'rare', gearPerRun: 0.29, ilvl: 46 },
+  { fill: [0.55, 0.75], currency: 'rare', gearPerRun: 0.3, ilvl: 58 },
+  { fill: [0.6, 0.85], currency: 'exotic', gearPerRun: 0.3, ilvl: 70 },
 ];
 
 

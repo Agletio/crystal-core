@@ -84,6 +84,8 @@ export interface GameState {
   /** What you are carrying to a PERSON. Uncapped for the reason crystals are:
    *  nothing sells one, so a cap could only lose loot. */
   relics: Item[];
+  /** MATERIALS, ONE ROW A KIND — `meta.n` is how many, and uncapped. */
+  materials: Item[];
   /**
    * What the auto-sell filter turns into gold on the way up: `KEEP_GROUPS` ids
    * and `tierKeepId` rungs in ONE list. Stored as what is SOLD rather than what
@@ -156,6 +158,7 @@ export function createGame(mode: StartMode = 'dev'): GameState {
     stash: [],
     crystals: [],
     relics: [],
+    materials: [],
     junk: [],
     stashSlots: STASH_START,
     character: makeCharacter({}, 'strike'),
@@ -293,7 +296,9 @@ export const carried = (game: GameState, kind: ItemKind): Item[] =>
     ? (game.crystals ?? [])
     : kind === 'relic'
       ? (game.relics ?? [])
-      : game.inventory.filter((i) => i.kind === kind);
+      : kind === 'material'
+        ? (game.materials ?? [])
+        : game.inventory.filter((i) => i.kind === kind);
 
 /** Only gear is capped. A crystal is never carried and a relic is never sold,
  *  so a limit on either could only throw loot away. */
@@ -315,6 +320,14 @@ export function addItem(game: GameState, item: Item): Placement {
   }
   if (item.kind === 'relic') {
     game.relics.push(item);
+    return 'carried';
+  }
+  // A STACK, so the bag holds one row however many descents fed it.
+  if (item.kind === 'material') {
+    game.materials = game.materials ?? [];
+    const held = game.materials.find((i) => i.base === item.base);
+    if (held) held.meta.n = (held.meta.n ?? 0) + (item.meta.n ?? 0);
+    else game.materials.push(item);
     return 'carried';
   }
   if (carryRoom(game, item.kind) > 0) {

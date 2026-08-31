@@ -5,6 +5,7 @@
  * of times, so frame rate never changes an outcome.
  */
 import { Rng } from '../rng';
+import { SOLID_PROPS } from '../vignettes';
 import {generateMap, sceneMap, dist, hasLineOfSight, roomCenter } from './grid';
 import type { GameMap, Grid, Room, Vec2 } from './grid';
 import { findPath, nearestByPath } from './pathfind';
@@ -78,7 +79,12 @@ import {
   socketPacks,
   socketSize,
   GILT,
+  GATHER,
   HOARD,
+  MATERIALS,
+  MATERIAL_BY_ID,
+  MATERIAL_FAMILIES,
+  MATERIAL_FAMILY_BY_ID,
   LOCK,
   LOCKS,
   SPLIT,
@@ -95,7 +101,15 @@ import type { MonsterAbilityDef, MonsterDef, MonsterRankDef } from '../types';
 import { LURKS, SCENE_BY_ID, scaleFor } from '../scenes';
 import type { SceneAct } from '../scenes';
 import { ModPool, computeStat } from '../mods';
-import { lootRank, makeRelic, makeUnique, perfectChance, pickGearBase, rollGear } from '../economy';
+import {
+  lootRank,
+  makeMaterial,
+  makeRelic,
+  makeUnique,
+  perfectChance,
+  pickGearBase,
+  rollGear,
+} from '../economy';
 import type { Boost, Item, SkillDef } from '../types';
 import type { MonsterRank } from '../render/bestiary';
 
@@ -146,8 +160,8 @@ const FINALE_RANGE = 5;
 
 /** Close enough to be standing on the way out, and the descent is over. */
 const AT_EXIT = 0.5;
-/** How long the gather at the mouth takes, in seconds. */
-const GATHER = 1.6;
+/** How long the sweep-up at the mouth takes, in seconds. */
+const SWEEP = 1.6;
 
 /** How far a pacing body walks from where it was standing, and back. */
 const PACE_STEP = 2;
@@ -335,6 +349,32 @@ export interface Hoard {
   free?: boolean; // guards down and UNLOCKED; `opened` is the walk having happened
 }
 
+/** A GATHERING NODE, guarded by one pack. `free` is that pack being down and
+ *  `taken` is the walk having happened — the Hoard's own two states, because it
+ *  is the Hoard's own mechanism with a material family on it. */
+export interface GatherNode {
+  id: number;
+  x: number;
+  y: number;
+  pack: number; // whose falling frees it
+  family: string;
+  /** The `MaterialDef` id this world's version of that family is, and how many
+   *  it hands over. `also` is the world's UNIQUE, riding on top of one node. */
+  material: string;
+  n: number;
+  also?: string;
+  art: { node: string; spent: string };
+  at: number; // index into `map.props`, so working it SWAPS the picture
+  free?: boolean;
+  taken?: boolean;
+  /** PASSED OVER, once and for ever. A distance cap alone LIVELOCKS: a node
+   *  across a wall sits inside the cap by line of sight and outside it once he
+   *  has walked round, so he crosses the boundary for ever and the descent
+   *  never ends. Declining is therefore a one-way decision, and it is only ever
+   *  taken with the floor already dead. */
+  left?: boolean;
+}
+
 /** A drop LYING ON THE FLOOR. Nothing picks one up — the bag fills on the way
  *  out either way — so this is WEIGHT, not a mechanic. */
 export interface Ground {
@@ -431,6 +471,8 @@ export interface RunState {
   vfx: Vfx[];
   /** Every Hoard put down this descent, and whether its guard is dead yet. */
   hoards: Hoard[];
+  /** Every gathering node, and whether it has been worked. */
+  nodes: GatherNode[];
   /** Bodies that welled up out of another and were then put down. */
   welled: number;
   wardens: number; // Wardens put down; nothing else could tell one apart
@@ -576,6 +618,8 @@ export class RunSim {
   private reinforceTimer = 0;
   private nextHoard = 0;
   private putDown: Hoard[] = []; // `spawn` runs BEFORE `this.state` exists
+  private nextNode = 0;
+  private nodesDown: GatherNode[] = [];
   private statsFor = new Map<string, CombatStats>(); // per kind, ability and RANK
   /** Read once: rolled per death, and only ever when something bought it. */
   private wellChance = 0;
@@ -584,8 +628,8 @@ export class RunSim {
   private watchChance = 0;
   /** Where the thing that is dropping fell — a body, or a box. */
   private dropAt: { x: number; y: number } | null = null;
-  private gathering = 0;
-  private gatherFrom = 0;
+  private sweeping = 0;
+  private sweptFrom = 0;
   private gearLeft = 0;
   private currencyLeft = 0;
   private budgeted = false;
@@ -686,6 +730,7 @@ export class RunSim {
       ground: [],
       vfx: [],
       hoards: this.putDown,
+      nodes: this.nodesDown,
       welled: 0,
       wardens: 0,
       bearers: 0,
@@ -925,8 +970,10 @@ export class RunSim {
     const hoardAt = new Set(order.slice(0, wanted.hoards));
     const veinAt = new Set(order.slice(wanted.hoards, wanted.hoards + wanted.veins));
 
+    const packRoom: Room[] = [];
     for (let p = 0; p < packCount; p++) {
       const room = this.rng.pick(rooms) ?? rooms[0];
+      packRoom[p] = room;
       const hoarded = hoardAt.has(p);
       // One lock a pack: the last guard down answers for one thing.
       const veined = !hoarded && veinAt.has(p);
@@ -1029,7 +1076,65 @@ export class RunSim {
         });
       }
     }
+    // LAST, and deliberately: every draw a node spends comes after the one that
+    // decided a body, so how much ore a run holds cannot move what is fighting.
+    this.placeNodes(map, packCount, packRoom);
     return monsters;
+  }
+
+  /**
+   * THE NODES, one per pack and dealt a family apiece. Placed here rather than
+   * in the map's dressing because a node is guarded: what frees it is the pack
+   * whose room it stands in going down, which is the Hoard's rule exactly.
+   */
+  private placeNodes(map: GameMap, packCount: number, packRoom: Room[]): void {
+    if (this.options.scene) return; // an authored room has no packs to guard one
+    const world = MATERIALS.filter((m) => m.world === this.set.theme);
+    const unique = world.find((m) => m.family === null);
+    const wanted = Math.min(packCount, this.whole(GATHER.perRun * this.set.yield));
+    if (wanted <= 0) return;
+
+    // DEALT ROUND, never rolled: six draws could come up all metal, and
+    // *"relatively equal drop rates"* is only sayable as a spread.
+    const deck = this.rng.shuffle(MATERIAL_FAMILIES.map((f) => f.id));
+    const packs = this.rng.shuffle(Array.from({ length: packCount }, (_, i) => i));
+    const carries = unique ? this.rng.int(0, wanted - 1) : -1;
+
+    for (let i = 0; i < wanted; i++) {
+      const family = MATERIAL_FAMILY_BY_ID[deck[i % deck.length]];
+      const def = world.find((m) => m.family === family.id);
+      if (!def) continue;
+      const pack = packs[i];
+      const at = this.nodeSpot(map, packRoom[pack]);
+      this.nodesDown.push({
+        id: this.nextNode++,
+        x: at.x,
+        y: at.y,
+        pack,
+        family: family.id,
+        material: def.id,
+        n: this.rng.int(GATHER.yield[0], GATHER.yield[1]),
+        ...(i === carries && unique ? { also: unique.id } : {}),
+        art: { node: family.node, spent: family.spent },
+        at: map.props.length,
+      });
+      map.props.push({ id: family.node, x: at.x, y: at.y });
+    }
+  }
+
+  /** A whole tile in the room that is not the middle, which is where a lock
+   *  stands. Falls back to the middle rather than dropping the node. */
+  private nodeSpot(map: GameMap, room: Room): Vec2 {
+    const middle = roomCenter(room);
+    for (let tries = 0; tries < 12; tries++) {
+      const x = room.x + this.rng.int(0, room.w - 1);
+      const y = room.y + this.rng.int(0, room.h - 1);
+      if (!map.grid.walkable(x, y)) continue;
+      if (x === Math.round(middle.x) && y === Math.round(middle.y)) continue;
+      if (map.props.some((p) => p.x === x && p.y === y && SOLID_PROPS.has(p.id))) continue;
+      return { x, y };
+    }
+    return { x: Math.round(middle.x), y: Math.round(middle.y) };
   }
 
   /** Events since the last call. The UI drains these to build its log. */
@@ -1044,7 +1149,7 @@ export class RunSim {
     if (s.status !== 'running') return;
 
     // THE CLOCK IS THE FIGHT'S; the gather is presentation after it.
-    if (this.gathering <= 0) s.elapsed += dt;
+    if (this.sweeping <= 0) s.elapsed += dt;
 
     // On a TICK, before anything else: a press lands on the next one like
     // every other decision, or a seed stops replaying the same run.
@@ -1548,10 +1653,17 @@ export class RunSim {
         // it comes back as is a passive that pays for it, not a free rule.
         this.settleAction(hero, false);
         if (hero.cooldown <= 0) this.swing(hero, target);
-      } else if (!this.advance(hero, target, dt)) {
-        // Route vanished mid-chase. Drop it; the next flood picks correctly.
-        hero.targetId = null;
-        hero.path = [];
+      } else {
+        // A NODE UNDER HIS FEET IS TAKEN BEFORE HE SETS OFF for the next room.
+        // Its pack is already down, so this is the room being clear — and
+        // coming back for it once he is three chambers on is exactly the
+        // backtracking the ask forbids.
+        if (this.stepNode(dt, GATHER.near)) return;
+        if (!this.advance(hero, target, dt)) {
+          // Route vanished mid-chase. Drop it; the next flood picks correctly.
+          hero.targetId = null;
+          hero.path = [];
+        }
       }
       return;
     }
@@ -1559,6 +1671,7 @@ export class RunSim {
     // NOTHING TO FIGHT: the locks his kills unlocked are what he goes to next,
     // one at a time, before he starts for the way out.
     if (this.stepHoard(dt)) return;
+    if (this.stepNode(dt)) return;
 
     // A boss room is cleared by putting the boss DOWN, never by walking out:
     // it has no way out, and the adds are what fills the gap while it lives.
@@ -1595,20 +1708,20 @@ export class RunSim {
     // A route that does not exist is the same answer as being there already.
     if (out > AT_EXIT && this.advance(hero, exit, dt)) return;
 
-    // THE GATHER: at the mouth, everything he walked past comes to him at once.
+    // THE SWEEP: at the mouth, everything he walked past comes to him at once.
     if (s.ground.length > 0) {
-      if (this.gathering === 0) this.gatherFrom = s.ground.length;
-      this.gathering += dt;
+      if (this.sweeping === 0) this.sweptFrom = s.ground.length;
+      this.sweeping += dt;
       this.settleAction(hero, false);
-      const took = Math.ceil((this.gathering / GATHER) * this.gatherFrom);
-      while (s.ground.length > Math.max(0, this.gatherFrom - took)) {
+      const took = Math.ceil((this.sweeping / SWEEP) * this.sweptFrom);
+      while (s.ground.length > Math.max(0, this.sweptFrom - took)) {
         const drop = s.ground.shift()!;
         s.floaters.push({
           x: drop.x, y: drop.y, text: drop.item.name, age: 0, crit: false, on: 'hero',
           kind: 'loot',
         });
       }
-      if (this.gathering < GATHER) return;
+      if (this.sweeping < SWEEP) return;
       s.ground = [];
     }
 
@@ -3559,6 +3672,7 @@ export class RunSim {
     this.burstCurse(victim);
     this.spreadAilments(victim);
     this.openHoard(victim);
+    this.freeNode(victim);
     this.wellUp(victim);
     this.splitDown(victim);
     this.gild(victim);
@@ -3859,6 +3973,82 @@ export class RunSim {
     this.settleAction(hero, false);
     this.takeHoard(near);
     return true;
+  }
+
+  /** ROOM CLEAR. The Second Watch and the Welling both put bodies back with the
+   *  same `pack`, so a node stays guarded until the room really is down. */
+  private freeNode(victim: Entity): void {
+    if (victim.pack === undefined) return;
+    if (this.state.monsters.some((m) => !m.dead && m.pack === victim.pack)) return;
+    for (const node of this.state.nodes) {
+      if (node.pack === victim.pack) node.free = true;
+    }
+  }
+
+  /** THE SAME WALK A CHEST GETS, and a chest goes first — a box is one thing
+   *  and a node is a stack, so the reading order is the interesting one. */
+  private stepNode(dt: number, within = GATHER.walk): boolean {
+    const hero = this.state.hero;
+    let near: GatherNode | null = null;
+    let far = Infinity;
+    // WHILE ANYTHING IS STILL ALIVE he only takes what he is passing; the far
+    // ones wait, because the fight will bring him back that way. With the floor
+    // dead there is nothing left to bring him, so what is far is LEFT — one
+    // way, or he crosses the boundary for ever and the descent never ends.
+    const over = !this.state.monsters.some((m) => !m.dead);
+    for (const node of this.state.nodes) {
+      if (!node.free || node.taken || node.left) continue;
+      const d = dist(hero, node);
+      if (d > within) {
+        if (over) node.left = true;
+        continue;
+      }
+      if (d < far) {
+        far = d;
+        near = node;
+      }
+    }
+    if (!near) return false;
+    if (far > GATHER.reach && this.advance(hero, near, dt)) {
+      this.face(hero, near.x, near.y);
+      return true;
+    }
+    hero.path = [];
+    this.face(hero, near.x, near.y);
+    this.settleAction(hero, false);
+    this.takeNode(near);
+    return true;
+  }
+
+  /** What comes out of it, once he is standing over it. */
+  private takeNode(node: GatherNode): void {
+    node.taken = true;
+    const prop = this.state.map.props[node.at];
+    if (prop && prop.id === node.art.node) prop.id = node.art.spent;
+
+    const family = MATERIAL_FAMILY_BY_ID[node.family];
+    this.bankMaterial(node.material, node.n);
+    this.state.floaters.push({
+      x: node.x, y: node.y, text: `${family?.verb ?? 'Took'} ${node.n}`, age: 0, crit: false,
+      on: 'monster', kind: 'loot',
+    });
+    if (!node.also) return;
+    this.bankMaterial(node.also, 1);
+    const rare = MATERIAL_BY_ID[node.also];
+    this.state.floaters.push({
+      x: node.x, y: node.y - 0.6, text: rare?.name ?? node.also, age: 0, crit: true,
+      on: 'monster', kind: 'loot',
+    });
+  }
+
+  /** A MATERIAL STACKS: one row in the bag however many descents fed it, so a
+   *  run that gathered four families holds four items and not fourteen. */
+  private bankMaterial(id: string, n: number): void {
+    const def = MATERIAL_BY_ID[id];
+    if (!def) return;
+    const held = this.state.loot.items.find((i) => i.kind === 'material' && i.base === id);
+    if (held) held.meta.n = (held.meta.n ?? 0) + n;
+    else this.state.loot.items.push(makeMaterial(def, n));
   }
 
   /** What is behind it, once he is standing over it. */

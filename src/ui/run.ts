@@ -771,7 +771,9 @@ function renderCarrying(): void {
   if (!sim) return;
   const rows = lootRows(sim.state);
   const items = sim.state.loot.items;
-  const sig = rows.map((r) => `${r.label}${r.value}`).join('|') + `#${items.length}`;
+  // A material STACKS, so the count alone cannot see a node being worked.
+  const stacked = items.reduce((n, i) => n + ((i.meta.n as number) ?? 0), 0);
+  const sig = rows.map((r) => `${r.label}${r.value}`).join('|') + `#${items.length}.${stacked}`;
   if (sig === lootSig) return;
   lootSig = sig;
 

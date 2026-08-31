@@ -14,7 +14,7 @@ import { attachTooltip, hideTooltip } from './tooltip';
 import { closeMenu, openMenu } from './menu';
 import type { ItemAction } from './menu';
 import { balance, isPerfect } from '../economy';
-import { CURRENCIES } from '../data';
+import { CURRENCIES, MATERIALS } from '../data';
 import { CARRY, fitsSlot, relicsIn, sendToEnd, sortInventory, swapItems } from '../game/state';
 import { EQUIP_SLOTS } from '../data';
 import type { GameState } from '../game/state';
@@ -59,6 +59,7 @@ export interface CurrencyHandler {
 const CURRENCY_SLOTS = 16;
 /** How many relic slots the column draws when there is anything in it. */
 const RELIC_SLOTS = 4;
+const MATERIAL_SLOTS = 8;
 
 /**
  * Rows in every dock column. The grid states both dimensions — an auto-filled
@@ -492,11 +493,38 @@ function renderRelics(): void {
   }
 }
 
+/** WHAT A DESCENT DUG UP, in the order the table declares so a column does not
+ *  reshuffle itself between runs. Its own column for the reason a relic has
+ *  one: nothing sells a material and nothing at the bench sees it yet. */
+function renderMaterials(): void {
+  if (!game) return;
+  const held = MATERIALS.map((def) => (game!.materials ?? []).find((i) => i.base === def.id))
+    .filter((i): i is Item => !!i && ((i.meta.n as number) ?? 0) > 0);
+  $('inv-materials-col').hidden = held.length === 0;
+  const host = $('inv-materials');
+  host.replaceChildren();
+  if (held.length === 0) return;
+  sizeGrid(host, Math.max(MATERIAL_SLOTS, held.length));
+
+  for (const item of held) {
+    const btn = el('button', 'slot slot--gear slot--off') as HTMLButtonElement;
+    btn.disabled = true;
+    btn.append(itemIcon(item, 30));
+    btn.append(el('span', 'slot__n', String((item.meta.n as number) ?? 0)));
+    attachTooltip(btn, () => itemCard(item));
+    host.append(btn);
+  }
+  for (let i = held.length; i < MATERIAL_SLOTS; i++) {
+    host.append(el('div', 'slot slot--empty'));
+  }
+}
+
 export function renderInventory(): void {
   if (!game) return;
   renderWallet();
   renderCurrencies();
   renderRelics();
+  renderMaterials();
 
   const items = game.inventory.filter((i) => i.kind === 'gear');
   fill($(GEAR_HOST), items.filter((i) => itemMatches(i, find)));
