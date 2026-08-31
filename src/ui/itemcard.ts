@@ -129,7 +129,13 @@ export function itemCard(item: Item, notes: string[] = []): HTMLElement {
     const family = def?.family ? MATERIAL_FAMILY_BY_ID[def.family] : undefined;
     const world = def ? THEME_BY_ID[def.world]?.name : undefined;
     card.append(
-      el('div', 'tip__sub', [family?.name ?? 'Rare material', world].filter(Boolean).join(' · '))
+      el(
+        'div',
+        'tip__sub',
+        [family?.name ?? 'Rare material', world, item.meta.done ? 'worked' : 'raw']
+          .filter(Boolean)
+          .join(' · ')
+      )
     );
     card.append(el('div', 'tip__note', `${(item.meta.n as number) ?? 1} held`));
     if (def) card.append(el('div', 'tip__flavour', def.description));

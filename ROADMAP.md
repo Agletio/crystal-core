@@ -368,10 +368,34 @@ approve; everything else is code that can be written while it renders.
         `geode_amber`→`geode_split` were already drawn and already a pair.
         **A lock is per world and a node is not**, because an outcrop is the
         rock itself; per-world nodes are 24 objects and nobody has asked.
-- [ ] **Step 3 — processing, in camp, ADVANCING ON DESCENTS.** A smelter job is
-      N clears long: load it, go down, come back to bars. Genuinely idle without
-      being farmable by an open browser, which is what "automation is universal"
-      demands. Processing pays profession XP.
+- [x] **Step 3 — processing, in camp, ADVANCING ON DESCENTS. DONE.** `WORK`,
+      `GameState.jobs` and `src/game/work.ts`: load a batch, go down, come back
+      to bars. What it settled:
+      - **RAW AND PROCESSED ARE TWO STACKS OF ONE ROW.** `Item.meta.done` and
+        `stackKey`, not 28 more `MaterialDef`s and 28 more icons. The name takes
+        `MaterialFamilyDef.one` — "Pale Iron Bar", "Wickcloth Bolt" — so a stack
+        reads as a thing rather than a plural stuck on a name.
+      - **A CLEAR, AND NOTHING ELSE.** `advanceWork` is called from
+        `buildReport` inside the `cleared` branch, beside `spendSocketed`: a
+        death moves no job and neither does walking out. What a walk does not
+        buy is progress, and a job is progress.
+      - **THE SLOT IS THE WHOLE COST.** `WORK.slots` is 3 over every station, so
+        which three you want next is the decision; the raw leaves the bag on
+        LOAD, because a job you could cancel for a refund is a slot that costs
+        nothing to fill.
+      - **XP IS FLAT AND NEVER BY WORLD.** A Seam job paying more than a Fissure
+        one would be a TIER in the one place the no-tiers rule is easiest to
+        break. `PROFESSION.curve` is 1.05: measured, level 2 is ONE batch, 50 is
+        166, and 99 is 1,972 batches — 1,315 descents with every slot full. At
+        1.075 it was 13,287 batches, which is a wall pretending to be a curve.
+      - **SIX STATIONS, ONE ROOM, SIX TABS.** A smelter and a loom differ in the
+        word and the picture, never the mechanism, so `Hotspot.family` opens the
+        same screen on that station's own tab. Boxes measured off the camp art
+        at 6× with a 10px grid, never by eye: smelter, loom, tanning frame,
+        kitchen, sawbench, jeweller's. Fifteen hotspots now, and smoke counts
+        them.
+      - **A ZONE-UNIQUE IS WORKED BY NOTHING.** It belongs to no family, so no
+        station takes it and the best recipes ask for it as it came up.
 - [ ] **Step 4 — crafting.** `RECIPES` naming one or two professions and a level
       in each; materials pick the BASE and its IMPLICIT; the level slides the
       roll window and narrows it; a chance of PERFECT off the level. Dismantle

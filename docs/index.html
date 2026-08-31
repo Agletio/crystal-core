@@ -2231,7 +2231,7 @@
         <div class="slots" id="inv-relics"></div>
       </div>
       <div class="dockcol" id="inv-materials-col" hidden>
-        <div class="dockcol__label">Materials</div>
+        <div class="dockcol__label" id="inv-materials-label">Materials</div>
         <div class="slots" id="inv-materials"></div>
       </div>
     </div>
@@ -2383,6 +2383,35 @@
       <div class="panel">
         <h3 class="panel__title">What is earned</h3>
         <div class="quests" id="crystals-quests"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- THE STATIONS. Six professions on six tabs, because processing is ONE
+     mechanism however it is dressed — a smelter and a loom differ in the word
+     and the picture. Every station in the camp opens this on its own tab, so
+     the furnace and the loom are two doors into one room. -->
+<div class="modal" id="work" hidden>
+  <div class="modal__card modal__card--wide">
+    <div class="modal__head">
+      <h2 class="modal__title">The stations</h2>
+      <div class="seedbar">
+        <code id="work-slots">0/3 loaded</code>
+        <button class="mini" id="work-close">Close</button>
+      </div>
+    </div>
+    <div class="modal__body">
+      <div class="climbtabs" id="work-tabs"></div>
+      <div class="panel">
+        <p class="skillhead__sub" id="work-note"></p>
+        <div class="grow"><div class="grow__fill" id="work-bar"></div></div>
+        <div class="crystal__grow" id="work-xp"></div>
+        <div class="crystals" id="work-raw"></div>
+      </div>
+      <div class="panel">
+        <h3 class="panel__title">On the stations</h3>
+        <div class="quests" id="work-jobs"></div>
       </div>
     </div>
   </div>

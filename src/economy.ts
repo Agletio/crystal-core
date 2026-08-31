@@ -27,6 +27,7 @@ import type {
   Wallet,
 } from './types';
 import type { MaterialDef } from './data';
+import { MATERIAL_FAMILY_BY_ID } from './data';
 
 let nextId = 1;
 const uid = (p: string) => `${p}_${nextId++}`;
@@ -299,21 +300,34 @@ export function makeRelic(def: RelicDef): Item {
   };
 }
 
-/** A STACK of one material: `meta.n` is how many, so a bag holds one row. */
-export function makeMaterial(def: MaterialDef, n = 1): Item {
+/** A STACK of one material: `meta.n` is how many, so a bag holds one row.
+ *  `done` is the PROCESSED form — the same row worked at a station, named for
+ *  what one of it is, so a family is two stacks and never two tables. */
+export function makeMaterial(def: MaterialDef, n = 1, done = false): Item {
+  const one = def.family ? MATERIAL_FAMILY_BY_ID[def.family]?.one : undefined;
   return {
     id: uid('material'),
     kind: 'material',
     base: def.id,
-    name: def.name,
-    tags: ['material', def.id, def.world, ...(def.family ? [def.family] : ['unique'])],
+    name: done && one ? `${def.name} ${one}` : def.name,
+    tags: [
+      'material',
+      def.id,
+      def.world,
+      ...(def.family ? [def.family] : ['unique']),
+      done ? 'processed' : 'raw',
+    ],
     ilvl: 1,
     slots: {},
     mods: [],
     implicits: [],
-    meta: { n },
+    meta: done ? { n, done: true } : { n },
   };
 }
+
+/** THE STACK a material belongs in. Raw and processed are the same row worked
+ *  or not, so the id alone cannot tell two stacks apart. */
+export const stackKey = (item: Item): string => `${item.base}${item.meta.done ? ':done' : ''}`;
 
 export function makeItem(base: string, ilvl = 1): Item {
   const m = /^crystal_t(\d+)$/.exec(base);

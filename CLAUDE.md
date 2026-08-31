@@ -186,8 +186,8 @@ picture's own pixels, and `src/ui/camp.ts` scales the whole stage, so a hotspot
 cannot drift off the thing it sits on. It FILLS the window and the two axes
 scale independently — the bench is against one edge and the shelf against the
 other, so a cover crop takes a verb off the screen. There is no map, no carve
-and no walk: nine hotspots — the crack, four sockets in the rock, the bench,
-the shelf, the tent, the fire — and what MOVES is light, wind and idling bodies
+and no walk: fifteen hotspots — the crack, four sockets in the rock, the bench,
+the shelf, the tent, the fire and six STATIONS — and what MOVES is light, wind and idling bodies
 on one canvas over the art. Everybody you have met stands about in it and clicking one
 goes to their room — a person's hotspot is their own body's grid, where that
 body was drawn. **THE FISSURE IS REACHED FROM THE CAMP AND NOWHERE ELSE** —
@@ -197,8 +197,12 @@ PICTURE'S ALONE**: the STASH is the shelf, the CRYSTALS are the four sockets
 (which open that screen whether or not one is in them — taking a crystal back
 is the Fissure card's own sockets' job, and a filled socket that unsocketed
 instead would leave no door at all), and THE RECKONING is the FIRE, the one lit
-thing in the art nothing else claimed. Everything else is still on the rail,
-and a screen with neither a button nor a hotspot is one somebody will lose.
+thing in the art nothing else claimed. **THE STATIONS ARE SIX MORE DOORS INTO
+ONE ROOM** — the smelter, the loom, the tanning frame, the kitchen, the sawbench
+and the jeweller's, each opening the stations screen on its own tab, because a
+smelter and a loom differ in the word and the picture and never the mechanism.
+Everything else is still on the rail, and a screen with neither a button nor a
+hotspot is one somebody will lose.
 
 **A COUNTER BELONGS TO A PERSON, and the shop is the Lampwright's.** *"The shop
 should exist in the first character you meet… Each character can have something
@@ -425,6 +429,21 @@ an outcrop is the rock itself. **GEAR IS THE LUCKY EXCEPTION NOW** —
 `DropBand.gearPerRun` is 0.25 to 0.30, one piece every four clears, *"so when
 you do finally get a piece it'll feel good."*
 
+**PROCESSING ADVANCES ON DESCENTS, NEVER ON A CLOCK.** *"A smelter job is N
+clears long: load it, go down, come back to bars."* `WORK` and `GameState.jobs`;
+`advanceWork` is called from `buildReport` inside the CLEARED branch beside
+`spendSocketed`, so a death moves no job and neither does walking out — what a
+walk does not buy is progress. The idling is the descending, which already
+chains, and nothing here can be farmed by an open browser. **RAW AND PROCESSED
+ARE TWO STACKS OF ONE ROW**: `Item.meta.done` and `stackKey`, named for
+`MaterialFamilyDef.one`, rather than 28 more rows and 28 more icons. **THE SLOT
+IS THE WHOLE COST** — `WORK.slots` is three over every station and the raw
+leaves the bag on LOAD, since a job you could cancel for a refund is a slot that
+costs nothing to fill. **A JOB IS ONE FOR ONE**, so nothing is lost and nothing
+minted. **XP IS FLAT AND NEVER BY WORLD**, or the no-tiers rule breaks in the
+easiest place: measured, level 2 is one batch and 99 is 1,972 of them, 1,315
+descents with every slot full. A zone-unique is worked by nothing at all.
+
 **A PERFECT BASE IS THE ENDGAME CHASE, and it is the only step above ordinary.**
 25% on the implicit, top tier only, three sockets minimum. Its rate is a SHARE
 of drops, which is why the count had to be flattened first — at 84 a clear the
@@ -632,6 +651,7 @@ src/sim/           the deterministic simulation
 src/sim/grants.ts  every switch anything may hand the sim, and who reads it
 src/sim/grid.ts    generate and carve a map; sceneMap beside it
 src/game/          save, state, report, crystals, scenes, graft
+src/game/work.ts   PROCESSING: what a station is working on, and what a clear moves
 src/render/        renderer seam: canvas2d fallback, pixi default
 src/render/generated-*.ts   art as data — never edited by hand
 src/ui/            one module per screen; talk.ts is a person in the camp

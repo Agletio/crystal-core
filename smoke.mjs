@@ -81,6 +81,7 @@ const currencySlots = () => filled('#inv-currency');
 // Its own column, and drawn only while you are holding one. Nothing in it has
 // a click: a relic is carried to a person, never spent at the bench.
 const relicSlots = () => filled('#inv-relics');
+const materialSlots = () => filled('#inv-materials');
 const named = (btn) => btn.getAttribute('aria-label') ?? '';
 
 // --- the way in: title, then a slot, then one question ---------------------
@@ -390,7 +391,7 @@ assert(all('#wallet .coin').length === 1, 'wallet shows gold only', text('wallet
 assert(text('wallet').includes('gold'), 'gold is held', text('wallet'));
 assert(
   all('.dock .slot .icon').length ===
-    invItems().length + currencySlots().length + relicSlots().length,
+    invItems().length + currencySlots().length + relicSlots().length + materialSlots().length,
   'every item and every stack has an icon'
 );
 
@@ -1133,9 +1134,11 @@ $('craft-close').click();
 assert($('craft').hidden === true, 'crafting closes');
 assert($('camp').hidden === false, 'and the camp is waiting underneath');
 assert(document.body.dataset.runPhase === 'menu', 'which is home, and not a descent');
+// The crack, four sockets, the bench, the shelf, the fire, the tent, and one
+// station a profession: everything on the picture there is to click.
 assert(
-  document.querySelectorAll('#camp-hotspots .camp__hot').length === 9,
-  'with everything on the picture there is to click, the fire among them',
+  document.querySelectorAll('#camp-hotspots .camp__hot').length === 15,
+  'with everything on the picture there is to click, the fire and six stations among them',
   String(document.querySelectorAll('#camp-hotspots .camp__hot').length)
 );
 // The Fissure window is the sockets and the one button, and nothing else:
@@ -2804,6 +2807,53 @@ $('dev-kit').click();
   );
   $('trade-close').click();
   assert($('trade').hidden === true, 'and it closes again');
+}
+
+// --- THE STATIONS: six doors into one room, and a job that moves on a clear -
+{
+  // NOT ON THE RAIL, like the shelf and the fire: the station in the picture
+  // is the way in, and it opens on its OWN tab.
+  assert($('open-work') === null, 'the rail has no button for a station');
+  $('camp-loom').click();
+  assert($('work').hidden === false, 'and the loom in the camp opens the stations');
+  assert(
+    $('work-tab-cloth').className.includes('climbtab--on'),
+    'on the tab of the station you actually clicked, not the first one',
+    $('work-tabs').textContent?.slice(0, 60)
+  );
+  assert(
+    all('#work-tabs .climbtab').length === 6,
+    'six professions, six tabs',
+    String(all('#work-tabs .climbtab').length)
+  );
+  // WITH NOTHING DUG UP the panel still reads: it says where the raw comes
+  // from rather than showing an empty grid.
+  assert(
+    /descent/i.test($('work-raw').textContent ?? ''),
+    'and with nothing in the bag it says where the raw comes from',
+    $('work-raw').textContent?.slice(0, 60)
+  );
+  assert(
+    /Load a batch/i.test($('work-jobs').textContent ?? '') && /0\/3/.test($('work-slots').textContent ?? ''),
+    'and nothing is on any station yet',
+    `${$('work-jobs').textContent?.slice(0, 40)} · ${$('work-slots').textContent}`
+  );
+
+  // ANOTHER STATION IS THE SAME ROOM. What differs is the tab.
+  $('work-close').click();
+  $('camp-smelter').click();
+  assert(
+    $('work').hidden === false && $('work-tab-metal').className.includes('climbtab--on'),
+    'and the smelter opens the same screen on Blacksmithing',
+    $('work-tabs').textContent?.slice(0, 40)
+  );
+  assert(
+    /Level 1/.test($('work-xp').textContent ?? ''),
+    'every profession starts at level 1, and the screen says so in numbers',
+    $('work-xp').textContent
+  );
+  $('work-close').click();
+  assert($('work').hidden === true, 'and it closes again');
 }
 
 // --- the Reckoning: the one web a level never pays for --------------------

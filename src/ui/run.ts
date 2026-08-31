@@ -63,6 +63,7 @@ import { closeMet, isMetOpen } from './met';
 import { closeGraft, isGraftOpen } from './graft';
 import { anchor, endSpeech, speakingAt, speakingBeat, startSpeech, syncSpeech } from './speech';
 import { openCrystals } from './crystals';
+import { openWork } from './work';
 import { createCanvasRenderer } from '../render/canvas2d';
 import { createPixiRenderer } from '../render/pixi';
 import { ZOOM_STEP, clampZoom, defaultZoom, readPalette } from '../render/renderer';
@@ -223,8 +224,8 @@ export function onRunFocused(): void {
   refreshRunPanels();
 }
 
-/** Nothing. Crystals are socketed from the collection and the dock holds only
- *  gear, so the shell's own actions are what a click there means. */
+/** Nothing: the dock holds only gear, so the shell's own actions are what a
+ *  click there means. */
 function runHandler() {
   return {
     actionFor: () => null,
@@ -239,9 +240,8 @@ function runHandler() {
 // --- the camp --------------------------------------------------------------
 //
 // A PICTURE rather than a map: `src/ui/camp.ts` owns everything on it and this
-// only says what a hotspot OPENS. The rail still reaches every one of those
-// screens. A SOCKET does what its socket on the Fissure card does, being the
-// same socket; a PERSON is TALKED TO, where they are standing.
+// only says what a hotspot OPENS. A SOCKET does what its socket on the Fissure
+// card does; a PERSON is TALKED TO, where they are standing.
 const OPENS: Record<Hotspot['opens'], (spot: Hotspot, at: DOMRect) => void> = {
   fissure: () => openFissure(),
   craft: () => openCraft(),
@@ -253,10 +253,12 @@ const OPENS: Record<Hotspot['opens'], (spot: Hotspot, at: DOMRect) => void> = {
     if (def) openTalk(def, at);
   },
   // A SOCKET IS THE ONLY DOOR TO THE CRYSTALS, so it opens them whether or not
-  // one is in it: taking a crystal BACK is what the Fissure card's own sockets
-  // are for, and a filled socket that unsocketed instead would be four screens
-  // and no way to reach the fifth.
+  // one is in it: taking a crystal BACK is the Fissure card's own sockets' job,
+  // and a filled socket that unsocketed instead would leave no door at all.
   socket: () => openCrystals(),
+  // Every station is one room on its own tab: a smelter and a loom differ in
+  // the word and the picture, never the mechanism.
+  work: (spot) => openWork(spot.family),
 };
 
 export function openFissure(): void {

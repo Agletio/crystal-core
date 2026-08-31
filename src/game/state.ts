@@ -17,6 +17,7 @@ import {
   WEAPON_SLOT,
   START_PRESETS,
   GRINDS,
+  MATERIALS,
   PROVING,
   CRYSTAL_ILVL,
   UNIQUE_BY_ID,
@@ -32,9 +33,11 @@ import {
   isTwoHanded,
   makeCrystal,
   makeGear,
+  makeMaterial,
   makeRelic,
   makeUnique,
   sellPrice,
+  stackKey,
 } from '../economy';
 import { baseTier } from '../mods';
 import { canDualWield, equippedSkill, mainSkillId, makeCharacter } from '../sim/character';
@@ -43,6 +46,7 @@ import { SCENES } from '../scenes';
 import { metMark } from './scenes';
 import type { Character } from '../sim/character';
 import type { Item, ItemKind, Wallet } from '../types';
+import type { WorkJob } from './work';
 
 // BUMPED ONCE for the whole crafting arc; nothing later in it may bump again.
 export const SAVE_VERSION = 2;
@@ -84,8 +88,10 @@ export interface GameState {
   /** What you are carrying to a PERSON. Uncapped for the reason crystals are:
    *  nothing sells one, so a cap could only lose loot. */
   relics: Item[];
-  /** MATERIALS, ONE ROW A KIND — `meta.n` is how many, and uncapped. */
+  /** MATERIALS, ONE ROW A STACK: `stackKey` is which, `meta.n` is how many. */
   materials: Item[];
+  /** WHAT THE STATIONS ARE WORKING ON, advanced by a CLEAR. */
+  jobs: WorkJob[];
   /**
    * What the auto-sell filter turns into gold on the way up: `KEEP_GROUPS` ids
    * and `tierKeepId` rungs in ONE list. Stored as what is SOLD rather than what
@@ -159,6 +165,7 @@ export function createGame(mode: StartMode = 'dev'): GameState {
     crystals: [],
     relics: [],
     materials: [],
+    jobs: [],
     junk: [],
     stashSlots: STASH_START,
     character: makeCharacter({}, 'strike'),
@@ -218,6 +225,10 @@ export function resetGame(game: GameState, mode: StartMode): void {
   game.inventory = stocked;
   game.crystals = preset.crystals.map((c) => makeCrystal(c.level, c.family));
   game.relics = (preset.relics ?? []).map((id) => makeRelic(RELIC_BY_ID[id]!));
+  game.materials = preset.materials
+    ? MATERIALS.map((def) => makeMaterial(def, preset.materials!))
+    : [];
+  game.jobs = [];
   game.stash = plain.slice(room);
   game.junk = [];
   game.stashSlots = Math.max(STASH_START, game.stash.length);
@@ -322,10 +333,12 @@ export function addItem(game: GameState, item: Item): Placement {
     game.relics.push(item);
     return 'carried';
   }
-  // A STACK, so the bag holds one row however many descents fed it.
+  // A STACK, so the bag holds one row however many descents fed it — and RAW
+  // and PROCESSED are two stacks of the same row, which is what `stackKey` is.
   if (item.kind === 'material') {
     game.materials = game.materials ?? [];
-    const held = game.materials.find((i) => i.base === item.base);
+    const key = stackKey(item);
+    const held = game.materials.find((i) => stackKey(i) === key);
     if (held) held.meta.n = (held.meta.n ?? 0) + (item.meta.n ?? 0);
     else game.materials.push(item);
     return 'carried';

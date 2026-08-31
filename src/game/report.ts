@@ -6,10 +6,12 @@
 import { bagsFull, bankLoot, grantFirstClear } from './state';
 import type { GameState } from './state';
 import { advanceSocketed, spendSocketed } from './crystals';
+import { advanceWork, professionAt } from './work';
+import type { Finished } from './work';
 import type { ModBurn } from './crystals';
 import type { CrystalGain } from './crystals';
 import { grant } from '../economy';
-import { DAMAGE_TYPE_BY_ID, MAIN_SLOT, SKILL_SLOTS } from '../data';
+import { DAMAGE_TYPE_BY_ID, MAIN_SLOT, PROFESSION_BY_ID, SKILL_SLOTS } from '../data';
 import { addXp, addSkillXp, equippedSkill } from '../sim/character';
 import type { RunState } from '../sim/run';
 import type { Item } from '../types';
@@ -34,6 +36,8 @@ export interface RunReport {
   levelled: CrystalGain[];
   /** Rolls that ran out on this descent. A dry crystal ends an Enter-chain. */
   burnt: ModBurn[];
+  /** Jobs that came off a station while you were down there. */
+  worked: Finished[];
   /** True when there was loot and the hero died holding it. */
   lostLoot: boolean;
   /** Whether the bag is at or over its limit now this run has banked. */
@@ -62,6 +66,7 @@ export function buildReport(game: GameState, run: RunState, left = false): RunRe
   const banked: Record<string, number> = {};
   let levelled: CrystalGain[] = [];
   let burnt: ModBurn[] = [];
+  let worked: Finished[] = [];
   let filtered = { kept: [] as Item[], sold: 0, gold: 0 };
 
   if (keeps) {
@@ -95,6 +100,9 @@ export function buildReport(game: GameState, run: RunState, left = false): RunRe
     // this is what makes a socket spent on a fresh one cost something.
     levelled = advanceSocketed(game, run.set);
     burnt = spendSocketed(game);
+    // THE STATIONS MOVE ON A CLEAR and on nothing else. A walk out keeps the
+    // loot and buys no progress, and a job is progress.
+    worked = advanceWork(game);
   }
 
   // XP is earned either way — you learned something on the way to dying.
@@ -142,6 +150,18 @@ export function buildReport(game: GameState, run: RunState, left = false): RunRe
     rows.push({ label: `${burn.crystal.name} · ${burn.name}`, value: 'used up' });
   }
 
+  // WHAT CAME OFF A STATION while you were down there, said with the level it
+  // bought: a job that finished silently is a job nobody knew was running.
+  for (const done of worked) {
+    const profession = PROFESSION_BY_ID[done.job.profession];
+    rows.push({
+      label: `${profession?.name ?? done.job.profession} · ${done.item.name}`,
+      value: done.levels > 0
+        ? `+${done.job.n}, level ${professionAt(game, done.job.profession).level}`
+        : `+${done.job.n}`,
+    });
+  }
+
   // Damage taken, split by type — worst first and under its own name, because
   // a monster brings its own element now and a descent routinely shows three
   // of these. What you read off it is which resistance to go and find.
@@ -171,6 +191,7 @@ export function buildReport(game: GameState, run: RunState, left = false): RunRe
     items: keeps ? [...filtered.kept] : [],
     levelled,
     burnt,
+    worked,
     lostLoot: !keeps && hadLoot,
     bagsFull: bagsFull(game),
     filtered: { sold: filtered.sold, gold: filtered.gold },

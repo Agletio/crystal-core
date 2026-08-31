@@ -498,15 +498,24 @@ function renderRelics(): void {
  *  one: nothing sells a material and nothing at the bench sees it yet. */
 function renderMaterials(): void {
   if (!game) return;
-  const held = MATERIALS.map((def) => (game!.materials ?? []).find((i) => i.base === def.id))
-    .filter((i): i is Item => !!i && ((i.meta.n as number) ?? 0) > 0);
+  // Table order, raw before processed, so a column never reshuffles itself
+  // between runs and the two stacks of one row sit together.
+  const rows = game.materials ?? [];
+  const held = MATERIALS.flatMap((def) =>
+    rows.filter((i) => i.base === def.id).sort((a, b) => (a.meta.done ? 1 : 0) - (b.meta.done ? 1 : 0))
+  ).filter((i) => ((i.meta.n as number) ?? 0) > 0);
   $('inv-materials-col').hidden = held.length === 0;
+  // CAPPED, and the label carries the rest. Twenty-eight materials in two
+  // states apiece is fifty-six stacks, and a dock column that tall is a dock
+  // that scrolls — the stations screen is where the whole list belongs.
+  $('inv-materials-label').textContent =
+    held.length > MATERIAL_SLOTS ? `Materials ${MATERIAL_SLOTS}/${held.length}` : 'Materials';
   const host = $('inv-materials');
   host.replaceChildren();
   if (held.length === 0) return;
-  sizeGrid(host, Math.max(MATERIAL_SLOTS, held.length));
+  sizeGrid(host, MATERIAL_SLOTS);
 
-  for (const item of held) {
+  for (const item of held.slice(0, MATERIAL_SLOTS)) {
     const btn = el('button', 'slot slot--gear slot--off') as HTMLButtonElement;
     btn.disabled = true;
     btn.append(itemIcon(item, 30));

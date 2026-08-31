@@ -13,9 +13,10 @@ export interface Hotspot {
   y: number;
   w: number;
   h: number;
-  opens: 'fissure' | 'craft' | 'stash' | 'character' | 'socket' | 'trials' | 'room';
+  opens: 'fissure' | 'craft' | 'stash' | 'character' | 'socket' | 'trials' | 'room' | 'work';
   slot?: number; // which of `RUN_SLOTS`, for a socket in the rock
   room?: string; // which `SceneDef`, for somebody standing about
+  family?: string; // which `MATERIAL_FAMILIES` tab, for a station
   says: string;
 }
 
@@ -58,6 +59,44 @@ export const CAMP_HOTSPOTS: Hotspot[] = [
     x: 532, y: 106, w: 98, h: 86,
     opens: 'character',
     says: 'Your tent. What you are wearing, and what it comes to.',
+  },
+  // SIX STATIONS, one a profession, and every one of them a door into the same
+  // room on its own tab. Measured off `camp_ground.png` rather than by eye.
+  {
+    id: 'smelter',
+    x: 28, y: 120, w: 92, h: 87,
+    opens: 'work', family: 'metal',
+    says: 'The smelter. Ore in, bars out, and it works while you are down there.',
+  },
+  {
+    id: 'loom',
+    x: 401, y: 123, w: 46, h: 62,
+    opens: 'work', family: 'cloth',
+    says: 'The loom. Fibre into bolts.',
+  },
+  {
+    id: 'tannery',
+    x: 463, y: 128, w: 46, h: 51,
+    opens: 'work', family: 'hide',
+    says: 'The tanning frame. Skins into leather.',
+  },
+  {
+    id: 'kitchen',
+    x: 488, y: 204, w: 43, h: 65,
+    opens: 'work', family: 'fish',
+    says: 'The kitchen. What you hauled out of a pool, made worth eating.',
+  },
+  {
+    id: 'sawbench',
+    x: 172, y: 305, w: 84, h: 58,
+    opens: 'work', family: 'wood',
+    says: 'The sawbench. Logs cut down to staves.',
+  },
+  {
+    id: 'jeweller',
+    x: 472, y: 325, w: 62, h: 41,
+    opens: 'work', family: 'gem',
+    says: "The jeweller's. Rough stone, cut.",
   },
 ];
 

@@ -96,6 +96,8 @@ import {
   MATERIAL_FAMILIES,
   MATERIAL_BY_ID,
   MATERIAL_FAMILY_BY_ID,
+  WORK,
+  PROFESSION,
   PROFESSIONS,
   PROVING,
   RUN_SLOTS,
@@ -130,6 +132,7 @@ import {
   balance,
   grant,
   makeCrystal,
+  makeMaterial,
   pickGearBase,
   priceOfItem,
   recipeInputs,
@@ -161,6 +164,7 @@ import { SCENE_ART } from './render/generated-scene';
 import type { SceneDef } from './scenes';
 import { COVER_PROPS, COVER_SET, FACE_FOOT, FACE_HEAD, FOOT, HUNG_PROPS, VIGNETTES, WALL_PROPS } from './vignettes';
 import { PROP_ART } from './render/generated-props';
+import { jobsIn, loadWork, professionAt, whyNotWork, xpToNext as workXpToNext } from './game/work';
 import { ZONES } from './render/generated-tiles';
 import type { Entity, RunState } from './sim/run';
 import {
@@ -3211,6 +3215,9 @@ rule('MATERIALS AND PROFESSIONS — is the table a thing a recipe could read?');
     MATERIAL_FAMILIES.flatMap((f) => [
       { where: `family/${f.id}`, text: f.raw },
       { where: `family/${f.id}`, text: f.processed },
+      { where: `family/${f.id}`, text: f.one },
+      { where: `family/${f.id}`, text: f.verb },
+      { where: `family/${f.id}`, text: f.station },
     ])
   );
   const wrongWord = said.flatMap(({ where, text }) =>
@@ -3218,14 +3225,18 @@ rule('MATERIALS AND PROFESSIONS — is the table a thing a recipe could read?');
   );
   check(wrongWord.length === 0, 'and not one of them says a thing the old way', wrongWord.join('; '));
 
-  // A DESCENT IS THE ONLY SOURCE. Nothing is handed one at creation, so what a
-  // player holds is exactly what they went down and dug up.
-  const g = createGame('dev');
-  const held = [...g.inventory, ...g.stash, ...(g.materials ?? [])];
+  // A DESCENT IS THE ONLY SOURCE. A new character is handed none, so what a
+  // player holds is exactly what they went down and dug up — and the DEV kit
+  // holds every one, because a station nobody can load is a screen nobody can
+  // look at.
+  const g = createGame('fresh');
+  const kit = createGame('dev');
   check(
-    held.filter((i) => i.kind === 'material').length === 0,
-    'and nobody starts holding one: a descent is the only place a material comes from',
-    `${held.length} materials in a fresh bag`
+    (g.materials ?? []).length === 0 &&
+      [...g.inventory, ...g.stash].every((i) => i.kind !== 'material') &&
+      (kit.materials ?? []).length === MATERIALS.length,
+    'and nobody starts holding one, though the dev kit is handed all of them',
+    `${(g.materials ?? []).length} fresh, ${(kit.materials ?? []).length} in the kit`
   );
 
   // A NODE IS A PICTURE, and one that resolves to nothing draws an invisible
@@ -3382,6 +3393,175 @@ rule('GATHERING — is a node free, guarded, walked to and equally spread?');
     clears > 0 && gear / clears < 1 && units / clears > gear / clears,
     'and GEAR is the lucky exception now, not the heap you sort',
     `${(gear / Math.max(1, clears)).toFixed(2)} pieces against ${(units / Math.max(1, clears)).toFixed(1)} materials`
+  );
+}
+
+// ===========================================================================
+rule('THE STATIONS — does a job advance on descents, and never on a clock?');
+
+// STEP 3: *"A smelter job is N clears long: load it, go down, come back to
+// bars."* What has to hold is that NOTHING here moves without a descent, that a
+// job neither loses nor mints, and that the whole loop runs headless.
+{
+  const fresh = createGame('fresh');
+  check(
+    jobsIn(fresh).length === 0 &&
+      PROFESSIONS.every((p) => professionAt(fresh, p.id).level === 1),
+    `a new character starts with no job loaded and all ${PROFESSIONS.length} professions at level 1`,
+    `${jobsIn(fresh).length} jobs`
+  );
+
+  // NOTHING IS WORKED THAT WAS NOT DUG UP. A batch you cannot afford is refused
+  // and SAYS SO — a button that greys out and will not say why is one nobody
+  // learns from.
+  const ore = MATERIAL_BY_ID.pale_iron;
+  const refused = whyNotWork(fresh, ore);
+  check(
+    refused !== null && /\d/.test(refused) && loadWork(fresh, ore) === null,
+    'and a batch it cannot pay for is refused, in numbers',
+    refused ?? 'it went ahead anyway'
+  );
+
+  // A ZONE-UNIQUE BELONGS TO NO FAMILY, so no station works it: it is what the
+  // best recipes ask for exactly as it came up out of the floor.
+  const unique = MATERIALS.find((m) => m.family === null)!;
+  addItem(fresh, makeMaterial(unique, 99));
+  check(
+    whyNotWork(fresh, unique) !== null && loadWork(fresh, unique) === null,
+    'and a world\'s own unique is worked by nothing at all',
+    whyNotWork(fresh, unique) ?? 'a station took it'
+  );
+
+  // THE SLOT CAP IS THE WHOLE OF WHAT A JOB COSTS, beyond the descents.
+  const shop = createGame('fresh');
+  for (const def of MATERIALS.filter((m) => m.family !== null)) {
+    addItem(shop, makeMaterial(def, WORK.batch * 4));
+  }
+  const loaded = MATERIALS.filter((m) => m.family !== null)
+    .map((def) => loadWork(shop, def))
+    .filter(Boolean);
+  check(
+    loaded.length === WORK.slots && jobsIn(shop).length === WORK.slots,
+    `and ${WORK.slots} jobs is every station loaded, whatever is in the bag`,
+    `${loaded.length} took`
+  );
+
+  // THE RAW LEAVES THE BAG NOW. A job you could cancel for a refund is a slot
+  // that costs nothing to fill.
+  const first = MATERIALS.find((m) => m.family !== null)!;
+  const heldNow = (shop.materials ?? []).find((i) => i.base === first.id && !i.meta.done);
+  check(
+    ((heldNow?.meta.n as number) ?? 0) === WORK.batch * 4 - WORK.batch,
+    'and the raw leaves the bag the moment it is loaded',
+    String((heldNow?.meta.n as number) ?? 0)
+  );
+
+  // A DEATH ADVANCES NOTHING, which is the rule a crystal's `uses` is under:
+  // what a walk out does not buy is PROGRESS, and a job is progress.
+  const before = jobsIn(shop).map((j) => j.left).join(',');
+  const died = new RunSim([makeCrystal(1)], ladderCharacter(1, new Rng(3)), new Rng(1));
+  died.state.status = 'died';
+  buildReport(shop, died.state);
+  check(
+    jobsIn(shop).map((j) => j.left).join(',') === before,
+    'and a death moves no job at all: what a run does not clear, it does not bank',
+    `${before} -> ${jobsIn(shop).map((j) => j.left).join(',')}`
+  );
+
+  // A WALK OUT KEEPS THE LOOT AND BUYS NO PROGRESS, so it moves no job either.
+  const cleared = new RunSim([makeCrystal(1)], ladderCharacter(1, new Rng(3)), new Rng(1));
+  cleared.state.status = 'cleared';
+  buildReport(shop, cleared.state, true);
+  check(
+    jobsIn(shop).map((j) => j.left).join(',') === before,
+    'and neither does walking out with what you found',
+    jobsIn(shop).map((j) => j.left).join(',')
+  );
+
+  // A CLEAR, and the WHOLE of it: one for one, banked, and paid in XP.
+  const wanted = jobsIn(shop).map((j) => ({ ...j }));
+  let report = buildReport(shop, cleared.state);
+  for (let i = 1; i < WORK.clears; i++) report = buildReport(shop, cleared.state);
+  const done = report.worked;
+  check(
+    done.length === wanted.length && jobsIn(shop).length === 0,
+    `and ${WORK.clears} clears takes every one of them off the station`,
+    `${done.length} finished, ${jobsIn(shop).length} still on`
+  );
+  const minted = done.filter((d) => ((d.item.meta.n as number) ?? 0) !== WORK.batch);
+  check(
+    minted.length === 0,
+    'and a job hands back exactly what it took: nothing lost, nothing minted',
+    minted.map((d) => `${d.item.name} ${d.item.meta.n}`).join(', ')
+  );
+
+  // RAW AND PROCESSED ARE TWO STACKS OF ONE ROW. Merged, a recipe could not
+  // tell ore from bars; two tables, and every screen has to learn both.
+  const both = (shop.materials ?? []).filter((i) => i.base === first.id);
+  check(
+    both.length === 2 && both.filter((i) => i.meta.done).length === 1,
+    'and it stacks apart from the raw it came from, off ONE material row',
+    `${both.length} stacks of ${first.id}`
+  );
+
+  const smith = professionAt(shop, 'blacksmithing');
+  check(
+    smith.level > 1 || smith.xp > 0,
+    'and the profession that did the work is further on for it',
+    `level ${smith.level}, ${smith.xp} xp`
+  );
+
+  // WHAT 99 COSTS, measured rather than chosen: *"you can freely level them all
+  // but it just costs your time."* Printed, because it is a balance number.
+  let jobs = 0;
+  let banked = 0;
+  for (let level = 1; level < PROFESSION.maxLevel; level++) banked += workXpToNext(level);
+  jobs = Math.ceil(banked / (WORK.xp * WORK.batch));
+  line(
+    `  level ${PROFESSION.maxLevel} is ${banked.toLocaleString()} xp — ${jobs.toLocaleString()} batches, ` +
+      `${Math.ceil((jobs * WORK.clears) / WORK.slots).toLocaleString()} descents with every slot full`
+  );
+  // A LEVEL HAS TO BE FELT IN THE FIRST HOUR, or the whole mechanism is a wall
+  // pretending to be a curve.
+  check(
+    workXpToNext(1) <= WORK.xp * WORK.batch,
+    'and the FIRST level costs one batch, so the curve is felt before it is long',
+    `${workXpToNext(1)} xp against ${WORK.xp * WORK.batch} a batch`
+  );
+
+  // A JOB POINTS AT A TABLE, and a save that outlives the table takes the job
+  // with it rather than paying out something that no longer exists.
+  const rotted = createGame('fresh');
+  rotted.jobs = [{ id: 'job_x', profession: 'nobody', material: 'nothing', n: 4, left: 1 }];
+  const healed = heal(rotted);
+  check(
+    rotted.jobs.length === 0 && healed.items > 0,
+    'and a save holding a job for a material nobody makes any more loses the job',
+    `${rotted.jobs.length} left`
+  );
+
+  // THE WHOLE LOOP, HEADLESS. Gathering feeds the station and the station pays
+  // the profession, with a real descent between: automation is universal and
+  // there is no step in this a player has to be present for.
+  const loop = createGame('fresh');
+  loop.character = ladderCharacter(6, new Rng(11));
+  const kit = [makeCrystal(1), makeCrystal(1), makeCrystal(1), makeCrystal(1)];
+  let ran = 0;
+  let anyDone = 0;
+  while (ran < 12 && anyDone === 0) {
+    const sim = new RunSim(kit, loop.character, new Rng(2200 + ran));
+    runToCompletion(sim, 600);
+    ran++;
+    if (sim.state.status !== 'cleared') continue;
+    anyDone += buildReport(loop, sim.state).worked.length;
+    // Load whatever came up, which is what a player would do.
+    for (const def of MATERIALS.filter((m) => m.family !== null)) loadWork(loop, def);
+  }
+  const madeAny = (loop.materials ?? []).filter((i) => i.meta.done).length;
+  check(
+    anyDone > 0 && madeAny > 0,
+    'and the whole loop runs headless: dug up, loaded, descended, worked',
+    `${ran} descents, ${anyDone} jobs off, ${madeAny} processed stacks`
   );
 }
 

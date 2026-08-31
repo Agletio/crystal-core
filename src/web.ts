@@ -32,6 +32,7 @@ import { initGraft, isGraftOpen } from './ui/graft';
 import { initSpeech, isSpeaking } from './ui/speech';
 import { closeParley, initTalk, isParleying } from './ui/talk';
 import { initCrystals, openCrystals, closeCrystals, isCrystalsOpen } from './ui/crystals';
+import { initWork, openWork, closeWork, isWorkOpen } from './ui/work';
 import {
   centreCamera,
   drinkFlask,
@@ -122,6 +123,7 @@ function restart(mode: StartMode): void {
     closeStash();
     closeSettings();
     closeCrystals();
+    closeWork();
     onRunFocused();
   }
   makeCharacter();
@@ -248,6 +250,11 @@ initFilter(game, () => {
 });
 // Socketing from here changes the set the Fissure is holding, so the map re-reads.
 initCrystals(game, refreshRunPanels);
+// Loading a batch takes the raw out of the bag, so the dock is already stale.
+initWork(game, () => {
+  refreshRunPanels();
+  renderInventory();
+});
 // The crystal is in your hands the moment the panel closes, so the collection
 // and the Fissure's counts are both already out of date.
 initMet(game, () => {
@@ -354,6 +361,7 @@ const SCREENS: Record<
   craft: { el: 'craft', open: openCraft, close: closeCraft, isOpen: isCraftOpen },
   shop: { el: 'shop', open: openShop, close: closeShop, isOpen: isShopOpen },
   crystals: { el: 'crystals', open: openCrystals, close: closeCrystals, isOpen: isCrystalsOpen },
+  work: { el: 'work', open: () => openWork(), close: closeWork, isOpen: isWorkOpen },
   stash: { el: 'stash', open: openStash, close: closeStash, isOpen: isStashOpen },
   history: { el: 'history', open: openHistory, close: closeHistory, isOpen: isHistoryOpen },
   save: { el: 'savedata', open: openSaveData, close: closeSaveData, isOpen: isSaveDataOpen },

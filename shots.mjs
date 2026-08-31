@@ -187,7 +187,7 @@ const STATES = [
   'handover', 'descent', 'results',
   'scene', 'speech', 'lampwright',
   'skills', 'skill-list', 'skill-web', 'move-web', 'trade', 'trials', 'proving',
-  'bench', 'tooltip', 'glossary', 'graft',
+  'bench', 'tooltip', 'glossary', 'graft', 'stations',
 ];
 
 const browser = await chromium.launch();
@@ -666,6 +666,16 @@ for (const vp of VIEWPORTS) {
     document.getElementById('welcome-go')?.click();
   });
   await page.waitForTimeout(500);
+
+  // THE STATIONS, off the smelter and with the kit's raw in the bag: six tabs,
+  // an XP bar and a column of loadable batches. Taken here rather than on a
+  // fresh game, where the panel is nothing but its empty line.
+  await page.evaluate(() => document.getElementById('camp-smelter')?.click());
+  await page.waitForTimeout(300);
+  await shoot('stations');
+  await page.evaluate(() => document.getElementById('work-close')?.click());
+  await page.waitForTimeout(200);
+
   // The tooltip below is a REAL hover, which a hidden slot refuses.
   await page.evaluate(() => document.getElementById('open-inventory')?.click());
   await page.evaluate(() => {

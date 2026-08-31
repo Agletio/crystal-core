@@ -40,10 +40,11 @@ import {
   crystalName,
   tierKeepId,
   MATERIAL_BY_ID,
+  PROFESSION_BY_ID,
 } from '../data';
 import { nodeById, replayTreeNodes, treeFor, treePointsFor } from '../skills-tree';
 import { TRADE_BY_ID, replayTradeNodes, tradePointsFor } from '../trades';
-import { isPerfect, makeGear, reserveItemIds } from '../economy';
+import { isPerfect, makeGear, reserveItemIds, stackKey } from '../economy';
 import { canDualWield } from '../sim/character';
 import { attributePointsFor, weaponFits } from '../sim/character';
 import type { Character } from '../sim/character';
@@ -358,16 +359,30 @@ export function heal(game: GameState): Healed {
   game.crystals = keep(Array.isArray(game.crystals) ? game.crystals : []);
   game.relics = keep(Array.isArray(game.relics) ? game.relics : []);
   game.materials = keep(Array.isArray(game.materials) ? game.materials : []);
-  // ONE ROW A KIND is the invariant the whole crafting arc reads, so a save
-  // that somehow holds two of a material is merged rather than trusted.
+  // ONE ROW A STACK is the invariant the whole crafting arc reads, so a save
+  // that somehow holds two of one is merged rather than trusted.
   const stacks = new Map<string, Item>();
   for (const row of game.materials) {
     const n = Math.max(1, Math.floor(Number(row.meta.n) || 1));
-    const held = stacks.get(row.base);
+    const key = stackKey(row);
+    const held = stacks.get(key);
     if (held) held.meta.n += n;
-    else stacks.set(row.base, { ...row, meta: { ...row.meta, n } });
+    else stacks.set(key, { ...row, meta: { ...row.meta, n } });
   }
   game.materials = [...stacks.values()];
+
+  // A JOB POINTS AT A MATERIAL and at a profession. Either being gone takes the
+  // job with it — the raw is already spent, so this is a loss, and refunding
+  // into a table that has moved is the worse answer.
+  const jobs = Array.isArray(game.jobs) ? game.jobs : [];
+  game.jobs = jobs.filter((job) => {
+    const ok =
+      job && MATERIAL_BY_ID[job.material] !== undefined &&
+      PROFESSION_BY_ID[job.profession] !== undefined &&
+      Number.isFinite(job.left) && job.left > 0 && Number.isFinite(job.n) && job.n > 0;
+    if (!ok) out.items++;
+    return ok;
+  });
   // Same rule as every other container: a base that is gone takes its entry.
   game.sold = (Array.isArray(game.sold) ? game.sold : []).filter((e) => {
     const ok = e && e.item && baseExists(e.item) && Number.isFinite(e.price);

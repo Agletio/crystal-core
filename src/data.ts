@@ -2200,18 +2200,14 @@ export const LADDER = {
 
 // --- what gear is MADE of -------------------------------------------------
 //
-// *"Mobs drop crafting items… along with ores, cloths, leathers, gems etc.
-// Using those items along with the currency items crafts bases of different
-// tiers."* MATERIALS HAVE VERSIONS, NEVER TIERS: demonic cloth is not better
-// than prismatic cloth, so the shallow end stays an ingredient at the deep end
-// and a tier is how many DIFFERENT versions a recipe demands.
+// MATERIALS HAVE VERSIONS, NEVER TIERS: demonic cloth is not better than
+// prismatic cloth, so the shallow end stays an ingredient at the deep end and a
+// tier is how many DIFFERENT versions a recipe demands.
 
 /** One of the six things gear is made OF, and the one profession that works
- *  it. `raw` is what comes out of a descent and `processed` what camp turns it
- *  into — two words because the bench and the station are different places.
+ *  it. `raw` comes out of a descent and `processed` is what camp turns it into.
  *  `node` is what it looks like on a floor and `spent` the same object worked
- *  out; `verb` is the one word for taking it. *"Ore is mined, hide is
- *  skinned"* is flavour on ONE mechanism, never six of them. */
+ *  out; *"ore is mined, hide is skinned"* is `verb` on ONE mechanism. */
 export interface MaterialFamilyDef {
   id: string;
   name: string;
@@ -2221,30 +2217,32 @@ export interface MaterialFamilyDef {
   verb: string;
   node: string;
   spent: string;
+  /** What ONE processed unit of it is called, so a stack reads as a thing
+   *  rather than as a plural stuck on a name. */
+  one: string;
 }
 
 export const MATERIAL_FAMILIES: MaterialFamilyDef[] = [
   { id: 'metal', name: 'Metal', raw: 'ore', processed: 'bars', station: 'the smelter',
-    verb: 'Mined', node: 'node_ore', spent: 'node_ore_spent' },
+    verb: 'Mined', node: 'node_ore', spent: 'node_ore_spent', one: 'Bar' },
   { id: 'cloth', name: 'Cloth', raw: 'fibre', processed: 'bolts', station: 'the loom',
-    verb: 'Stripped', node: 'cocoon', spent: 'web' },
+    verb: 'Stripped', node: 'cocoon', spent: 'web', one: 'Bolt' },
   { id: 'hide', name: 'Hide', raw: 'skins', processed: 'leather', station: 'the tanning frame',
-    verb: 'Skinned', node: 'node_carcass', spent: 'node_carcass_spent' },
-  { id: 'wood', name: 'Wood', raw: 'logs', processed: 'staves', station: 'the bench',
-    verb: 'Cut', node: 'node_stump', spent: 'node_stump_spent' },
+    verb: 'Skinned', node: 'node_carcass', spent: 'node_carcass_spent', one: 'Leather' },
+  { id: 'wood', name: 'Wood', raw: 'logs', processed: 'staves', station: 'the sawbench',
+    verb: 'Cut', node: 'node_stump', spent: 'node_stump_spent', one: 'Stave' },
   { id: 'gem', name: 'Gem', raw: 'rough', processed: 'cut stones', station: "the jeweller's",
-    verb: 'Prised', node: 'geode_amber', spent: 'node_geode_spent' },
+    verb: 'Prised', node: 'geode_amber', spent: 'node_geode_spent', one: 'Gem' },
   { id: 'fish', name: 'Fish', raw: 'a catch', processed: 'meals', station: 'the kitchen',
-    verb: 'Netted', node: 'node_pool', spent: 'node_pool_spent' },
+    verb: 'Netted', node: 'node_pool', spent: 'node_pool_spent', one: 'Meal' },
 ];
 
 export const MATERIAL_FAMILY_BY_ID: Record<string, MaterialFamilyDef> = Object.fromEntries(
   MATERIAL_FAMILIES.map((f) => [f.id, f])
 );
 
-/** A material is a FAMILY in a WORLD, or a world's own `unique` — which belongs
- *  to no family, is tied to no profession, and is what the best recipes ask
- *  for. `icon` is a row in `icons.json`; the demo holds every one to resolving. */
+/** A FAMILY in a WORLD, or a world's own `unique` — which belongs to no family
+ *  and is what the best recipes ask for. */
 export interface MaterialDef {
   id: string;
   name: string;
@@ -2254,12 +2252,8 @@ export interface MaterialDef {
   description: string;
 }
 
-/**
- * TWENTY-FOUR VERSIONS AND FOUR UNIQUES. *"They should all contain the normal
- * ones but maybe just a single unique material per zone."* Every world carries
- * every family, so wood in a crystal cavern and fish in the Rot are a NAMING
- * problem and never a reason to drop a family from a world.
- */
+/** TWENTY-FOUR VERSIONS AND FOUR UNIQUES. Wood in a crystal cavern is a NAMING
+ *  problem and never a reason to drop a family from a world. */
 export const MATERIALS: MaterialDef[] = [
   { id: 'pale_iron', name: 'Pale Iron', world: 'fissure', family: 'metal', icon: 'mat_pale_iron',
     description: 'Ore out of the old workings, more rust than iron.' },
@@ -2326,9 +2320,8 @@ export const MATERIAL_BY_ID: Record<string, MaterialDef> = Object.fromEntries(
   MATERIALS.map((m) => [m.id, m])
 );
 
-/** SIX PROFESSIONS, ONE PER FAMILY. `makes` is what it is FOR, in the game's
- *  own words — `ARMOUR_FAMILIES.archetypes` is what an armour recipe names, so
- *  a hybrid family asks for exactly the two professions its archetypes do. */
+/** SIX PROFESSIONS, ONE PER FAMILY. A hybrid armour family asks for the two
+ *  professions its `ARMOUR_FAMILIES.archetypes` name. */
 export interface ProfessionDef {
   id: string;
   name: string;
@@ -2350,9 +2343,26 @@ export const PROFESSION_BY_ID: Record<string, ProfessionDef> = Object.fromEntrie
 );
 
 /** NOTHING CAPS A PROFESSION — *"you can freely level them all but it just
- *  costs your time"* — so the ceiling is the same for each and the early choice
- *  is what is real. */
-export const PROFESSION = { maxLevel: 99 };
+ *  costs your time"* — so the early choice is what is real. `xpTo1` is the
+ *  first level and `curve` how much steeper each one after it is. */
+export const PROFESSION = { maxLevel: 99, xpTo1: 20, curve: 1.05 };
+
+/**
+ * A JOB AT A STATION, and it ADVANCES ON DESCENTS. *"A smelter job is N clears
+ * long."* Genuinely idle — the idling is the descending, which already chains —
+ * and unfarmable by an open browser, which is what universal automation demands
+ * of anything paying while you are away. A DEATH advances nothing, the rule a
+ * crystal's `uses` is already under. ONE FOR ONE, so what a job COSTS is the
+ * descents and the slot rather than a conversion rate to optimise.
+ */
+export const WORK = {
+  batch: 4, // raw a job eats, and processed it hands back
+  clears: 2, // descents it takes
+  slots: 3, // jobs loaded at once, over every station: the whole of the cost
+  // FLAT, never by world: a Seam job paying more would be a TIER in the one
+  // place the no-tiers rule is easiest to break.
+  xp: 6,
+};
 
 /** THE PROVING GROUND: one area past the climb, at a set floor. *"A set
  *  difficulty even harder than the final 'story mode' level which you can scale
@@ -3778,6 +3788,7 @@ export interface StartPreset {
   gear: Array<{ base: string; ilvl: number; perfect?: boolean }>;
   uniques?: string[];
   relics?: string[];
+  materials?: number; // raw of EVERY one, so a station can be loaded without mining
   /** Whether that gear starts worn, or has to be earned first. */
   equipped: boolean;
 }
@@ -3803,6 +3814,8 @@ export const START_PRESETS: Record<'fresh' | 'dev', StartPreset> = {
     uniques: UNIQUES.map((u) => u.id),
     // And one of every relic, so the room it schedules is one press away.
     relics: RELICS.map((r) => r.id),
+    // Enough raw of every one to load a station three times over.
+    materials: 24,
     equipped: true,
   },
 };
