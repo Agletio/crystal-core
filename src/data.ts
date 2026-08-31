@@ -338,6 +338,13 @@ export const BASE_TIER_ILVL = [1, 22, 46];
 /** Budget points per rung, before the slot share. */
 const ARMOUR_BUDGET = [20, 32, 46];
 
+/** **A HYBRID IS MORE TOTAL POWER; A SPECIALIST IS MORE OF ONE THING.** *"The
+ *  hybrids can be strictly more overall stat power… but you can get more of one
+ *  stat going specific."* So the two professions a hybrid costs buy BREADTH: it
+ *  spends `lift` times the budget, and no single share of it may reach a
+ *  specialist's — which the demo holds, for every stat there is. */
+export const HYBRID = { lift: 1.2 };
+
 /** How much of the budget a slot carries. Body armour is the armour piece. */
 const ARMOUR_SLOT_SHARE: Record<string, number> = {
   helmet: 0.7, body: 1, gloves: 0.55, boots: 0.55,
@@ -371,7 +378,7 @@ const IMPLICIT_STEP: Record<string, number> = {
   attackSpeed: 0.1, castSpeed: 0.1, moveSpeed: 0.1, critChance: 1,
 };
 
-const IMPLICIT_STAT: Record<string, { stat: string; form: 'flat' | 'inc'; tags?: string[] }> = {
+export const IMPLICIT_STAT: Record<string, { stat: string; form: 'flat' | 'inc'; tags?: string[] }> = {
   armour: { stat: 'armour', form: 'flat' },
   attackDamage: { stat: 'damage', form: 'inc', tags: ['attack'] },
   spellDamage: { stat: 'damage', form: 'inc', tags: ['spell'] },
@@ -402,7 +409,9 @@ export const ARMOUR_FAMILIES: ArmourFamily[] = [
   },
   {
     id: 'vanguard', archetypes: ['melee'],
-    mix: { armour: 0.7, attackDamage: 0.3 },
+    // It carries the ATTACK SPEED, and it is the only specialist that does: no
+    // hybrid may be the most of any stat, so every stat needs a home here.
+    mix: { armour: 0.6, attackDamage: 0.22, attackSpeed: 0.18 },
     words: ['Scored', 'Honed', 'Warlord'],
     nouns: { helmet: 'Barbute', body: 'Brigandine', gloves: 'Handguards', boots: 'Sabatons' },
   },
@@ -444,7 +453,7 @@ export const ARMOUR_FAMILIES: ArmourFamily[] = [
   },
   {
     id: 'runeguard', archetypes: ['melee', 'spell'],
-    mix: { armour: 0.4, spellDamage: 0.35, castSpeed: 0.25 },
+    mix: { armour: 0.4, spellDamage: 0.4, castSpeed: 0.2 },
     words: ['Etched', 'Warded', 'Aegis'],
     nouns: { helmet: 'Crown', body: 'Scalemail', gloves: 'Bracers', boots: 'Sollerets' },
   },
@@ -456,7 +465,7 @@ export const ARMOUR_FAMILIES: ArmourFamily[] = [
   },
   {
     id: 'whisper', archetypes: ['spell', 'rogue'],
-    mix: { armour: 0.22, spellDamage: 0.33, castSpeed: 0.25, moveSpeed: 0.2 },
+    mix: { armour: 0.22, spellDamage: 0.38, castSpeed: 0.2, moveSpeed: 0.2 },
     words: ['Hushed', 'Muted', 'Sibilant'],
     nouns: { helmet: 'Cap', body: 'Cloak', gloves: 'Fingers', boots: 'Padfeet' },
   },
@@ -468,7 +477,7 @@ export const ARMOUR_FAMILIES: ArmourFamily[] = [
   },
   {
     id: 'duelist', archetypes: ['melee', 'rogue'],
-    mix: { armour: 0.45, attackDamage: 0.3, attackSpeed: 0.13, moveSpeed: 0.12 },
+    mix: { armour: 0.45, attackDamage: 0.28, attackSpeed: 0.13, moveSpeed: 0.14 },
     words: ['Fenced', 'Parried', 'Bladed'],
     nouns: { helmet: 'Visor', body: 'Doublet', gloves: 'Guards', boots: 'Stepplates' },
   },
@@ -480,8 +489,8 @@ export const ARMOUR_SLOT_KINDS = ['helmet', 'body', 'gloves', 'boots'] as const;
 export const REFERENCE_ARMOUR_FAMILY = 'skirmisher';
 
 /** Budget a family may spend on one slot at one rung. */
-export const armourBudget = (kind: string, tier: number): number =>
-  ARMOUR_BUDGET[tier - 1] * (ARMOUR_SLOT_SHARE[kind] ?? 1);
+export const armourBudget = (kind: string, tier: number, hybrid = false): number =>
+  ARMOUR_BUDGET[tier - 1] * (ARMOUR_SLOT_SHARE[kind] ?? 1) * (hybrid ? HYBRID.lift : 1);
 
 /**
  * toFixed, not the bare multiply: 7 * 0.1 is 0.7000000000000001 in binary
@@ -506,7 +515,7 @@ const armourBases = (): GearBase[] => {
   for (const family of ARMOUR_FAMILIES) {
     for (const kind of ARMOUR_SLOT_KINDS) {
       for (let tier = 1; tier <= 3; tier++) {
-        const budget = armourBudget(kind, tier);
+        const budget = armourBudget(kind, tier, family.archetypes.length > 1);
         const implicit = Object.entries(family.mix)
           .filter(([key, share]) => key !== 'armour' && share > 0)
           .map(([key, share]) => spend(key, budget * share));
@@ -532,11 +541,9 @@ const armourBases = (): GearBase[] => {
 
 export const ARMOUR_BASES: GearBase[] = armourBases();
 
-/**
- * A base read back into budget points — the inverse of spend(), and the only
- * check that two families priced the same thing the same way. The rating counts;
- * it comes out of the same budget. Lossy by under a point per line.
- */
+/** A base read back into budget points — the inverse of spend(), and the only
+ *  check that two families priced the same thing the same way. Lossy by under
+ *  a point per line. */
 export const implicitSpend = (base: GearBase): number =>
   (base.armour ?? 0) / IMPLICIT_PER_POINT.armour +
   (base.implicit ?? []).reduce((total, s) => {
@@ -741,8 +748,7 @@ export const SHIELD_BASES: GearBase[] = [
   shield('tower_shield', 'Graven Tower Shield', 3, 96, 30),
 ];
 
-/** Every rung holds the same modifiers, so what a rung buys on jewellery is the
- *  IMPLICIT's own size. `amulet` and `ring` stay the ids a save points at. */
+/** Every rung holds the same modifiers, so a rung buys the IMPLICIT's size. */
 const TRINKET_SLOTS = { offence: 3, defence: 2, utility: 1 };
 
 /**
@@ -1642,6 +1648,39 @@ export const ATTRIBUTES: AttributeDef[] = [
 export const ATTRIBUTE_BY_ID: Record<string, AttributeDef> = Object.fromEntries(
   ATTRIBUTES.map((a) => [a.id, a])
 );
+
+/** **WHAT ONE UNIT OF A STAT IS WORTH, HERO-SIDE.** `DANGER_STATS` prices what
+ *  a MONSTER carries; this prices what YOU do. One POWER is one point of an
+ *  armour family's budget — 6 armour, or 1% increased damage. The seven a base
+ *  implicit carries are DERIVED off `IMPLICIT_PER_POINT` so the two can never
+ *  drift; the rest are balance numbers the demo PRINTS. */
+export const STAT_POWER: Record<string, number> = {
+  ...Object.fromEntries(
+    Object.entries(IMPLICIT_STAT).map(([key, s]) => [
+      `${s.stat}:${s.form}`,
+      1 / IMPLICIT_PER_POINT[key],
+    ])
+  ),
+  'damage:flat': 1.2, // a flat line beats an increase: it is multiplied afterwards
+  'life:inc': 1.4,
+  'life:flat': 0.05,
+  'mana:inc': 0.5,
+  'mana:flat': 0.02,
+  'lifeRegen:flat': 0.4,
+  'manaRegen:flat': 0.15,
+  'critMultiplier:inc': 0.5,
+  'areaOfEffect:inc': 0.7,
+  'attackRange:flat': 1.5,
+  'attackRange:inc': 0.3, // a bow's own line, and reach is worth less as a share
+  'dodgeChance:flat': 1.2,
+  'blockChance:flat': 1.2,
+  'rarity:inc': 0.2,
+  'currencyFind:inc': 0.2,
+  ...Object.fromEntries(DAMAGE_TYPES.map((t) => [`${t.id}Res:flat`, 0.5])),
+  ...Object.fromEntries(DAMAGE_GROUPS.map((g) => [`${g}Res:flat`, 0.5])),
+  ...Object.fromEntries(ATTRIBUTES.map((a) => [`${a.id}:flat`, 0.9])),
+};
+
 
 /** One per attribute, so the four you SPEND points on are also four you can
  *  find. `ATTRIBUTE_STEP` is 1, so a point off a ring is worth a point spent,

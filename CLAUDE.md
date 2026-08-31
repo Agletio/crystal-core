@@ -456,6 +456,19 @@ every ink of `gear_ring` / `gear_amulet` toward the implicit's own hue at that
 ink's OWN brightness, so the SHAPE says which slot and the COLOUR says what is
 on it.
 
+**A HYBRID IS MORE TOTAL POWER; A SPECIALIST IS MORE OF ONE THING.** *"The
+hybrids can be strictly more overall stat power so for most builds they can be
+better, but you can get more of one stat going specific."* `HYBRID.lift` is 1.2
+on `armourBudget`, so a two-archetype family spends 55 points where a
+specialist spends 46 — the two professions it costs buy BREADTH. The second
+half is what keeps a specialist worth taking, and it is a rule about the whole
+table: **the family with the MOST of any stat is a SPECIALIST**, so whatever
+you are stacking a hybrid is never the answer. `STAT_POWER` is the hero-side
+weight per stat — `DANGER_STATS` prices what a MONSTER carries, this prices
+what YOU do — and `statPower()` reads a finished ITEM, so both halves are
+asserted about what a player wears rather than about a mix. An UNPRICED stat is
+worth NOTHING in that total, so every base implicit is held to being priced.
+
 **MATERIALS DECIDE WHAT AN ITEM IS; CURRENCY DECIDES WHAT IS ON IT.** A craft
 picks the BASE and its IMPLICIT and every modifier is still the bench's — two
 economies, two decisions, neither a slot machine. **A RECIPE IS DERIVED, NEVER

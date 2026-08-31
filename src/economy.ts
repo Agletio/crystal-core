@@ -1,8 +1,7 @@
 import { Rng } from './rng';
 import { ModPool, baseTier, modCapacity, rollRandomMod } from './mods';
 import {
-  ARMOUR_FAMILIES,
-  ARMOUR_SLOT_KINDS,
+  keepGroupFor,
   CRYSTAL_ILVL,
   CRYSTAL_LEVELS,
   EQUIP_SLOTS,
@@ -144,14 +143,14 @@ const SLOTS_FOR: Record<string, number> = EQUIP_SLOTS.reduce(
   {} as Record<string, number>
 );
 
-/** What a FILTER can name inside a kind: the eight weapon families, the three
- *  armour archetypes, one apiece for a shield, a ring and an amulet. A hybrid
- *  family is two archetypes rather than a thirteenth. */
-const ARCHETYPES = new Set(ARMOUR_FAMILIES.flatMap((f) => f.archetypes)).size;
+/** What a FILTER can name inside a kind, off `KEEP_GROUPS` itself rather than
+ *  off `GearBase.family` — which reads the same until a kind grows families the
+ *  filter does not name. Jewellery did exactly that: ten implicits took rings
+ *  from weight 2 to 20 and 39% of every drop was a ring. */
 const FAMILIES_IN = (kind: string): number =>
-  (ARMOUR_SLOT_KINDS as readonly string[]).includes(kind)
-    ? ARCHETYPES
-    : new Set(GEAR_BASES.filter((b) => b.kind === kind).map((b) => b.family ?? kind)).size;
+  new Set(
+    GEAR_BASES.filter((b) => b.kind === kind).map((b) => keepGroupFor(b)?.id ?? kind)
+  ).size;
 
 /** Drop weight per kind: its slots TIMES what a filter can name in it. Slots
  *  alone made rings the commonest drop at 22% and the whole weapon kind rarer

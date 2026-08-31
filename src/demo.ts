@@ -82,8 +82,12 @@ import {
   RELIC_BY_ID,
   WEAPON_BASES,
   BASE_TIER_ILVL,
+  ARMOUR_SLOT_KINDS,
   GEAR_BASES,
+  HYBRID,
+  IMPLICIT_STAT,
   JEWEL_IMPLICITS,
+  STAT_POWER,
   GEAR_BASE_BY_ID,
   KEEP_GROUPS,
   KEEP_TIERS,
@@ -191,6 +195,7 @@ import {
   slotCapacity,
   slotTypes,
   slotUsed,
+  statPower,
 } from './mods';
 import { ENTRANCE, EXIT, FLOOR, TUNNEL, WALL, dist, generateMap, sceneMap } from './sim/grid';
 import type { Grid } from './sim/grid';
@@ -896,11 +901,12 @@ rule('OPENINGS — does the bench draw exactly what the item can hold?');
 // ===========================================================================
 rule('ARMOUR SETS — is a hybrid a redistribution or a discount?');
 
-// Twelve families over one budget. A hybrid borrows from two archetypes, and
-// the only thing stopping it borrowing the good half of each is that every
-// family spends the SAME points at the same exchange rate. Read the implicits
-// back into points and the spread across families must be rounding and nothing
-// else — otherwise "hybrid" is just the correct answer.
+// Twelve families over TWO budgets. A hybrid spends `HYBRID.lift` of a
+// specialist's, which is the user's own rule and the whole of what two
+// professions buy — so what has to hold here is that each family spends ITS
+// budget and no more, and that the spread WITHIN a group is rounding. The thing
+// that stops "hybrid" being simply the correct answer is the other half, which
+// THE HYBRID RULE holds: the most of any one stat is a specialist's.
 {
   let overspent = 0;
   let worstSpread = 0;
@@ -908,18 +914,20 @@ rule('ARMOUR SETS — is a hybrid a redistribution or a discount?');
 
   for (const kind of ['helmet', 'body', 'gloves', 'boots']) {
     for (let tier = 1; tier <= 3; tier++) {
-      const budget = armourBudget(kind, tier);
       const spends = ARMOUR_FAMILIES.map((f) => {
         const base = GEAR_BASE_BY_ID[`${f.id}_${kind}_t${tier}`];
-        return { id: f.id, points: base ? implicitSpend(base) : -1 };
+        return { id: f.id, hybrid: f.archetypes.length > 1, points: base ? implicitSpend(base) : -1 };
       });
       for (const s of spends) {
         // One line rounds by under a point, and no family authors more than
         // four, so anything past this is a mix that does not sum to one.
-        if (Math.abs(s.points - budget) > 1) overspent++;
+        if (Math.abs(s.points - armourBudget(kind, tier, s.hybrid)) > 1) overspent++;
       }
-      const spread = Math.max(...spends.map((s) => s.points)) - Math.min(...spends.map((s) => s.points));
-      worstSpread = Math.max(worstSpread, spread);
+      // WITHIN a group: across the two, the gap is the lift and is the point.
+      for (const group of [true, false]) {
+        const at = spends.filter((s) => s.hybrid === group).map((s) => s.points);
+        worstSpread = Math.max(worstSpread, Math.max(...at) - Math.min(...at));
+      }
       if (tier === 3 && kind === 'body') {
         for (const f of ARMOUR_FAMILIES) {
           const b = GEAR_BASE_BY_ID[`${f.id}_${kind}_t${tier}`];
@@ -937,8 +945,8 @@ rule('ARMOUR SETS — is a hybrid a redistribution or a discount?');
 
   check(overspent === 0, 'every family spends its whole budget and no more',
     `${overspent} family/slot/rung combinations are off budget`);
-  check(worstSpread <= 1, 'so no family out-earns another at the same slot and rung',
-    `the widest spread between two families is ${worstSpread.toFixed(2)} points`);
+  check(worstSpread <= 1, 'so no family out-earns another of its own kind at the same slot and rung',
+    `the widest spread inside one group is ${worstSpread.toFixed(2)} points`);
 
   // The archetypes have to still MEAN something. A table that balances
   // perfectly but puts the mage in plate is balanced mush.
@@ -3880,6 +3888,114 @@ rule('JEWELLERY — is the amulet slot contested, and is a ring a decision?');
         `${String(amulet).padStart(3)} on a tier 3 amulet`
     );
   }
+}
+
+// ===========================================================================
+rule('THE HYBRID RULE — is breadth worth two professions, and what does it cost?');
+
+// STEP 6: *"The hybrids can be strictly more overall stat power so for most
+// builds they can be better, but you can get more of one stat going specific."*
+// Both halves, and without `STAT_POWER` neither is checkable — a hybrid family
+// spent exactly the same budget as a specialist until this step, so the rule
+// was a sentence in a file and nothing else.
+{
+  const single = ARMOUR_FAMILIES.filter((f) => f.archetypes.length === 1);
+  const both = ARMOUR_FAMILIES.filter((f) => f.archetypes.length > 1);
+  check(
+    single.length === both.length && single.length > 0,
+    `${single.length} specialist armour families and ${both.length} hybrids, one for one`,
+    `${single.length} against ${both.length}`
+  );
+
+  // EVERY IMPLICIT IS PRICED, or a family goes missing from its own total and
+  // the whole comparison is read off a table with a hole in it.
+  const unpriced = new Set<string>();
+  for (const base of GEAR_BASES) {
+    for (const spec of base.implicit ?? []) {
+      if (!STAT_POWER[`${spec.stat}:${spec.form}`]) unpriced.add(`${spec.stat}:${spec.form}`);
+    }
+    if ((base.armour ?? 0) > 0 && !STAT_POWER['armour:flat']) unpriced.add('armour:flat');
+  }
+  check(
+    unpriced.size === 0,
+    'and every stat a base implicit carries has a price, so no line is worth nothing by accident',
+    [...unpriced].join(', ')
+  );
+
+  // HALF ONE: a hybrid is MORE TOTAL POWER, read off the finished ITEM rather
+  // than off the mix it was built from.
+  const power = (family: string, kind: string, tier: number): number =>
+    statPower(makeGear(`${family}_${kind}_t${tier}`, 70));
+  const worst = Math.min(...both.map((f) => power(f.id, 'body', 3)));
+  const best = Math.max(...single.map((f) => power(f.id, 'body', 3)));
+  line(
+    `  a tier 3 body: specialists ${single.map((f) => power(f.id, 'body', 3).toFixed(0)).join(' ')} · ` +
+      `hybrids ${both.map((f) => power(f.id, 'body', 3).toFixed(0)).join(' ')}`
+  );
+  check(
+    worst > best,
+    `and the WEAKEST hybrid totals more power than the strongest specialist — ${HYBRID.lift}× the budget`,
+    `${worst.toFixed(1)} against ${best.toFixed(1)}`
+  );
+
+  // AND AT EVERY SLOT AND EVERY RUNG, not only the one this happened to check.
+  const beaten: string[] = [];
+  for (const kind of ARMOUR_SLOT_KINDS) {
+    for (let tier = 1; tier <= 3; tier++) {
+      const low = Math.min(...both.map((f) => power(f.id, kind, tier)));
+      const high = Math.max(...single.map((f) => power(f.id, kind, tier)));
+      if (low <= high) beaten.push(`${kind} t${tier}`);
+    }
+  }
+  check(beaten.length === 0, 'at every slot and every rung there is', beaten.join(', '));
+
+  // HALF TWO, AND IT IS THE ONE THAT KEEPS A SPECIALIST WORTH TAKING: *"you can
+  // get more of one stat going specific."* For every stat any family carries,
+  // the family with the MOST of it is a specialist — so whatever you are
+  // stacking, a hybrid is never the answer.
+  const mostOf = new Map<string, { id: string; at: number; hybrid: boolean }>();
+  for (const family of ARMOUR_FAMILIES) {
+    const hybrid = family.archetypes.length > 1;
+    for (const [stat, share] of Object.entries(family.mix)) {
+      const at = share * (hybrid ? HYBRID.lift : 1);
+      const held = mostOf.get(stat);
+      if (!held || at > held.at) mostOf.set(stat, { id: family.id, at, hybrid });
+    }
+  }
+  const stolen = [...mostOf].filter(([, who]) => who.hybrid).map(([stat, who]) => `${stat}→${who.id}`);
+  line(
+    `  the most of each: ${[...mostOf].map(([stat, who]) => `${stat} ${who.id}`).join(', ')}`
+  );
+  check(
+    stolen.length === 0,
+    `and the family with the MOST of each of the ${mostOf.size} stats is a SPECIALIST, whatever you are stacking`,
+    stolen.join(', ')
+  );
+
+  // AND IT REACHES THE ITEM. The share is arithmetic; what a player wears is a
+  // number on a piece, and that is what has to be bigger.
+  const short: string[] = [];
+  for (const [stat, who] of mostOf) {
+    const at = (family: string): number => {
+      const base = GEAR_BASE_BY_ID[`${family}_body_t3`];
+      if (stat === 'armour') return base?.armour ?? 0;
+      const want = IMPLICIT_STAT[stat];
+      const line3 = base?.implicit?.find(
+        (l) => l.stat === want?.stat && l.form === want?.form
+          && (want.tags?.[0] === undefined || (l.tags ?? []).includes(want.tags[0]))
+      );
+      return line3?.range[0] ?? 0;
+    };
+    const bestSingle = Math.max(...single.map((f) => at(f.id)));
+    const bestHybrid = Math.max(...both.map((f) => at(f.id)));
+    if (bestHybrid >= bestSingle) short.push(`${stat}: ${bestHybrid} vs ${bestSingle}`);
+    void who;
+  }
+  check(
+    short.length === 0,
+    'and it is on the PIECE, not only in the mix it was built from',
+    short.join(', ')
+  );
 }
 
 // ===========================================================================
@@ -9108,7 +9224,12 @@ rule('WHAT A BAND IS WORTH — does pushing power actually pay?');
   const reached: number[] = [];
 
   for (let band = 0; band < DROP_BANDS.length; band++) {
-    const runs = 10;
+    // FORTY AT THE SHALLOW END. `HOARD.baseline` is a free chest one run in
+    // five and it pays a RUN, not a monster — over 21 bodies that is +4 gold a
+    // kill against a mean under 2, so ten runs at band 0 measure whether a
+    // chest turned up. It inverted the ordering twice under changes that had
+    // nothing to do with gold. Band 0 is 21 monsters, so this is nearly free.
+    const runs = band <= 1 ? 40 : 10;
     let banked = 0;
     let killed = 0;
     let cleared = 0;

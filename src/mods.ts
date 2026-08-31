@@ -4,6 +4,7 @@ import {
   GEAR_BASE_BY_ID,
   MOD_BY_ID,
   MOD_TIER_LIFT,
+  STAT_POWER,
   USES,
   baseMods,
   usesFor,
@@ -73,6 +74,21 @@ export const baseTier = (item: Item): number =>
   item.kind === 'crystal'
     ? Number(item.meta?.level) || 1
     : (GEAR_BASE_BY_ID[item.base]?.tier ?? 1);
+
+/** **TOTAL STAT POWER**, off `STAT_POWER` — every line a piece carries, base
+ *  and rolled alike, in one number. An UNPRICED stat is worth nothing here
+ *  rather than guessed at, and the demo holds every implicit to being priced. */
+export function statPower(item: Item): number {
+  const weigh = (stat: string, form: string, value: number): number =>
+    (STAT_POWER[`${stat}:${form}`] ?? 0) * value;
+  // The rating and the swing are not LINES, and are the same kind of thing.
+  let power = weigh('armour', 'flat', item.armour ?? 0)
+    + weigh('damage', 'flat', item.damage ?? 0);
+  for (const mod of [...item.implicits, ...item.mods]) {
+    for (const line of mod.stats) power += weigh(line.stat, line.form, line.value);
+  }
+  return power;
+}
 
 /** What that ladder is called on screen. A crystal's is a level, not a tier. */
 export const tierName = (item: Item): string =>

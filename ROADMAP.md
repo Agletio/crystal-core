@@ -450,11 +450,45 @@ approve; everything else is code that can be written while it renders.
         jewellery bases read as inert. The probe now substitutes what an
         attribute BUYS, off `ATTRIBUTES.per`, which is what it really does. **A
         gear line granting an attribute was untested until this step.**
-- [ ] **Step 6 — the hybrid rule, and the table that makes it checkable.** A
-      hero-side stat-power weight per stat, shaped like `DANGER_STATS`. The demo
-      then asserts both halves: a hybrid piece totals MORE power than a
-      specialist, and a specialist beats it on its own one stat. Without the
-      table this rule is a claim.
+- [x] **Step 6 — the hybrid rule. DONE.** `STAT_POWER`, `statPower()` and
+      `HYBRID.lift`:
+      - **THE RULE WAS NOT IMPLEMENTED AT ALL.** `ARMOUR_BUDGET` is one figure
+        and every `mix` sums to 1, so a hybrid family spent EXACTLY the same 46
+        points as a specialist — twelve families of pure sidegrade. It read as
+        built because the sentence was in the file.
+      - **`HYBRID.lift` IS 1.2**, off the user's own worked example: a
+        specialist helm is 50 armour, ten power; a hybrid is 30 and 30, twelve.
+        Measured, a tier 3 body is 46 power specialist against 55 hybrid.
+      - **HALF TWO NEEDED FOUR MIXES MOVED.** *"You can get more of one stat
+        going specific"* only holds if the family with the MOST of every stat is
+        a specialist, and at 1.2× three hybrids overtook one: `runeguard` and
+        `whisper` on cast speed, `duelist` on attack damage. **And `attackSpeed`
+        had no specialist at all** — only `duelist`, a hybrid, carried it — so
+        `vanguard` took it, which is what makes it a melee family about hitting
+        rather than a second Bulwark.
+      - **THE CHECK READS THE PIECE, not the mix.** `statPower` sums every line
+        a finished item carries, so the assertion is about what a player wears.
+        Asked at every slot and every rung, not one sample.
+      - **AN UNPRICED STAT IS WORTH NOTHING**, so the demo holds every base
+        implicit to being in `STAT_POWER` — otherwise a family goes missing from
+        its own total and the comparison is read off a table with a hole in it.
+        It caught `attackRange:inc`, a bow's own line, on the first run.
+      - **ARMOUR SETS' OWN CHECK WAS THE OLD RULE.** *"Every family spends the
+        SAME points… otherwise 'hybrid' is just the correct answer"* — that is
+        the premise step 6 reverses. It compares against each family's OWN
+        budget now, and the spread WITHIN a group; what stops hybrid being
+        simply the answer is the other half, which THE HYBRID RULE holds.
+      - **JEWELLERY BROKE THE DROP MIX and step 6 found it.** `FAMILIES_IN` read
+        `GearBase.family`, so ten implicits took rings from weight 2 to 20 and
+        **39% of every drop was a ring**. It reads `KEEP_GROUPS` now, which is
+        what its comment already claimed — rings are 5.7%. **Step 8 deletes the
+        filter, so this weight needs a new basis then.**
+      - **`HOARD.baseline` INVERTED THE BAND-WORTH CHECK, TWICE.** A free chest
+        one run in five pays a RUN, not a monster; over band 0's 21 bodies that
+        is +4 gold a kill against a mean under 2, so ten runs measured whether a
+        chest turned up rather than what a monster is worth. Forty runs at the
+        two shallow bands — measured, band 0 goes 1.975 → 1.453 and band 1
+        1.718 → 2.190, and the ordering is real again.
 - [ ] **Step 7 — cooking.** Fish, meals, and a buff that burns down on
       `RolledMod.uses` — the shape already ships. Applied in camp, never
       mid-run; the level slides how many runs it lasts, exactly as it slides a
