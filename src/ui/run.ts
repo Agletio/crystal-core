@@ -41,7 +41,7 @@ import { spend } from '../economy';
 import { bagsFull, crystalsIn, socketed, unsocket } from '../game/state';
 import type { GameState } from '../game/state';
 import { crystalProgress } from '../game/crystals';
-import { bossBeaten, hasMet, takeBoss, takeMet } from '../game/scenes';
+import { bossBeaten, hasMet, takeBoss, takeMet, whoIsDown } from '../game/scenes';
 import { takeTrials } from '../game/trials';
 import { SCENES, SCENE_BY_ID } from '../scenes';
 import type { Hotspot } from '../scenes/camp';
@@ -140,9 +140,6 @@ const SHOUT_FOR = 1.9;
 /** The look at what you called up, there and back. */
 const ARRIVAL = 2.6;
 
-/** How often somebody unmet is standing in a descent. They are found by walking
- *  past — no click, no stop — so this is the only thing that gates a meeting. */
-const MEET_CHANCE = 0.5;
 let arrival = 0;
 const DEFAULT_ZOOM = 2;
 let zoom = DEFAULT_ZOOM;
@@ -456,15 +453,11 @@ function renderKeySocket(grid: HTMLElement): void {
 // Run
 // ---------------------------------------------------------------------------
 
-/** Somebody unmet, sometimes — and only IN THEIR OWN ZONE. `SceneDef.theme` is
- *  where they live, so the Osteomancer is found in the Rot and nowhere else;
- *  a man who turns up in every world is a man who lives in none. */
-function whoIsDown(theme: MapTheme): { id: string; sprite: string } | undefined {
-  const left = SCENES.filter((s) => !s.encounter && s.theme === theme && !hasMet(game, s.id));
-  if (left.length === 0 || Math.random() > MEET_CHANCE) return undefined;
-  const def = left[Math.floor(Math.random() * left.length)];
-  return { id: def.id, sprite: def.who };
-}
+/** What the sim needs of a meeting: who to stand there, and which sprite. */
+const meetsIn = (theme: MapTheme, rung: number) => {
+  const def = whoIsDown(game, theme, rung);
+  return def ? { id: def.id, sprite: def.who } : undefined;
+};
 
 function launch(): void {
   // A socketed key opens the fight AT the door: the descent this entry would
@@ -502,7 +495,7 @@ function launch(): void {
     potionThresholds: game.potions,
     beaten: game.bosses ?? [],
     rung: ran,
-    meets: whoIsDown(runSet(set, trialMod(game.character), ran).theme),
+    meets: meetsIn(runSet(set, trialMod(game.character), ran).theme, ran.rung),
   });
 
   note(

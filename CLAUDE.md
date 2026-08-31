@@ -420,10 +420,12 @@ ditch all the rooms. I want to encounter them randomly in the maps and they
 just say like one thing… then they can be in the camp and you can just talk to
 them."* `SceneDef.theme` is where somebody LIVES and they are only ever found
 there — a man who turns up in every world lives in none. One unmet person from
-THAT zone stands in the room furthest from the way in, at `MEET_CHANCE` a
-descent — placed with NO draw, so
-whether somebody is down there cannot move a single roll — and walking past
-them is the whole meeting: `SceneDef.greets` goes into the log, nothing stops,
+THAT zone stands in the room furthest from the way in, **SCHEDULED and never
+rolled**: `whoIsDown` puts the next one nobody has met at every `MEET.every`
+depth from the `MEET.first`, so finishing a zone is meeting everybody who lives
+in it and a crafting bench is never behind a coin that did not come up. Placed
+with NO draw, so whether somebody is down there cannot move a single roll — and
+walking past them is the whole meeting: `SceneDef.greets` goes into the log, nothing stops,
 and they stand there for the rest of the run. Afterwards they are in the camp,
 and clicking them runs `SceneDef.beats` and then whatever they are FOR: the
 Lampwright's crystal, the Lambengolmor's key, the ossuary's and the orrery's

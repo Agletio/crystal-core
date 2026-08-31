@@ -166,11 +166,14 @@ retired phrasings.
       column with nothing to put in it is never on screen. `campaignLine` and
       `campaignPrize` in `src/ladder.ts` state the finish line on the climb
       before you get there, and the last zone's boss pip says so too.
-- [ ] **Step 3 — the three crafting people, one a zone.** `SceneDef.theme`
-      already places them: the Lampwright in the base world, one of the
-      Cavern's two in the Cavern, the Osteomancer in the Rot. Each is met in
-      that zone's own stretch of the campaign rather than at `MEET_CHANCE` in
-      whatever you socketed.
+- [x] **Step 3 — the three crafting people, one a zone. DONE.** `whoIsDown` is
+      in `src/game/scenes.ts` and SCHEDULED rather than rolled: the next unmet
+      person of that world stands at every `MEET.every` depth from `MEET.first`,
+      which measures out as the Lampwright at The Answering 2, the Glasswright
+      and the Astral-Geometer at The Refraction 2 and 6, and the Osteomancer at
+      The Flowering 2. `MEET_CHANCE` is gone; the demo walks all 42 depths in
+      order and holds every person to turning up, in their own world and off an
+      arena depth, and to never standing there twice.
 - [ ] **Step 4 — what AWARDS the points becomes GRINDS. The WEB SURVIVES.**
       *The user's call: "Tree survives."* All 156 nodes stay exactly as they
       are and points walk them as they do today; what is deleted is `TRIALS`,

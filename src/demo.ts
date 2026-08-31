@@ -139,7 +139,7 @@ import { hasGearArt } from './ui/icons';
 import { lootSpan } from './render/renderer';
 import { RunSim, TICK, runToCompletion, walkToMeeting } from './sim/run';
 import { findPath } from './sim/pathfind';
-import { folkMet, gaveKey, hasMet, keyOwed, takeBoss, takeMet } from './game/scenes';
+import { folkMet, gaveKey, hasMet, keyOwed, takeBoss, takeMet, whoIsDown } from './game/scenes';
 import { TRIAL_CONDITIONS, healTrials } from './game/trials';
 import { TRIAL_POINTS_MAX, canAllocateTrial, canDeallocateTrial, trialNodes, trialPointsFor } from './trials';
 import * as trialsModule from './trials';
@@ -10020,6 +10020,50 @@ rule('THE COLLECTION — do crystals arrive, and do they grow?');
       check(homeless.length === 0, 'and a zone of their own to be found in', homeless.join(', '));
       const zones = new Set(SCENES.filter((s) => !s.encounter).map((s) => s.theme));
       line(`  ${SCENES.filter((s) => !s.encounter).length} people across ${zones.size} zones`);
+
+      // SCHEDULED, INSIDE THEIR OWN ZONE'S STRETCH OF THE CAMPAIGN. *"Encounter
+      // each npc for crafting in each zone respectively."* A coin could leave a
+      // crafting bench behind a roll that never came up, so the whole climb is
+      // walked here in order and everybody has to turn up — in the world they
+      // live in, and BEFORE that zone's arena, which places nobody.
+      {
+        const walk = createGame('fresh');
+        const seen: Record<string, { zone: number; rung: number }> = {};
+        LADDER.zones.forEach((zone, z) => {
+          for (let rung = 1; rung <= zone.rungs; rung++) {
+            const who = whoIsDown(walk, zone.world, rung);
+            if (!who || seen[who.id]) continue;
+            seen[who.id] = { zone: z, rung };
+            takeMet(walk, who.id);
+          }
+        });
+        const folk = SCENES.filter((s) => !s.encounter);
+        const missed = folk.filter((s) => !seen[s.id]).map((s) => s.id);
+        check(
+          missed.length === 0,
+          `walking the ${LADDER_RUNGS} depths in order meets every one of the ${folk.length}, with nothing rolled`,
+          missed.join(', ')
+        );
+        const astray = folk
+          .filter((s) => seen[s.id] && LADDER.zones[seen[s.id].zone].world !== s.theme)
+          .map((s) => `${s.id} in ${LADDER.zones[seen[s.id].zone].name}`);
+        check(astray.length === 0, 'each in the zone whose world they live in', astray.join(', '));
+        const late = folk
+          .filter((s) => seen[s.id] && seen[s.id].rung >= LADDER.zones[seen[s.id].zone].rungs)
+          .map((s) => s.id);
+        check(late.length === 0, 'and none of them on an arena depth, which stands nobody', late.join(', '));
+        line(
+          `  ${folk
+            .map((s) => `${s.id}=${LADDER.zones[seen[s.id].zone].name} ${seen[s.id].rung}`)
+            .join(', ')}`
+        );
+        // AND NEVER TWICE. Re-grinding a meeting depth once they are all met
+        // puts nobody down there, so an old depth is not a second first line.
+        const again = LADDER.zones.flatMap((zone, z) =>
+          [...Array(zone.rungs).keys()].map((i) => whoIsDown(walk, zone.world, i + 1))
+        ).filter(Boolean);
+        check(again.length === 0, 'and re-grinding any of those depths stands nobody there again', String(again.length));
+      }
       // And something to say in the camp both ways round: what they WANT, and
       // one standing line for when they want nothing. Without the second,
       // every visit is a demand and the camp reads as a row of shops.

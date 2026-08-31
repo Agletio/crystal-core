@@ -1962,6 +1962,11 @@ export const LAMPWRIGHT = {
   },
 };
 
+/** WHERE SOMEBODY IS FOUND: their own world, at every `every` depth from the
+ *  `first` and SCHEDULED, so a zone's people are met inside that zone's stretch
+ *  of the campaign. The shortest zone's 12 is three meetings against two. */
+export const MEET = { first: 2, every: 4 };
+
 /** The opening, in numbers: the one stretch where what happens next is
  *  scheduled rather than earned. */
 export const INTRO = {
@@ -2839,9 +2844,8 @@ export const BOSS_KEY_BY_ID: Record<string, BossKeyDef> = Object.fromEntries(
   BOSS_KEYS.map((k) => [k.id, k])
 );
 
-/** WHAT THE WEB IS PAID IN. A trial pays a HANDFUL, so finishing one is an
- *  event rather than a tick; a rung pays one, and only above `freeZone` — the
- *  Fissure pays nothing and the web is SHUT until it is whole. */
+/** WHAT THE WEB IS PAID IN: a HANDFUL a trial, so finishing one is an event
+ *  rather than a tick. `perRung` only sizes `TRIAL_POINTS_MAX` — no rung pays. */
 export const TRIAL_POINTS = { perTrial: 5, perRung: 1, freeZone: 0 };
 
 /** Something done once, paying `TRIAL_POINTS.perTrial` into the trials web. */
