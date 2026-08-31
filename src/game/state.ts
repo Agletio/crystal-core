@@ -21,9 +21,7 @@ import {
   PROVING,
   CRYSTAL_ILVL,
   UNIQUE_BY_ID,
-  keepGroupFor,
   starterWeapon,
-  tierKeepId,
 } from '../data';
 import type { EquipSlotDef, MapTheme, RunSlotDef } from '../types';
 import {
@@ -92,13 +90,6 @@ export interface GameState {
   materials: Item[];
   /** WHAT THE STATIONS ARE WORKING ON, advanced by a CLEAR. */
   jobs: WorkJob[];
-  /**
-   * What the auto-sell filter turns into gold on the way up: `KEEP_GROUPS` ids
-   * and `tierKeepId` rungs in ONE list. Stored as what is SOLD rather than what
-   * is kept, so an empty list — a fresh game, or a save written before any of
-   * this — keeps everything and the filter starts doing nothing.
-   */
-  junk: string[];
   /** How big the stash currently is. Bought up with gold. */
   stashSlots: number;
   character: Character;
@@ -132,9 +123,6 @@ export interface GameState {
   /** What you sold, newest first, each at what it paid. Buying one back costs
    *  the same, so the counter can never mint or eat gold. */
   sold: SoldEntry[];
-  /** Stored, not rolled on open: one you re-roll by closing is not a choice. */
-  shopStock: Item[];
-  shopLevel: number;
   /** Key overrides by binding id; a missing one takes the table's default. */
   keys: Record<string, string>;
   /** Share of a pool a potion fires at, by id. Charges are `RunState`'s. */
@@ -166,7 +154,6 @@ export function createGame(mode: StartMode = 'dev'): GameState {
     relics: [],
     materials: [],
     jobs: [],
-    junk: [],
     stashSlots: STASH_START,
     character: makeCharacter({}, 'strike'),
     sockets: {},
@@ -179,8 +166,6 @@ export function createGame(mode: StartMode = 'dev'): GameState {
     given: [],
     quests: [],
     sold: [],
-    shopStock: [],
-    shopLevel: 0,
     keys: {},
     potions: {},
     parked: false,
@@ -235,7 +220,6 @@ export function resetGame(game: GameState, mode: StartMode): void {
     : [];
   game.jobs = [];
   game.stash = plain.slice(room);
-  game.junk = [];
   game.stashSlots = Math.max(STASH_START, game.stash.length);
 
   // The dev preset wears a rolled set, so the stat pipeline has something in it.
@@ -268,10 +252,6 @@ export function resetGame(game: GameState, mode: StartMode): void {
   if (mode === 'dev') game.character.paidCampaign = true;
   game.called = null;
   game.sold = [];
-  // Zero, not the character's level, so the next open restocks rather than
-  // showing whatever the previous game happened to be carrying.
-  game.shopStock = [];
-  game.shopLevel = 0;
 }
 
 /** Granted once, on the first cleared descent. Returns what it gave. */
@@ -385,47 +365,19 @@ export function removeItem(game: GameState, item: Item): boolean {
   return takeFrom(game.inventory, item);
 }
 
-/**
- * Whether the filter lets this piece up out of the Fissure. Kept when its RUNG
- * is kept AND its GROUP is, so "tier 3 mage gear" is two clicks rather than a
- * row per combination. A named piece is never junk, and neither is a PERFECT
- * one: both are only ever a decision, and a filter set weeks ago was not a
- * decision about this one.
- */
-export function keepsItem(game: GameState, item: Item): boolean {
-  if (!canSell(item) || isUnique(item) || isPerfect(item)) return true;
-  const junk = game.junk ?? [];
-  if (junk.length === 0) return true;
-  const base = GEAR_BASE_BY_ID[item.base];
-  if (!base) return true;
-  const group = keepGroupFor(base);
-  return !junk.includes(tierKeepId(baseTier(item))) && !(group && junk.includes(group.id));
-}
-
-/** What a cleared descent came up with, once the filter has been through it. */
+/** What a cleared descent came up with. */
 export interface Banked {
   kept: Item[];
-  sold: number;
-  gold: number;
 }
 
 /**
- * A cleared run's loot, banked whole. What the filter junks turns into gold on
- * the way up; the rest goes into the bag even when that puts it OVER its limit,
- * since splitting a descent's drops is worse than a bag reading 34/32. A filter
- * sale stays OFF the counter — a descent's worth would push every deliberate
- * sale off a twelve-deep shelf.
+ * A cleared run's loot, banked WHOLE — there is no filter any more, because
+ * there is nothing to filter. It goes into the bag even when that puts it OVER
+ * its limit: splitting a descent's drops is worse than a bag reading 34/32.
  */
 export function bankLoot(game: GameState, items: Item[]): Banked {
-  const out: Banked = { kept: [], sold: 0, gold: 0 };
+  const out: Banked = { kept: [] };
   for (const item of items) {
-    if (!keepsItem(game, item)) {
-      const paid = sellPrice(item);
-      grant(game.wallet, 'gold', paid);
-      out.sold++;
-      out.gold += paid;
-      continue;
-    }
     out.kept.push(item);
     if (item.kind === 'gear') game.inventory.push(item);
     else addItem(game, item);

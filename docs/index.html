@@ -1177,8 +1177,6 @@
   /* The stash is a modal, not the dock: it can be as deep as you have paid
      for, and scroll if it outgrows the card. */
   /* Where the loop stops. The count going red is the whole warning. */
-  .keeprow { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 12px; }
-  .keepbtn { min-width: 92px; justify-content: center; text-align: center; }
   .slots--stash {
     grid-template-columns: repeat(auto-fill, 40px);
     grid-template-rows: none;
@@ -2290,9 +2288,6 @@
   </div>
 </div>
 
-<!-- The auto-sell filter. Clicked in what you KEEP, and read on the way up
-     out of a cleared descent: what it does not keep never reaches a container
-     at all, it arrives as gold. -->
 <!-- The Lampwright. A body on the map you walk to, not a line in a report:
      the crystal is handed over here and is yours from that moment, whatever
      happens further down. -->
@@ -2515,12 +2510,18 @@
     </div>
     <div class="modal__body">
       <div class="panel">
-        <p class="panel__title">On the shelf</p>
-        <div class="buys" id="shop-stock"></div>
+        <p class="panel__title">Under the counter</p>
+        <p class="empty" id="shop-gamble-hint"></p>
+        <div class="buys" id="shop-gamble"></div>
       </div>
       <div class="panel">
         <p class="panel__title">Crafting supplies</p>
         <div class="buys" id="workshop"></div>
+      </div>
+      <div class="panel">
+        <p class="panel__title">Raw material</p>
+        <p class="empty" id="shop-raw-hint"></p>
+        <div class="buys" id="shop-raw"></div>
       </div>
       <div class="panel">
         <p class="panel__title">Selling</p>
@@ -2730,27 +2731,11 @@
     <div class="modal__body">
       <div class="settabs">
         <button class="mini mini--on" id="set-tab-keys">Keys</button>
-        <button class="mini" id="set-tab-filter">Auto-sell</button>
         <button class="mini" id="set-tab-book">The Book</button>
       </div>
       <div id="set-pane-keys">
         <p class="skillhead__sub">Click a key to rebind it. Escape always closes what is on top.</p>
         <div class="keyrows" id="settings-keys"></div>
-      </div>
-      <div id="set-pane-filter" hidden>
-        <div class="settabs">
-          <button class="chip" id="filter-all">Keep everything</button>
-          <button class="chip" id="filter-none">Keep nothing</button>
-        </div>
-        <div class="panel">
-          <p class="empty" id="filter-hint"></p>
-          <div class="dockcol__label">Rungs</div>
-          <div class="keeprow" id="filter-tiers"></div>
-          <div class="dockcol__label">Weapons and jewellery</div>
-          <div class="keeprow" id="filter-gear"></div>
-          <div class="dockcol__label">Armour</div>
-          <div class="keeprow" id="filter-armour"></div>
-        </div>
       </div>
       <div id="set-pane-book" hidden>
         <input class="find" id="book-find" placeholder="Find a word" />

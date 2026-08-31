@@ -32,7 +32,6 @@ import { closeMenu, initMenu, isMenuOpen } from './ui/menu';
 import { initCraft, openCraft, closeCraft, isCraftOpen, refreshCraft } from './ui/craft';
 import { initShop, openShop, closeShop, isShopOpen, refreshShop } from './ui/shop';
 import { initStash, openStash, closeStash, isStashOpen } from './ui/stash';
-import { initFilter } from './ui/filter';
 import { initMet, isMetOpen } from './ui/met';
 import { initGraft, isGraftOpen } from './ui/graft';
 import { initSpeech, isSpeaking } from './ui/speech';
@@ -276,12 +275,6 @@ initCraft(game, onRunFocused, () => {
 initShop(game);
 // Closing the stash hands the dock back to the map, same as crafting does.
 initStash(game, onRunFocused);
-// What the filter keeps decides whether a descent fills the bag, and a full
-// bag is what shuts the Fissure — so the launcher re-reads.
-initFilter(game, () => {
-  refreshRunPanels();
-  refreshShop();
-});
 // Socketing from here changes the set the Fissure is holding, so the map re-reads.
 initCrystals(game, refreshRunPanels);
 // Loading a batch takes the raw out of the bag, so the dock is already stale.

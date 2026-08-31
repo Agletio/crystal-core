@@ -774,7 +774,7 @@ const openCounter = () => {
 assert($('shop').hidden === true, 'the shop starts closed');
 assert(!$('craft').contains($('workshop')), 'the shop is not inside crafting');
 openCounter();
-assert($('shop').hidden === false, 'the shop opens — it is the Lampwright\'s shelf');
+assert($('shop').hidden === false, 'the shop opens — it is the Lampwright\'s counter');
 
 const buys = all('#workshop button.buy');
 assert(buys.length >= 1, 'the shop lists recipes', String(buys.length));
@@ -797,17 +797,29 @@ assert(
   buyNames().join(', ')
 );
 
-// Random gear on the shelf, priced and one-of-each.
-const stock = () => all('#shop-stock button.buy');
-assert(stock().length >= 2, 'the shop stocks gear', String(stock().length));
+// --- NOTHING NAMED IS SOLD: the counter is a gamble ------------------------
+// You buy "a ring", not a ring you read first. A shelf of named pieces was the
+// one place gold could beat the bench, and gear you wear is gear you MADE.
+assert($('shop-stock') === null, 'the shelf of named gear is gone');
+const gambles = () => all('#shop-gamble button.buy');
+assert(gambles().length >= 6, 'the counter offers one gamble per kind', String(gambles().length));
 assert(
-  all('#shop-stock .buy__cost').every((n) => /\d+ gold/.test(n.textContent)),
-  'every piece shows a price'
+  all('#shop-gamble .buy__name').every((n) => /^An? (pair of )?[a-z]+$/.test(n.textContent)),
+  'and every one of them names a KIND rather than a piece',
+  all('#shop-gamble .buy__name')[0]?.textContent
 );
 assert(
-  all('#shop-stock .buy__cost').every((n) => /Tier \d/.test(n.textContent)),
-  'and its base tier',
-  all('#shop-stock .buy__cost')[0]?.textContent
+  all('#shop-gamble .buy__cost').every((n) => /^\d+ gold$/.test(n.textContent)),
+  'each priced in gold'
+);
+
+// Raw material, at a bad rate: the smoothing for a recipe you are two short of.
+const raws = () => all('#shop-raw button.buy');
+assert(raws().length >= 1, 'the counter also sells raw material', String(raws().length));
+assert(
+  all('#shop-raw .buy__cost').every((n) => /\d+ gold · /.test(n.textContent)),
+  'priced in gold, and said with the world it comes out of',
+  all('#shop-raw .buy__cost')[0]?.textContent
 );
 
 // Prices print words, not wallet keys — a modifier rendering `areaOfEffect`
@@ -865,61 +877,15 @@ assert(
   text('inv-gear-label')
 );
 
-// --- the filter -----------------------------------------------------------
-// What comes up out of the Fissure with you and what arrives as gold. Clicked
-// in what you KEEP, and stored as the inverse, so a save that has never opened
-// it keeps everything.
-// It lives in Settings now: a rule you set once belongs with the other rules
-// you set once, not on a rail beside the screens you open every descent.
+// --- settings, which is keys and the book now -----------------------------
+// The FILTER is gone with the heap it existed to sort: a clear banks the lot,
+// and what you do not want is dismantled or sold rather than never picked up.
 assert($('settings').hidden === true, 'settings starts closed');
 $('open-settings').click();
 assert($('settings').hidden === false, 'and opens from the rail');
-$('set-tab-filter').click();
-assert($('set-pane-filter').hidden === false, 'the auto-sell filter is a tab in it');
-assert(document.getElementById('open-filter') === null, 'and it left the rail behind');
-
-const keepToggles = () => all('#set-pane-filter .keepbtn');
-assert(keepToggles().length > 3, 'it draws a toggle per rung and per group', String(keepToggles().length));
-assert(
-  all('#filter-tiers .keepbtn').length === 3,
-  'three rungs, which is what a base tier is',
-  String(all('#filter-tiers .keepbtn').length)
-);
-assert(all('#filter-gear .keepbtn').length > 0, 'weapons and jewellery in their own row');
-assert(all('#filter-armour .keepbtn').length > 0, 'and the armour sets in theirs');
-assert(
-  keepToggles().every((b) => b.classList.contains('mini--on')),
-  'and everything starts KEPT, so an unopened filter does nothing',
-  String(keepToggles().filter((b) => !b.classList.contains('mini--on')).length)
-);
-assert(
-  /keeping everything/i.test(text('filter-hint')),
-  'which it says, rather than leaving you to read the buttons',
-  text('filter-hint')
-);
-
-// A toggle is the whole interface: click one and it is what gets sold.
-keepToggles()[0].click();
-assert(
-  !keepToggles()[0].classList.contains('mini--on'),
-  'clicking one turns it off'
-);
-assert(
-  !/keeping everything/i.test(text('filter-hint')),
-  'and the line stops saying nothing is being sold',
-  text('filter-hint')
-);
-$('filter-all').click();
-assert(
-  keepToggles().every((b) => b.classList.contains('mini--on')),
-  'Keep everything puts the lot back'
-);
-$('filter-none').click();
-assert(
-  keepToggles().every((b) => !b.classList.contains('mini--on')),
-  'and Keep nothing is the other end of the same rule'
-);
-$('filter-all').click();
+assert(document.getElementById('open-filter') === null, 'the filter left the rail behind');
+assert(document.getElementById('set-tab-filter') === null, 'and its tab in settings with it');
+assert(document.getElementById('set-pane-filter') === null, 'and the pane behind that tab');
 
 // --- the keys, and the book ------------------------------------------------
 $('set-tab-keys').click();

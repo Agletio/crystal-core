@@ -1,7 +1,6 @@
 /**
- * Core types. Gear and crystals are the SAME structure — a crystal is an item
- * whose mods affect map generation instead of your character — so every
- * currency works on both with no special-casing.
+ * Core types. Gear and crystals are the SAME structure — a crystal's mods
+ * affect map generation — so every currency works on both with no special case.
  */
 
 export type StatForm = 'flat' | 'inc' | 'more';
@@ -121,11 +120,13 @@ export interface DropGate {
   minPower?: number;
   /** The one world it comes out of. */
   zone?: MapTheme;
+  /** WHERE it can come from. Absent means both, and nothing is authored
+   *  behind it yet: the seam is here so a counter-only piece is a table row. */
+  source?: 'floor' | 'gamble';
 }
 
-/** A fixed identity: lines no currency can touch and a switch out of `GRANTS`,
- *  closer to a tree passive than to a rolled modifier. A version of a BASE, so
- *  slot, art and armour come from there. */
+/** A fixed identity: lines no currency can touch and a switch out of `GRANTS`.
+ *  A version of a BASE, so slot, art and armour come from there. */
 export interface UniqueDef {
   id: string;
   name: string;
@@ -202,7 +203,7 @@ export interface EquipSlotDef {
   accepts: GearKind[];
 }
 
-/** A socket in the Fissure. `accepts` is an item kind, so a slot that takes
+/** A socket in the Fissure. `accepts` is an item KIND, so a slot taking
  *  something other than a crystal is one more entry. */
 export interface RunSlotDef {
   id: string;

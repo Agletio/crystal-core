@@ -22,8 +22,6 @@ import {
   FAMILY_BY_ID,
   FORGED_BY_ID,
   GEAR_BASE_BY_ID,
-  KEEP_GROUPS,
-  KEEP_TIERS,
   LADDER,
   MAIN_SKILLS,
   MAIN_SLOT,
@@ -38,7 +36,6 @@ import {
   SKILL_BY_ID,
   UNIQUE_BY_ID,
   crystalName,
-  tierKeepId,
   MATERIAL_BY_ID,
   MEAL_BY_FISH,
   PROFESSION_BY_ID,
@@ -462,15 +459,8 @@ export function heal(game: GameState): Healed {
   game.bosses = (Array.isArray(game.bosses) ? game.bosses : []).filter((id) => BOSS_BY_ID[id]);
   if (game.called && !BOSS_BY_ID[game.called]) game.called = null;
 
-  // A row nothing resolves goes: dropping one only ever KEEPS more, which is
-  // the safe direction for a repair nobody asked for.
-  {
-    const rows = new Set([
-      ...KEEP_GROUPS.map((g) => g.id),
-      ...KEEP_TIERS.map((t) => tierKeepId(t)),
-    ]);
-    game.junk = (Array.isArray(game.junk) ? game.junk : []).filter((id) => rows.has(id));
-  }
+  // The FILTER is gone with the heap it sorted, and so is its stored list.
+  delete (game as unknown as { junk?: string[] }).junk;
 
   // A threshold for a potion that no longer exists costs its entry; one out of
   // range is clamped rather than dropped, so a save never fires a flask at a

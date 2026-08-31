@@ -100,12 +100,10 @@ export const AILMENT_NAMES: Record<string, string> = {
 
 /**
  * WHAT A DAMAGE TYPE DOES over time. Dealing the type applies it at `chance`
- * percent, so an ailment is a fact about the damage and not a node somebody
- * bought. A damage ailment scales by its OWN tags and nothing else — Fire,
- * Burn and Damage over Time reach a Burn where Spell, Attack and Critical
- * never do, which falls out of the tag filter `computeStat` already applies.
- * Prismatic has no row on purpose: what it gets instead is that little down
- * here wards against it, which is a `DEFENCE` rule.
+ * percent, so an ailment is a fact about the damage. One scales by its OWN tags
+ * and nothing else — Fire, Burn and Damage over Time reach a Burn where Spell,
+ * Attack and Critical never do. Prismatic has no row on purpose: what it gets
+ * instead is that little down here wards against it, a `DEFENCE` rule.
  */
 export interface AilmentDef {
   id: string;
@@ -243,13 +241,10 @@ export const stunChanceFor = (share: number): number =>
   Math.max(0, Math.min(1, share ** WARRIOR.stunPower));
 
 /**
- * WHAT A TRADE GIVES FOR NOTHING, before a point is spent. Four rows against
- * each other, because a baseline is what tells two trades apart in the first
- * hour rather than at the point cap.
- *
- * The Alchemist's is charged by KILLS and never by a clock: seconds would hand
- * a build grinding down one tanky body permanent regeneration for nothing,
- * where a room full of things to kill is where the flasks should come back.
+ * WHAT A TRADE GIVES FOR NOTHING, before a point is spent — what tells two of
+ * them apart in the first hour rather than at the point cap. The Alchemist's is
+ * charged by KILLS and never by a clock: seconds would hand a build grinding
+ * down one tanky body permanent regeneration for nothing.
  */
 export const TRADE_BASE = {
   alchemistChargePerKill: 1 / 8,
@@ -329,11 +324,10 @@ export const BASE_TIER_ILVL = [1, 22, 46];
 
 // --- armour ----------------------------------------------------------------
 //
-// Twelve families across four slots and three rungs. Every family spends the
-// SAME budget at the same rate and differs only in how it splits it, so a
-// hybrid is a redistribution rather than a surplus — the demo re-adds the
-// points to prove it. Slot layouts never vary by family: a better split AND
-// more openings is how one becomes the only choice.
+// Twelve families across four slots and three rungs, every one spending the
+// SAME budget and differing only in how it splits it. Slot layouts never vary
+// by family: a better split AND more openings is how one becomes the only
+// choice.
 
 /** Budget points per rung, before the slot share. */
 const ARMOUR_BUDGET = [20, 32, 46];
@@ -557,11 +551,10 @@ export const implicitSpend = (base: GearBase): number =>
   }, 0);
 
 /**
- * Weapons, in five families. Every weapon carries an IMPLICIT no craft can
- * touch — wands spell damage or cast speed, swords attack speed, daggers flat
- * crit, maces flat damage of ONE type, so a mace commits you. Rungs within a
- * family are gated by ilvl, so bases are themselves progression. Bows are the
- * one TWO-HANDED family, and the off hand is what pays for their increase.
+ * Weapons, in five families, each carrying an IMPLICIT no craft can touch —
+ * wands spell damage or cast speed, swords attack speed, daggers flat crit,
+ * maces flat damage of ONE type, so a mace commits you. Bows are the one
+ * TWO-HANDED family, and the off hand is what pays for their increase.
  */
 const WEAPON_SLOTS = { offence: 5, defence: 1, utility: 0 };
 
@@ -752,14 +745,10 @@ export const SHIELD_BASES: GearBase[] = [
 const TRINKET_SLOTS = { offence: 3, defence: 2, utility: 1 };
 
 /**
- * TEN IMPLICITS, and JEWELLERY IS WHAT CARRIES THEM. A ring and an amulet of
- * each, at three rungs, so the choice between two slots is a choice about what
- * you are short of rather than about which is the bigger number.
- *
- * `per` is what one POINT of the budget buys, which is the one place a
- * resistance point and a Strength point are priced against each other. `hue`
- * is what the icon is washed toward — *"no new icons"*, so `gear_ring` and
- * `gear_amulet` are RECOLOURED and the shape stays the slot's.
+ * TEN IMPLICITS, and JEWELLERY IS WHAT CARRIES THEM: a ring and an amulet of
+ * each, at three rungs. `per` is what one POINT of the budget buys, the one
+ * place a resistance point and a Strength point are priced against each other.
+ * `hue` is what the icon is washed toward — *"no new icons"*.
  */
 export interface JewelImplicit {
   id: string;
@@ -845,97 +834,24 @@ export const GEAR_BASE_BY_ID: Record<string, GearBase> = Object.fromEntries(
   GEAR_BASES.map((b) => [b.id, b])
 );
 
-// --- what the filter is clicked in -----------------------------------------
-//
-// A group is a SET somebody builds toward — every mage piece, every bow — never
-// one base at a time. Both halves are DERIVED from the tables above, so a
-// family added there lands in a group without being listed twice.
+// --- what a kind is WORTH as a drop ----------------------------------------
 
-export interface KeepGroup {
-  id: string;
-  name: string;
-  /** What the row holds, said in the names it actually drops under. */
-  detail: string;
-  holds(base: GearBase): boolean;
-}
-
-/** What an archetype is called to somebody choosing gear rather than reading
- *  the table. `melee` is the one that has no obvious word for it. */
-const ARCHETYPE_NAME: Record<string, string> = {
-  melee: 'Tank',
-  spell: 'Mage',
-  rogue: 'Rogue',
+/**
+ * **HOW MANY MEANINGFULLY DIFFERENT THINGS A KIND HOLDS**, authored and never
+ * COUNTED: ten ring implicits counted took rings to 39% of every drop. A weight
+ * that tracks content volume is a bug waiting for the next table to grow, so
+ * this is a decision and the demo holds every kind to being in it.
+ */
+export const KIND_VARIETY: Record<string, number> = {
+  weapon: 8,
+  shield: 1,
+  helmet: 3,
+  body: 3,
+  gloves: 3,
+  boots: 3,
+  ring: 1,
+  amulet: 1,
 };
-
-const capitalise = (word: string): string => word[0].toUpperCase() + word.slice(1);
-
-/** One group per ARCHETYPE PAIRING, not per family: what a person means by
- *  "mage gear" is both mage families, and a hybrid is a third thing again. */
-const armourGroups = (): KeepGroup[] => {
-  const out: KeepGroup[] = [];
-  for (const family of ARMOUR_FAMILIES) {
-    const key = family.archetypes.join('_');
-    if (out.some((g) => g.id === `armour_${key}`)) continue;
-    const kin = ARMOUR_FAMILIES.filter((f) => f.archetypes.join('_') === key);
-    out.push({
-      id: `armour_${key}`,
-      name: family.archetypes.map((a) => ARCHETYPE_NAME[a] ?? a).join(' / '),
-      detail: `${kin.map((f) => f.words[2]).join(' and ')} armour`,
-      holds: (base) => kin.some((f) => f.id === base.family),
-    });
-  }
-  return out;
-};
-
-const weaponGroups = (): KeepGroup[] => {
-  const out: KeepGroup[] = [];
-  for (const base of WEAPON_BASES) {
-    const family = base.family ?? base.id;
-    if (out.some((g) => g.id === `weapon_${family}`)) continue;
-    const kin = WEAPON_BASES.filter((b) => b.family === family);
-    out.push({
-      id: `weapon_${family}`,
-      name: `${capitalise(family)}s`,
-      detail: kin.map((b) => b.name).join(', '),
-      holds: (b) => b.family === family,
-    });
-  }
-  return out;
-};
-
-export const KEEP_GROUPS: KeepGroup[] = [
-  ...weaponGroups(),
-  {
-    id: 'shield',
-    name: 'Shields',
-    detail: SHIELD_BASES.map((b) => b.name).join(', '),
-    holds: (base) => base.kind === 'shield',
-  },
-  ...armourGroups(),
-  {
-    id: 'amulet',
-    name: 'Amulets',
-    detail: 'Pendants, Amulets and Torcs',
-    holds: (base) => base.kind === 'amulet',
-  },
-  {
-    id: 'ring',
-    name: 'Rings',
-    detail: 'Bands, Rings and Signets',
-    holds: (base) => base.kind === 'ring',
-  },
-];
-
-/** The group a base falls in. Every base is in exactly one; the demo holds it. */
-export const keepGroupFor = (base: GearBase): KeepGroup | undefined =>
-  KEEP_GROUPS.find((g) => g.holds(base));
-
-/** The filter's id for a base rung, alongside a group's. One namespace, so
- *  `GameState.junk` is a flat list rather than two lists that can disagree. */
-export const tierKeepId = (tier: number): string => `t${tier}`;
-
-/** Rungs, low to high. Three of them, and `BASE_TIER_ILVL` is why. */
-export const KEEP_TIERS: number[] = BASE_TIER_ILVL.map((_, i) => i + 1);
 
 // --- mod pool --------------------------------------------------------------
 //
@@ -2460,12 +2376,10 @@ export const WORK = {
 
 /**
  * CRAFTING. **MATERIALS DECIDE WHAT AN ITEM IS; CURRENCY DECIDES WHAT IS ON
- * IT** — a craft picks the BASE and its IMPLICIT, and every modifier is still
- * the bench's. **A LEVEL SLIDES THE WINDOW**: *"a plate helm can get between
- * 100–150 armour, where if you're 1 blacksmithing it's always 100–105 and if
- * you're 99 it's always 145–150."* `span` is how far off the row a craft can
- * land EACH WAY, so a DROP is exactly the row and the level is the whole of
- * what separates a craft from it. **A TIER IS HOW MANY DIFFERENT VERSIONS THE
+ * IT.** **A LEVEL SLIDES THE WINDOW**: *"a plate helm can get between 100–150
+ * armour, where if you're 1 blacksmithing it's always 100–105 and if you're 99
+ * it's always 145–150."* `span` is how far off the row a craft lands EACH WAY,
+ * so a DROP is exactly the row. **A TIER IS HOW MANY DIFFERENT VERSIONS THE
  * RECIPE DEMANDS**, which is why depth matters without deep ore being better.
  */
 export const CRAFT = {
@@ -3709,9 +3623,18 @@ export const DROP_BANDS: DropBand[] = [
 export const bandFor = (power: number): DropBand =>
   DROP_BANDS[Math.max(0, Math.min(DROP_BANDS.length - 1, Math.round(power)))];
 
-/** Whether a gated thing exists in this run at all. No gate opens everywhere. */
-export const opensHere = (gate: DropGate | undefined, power: number, zone: MapTheme): boolean =>
-  !gate || ((gate.minPower ?? 0) <= power && (gate.zone === undefined || gate.zone === zone));
+/** Whether a gated thing exists HERE. `from` is which road is asking — the
+ *  floor or the counter — and an absent `source` opens to both. */
+export const opensHere = (
+  gate: DropGate | undefined,
+  power: number,
+  zone: MapTheme,
+  from: 'floor' | 'gamble' = 'floor'
+): boolean =>
+  !gate
+  || ((gate.minPower ?? 0) <= power
+    && (gate.zone === undefined || gate.zone === zone)
+    && (gate.source === undefined || gate.source === from));
 
 // --- uniques ---------------------------------------------------------------
 //
@@ -3847,38 +3770,63 @@ export const PERFECT = {
   dangerFull: 900,
 };
 
-// --- the shop's shelf ------------------------------------------------------
+// --- the shop's counter ----------------------------------------------------
 //
-// Grows with you. At level 1 it holds a Rough piece or two and the currencies
-// that work on them. It never reaches the top: the best a shop sells is a rung
-// below what a map of the same era drops, so buying is a floor under your luck
-// rather than a way around the crystal ladder.
+// NOTHING NAMED IS SOLD. You buy "a ring", not a ring you read first, so the
+// counter can never be the piece you were going to make — gear you WEAR is
+// gear you MADE, and this is the gold sink beside it.
 
 export const SHOP = {
-  /** Pieces on the shelf: grows one per this many levels, capped. */
-  slotsPerLevel: 4,
-  minSlots: 2,
-  maxSlots: 8,
-  /** Item level of stock, as a multiple of character level. */
+  /** Item level of what the counter deals in, as a multiple of character level. */
   ilvlPerLevel: 1.6,
   /** Gold per item level, before the base's tier. */
   pricePerIlvl: 2.4,
   /** Price multiplier by base tier. Steeper than the mod count, on purpose. */
   priceByTier: [1, 2.6, 7],
-  /**
-   * What a SALE pays, against the same base. Six modifiers reach 1.9×, so the
-   * fraction has to stay under 1/1.9 or buying a full piece and selling it back
-   * would mint gold out of the shelf.
-   */
+  /** What a SALE pays, against the same base. */
   sellFraction: 0.35,
   /** What one rolled modifier adds to a sale, as a fraction of the base. */
   pricePerMod: 0.15,
-  /**
-   * What a SALE pays for the tier, flatter than what a purchase charges for
-   * it: a good piece is worth having, not worth selling. Every entry stays at
-   * or under its purchase multiplier, or the counter would mint gold.
-   */
+  /** What a SALE pays for the tier: a good piece is worth having rather than
+   *  worth selling, so this stays flat where the gamble's price does not. */
   sellByTier: [1, 1.8, 3.2],
+};
+
+/**
+ * THE GAMBLE. One entry per kind, priced ABOVE what the best possible piece of
+ * that item level could ever sell for — so buying and selling back is a loss
+ * however the roll lands, which is the whole of what stops a gold press.
+ */
+export const GAMBLE = {
+  /** What one costs, as a multiple of the dearest sale at that item level. */
+  over: 1.75,
+  /** Floor, so a level-1 gamble is several clears rather than pocket change. */
+  floor: 120,
+  /** Modifiers a bought piece rolls. Never a Perfect base: that is the floor's. */
+  fill: 6,
+  /** Chance of a named piece instead. A lottery on the end of a sink. */
+  uniqueChance: 0.004,
+};
+
+/**
+ * WHAT GOLD BUYS OTHERWISE: raw material, at a rate a descent beats every time.
+ * It exists to finish a recipe you are two Bolts short of, never to feed one —
+ * a clear gathers about 21 raw, and this is by WORLD because a world is the
+ * whole of what makes one material deeper than another.
+ */
+export const MATERIAL_PRICE: Record<MapTheme, number> = {
+  fissure: 60,
+  prismatic: 400,
+  demonic: 900,
+  seam: 2200,
+};
+
+/** Character level the counter starts stocking each world's raw at. */
+export const MATERIAL_SOLD_AT: Record<MapTheme, number> = {
+  fissure: 1,
+  prismatic: 20,
+  demonic: 40,
+  seam: 60,
 };
 
 export const LOOT = {

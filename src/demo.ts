@@ -89,15 +89,14 @@ import {
   JEWEL_IMPLICITS,
   STAT_POWER,
   GEAR_BASE_BY_ID,
-  KEEP_GROUPS,
-  KEEP_TIERS,
+  KIND_VARIETY,
   WARD_GROUPS,
   WEAPON_SPECIALITY,
   PERFECT,
-  tierKeepId,
-  keepGroupFor,
   BASE_TIER_MODS,
   MATERIALS,
+  MATERIAL_PRICE,
+  GATHER,
   MATERIAL_FAMILIES,
   CRAFT,
   MATERIAL_BY_ID,
@@ -144,7 +143,11 @@ import {
   makeCrystal,
   makeMaterial,
   pickGearBase,
-  priceOfItem,
+  gamblePrice,
+  bestSale,
+  soldHere,
+  gambleFor,
+  shopIlvl,
   recipeInputs,
   rollCrystal,
   makeGear,
@@ -363,7 +366,6 @@ import {
   handClash,
   armForSkill,
   giftWeapon,
-  keepsItem,
   plainGear,
   isUnique,
   replaceItem,
@@ -1114,72 +1116,47 @@ rule('DROPS — does the set decide what the map can give you?');
 }
 
 // ===========================================================================
-rule('THE FILTER — what comes up out of the Fissure, and can the loop wedge?');
+rule('THE BAG — what comes up out of the Fissure, and can the loop wedge?');
 
-// There is one container now: your bag. Everything a cleared descent found
-// either lands in it or arrives as gold, and which of the two is a standing
-// rule you set once. What has to hold: a run never loses a drop, capacity is
-// read between runs so nothing is split, the filter is read on the way up and
-// nowhere else, and there is always a way back under the limit — otherwise the
-// game has a state you cannot play out of.
+// There is one container: your bag, and everything a cleared descent found
+// lands in it. What has to hold: a run never loses a drop, capacity is read
+// between runs so nothing is split, and there is always a way back under the
+// limit — otherwise the game has a state you cannot play out of.
 {
-  // Every base is in EXACTLY one group, or the filter has a hole a piece falls
-  // through — and a piece nothing matches would be silently unsellable forever.
+  // WHAT THE MIX IS. *"you end up with just a ton of rings and amulets."*
+  // Weighted by SLOTS alone that was true and measured: jewellery is 10 rows
+  // of implicit an armour family is one of, so ten bases read as ten times the
+  // variety. `KIND_VARIETY` is AUTHORED for exactly that reason — a weight
+  // that tracks how many rows a table happens to hold is a weight the next
+  // table to grow silently moves.
   {
-    const homeless = GEAR_BASES.filter((b) => !keepGroupFor(b));
-    const doubled = GEAR_BASES.filter((b) => KEEP_GROUPS.filter((g) => g.holds(b)).length > 1);
-    line(`  ${KEEP_GROUPS.length} groups over ${GEAR_BASES.length} bases: ` +
-      KEEP_GROUPS.map((g) => `${g.name} ${GEAR_BASES.filter((b) => g.holds(b)).length}`).join(', '));
-    check(
-      homeless.length === 0 && doubled.length === 0,
-      'every gear base falls in exactly one keep group',
-      `${homeless.length} in none, ${doubled.length} in two`
-    );
-
-    // WHAT A FILTER LEAVES. *"I end up just immediately filtering all except
-    // 1/2 base types and 1/2 weapons. The problem is doing that with the way
-    // items are weighted you end up with just a ton of rings and amulets."*
-    // Weighted by SLOTS alone that was true and measured: a ring cannot be
-    // filtered by family, so it survived every cut whole while a weapon family
-    // was cut to an eighth. A gauge, printed rather than asserted.
     const roll = new Rng(7);
     const share: Record<string, number> = {};
     const SPINS = 20000;
     for (let i = 0; i < SPINS; i++) {
       const base = pickGearBase(60, roll);
-      const group = base ? keepGroupFor(base) : undefined;
-      if (group) share[group.name] = (share[group.name] ?? 0) + 1;
+      if (base) share[base.kind] = (share[base.kind] ?? 0) + 1;
     }
-    const pct = (name: string) => (100 * (share[name] ?? 0)) / SPINS;
-    // One archetype's three groups and one weapon family: the cut the line was
-    // written about, with jewellery kept because there is nothing to cut it by.
-    const kept = ['Tank', 'Tank / Mage', 'Tank / Rogue', 'Maces', 'Rings', 'Amulets'];
-    const total = kept.reduce((n, k) => n + pct(k), 0);
-    const jewels = pct('Rings') + pct('Amulets');
+    const pct = (kind: string) => (100 * (share[kind] ?? 0)) / SPINS;
     gauge(
-      `every drop: ${pct('Rings').toFixed(1)}% rings, ${pct('Amulets').toFixed(1)}% amulets, ` +
-        `${pct('Maces').toFixed(1)}% maces, ${pct('Tank').toFixed(1)}% of one armour group`
+      'every drop: ' +
+        Object.keys(KIND_VARIETY).map((k) => `${pct(k).toFixed(1)}% ${k}`).join(', ')
     );
-    gauge(
-      `filtered to melee plate and maces, ${total.toFixed(0)}% of drops bank and ` +
-        `${((100 * jewels) / total).toFixed(0)}% of the bag is jewellery`
-    );
-    // A group nothing can drop into is a filter row that never does anything.
-    const barren = KEEP_GROUPS.filter((g) => !share[g.name]);
+    const barren = Object.keys(KIND_VARIETY).filter((k) => !share[k]);
     check(
-      barren.length === 0,
-      'and every one of them is reachable by a drop',
-      barren.map((g) => g.name).join(', ')
+      barren.length === 0 && pct('ring') < 15,
+      'every kind is reachable by a drop, and no one of them owns the bag',
+      `${barren.join(', ') || 'all reachable'}, rings ${pct('ring').toFixed(1)}%`
     );
   }
 
   const game = createGame('fresh');
   const drops = Array.from({ length: 20 }, (_, i) => makeGear('ash_wand', i + 1));
-  const first = bankLoot(game, drops);
+  bankLoot(game, drops);
   check(
-    game.inventory.length === 20 && first.sold === 0,
-    'with nothing junked a cleared run banks the lot into your bags',
-    `${game.inventory.length} carried, ${first.sold} sold`
+    game.inventory.length === 20,
+    'a cleared run banks the lot into your bags',
+    `${game.inventory.length} carried`
   );
 
   // Deliberately past the limit: the alternative is splitting a descent's
@@ -1268,85 +1245,6 @@ rule('THE FILTER — what comes up out of the Fissure, and can the loop wedge?')
     game.inventory.length === 0 && rest.count > 0,
     'and selling ALL of it empties the bag with every other container full',
     `${game.inventory.length} left after selling ${rest.count}`
-  );
-}
-
-// The two axes, and what taking both comes to. A rung and a group are ANDed,
-// so "tier 3 mage gear" is two clicks — and the demo is what stops the two
-// halves quietly becoming an OR, which would sell almost everything.
-{
-  const game = createGame('fresh');
-  const mageHelm = makeGear('arcanist_helmet_t3', 46);
-  const mageBoot = makeGear('arcanist_boots_t1', 1);
-  const tankHelm = makeGear('bulwark_helmet_t3', 46);
-  const bow = makeGear('yew_longbow', 46);
-
-  check(
-    [mageHelm, tankHelm, bow].every((i) => keepsItem(game, i)),
-    'an untouched filter keeps everything, so a save that never opens it is unchanged',
-    `junk holds ${game.junk.length}`
-  );
-
-  game.junk = ['armour_spell'];
-  check(
-    !keepsItem(game, mageHelm) && !keepsItem(game, mageBoot) &&
-      keepsItem(game, tankHelm) && keepsItem(game, bow),
-    'junking a group sells every rung of it and touches nothing else',
-    `mage t3 ${keepsItem(game, mageHelm)}, tank ${keepsItem(game, tankHelm)}`
-  );
-
-  game.junk = ['t1', 't2'];
-  check(
-    !keepsItem(game, mageBoot) && keepsItem(game, mageHelm) && keepsItem(game, tankHelm),
-    'junking a rung sells every group at it and touches nothing else',
-    `t1 ${keepsItem(game, mageBoot)}, t3 ${keepsItem(game, mageHelm)}`
-  );
-
-  game.junk = [...KEEP_GROUPS.map((g) => g.id), 't1', 't2'].filter((id) => id !== 'armour_spell');
-  check(
-    keepsItem(game, mageHelm) && !keepsItem(game, mageBoot) && !keepsItem(game, tankHelm) &&
-      !keepsItem(game, bow),
-    'and both axes together keep exactly one rung of one group',
-    `mage t3 ${keepsItem(game, mageHelm)}, mage t1 ${keepsItem(game, mageBoot)}`
-  );
-
-  // A unique is only ever a decision, and a rule set weeks ago was not a
-  // decision about this one. The same line the bulk sell button holds.
-  const named = makeUnique(UNIQUES[0], 60, new Rng(3));
-  check(
-    keepsItem(game, named),
-    'a named piece is never junk, whatever the filter says about its base',
-    named.name
-  );
-}
-
-// What the filter is FOR: gold, banked on the way up, and a bag that fills
-// slower for it. Both halves have to land on the report, or a screen you set
-// once and never open again is invisible.
-{
-  const game = createGame('fresh');
-  game.junk = ['armour_melee'];
-  const loot = [
-    makeGear('bulwark_helmet_t2', 22),
-    makeGear('bulwark_body_t2', 22),
-    makeGear('arcanist_helmet_t2', 22),
-  ];
-  const before = balance(game.wallet, 'gold');
-  const banked = bankLoot(game, loot);
-  check(
-    banked.sold === 2 && banked.kept.length === 1 && game.inventory.length === 1,
-    'the filter takes its share on the way up and the rest lands in the bag',
-    `${banked.sold} sold, ${banked.kept.length} kept, ${game.inventory.length} carried`
-  );
-  check(
-    banked.gold > 0 && balance(game.wallet, 'gold') === before + banked.gold,
-    `and what it sold is real gold — ${banked.gold} of it`,
-    `${balance(game.wallet, 'gold')} against ${before}`
-  );
-  check(
-    game.sold.length === 0,
-    'and never reaches the counter, where a descent of them would bury a real sale',
-    `${game.sold.length} on the counter`
   );
 }
 
@@ -10142,20 +10040,57 @@ rule('WHERE THE GOLD COMES FROM — is selling worth the walk to the counter?');
   const wallet: Wallet = {};
   grant(wallet, 'gold', 300);
 
-  // Nothing may mint gold out of the shelf. A full tier 3 piece is the best
-  // case for the mod bonus, so it is the one that has to stay under.
-  const arbitrage: string[] = [];
-  for (const base of ['bulwark_body_t1', 'bulwark_body_t2', 'bulwark_body_t3']) {
-    const piece = rollGear(base, 60, 6, pool, new Rng(41));
-    if (sellPrice(piece) >= priceOfItem(piece)) {
-      arbitrage.push(`${base} ${sellPrice(piece)} >= ${priceOfItem(piece)}`);
+  // NOTHING MAY MINT GOLD OUT OF THE COUNTER. A gamble costs more than the
+  // best possible piece of its item level sells for, so buying one and selling
+  // it straight back is a loss however well it rolled — and the arithmetic is
+  // derived rather than typed, so no edit to either number can invert it.
+  {
+    const arbitrage: string[] = [];
+    for (const level of [1, 20, 50, 99]) {
+      const ilvl = shopIlvl(level);
+      const paid = gamblePrice(ilvl);
+      const best = Math.round(bestSale(ilvl));
+      if (best >= paid) arbitrage.push(`level ${level}: sells ${best} >= ${paid} paid`);
     }
+    gauge(
+      'a gamble costs ' +
+        [1, 20, 50, 99]
+          .map((l) => `${gamblePrice(shopIlvl(l))} at level ${l}`)
+          .join(', ')
+    );
+    check(
+      arbitrage.length === 0,
+      'and buying a gamble and selling it straight back always loses',
+      arbitrage.join(', ')
+    );
+    // A rolled piece is what actually comes out of one, so measure that too.
+    const worst: string[] = [];
+    for (const kind of Object.keys(KIND_VARIETY)) {
+      const ilvl = shopIlvl(50);
+      const got = gambleFor(kind, ilvl, pool, new Rng(4100));
+      if (got && sellPrice(got) >= gamblePrice(ilvl)) {
+        worst.push(`${kind} ${sellPrice(got)} >= ${gamblePrice(ilvl)}`);
+      }
+    }
+    check(
+      worst.length === 0,
+      'and it holds for a piece the counter actually rolled, in every kind',
+      worst.join(', ')
+    );
+    // NO PERFECT out of it, at any level: the endgame chase is the floor's.
+    const perfects = [1, 50, 99].flatMap((l) =>
+      Object.keys(KIND_VARIETY).flatMap((kind) =>
+        Array.from({ length: 40 }, (_, i) =>
+          gambleFor(kind, shopIlvl(l), pool, new Rng(770 + i * 13 + l))
+        )
+      )
+    ).filter((i) => i && isPerfect(i));
+    check(
+      perfects.length === 0,
+      'and no amount of gold buys a Perfect base',
+      `${perfects.length} came out of the counter`
+    );
   }
-  check(
-    arbitrage.length === 0,
-    'buying a piece and selling it straight back always loses',
-    arbitrage.join(', ')
-  );
 
   line('  band   gold banked   drops   sale value   share from selling');
   const shares: number[] = [];
@@ -10237,6 +10172,34 @@ rule('WHERE THE GOLD COMES FROM — is selling worth the walk to the counter?');
     `and the level-1 shelf (${bench} gold) is ${Math.ceil(bench / perRun)} descents of saving`,
     `${perRun.toFixed(1)} gold a run against a ${bench} gold shelf — over ${REACH} descents`
   );
+
+  // GOLD BUYS MATERIAL AT A BAD RATE, and the rate is what makes it a smoothing
+  // mechanism rather than a supply: a descent gathers `GATHER.perRun` nodes of
+  // 2–5 each for nothing, so buying has to stay well under that per clear.
+  {
+    const gathered = GATHER.perRun * ((GATHER.yield[0] + GATHER.yield[1]) / 2);
+    const bought = perRun / MATERIAL_PRICE.fissure;
+    gauge(
+      `a bare clear gathers ${gathered.toFixed(0)} raw and its gold buys ` +
+        `${bought.toFixed(2)} — descending is ${(gathered / bought).toFixed(0)}x the rate`
+    );
+    check(
+      bought < gathered,
+      'and buying raw is never better than going and getting it',
+      `${bought.toFixed(2)} bought against ${gathered.toFixed(0)} gathered`
+    );
+    // Every world's raw is on the counter, so no family is behind a coin that
+    // did not come up — and a world's own UNIQUE never is.
+    const missing = MATERIALS.filter(
+      (m) => m.family !== null && !soldHere(m, PROFESSION.maxLevel)
+    );
+    const leaked = MATERIALS.filter((m) => m.family === null && soldHere(m, PROFESSION.maxLevel));
+    check(
+      missing.length === 0 && leaked.length === 0,
+      `the counter reaches all ${MATERIALS.length - leaked.length - missing.length} raw families and no world's unique`,
+      `${missing.length} unreachable, ${leaked.length} uniques on sale`
+    );
+  }
 }
 
 // ===========================================================================
@@ -10693,18 +10656,11 @@ rule('PERFECT BASES — is the rarest thing in the game worth the socket?');
     `at 4 sockets: ${[0, 300, 600, 900].map((d) => `danger ${d} ${(perfectChance(4, d) * 100).toFixed(2)}%`).join(' · ')}`
   );
 
-  // NEVER SWEPT UP. The filter and the bulk button both exist because they
-  // cannot eat a decision, and a Perfect base with nothing on it is one.
+  // NEVER SWEPT UP. The bulk button exists because it cannot eat a decision,
+  // and a Perfect base with nothing on it is one.
   {
-    const g = createGame('fresh');
-    g.junk = KEEP_GROUPS.map((k) => k.id).concat(KEEP_TIERS.map((t) => tierKeepId(t)));
     const bare = makeGear('bulwark_body_t3', 60);
     const best = makeGear('bulwark_body_t3', 60, undefined, true);
-    check(
-      !keepsItem(g, bare) && keepsItem(g, best),
-      'a filter set to sell everything still walks a Perfect base up out of the Fissure',
-      `bare ${keepsItem(g, bare)}, perfect ${keepsItem(g, best)}`
-    );
     const heap = plainGear([bare, best]);
     check(
       heap.length === 1 && heap[0] === bare,
@@ -12908,7 +12864,7 @@ rule('THE SAVE — does a save survive the game changing under it?');
     makeGear('ash_wand', 1),
     { ...game.inventory[0], id: 'haul_ghost', base: 'base_that_was_renamed' },
   ];
-  game.junk = ['armour_spell', 'a_filter_row_that_was_cut'];
+  (game as unknown as { junk: string[] }).junk = ['armour_spell'];
   game.wallet.shard_of_something_removed = 9;
   (game.character as any).equipped.main = 'a_skill_that_was_cut';
 
@@ -12955,9 +12911,9 @@ rule('THE SAVE — does a save survive the game changing under it?');
     `${game.inventory.length} carried`
   );
   check(
-    game.junk.length === 1 && game.junk[0] === 'armour_spell',
-    'and a filter row nothing resolves is dropped, which only ever keeps more',
-    game.junk.join(', ')
+    (game as unknown as { junk?: string[] }).junk === undefined,
+    'and a save written when there was a filter loses it entirely, keeping more',
+    'the filter is still on the save'
   );
   check(
     game.sockets.s1?.id === good.id &&
@@ -13177,17 +13133,16 @@ rule('THE SAVE — does a save survive the game changing under it?');
     after.map((i) => i.id).join(' ')
   );
 
-  // The check above named the collections it looked in, and so did the code:
-  // the shop's shelf is stored so it does not re-roll on every open, and it
-  // was on neither list. So this asks the question of EVERY field that can
-  // hold an item, found by walking the save rather than by remembering.
+  // The check above named the collections it looked in, and so did the code —
+  // and a field on neither list leaked. So this asks the question of EVERY
+  // field that can hold an item, by walking the save rather than remembering.
   const collections: Array<[string, (g: GameState, item: Item) => void]> = [
     ['inventory', (g, item) => { g.inventory = [item]; }],
     ['stash', (g, item) => { g.stash = [item]; }],
     ['crystals', (g, item) => { g.crystals = [item]; }],
     ['relics', (g, item) => { g.relics = [item]; }],
     ['sold', (g, item) => { g.sold = [{ item, price: 1 }]; }],
-    ['shopStock', (g, item) => { g.shopStock = [item]; }],
+    ['materials', (g, item) => { g.materials = [item]; }],
     ['equipment', (g, item) => { g.character.equipment = { weapon: item }; }],
   ];
   const leaked: string[] = [];
@@ -13198,7 +13153,7 @@ rule('THE SAVE — does a save survive the game changing under it?');
     const mark = HIGH + (i + 1) * 1000;
     const save = {
       ...createGame('fresh'),
-      inventory: [], stash: [], crystals: [], relics: [], sold: [], shopStock: [], craftId: null,
+      inventory: [], stash: [], crystals: [], relics: [], sold: [], materials: [], craftId: null,
     };
     save.character = { ...save.character, equipment: {} };
     const item = makeGear('ash_wand', 1);

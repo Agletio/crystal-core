@@ -211,6 +211,24 @@ similar to a shop or a just a different shop entirely."* `SceneDef.keeps` is
 what somebody runs without being handed anything; a bench a RELIC buys (the
 ossuary's, the orrery's) is the same shape already.
 
+**NOTHING NAMED IS SOLD: the counter is a GAMBLE.** You buy "a ring", not a ring
+you read first — one button per KIND, rolled at the click and never stored, so
+there is no shelf to reopen the window at. **Its price is DERIVED and never
+typed**: `bestSale(ilvl)` is the most any piece of that level could ever fetch —
+top base tier, every slot filled — and `gamblePrice` is `GAMBLE.over` times it,
+so buying one and selling it back is a loss however it rolled and no edit can
+invert that. **NO PERFECT comes out of it**, at any level: that is the floor's
+own chase. The only named pieces it can reach are the FISSURE's, because the
+counter stands in the camp above it. **GOLD ALSO BUYS RAW, at a bad rate** —
+`MATERIAL_PRICE` flat by world — which is what makes it the smoothing for a
+recipe you are two short of rather than a supply: a bare clear's gold buys 0.80
+raw against the 21 it gathers, so descending is 26x the rate.
+
+**THERE IS NO FILTER, because there is nothing to filter.** A clear banks the
+LOT; what you do not want is dismantled at the anvil or sold across the counter.
+`KIND_VARIETY` is what weights a drop's KIND now, AUTHORED and never counted —
+counted off content volume, ten ring implicits took rings to 39% of every drop.
+
 **CLICKING A PERSON ASKS WHAT YOU WANT OF THEM** — *"a menu that says like
 Dialogue option / Shop / Exit"* — `options()` in `src/ui/talk.ts`: their words,
 their counter, the way out, each with an id a harness names rather than its
@@ -516,7 +534,7 @@ same odds paid 3.79 Perfect bases a descent and the rare tier was wallpaper.
 was 6,072 a clear at the deep end, so a found piece's rolled lines were worth
 five gold apiece and the floor could never beat the bench — *"an item with no
 mods could be better than one with 3, you just need to click the currency."*
-`Recipe.goldPerIlvl` rides the shelf's own item level instead. **A CONSTANT
+`Recipe.goldPerIlvl` rides the counter's own item level instead. **A CONSTANT
 PRICE CANNOT THROTTLE ANYTHING**: a clear banks 54 gold at the bare Fissure
 against 30,359 at the deep end, so one number tuned to cost a clear at the top
 is 560 clears at the bottom and a new character could never buy one.

@@ -506,10 +506,31 @@ approve; everything else is code that can be written while it renders.
       - **IT BURNS DOWN ON A CLEAR AND NOTHING ELSE**, beside `spendSocketed`
         and `advanceWork`. **And it NEVER ends a chain** — a crystal roll
         running out does; a meal doing so would make eating one a leash.
-- [ ] **Step 8 — the shop becomes a GAMBLE and the filter GOES.** Delete the
-      Filter screen, `KEEP_GROUPS`, `GameState.junk`, the bulk sell and the
-      shelf of named gear. Gold buys materials at a bad rate. The camp picture
-      from step 0 lands here with its five new hotspots.
+- [x] **Step 8 — the shop is a GAMBLE and the filter is GONE. DONE.**
+      - **THE FILTER IS DELETED WHOLE**: `ui/filter.ts`, its tab in Settings,
+        `GameState.junk`, `keepsItem`, `KEEP_GROUPS`, `KEEP_TIERS`,
+        `RunReport.filtered` and the auto-sell half of `bankLoot`. A clear banks
+        the LOT; `heal` drops the stored list off an older save.
+      - **THE DROP MIX NEEDED A NEW BASIS** and it is `KIND_VARIETY`, AUTHORED
+        rather than counted. Measured after: 33.9% weapon, 8.1% ring, 4.5%
+        amulet, and every kind reachable.
+      - **NOTHING NAMED IS SOLD.** One button per KIND, rolled at the click and
+        never stored, so there is no shelf to reopen the window at. **NO
+        PERFECT** out of it at any level, and the only named pieces it can ever
+        reach are the FISSURE's: the counter stands in the camp above it and
+        `shopPower` is the deepest band its item level has reached.
+      - **THE PRICE IS DERIVED, never typed.** `bestSale(ilvl)` is the most any
+        piece of that level could sell for — top base tier, every slot filled —
+        and `gamblePrice` is `GAMBLE.over` times it, so no edit to either number
+        can leave a gamble paying for itself. Measured: 120 gold at level 1,
+        286 at 20, 715 at 50, 1,412 at 99.
+      - **GOLD BUYS RAW AT A BAD RATE**, flat by WORLD (`MATERIAL_PRICE`), which
+        is what makes it smoothing rather than supply — measured, a bare clear's
+        gold buys 0.80 raw against the 21 it gathers, so descending is 26x the
+        rate. Gated by character
+        level per world, and a world's UNIQUE is never on it.
+      - **THE CAMP PICTURE was already wired in step 3** — sixteen hotspots, the
+        six stations among them — so nothing was left for this step to land.
 
 **Done when.** A clear pays materials rather than a heap to sort; the gear you
 wear is gear you MADE; a profession level is felt in the roll you get; and there

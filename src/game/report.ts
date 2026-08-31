@@ -45,8 +45,6 @@ export interface RunReport {
   lostLoot: boolean;
   /** Whether the bag is at or over its limit now this run has banked. */
   bagsFull: boolean;
-  /** What the auto-sell filter turned into gold on the way up. */
-  filtered: { sold: number; gold: number };
   xp: number;
   levelsGained: number;
 }
@@ -71,7 +69,7 @@ export function buildReport(game: GameState, run: RunState, left = false): RunRe
   let burnt: ModBurn[] = [];
   let worked: Finished[] = [];
   let eaten: RolledMod | null = null;
-  let filtered = { kept: [] as Item[], sold: 0, gold: 0 };
+  let kept: Item[] = [];
 
   if (keeps) {
     for (const [id, amount] of Object.entries(run.loot.currency)) {
@@ -80,11 +78,10 @@ export function buildReport(game: GameState, run: RunState, left = false): RunRe
       banked[id] = n;
       grant(game.wallet, id, n);
     }
-    // Through the FILTER and into the bag. Nothing is refused here, so
+    // Everything the floor paid, into the bag. Nothing is refused here, so
     // capacity is a thing checked between runs rather than during one, and a
     // descent that overfills the bag by three is a bag reading 35/32.
-    filtered = bankLoot(game, run.loot.items);
-    if (filtered.gold > 0) banked.gold = (banked.gold ?? 0) + filtered.gold;
+    kept = bankLoot(game, run.loot.items).kept;
   }
 
   if (cleared) {
@@ -140,13 +137,8 @@ export function buildReport(game: GameState, run: RunState, left = false): RunRe
     rows.push({ label: 'skill levels', value: `+${skillLevels}` });
   }
 
-  if (keeps && filtered.kept.length > 0) {
-    rows.push({ label: 'into your bags', value: String(filtered.kept.length) });
-  }
-  // What the filter did, said in what it paid: a screen you set once and then
-  // never open again must still report itself every single descent.
-  if (filtered.sold > 0) {
-    rows.push({ label: 'sold by the filter', value: `${filtered.sold} for ${filtered.gold} gold` });
+  if (keeps && kept.length > 0) {
+    rows.push({ label: 'into your bags', value: String(kept.length) });
   }
   for (const gain of levelled) {
     rows.push({ label: gain.crystal.name, value: `+${gain.levels} level` });
@@ -196,14 +188,13 @@ export function buildReport(game: GameState, run: RunState, left = false): RunRe
     headline: left ? 'Back at camp' : cleared ? 'Fissure cleared' : 'You died',
     rows,
     banked,
-    items: keeps ? [...filtered.kept] : [],
+    items: keeps ? [...kept] : [],
     levelled,
     burnt,
     worked,
     eaten,
     lostLoot: !keeps && hadLoot,
     bagsFull: bagsFull(game),
-    filtered: { sold: filtered.sold, gold: filtered.gold },
     xp: Math.round(run.xpGained),
     levelsGained,
   };

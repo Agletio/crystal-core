@@ -1,7 +1,13 @@
 import { Rng } from './rng';
 import { ModPool, baseTier, modCapacity, rollRandomMod } from './mods';
 import {
-  keepGroupFor,
+  KIND_VARIETY,
+  DROP_BANDS,
+  GAMBLE,
+  MATERIAL_PRICE,
+  MATERIAL_SOLD_AT,
+  UNIQUES,
+  opensHere,
   CRYSTAL_ILVL,
   CRYSTAL_LEVELS,
   EQUIP_SLOTS,
@@ -143,21 +149,12 @@ const SLOTS_FOR: Record<string, number> = EQUIP_SLOTS.reduce(
   {} as Record<string, number>
 );
 
-/** What a FILTER can name inside a kind, off `KEEP_GROUPS` itself rather than
- *  off `GearBase.family` — which reads the same until a kind grows families the
- *  filter does not name. Jewellery did exactly that: ten implicits took rings
- *  from weight 2 to 20 and 39% of every drop was a ring. */
-const FAMILIES_IN = (kind: string): number =>
-  new Set(
-    GEAR_BASES.filter((b) => b.kind === kind).map((b) => keepGroupFor(b)?.id ?? kind)
-  ).size;
-
-/** Drop weight per kind: its slots TIMES what a filter can name in it. Slots
- *  alone made rings the commonest drop at 22% and the whole weapon kind rarer
- *  than boots — a filter cuts a kind by FAMILY, so a kind with none survives
- *  every cut whole and a filtered bag came back all jewellery. */
+/** Drop weight per kind: its SLOTS times its `KIND_VARIETY`. Slots alone made
+ *  rings the commonest drop at 22% and the whole weapon kind rarer than boots,
+ *  because a kind holding eight different weapons needs more rolls to find the
+ *  one you want than a kind holding one shape. */
 const KIND_WEIGHT: Record<string, number> = Object.fromEntries(
-  Object.entries(SLOTS_FOR).map(([kind, slots]) => [kind, slots * FAMILIES_IN(kind)])
+  Object.entries(SLOTS_FOR).map(([kind, slots]) => [kind, slots * (KIND_VARIETY[kind] ?? 1)])
 );
 
 /** Kind first, base only within it: a uniform pick would make composition a
@@ -350,14 +347,53 @@ export function balance(w: Wallet, id: string): number {
   return w[id] ?? 0;
 }
 
+/** The item level the counter deals at, off the character's own level. */
+export const shopIlvl = (level: number): number =>
+  Math.max(1, Math.round(level * SHOP.ilvlPerLevel));
+
+/** MOST any one piece of this item level could ever sell for: the top base
+ *  tier, every slot filled. What a gamble has to cost more than. */
+export const bestSale = (ilvl: number): number =>
+  ilvl *
+  SHOP.pricePerIlvl *
+  Math.max(...SHOP.sellByTier) *
+  (1 + GAMBLE.fill * SHOP.pricePerMod) *
+  SHOP.sellFraction;
+
+/** DERIVED, so no edit to the counter's own numbers can leave a gamble paying
+ *  for itself: buy, sell it back, and you are down however the roll landed. */
+export const gamblePrice = (ilvl: number): number =>
+  Math.max(GAMBLE.floor, Math.round(bestSale(ilvl) * GAMBLE.over));
+
+/** What the counter's stock is worth in RUN POWER: the deepest band whose own
+ *  item level it has reached. A counter has no descent behind it, so this is
+ *  the only honest answer, and it is what gates a named piece out of one. */
+export const shopPower = (ilvl: number): number =>
+  Math.max(0, DROP_BANDS.filter((b) => b.ilvl <= ilvl).length - 1);
+
 /**
- * Priced off item level and tier, never off what rolled. Charging for a good
- * roll would turn a shelf you can SEE into the gamble maps already are.
+ * ONE PIECE OF A KIND, unseen until it is paid for. The counter stands in the
+ * camp above the Fissure, so the Fissure is the whole of what it can name.
+ * NEVER Perfect: that is the floor's own chase, and gold is not allowed at it.
  */
-export function priceOfItem(item: Item): number {
-  const byTier = SHOP.priceByTier[baseTier(item) - 1] ?? 1;
-  return Math.max(4, Math.round(item.ilvl * SHOP.pricePerIlvl * byTier));
+export function gambleFor(kind: string, ilvl: number, pool: ModPool, rng: Rng): Item | undefined {
+  const power = shopPower(ilvl);
+  const named = UNIQUES.filter(
+    (u) => GEAR_BASE_BY_ID[u.base]?.kind === kind && opensHere(u.gate, power, 'fissure', 'gamble')
+  );
+  if (named.length > 0 && rng.next() < GAMBLE.uniqueChance) {
+    return makeUnique(rng.pick(named)!, ilvl, rng);
+  }
+  const base = rng.pick(GEAR_BASES.filter((b) => b.kind === kind && (b.ilvl ?? 1) <= ilvl));
+  return base ? rollGear(base.id, ilvl, GAMBLE.fill, pool, rng) : undefined;
 }
+
+/** Raw only, and never a world's unique: the counter smooths a recipe you are
+ *  two short of, and the best inputs stay something you went and got. */
+export const materialPrice = (def: MaterialDef): number => MATERIAL_PRICE[def.world];
+
+export const soldHere = (def: MaterialDef, level: number): boolean =>
+  def.family !== null && level >= MATERIAL_SOLD_AT[def.world];
 
 /** Gear only. A crystal is a standing choice, not stock. */
 export const canSell = (item: Item): boolean => item.kind === 'gear';

@@ -1,18 +1,14 @@
 /**
- * Settings: keys, the auto-sell filter, and the book.
+ * Settings: keys and the book.
  *
  * Almost none of this is machinery. `BINDINGS` already says what every key
  * DOES and defaults to, `GameState.keys` already overrides by the same id, and
  * `KEYWORDS` already carries every definition with its own numbers — so a
  * rebinding screen is a screen, and the book is a Find box over a table.
- *
- * The filter MOVED here rather than being rebuilt: its markup came across with
- * its ids, so `filter.ts` renders into exactly what it always did.
  */
 import { BINDINGS } from '../data';
 import { KEYWORDS } from '../keywords';
 import { keyFor, keyName } from './keys';
-import { render as renderFilter } from './filter';
 import type { GameState } from '../game/state';
 
 const $ = (id: string) => document.getElementById(id)!;
@@ -28,7 +24,7 @@ let game: GameState;
 let onChanged: (() => void) | null = null;
 /** The binding waiting for a press, or null. A MODE, so it is not saved. */
 let listening: string | null = null;
-type Tab = 'keys' | 'filter' | 'book';
+type Tab = 'keys' | 'book';
 let tab: Tab = 'keys';
 
 // ---------------------------------------------------------------------------
@@ -117,17 +113,14 @@ function renderBook(): void {
 function render(): void {
   for (const [id, which] of [
     ['set-tab-keys', 'keys'],
-    ['set-tab-filter', 'filter'],
     ['set-tab-book', 'book'],
   ] as const) {
     $(id).classList.toggle('mini--on', tab === which);
   }
   $('set-pane-keys').hidden = tab !== 'keys';
-  $('set-pane-filter').hidden = tab !== 'filter';
   $('set-pane-book').hidden = tab !== 'book';
 
   if (tab === 'keys') renderKeys();
-  if (tab === 'filter') renderFilter();
   if (tab === 'book') renderBook();
 }
 
@@ -152,7 +145,6 @@ export function initSettings(state: GameState, changed?: () => void): void {
   onChanged = changed ?? null;
   ($('settings-close') as HTMLButtonElement).onclick = closeSettings;
   ($('set-tab-keys') as HTMLButtonElement).onclick = () => openSettings('keys');
-  ($('set-tab-filter') as HTMLButtonElement).onclick = () => openSettings('filter');
   ($('set-tab-book') as HTMLButtonElement).onclick = () => openSettings('book');
   ($('book-find') as HTMLInputElement).oninput = renderBook;
   document.addEventListener('keydown', capture, true);
