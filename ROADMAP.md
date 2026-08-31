@@ -292,6 +292,36 @@ approve; everything else is code that can be written while it renders.
       - **The cost of that shape is TONE.** A prop generated apart from its
         ground comes back polished and lit its own way; `tone` and `dull` toward
         the ground's mean is the existing repair and it is not optional.
+
+      **THE SHAPE, SETTLED, and it is the user's:** *"make every object you
+      click on something we drop in — loom, anvil, furnace, crafting bench,
+      shelf, fire, tent. Also make spots for buildings/tents for each of the NPC
+      characters and make those upgradeable as well."* So:
+
+      - **The GROUND is `camp_wide` in `scenes.json`** — the same 688×384, the
+        camera pulled well back, the cliff in the top quarter and the bottom
+        three quarters open empty grass. Its ask EXCLUDES every piece of
+        furniture by name, because anything painted in is a thing that can
+        never be upgraded and a second copy of an object standing on it.
+      - **`tools/art/camp.mts` asks all FIFTEEN objects as ONE job.** At 85px
+        `create_1_direction_object` returns sixteen candidates for 25
+        generations and `item_descriptions` makes each one a different object,
+        so the whole camp costs one ask rather than fifteen. `view` is
+        `sidescroller` — the enum is only that or `top-down`, and a front
+        elevation is what stands on a ground plane.
+      - **The fifteen**: bench, shelf, fire, tent (the four that exist), then
+        furnace, anvil, loom, tannery, sawbench, jeweller, kitchen (one per
+        profession, the smelter and the anvil both Blacksmithing's), then a
+        shelter each for the Lampwright, the Glasswright, the Osteomancer and
+        the Astral-Geometer.
+      - **AN UPGRADE IS `create_object_state`**, whose whole contract is *the
+        same object, nothing else changes* — `chest.mts open` is the proven use.
+        A level is a picture swap of THAT building.
+      - **THE FOUR SOCKETS STAY IN THE CLIFF for now** and are pack two. They
+        are recesses in a rock face rather than things standing on ground, and
+        fifteen already fills a sixteen-candidate job. Written down because the
+        user's rule says every clickable is dropped in, and these are the
+        exception still owed.
 - [ ] **Step 1 — the tables, and nothing uses them yet.** `MATERIALS` (28 rows),
       `PROFESSIONS` (6), `Character.professions` as `{ level, xp }` apiece, and
       an `ItemKind` for a material so it stacks. `SAVE_VERSION` bumps here and
