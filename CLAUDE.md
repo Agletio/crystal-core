@@ -186,8 +186,8 @@ picture's own pixels, and `src/ui/camp.ts` scales the whole stage, so a hotspot
 cannot drift off the thing it sits on. It FILLS the window and the two axes
 scale independently — the bench is against one edge and the shelf against the
 other, so a cover crop takes a verb off the screen. There is no map, no carve
-and no walk: fifteen hotspots — the crack, four sockets in the rock, the bench,
-the shelf, the tent, the fire and six STATIONS — and what MOVES is light, wind and idling bodies
+and no walk: sixteen hotspots — the crack, four sockets in the rock, the bench,
+the shelf, the tent, the fire, the ANVIL and six STATIONS — and what MOVES is light, wind and idling bodies
 on one canvas over the art. Everybody you have met stands about in it and clicking one
 goes to their room — a person's hotspot is their own body's grid, where that
 body was drawn. **THE FISSURE IS REACHED FROM THE CAMP AND NOWHERE ELSE** —
@@ -201,8 +201,9 @@ thing in the art nothing else claimed. **THE STATIONS ARE SIX MORE DOORS INTO
 ONE ROOM** — the smelter, the loom, the tanning frame, the kitchen, the sawbench
 and the jeweller's, each opening the stations screen on its own tab, because a
 smelter and a loom differ in the word and the picture and never the mechanism.
-Everything else is still on the rail, and a screen with neither a button nor a
-hotspot is one somebody will lose.
+**THE ANVIL IS WHERE A BASE IS MADE**, which is a different verb from the
+bench's. Everything else is still on the rail, and a screen with neither a
+button nor a hotspot is one somebody will lose.
 
 **A COUNTER BELONGS TO A PERSON, and the shop is the Lampwright's.** *"The shop
 should exist in the first character you meet… Each character can have something
@@ -444,6 +445,33 @@ minted. **XP IS FLAT AND NEVER BY WORLD**, or the no-tiers rule breaks in the
 easiest place: measured, level 2 is one batch and 99 is 1,972 of them, 1,315
 descents with every slot full. A zone-unique is worked by nothing at all.
 
+**MATERIALS DECIDE WHAT AN ITEM IS; CURRENCY DECIDES WHAT IS ON IT.** A craft
+picks the BASE and its IMPLICIT and every modifier is still the bench's — two
+economies, two decisions, neither a slot machine. **A RECIPE IS DERIVED, NEVER
+AUTHORED**: `ARCHETYPE_PROFESSION` turns `ARMOUR_FAMILIES.archetypes` into one
+or two professions, so a hybrid family asks for exactly the two its archetypes
+name and there is no list to keep in step with the base table;
+`WEAPON_PROFESSIONS` is the one row weapons need, having no archetypes.
+**A TIER IS HOW MANY DIFFERENT WORLD VERSIONS THE RECIPE DEMANDS** —
+`CRAFT.versions` — so depth matters because ACCESS is gated and never because
+deep ore is better ore, and nothing becomes obsolete.
+
+**A LEVEL SLIDES THE WINDOW, and `makeGear`'s `made` is the whole of it.**
+*"A plate helm can get between 100–150 armour, where if you're 1 blacksmithing
+it's always 100–105 and if you're 99 it's always 145–150."* A DROP is exactly
+the row, so `made` is 1 for one; measured on an 84-armour helm, level 1 makes
+71–75, level 50 makes 82–86 and level 99 makes 94–97. It rides `armour`,
+`damage` and every implicit through the one parameter, and PERFECT stacks on
+top so it stays the step above the best a level can reach. The LOWEST level in
+a recipe is what the window reads: a hybrid is no better than the profession you
+neglected.
+
+**A DISMANTLE MAY NEVER RETURN MORE THAN THE RECIPE TOOK**, or craft →
+dismantle → craft prints materials. `meta.spent` is the RECEIPT a craft leaves,
+so a made piece refunds a share of what it actually ate; a found one has none,
+so its refund is spread round the family's versions off its own id rather than
+always landing on the first. The demo asks this of EVERY base, not a sample.
+
 **A PERFECT BASE IS THE ENDGAME CHASE, and it is the only step above ordinary.**
 25% on the implicit, top tier only, three sockets minimum. Its rate is a SHARE
 of drops, which is why the count had to be flattened first — at 84 a clear the
@@ -652,6 +680,7 @@ src/sim/grants.ts  every switch anything may hand the sim, and who reads it
 src/sim/grid.ts    generate and carve a map; sceneMap beside it
 src/game/          save, state, report, crystals, scenes, graft
 src/game/work.ts   PROCESSING: what a station is working on, and what a clear moves
+src/game/forge.ts  MAKING A BASE: the recipe off the base, the window off the level
 src/render/        renderer seam: canvas2d fallback, pixi default
 src/render/generated-*.ts   art as data — never edited by hand
 src/ui/            one module per screen; talk.ts is a person in the camp

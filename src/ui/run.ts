@@ -64,6 +64,7 @@ import { closeGraft, isGraftOpen } from './graft';
 import { anchor, endSpeech, speakingAt, speakingBeat, startSpeech, syncSpeech } from './speech';
 import { openCrystals } from './crystals';
 import { openWork } from './work';
+import { openForge } from './forge';
 import { createCanvasRenderer } from '../render/canvas2d';
 import { createPixiRenderer } from '../render/pixi';
 import { ZOOM_STEP, clampZoom, defaultZoom, readPalette } from '../render/renderer';
@@ -259,6 +260,7 @@ const OPENS: Record<Hotspot['opens'], (spot: Hotspot, at: DOMRect) => void> = {
   // Every station is one room on its own tab: a smelter and a loom differ in
   // the word and the picture, never the mechanism.
   work: (spot) => openWork(spot.family),
+  forge: () => openForge(),
 };
 
 export function openFissure(): void {

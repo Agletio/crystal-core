@@ -187,7 +187,7 @@ const STATES = [
   'handover', 'descent', 'results',
   'scene', 'speech', 'lampwright',
   'skills', 'skill-list', 'skill-web', 'move-web', 'trade', 'trials', 'proving',
-  'bench', 'tooltip', 'glossary', 'graft', 'stations',
+  'bench', 'tooltip', 'glossary', 'graft', 'stations', 'anvil',
 ];
 
 const browser = await chromium.launch();
@@ -674,6 +674,15 @@ for (const vp of VIEWPORTS) {
   await page.waitForTimeout(300);
   await shoot('stations');
   await page.evaluate(() => document.getElementById('work-close')?.click());
+  await page.waitForTimeout(200);
+
+  // THE ANVIL, with the kit's worked material in the bag: every base in the
+  // slot, what each asks for, and the window the level buys. The densest list
+  // in the game after the bench.
+  await page.evaluate(() => document.getElementById('camp-anvil')?.click());
+  await page.waitForTimeout(300);
+  await shoot('anvil');
+  await page.evaluate(() => document.getElementById('forge-close')?.click());
   await page.waitForTimeout(200);
 
   // The tooltip below is a REAL hover, which a hidden slot refuses.

@@ -396,11 +396,36 @@ approve; everything else is code that can be written while it renders.
         them.
       - **A ZONE-UNIQUE IS WORKED BY NOTHING.** It belongs to no family, so no
         station takes it and the best recipes ask for it as it came up.
-- [ ] **Step 4 — crafting.** `RECIPES` naming one or two professions and a level
-      in each; materials pick the BASE and its IMPLICIT; the level slides the
-      roll window and narrows it; a chance of PERFECT off the level. Dismantle
-      lands here too, and it may never return more than the recipe took.
-      Crafting pays XP, weighted so a higher recipe beats spamming the cheapest.
+- [x] **Step 4 — crafting. DONE.** `CRAFT`, `src/game/forge.ts` and the ANVIL
+      in the camp. What it settled:
+      - **A RECIPE IS DERIVED, NEVER AUTHORED.** `ARMOUR_FAMILIES.archetypes` is
+        already melee / spell / rogue, so `ARCHETYPE_PROFESSION` turns it into
+        one or two professions and a hybrid family asks for exactly the two its
+        archetypes name. Weapons have no archetypes, so `WEAPON_PROFESSIONS` is
+        the one table they need — a row, not a special case. Every one of the
+        unnamed bases is craftable and there is no `RECIPES` list to keep in
+        step with the base table.
+      - **`made` IS A MULTIPLIER ON THE ROW, and a DROP is exactly 1.** That is
+        the whole of the window: measured, a level 1 craft of an 84-armour helm
+        makes 71–75, level 50 makes 82–86 and level 99 makes 94–97 — under a
+        drop at the bottom, over it at the top, with the row as the middle. It
+        rides `armour`, `damage` AND every implicit through the one `makeGear`
+        parameter, so a weapon's implicit moves with its damage.
+      - **PERFECT STACKS ON TOP OF IT**, so it stays the step above the best a
+        level can reach, and `CRAFT.perfectAtTop` is the second road to one.
+      - **THE RECEIPT IS ON THE ITEM.** `meta.spent` is what the craft actually
+        ate, so a dismantle refunds a share of THAT rather than guessing off the
+        recipe. A FOUND piece has no receipt, so its refund is spread round the
+        family's versions off its own id — always refunding the first version
+        would slowly starve a bag of the three a tier 3 recipe still wants.
+      - **THE PRINTER CHECK IS ASKED OF EVERY BASE**, not a sample: craft it at
+        the cap, dismantle it, and assert the total back is under the total in.
+        It is the one check standing between this and a material printer.
+      - **`CraftRecipe`, NOT `Recipe`.** The shelf already owns that word for
+        what a currency purchase costs; one word per mechanism means neither
+        may quietly take it from the other.
+      - **THE DEV KIT CARRIES RAW AND WORKED**, or half the arc is unreachable
+        from it. Sixteen hotspots now.
 - [ ] **Step 5 — jewellery.** Twenty `GearBase` rows — ten implicits × ring and
       amulet — tinted rather than re-drawn, the amulet's implicit rolling
       stronger than the ring's.

@@ -13,7 +13,9 @@ export interface Hotspot {
   y: number;
   w: number;
   h: number;
-  opens: 'fissure' | 'craft' | 'stash' | 'character' | 'socket' | 'trials' | 'room' | 'work';
+  opens:
+    | 'fissure' | 'craft' | 'stash' | 'character'
+    | 'socket' | 'trials' | 'room' | 'work' | 'forge';
   slot?: number; // which of `RUN_SLOTS`, for a socket in the rock
   room?: string; // which `SceneDef`, for somebody standing about
   family?: string; // which `MATERIAL_FAMILIES` tab, for a station
@@ -59,6 +61,14 @@ export const CAMP_HOTSPOTS: Hotspot[] = [
     x: 532, y: 106, w: 98, h: 86,
     opens: 'character',
     says: 'Your tent. What you are wearing, and what it comes to.',
+  },
+  // THE ANVIL is where a base is MADE, which is a different verb from the
+  // bench's: materials decide what a piece IS and currency what is on it.
+  {
+    id: 'anvil',
+    x: 158, y: 224, w: 40, h: 40,
+    opens: 'forge',
+    says: 'The anvil. What a heap of worked material could be made into.',
   },
   // SIX STATIONS, one a profession, and every one of them a door into the same
   // room on its own tab. Measured off `camp_ground.png` rather than by eye.

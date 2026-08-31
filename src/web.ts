@@ -10,7 +10,7 @@ import { armForSkill, createGame, resetGame, sellItem, slotFor, stashRoom, toSta
 import { canSell, sellPrice } from './economy';
 import { onWearChanged, wear } from './ui/wear';
 import { dismissToast } from './ui/toast';
-import { EQUIP_SLOTS, POTIONS } from './data';
+import { EQUIP_SLOTS, MATERIAL_BY_ID, MATERIAL_FAMILY_BY_ID, POTIONS } from './data';
 import type { StartMode } from './game/state';
 import { applySave, clearSave, healedAnything, loadGame, saveGame, startAutosave } from './game/save';
 import type { Healed } from './game/save';
@@ -33,6 +33,15 @@ import { initSpeech, isSpeaking } from './ui/speech';
 import { closeParley, initTalk, isParleying } from './ui/talk';
 import { initCrystals, openCrystals, closeCrystals, isCrystalsOpen } from './ui/crystals';
 import { initWork, openWork, closeWork, isWorkOpen } from './ui/work';
+import { initForge, openForge, closeForge, isForgeOpen } from './ui/forge';
+import { dismantle, dismantleYield } from './game/forge';
+
+/** A refund is PROCESSED, so it is said the way a processed stack is named. */
+const workedName = (id: string): string => {
+  const def = MATERIAL_BY_ID[id];
+  const one = def?.family ? MATERIAL_FAMILY_BY_ID[def.family]?.one : undefined;
+  return one ? `${def!.name} ${one}` : (def?.name ?? id);
+};
 import {
   centreCamera,
   drinkFlask,
@@ -124,6 +133,7 @@ function restart(mode: StartMode): void {
     closeSettings();
     closeCrystals();
     closeWork();
+    closeForge();
     onRunFocused();
   }
   makeCharacter();
@@ -255,6 +265,11 @@ initWork(game, () => {
   refreshRunPanels();
   renderInventory();
 });
+// A craft spends materials and puts a piece in the bag, so both are stale.
+initForge(game, () => {
+  refreshRunPanels();
+  renderInventory();
+});
 // The crystal is in your hands the moment the panel closes, so the collection
 // and the Fissure's counts are both already out of date.
 initMet(game, () => {
@@ -324,6 +339,23 @@ setItemActions({
         },
       });
     }
+    // DISMANTLE, and it can never hand back more than the recipe took — the
+    // one thing that would make craft → dismantle → craft a printer. Menu
+    // only, beside the sale: both are one-way.
+    const back = dismantleYield(game, item);
+    if (back.length > 0) {
+      out.push({
+        label: `Dismantle for ${back.map((r) => `${r.n} ${workedName(r.material)}`).join(', ')}`,
+        menuOnly: true,
+        run: () => {
+          const paid = dismantle(game, item);
+          if (!paid) return;
+          note(`Dismantled ${item.name}`);
+          renderInventory();
+          refreshRunPanels();
+        },
+      });
+    }
     return out;
   },
   // Dragging onto a slot in the crafting window's worn column. A deliberate
@@ -362,6 +394,7 @@ const SCREENS: Record<
   shop: { el: 'shop', open: openShop, close: closeShop, isOpen: isShopOpen },
   crystals: { el: 'crystals', open: openCrystals, close: closeCrystals, isOpen: isCrystalsOpen },
   work: { el: 'work', open: () => openWork(), close: closeWork, isOpen: isWorkOpen },
+  forge: { el: 'forge', open: openForge, close: closeForge, isOpen: isForgeOpen },
   stash: { el: 'stash', open: openStash, close: closeStash, isOpen: isStashOpen },
   history: { el: 'history', open: openHistory, close: closeHistory, isOpen: isHistoryOpen },
   save: { el: 'savedata', open: openSaveData, close: closeSaveData, isOpen: isSaveDataOpen },

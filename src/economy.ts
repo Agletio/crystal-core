@@ -86,9 +86,9 @@ export function makeCrystal(level: number, family: MonsterFamily = 'normal'): It
 
 /** Implicits use fixed ranges: they take a mod's shape purely so stat
  *  aggregation needs no special case for them. */
-function implicitsFor(def: GearBase | undefined, perfect = false): RolledMod[] {
+function implicitsFor(def: GearBase | undefined, perfect = false, made = 1): RolledMod[] {
   if (!def?.implicit?.length) return [];
-  const lift = perfect ? 1 + PERFECT.lift : 1;
+  const lift = (perfect ? 1 + PERFECT.lift : 1) * made; // both, and they stack
   return [
     {
       entryId: `${def.id}_implicit`,
@@ -101,7 +101,7 @@ function implicitsFor(def: GearBase | undefined, perfect = false): RolledMod[] {
       stats: def.implicit.map((s) => ({
         stat: s.stat,
         form: s.form,
-        value: perfect ? Math.ceil(s.range[0] * lift) : s.range[0],
+        value: lift === 1 ? s.range[0] : Math.ceil(s.range[0] * lift),
         tags: s.tags ?? [],
       })),
     },
@@ -193,11 +193,20 @@ export function defaultGearBase(
   );
 }
 
-export function makeGear(base: string, ilvl: number, name?: string, perfect = false): Item {
+/** `made` is a CRAFT's lift on the row, and 1 is exactly the row — which is
+ *  what a DROP pays, so the level is what separates made from found. */
+export function makeGear(
+  base: string,
+  ilvl: number,
+  name?: string,
+  perfect = false,
+  made = 1
+): Item {
   const def = GEAR_BASE_BY_ID[base];
   // A base that cannot be Perfect simply is not one, so a caller may ask.
   const lifted = perfect && canBePerfect(base);
-  const lift = (n: number) => Math.ceil(n * (1 + PERFECT.lift));
+  const lift = (n: number) => Math.ceil(n * (1 + PERFECT.lift) * made);
+  const plain = (n: number) => (made === 1 ? n : Math.ceil(n * made));
   return {
     id: uid('gear'),
     kind: 'gear',
@@ -209,10 +218,10 @@ export function makeGear(base: string, ilvl: number, name?: string, perfect = fa
     // roll move speed, whatever its tier.
     slots: { ...(def?.slots ?? GEAR_SLOTS) },
     mods: [],
-    implicits: implicitsFor(def, lifted),
+    implicits: implicitsFor(def, lifted, made),
     // The item outlives its base, and a Perfect one differs from its row.
-    ...(def?.armour ? { armour: lifted ? lift(def.armour) : def.armour } : {}),
-    ...(def?.damage ? { damage: lifted ? lift(def.damage) : def.damage } : {}),
+    ...(def?.armour ? { armour: lifted ? lift(def.armour) : plain(def.armour) } : {}),
+    ...(def?.damage ? { damage: lifted ? lift(def.damage) : plain(def.damage) } : {}),
     // Which slot type this fits. Kept on the item so equipping doesn't have
     // to reach back into the base table every time it asks.
     meta: {

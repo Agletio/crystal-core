@@ -189,19 +189,12 @@ export const AILMENT = {
   tick: 0.5, // poison lands in half-second lumps, which is also the crit cadence
 };
 
-/**
- * Resistance and armour are separate MULTIPLIERS — at both caps you take
- * 0.25 * 0.25 of a hit; adding them would be immunity at 75 + 75. Armour
- * curves with armour POINTS, not with the size of the hit, and applies to HITS
- * only: damage over time goes through resistance alone.
- */
-/**
- * What a passive deals on its OWN, and the whole point of the number: it comes
- * off character LEVEL and nothing else. A share of your hit inherits every
- * multiplier a build already stacked, which makes it a rider no build declines;
- * flat and never scaling dies by band 3. Level is the one input that is not a
- * choice, so it can be tuned with one figure and can never become a target.
- */
+/** Resistance and armour are separate MULTIPLIERS — at both caps you take
+ *  0.25 * 0.25 of a hit; adding them would be immunity at 75 + 75. Armour
+ *  curves with armour POINTS and applies to HITS only. */
+/** What a passive deals on its OWN, off character LEVEL and nothing else: a
+ *  share of your hit is a rider no build declines, and a flat number dies by
+ *  band 3. Level is the one input that is not a choice. */
 export const PASSIVE_DAMAGE = {
   sunderPerLevel: 5.5, // Sundering's Burst, physical
   sunderEvery: 4, // seconds between one Burst being armed and the next
@@ -1615,17 +1608,10 @@ export const GEAR_MODS: ModDef[] = [
   ...RESISTANCE_MODS,
 ];
 
-/**
- * What somebody will write over a base's own line, and nothing else in the game
- * can. Never rolled — weight 0, and the pool is weighted — but present in
- * `ALL_MODS`, so a save resolves one and `npm run mods` holds it to the same
- * rules as a line that drops.
- *
- * `kinds` is which gear a line may be grafted onto, read by the panel rather
- * than by `appliesTo`: a graft is not a currency and never asks the pool.
- * `who` is whose room it is written in — the man who takes bodies has no
- * opinion about a ring, and says so out loud.
- */
+/** What somebody will write over a base's own line. Never rolled — weight 0 —
+ *  but present in `ALL_MODS`, so a save resolves one and `npm run mods` holds
+ *  it to the same rules. `kinds` is which gear it may be grafted onto, read by
+ *  the panel rather than by `appliesTo`; `who` is whose room writes it. */
 export interface ForgedDef {
   mod: ModDef;
   kinds: string[];
@@ -2362,6 +2348,62 @@ export const WORK = {
   // FLAT, never by world: a Seam job paying more would be a TIER in the one
   // place the no-tiers rule is easiest to break.
   xp: 6,
+};
+
+/**
+ * CRAFTING. **MATERIALS DECIDE WHAT AN ITEM IS; CURRENCY DECIDES WHAT IS ON
+ * IT** — a craft picks the BASE and its IMPLICIT, and every modifier is still
+ * the bench's. **A LEVEL SLIDES THE WINDOW**: *"a plate helm can get between
+ * 100–150 armour, where if you're 1 blacksmithing it's always 100–105 and if
+ * you're 99 it's always 145–150."* `span` is how far off the row a craft can
+ * land EACH WAY, so a DROP is exactly the row and the level is the whole of
+ * what separates a craft from it. **A TIER IS HOW MANY DIFFERENT VERSIONS THE
+ * RECIPE DEMANDS**, which is why depth matters without deep ore being better.
+ */
+export const CRAFT = {
+  span: 0.15,
+  /** The window's width as a share of the whole span, and it NARROWS. */
+  widthAt1: 0.15,
+  widthAtTop: 0.1,
+  /** A PERFECT base out of a craft, at level 1 and at the cap. The floor pays
+   *  one as a share of a rare drop and neither road closes the other. */
+  perfectAt1: 0,
+  perfectAtTop: 0.06,
+  /** The profession level a tier asks for, and what it asks in materials:
+   *  how many DIFFERENT world versions and how many of each. */
+  needs: [1, 20, 45],
+  versions: [1, 2, 4],
+  each: [2, 3, 4],
+  /** From this tier up, a recipe also wants one of a world's UNIQUE — the
+   *  thing tied to no profession, which is what it is FOR. */
+  uniqueFrom: 3,
+  /** XP a craft pays, by tier: a higher recipe beats spamming the cheapest. */
+  xp: [12, 40, 130],
+  /** A DISMANTLE's share of what the recipe took. NEVER 1 or more, or craft →
+   *  dismantle → craft is a material printer. */
+  back: 0.5,
+};
+
+/** WHICH PROFESSION AN ARCHETYPE IS, so a hybrid armour family's recipe names
+ *  exactly the two professions its archetypes already name. */
+export const ARCHETYPE_PROFESSION: Record<string, string> = {
+  melee: 'blacksmithing',
+  spell: 'weaving',
+  rogue: 'leatherworking',
+};
+
+/** A weapon has no archetypes, so its family says who makes it — *"a sword is
+ *  mostly Blacksmithing, a bow mostly Woodworking, a staff between."* */
+export const WEAPON_PROFESSIONS: Record<string, string[]> = {
+  sword: ['blacksmithing'],
+  sword2h: ['blacksmithing'],
+  dagger: ['blacksmithing'],
+  mace: ['blacksmithing'],
+  mace2h: ['blacksmithing'],
+  bow: ['woodworking', 'leatherworking'],
+  staff: ['woodworking', 'weaving'],
+  wand: ['woodworking', 'jewelling'],
+  shield: ['blacksmithing', 'woodworking'],
 };
 
 /** THE PROVING GROUND: one area past the climb, at a set floor. *"A set
@@ -3519,13 +3561,10 @@ export const opensHere = (gate: DropGate | undefined, power: number, zone: MapTh
 
 // --- uniques ---------------------------------------------------------------
 //
-// A named piece whose lines are fixed and whose real content is a `grants`
-// entry — the same table the trees hand switches to the sim through, so the
-// merge rules and the demo's "declared, and read by something" rule apply to
-// gear for free. Every one is a TRADE: the switch is paid for on the item.
-//
-// A unique declares no modifier slots, so no currency reaches it. The whole
-// point is a fixed thing you build around rather than a canvas.
+// A named piece whose real content is a `grants` entry — the same table the
+// trees hand switches through, so every merge rule applies to gear for free.
+// Every one is a TRADE: the switch is paid for on the item. It declares no
+// modifier slots, so no currency reaches it.
 
 export const UNIQUES: UniqueDef[] = [
   // The Fissure's own, which is what it gets for being the shallow end: two

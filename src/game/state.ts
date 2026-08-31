@@ -225,8 +225,13 @@ export function resetGame(game: GameState, mode: StartMode): void {
   game.inventory = stocked;
   game.crystals = preset.crystals.map((c) => makeCrystal(c.level, c.family));
   game.relics = (preset.relics ?? []).map((id) => makeRelic(RELIC_BY_ID[id]!));
+  // RAW and WORKED both: a kit that could not reach the anvil is one that can
+  // look at half the arc.
   game.materials = preset.materials
-    ? MATERIALS.map((def) => makeMaterial(def, preset.materials!))
+    ? MATERIALS.flatMap((def) => [
+        makeMaterial(def, preset.materials!),
+        ...(def.family ? [makeMaterial(def, preset.materials!, true)] : []),
+      ])
     : [];
   game.jobs = [];
   game.stash = plain.slice(room);

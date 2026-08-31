@@ -94,6 +94,7 @@ import {
   BASE_TIER_MODS,
   MATERIALS,
   MATERIAL_FAMILIES,
+  CRAFT,
   MATERIAL_BY_ID,
   MATERIAL_FAMILY_BY_ID,
   WORK,
@@ -131,6 +132,7 @@ import { seamSocketed } from './sim/crystal';
 import {
   balance,
   grant,
+  canBePerfect,
   makeCrystal,
   makeMaterial,
   pickGearBase,
@@ -165,6 +167,17 @@ import type { SceneDef } from './scenes';
 import { COVER_PROPS, COVER_SET, FACE_FOOT, FACE_HEAD, FOOT, HUNG_PROPS, VIGNETTES, WALL_PROPS } from './vignettes';
 import { PROP_ART } from './render/generated-props';
 import { jobsIn, loadWork, professionAt, whyNotWork, xpToNext as workXpToNext } from './game/work';
+import {
+  craftBase,
+  dismantle,
+  dismantleYield,
+  liftFor,
+  makersOf,
+  perfectChanceAt,
+  qualityRoll,
+  recipeFor,
+  whyNotCraft,
+} from './game/forge';
 import { ZONES } from './render/generated-tiles';
 import type { Entity, RunState } from './sim/run';
 import {
@@ -3231,11 +3244,14 @@ rule('MATERIALS AND PROFESSIONS — is the table a thing a recipe could read?');
   // look at.
   const g = createGame('fresh');
   const kit = createGame('dev');
+  // The kit holds a RAW stack of every one and a WORKED stack of every one
+  // that has a family, since a zone-unique is worked by nothing.
+  const workable = MATERIALS.filter((m) => m.family !== null).length;
   check(
     (g.materials ?? []).length === 0 &&
       [...g.inventory, ...g.stash].every((i) => i.kind !== 'material') &&
-      (kit.materials ?? []).length === MATERIALS.length,
-    'and nobody starts holding one, though the dev kit is handed all of them',
+      (kit.materials ?? []).length === MATERIALS.length + workable,
+    'and nobody starts holding one, though the dev kit is handed all of them raw and worked',
     `${(g.materials ?? []).length} fresh, ${(kit.materials ?? []).length} in the kit`
   );
 
@@ -3562,6 +3578,213 @@ rule('THE STATIONS — does a job advance on descents, and never on a clock?');
     anyDone > 0 && madeAny > 0,
     'and the whole loop runs headless: dug up, loaded, descended, worked',
     `${ran} descents, ${anyDone} jobs off, ${madeAny} processed stacks`
+  );
+}
+
+// ===========================================================================
+rule('THE ANVIL — does a level slide the window, and can a dismantle print?');
+
+// STEP 4: **MATERIALS DECIDE WHAT AN ITEM IS; CURRENCY DECIDES WHAT IS ON IT.**
+// A recipe is DERIVED off the base rather than authored, so what can be wrong
+// is the derivation, the window, and the one thing that would break the whole
+// economy — a dismantle handing back more than the recipe took.
+{
+  const kit = () => {
+    const g = createGame('fresh');
+    for (const def of MATERIALS) {
+      addItem(g, makeMaterial(def, 400));
+      addItem(g, makeMaterial(def, 400, true));
+    }
+    return g;
+  };
+  const at = (g: GameState, level: number): GameState => {
+    g.character.professions = Object.fromEntries(
+      PROFESSIONS.map((p) => [p.id, { level, xp: 0 }])
+    );
+    return g;
+  };
+
+  // EVERY BASE THAT IS NOT NAMED IS MAKEABLE. A base with no recipe is one
+  // nobody can ever get on purpose, now that the floor pays a quarter a clear.
+  const plain = GEAR_BASES.filter((b) => !UNIQUES.some((u) => u.base === b.id));
+  const unmade = plain.filter((b) => recipeFor(b.id) === null);
+  check(
+    unmade.length === 0,
+    `all ${plain.length} unnamed bases have a recipe, derived off the base and authored nowhere`,
+    unmade.slice(0, 5).map((b) => b.id).join(', ')
+  );
+
+  // A HYBRID FAMILY NAMES EXACTLY THE TWO PROFESSIONS ITS ARCHETYPES DO, which
+  // is the whole reason no table special-cases anything.
+  const wrong = ARMOUR_FAMILIES.filter((family) => {
+    const base = GEAR_BASES.find((b) => b.family === family.id);
+    const made = base ? makersOf(base) : [];
+    return made.length !== family.archetypes.length;
+  });
+  check(
+    wrong.length === 0,
+    'and a hybrid armour family asks for exactly the two professions its archetypes name',
+    wrong.map((f) => f.id).join(', ')
+  );
+
+  // A TIER IS HOW MANY DIFFERENT VERSIONS IT DEMANDS. Depth matters because
+  // ACCESS is gated, never because deep ore is better ore.
+  const tiers = [1, 2, 3].map((tier) => {
+    const base = GEAR_BASES.find((b) => b.tier === tier && recipeFor(b.id));
+    return recipeFor(base?.id ?? '')!;
+  });
+  check(
+    tiers[0].parts[0].versions < tiers[1].parts[0].versions &&
+      tiers[1].parts[0].versions < tiers[2].parts[0].versions &&
+      tiers[2].unique > 0 && tiers[0].unique === 0,
+    'and a higher tier asks for more DIFFERENT versions, the top one for a world\'s own',
+    tiers.map((r) => `t${r.tier} ${r.parts[0].versions}x${r.parts[0].wants}`).join(', ')
+  );
+
+  // THE WINDOW. *"A plate helm can get between 100–150 armour, where if you're
+  // 1 blacksmithing it's always 100–105 and if you're 99 it's always 145–150."*
+  const helm = GEAR_BASES.find((b) => b.id === 'bulwark_helmet_t1')!;
+  const spread = (level: number): [number, number] => {
+    let lo = Infinity;
+    let hi = -Infinity;
+    for (let i = 0; i < 400; i++) {
+      const made = liftFor(qualityRoll(level, new Rng(9000 + i))) * (helm.armour ?? 0);
+      lo = Math.min(lo, made);
+      hi = Math.max(hi, made);
+    }
+    return [lo, hi];
+  };
+  const low = spread(1);
+  const top = spread(PROFESSION.maxLevel);
+  line(
+    `  ${helm.name} is ${helm.armour} armour on the row: level 1 makes ` +
+      `${low[0].toFixed(1)}–${low[1].toFixed(1)}, level ${PROFESSION.maxLevel} makes ` +
+      `${top[0].toFixed(1)}–${top[1].toFixed(1)}`
+  );
+  check(
+    low[1] < (helm.armour ?? 0) && top[0] > (helm.armour ?? 0),
+    'a level 1 craft lands UNDER the row and a level 99 one over it, so a DROP is the middle',
+    `${low[1].toFixed(1)} and ${top[0].toFixed(1)} against ${helm.armour}`
+  );
+  check(
+    top[1] - top[0] < low[1] - low[0],
+    'and the window NARROWS as it climbs, so the level buys certainty as well as size',
+    `${(low[1] - low[0]).toFixed(2)} wide at 1, ${(top[1] - top[0]).toFixed(2)} at the cap`
+  );
+
+  // AND IT REACHES THE ITEM, not just the arithmetic: a made piece differs
+  // from a found one in `armour`, `damage` and every implicit it carries.
+  const madeLow = craftBase(at(kit(), 1), recipeFor('bulwark_helmet_t1')!, new Rng(3))!;
+  const madeTop = craftBase(at(kit(), PROFESSION.maxLevel), recipeFor('bulwark_helmet_t1')!, new Rng(3))!;
+  const found = makeGear('bulwark_helmet_t1', helm.ilvl ?? 1);
+  check(
+    (madeLow.item.armour ?? 0) < (found.armour ?? 0) &&
+      (madeTop.item.armour ?? 0) > (found.armour ?? 0),
+    'and it reaches the PIECE: a made helm at 1 is worse than a found one and at 99 is better',
+    `${madeLow.item.armour} · ${found.armour} · ${madeTop.item.armour}`
+  );
+  const weapon = GEAR_BASES.find((b) => b.kind === 'weapon' && b.implicit?.length && b.tier === 1)!;
+  const swung = craftBase(at(kit(), PROFESSION.maxLevel), recipeFor(weapon.id)!, new Rng(4))!;
+  check(
+    (swung.item.damage ?? 0) > (weapon.damage ?? 0) &&
+      swung.item.implicits[0].stats[0].value > (weapon.implicit![0].range[0] ?? 0),
+    'and the IMPLICIT rides the same window, not the damage alone',
+    `${swung.item.damage} vs ${weapon.damage}, ${swung.item.implicits[0].stats[0].value} vs ${weapon.implicit![0].range[0]}`
+  );
+
+  // A CRAFT IS REFUSED IN NUMBERS. A level you have not reached and a material
+  // you do not hold are the two walls, and both say what they want.
+  const poor = createGame('fresh');
+  const why = whyNotCraft(poor, recipeFor('bulwark_helmet_t1')!);
+  check(
+    why !== null && /\d/.test(why) && craftBase(poor, recipeFor('bulwark_helmet_t1')!, new Rng(1)) === null,
+    'a craft with nothing in the bag is refused, and says what it wanted in numbers',
+    why ?? 'it went ahead anyway'
+  );
+  const low3 = at(kit(), 1);
+  const gated = whyNotCraft(low3, recipeFor(tiers[2].base)!);
+  check(
+    gated !== null && /\d/.test(gated),
+    'and a tier 3 recipe at level 1 is refused on the LEVEL, however full the bag',
+    gated ?? 'it went ahead anyway'
+  );
+
+  // A CRAFT PAYS XP, weighted so a higher recipe beats spamming the cheapest.
+  check(
+    CRAFT.xp.every((n, i) => i === 0 || n > CRAFT.xp[i - 1]) &&
+      CRAFT.xp[2] > CRAFT.xp[0] * CRAFT.each[2] / CRAFT.each[0],
+    'and a tier 3 craft pays more XP than the materials it costs would buy as tier 1s',
+    CRAFT.xp.join(' → ')
+  );
+  const learner = at(kit(), 1);
+  craftBase(learner, recipeFor('bulwark_helmet_t1')!, new Rng(7));
+  check(
+    professionAt(learner, 'blacksmithing').level > 1 ||
+      professionAt(learner, 'blacksmithing').xp > 0,
+    'and the profession that made it is further on for having made it',
+    JSON.stringify(professionAt(learner, 'blacksmithing'))
+  );
+
+  // **A DISMANTLE MAY NEVER RETURN MORE THAN THE RECIPE TOOK.** This is the one
+  // check that stands between the whole economy and a material printer, and it
+  // is asked of EVERY base rather than of a sample.
+  const printers: string[] = [];
+  for (const base of plain) {
+    const recipe = recipeFor(base.id);
+    if (!recipe) continue;
+    const g = at(kit(), PROFESSION.maxLevel);
+    const made = craftBase(g, recipe, new Rng(11));
+    if (!made) continue;
+    const took = new Map<string, number>();
+    for (const row of made.spent) took.set(row.material, (took.get(row.material) ?? 0) + row.n);
+    let backTotal = 0;
+    let tookTotal = 0;
+    for (const row of dismantleYield(g, made.item)) {
+      if (row.n > (took.get(row.material) ?? 0)) printers.push(`${base.id}/${row.material}`);
+      backTotal += row.n;
+    }
+    for (const n of took.values()) tookTotal += n;
+    if (backTotal >= tookTotal) printers.push(`${base.id} whole`);
+  }
+  check(
+    printers.length === 0,
+    `and not one of the ${plain.length} bases hands back as much as it took: craft → dismantle → craft cannot print`,
+    printers.slice(0, 4).join(', ')
+  );
+
+  // AND IT ACTUALLY RUNS: the piece leaves the bag and the materials arrive.
+  const taker = at(kit(), PROFESSION.maxLevel);
+  const piece = craftBase(taker, recipeFor('bulwark_helmet_t1')!, new Rng(13))!.item;
+  const heldBefore = (taker.materials ?? []).reduce((n, i) => n + ((i.meta.n as number) ?? 0), 0);
+  const paidBack = dismantle(taker, piece);
+  const heldAfter = (taker.materials ?? []).reduce((n, i) => n + ((i.meta.n as number) ?? 0), 0);
+  check(
+    paidBack !== null && !taker.inventory.includes(piece) && heldAfter > heldBefore,
+    'and taking one apart really does spend the piece and bank what came off it',
+    `${heldBefore} → ${heldAfter}`
+  );
+
+  // A PERFECT BASE IS CRAFTABLE AND STILL DROPS, and the craft's odds ride the
+  // LEVEL — either luck or a hundred levels of work, and neither road closes
+  // the other.
+  check(
+    perfectChanceAt(1) < perfectChanceAt(PROFESSION.maxLevel) &&
+      perfectChanceAt(PROFESSION.maxLevel) > 0,
+    'a Perfect base comes off the LEVEL as well as off the floor',
+    `${(perfectChanceAt(1) * 100).toFixed(1)}% at 1, ${(perfectChanceAt(PROFESSION.maxLevel) * 100).toFixed(1)}% at the cap`
+  );
+  const perfectBase = GEAR_BASES.find((b) => canBePerfect(b.id) && recipeFor(b.id))!;
+  let perfects = 0;
+  const runs = 400;
+  for (let i = 0; i < runs; i++) {
+    const g = at(kit(), PROFESSION.maxLevel);
+    if (craftBase(g, recipeFor(perfectBase.id)!, new Rng(500 + i))?.perfect) perfects++;
+  }
+  line(`  ${perfects} Perfect in ${runs} crafts of ${perfectBase.name} at the cap`);
+  check(
+    perfects > 0,
+    'and it really does come out of a craft at the cap, not only out of the table',
+    `${perfects} in ${runs}`
   );
 }
 

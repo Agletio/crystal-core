@@ -1134,11 +1134,11 @@ $('craft-close').click();
 assert($('craft').hidden === true, 'crafting closes');
 assert($('camp').hidden === false, 'and the camp is waiting underneath');
 assert(document.body.dataset.runPhase === 'menu', 'which is home, and not a descent');
-// The crack, four sockets, the bench, the shelf, the fire, the tent, and one
-// station a profession: everything on the picture there is to click.
+// The crack, four sockets, the bench, the shelf, the fire, the tent, the anvil
+// and one station a profession: everything on the picture there is to click.
 assert(
-  document.querySelectorAll('#camp-hotspots .camp__hot').length === 15,
-  'with everything on the picture there is to click, the fire and six stations among them',
+  document.querySelectorAll('#camp-hotspots .camp__hot').length === 16,
+  'with everything on the picture there is to click, the fire, the anvil and six stations among them',
   String(document.querySelectorAll('#camp-hotspots .camp__hot').length)
 );
 // The Fissure window is the sockets and the one button, and nothing else:
@@ -2854,6 +2854,35 @@ $('dev-kit').click();
   );
   $('work-close').click();
   assert($('work').hidden === true, 'and it closes again');
+}
+
+// --- THE ANVIL: what a heap of material could become ----------------------
+{
+  assert($('open-forge') === null, 'the rail has no button for the anvil');
+  $('camp-anvil').click();
+  assert($('forge').hidden === false, 'and the anvil in the camp opens it');
+  assert(
+    all('#forge-tabs .climbtab').length === 8,
+    'one tab a slot, so a piece is looked for where it is worn',
+    String(all('#forge-tabs .climbtab').length)
+  );
+  // EVERY BASE IS LISTED, craftable or not: a plan you cannot see is a plan
+  // nobody makes, so a row you cannot afford says why rather than vanishing.
+  const rows = () => all('#forge-list .crystal');
+  assert(rows().length > 5, 'and every base in that slot is on the list', String(rows().length));
+  assert(
+    rows().every((row) => /Tier \d/.test(row.textContent ?? '')),
+    'each saying its tier and the window the level buys',
+    rows()[0]?.textContent?.slice(0, 70)
+  );
+  const stopped = rows().filter((row) => row.querySelector('button')?.disabled);
+  assert(
+    stopped.every((row) => /\d/.test(row.querySelector('button')?.textContent ?? '')),
+    'and a row you cannot make says what it wanted, in numbers',
+    stopped[0]?.querySelector('button')?.textContent
+  );
+  $('forge-close').click();
+  assert($('forge').hidden === true, 'and it closes again');
 }
 
 // --- the Reckoning: the one web a level never pays for --------------------
