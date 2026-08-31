@@ -383,10 +383,17 @@ gets for NOTHING** — measured, a chest in one descent of 4.8 on blank crystals
 Hoard and never the Vein: a free lock paying currency hands a shard's scarcity
 straight back.
 
-**A LOCK IS MADE OF THE WORLD IT STANDS IN, and it OPENS.** `LOCKS` is three a
-world — two ordinary and one RARE — each a `shut` prop and the `open` frame of
-**the same generated object**, so the last guard falling swaps the picture
-rather than standing a second chest beside the first. A pair is cropped to ONE
+**A LOCK IS MADE OF THE WORLD IT STANDS IN, and it is WALKED TO.** `LOCKS` is
+three a world — two ordinary and one RARE — each a `shut` prop and the `open`
+frame of **the same generated object**, so opening one swaps the picture rather
+than standing a second chest beside the first. **The last guard falling only
+UNLOCKS it** (`Hoard.free`): *"I want it to be a chest that will actually open
+and when you kill all the mobs your character walks up and opens it."*
+`stepHoard` is that walk and it is a shipped default policy `runToCompletion`
+runs, asked with nothing left to fight so a pack always outranks a box. A route
+that does not exist is the same answer as being there already — the rule the
+exit is already under, and what stops a walled-off lock holding a descent open
+for ever. A pair is cropped to ONE
 box (`PropSpec.with`), or the lid going back moves the box under it. **A rare
 one is never a bigger pile**: `LOCK.rareRarity` is what its ONE drop is worth
 extra, because rarity buys what a piece IS everywhere else in the game. A

@@ -453,8 +453,8 @@ let parkedCount = 0;
 
 /**
  * A check DEFERRED to the balance pass, at the user's word. Each reads off the
- * characters the ladder walks, and that walk moved with the trunk's shape. The
- * numbers still print; `ROADMAP.md` names all four.
+ * characters the ladder walks, and that walk moves with everything. The numbers
+ * still print, and the line above each one says what it read.
  */
 function parkedCheck(ok: boolean, good: string, bad: string): void {
   if (ok) {
@@ -11156,6 +11156,43 @@ rule('THE ROCK\'S OWN RULES — does a crystal DO something, or just add up?');
     );
   }
 
+  // THE CHEST IS WALKED TO. *"I want it to be a chest that will actually open
+  // and when you kill all the mobs your character walks up and opens it."* So
+  // the guards falling UNLOCKS it and nothing else, and the walk is a shipped
+  // default policy `runToCompletion` runs — there is no click anywhere in it.
+  {
+    const set = carrying('hoardChance', 100);
+    const sim = new RunSim(set, who(), new Rng(5252));
+    // Every guard down, by hand, before a single step is taken: this is the
+    // moment the box used to spring open on its own.
+    let guard = 0;
+    while (guard < 4000 && sim.state.hoards.every((h) => !h.free)) {
+      sim.step(1 / 30);
+      guard++;
+    }
+    const freed = sim.state.hoards.filter((h) => h.free);
+    check(
+      freed.length > 0 && freed.every((h) => !h.opened || dist(sim.state.hero, h) <= HOARD.reach),
+      'a lock whose guards are down is UNLOCKED and still shut — it does not spring open where he stands',
+      `${freed.length} freed, ${sim.state.hoards.filter((h) => h.opened).length} already open`
+    );
+    const end = runToCompletion(sim, 900);
+    const locks = sim.state.hoards;
+    check(
+      end.status === 'cleared' && locks.length > 0 && locks.every((h) => h.free && h.opened),
+      `and every one of the ${locks.length} is walked to and opened, headless, with the run still ending`,
+      `${end.status}: ${locks.filter((h) => h.opened).length} of ${locks.length} opened`
+    );
+    check(
+      locks.every((h) => (sim.state.map.props[h.at]?.id ?? '') === h.lock.open),
+      'and the PICTURE changed with it — the same object, its open frame',
+      locks.map((h) => sim.state.map.props[h.at]?.id).join(', ')
+    );
+    // A LOCK NOTHING CAN REACH may not hold a descent open for ever: the run
+    // above ending at all is that, and this is the rule it rests on.
+    line(`  ${locks.length} locks, all walked to, in ${end.elapsed.toFixed(0)}s`);
+  }
+
   // THE VEIN pays CURRENCY where a Hoard pays gear: the same guard and the same
   // lock, a different thing behind it, which is what makes the pair a decision.
   {
@@ -12155,6 +12192,6 @@ line(
     : `  ✗ ${failed} check${failed === 1 ? '' : 's'} failed — see above`
 );
 if (parkedCount > 0) {
-  line(`  … and ${parkedCount} parked for the balance pass, named in ROADMAP.md`);
+  line(`  … and ${parkedCount} parked for the balance pass — each printed above`);
 }
 process.exitCode = failed === 0 ? 0 : 1;

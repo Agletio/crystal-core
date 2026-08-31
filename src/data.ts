@@ -3220,6 +3220,7 @@ export const HOARD = {
   drops: 1, // ONE thing when the last of them is down, never a pile
   goldChance: 0.3, // or coin instead, which makes opening one a small gamble
   gold: 90, // at the bare Fissure, lifted by the run's own danger
+  reach: 1.2, // how close he walks: guards falling only UNLOCKS a lock
 };
 
 /** WHAT A LOCK LOOKS LIKE, and it is made of the world it stands in: two

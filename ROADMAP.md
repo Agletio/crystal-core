@@ -12,7 +12,8 @@ character walk to the chest, you can pick the names for phase 6 too. And then go
 to phase 7."* So:
 
 1. ~~PHASE 6~~ — **WHOLE and deleted.** `git log` from `2ff5dfa` to `4b6caac`.
-2. **THE CHEST WALK** — the one loose end with a task behind it.
+2. ~~THE CHEST WALK~~ — **DONE.** `Hoard.free` is the guards being down and
+   `stepHoard` is the walk that opens it, asked with nothing left to fight.
 3. **PHASE 7**, in full.
 
 Nothing else is queued and nothing else may be promoted without being asked.
@@ -415,14 +416,6 @@ still be satisfiable.
 
 **Left over from finished phases. Each is a task, not a question.**
 
-- **THE HERO STILL DOES NOT WALK TO THE CHEST.** *"I want it to be a chest that
-  will actually open and when you kill all the mobs your character walks up and
-  opens it."* The twelve locks are drawn, shut and open, and the swap works —
-  `swapProps` in `src/render/pixi.ts` re-reads a prop's id every frame, which is
-  what was broken. What is missing is the WALK: a lock still opens the instant
-  the last guard falls, wherever the hero is standing. It needs a shipped
-  default policy that `runToCompletion` runs, like everything else a player
-  could do mid-descent.
 - **The named-piece check is thin.** 16 descents expects 5.5 and read 3; a zero
   is a 1-in-250 flake. Uniques are a share of drops like Perfect, and the count
   fell under them — either widen the sample or make it a `gauge()`.
@@ -434,6 +427,14 @@ still be satisfiable.
 ## Traps that outlive the phase that found them
 
 **Kept because they bite the NEXT thing, not because of what they came from.**
+
+- **THE CHEST WALK COST A WALL CHECK ONE DEATH.** A level-16 Strike character
+  against four blank Prismatic crystals died 6 of 12 seeds before it and 7 of 12
+  after, which tips a parked balance check from ✓ to printed. The cause is real
+  and small: a descent now spends a little longer on the floor walking to what
+  it unlocked. **Not tuned** — it is a balance number, the pass is the user's to
+  call, and the file's own warning is that this measurement is noisy at twelve
+  seeds. Written down so the balance pass knows where the death came from.
 
 - **THIRTY PAIR VARIANTS ARE DRAWN AND UNREACHABLE.** Ten each for the
   Alchemist, the Aethermancer and Mahthar, made before dual wielding became one

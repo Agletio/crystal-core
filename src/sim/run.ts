@@ -332,6 +332,7 @@ export interface Hoard {
   rare: boolean;
   /** THE SECOND WATCH has already put this one's guards back up. Once, ever. */
   risen?: boolean;
+  free?: boolean; // guards down and UNLOCKED; `opened` is the walk having happened
 }
 
 /** A drop LYING ON THE FLOOR. Nothing picks one up — the bag fills on the way
@@ -1554,6 +1555,10 @@ export class RunSim {
       }
       return;
     }
+
+    // NOTHING TO FIGHT: the locks his kills unlocked are what he goes to next,
+    // one at a time, before he starts for the way out.
+    if (this.stepHoard(dt)) return;
 
     // A boss room is cleared by putting the boss DOWN, never by walking out:
     // it has no way out, and the adds are what fills the gap while it lives.
@@ -3795,7 +3800,7 @@ export class RunSim {
   private openHoard(victim: Entity): void {
     if (!victim.hoard) return;
     const box = this.state.hoards.find((h) => h.id === victim.hoard);
-    if (!box || box.opened) return;
+    if (!box || box.opened || box.free) return;
     if (this.state.monsters.some((m) => !m.dead && m.hoard === victim.hoard)) return;
 
     if (this.watchChance > 0 && !box.risen && this.rng.chance(this.watchChance / 100)) {
@@ -3824,6 +3829,40 @@ export class RunSim {
       return;
     }
 
+    // UNLOCKED, NOT OPEN. What is left is the walk, which `stepHoard` runs.
+    box.free = true;
+  }
+
+  /** THE CHEST IS WALKED TO. *"When you kill all the mobs your character walks
+   *  up and opens it."* Asked with nothing to fight, so a pack outranks a box;
+   *  a route that does not exist is the same answer as being there already,
+   *  which is what stops a walled-off lock holding a descent open for ever. */
+  private stepHoard(dt: number): boolean {
+    const hero = this.state.hero;
+    let near: Hoard | null = null;
+    let far = Infinity;
+    for (const box of this.state.hoards) {
+      if (!box.free || box.opened) continue;
+      const d = dist(hero, box);
+      if (d < far) {
+        far = d;
+        near = box;
+      }
+    }
+    if (!near) return false;
+    if (far > HOARD.reach && this.advance(hero, near, dt)) {
+      this.face(hero, near.x, near.y);
+      return true;
+    }
+    hero.path = [];
+    this.face(hero, near.x, near.y);
+    this.settleAction(hero, false);
+    this.takeHoard(near);
+    return true;
+  }
+
+  /** What is behind it, once he is standing over it. */
+  private takeHoard(box: Hoard): void {
     box.opened = true;
     const prop = this.state.map.props[box.at];
     if (prop && prop.id === box.lock.shut) prop.id = box.lock.open;
