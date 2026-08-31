@@ -779,7 +779,12 @@ export function statMods(
   character: Character,
   grants: Record<string, unknown> = {}
 ): RolledMod[] {
-  const extra = [treeMod(character), attributeMod(character), weaponMod(character, grants)];
+  // WHAT YOU ATE is a mod like any other, so a meal reaches the sheet, the sim
+  // and every card through the one seam every other line already uses.
+  const extra = [
+    treeMod(character), attributeMod(character), weaponMod(character, grants),
+    character.meal ?? null,
+  ];
   return [
     ...equippedItems(character).flatMap((i) =>
       [...i.mods, ...i.implicits].map((m) =>

@@ -6,7 +6,7 @@
 import { bagsFull, bankLoot, grantFirstClear } from './state';
 import type { GameState } from './state';
 import { advanceSocketed, spendSocketed } from './crystals';
-import { advanceWork, professionAt } from './work';
+import { advanceWork, professionAt, spendMeal } from './work';
 import type { Finished } from './work';
 import type { ModBurn } from './crystals';
 import type { CrystalGain } from './crystals';
@@ -14,7 +14,7 @@ import { grant } from '../economy';
 import { DAMAGE_TYPE_BY_ID, MAIN_SLOT, PROFESSION_BY_ID, SKILL_SLOTS } from '../data';
 import { addXp, addSkillXp, equippedSkill } from '../sim/character';
 import type { RunState } from '../sim/run';
-import type { Item } from '../types';
+import type { Item, RolledMod } from '../types';
 
 export interface ReportRow {
   label: string;
@@ -38,6 +38,9 @@ export interface RunReport {
   burnt: ModBurn[];
   /** Jobs that came off a station while you were down there. */
   worked: Finished[];
+  /** The meal that ran out on this descent, if one did. Ends an Enter-chain? No
+   *  — a meal is a buff you replace, never a thing you cannot descend without. */
+  eaten: RolledMod | null;
   /** True when there was loot and the hero died holding it. */
   lostLoot: boolean;
   /** Whether the bag is at or over its limit now this run has banked. */
@@ -67,6 +70,7 @@ export function buildReport(game: GameState, run: RunState, left = false): RunRe
   let levelled: CrystalGain[] = [];
   let burnt: ModBurn[] = [];
   let worked: Finished[] = [];
+  let eaten: RolledMod | null = null;
   let filtered = { kept: [] as Item[], sold: 0, gold: 0 };
 
   if (keeps) {
@@ -103,6 +107,8 @@ export function buildReport(game: GameState, run: RunState, left = false): RunRe
     // THE STATIONS MOVE ON A CLEAR and on nothing else. A walk out keeps the
     // loot and buys no progress, and a job is progress.
     worked = advanceWork(game);
+    // WHAT YOU ATE burns down on a clear too, off the same rule.
+    eaten = spendMeal(game);
   }
 
   // XP is earned either way — you learned something on the way to dying.
@@ -162,6 +168,8 @@ export function buildReport(game: GameState, run: RunState, left = false): RunRe
     });
   }
 
+  if (eaten) rows.push({ label: eaten.name, value: 'eaten up', bad: true });
+
   // Damage taken, split by type — worst first and under its own name, because
   // a monster brings its own element now and a descent routinely shows three
   // of these. What you read off it is which resistance to go and find.
@@ -192,6 +200,7 @@ export function buildReport(game: GameState, run: RunState, left = false): RunRe
     levelled,
     burnt,
     worked,
+    eaten,
     lostLoot: !keeps && hadLoot,
     bagsFull: bagsFull(game),
     filtered: { sold: filtered.sold, gold: filtered.gold },

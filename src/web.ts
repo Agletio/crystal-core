@@ -10,7 +10,13 @@ import { armForSkill, createGame, resetGame, sellItem, slotFor, stashRoom, toSta
 import { canSell, sellPrice } from './economy';
 import { onWearChanged, wear } from './ui/wear';
 import { dismissToast } from './ui/toast';
-import { EQUIP_SLOTS, MATERIAL_BY_ID, MATERIAL_FAMILY_BY_ID, POTIONS } from './data';
+import {
+  EQUIP_SLOTS,
+  MATERIAL_BY_ID,
+  MATERIAL_FAMILY_BY_ID,
+  MEAL_BY_FISH,
+  POTIONS,
+} from './data';
 import type { StartMode } from './game/state';
 import { applySave, clearSave, healedAnything, loadGame, saveGame, startAutosave } from './game/save';
 import type { Healed } from './game/save';
@@ -35,6 +41,24 @@ import { initCrystals, openCrystals, closeCrystals, isCrystalsOpen } from './ui/
 import { initWork, openWork, closeWork, isWorkOpen } from './ui/work';
 import { initForge, openForge, closeForge, isForgeOpen } from './ui/forge';
 import { dismantle, dismantleYield } from './game/forge';
+import { eatMeal, mealRuns, professionAt, whyNotEat } from './game/work';
+import { Rng } from './rng';
+import { statParts } from './mod-text';
+
+/** The meal roll's own stream: a buff you re-roll by closing a menu is not a
+ *  buff, so it is seeded once and never from the run's own seed. */
+const mealRng = new Rng(Date.now() & 0x7fffffff);
+
+/** What eating one would be worth, at the level you cook at — in the game's own
+ *  words for a line, so a meal reads the way every other modifier does. */
+const saysMeal = (fish: string, level: number): string => {
+  const def = MEAL_BY_FISH[fish];
+  const line = def?.stats[0];
+  const runs = `${mealRuns(level, new Rng(1))}–${mealRuns(level, new Rng(99))} descents`;
+  if (!line) return runs;
+  const said = statParts({ stat: line.stat, form: line.form, value: line.range[0], tags: line.tags ?? [] });
+  return `${said.value} ${said.label} for ${runs}`;
+};
 
 /** A refund is PROCESSED, so it is said the way a processed stack is named. */
 const workedName = (id: string): string => {
@@ -336,6 +360,25 @@ setItemActions({
           note(`Sold ${item.name} for ${paid} gold`, 'add');
           renderInventory();
           refreshShop();
+        },
+      });
+    }
+    // EAT IT. A meal is a buff that lasts RUNS, and the processed fish IS the
+    // meal — so the verb sits on the stack rather than behind a second recipe.
+    const why = whyNotEat(game, item.base);
+    if (item.kind === 'material' && MEAL_BY_FISH[item.base]) {
+      const level = professionAt(game, 'cooking').level;
+      out.push({
+        label: why ?? `Eat it — ${saysMeal(item.base, level)}`,
+        menuOnly: true,
+        blocked: why ?? undefined,
+        run: () => {
+          const meal = eatMeal(game, item.base, mealRng);
+          if (!meal) return;
+          note(`Ate ${meal.name} — ${meal.uses} descents`);
+          renderInventory();
+          refreshRunPanels();
+          refreshCharacter();
         },
       });
     }

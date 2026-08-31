@@ -101,6 +101,9 @@ import {
   MATERIAL_FAMILIES,
   CRAFT,
   MATERIAL_BY_ID,
+  MEAL,
+  MEALS,
+  MEAL_BY_FISH,
   MATERIAL_FAMILY_BY_ID,
   WORK,
   PROFESSION,
@@ -171,7 +174,15 @@ import { SCENE_ART } from './render/generated-scene';
 import type { SceneDef } from './scenes';
 import { COVER_PROPS, COVER_SET, FACE_FOOT, FACE_HEAD, FOOT, HUNG_PROPS, VIGNETTES, WALL_PROPS } from './vignettes';
 import { PROP_ART } from './render/generated-props';
-import { jobsIn, loadWork, professionAt, whyNotWork, xpToNext as workXpToNext } from './game/work';
+import {
+  eatMeal,
+  jobsIn,
+  loadWork,
+  mealRuns,
+  professionAt,
+  whyNotWork,
+  xpToNext as workXpToNext,
+} from './game/work';
 import {
   craftBase,
   dismantle,
@@ -3995,6 +4006,141 @@ rule('THE HYBRID RULE — is breadth worth two professions, and what does it cos
     short.length === 0,
     'and it is on the PIECE, not only in the mix it was built from',
     short.join(', ')
+  );
+}
+
+// ===========================================================================
+rule('COOKING — does a meal reach the sheet, and does it burn down?');
+
+// STEP 7: **A MEAL IS A BUFF THAT LASTS RUNS**, which is the crystal roll's own
+// shape pointed at the hero. The PROCESSED fish IS the meal, so there is no
+// second recipe — and the level slides how long it lasts by the identical rule
+// that slides a base's roll, which is the whole reason there is one to learn.
+{
+  const kit = (): GameState => {
+    const g = createGame('fresh');
+    g.character = ladderCharacter(3, new Rng(4));
+    for (const meal of MEALS) addItem(g, makeMaterial(MATERIAL_BY_ID[meal.fish], 9, true));
+    return g;
+  };
+
+  // ONE MEAL PER FISH, and every fish has one: a world whose catch cooks into
+  // nothing is a family of material with a dead end at the kitchen.
+  const fish = MATERIALS.filter((m) => m.family === 'fish');
+  check(
+    MEALS.length === fish.length && fish.every((f) => MEAL_BY_FISH[f.id]),
+    `all ${fish.length} fish cook into a meal of their own`,
+    fish.filter((f) => !MEAL_BY_FISH[f.id]).map((f) => f.id).join(', ')
+  );
+  const unpaid = MEALS.filter((m) => m.stats.length === 0 || m.stats.some((l) => l.range[0] === 0));
+  check(
+    unpaid.length === 0 && new Set(MEALS.map((m) => m.stats[0].stat)).size === MEALS.length,
+    'and each buys something different, in a figure',
+    unpaid.map((m) => m.name).join(', ')
+  );
+
+  // **THE LEVEL SLIDES HOW LONG IT LASTS**, off the same window a craft reads.
+  // *"One buff can give 5–15 runs, and at level 1 you can only get it to land
+  // on 5–8 and it goes up until level 99 cooking is always 14–15."*
+  const window = (level: number): [number, number] => {
+    let lo = Infinity;
+    let hi = -Infinity;
+    for (let i = 0; i < 2000; i++) {
+      const at = mealRuns(level, new Rng(4000 + i));
+      lo = Math.min(lo, at);
+      hi = Math.max(hi, at);
+    }
+    return [lo, hi];
+  };
+  const low = window(1);
+  const top = window(PROFESSION.maxLevel);
+  line(
+    `  a meal lasts ${low[0]}–${low[1]} descents at Cooking 1 and ${top[0]}–${top[1]} at ` +
+      `${PROFESSION.maxLevel}, out of ${MEAL.runs[0]}–${MEAL.runs[1]}`
+  );
+  check(
+    low[0] === MEAL.runs[0] && top[1] === MEAL.runs[1] && low[1] < top[0],
+    'the level slides the run count and the two windows do not overlap',
+    `${low.join('–')} against ${top.join('–')}`
+  );
+
+  // IT REACHES THE SHEET, through `statMods` like every other line — so the
+  // sim, the card and the sheet all read one meal and cannot disagree.
+  const g = kit();
+  const before = characterStats(g.character);
+  const meal = eatMeal(g, 'blindfish', new Rng(7));
+  check(
+    meal !== null && characterStats(g.character).maxLife > before.maxLife,
+    'and eating one reaches the sheet — it is a mod, through the seam every line uses',
+    `${before.maxLife.toFixed(1)} -> ${characterStats(g.character).maxLife.toFixed(1)}`
+  );
+  const left = (g.materials ?? []).find((i) => i.base === 'blindfish' && i.meta.done);
+  check(
+    ((left?.meta.n as number) ?? 0) === 8,
+    'and it spends exactly one cooked fish',
+    String((left?.meta.n as number) ?? 0)
+  );
+
+  // ONE AT A TIME. A second sits the first down, which is what makes which fish
+  // you cooked a decision rather than a checklist you tick off.
+  const second = eatMeal(g, 'palefin', new Rng(8));
+  check(
+    second !== null && g.character.meal?.defId === second.defId,
+    'and a second sits the first one down: one at a time, so it is a choice',
+    g.character.meal?.name ?? 'nothing'
+  );
+
+  // **IT BURNS DOWN ON A CLEAR AND ON NOTHING ELSE**, the rule a crystal roll
+  // is already under: what a walk out does not buy is PROGRESS.
+  const sim = new RunSim([makeCrystal(1)], g.character, new Rng(1));
+  const was = g.character.meal!.uses!;
+  sim.state.status = 'died';
+  buildReport(g, sim.state);
+  const afterDeath = g.character.meal?.uses;
+  sim.state.status = 'cleared';
+  buildReport(g, sim.state, true);
+  const afterWalk = g.character.meal?.uses;
+  check(
+    afterDeath === was && afterWalk === was,
+    'a death spends none of it, and neither does walking out with what you found',
+    `${was} → ${afterDeath} → ${afterWalk}`
+  );
+
+  let clears = 0;
+  let ended: RolledMod | null = null;
+  while (g.character.meal && clears < 60) {
+    ended = buildReport(g, sim.state).eaten;
+    clears++;
+  }
+  check(
+    clears === was && ended !== null && g.character.meal === undefined,
+    `and ${was} clears is exactly what it lasted, and the report says it went`,
+    `${clears} clears, ended ${ended?.name ?? 'silently'}`
+  );
+
+  // A MEAL IS NEVER A THING YOU CANNOT DESCEND WITHOUT. A crystal roll running
+  // out ends an Enter-chain; this must not, or eating one is a leash.
+  const chained = kit();
+  eatMeal(chained, 'riftfin', new Rng(9));
+  const report = buildReport(chained, sim.state);
+  check(
+    report.cleared && !report.bagsFull,
+    'and it never stops a chain: a buff is not a thing a descent needs',
+    `${report.status}`
+  );
+
+  // A SAVE THAT OUTLIVES THE TABLE. A meal whose fish is gone, or whose
+  // descents ran out on disk, is a buff that would never end.
+  const rotted = createGame('fresh');
+  rotted.character.meal = {
+    entryId: 'meal_x', defId: 'meal_nothing', group: 'meal', slot: 'meal',
+    name: 'Nothing', tier: 0, tags: ['meal'], uses: 4, stats: [],
+  };
+  heal(rotted);
+  check(
+    rotted.character.meal === undefined,
+    'and a save holding a meal for a fish nobody cooks any more loses the meal',
+    rotted.character.meal ? 'it survived' : ''
   );
 }
 

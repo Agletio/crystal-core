@@ -3615,6 +3615,52 @@ export const REWARD = {
   mixYield: 0.25,
 };
 
+/** **A MEAL IS A BUFF THAT LASTS RUNS**, and that shape already ships:
+ *  `RolledMod.uses` is descents left, spent one per CLEAR. The PROCESSED fish
+ *  IS the meal, so eating one is a verb rather than a second recipe. ONE AT A
+ *  TIME — a second sits down the first, which is what makes it a decision. */
+export interface MealDef {
+  /** The PROCESSED material eating it spends — a world's own fish. */
+  fish: string;
+  name: string;
+  stats: StatSpec[];
+  say: string;
+}
+
+export const MEAL = {
+  // Descents one lasts, the LEVEL sliding where in here it lands exactly as it
+  // slides a base's roll: *"one buff can give 5–15 runs, and at level 1 you can
+  // only get it to land on 5–8."*
+  runs: [5, 15] as [number, number],
+};
+
+export const MEALS: MealDef[] = [
+  {
+    fish: 'blindfish', name: 'Blindfish Broth',
+    stats: [{ stat: 'life', form: 'inc', range: [8, 8] }],
+    say: 'Thin, grey and hot. It sits in you for days.',
+  },
+  {
+    fish: 'palefin', name: 'Palefin, Split and Salted',
+    stats: [{ stat: 'rarity', form: 'inc', range: [28, 28] }],
+    say: 'The eyes are the part worth keeping.',
+  },
+  {
+    fish: 'sumpfish', name: 'Sumpfish Stew',
+    stats: [{ stat: 'currencyFind', form: 'inc', range: [28, 28] }],
+    say: 'It was warm before it was cooked.',
+  },
+  {
+    fish: 'riftfin', name: 'Riftfin, Both Halves',
+    stats: [{ stat: 'damage', form: 'inc', range: [11, 11] }],
+    say: 'One side of it tastes of the other side.',
+  },
+];
+
+export const MEAL_BY_FISH: Record<string, MealDef> = Object.fromEntries(
+  MEALS.map((m) => [m.fish, m])
+);
+
 /** A drop picks a class first, then a currency within it, so rarity climbing
  *  `basic → uncommon → rare → exotic` is the only route to the scarce ones. */
 export const CURRENCY_DROP = {

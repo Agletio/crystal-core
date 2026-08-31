@@ -7,12 +7,22 @@
  * by an open browser — the one thing universal automation forbids of anything
  * that pays while you are away.
  */
-import { MATERIAL_BY_ID, MATERIAL_FAMILY_BY_ID, PROFESSION, PROFESSIONS, WORK } from '../data';
+import {
+  MATERIAL_BY_ID,
+  MATERIAL_FAMILY_BY_ID,
+  MEAL,
+  MEAL_BY_FISH,
+  PROFESSION,
+  PROFESSIONS,
+  WORK,
+} from '../data';
 import type { MaterialDef, ProfessionDef } from '../data';
 import { makeMaterial } from '../economy';
 import { addItem } from './state';
 import type { GameState } from './state';
-import type { Item } from '../types';
+import type { Item, RolledMod } from '../types';
+import type { Rng } from '../rng';
+import { liftFor, qualityRoll } from './forge';
 
 /** One batch loaded at a station. `left` is DESCENTS, counted down by a CLEAR
  *  and by nothing else — a walk out banks no progress anywhere in the game. */
@@ -141,3 +151,71 @@ export function saysJob(job: WorkJob): string {
 
 export const professionFor = (family: string): ProfessionDef | undefined =>
   PROFESSIONS.find((p) => p.family === family);
+
+// --- cooking, and the buff that burns down ---------------------------------
+//
+// A MEAL IS A BUFF THAT LASTS RUNS, which is the crystal roll's own shape
+// pointed at the hero. The PROCESSED fish IS the meal, so eating one is a verb
+// rather than a second recipe, and the COOKING level slides how long it lasts
+// exactly as it slides a base's roll — one thing to learn.
+
+/** Descents a meal cooked at this level lasts. The window NARROWS as it climbs,
+ *  off the same `CRAFT.width*` a craft reads: *"at level 1 you can only get it
+ *  to land on 5–8 and it goes up until level 99 cooking is always 14–15."* */
+export function mealRuns(level: number, rng: Rng): number {
+  const quality = qualityRoll(level, rng);
+  const [lo, hi] = MEAL.runs;
+  return Math.max(1, Math.round(lo + quality * (hi - lo)));
+}
+
+/** Why this cannot be eaten, or null. */
+export function whyNotEat(game: GameState, fish: string): string | null {
+  if (!MEAL_BY_FISH[fish]) return 'Nothing is cooked out of that.';
+  const held = (game.materials ?? []).find((i) => i.base === fish && i.meta.done);
+  if (((held?.meta.n as number) ?? 0) < 1) return 'None cooked. Work some at the kitchen.';
+  return null;
+}
+
+/** EAT IT. One at a time: a second sits the first down, which is what makes
+ *  which fish you cooked a decision rather than a checklist. */
+export function eatMeal(game: GameState, fish: string, rng: Rng): RolledMod | null {
+  if (whyNotEat(game, fish)) return null;
+  const def = MEAL_BY_FISH[fish];
+  const held = (game.materials ?? []).find((i) => i.base === fish && i.meta.done)!;
+  held.meta.n = ((held.meta.n as number) ?? 0) - 1;
+  game.materials = (game.materials ?? []).filter((i) => ((i.meta.n as number) ?? 0) > 0);
+
+  const level = professionAt(game, 'cooking').level;
+  const lift = liftFor(qualityRoll(level, rng));
+  const meal: RolledMod = {
+    entryId: `meal_${fish}`,
+    defId: `meal_${fish}`,
+    group: 'meal',
+    slot: 'meal',
+    name: def.name,
+    tier: 0,
+    tags: ['meal'],
+    uses: mealRuns(level, rng),
+    stats: def.stats.map((line) => ({
+      stat: line.stat,
+      form: line.form,
+      value: Math.round(line.range[0] * lift),
+      tags: line.tags ?? [],
+    })),
+  };
+  game.character.meal = meal;
+  return meal;
+}
+
+/** ONE DESCENT off what you ate, on a CLEAR and never on a death — the rule a
+ *  crystal roll is already under. Returns the meal that ran out, if one did. */
+export function spendMeal(game: GameState): RolledMod | null {
+  const meal = game.character.meal;
+  if (!meal || meal.uses === undefined) return null;
+  if (meal.uses > 1) {
+    game.character.meal = { ...meal, uses: meal.uses - 1 };
+    return null;
+  }
+  delete game.character.meal;
+  return meal;
+}

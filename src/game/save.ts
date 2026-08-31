@@ -40,6 +40,7 @@ import {
   crystalName,
   tierKeepId,
   MATERIAL_BY_ID,
+  MEAL_BY_FISH,
   PROFESSION_BY_ID,
 } from '../data';
 import { nodeById, replayTreeNodes, treeFor, treePointsFor } from '../skills-tree';
@@ -370,6 +371,15 @@ export function heal(game: GameState): Healed {
     else stacks.set(key, { ...row, meta: { ...row.meta, n } });
   }
   game.materials = [...stacks.values()];
+
+  // A MEAL POINTS AT A FISH. One whose row is gone, or whose descents have run
+  // out on disk, is a buff that would never end.
+  const meal = game.character?.meal;
+  if (meal && (!MEAL_BY_FISH[String(meal.defId).replace('meal_', '')]
+    || !Number.isFinite(meal.uses) || (meal.uses ?? 0) < 1)) {
+    delete game.character.meal;
+    out.items++;
+  }
 
   // A JOB POINTS AT A MATERIAL and at a profession. Either being gone takes the
   // job with it — the raw is already spent, so this is a loss, and refunding

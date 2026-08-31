@@ -15,7 +15,7 @@ import {
 import { treePointsFor } from '../skills-tree';
 import { TRADE_BY_ID, canAllocateTrade, canDeallocateTrade, tradePointsFor } from '../trades';
 import { canAllocateTrial, canDeallocateTrial, trialPointsFor } from '../trials';
-import type { Item, SkillDef, SkillSlotDef } from '../types';
+import type { Item, RolledMod, SkillDef, SkillSlotDef } from '../types';
 
 /**
  * A skill's own progression. Levels come from USE — only the active skill takes
@@ -53,6 +53,8 @@ export interface Character {
    *  the Reckoning at nothing. What they PAID for is derived, never stored. */
   grinds: Record<string, number>;
   professions?: Record<string, { level: number; xp: number }>; // absent is level 1
+  /** WHAT YOU ATE: `uses` is descents left, spent one per CLEAR. One at a time. */
+  meal?: RolledMod;
   /** Rungs CLEARED per zone, keyed by theme. See `src/ladder.ts`. */
   climbed: Record<string, number>;
   /** Nodes walked on the Reckoning. */

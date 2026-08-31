@@ -102,9 +102,17 @@ export function render(): void {
   const at = professionAt(game, profession?.id ?? '');
   const need = xpToNext(at.level);
 
+  // ON THE COOKING TAB, what you are UNDER: a buff with no readout is a buff
+  // nobody plans around, and this is the kitchen's own room.
+  const meal = game.character.meal;
+  const eating = family.id === 'fish'
+    ? meal
+      ? ` You are on ${meal.name} — ${meal.uses} ${meal.uses === 1 ? 'descent' : 'descents'} left.`
+      : ' Nothing eaten. Cook a fish and eat it out of the dock.'
+    : '';
   $('work-note').textContent =
     `${profession?.name} works ${family.name.toLowerCase()} at ${family.station}: ` +
-    `${family.raw} into ${family.processed}, ${WORK.clears} descents a batch.`;
+    `${family.raw} into ${family.processed}, ${WORK.clears} descents a batch.${eating}`;
   ($('work-bar') as HTMLElement).style.width = `${Math.round((at.xp / need) * 100)}%`;
   $('work-xp').textContent = `Level ${at.level} — ${Math.floor(at.xp)} / ${need} to the next`;
 

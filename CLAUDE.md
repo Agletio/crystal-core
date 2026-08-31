@@ -456,6 +456,17 @@ every ink of `gear_ring` / `gear_amulet` toward the implicit's own hue at that
 ink's OWN brightness, so the SHAPE says which slot and the COLOUR says what is
 on it.
 
+**A MEAL IS A BUFF THAT LASTS RUNS, and the PROCESSED FISH IS THE MEAL.** The
+kitchen already makes them, so eating one is a VERB on the stack rather than a
+second recipe — `Character.meal` is a `RolledMod` in `statMods` beside the tree
+and the attributes, so the sheet, the sim and every card read one meal through
+the seam every other line uses. ONE AT A TIME: a second sits the first down.
+`MEAL.runs` is 5–15 descents and the COOKING level slides where in it you land,
+off the same `qualityRoll` a craft reads — measured, 5–6 at level 1 and 14–15
+at 99. It burns down on a CLEAR and nothing else, beside `spendSocketed`, and
+it NEVER ends an Enter-chain: a crystal roll running out does, and a meal doing
+so would make eating one a leash.
+
 **A HYBRID IS MORE TOTAL POWER; A SPECIALIST IS MORE OF ONE THING.** *"The
 hybrids can be strictly more overall stat power so for most builds they can be
 better, but you can get more of one stat going specific."* `HYBRID.lift` is 1.2

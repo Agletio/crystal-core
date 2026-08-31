@@ -2856,6 +2856,29 @@ $('dev-kit').click();
   assert($('work').hidden === true, 'and it closes again');
 }
 
+// --- COOKING: a buff that lasts RUNS --------------------------------------
+{
+  $('camp-kitchen').click();
+  assert(
+    $('work').hidden === false && $('work-tab-fish').className.includes('climbtab--on'),
+    'the kitchen opens the stations on Cooking'
+  );
+  // WITH NOTHING EATEN it says so, and says where a meal comes from: a buff
+  // with no readout is a buff nobody plans around.
+  assert(
+    /Nothing eaten/i.test($('work-note').textContent ?? ''),
+    'and says what you are under, which is nothing yet',
+    $('work-note').textContent?.slice(-80)
+  );
+  $('work-close').click();
+
+  // THE VERB IS ON THE STACK. The processed fish IS the meal, so eating one is
+  // an action on it rather than a second recipe behind a second screen.
+  $('open-inventory').click();
+  const cooked = all('#inv-materials .slot:not(.slot--empty)');
+  assert(cooked.length > 0, 'the dock is holding cooked material', String(cooked.length));
+}
+
 // --- THE ANVIL: what a heap of material could become ----------------------
 {
   assert($('open-forge') === null, 'the rail has no button for the anvil');

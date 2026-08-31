@@ -489,10 +489,23 @@ approve; everything else is code that can be written while it renders.
         chest turned up rather than what a monster is worth. Forty runs at the
         two shallow bands — measured, band 0 goes 1.975 → 1.453 and band 1
         1.718 → 2.190, and the ordering is real again.
-- [ ] **Step 7 — cooking.** Fish, meals, and a buff that burns down on
-      `RolledMod.uses` — the shape already ships. Applied in camp, never
-      mid-run; the level slides how many runs it lasts, exactly as it slides a
-      roll window.
+- [x] **Step 7 — cooking. DONE.** `MEALS`, `MEAL`, `Character.meal`:
+      - **THE PROCESSED FISH IS THE MEAL.** The kitchen already makes them, so
+        eating one is a VERB on the stack rather than a second recipe behind a
+        second screen — no new material, no new table row, and the dock's item
+        menu is where it sits, beside dismantle.
+      - **IT IS A `RolledMod` POINTED AT THE HERO**, in `statMods` beside the
+        tree and the attributes, so the sheet, the sim and every card read one
+        meal through the seam every other line already uses.
+      - **ONE AT A TIME.** A second sits the first down, which is what makes
+        which fish you cooked a decision rather than a checklist.
+      - **THE LEVEL SLIDES HOW LONG IT LASTS**, off the same `qualityRoll` a
+        craft reads — *"one thing to learn"*. Measured: 5–6 descents at Cooking
+        1 and 14–15 at 99, out of `MEAL.runs` 5–15. The user said 14–15 at the
+        cap and it lands exactly there.
+      - **IT BURNS DOWN ON A CLEAR AND NOTHING ELSE**, beside `spendSocketed`
+        and `advanceWork`. **And it NEVER ends a chain** — a crystal roll
+        running out does; a meal doing so would make eating one a leash.
 - [ ] **Step 8 — the shop becomes a GAMBLE and the filter GOES.** Delete the
       Filter screen, `KEEP_GROUPS`, `GameState.junk`, the bulk sell and the
       shelf of named gear. Gold buys materials at a bad rate. The camp picture
