@@ -82,14 +82,84 @@ const FISSURE_FLOOR_SAID =
   'brightly lit, NOT dark, NOT black, NOT charcoal, NOT green, NOT olive';
 /** `lit_round`'s own lower base tile, off `get_topdown_tileset`. */
 const FISSURE_FLOOR_TILE = '0f8b4d8e-4c25-431b-89fc-75ee0e6873ad';
-/** Colour named by EXCLUSION and the family excluded with it: every water
- *  prompt drifts tropical, and this rock is unlit and cold. */
+/**
+ * OVER-EXCLUDED ONCE, and it came back a HOLE. Asked as "VERY DARK almost
+ * black" with blue, teal, cyan, turquoise and green all excluded, there was no
+ * hue left for water to be made of and all three candidates read as a chasm —
+ * the deleted `VOID` by accident. *Exclude only what you mean.*
+ *
+ * What makes water read at 32px is a SURFACE, not a colour: something
+ * reflected in it and a flat highlight. So the hue comes back as a cold
+ * blue-grey, the reflection is asked for outright, and the exclusions are cut
+ * to the drift actually observed — tropical brightness.
+ */
 const WATER =
-  'still black water, deep and cold and unlit, VERY DARK almost black, ' +
-  'NOT blue, NOT bright, NOT teal, NOT cyan, NOT turquoise, NOT tropical, ' +
-  'NOT green, NOT sunlit, NOT sparkling';
+  'the flat still surface of deep cold water, dark blue-grey, ' +
+  'MIRROR-SMOOTH and REFLECTIVE, the pale stone of the bank reflected in it ' +
+  'near the edge, a few flat pale specular highlights lying on the surface, ' +
+  'NOT tropical, NOT bright, NOT sunlit, NOT turquoise, NOT a hole, ' +
+  'NOT a pit, NOT empty black';
 
 const ASK: Record<string, Record<string, unknown>> = {
+  // --- WATER, round 2: a SHORE, not a cliff -------------------------------
+  //
+  // The first three asked `transition_size` 0.5 and 0.8, which is the CLIFF
+  // the rock sets are built on — the docs' own scale is 0 sharp, 0.25 medium,
+  // 0.5 wide, 1.0 full-tile cliff. A shoreline is a blend, so every one of
+  // them drew rock columns dropping into the dark and read as a pit with a
+  // lip. 0.25, and the transition says WET rather than SHEER.
+  fissure_shore: {
+    lower_description: WATER,
+    upper_description: FISSURE_FLOOR_SAID,
+    upper_base_tile_id: FISSURE_FLOOR_TILE,
+    transition_description:
+      'wet dark stone at the waterline, the floor darkening as it goes under, damp and shining',
+    shape_style: 'round',
+    transition_size: 0.25,
+    enhance: false,
+    tile_size: { width: 32, height: 32 },
+    outline: 'lineless',
+    shading: 'detailed shading',
+    detail: 'highly detailed',
+    view: 'high top-down',
+  },
+  // The same shore let the model write it, which is how `lit_round` was asked
+  // and `lit_round` is the one that shipped.
+  fissure_shore_enhanced: {
+    lower_description: WATER,
+    upper_description: FISSURE_FLOOR_SAID,
+    upper_base_tile_id: FISSURE_FLOOR_TILE,
+    transition_description:
+      'wet dark stone at the waterline, the floor darkening as it goes under, damp and shining',
+    shape_style: 'round',
+    transition_size: 0.25,
+    enhance: true,
+    tile_size: { width: 32, height: 32 },
+    outline: 'lineless',
+    shading: 'detailed shading',
+    detail: 'highly detailed',
+    view: 'high top-down',
+  },
+  // A RAGGED waterline. Of the first three the `pro` shore was the only one
+  // whose edge was not drawn with a ruler, and a pool with a straight edge
+  // reads as a tank — so the shape is worth keeping even though its floor
+  // drifted warmer than the one that ships.
+  fissure_shore_pro: {
+    lower_description: WATER,
+    upper_description: FISSURE_FLOOR_SAID,
+    upper_base_tile_id: FISSURE_FLOOR_TILE,
+    transition_description:
+      'wet dark stone at the waterline, the floor darkening as it goes under, damp and shining',
+    mode: 'pro',
+    raggedness: 0.85,
+    spread_x: 0.35,
+    transition_size: 0.25,
+    tile_size: { width: 32, height: 32 },
+    outline: 'lineless',
+    shading: 'detailed shading',
+    detail: 'highly detailed',
+    view: 'high top-down',
+  },
   // --- WATER, chained off the FISSURE FLOOR THAT ALREADY SHIPS -------------
   //
   // `upper_base_tile_id` is the docs' "connected tilesets": the shipped set's
