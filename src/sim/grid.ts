@@ -223,6 +223,21 @@ export const PATCHES: Partial<Record<MapTheme, PatchDef[]>> = {
   ],
 };
 
+/** LEVEL 2: the walkable floor in another grain, asked at `transition_size` 0
+ *  so there is no boundary at all. Nothing here ever blocks. */
+export const FLOORS: Partial<Record<MapTheme, PatchDef[]>> = {
+  fissure: [
+    { set: 'fissure_floor_grit', most: 70, count: 3 },
+    { set: 'fissure_floor_swept', most: 70, count: 3 },
+  ],
+  demonic: [{ set: 'rot_floor_veined', most: 70, count: 3 }],
+  prismatic: [{ set: 'cavern_floor_coarse', most: 70, count: 3 }],
+};
+
+/** Both, level 1 first, in the order `Grid.patch` indexes them. */
+export const patchesFor = (theme: MapTheme): PatchDef[] =>
+  [...(PATCHES[theme] ?? []), ...(FLOORS[theme] ?? [])];
+
 /** How far a passage wanders off the line between the rooms it joins, and how
  *  much of a dug room's outer ring the rock never gave up. */
 const WOBBLE: Record<Cut, number> = { dug: 1, gullet: 0, grown: 3 };
@@ -524,8 +539,8 @@ function placePatches(
   rooms: Room[],
   keep: Vec2[]
 ): string[] {
-  const defs = PATCHES[theme];
-  if (!defs) return [];
+  const defs = patchesFor(theme);
+  if (defs.length === 0) return [];
   const spared = new Set(keep.map((v) => v.y * grid.width + v.x));
   grid.blocking = defs.map((d) => !!d.blocks);
   // EVERY REACHABLE TILE, not just the landmarks: a monster stranded in a

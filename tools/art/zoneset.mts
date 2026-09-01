@@ -57,7 +57,10 @@ const RETONE: Record<string, Retone> = {
 };
 
 // TONED WITH THE FLOOR IT SITS ON: chaining buys the SHAPE, not the tone.
-for (const name of ['fissure_pool', 'fissure_moss2', 'fissure_rubble', 'fissure_floor_cracked']) {
+for (const name of [
+  'fissure_pool', 'fissure_moss2', 'fissure_rubble', 'fissure_floor_cracked',
+  'fissure_floor_grit', 'fissure_floor_swept',
+]) {
   RETONE[name] = RETONE.lit_round;
 }
 

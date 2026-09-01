@@ -213,7 +213,7 @@ import {
   slotUsed,
   statPower,
 } from './mods';
-import { ENTRANCE, EXIT, FLOOR, PATCHES, TUNNEL, WALL, dist, generateMap, reachable, sceneMap } from './sim/grid';
+import { ENTRANCE, EXIT, FLOOR, TUNNEL, WALL, dist, generateMap, patchesFor, reachable, sceneMap } from './sim/grid';
 import type { Grid } from './sim/grid';
 import { CREATURE_FRAMES, GLOW, IDLE_CYCLE, STRIDE_CYCLE, framesOf, wellFormed } from './render/sprites';
 import { PORTRAITS } from './render/portraits';
@@ -2051,7 +2051,7 @@ rule('SPRITES — is the pixel art well formed?');
     let pockets = 0;
     const seen = new Set<string>();
     for (const theme of MAP_THEMES.map((t) => t.id as MapTheme)) {
-      const defs = PATCHES[theme] ?? [];
+      const defs = patchesFor(theme);
       for (let i = 0; i < 14; i++) {
         const map = dressedMap(6100 + i * 7, theme);
         const { grid } = map;
@@ -2096,7 +2096,7 @@ rule('SPRITES — is the pixel art well formed?');
     );
     // A set nothing places is a set nobody sees, and a name that does not
     // resolve draws NOTHING and fails nowhere.
-    const named = MAP_THEMES.flatMap((t) => (PATCHES[t.id as MapTheme] ?? []).map((d) => d.set));
+    const named = MAP_THEMES.flatMap((t) => patchesFor(t.id as MapTheme).map((d) => d.set));
     const missing = named.filter((n) => !ZONES[n]);
     const unplaced = named.filter((n) => !seen.has(n));
     check(
