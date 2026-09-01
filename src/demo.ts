@@ -95,6 +95,8 @@ import {
   PERFECT,
   BASE_TIER_MODS,
   MATERIALS,
+  GATHERED,
+  DROPPED,
   MATERIAL_PRICE,
   GATHER,
   MATERIAL_FAMILIES,
@@ -3254,10 +3256,22 @@ rule('MATERIALS AND PROFESSIONS — is the table a thing a recipe could read?');
 
   // A NODE IS A PICTURE, and one that resolves to nothing draws an invisible
   // thing the hero walks to — the worst possible version of this bug.
-  const unseen = MATERIAL_FAMILIES.flatMap((f) =>
-    [f.node, f.spent].filter((id) => !PROP_ART[id]).map((id) => `${f.id}→${id}`)
+  // Only the GATHERED ones: a dropped family stands nothing on the floor, so
+  // asking it for a picture is asking for art nobody would ever see.
+  const unseen = GATHERED.flatMap((f) =>
+    [f.node, f.spent].filter((id) => !id || !PROP_ART[id]).map((id) => `${f.id}→${id}`)
   );
-  check(unseen.length === 0, 'and every family has a node and a worked-out frame that draw', unseen.join(', '));
+  check(
+    unseen.length === 0,
+    `and all ${GATHERED.length} gathered families have a node and a worked-out frame that draw`,
+    unseen.join(', ')
+  );
+  const stray = DROPPED.filter((f) => f.node || f.spent).map((f) => f.id);
+  check(
+    stray.length === 0,
+    'while a dropped family declares no node at all, having nowhere to stand one',
+    stray.join(', ')
+  );
 }
 
 // ===========================================================================

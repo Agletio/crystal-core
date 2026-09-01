@@ -84,6 +84,9 @@ import {
   MATERIALS,
   MATERIAL_BY_ID,
   MATERIAL_FAMILIES,
+  GATHERED,
+  DROPPED,
+  BODY_DROP,
   MATERIAL_FAMILY_BY_ID,
   LOCK,
   LOCKS,
@@ -631,6 +634,9 @@ export class RunSim {
   private sweeping = 0;
   private sweptFrom = 0;
   private gearLeft = 0;
+  private materialLeft = 0;
+  /** Which dropped family is next. A COUNTER, so the two alternate. */
+  private nextDropped = 0;
   private currencyLeft = 0;
   private budgeted = false;
   private byId = new Map<number, Entity>();
@@ -1094,9 +1100,10 @@ export class RunSim {
     const wanted = Math.min(packCount, this.whole(GATHER.perRun * this.set.yield));
     if (wanted <= 0) return;
 
-    // DEALT ROUND, never rolled: six draws could come up all metal, and
-    // *"relatively equal drop rates"* is only sayable as a spread.
-    const deck = this.rng.shuffle(MATERIAL_FAMILIES.map((f) => f.id));
+    // DEALT ROUND, never rolled: four draws could come up all metal, and
+    // *"relatively equal drop rates"* is only sayable as a spread. Only the
+    // GATHERED families are dealt — hide and gem come off a body.
+    const deck = this.rng.shuffle(GATHERED.map((f) => f.id));
     const packs = this.rng.shuffle(Array.from({ length: packCount }, (_, i) => i));
     const carries = unique ? this.rng.int(0, wanted - 1) : -1;
 
@@ -1115,10 +1122,11 @@ export class RunSim {
         material: def.id,
         n: this.rng.int(GATHER.yield[0], GATHER.yield[1]),
         ...(i === carries && unique ? { also: unique.id } : {}),
-        art: { node: family.node, spent: family.spent },
+        // The deck is GATHERED, so both frames are always there.
+        art: { node: family.node ?? '', spent: family.spent ?? '' },
         at: map.props.length,
       });
-      map.props.push({ id: family.node, x: at.x, y: at.y });
+      map.props.push({ id: family.node ?? '', x: at.x, y: at.y });
     }
   }
 
@@ -3667,6 +3675,7 @@ export class RunSim {
     this.dropAt = victim;
     this.rollCurrency();
     this.rollGearDrop();
+    this.rollMaterialDrop();
     this.rollRelicDrop();
     this.rollKeyDrop();
     this.burstCurse(victim);
@@ -3685,6 +3694,19 @@ export class RunSim {
     }
     this.events.push({ kind: 'kill', total: s.killed, xp: this.xpPerKill });
 
+  }
+
+  /** WHAT A BODY LEAVES: hide off what you killed, gems out of anything. Off
+   *  the same depleting budget gear is, and DEALT round the dropped families
+   *  the way `placeNodes` deals the gathered ones. */
+  private rollMaterialDrop(): void {
+    this.budgets();
+    if (!this.rng.chance(this.materialLeft / this.bodiesLeft())) return;
+    this.materialLeft--;
+    const family = DROPPED[this.nextDropped++ % DROPPED.length];
+    const def = MATERIALS.find((m) => m.world === this.set.theme && m.family === family.id);
+    if (!def) return;
+    this.bankMaterial(def.id, this.rng.int(BODY_DROP.each[0], BODY_DROP.each[1]));
   }
 
   /** Item level comes off the power band and the base's tier off that, so a
@@ -3716,6 +3738,8 @@ export class RunSim {
     this.currencyLeft = this.whole(
       CURRENCY_DROP.perRun * (1 + hero.currencyFind / 100) * this.set.pays.currency
     );
+    // Off `yield` for the reason gear is: the budget rides run LENGTH.
+    this.materialLeft = this.whole(BODY_DROP.perRun * this.set.yield);
   }
 
   private whole(budget: number): number {

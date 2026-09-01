@@ -2218,6 +2218,9 @@ export const LADDER = {
  *  it. `raw` comes out of a descent and `processed` is what camp turns it into.
  *  `node` is what it looks like on a floor and `spent` the same object worked
  *  out; *"ore is mined, hide is skinned"* is `verb` on ONE mechanism. */
+/** THINGS THAT GROW OR SIT IN THE ROCK ARE GATHERED; THINGS OFF A BODY DROP. */
+export type MaterialSource = 'gathered' | 'dropped';
+
 export interface MaterialFamilyDef {
   id: string;
   name: string;
@@ -2225,8 +2228,10 @@ export interface MaterialFamilyDef {
   processed: string;
   station: string;
   verb: string;
-  node: string;
-  spent: string;
+  /** A node's two frames. A DROPPED family has none. */
+  node?: string;
+  spent?: string;
+  from: MaterialSource;
   /** What ONE processed unit of it is called, so a stack reads as a thing
    *  rather than as a plural stuck on a name. */
   one: string;
@@ -2234,18 +2239,25 @@ export interface MaterialFamilyDef {
 
 export const MATERIAL_FAMILIES: MaterialFamilyDef[] = [
   { id: 'metal', name: 'Metal', raw: 'ore', processed: 'bars', station: 'the smelter',
-    verb: 'Mined', node: 'node_ore', spent: 'node_ore_spent', one: 'Bar' },
+    verb: 'Mined', node: 'node_ore', spent: 'node_ore_spent', from: 'gathered', one: 'Bar' },
+  // CLOTH IS A PLANT, which is where the herb went: something you cut.
   { id: 'cloth', name: 'Cloth', raw: 'fibre', processed: 'bolts', station: 'the loom',
-    verb: 'Stripped', node: 'cocoon', spent: 'web', one: 'Bolt' },
+    verb: 'Cut', node: 'node_fibre', spent: 'node_fibre_spent', from: 'gathered', one: 'Bolt' },
   { id: 'hide', name: 'Hide', raw: 'skins', processed: 'leather', station: 'the tanning frame',
-    verb: 'Skinned', node: 'node_carcass', spent: 'node_carcass_spent', one: 'Leather' },
+    verb: 'Skinned', from: 'dropped', one: 'Leather' },
+  // A DEADFALL sits in the rock like an outcrop, so wood is gathered. Not the
+  // user's ruling: a monster dropping LOGS is what made nodes exist.
   { id: 'wood', name: 'Wood', raw: 'logs', processed: 'staves', station: 'the sawbench',
-    verb: 'Cut', node: 'node_stump', spent: 'node_stump_spent', one: 'Stave' },
+    verb: 'Felled', node: 'node_stump', spent: 'node_stump_spent', from: 'gathered', one: 'Stave' },
   { id: 'gem', name: 'Gem', raw: 'rough', processed: 'cut stones', station: "the jeweller's",
-    verb: 'Prised', node: 'geode_amber', spent: 'node_geode_spent', one: 'Gem' },
+    verb: 'Prised', from: 'dropped', one: 'Gem' },
   { id: 'fish', name: 'Fish', raw: 'a catch', processed: 'meals', station: 'the kitchen',
-    verb: 'Netted', node: 'node_pool', spent: 'node_pool_spent', one: 'Meal' },
+    verb: 'Netted', node: 'node_pool', spent: 'node_pool_spent', from: 'gathered', one: 'Meal' },
 ];
+
+/** Derived: a family changing source moves both with one edit. */
+export const GATHERED = MATERIAL_FAMILIES.filter((f) => f.from === 'gathered');
+export const DROPPED = MATERIAL_FAMILIES.filter((f) => f.from === 'dropped');
 
 export const MATERIAL_FAMILY_BY_ID: Record<string, MaterialFamilyDef> = Object.fromEntries(
   MATERIAL_FAMILIES.map((f) => [f.id, f])
@@ -3577,6 +3589,17 @@ export const MEAL_BY_FISH: Record<string, MealDef> = Object.fromEntries(
 
 /** A drop picks a class first, then a currency within it, so rarity climbing
  *  `basic → uncommon → rare → exotic` is the only route to the scarce ones. */
+/** WHAT A BODY LEAVES: hide, and gems out of anything. A PER-RUN DEPLETING
+ *  BUDGET, never a per-kill rate — kills run 26 at the bare Fissure against 847
+ *  at the deep end. `perRun` is WHOLE: on a fraction a run pays `left ×
+ *  H(bodies)`, 7.4 over 850. */
+export const BODY_DROP = {
+  /** DROPS a clear pays, NOT raw: each hands over `each`. Matched per FAMILY to
+   *  the gathered four, who share `GATHER.perRun` 6 nodes, so 2 want 3. */
+  perRun: 3,
+  each: [2, 5] as [number, number], // what ONE body hands over
+};
+
 export const CURRENCY_DROP = {
   /** Currency a CLEAR pays, before Currency Find. **A SHARD IS A DECISION
    *  ABOUT ONE PIECE**: at 0.18 it is one shard per ten clears. */
@@ -3787,8 +3810,8 @@ export const SHOP = {
   sellFraction: 0.35,
   /** What one rolled modifier adds to a sale, as a fraction of the base. */
   pricePerMod: 0.15,
-  /** What a SALE pays for the tier: a good piece is worth having rather than
-   *  worth selling, so this stays flat where the gamble's price does not. */
+  /** What a SALE pays for the tier: a good piece is worth having, not worth
+   *  selling, so this stays flat where the gamble's price does not. */
   sellByTier: [1, 1.8, 3.2],
 };
 
@@ -3800,20 +3823,14 @@ export const SHOP = {
 export const GAMBLE = {
   /** What one costs, as a multiple of the dearest sale at that item level. */
   over: 1.75,
-  /** Floor, so a level-1 gamble is several clears rather than pocket change. */
-  floor: 120,
-  /** Modifiers a bought piece rolls. Never a Perfect base: that is the floor's. */
-  fill: 6,
-  /** Chance of a named piece instead. A lottery on the end of a sink. */
-  uniqueChance: 0.004,
+  floor: 120, // so a level-1 gamble is several clears, not pocket change
+  fill: 6, // modifiers a bought piece rolls; never a Perfect base
+  uniqueChance: 0.004, // a named piece instead: a lottery on the end of a sink
 };
 
-/**
- * WHAT GOLD BUYS OTHERWISE: raw material, at a rate a descent beats every time.
- * It exists to finish a recipe you are two Bolts short of, never to feed one —
- * a clear gathers about 21 raw, and this is by WORLD because a world is the
- * whole of what makes one material deeper than another.
- */
+/** WHAT GOLD BUYS OTHERWISE: raw, at a rate a descent beats every time. It
+ *  finishes a recipe you are two Bolts short of, never feeds one — a clear
+ *  gathers about 21. By WORLD, which is what makes one material deeper. */
 export const MATERIAL_PRICE: Record<MapTheme, number> = {
   fissure: 60,
   prismatic: 400,
@@ -3821,7 +3838,7 @@ export const MATERIAL_PRICE: Record<MapTheme, number> = {
   seam: 2200,
 };
 
-/** Character level the counter starts stocking each world's raw at. */
+/** Level the counter starts stocking each world's raw at. */
 export const MATERIAL_SOLD_AT: Record<MapTheme, number> = {
   fissure: 1,
   prismatic: 20,
