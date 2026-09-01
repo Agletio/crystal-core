@@ -340,7 +340,6 @@ export function patchKey(grid: Grid, x: number, y: number, index: number): numbe
   return ((one(x, y) * 3 + one(x + 1, y)) * 3 + one(x, y + 1)) * 3 + one(x + 1, y + 1);
 }
 
-/** Every patch index touching the cell's own corners. */
 export function patchesAt(grid: Grid, x: number, y: number): number[] {
   const seen = new Set<number>();
   for (let cy = y - 1; cy <= y + 1; cy++) {
