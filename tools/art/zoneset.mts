@@ -145,6 +145,39 @@ const patch = (zone: string, said: string, edge: string, ragged = 0.85) => ({
 
 const WET = 'wet dark stone at the waterline, the floor darkening as it goes under';
 
+/**
+ * A RAISED SHELF OF THE SAME FLOOR — the zone in two storeys rather than one.
+ *
+ * It is the ROCK WALL'S OWN SHAPE: `transition_size: 1` is the full-tile cliff
+ * every zone set is already built on, so a plateau lands in the SAME 21 Wang
+ * keys the renderer already scores. What separates it from a wall is not the
+ * art but the grid — a wall is unwalkable and a shelf is floor you can only
+ * reach by a stair, which is a third tile state and a link the pathfinder has
+ * to be told about.
+ */
+const raised = (zone: string) => ({
+  // THE TWO TERRAINS MUST DIFFER OR THE MODEL INVENTS THE DIFFERENCE. Asked as
+  // the same floor twice it drew the LOWER as flat black holes — a pit, not a
+  // shelf. Height is read off LIGHT in an overhead view, so the upper floor is
+  // the one nearer the lamp and the lower is the one in its shadow. That is a
+  // real difference to draw and it is the difference the eye actually uses.
+  lower_description: FLOOR[zone].said
+    + ', lying LOWER and IN SHADOW, dimmer and cooler, NOT black, NOT a hole, NOT a pit',
+  lower_base_tile_id: FLOOR[zone].tile,
+  upper_description: FLOOR[zone].said
+    + ', standing HIGHER on a shelf and brightly lit from above, the same floor',
+  transition_description:
+    'a sheer cut rock face in deep shadow dropping from the upper floor to the lower',
+  shape_style: 'round',
+  transition_size: 1,
+  enhance: false,
+  tile_size: { width: 32, height: 32 },
+  outline: 'lineless',
+  shading: 'detailed shading',
+  detail: 'highly detailed',
+  view: 'high top-down',
+});
+
 const ASK: Record<string, Record<string, unknown>> = {
   // --- EVERY ZONE'S EXTRA TERRAINS ----------------------------------------
   //
@@ -152,6 +185,24 @@ const ASK: Record<string, Record<string, unknown>> = {
   // do this later."* One ask per patch, all chained off their own zone's floor.
   // WATER IS FUNCTIONAL — a fishing pool stands on it — and the rest is what
   // the rock does on its own.
+  // ELEVATION, one zone as the proof: the same floor on a shelf above itself.
+  fissure_raised2: raised('fissure'),
+  // FLOOR VARIATION is a patch whose other terrain is ANOTHER FLOOR. Every set
+  // holds exactly ONE pure-floor tile — measured, 1 of 25 in all four — so the
+  // open ground is one 32px square repeated, which is the blandness itself.
+  fissure_floor_cracked: patch('fissure',
+    'the same pale dusty cave floor but dried and CRACKED into plates, fine dark '
+    + 'fissures running between them, LIGHT warm grey-brown, NOT dark, NOT black',
+    'the cracking fading out into smooth dust', 0.6),
+  rot_bone: patch('rot', 'a bed of dry pale bone fragments and shed plates packed together, '
+    + 'chalky off-white, NOT tan, NOT beige, NOT gold, NOT ivory, NOT warm',
+    'the bone thinning into bare membrane'),
+  cavern_ice: patch('cavern', 'a sheet of clouded pale ice over stone, milky white-blue, cracked '
+    + 'and faintly translucent, NOT bright blue, NOT water, NOT purple',
+    'the ice thinning to a wet rim over grit'),
+  seam_ash: patch('seam', 'a drift of fine dark ash and cinder, near-black powder in soft banks, '
+    + 'NOT brown, NOT sandy, NOT grey stone, NOT warm',
+    'the ash thinning out over pale membrane'),
   fissure_pool: patch('fissure', WATER_SAID, WET),
   fissure_moss: patch('fissure', 'a thick mat of dark wet moss and pale lichen creeping over the stone, '
     + 'deep desaturated green-grey, NOT bright green, NOT grass, NOT a lawn, NOT sunlit', 
