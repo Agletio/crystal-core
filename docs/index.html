@@ -489,6 +489,9 @@
   /* Not a screen the game has: a way to reach a state you would have to play
      to. Wide buttons, because each one says what it does under its name. */
   .devgroup { margin-bottom: 14px; }
+  /* A generated sheet, drawn NEAREST: a 32px tile judged through a bilinear
+     resample is a judgement about the browser's filter, not about the art. */
+  .devsheet { display: block; image-rendering: pixelated; border: 1px solid var(--edge); }
   .devgroup__title { margin: 0; font-family: var(--display); font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--citrine); }
   .devgroup__why { margin: 2px 0 7px; font-size: 10px; color: var(--text-dim); max-width: 62ch; }
   .devgroup__row { display: flex; flex-wrap: wrap; gap: 6px; }

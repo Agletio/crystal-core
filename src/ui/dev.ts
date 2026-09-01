@@ -12,6 +12,7 @@ import { BOSS_BY_ID, CAMPAIGN_REWARD, GRINDS, INTRO, LADDER, THEME_BY_ID } from 
 import { ladderCharacter } from '../sim/loadout';
 import { mainSkillId, skillProgress } from '../sim/character';
 import { heal } from '../game/save';
+import { ZONES } from '../render/generated-tiles';
 import { takeMet } from '../game/scenes';
 import { campaignDone } from '../ladder';
 import { pathToNotable } from '../skills-tree';
@@ -194,6 +195,20 @@ function render(): void {
     climb.append(button);
   });
 
+  // EVERY GENERATED TILESET, drawn. A set is judged on whether its terrains
+  // read apart at tile size, which no list of names answers — and this reads
+  // `ZONES` straight, so a set emitted tomorrow is in here with no edit.
+  const sets = group(
+    'Tilesets',
+    `Every emitted set, drawn at ${SHEET_SCALE}x. A zone is one of these and each patch of terrain is another.`
+  );
+  const look = el('button', 'mini devbtn') as HTMLButtonElement;
+  look.id = 'dev-tilesets';
+  look.append(el('span', 'devbtn__name', 'Look at the tilesets'));
+  look.append(el('span', 'devbtn__what', `${Object.keys(ZONES).length} emitted`));
+  look.onclick = () => renderSheets();
+  sets.append(look);
+
   const over = group('Start over', 'Wipes what you are playing and deals a stocked game.');
   const kit = el('button', 'mini devbtn devbtn--warn') as HTMLButtonElement;
   kit.id = 'dev-kit';
@@ -207,6 +222,46 @@ function render(): void {
     hooks.restock();
   };
   over.append(kit);
+}
+
+/** Big enough that a shore is a shore rather than a smudge. */
+const SHEET_SCALE = 3;
+
+/**
+ * THE SHEETS THEMSELVES, not a generated room. The tile PICKER lives in
+ * `pixi.ts` and scoring a key is the one answer both renderers have to read,
+ * so a second copy of it here would be the thing that quietly disagrees. What
+ * a sheet cannot show is the carve; what it shows perfectly is whether two
+ * terrains read apart, which is the question a new set is asked.
+ */
+function renderSheets(): void {
+  const host = $('dev-body');
+  host.replaceChildren();
+
+  const back = el('button', 'mini devbtn') as HTMLButtonElement;
+  back.id = 'dev-tilesets-back';
+  back.append(el('span', 'devbtn__name', 'Back'));
+  back.onclick = render;
+  host.append(back);
+
+  for (const [name, set] of Object.entries(ZONES)) {
+    const box = el('div', 'devgroup');
+    box.append(el('h3', 'devgroup__title', name));
+    box.append(el('p', 'devgroup__why', `${set.tiles.length} tiles at ${set.grid}px`));
+    const img = new Image();
+    img.src = set.png;
+    img.alt = name;
+    img.className = 'devsheet';
+    img.style.width = `${img.width || 128 * SHEET_SCALE}px`;
+    // NEAREST, or a 32px tile judged through a bilinear resample is a
+    // judgement about the browser's filter rather than about the art.
+    img.style.imageRendering = 'pixelated';
+    img.onload = () => {
+      img.style.width = `${img.naturalWidth * SHEET_SCALE}px`;
+    };
+    box.append(img);
+    host.append(box);
+  }
 }
 
 export function isDevOpen(): boolean {
