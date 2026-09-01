@@ -62,8 +62,8 @@ export class Grid {
    *  under an altar is still floor and every renderer keys off `tiles`. */
   readonly solid: Uint8Array;
   /** WHAT THE FLOOR IS MADE OF: 1-based into `GameMap.patches`, 0 for the
-   *  zone's own. A THIRD layer rather than a tile value, because a pool is
-   *  still floor to the carve and to `wangKey`. */
+   *  zone's own. A layer rather than a tile, since a pool is still floor to
+   *  the carve and to `wangKey`. */
   readonly patch: Uint8Array;
   /** Which of those block, same 1-based index. On the grid so `walkable`
    *  needs nothing passed to it. */
@@ -205,9 +205,8 @@ export const ZONE: Partial<Record<MapTheme, string>> = {
   seam: 'seam_pro',
 };
 
-/** THREE FLOOR LEVELS: rock 3, the walkable floor 2, and anything LOWER —
- *  water, lava, blood — is 1. **LEVEL 1 IS NEVER WALKABLE**, so every entry
- *  here blocks and a zone gets one or two. Floor VARIETY is level 2's. */
+/** THREE FLOOR LEVELS: rock 3, walkable floor 2, anything LOWER 1. **LEVEL 1
+ *  IS NEVER WALKABLE**, so every entry blocks and a zone gets one or two. */
 export interface PatchDef {
   set: string;
   blocks?: boolean;
@@ -216,12 +215,13 @@ export interface PatchDef {
 }
 
 export const PATCHES: Partial<Record<MapTheme, PatchDef[]>> = {
-  fissure: [{ set: 'fissure_pool', blocks: true, most: 48, count: 4 }],
-  demonic: [{ set: 'rot_blood', blocks: true, most: 44, count: 3 }],
-  prismatic: [{ set: 'cavern_pool', blocks: true, most: 48, count: 4 }],
+  // A BODY of water, not a puddle: `most` is what a whole chamber holds.
+  fissure: [{ set: 'fissure_pool', blocks: true, most: 110, count: 6 }],
+  demonic: [{ set: 'rot_blood', blocks: true, most: 100, count: 5 }],
+  prismatic: [{ set: 'cavern_pool', blocks: true, most: 110, count: 6 }],
   seam: [
-    { set: 'seam_lava', blocks: true, most: 44, count: 3 },
-    { set: 'seam_pool', blocks: true, most: 44, count: 2 },
+    { set: 'seam_lava', blocks: true, most: 90, count: 4 },
+    { set: 'seam_pool', blocks: true, most: 90, count: 4 },
   ],
 };
 
@@ -489,22 +489,25 @@ function growPatch(
     if (clear > 1 && offRock(grid, at.x, at.y) < clear) continue;
     grid.patch[key] = index;
     taken.push(key);
+    // A FLOOD, not a scatter: at a chance it dies after a few tiles.
     for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
-      if (rng.next() < 0.62) edge.push({ x: at.x + dx, y: at.y + dy });
+      edge.push({ x: at.x + dx, y: at.y + dy });
     }
   }
   return taken;
 }
 
-/** How far from the rock a blocking patch is KEPT. A one-tile ring is not
- *  enough: `findPath` tests TILES and `fits` the whole BODY, so it is a route
- *  no body can walk — band 4 seed 29 oscillated 300s against one. */
+/** How far from the rock a blocking patch is KEPT. A one-tile ring is a route
+ *  `findPath` offers and no body can walk: at 2, water is 19.3 tiles a map and
+ *  band 4 seed 29 hangs; at 3 it is 4.6 and 70 runs terminate. */
 const OPEN_SEED = 3;
 
-/** A floor tile at least `off` from the rock, or null. */
+/** A floor tile at least `off` from the rock. BIGGEST CHAMBERS FIRST: a
+ *  two-tile margin leaves nothing at all in a small room. */
 function seedFor(grid: Grid, rng: Rng, rooms: Room[], off: number): Vec2 | null {
-  for (let tries = 0; tries < 24; tries++) {
-    const room = rooms[rng.int(0, rooms.length - 1)];
+  const roomy = [...rooms].sort((a, b) => b.w * b.h - a.w * a.h).slice(0, 4);
+  for (let tries = 0; tries < 40; tries++) {
+    const room = roomy[rng.int(0, roomy.length - 1)];
     const at = {
       x: room.x + rng.int(0, Math.max(0, room.w - 1)),
       y: room.y + rng.int(0, Math.max(0, room.h - 1)),

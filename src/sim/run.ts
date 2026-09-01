@@ -367,6 +367,9 @@ export interface GatherNode {
   n: number;
   also?: string;
   art: { node: string; spent: string };
+  /** WHERE THE PICTURE GOES when that is not where he stands: ripples sit ON
+   *  the water and `x`/`y` stay the bank, so every walk rule is untouched. */
+  on?: Vec2;
   at: number; // index into `map.props`, so working it SWAPS the picture
   free?: boolean;
   taken?: boolean;
@@ -1114,7 +1117,9 @@ export class RunSim {
       const def = world.find((m) => m.family === family.id);
       if (!def) continue;
       const pack = packs[i];
-      const at = this.nodeSpot(map, packRoom[pack]);
+      // A FISHING SPOT WANTS WATER; a room without any takes an ordinary spot.
+      const pool = family.id === 'fish' ? this.poolSpot(map, packRoom[pack]) : null;
+      const at = pool?.stand ?? this.nodeSpot(map, packRoom[pack]);
       this.nodesDown.push({
         id: this.nextNode++,
         x: at.x,
@@ -1124,12 +1129,29 @@ export class RunSim {
         material: def.id,
         n: this.rng.int(GATHER.yield[0], GATHER.yield[1]),
         ...(i === carries && unique ? { also: unique.id } : {}),
+        ...(pool ? { on: pool.on } : {}),
         // The deck is GATHERED, so both frames are always there.
         art: { node: family.node ?? '', spent: family.spent ?? '' },
         at: map.props.length,
       });
-      map.props.push({ id: family.node ?? '', x: at.x, y: at.y });
+      const drawn = pool?.on ?? at;
+      map.props.push({ id: family.node ?? '', x: drawn.x, y: drawn.y });
     }
+  }
+
+  /** A WATER tile with a bank to stand on, or null where a room has none. */
+  private poolSpot(map: GameMap, room: Room): { stand: Vec2; on: Vec2 } | null {
+    const grid = map.grid;
+    for (let tries = 0; tries < 24; tries++) {
+      const x = room.x + this.rng.int(0, room.w - 1);
+      const y = room.y + this.rng.int(0, room.h - 1);
+      if (!grid.inBounds(x, y) || grid.patch[y * grid.width + x] === 0) continue;
+      if (grid.walkable(x, y)) continue; // a patch he can stand on is not water
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+        if (grid.walkable(x + dx, y + dy)) return { stand: { x: x + dx, y: y + dy }, on: { x, y } };
+      }
+    }
+    return null;
   }
 
   /** A whole tile in the room that is not the middle, which is where a lock
