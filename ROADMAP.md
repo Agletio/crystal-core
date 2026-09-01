@@ -36,6 +36,17 @@ it. **The Diggings** is the name if he ever asks; it is one string.
 `Character.trials` are what a save points at, exactly as `rung` stayed `rung`
 when a player started calling it a depth.
 
+**THE LEVEL BUILDER EXISTS**, in the dev menu — *"honestly just givve me the
+level builder, have everything we've made as objects I can add and the floor
+variants ill make at least one for you to reference."* `src/ui/builder.ts`: a
+paint grid drawn with the REAL tilesets through the renderer's own
+`zoneTileAt`/`patchTileAt` and the REAL `makeProp` art, a palette of rock, floor,
+every level-1 terrain and level-2 variant the world holds and all 99 props, and
+a PLAN out of it — one character a tile (`#` rock, `.` the zone's own floor, a
+DIGIT the patch index into `patchesFor(theme)`) plus a list of objects, which
+pastes back in. **It is what a floor is judged on now**: a sheet says whether
+two terrains read apart, only a laid floor says what the carve does with them.
+
 **PHASE 3 — the quest log — is PARKED by the user's word** until a start with
 nothing explaining it has been played. Do not take it because it is in the file.
 
@@ -61,53 +72,37 @@ binding.
 
 ---
 
-## Phase 8 — TERRAIN: the patches land on the floor, and WATER IS NOT WALKABLE
+## Phase 8 — TERRAIN: the MECHANISM is done; the LOOK is with the user
 
-**The art is DONE and inert.** Seventeen sets are in `generated-tiles.ts` and
-the renderer reads exactly one of them per zone, so thirteen terrains are data
-nothing looks at. `git log` at `0dec8b6`.
+**Every bullet this phase was written with is landed.** `Grid.patch` is a third
+layer and `Grid.walkable` refuses a blocking one; `placePatches` proves exact
+reachability by flooding twice and undoes a seed that takes a tile away; a patch
+is placed off the dressing's own rng; `PATCHES` and `FLOORS` are the table
+beside `ZONE`, one or two level-1 terrains a world; and which tile draws a cell
+is `zoneTileAt`/`patchTileAt` in `render/renderer.ts`, read by Pixi and by the
+level builder alike. `shots` lays a plan in the builder and fails a floor that
+drew under 12 colours.
 
-**THE RULING IS THE USER'S: water is NOT walkable.** So a pool is a hole in the
-walkable set, and that is the whole of what makes this phase risky rather than
-decorative — everything below follows from it.
+**`OPEN_SEED` IS 3 AND IT IS LOAD-BEARING.** A blocking patch held two tiles off
+rock always leaves a walkable ring, which is what makes the reachability check a
+proof rather than a filter. At 2, water is 19.3 tiles a map and band 4 seed 29
+runs forever: a one-tile ring is a route `findPath` offers that `Grid.fits`
+refuses to walk. At 3 it is 4.6 tiles and 70 runs terminate. **The tension is
+real and no number resolves it** — bigger water wants bigger rooms or a
+width-aware pathfinder, which is its own phase.
 
-**What each set IS.** A zone floor is a 25-tile set at `transition_size` 0.8–1.0
-— a full-tile cliff, which is why a wall spans two rows. A patch is a 16-tile
-set at 0.25 — a blend, no cliff. The plain 16 cover every corner combination,
-so a patch needs no `fitCorners` rescue that a zone floor needs.
-
-- [ ] **A THIRD TILE STATE, and `walkable` is where it is decided.**
-      `Grid.walkable` is `tile !== WALL && !solid`. Water has to fail it without
-      being WALL, because WALL is what `tileDecals` and `isWallFace` draw rock
-      for. Prefer a new tile value to `solid`: `solid` is furniture standing ON
-      a walkable tile and the tile under it is still floor, which is the
-      opposite of what a pool is.
-- [ ] **A RUN MUST ALWAYS END, and this is the phase that can break it.**
-      `runToCompletion` is bounded at 600s and a run that does not finish is a
-      MECHANISM failure, not a balance number. Carve the water BEFORE the
-      connectivity pass and treat it as wall for pathing, or a pool between the
-      hero and the exit is a descent that never returns.
-- [ ] **THE LIVELOCK PRECEDENT IS EXACTLY THIS SHAPE.** A gathering node across
-      a wall was inside its distance cap by line of sight and outside it once
-      he had walked round, and one run hit the 400s bound. Anything the hero
-      walks to that a pool can sit between is the same bug: a lock, a node, a
-      person, the exit.
-- [ ] **A patch is DRESSING, never difficulty.** It must draw off its own rng
-      like every other bit of dressing, or placing one moves the draw that
-      picks a monster and a seed stops replaying.
-- [ ] **The renderer picks a SECOND sheet per cell.** `buildProps` reads
-      `ZONES[map.zone]` and scores one Wang key; a patch is a second set over
-      the same grid. The scoring is the one answer both renderers read — put it
-      in `render/renderer.ts` rather than growing a second copy in `pixi.ts`.
-- [ ] **FLOOR VARIATION IS THE CHEAP HALF and it is worth doing first.**
-      Measured: every set holds exactly ONE pure-floor tile, 1 of 25 in all
-      four, so the open ground of every room is a single 32px square repeated.
-      `fissure_floor_cracked` is a floor variant that needs no walkability
-      question answered at all.
-- [ ] **Which patch goes in which zone is a TABLE**, beside `ZONE`. Thirteen
-      exist; a zone wants two or three, not all of them.
-- [ ] **`shots` is the proof.** A new terrain drawn wrong is invisible in every
-      check that does not look at it.
+- [ ] **THE WATER DOES NOT READ AS WATER**, and the level builder is where this
+      became visible: `fissure_pool` draws as dark ridged slabs at tile size.
+      A re-ask, not a mechanism.
+- [ ] **THE LEVEL-2 VARIANTS DO NOT BLEND.** They were asked at
+      `transition_size` 0 and still land as a darker speckled area with an edge
+      you can trace. **THE USER IS DRAWING THE REFERENCE** — *"the floor
+      variants ill make at least one for you to reference"* — so do not re-ask
+      the sets until that plan is in hand; match what he lays.
+- [ ] **A PAINTED SHAPE IS STILL A PAINTED SHAPE.** Even blended, one set laid
+      over a region reads as a region. Whether variation wants scattering per
+      CELL rather than in patches is the open design question under this, and
+      the reference floor answers it.
 
 **Not in this phase.** ELEVATION. It is a known plan and it costs no
 generations — a shelf is the rock set's own cliff with the pure-rock tiles
@@ -139,34 +134,32 @@ sit in the rock are GATHERED; things that come off a body DROP.**
 **Wood is MY call, not the user's** — a monster dropping logs is the weirdness
 that created nodes. Flagged to him; reverse it if he says so.
 
-- [ ] **A PER-RUN DEPLETING BUDGET, never a per-kill rate.** This is the rule
-      that has bitten twice. Kills run 26 at the bare Fissure against 847 at the
-      deep end, so a rate that looks flat pays 1.5 a clear at one end and 84 at
-      the other. Follow `DropBand.gearPerRun` and `CURRENCY_DROP.perRun`: drawn
-      down body by body against what is LEFT to kill.
-- [ ] **SETTLE THE BUDGET TO A WHOLE NUMBER BEFORE SPREADING IT.**
-      `left / bodiesLeft` places exactly `left` only when `left` is an INTEGER;
-      on a fraction the run pays `left × H(bodies)` — 3.5 over 33 bodies and 7.4
-      over 850. A currency budget of 0.9 paid 1.29 a clear.
-- [ ] **DEALT, NEVER ROLLED survives for the gathered four.** `placeNodes`
-      shuffles the six families and deals one per node so a descent is one of
-      each. With two families off the floor the deck is FOUR, and the dropped
-      two need their own spread — *"relatively equal drop rates"* is only
-      sayable as a spread.
-- [ ] **THE CLOTH FAMILY'S RAW BECOMES A PLANT**, so its four materials need
-      new icons through `icons.json` → `icon.mts` → `portrait.mts`. The
-      PROCESSED half is still cloth and the loom is unchanged: `MaterialFamilyDef`
-      keeps `one: 'Bolt'` and gains a new `verb` and `node`.
-- [ ] **A FISHING POOL IS A NODE ON WATER**, which is the one place Phase 9
-      depends on Phase 8. `node_pool` is a ring of stones round a flat grey disc
-      today and reads as a fire pit at 40px — the user's complaint. It should
-      stand ON the water terrain rather than being a picture of water.
+**THE SPREAD IS LANDED.** `BODY_DROP.perRun` is 3 whole drops of 2–5 each,
+drawn down body by body through the same `budgets()` the gear and currency
+budgets use, on `bodyRng` — its OWN stream, seed 104729, because a draw per kill
+out of the run's rng cost band 5 its tier 3 bases. `placeNodes` deals round
+`GATHERED` and `rollMaterialDrop` round `DROPPED`, so both halves are a spread
+rather than a roll. Measured, 3.2–8.2 a family against gathering's 20. The
+fishing spot is landed too: `poolSpot` stands `node_ripple` ON the water with a
+walkable neighbour, and a room with no pool grows no fish node at all. **It is
+UNDER-DEALT and that is unfixed** — 0.47 a run against 1.45 for the other three,
+because a spot needs a pool in its own room.
+
+- [ ] **THE CLOTH FAMILY'S FOUR MATERIALS STILL CARRY SPIDER-SILK NAMES.**
+      `MaterialFamilyDef` is a plant already — `raw: 'fibre'`, `verb: 'Cut'`,
+      the bush nodes — but `wickcloth`, `glassweave`, `rotsilk` and `weldcloth`
+      are woven things, and their icons are cloth. New icons through
+      `icons.json` → `icon.mts` → `portrait.mts`. **The ids do not move**: a
+      save points at them, so it is `name` and `description` that change.
 - [ ] **THE ORE ART IS RE-ASKED.** *"I dont like how the ores and the fish
       look."* Measured at 6x: the vein is nearly invisible and it reads as a
       grey boulder beside the stump. A bad draw, not a wrong world — re-ask
       before deciding it needs per-world art, which is 24 objects.
-- [ ] **`node_carcass` and `geode_amber` RETIRE** with the two families that
-      leave the floor. Cutting them lowers the comment ceiling too.
+- [ ] **`node_carcass` AND `geode_amber` NO LONGER RETIRE.** They were dead
+      data when hide and gem left the floor; the level builder offers every
+      `PROP_ART` id as a placeable object, so they are a palette entry now.
+      `geode_amber` is also a `style` image in `node.mts` and `chest.mts`, and a
+      style image is what keeps the next generation matching the roster.
 - [ ] **The demo is what proves the rates.** A gathered family and a dropped one
       must pay comparably over a run, at every band, and the check is a
       `gauge()` where it is balance and a `check()` where it is mechanism.
