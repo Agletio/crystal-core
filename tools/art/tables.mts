@@ -116,6 +116,10 @@ interface PropSpec {
    *  crops to ONE box, or the taller frame squares to a bigger grid and the
    *  box jumps sideways the moment it opens. */
   with?: string;
+  /** Quarter turns clockwise before conversion: a stair climbing a west rim
+   *  is the south one's picture turned, since its treads are lit from above
+   *  whichever way they run. A TILE is never turned; a flat prop may be. */
+  turn?: number;
 }
 
 interface Manifest {
@@ -525,6 +529,24 @@ function cropped(rows: string[], beside?: string[]): string[] {
 
 /** A generated object is NOT permanent — every prop this repo shipped comes
  *  back `not found` — so a row the server lost keeps the grid it ships. */
+/** The image turned a quarter clockwise `n` times. */
+function turned(image: ReturnType<typeof decodePng>, n: number): ReturnType<typeof decodePng> {
+  let out = image;
+  for (let i = 0; i < ((n % 4) + 4) % 4; i++) {
+    const { width, height, rgba } = out;
+    const next = new Uint8Array(rgba.length);
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const from = (y * width + x) * 4;
+        const to = (x * height + (height - 1 - y)) * 4;
+        next.set(rgba.subarray(from, from + 4), to);
+      }
+    }
+    out = { width: height, height: width, rgba: next };
+  }
+  return out;
+}
+
 async function furniture(specs: PropSpec[], ground: Tone | null): Promise<Record<string, Prop>> {
   const out: Record<string, Prop> = {};
   const uncropped: Record<string, string[]> = {};
@@ -551,7 +573,7 @@ async function furniture(specs: PropSpec[], ground: Tone | null): Promise<Record
       out[spec.id] = { grid: had.grid, tiles: had.tiles, rows: had.rows, key: had.key };
       continue;
     }
-    const got = debackground(decodePng(png));
+    const got = turned(debackground(decodePng(png)), spec.turn ?? 0);
     const raw = spec.dull ? dulled(got, spec.dull) : got;
     const pull = spec.tone ?? PROP_TONE;
     const image =

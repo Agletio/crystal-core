@@ -224,6 +224,41 @@ counter stands in the camp above it. **GOLD ALSO BUYS RAW, at a bad rate** —
 recipe you are two short of rather than a supply: a bare clear's gold buys 0.80
 raw against the 21 it gathers, so descending is 26x the rate.
 
+**A CHAMBER MAY STAND A LEVEL UP, and nothing is ever stacked.** *"Raised only,
+no levels stacked on top of each other."* `SHELF` is a chamber's floor a level
+up, walkable; `RIM` is its edge band and NOBODY WALKS IT — with a per-cell
+`walkable` that one rule keeps the two levels apart for every mover, the
+pathfinder, line of sight and the separation push at once, where an edge rule
+would have to be taught to each and a knockback would still shove a body off a
+cliff; `STAIR` is a rim cell you climb through, its foot the ground cell beside
+it. A room is raised WHOLE (`raiseRooms`, off the room graph and never off
+noise contours, which give rings nobody can reach), never the hole's room and
+never the way out's, only one with room for an interior inside its rim. **ROCK
+COUNTS AS HIGH**: a shelf against the wall has no rim there and its set draws on
+under the rock, which wins at any corner the two share. The shelf is drawn by
+`SHELF_SET`, the zone's floor as both terrains with the cliff tool's full-tile
+face, keyed by the SAME 21 corners the rock is (`wangKey(grid, x, y, high)`), so
+`fitShelf` mends a step the set cannot draw by FILLING the notch rather than
+shrinking the shelf — demoting alone ate a chamber's south half row by row.
+**The stairs are the proof of reachability**: at the corridor MOUTHS first, then
+south faces, then any straight rim, joined by union-find until every walkable
+cell is reached from the hole; what is still cut off is dug to through rock and
+a shelf nothing reaches comes down. A south stair carries the tall face, the
+other three a flat run of the same treads (`stair_e`/`stair_w` are the south
+picture turned at import — a TILE is never turned, a flat prop may be). `RAISE`
+is the share of a world's chambers that stand up and **IT SHIPS AT ZERO until
+the world has its shelf set**: only the Fissure has one; `raiseShare` is the
+dev kit's override (`#dev-shelves`, `SHELVES=1` on `descent-peek`) and what the
+demo forces to prove every seed. Measured with every eligible chamber up: 2.8
+of 7 rooms a Fissure map stand, and a descent over them still ends.
+
+**A LAKE IS A DEEP CORE IN A SHALLOW WREATH.** Brogue's rule: a blocking patch's
+DEEP is every cell of it with the patch on all four sides (`Grid.deep`), and its
+ring walks, drawn as the shore. So water lies against a wall and still leaves a
+way round, and `placePatches` refuses a lake WHOLE if its deep strands one dry
+cell. A landmark keeps a dry ring — the way out standing in a pond is a hole in
+the water — and nothing wet takes a stair's foot or a face cell.
+
 **THERE IS NO FILTER, because there is nothing to filter.** A clear banks the
 LOT; what you do not want is dismantled at the anvil or sold across the counter.
 `KIND_VARIETY` is what weights a drop's KIND now, AUTHORED and never counted —
@@ -751,6 +786,7 @@ src/render/generated-*.ts   art as data — never edited by hand
 src/ui/            one module per screen; talk.ts is a person in the camp
 src/ui/builder.ts  THE LEVEL BUILDER: paint a floor with the real sets and props
 tools/art/         the generator, over MCP: bodies.json asks, generated.json answers
-tools/*-peek.mjs   screenshots off the committed bundle
+tools/*-peek.mjs   screenshots off the committed bundle; plan-peek draws a builder plan
+tools/terrain-proto.mts  the standalone reference for the terraced generator
 src/demo.ts        the checks; src/mods-check.ts the modifier sweep
 ```

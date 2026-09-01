@@ -3,7 +3,7 @@
  * (a WebGL and a 2D context cannot share a canvas), and works in TILE UNITS —
  * scale and camera are its own business.
  */
-import { ENTRANCE, EXIT, TUNNEL, WALL, patchKey, wangKey } from '../sim/grid';
+import { ENTRANCE, EXIT, TUNNEL, WALL, cornerOf, isRock, patchKey, wangKey } from '../sim/grid';
 import type { RunState } from '../sim/run';
 import type { Grid, Vec2 } from '../sim/grid';
 import type { ZoneSet } from './generated-tiles';
@@ -697,15 +697,6 @@ export function isWallFace(at: (x: number, y: number) => number, x: number, y: n
 /** A corner's place in the base-three key, high to low. */
 const PLACE = [27, 9, 3, 1];
 
-/** Rock only where all four cells round it are, the FACE where the corner one
- *  row above is — the cliff in the cell BELOW makes a wall two rows tall. */
-function cornerAt(grid: Grid, cx: number, cy: number): number {
-  const rock = (px: number, py: number): boolean =>
-    grid.at(px - 1, py - 1) === WALL && grid.at(px, py - 1) === WALL &&
-    grid.at(px - 1, py) === WALL && grid.at(px, py) === WALL;
-  return rock(cx, cy) ? 1 : rock(cx, cy - 1) ? 2 : 0;
-}
-
 const NEAREST = new WeakMap<ZoneSet, Map<number, number>>();
 
 /** The nearest key a set holds — it answers 21 of the 81, and a key nothing
@@ -741,13 +732,19 @@ function nearestKey(set: ZoneSet, key: number): number {
  *  `over`/`under` are the rows either side of the tile's own two and they are
  *  CORNER values — read as tile type instead, the four wall CONTINUATIONS are
  *  picked at random and the lip repeats down a face as a pale line. */
-export function zoneTileAt(set: ZoneSet, grid: Grid, x: number, y: number): number {
-  const key = nearestKey(set, wangKey(grid, x, y));
+export function zoneTileAt(
+  set: ZoneSet,
+  grid: Grid,
+  x: number,
+  y: number,
+  solid: (tile: number) => boolean = isRock
+): number {
+  const key = nearestKey(set, wangKey(grid, x, y, solid));
   const want = [
-    cornerAt(grid, x, y - 1),
-    cornerAt(grid, x + 1, y - 1),
-    cornerAt(grid, x, y + 2),
-    cornerAt(grid, x + 1, y + 2),
+    cornerOf(grid, x, y - 1, solid),
+    cornerOf(grid, x + 1, y - 1, solid),
+    cornerOf(grid, x, y + 2, solid),
+    cornerOf(grid, x + 1, y + 2, solid),
   ];
   let best = -1;
   let score = -Infinity;

@@ -34,6 +34,21 @@ export const EXIT = 3;
 /** Corridor floor. Walkable exactly like FLOOR — it exists so a renderer can
  *  tell a chamber from a passage without re-deriving it from the rectangles. */
 export const TUNNEL = 4;
+/** A RAISED chamber: floor a level up, walkable. Never stacked — one shelf
+ *  over the ground and rock over both, so a cell has one height. */
+export const SHELF = 5;
+/** A shelf's edge band, NOT walkable: with a per-cell `walkable` this is the
+ *  whole of what keeps the two levels apart, and every mover, the pathfinder,
+ *  line of sight and the separation push read it for nothing. */
+export const RIM = 6;
+/** A rim cell you climb through, walkable both ways. The floor cell beside it
+ *  is the stair's foot and stays what it was. */
+export const STAIR = 7;
+
+export const raised = (tile: number): boolean => tile === SHELF || tile === RIM || tile === STAIR;
+/** What a shelf's edge is read against: rock stands higher still, so a shelf
+ *  against a wall has no rim there and its set draws on under the rock. */
+export const high = (tile: number): boolean => raised(tile) || tile === WALL;
 
 export interface Room {
   x: number;
@@ -97,9 +112,21 @@ export class Grid {
     const ty = Math.round(y);
     if (!this.inBounds(tx, ty)) return false;
     const at = ty * this.width + tx;
-    if (this.tiles[at] === WALL || this.solid[at]) return false;
-    const patch = this.patch[at];
-    return patch === 0 || !this.blocking[patch - 1];
+    const tile = this.tiles[at];
+    if (tile === WALL || tile === RIM || this.solid[at]) return false;
+    return !this.deep(tx, ty);
+  }
+
+  /** The DEEP of a blocking patch: a cell of it with the patch on all four
+   *  sides. Its ring is the wreath, walked and drawn as the shore, which is
+   *  what lets water lie against a wall and still leave a way round. */
+  deep(x: number, y: number): boolean {
+    const patch = this.patch[y * this.width + x];
+    if (patch === 0 || !this.blocking[patch - 1]) return false;
+    for (const [dx, dy] of N4) {
+      if (!this.inBounds(x + dx, y + dy) || this.patch[(y + dy) * this.width + x + dx] !== patch) return false;
+    }
+    return true;
   }
 
   /** Whether a BODY of this radius fits, not whether its centre does. Tile n
@@ -111,13 +138,16 @@ export class Grid {
         if (!this.walkable(tx, ty)) return false;
       }
     }
-    // A tile with rock to the NORTH is walkable across its FOOT and not across
-    // the face hanging into it: higher, and the feet it draws are in the rock.
+    // A tile with rock or a rim to the NORTH is walkable across its FOOT and not
+    // across the face hanging into it: higher, and the feet it draws are in it.
     const ty = Math.round(y);
-    if (y < ty - FACE_LIP && this.at(Math.round(x), ty - 1) === WALL) return false;
+    const above = this.at(Math.round(x), ty - 1);
+    if (y < ty - FACE_LIP && (above === WALL || above === RIM)) return false;
     return true;
   }
 }
+
+const N4 = [[1, 0], [-1, 0], [0, 1], [0, -1]] as const;
 
 /** Under half a tile, so a rank-scaled body can still walk a one-tile gap. */
 const BODY_MAX = 0.45;
@@ -170,6 +200,8 @@ export interface GameMap {
   patches: string[];
   /** Which generated tileset that surface is, when there is one. */
   zone?: string;
+  /** Which rooms stand a level up, by index into `rooms`. */
+  raised: number[];
 }
 
 function overlaps(a: Room, b: Room, pad: number): boolean {
@@ -203,6 +235,31 @@ export const ZONE: Partial<Record<MapTheme, string>> = {
   seam: 'seam_pro',
 };
 
+/** The set a SHELF is drawn with: the zone's floor as both terrains, the cliff
+ *  tool's full-tile face on every south edge. Keyed exactly as the rock is. */
+export const SHELF_SET: Partial<Record<MapTheme, string>> = {
+  fissure: 'fissure_shelf',
+};
+
+/** The share of a world's chambers that stand a level up. ZERO SHIPS until a
+ *  world has a shelf set AND a stair picture — a rim nobody can see is a line
+ *  the hero refuses to cross for no reason. `raiseShare` is the override the
+ *  dev kit and the demo force it up with. */
+export const RAISE: Record<MapTheme, number> = {
+  fissure: 0,
+  demonic: 0,
+  prismatic: 0,
+  seam: 0,
+};
+
+let forcedRaise: number | null = null;
+export function raiseShare(share: number | null): void {
+  forcedRaise = share;
+}
+
+/** The smallest interior a shelf keeps; under it the chamber comes back down. */
+const SHELF_LEAST = 6;
+
 /** THREE FLOOR LEVELS: rock 3, walkable floor 2, anything LOWER 1. **LEVEL 1
  *  IS NEVER WALKABLE**, so every entry blocks and a zone gets one or two. */
 export interface PatchDef {
@@ -213,13 +270,14 @@ export interface PatchDef {
 }
 
 export const PATCHES: Partial<Record<MapTheme, PatchDef[]>> = {
-  // A BODY of water, not a puddle: `most` is what a whole chamber holds.
-  fissure: [{ set: 'fissure_pool', blocks: true, most: 110, count: 6 }],
-  demonic: [{ set: 'rot_blood', blocks: true, most: 100, count: 5 }],
-  prismatic: [{ set: 'cavern_pool', blocks: true, most: 110, count: 6 }],
+  // A LAKE: its DEEP blocks and its wreath walks, so `most` is the whole blob
+  // and a pool of it lies against the wall with a way round still there.
+  fissure: [{ set: 'fissure_pool', blocks: true, most: 40, count: 7 }],
+  demonic: [{ set: 'rot_blood', blocks: true, most: 36, count: 6 }],
+  prismatic: [{ set: 'cavern_pool', blocks: true, most: 40, count: 7 }],
   seam: [
-    { set: 'seam_lava', blocks: true, most: 90, count: 4 },
-    { set: 'seam_pool', blocks: true, most: 90, count: 4 },
+    { set: 'seam_lava', blocks: true, most: 32, count: 4 },
+    { set: 'seam_pool', blocks: true, most: 32, count: 4 },
   ],
 };
 
@@ -269,8 +327,16 @@ function islandsIn(r: Room, spare: Vec2[]): { x: number; y: number; r: number }[
 }
 
 /** A room, cut the way its world cuts. The `Room` RECTANGLE never changes —
- *  every spawn, the entrance and the exit are placed off it. */
-function carveRoom(grid: Grid, r: Room, cut: Cut, spare: Vec2[] = [], fill = FLOOR): void {
+ *  every spawn, the entrance and the exit are placed off it. `mark` records
+ *  which room a cell was cut for, which is what a shelf is raised by. */
+function carveRoom(
+  grid: Grid,
+  r: Room,
+  cut: Cut,
+  spare: Vec2[] = [],
+  fill = FLOOR,
+  mark?: { of: Uint8Array; index: number }
+): void {
   if (cut !== 'grown') {
     // Both keep the rectangle's AREA: a fifth smaller with the same pack in
     // it is a pack that arrives all at once.
@@ -314,18 +380,336 @@ function carveRoom(grid: Grid, r: Room, cut: Cut, spare: Vec2[] = [], fill = FLO
       if (d > 0.8 + swell + tileNoise(x, y, 50) * 0.35) continue;
       if (islands.some((i) => (x - i.x) ** 2 + (y - i.y) ** 2 < i.r * i.r)) continue;
       grid.set(x, y, fill);
+      if (mark) mark.of[y * grid.width + x] = mark.index;
     }
   }
 }
 
-/** A cell's four CORNERS in base three — 0 floor, 1 rock, 2 the cut face — the
+/** One automaton pass over the whole grid, so no run of edge the carve left is
+ *  straight: a floor cell with two open neighbours or fewer is a nub and goes,
+ *  rock with six or more is a notch and opens. Never the border. */
+function erode(grid: Grid): void {
+  const next = new Uint8Array(grid.tiles);
+  for (let y = 1; y < grid.height - 1; y++) {
+    for (let x = 1; x < grid.width - 1; x++) {
+      let open = 0;
+      for (let dy = -1; dy <= 1; dy++) {
+        for (let dx = -1; dx <= 1; dx++) if ((dx || dy) && grid.at(x + dx, y + dy) !== WALL) open++;
+      }
+      const at = y * grid.width + x;
+      if (grid.tiles[at] !== WALL && open <= 2) next[at] = WALL;
+      else if (grid.tiles[at] === WALL && open >= 6) next[at] = FLOOR;
+    }
+  }
+  grid.tiles.set(next);
+}
+
+const ground = (tile: number): boolean => tile === FLOOR || tile === TUNNEL;
+
+/** Which chambers stand a level up: never the hole's, never the way out's, the
+ *  rest on a coin. Every cell cut for one becomes SHELF. */
+function raiseRooms(grid: Grid, rooms: Room[], roomOf: Uint8Array, rng: Rng, share: number, skip: Set<number>): number[] {
+  const raised: number[] = [];
+  if (share <= 0) return raised;
+  // Only a chamber with room for an interior inside its rim: a small one
+  // comes back down in the fitting and cost its coin for nothing.
+  rooms.forEach((r, i) => {
+    if (!skip.has(i) && r.w * r.h >= 35 && rng.chance(share)) raised.push(i);
+  });
+  const lift = new Set(raised.map((i) => i + 1));
+  for (let k = 0; k < grid.tiles.length; k++) {
+    if (grid.tiles[k] === FLOOR && lift.has(roomOf[k])) grid.tiles[k] = SHELF;
+  }
+  // Everything open inside the RECTANGLE is the room's too: a corridor that
+  // drilled an island and an island the erosion opened are holes otherwise.
+  for (const i of raised) {
+    const r = rooms[i];
+    for (let y = r.y; y < r.y + r.h; y++) {
+      for (let x = r.x; x < r.x + r.w; x++) if (ground(grid.at(x, y))) grid.set(x, y, SHELF);
+    }
+  }
+  return raised;
+}
+
+/** A shelf is a MASS, not a fringe: a ragged edge is all rim and holds no
+ *  straight run a stair can stand in. Two majority passes over the raised mask
+ *  fill its notches and shed its nubs before the rim is read off it. */
+function smoothShelves(grid: Grid, keep: Set<number>): void {
+  for (let pass = 0; pass < 2; pass++) {
+    const next = new Uint8Array(grid.tiles);
+    for (let y = 1; y < grid.height - 1; y++) {
+      for (let x = 1; x < grid.width - 1; x++) {
+        const at = y * grid.width + x;
+        const tile = grid.tiles[at];
+        if (tile !== FLOOR && tile !== TUNNEL && tile !== SHELF) continue;
+        let up = 0;
+        let rock = 0;
+        for (let dy = -1; dy <= 1; dy++) {
+          for (let dx = -1; dx <= 1; dx++) {
+            if (!dx && !dy) continue;
+            const near = grid.at(x + dx, y + dy);
+            if (raised(near)) up++;
+            else if (near === WALL) rock++;
+          }
+        }
+        // Rock counts toward a notch and never toward a corridor: a passage
+        // cell has rock on both sides and one shelf cell behind it.
+        if (tile === SHELF && up + rock <= 3) next[at] = FLOOR;
+        else if (tile !== SHELF && up >= 3 && up + rock >= 7 && !keep.has(at)) next[at] = SHELF;
+      }
+    }
+    grid.tiles.set(next);
+  }
+}
+
+/** The RIM is every raised cell with a neighbour, diagonals included, that is
+ *  neither raised nor rock. Re-derived whole, since a demotion moves it. */
+export function rimShelves(grid: Grid): void {
+  for (let k = 0; k < grid.tiles.length; k++) if (grid.tiles[k] === RIM) grid.tiles[k] = SHELF;
+  const rim: number[] = [];
+  for (let y = 0; y < grid.height; y++) {
+    for (let x = 0; x < grid.width; x++) {
+      if (grid.at(x, y) !== SHELF) continue;
+      let edge = false;
+      for (let dy = -1; dy <= 1 && !edge; dy++) {
+        for (let dx = -1; dx <= 1; dx++) if (!high(grid.at(x + dx, y + dy))) edge = true;
+      }
+      if (edge) rim.push(y * grid.width + x);
+    }
+  }
+  for (const k of rim) grid.tiles[k] = RIM;
+}
+
+/** Every raised cell joined to this one, diagonals included, back to ground. */
+function lowerShelf(grid: Grid, from: number): void {
+  const queue = [from];
+  while (queue.length > 0) {
+    const k = queue.pop()!;
+    if (!raised(grid.tiles[k])) continue;
+    grid.tiles[k] = FLOOR;
+    const x = k % grid.width;
+    const y = (k - x) / grid.width;
+    for (let dy = -1; dy <= 1; dy++) {
+      for (let dx = -1; dx <= 1; dx++) {
+        if (grid.inBounds(x + dx, y + dy) && raised(grid.at(x + dx, y + dy))) queue.push((y + dy) * grid.width + x + dx);
+      }
+    }
+  }
+}
+
+/** How many of a cell's eight neighbours stand high. */
+function highAround(grid: Grid, x: number, y: number): number {
+  let n = 0;
+  for (let dy = -1; dy <= 1; dy++) {
+    for (let dx = -1; dx <= 1; dx++) if ((dx || dy) && high(grid.at(x + dx, y + dy))) n++;
+  }
+  return n;
+}
+
+/** Rim a shelf set cannot draw, mended until none is left — `fitCorners` for a
+ *  shelf. What it lacks is a ONE-CELL STEP in an edge, so the notch beside the
+ *  cell is FILLED where a floor cell with the shelf nearly round it exists, and
+ *  the cell comes down only otherwise: demoting alone moved the step one cell
+ *  along and ate a chamber's south half row by row. A shelf too small to keep
+ *  an interior comes down whole. */
+function fitShelf(grid: Grid, set: string | undefined): void {
+  const known = new Set((set && ZONES[set] ? ZONES[set].tiles : []).map((t) => t.key));
+  for (let pass = 0; pass < 16; pass++) {
+    rimShelves(grid);
+    let mended = 0;
+    for (let y = 0; y < grid.height; y++) {
+      for (let x = 0; x < grid.width; x++) {
+        if (grid.at(x, y) !== RIM || known.has(wangKey(grid, x, y, high))) continue;
+        const notch = N4.map(([dx, dy]) => ({ x: x + dx, y: y + dy }))
+          .filter((n) => grid.at(n.x, n.y) === FLOOR && highAround(grid, n.x, n.y) >= 5)
+          .sort((a, b) => highAround(grid, b.x, b.y) - highAround(grid, a.x, a.y))[0];
+        if (notch) grid.set(notch.x, notch.y, SHELF);
+        else grid.set(x, y, FLOOR);
+        mended++;
+      }
+    }
+    if (mended === 0) break;
+  }
+  for (let k = 0; k < grid.tiles.length; k++) {
+    if (grid.tiles[k] !== SHELF) continue;
+    let interior = 0;
+    const seen = new Set<number>();
+    const queue = [k];
+    while (queue.length > 0) {
+      const at = queue.pop()!;
+      if (seen.has(at) || !raised(grid.tiles[at])) continue;
+      seen.add(at);
+      if (grid.tiles[at] === SHELF) interior++;
+      const x = at % grid.width;
+      const y = (at - x) / grid.width;
+      for (let dy = -1; dy <= 1; dy++) {
+        for (let dx = -1; dx <= 1; dx++) if (grid.inBounds(x + dx, y + dy)) queue.push((y + dy) * grid.width + x + dx);
+      }
+    }
+    if (interior < SHELF_LEAST) lowerShelf(grid, k);
+  }
+  rimShelves(grid);
+}
+
+type Side = 'n' | 's' | 'e' | 'w';
+const SIDE: Record<Side, readonly [number, number]> = { n: [0, -1], s: [0, 1], e: [1, 0], w: [-1, 0] };
+
+/** Whether a rim cell can be a stair down this side: shelf behind it, two
+ *  cells of ground in front, and a straight run of rim either side. */
+function stairFits(grid: Grid, x: number, y: number, side: Side): boolean {
+  const [dx, dy] = SIDE[side];
+  if (grid.at(x, y) !== RIM || grid.at(x - dx, y - dy) !== SHELF) return false;
+  if (!ground(grid.at(x + dx, y + dy))) return false;
+  const beside = (tile: number) => tile === RIM || tile === STAIR || tile === WALL;
+  return beside(grid.at(x + dy, y + dx)) && beside(grid.at(x - dy, y - dx));
+}
+
+/**
+ * STAIRS, at the MOUTHS first — where a corridor arrives at a rim — then south
+ * faces, then any straight rim, each taken only when it joins two regions not
+ * yet joined, plus one in twenty for a second way up. What is still cut off is
+ * dug to through rock, and a shelf that cannot be reached comes down.
+ */
+function placeStairs(grid: Grid, rng: Rng, entrance: Vec2): MapProp[] {
+  const props: MapProp[] = [];
+  const region = new Map<number, number>();
+  {
+    const done = new Set<number>();
+    let n = 0;
+    for (let y = 0; y < grid.height; y++) {
+      for (let x = 0; x < grid.width; x++) {
+        const k = y * grid.width + x;
+        if (!grid.walkable(x, y) || done.has(k)) continue;
+        for (const cell of reachable(grid, { x, y })) {
+          done.add(cell);
+          region.set(cell, n);
+        }
+        n++;
+      }
+    }
+  }
+  const parent = new Map<number, number>();
+  const root = (r: number): number => {
+    let p = parent.get(r) ?? r;
+    while (p !== r) {
+      r = p;
+      p = parent.get(r) ?? r;
+    }
+    return r;
+  };
+  const spots: { x: number; y: number; side: Side; a: number; b: number; rank: number }[] = [];
+  for (let y = 1; y < grid.height - 1; y++) {
+    for (let x = 1; x < grid.width - 1; x++) {
+      for (const side of ['s', 'n', 'e', 'w'] as const) {
+        if (!stairFits(grid, x, y, side)) continue;
+        const [dx, dy] = SIDE[side];
+        const mouth = grid.at(x + dx, y + dy) === TUNNEL;
+        const landing = ground(grid.at(x + 2 * dx, y + 2 * dy)) ? 0 : 0.5; // room to stand at its foot
+        spots.push({
+          x, y, side,
+          a: region.get((y - dy) * grid.width + x - dx) ?? -1,
+          b: region.get((y + dy) * grid.width + x + dx) ?? -1,
+          rank: (mouth ? 0 : side === 's' ? 1 : 2) + landing,
+        });
+      }
+    }
+  }
+  const order = rng.shuffle(spots).sort((p, q) => p.rank - q.rank);
+  const near = (x: number, y: number): boolean => props.some((p) => Math.abs(p.x - x) + Math.abs(p.y - y) <= 2);
+  for (const s of order) {
+    const joins = root(s.a) !== root(s.b);
+    if (!joins && !rng.chance(0.05)) continue;
+    if (near(s.x, s.y) || !stairFits(grid, s.x, s.y, s.side)) continue;
+    const [dx, dy] = SIDE[s.side];
+    // The picture spans the rim cell and its foot: two tall for a south or
+    // north stair, two wide for the others. A prop hangs from the FOOT of its
+    // own tile and a wide one is centred on it, so the anchor is the lower
+    // cell of a south stair and the western cell of a west one.
+    const foot = (x: number, y: number): MapProp =>
+      ({ id: `stair_${s.side}`, x: s.side === 'w' ? x - 1 : x, y: s.side === 's' ? y + 1 : y });
+    grid.set(s.x, s.y, STAIR);
+    props.push(foot(s.x, s.y));
+    // Two wide along the rim when the next cell fits too, so a pack gets through.
+    if (stairFits(grid, s.x + dy, s.y + dx, s.side)) {
+      grid.set(s.x + dy, s.y + dx, STAIR);
+      props.push(foot(s.x + dy, s.y + dx));
+    }
+    parent.set(root(s.a), root(s.b));
+  }
+
+  for (let round = 0; round < 10; round++) {
+    const seen = reachable(grid, entrance);
+    let lost: Set<number> | null = null;
+    const done = new Set<number>();
+    for (let y = 0; y < grid.height; y++) {
+      for (let x = 0; x < grid.width; x++) {
+        const k = y * grid.width + x;
+        if (!grid.walkable(x, y) || seen.has(k) || done.has(k)) continue;
+        const pocket = reachable(grid, { x, y });
+        pocket.forEach((c) => done.add(c));
+        if (!lost || pocket.size > lost.size) lost = pocket;
+      }
+    }
+    if (!lost) break;
+    const pocket: Set<number> = lost;
+    let dug = false;
+    let best: { a: Vec2; b: Vec2; d: number } | null = null;
+    for (const k of pocket) {
+      if (!ground(grid.tiles[k])) continue;
+      const a = { x: k % grid.width, y: Math.floor(k / grid.width) };
+      for (const r of seen) {
+        if (!ground(grid.tiles[r])) continue;
+        const b = { x: r % grid.width, y: Math.floor(r / grid.width) };
+        const d = Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
+        if (d < 16 && (!best || d < best.d)) best = { a, b, d };
+      }
+    }
+    if (best) {
+      const keep = new Uint8Array(grid.tiles);
+      carveCorridor(grid, best.a, best.b, rng, 0);
+      dug = reachable(grid, entrance).has(best.a.y * grid.width + best.a.x);
+      if (!dug) grid.tiles.set(keep);
+    }
+    if (dug) continue;
+    // Its neighbouring shelf comes down, stairs and all.
+    let lowered = false;
+    for (const k of pocket) {
+      const x = k % grid.width;
+      const y = (k - x) / grid.width;
+      for (const [dx, dy] of N4) {
+        if (!raised(grid.at(x + dx, y + dy))) continue;
+        lowerShelf(grid, (y + dy) * grid.width + x + dx);
+        lowered = true;
+        break;
+      }
+      if (lowered) break;
+    }
+    if (!lowered) break; // a pocket the carve left, older than any of this
+  }
+  return props.filter((p) => {
+    const side = p.id.slice(6) as Side;
+    return grid.at(side === 'w' ? p.x + 1 : p.x, side === 's' ? p.y - 1 : p.y) === STAIR;
+  });
+}
+
+export const isRock = (tile: number): boolean => tile === WALL;
+
+/** A CORNER's value under a solidity — 1 where all four cells round it are
+ *  solid, 2 where the corner one row above is (the FACE hangs into the cell
+ *  below, so a wall spans two rows), 0 otherwise. One rule for the rock and
+ *  for a shelf, which is what lets one set of 21 keys draw both. */
+export function cornerOf(grid: Grid, cx: number, cy: number, solid: (tile: number) => boolean): number {
+  const whole = (px: number, py: number): boolean =>
+    solid(grid.at(px - 1, py - 1)) && solid(grid.at(px, py - 1)) &&
+    solid(grid.at(px - 1, py)) && solid(grid.at(px, py));
+  return whole(cx, cy) ? 1 : whole(cx, cy - 1) ? 2 : 0;
+}
+
+/** A cell's four CORNERS in base three — 0 floor, 1 solid, 2 the cut face — the
  *  key a generated tileset is indexed by. Here rather than in a renderer
  *  because the GRID answers it too: what a set cannot draw it must not make. */
-export function wangKey(grid: Grid, x: number, y: number): number {
-  const solid = (cx: number, cy: number): boolean =>
-    grid.at(cx - 1, cy - 1) === WALL && grid.at(cx, cy - 1) === WALL &&
-    grid.at(cx - 1, cy) === WALL && grid.at(cx, cy) === WALL;
-  const one = (cx: number, cy: number): number => (solid(cx, cy) ? 1 : solid(cx, cy - 1) ? 2 : 0);
+export function wangKey(grid: Grid, x: number, y: number, solid: (tile: number) => boolean = isRock): number {
+  const one = (cx: number, cy: number): number => cornerOf(grid, cx, cy, solid);
   return ((one(x, y) * 3 + one(x + 1, y)) * 3 + one(x, y + 1)) * 3 + one(x + 1, y + 1);
 }
 
@@ -477,15 +861,14 @@ function block(grid: Grid, props: MapProp[], must: Vec2[]): void {
 }
 
 /** A BLOB grown off a seed, ragged at the edge. A tile the map MUST reach is
- *  never taken. */
+ *  never taken, and neither is a stair's foot. */
 function growPatch(
   grid: Grid,
   rng: Rng,
   index: number,
   def: PatchDef,
   keep: Set<number>,
-  from: Vec2,
-  clear: number
+  from: Vec2
 ): number[] {
   const taken: number[] = [];
   const edge: Vec2[] = [from];
@@ -495,31 +878,29 @@ function growPatch(
     const key = at.y * grid.width + at.x;
     if (seen.has(key)) continue;
     seen.add(key);
-    // FLOOR only: a patch over a landmark hides the way out.
-    if (grid.at(at.x, at.y) !== FLOOR || keep.has(key) || grid.patch[key] !== 0) continue;
-    // Held off the rock, which makes it safe by CONSTRUCTION: a pool that never
-    // touches a wall has a walkable ring round it and cuts nothing off.
-    if (clear > 1 && offRock(grid, at.x, at.y) < clear) continue;
+    // The GROUND only: a patch over a landmark hides the way out, and a shelf
+    // is drawn with its own set.
+    if (grid.at(at.x, at.y) !== FLOOR || grid.patch[key] !== 0) continue;
+    if (N4.some(([dx, dy]) => grid.at(at.x + dx, at.y + dy) === STAIR)) continue;
+    // A landmark keeps a dry ring: the way out standing in a pond is a hole
+    // in the water, and a lock in one is a chest nobody can walk up to.
+    let near = false;
+    for (let dy = -1; dy <= 1 && !near; dy++) {
+      for (let dx = -1; dx <= 1; dx++) if (keep.has((at.y + dy) * grid.width + at.x + dx)) near = true;
+    }
+    if (near) continue;
+    if (grid.at(at.x, at.y - 1) === RIM) continue; // the face hangs into this cell
     grid.patch[key] = index;
     taken.push(key);
-    // A FLOOD, not a scatter: at a chance it dies after a few tiles.
-    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
-      edge.push({ x: at.x + dx, y: at.y + dy });
-    }
+    for (const [dx, dy] of N4) edge.push({ x: at.x + dx, y: at.y + dy });
   }
   return taken;
 }
 
-/** How far from the rock a blocking patch is KEPT. A one-tile ring is a route
- *  `findPath` offers and no body can walk: at 2, water is 19.3 tiles a map and
- *  band 4 seed 29 hangs; at 3 it is 4.6 and 70 runs terminate. */
-const OPEN_SEED = 3;
-
-/** A floor tile at least `off` from the rock. BIGGEST CHAMBERS FIRST: a
- *  two-tile margin leaves nothing at all in a small room. */
-function seedFor(grid: Grid, rng: Rng, rooms: Room[], off: number): Vec2 | null {
-  // WIDEST FIRST, and a DRY room before one that already holds water: a fishing
-  // spot needs a pool in its OWN room, so concentrating it starves fish.
+/** A floor tile to grow a patch from. BIGGEST CHAMBERS FIRST, and a DRY room
+ *  before one that already holds water, since a fishing spot needs a pool in
+ *  its OWN room. */
+function seedFor(grid: Grid, rng: Rng, rooms: Room[]): Vec2 | null {
   const roomy = [...rooms].sort((a, b) => b.w * b.h - a.w * a.h);
   const dry = roomy.filter((r) => !holdsPatch(grid, r));
   for (const list of [dry.length > 0 ? dry : roomy, roomy]) {
@@ -530,8 +911,8 @@ function seedFor(grid: Grid, rng: Rng, rooms: Room[], off: number): Vec2 | null 
         x: room.x + rng.int(0, Math.max(0, room.w - 1)),
         y: room.y + rng.int(0, Math.max(0, room.h - 1)),
       };
-      if (grid.at(at.x, at.y) !== FLOOR) continue;
-      if (offRock(grid, at.x, at.y) >= off) return at;
+      // Seeded a tile in from the rock, so the deep has somewhere to be.
+      if (grid.at(at.x, at.y) === FLOOR && offRock(grid, at.x, at.y) >= 2) return at;
     }
   }
   return null;
@@ -565,15 +946,16 @@ function placePatches(
 
   defs.forEach((def, i) => {
     for (let n = 0; n < def.count; n++) {
-      // Seeded in OPEN floor: from a wall it plugs the corner behind it.
-      const clear = def.blocks ? OPEN_SEED : 1;
-      const from = seedFor(grid, rng, rooms, clear);
+      const from = seedFor(grid, rng, rooms);
       if (!from) continue;
-      const taken = growPatch(grid, rng, i + 1, def, spared, from, clear);
+      const taken = growPatch(grid, rng, i + 1, def, spared, from);
       if (taken.length === 0 || !def.blocks) continue;
-      // Exactly the tiles it took may go, and nothing behind them.
+      // Exactly its DEEP may go, and nothing behind it — Brogue's rule: a lake
+      // that strands a dry cell is refused whole. A blob with no deep is a
+      // puddle and goes too.
+      const deep = taken.filter((key) => grid.deep(key % grid.width, Math.floor(key / grid.width))).length;
       const now = reachable(grid, keep[0]).size;
-      if (now !== open - taken.length) {
+      if (deep < 3 || now !== open - deep) {
         for (const key of taken) grid.patch[key] = 0;
       } else {
         open = now;
@@ -602,7 +984,8 @@ export function coverFloor(grid: Grid, rng: Rng): MapProp[] {
   for (let y = 0; y < grid.height; y++) {
     for (let x = 0; x < grid.width; x++) {
       if (!grid.walkable(x, y) && grid.at(x, y) !== FLOOR) continue;
-      if (grid.at(x, y - 1) === WALL) continue; // it DRAWS the face: stone would land up the wall
+      const above = grid.at(x, y - 1); // it DRAWS the face: stone would land up the wall
+      if (above === WALL || above === RIM) continue;
       if (!rng.chance(COVER_RATE[offRock(grid, x, y) - 1])) continue;
       out.push({ id: weighted(COVER_PROPS, rng.next()), x, y });
     }
@@ -772,9 +1155,27 @@ export function generateMap(
   }
 
   const cut = CUT[theme] ?? 'dug';
-  for (const room of rooms) carveRoom(grid, room, cut);
+  // Every descent's chamber is GROWN: an ellipse with headlands and a ragged
+  // edge, whatever the world, because a rectangle is what read as built. The
+  // world's own cut still shapes its authored rooms and its corridors' wander.
+  const roomOf = new Uint8Array(width * height);
+  rooms.forEach((room, i) => carveRoom(grid, room, 'grown', [], FLOOR, { of: roomOf, index: i + 1 }));
   for (let i = 1; i < rooms.length; i++) {
     carveCorridor(grid, roomCenter(rooms[i - 1]), roomCenter(rooms[i]), rng, WOBBLE[cut]);
+  }
+  // A loop or two, so the map is not a chain.
+  for (let i = 0; i < Math.floor(rooms.length / 3); i++) {
+    carveCorridor(grid, roomCenter(rooms[rng.int(0, rooms.length - 1)]), roomCenter(rooms[rng.int(0, rooms.length - 1)]), rng, WOBBLE[cut]);
+  }
+  erode(grid);
+  for (const room of rooms) {
+    const c = roomCenter(room);
+    if (grid.at(c.x, c.y) === WALL) carveRoom(grid, room, 'grown');
+    // A blob leaves the rectangle's corners as rock and a passage may dig
+    // them; what is dug inside the rectangle is the chamber's own.
+    for (let y = room.y; y < room.y + room.h; y++) {
+      for (let x = room.x; x < room.x + room.w; x++) if (grid.at(x, y) === TUNNEL) grid.set(x, y, FLOOR);
+    }
   }
 
   const entrance = clearSpot(grid, roomCenter(rooms[0]));
@@ -798,11 +1199,35 @@ export function generateMap(
   if (!reachable(grid, entrance).has(exitKey)) {
     carveCorridor(grid, entrance, exit, rng, 0); // straight, whatever the world
   }
+  for (const room of rooms) {
+    const c = roomCenter(room);
+    if (!reachable(grid, entrance).has(c.y * grid.width + c.x)) carveCorridor(grid, entrance, c, rng, 0);
+  }
 
   const zone = ZONE[theme];
-  // Fitted BEFORE the landmarks are stamped, or opening a cell beside one
-  // reads its ENTRANCE tile as floor and the hole moves.
+  // Fitted BEFORE the shelves and the landmarks: a cell opened beside a rim is
+  // a pocket nothing reaches, and one opened beside the hole moves it.
   if (zone) fitCorners(grid, zone);
+
+  // A LEVEL UP. The shelves are fitted to their set, then a raised room whose
+  // middle did not survive as interior comes down, since a pack and a lock
+  // stand there; then the stairs, which are the proof of reachability.
+  const share = SHELF_SET[theme] ? (forcedRaise ?? RAISE[theme]) : 0; // no set, no shelf
+  const lifted = raiseRooms(grid, rooms, roomOf, rng, share, new Set([0, rooms.indexOf(exitRoom)]));
+  smoothShelves(grid, new Set([entrance, exit, ...rooms.map(roomCenter)].map((v) => v.y * grid.width + v.x)));
+  fitShelf(grid, SHELF_SET[theme]);
+  for (const i of lifted) {
+    const c = roomCenter(rooms[i]);
+    if (grid.at(c.x, c.y) !== SHELF) {
+      for (let k = 0; k < roomOf.length; k++) if (roomOf[k] === i + 1 && raised(grid.tiles[k])) lowerShelf(grid, k);
+    }
+  }
+  rimShelves(grid);
+  const stairs = placeStairs(grid, rng, entrance);
+  const standing = lifted.filter((i) => {
+    const c = roomCenter(rooms[i]);
+    return grid.at(c.x, c.y) === SHELF;
+  });
 
   grid.set(Math.round(entrance.x), Math.round(entrance.y), ENTRANCE);
   grid.set(Math.round(exit.x), Math.round(exit.y), EXIT);
@@ -810,7 +1235,7 @@ export function generateMap(
   // A generated surface is DRESSED and one drawing its own rock is not. Cover
   // and growth are the WHOLE of it: a descent is what the rock did, and nothing
   // stands on its floor.
-  const props: MapProp[] = [];
+  const props: MapProp[] = [...stairs];
   let patches: string[] = [];
   if (zone) {
     // Its own stream, or dressing a map moves which monsters spawn in it.
@@ -827,7 +1252,7 @@ export function generateMap(
     patches = placePatches(grid, dress, theme, rooms, keep);
   }
 
-  return { grid, rooms, entrance, exit, props, vein, theme, bare: !!zone, zone, patches };
+  return { grid, rooms, entrance, exit, props, vein, theme, bare: !!zone, zone, patches, raised: standing };
 }
 
 /**
@@ -887,5 +1312,5 @@ export function sceneMap(plan: ScenePlan, theme: MapTheme, vein = 1): GameMap {
   block(grid, props, [entrance, plan.stands]);
   // An AUTHORED room takes none: what is on its floor is the author's, and a
   // pool grown across a boss arena is the carve overruling them.
-  return { grid, rooms, entrance, exit: entrance, props, vein, theme, bare: !!zone, zone, patches: [] };
+  return { grid, rooms, entrance, exit: entrance, props, vein, theme, bare: !!zone, zone, patches: [], raised: [] };
 }

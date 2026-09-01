@@ -859,6 +859,8 @@ for (const vp of VIEWPORTS) {
         const dx = (x - 20) / 17, dy = (y - 12) / 10;
         if (dx * dx + dy * dy > 1) { row += '#'; continue; }
         const px = (x - 12) / 5, py = (y - 15) / 4;
+        // A shelf with a stair in its south rim, so the level up draws too.
+        if (x >= 22 && x <= 30 && y >= 5 && y <= 10) { row += y === 10 && (x === 25 || x === 26) ? 'S' : '^'; continue; }
         row += px * px + py * py < 1 ? '1' : '.';
       }
       rows.push(row);

@@ -7,8 +7,8 @@
  *
  * What comes out is a PLAN: one character a tile and a list of objects.
  */
-import { FLOOR, Grid, WALL, patchesAt, patchesFor } from '../sim/grid';
-import { ZONE } from '../sim/grid';
+import { FLOOR, Grid, SHELF, STAIR, RIM, WALL, high, patchesAt, patchesFor, rimShelves, wangKey } from '../sim/grid';
+import { SHELF_SET, ZONE } from '../sim/grid';
 import { patchTileAt, zoneTileAt } from '../render/renderer';
 import { ZONES } from '../render/generated-tiles';
 import { PROP_ART } from '../render/generated-props';
@@ -100,7 +100,7 @@ function put(x: number, y: number): void {
   const cell = at(x, y);
   if (brush.kind === 'tile') {
     grid.tiles[cell] = brush.tile;
-    if (brush.tile === WALL) grid.patch[cell] = 0; // no pool inside the rock
+    if (brush.tile !== FLOOR) grid.patch[cell] = 0; // no pool inside the rock, none on a shelf
   } else if (brush.kind === 'patch') {
     if (grid.tiles[cell] === WALL) return;
     grid.patch[cell] = brush.index;
@@ -154,6 +154,22 @@ function draw(): void {
     }
   }
 
+  // A SHELF over the floor, keyed as the rock is; rock wins at a corner.
+  const shelfName = SHELF_SET[theme];
+  const shelfSet = shelfName ? ZONES[shelfName] : undefined;
+  const shelfSheet = shelfName ? sheets.get(shelfName) : undefined;
+  if (shelfSet && shelfSheet) {
+    for (let y = 0; y < grid.height; y++) {
+      for (let x = 0; x < grid.width; x++) {
+        if (grid.at(x, y) === WALL || wangKey(grid, x, y, high) === 0 || wangKey(grid, x, y) !== 0) continue;
+        const found = zoneTileAt(shelfSet, grid, x, y, high);
+        if (found < 0) continue;
+        const box = shelfSet.tiles[found].box;
+        ctx.drawImage(shelfSheet, box[0], box[1], box[2], box[3], x * zoom, y * zoom, zoom, zoom);
+      }
+    }
+  }
+
   // WHAT ELSE IS ON THE FLOOR, over the zone's own surface.
   const kits = setsFor(theme);
   for (let y = 0; y < grid.height; y++) {
@@ -203,7 +219,10 @@ function draw(): void {
 }
 
 /** ROWS of one character a tile — `#` rock, `.` the zone's own floor, a DIGIT
- *  the patch set at that index. Readable, so a plan can be edited by hand. */
+ *  the patch set at that index, `^` a shelf, `=` its rim, `S` a stair.
+ *  Readable, so a plan can be edited by hand. The rim is DERIVED, so `^` and
+ *  `=` read back the same. */
+const MARK: Record<number, string> = { [WALL]: '#', [SHELF]: '^', [RIM]: '=', [STAIR]: 'S' };
 function toPlan(): Plan {
   const rows: string[] = [];
   for (let y = 0; y < grid.height; y++) {
@@ -211,7 +230,7 @@ function toPlan(): Plan {
     for (let x = 0; x < grid.width; x++) {
       const cell = at(x, y);
       const patch = grid.patch[cell];
-      row += grid.tiles[cell] === WALL ? '#' : patch ? String(patch) : '.';
+      row += MARK[grid.tiles[cell]] ?? (patch ? String(patch) : '.');
     }
     rows.push(row);
   }
@@ -226,10 +245,11 @@ function fromPlan(plan: Plan): void {
     for (let x = 0; x < row.length; x++) {
       const mark = row[x];
       if (mark === '#') continue;
-      grid.tiles[y * grid.width + x] = FLOOR;
+      grid.tiles[y * grid.width + x] = mark === '^' || mark === '=' ? SHELF : mark === 'S' ? STAIR : FLOOR;
       if (mark >= '1' && mark <= '9') grid.patch[y * grid.width + x] = Number(mark);
     }
   });
+  rimShelves(grid);
   props = (plan.props ?? []).map((p) => ({ id: p.id, x: p.x, y: p.y }));
 }
 
@@ -250,6 +270,7 @@ function save(): void {
 }
 
 function changed(): void {
+  rimShelves(grid); // the rim is never painted, only read off the shelf
   draw();
   ($('builder-plan') as HTMLTextAreaElement).value = written();
   save();
@@ -317,6 +338,9 @@ function tools(): void {
   const rock = group(host, 'Level 3 and 2', 'The rock, and the floor cut out of it.');
   chip(rock, 'Rock', { kind: 'tile', tile: WALL });
   chip(rock, 'Floor', { kind: 'tile', tile: FLOOR });
+  const up = group(host, 'A level up', 'A shelf grows its own rim; a stair is painted on the rim, foot on the floor.');
+  chip(up, 'Shelf', { kind: 'tile', tile: SHELF });
+  chip(up, 'Stair', { kind: 'tile', tile: STAIR });
 
   const sets = setsFor(theme);
   const low = group(host, 'Level 1', 'Lower than the floor, and NEVER walkable.');
@@ -369,7 +393,7 @@ function bar(): void {
 
   const zooms = el('span', 'bldrbar__set');
   zooms.append(el('span', 'bldrbar__label', 'Zoom'));
-  for (const n of [14, 18, 22, 28, 36]) {
+  for (const n of [14, 18, 22, 28, 32, 36]) {
     const button = el('button', 'mini bldrchip', String(n)) as HTMLButtonElement;
     if (n === zoom) button.classList.add('bldrchip--on');
     button.onclick = () => {

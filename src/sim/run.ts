@@ -1163,8 +1163,7 @@ export class RunSim {
     for (let y = room.y; y < room.y + room.h; y++) {
       for (let x = room.x; x < room.x + room.w; x++) {
         if (!grid.inBounds(x, y)) continue;
-        const patch = grid.patch[y * grid.width + x];
-        if (patch === 0 || !grid.blocking[patch - 1]) continue;
+        if (!grid.deep(x, y)) continue; // the wreath is walked; a ripple sits on the deep
         for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
           if (!grid.walkable(x + dx, y + dy)) continue;
           found.push({ stand: { x: x + dx, y: y + dy }, on: { x, y } });

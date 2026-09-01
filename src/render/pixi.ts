@@ -18,7 +18,7 @@ import { AURA, AURA_BY_ID,
   AILMENT_BY_ID,
   GEAR_BASE_BY_ID,
 } from '../data';
-import { ENTRANCE, EXIT, WALL, patchesAt } from '../sim/grid';
+import { ENTRANCE, EXIT, SHELF_SET, WALL, high, patchesAt, wangKey } from '../sim/grid';
 import { tileNoise } from '../noise';
 import { gearCanvas } from '../ui/webicons';
 import { ATTACK_POSE, DEATH_FADE } from '../sim/run';
@@ -482,6 +482,27 @@ export async function createPixiRenderer(
           sprite.scale.set(size);
           if (lit < 1) sprite.alpha = lit;
           (solid ? wallLayer : groundLayer).addChild(sprite);
+        }
+      }
+
+      // A SHELF, over the floor: the zone's own floor as both terrains, keyed
+      // exactly as the rock is, and ROCK WINS AT A CORNER — where the two
+      // meet the wall's own tile draws, since its layer sits above anyway.
+      const shelfName = SHELF_SET[map.theme];
+      const shelfSet = shelfName ? ZONES[shelfName] : undefined;
+      const shelfArt = shelfName ? zones.get(shelfName) : undefined;
+      if (shelfSet && shelfArt) {
+        for (let y = 0; y < grid.height; y++) {
+          for (let x = 0; x < grid.width; x++) {
+            if (rock(x, y) || wangKey(grid, x, y, high) === 0 || wangKey(grid, x, y) !== 0) continue;
+            const found = zoneTileAt(shelfSet, grid, x, y, high);
+            if (found < 0) continue;
+            const sprite = new Sprite(shelfArt[found]);
+            sprite.x = x;
+            sprite.y = y;
+            sprite.scale.set(1.002 / shelfSet.grid);
+            groundLayer.addChild(sprite);
+          }
         }
       }
 

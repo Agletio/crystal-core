@@ -78,120 +78,59 @@ binding.
 beginning in terms of structure… multiple levels but not overlapping so some
 stairs rocky time stuff you can climb up or down, water lava etc. better
 enviroment detail so its not so repetative, How to add ores, herbs, fishing
-spots in a generated way that fits seemlessly."* The research is done (Brogue's
-`Architect.c`, Amit Patel's map generator, Wolverson's builders, Stardew's mine
-tables, Valheim's placement rules, the generator's live tool list) and this is
-the plan it came to. **`tools/terrain-proto.mts` IS THE REFERENCE** — run it on
-a seed and it prints what every step below does, and a schematic.
+spots in a generated way that fits seemlessly."* → *"Raised only no levels
+stacked on top of eacher."* The research (Brogue's `Architect.c`, Amit Patel's
+map generator, Wolverson's builders, Stardew's mine tables, Valheim's placement
+rules, the generator's live tool list) came to: keep the room skeleton, replace
+the carve, add ONE height layer, replace the dressing.
+**`tools/terrain-proto.mts` is the standalone reference** for the whole
+pipeline and `tools/plan-peek.mjs` draws a builder plan off the bundle.
 
-**What was wrong is not the skeleton.** Rooms joined by corridors is the pacing
-skeleton every ARPG uses and the sim needs `map.rooms` for packs, nodes, hoards
-and who is met. What reads as repetitive and rectangular is everything DRAWN on
-it: one floor tile repeated, variation laid as hard-edged patches, one flat
-light, a black rock with one shape, and nothing standing at a second height.
-**Keep the skeleton, replace the carve, add a height layer, replace the
-dressing.** Nothing in `src/sim/run.ts` should have to learn a new word except
-that a stair walks.
+**LANDED — the mechanism, and the Fissure's look.** `SHELF` / `RIM` / `STAIR`
+in `src/sim/grid.ts`, rooms raised whole off the room graph, the rim nobody
+walks, stairs at the mouths joined by union-find, lakes as a deep core in a
+walkable wreath (`OPEN_SEED` is gone), blob chambers with one erosion pass and
+a loop or two, `fitShelf` mending steps by filling notches, rock counting as
+high. The Fissure's shelf set is `fissure_shelf` — the account's own earlier
+"raised" attempt, never a failure, imported for nothing and retoned like the
+floor. The stair is ONE picture, `create_map_object` inpainted into a rendered
+crop of a real south face for a cent, turned at import for the east and west
+rims; the flat-ground stair was asked three ways and came back bare floor every
+time, so the north rim wears the same treads. The builder paints shelf and
+stair (`^`, `S`; `=` is derived), `shots` lays one, the demo forces every
+chamber up over 24 seeds and 6 descents and proves reachability, determinism
+and termination. **`RAISE` STILL SHIPS AT ZERO** — the user has not judged the
+shelf on a floor yet, and only the Fissure has a set.
 
-**THE STRUCTURE, in the order the passes run** (Brogue's order — walkability
-final before liquids, liquids final before dressing):
-
-1. **Carve.** Rooms as noise-swelled blobs, corridors two wide that drift one
-   tile a step, a loop or two so the map is not a chain, then ONE cellular
-   automata pass over the whole grid so no run of edge is straight. Flood from
-   the hole; a room it cannot reach is dug to.
-2. **Levels — a ROOM IS RAISED WHOLE.** `Grid.level`: rock, low floor, shelf.
-   Never the first room and never the way out; the rest by a coin weighted to
-   the bigger chambers (~30–55%). **A shelf's edge band is the RIM and nobody
-   walks it** — that is the whole of what keeps the two levels apart with a
-   per-cell `walkable`, which every mover, the pathfinder, line of sight and the
-   separation push already read; an edge-based rule would have to be taught to
-   all of them and a knockback would still shove a body off a cliff. So the
-   levels never overlap and never touch: the interior is reachable only through
-   a stair. Elevation is chosen off the room GRAPH and never off noise contours
-   — quantised noise gives concentric rings and shelves nobody can reach.
-3. **Stairs, at the MOUTHS first.** A stair is two cells, the rim cell and the
-   low cell beside it, both walkable. The first stairs go where a corridor
-   arrives at a rim, then south faces, then any straight rim, joined by
-   union-find until every walkable cell is reached from the hole; what is still
-   cut off is dug to through rock, and a shelf that cannot be reached comes
-   down. **A south stair carries the tall face; north, east and west are a flat
-   run of steps** — the cliff tool only ever hangs a face on the south edge.
-   "Rocky stuff you can climb" is the same two cells wearing a rubble picture.
-4. **Water and lava — a DEEP core in a SHALLOW wreath.** Brogue's lake: a blob
-   grown off the wettest floor, its interior (four wet neighbours) is DEEP and
-   blocks, its ring is SHALLOW and walks, drawn as the shore. **Refused whole if
-   any dry cell stops being reachable.** This dissolves `OPEN_SEED`: the wreath
-   IS the walkable ring, so water can lie against a wall and the deep core is
-   still a tile in. Lava is the same lake in the Seam's own set. On the low
-   floor only, never beside a stair.
-5. **Resources by RULE, not by room.** Ore is a VEIN walked 3–5 cells along
-   the rock (a north wall two deep, spaced apart), drawn IN the face. Herbs are
-   damp low floor beside the wreath. A fishing spot is a wreath cell with deep
-   water on one side and dry floor behind. `placeNodes` keeps dealing the
-   families and keeps the pack guard; what changes is that it asks the map for
-   a family's SPOTS instead of a room. Measured on eight seeds of the
-   prototype: 0–17 ore cells, 0–26 herb, 0–33 fish — the ore gate wants
-   loosening and a seed with no water pays no fish, which the deal already
-   tolerates.
-6. **Detail that is not a shape.** Three things, none a patch: (a) **many pure
-   floor tiles** picked per cell by hash with skewed weights (70/15/10/5) — a
-   set holds ONE and that one repeated is the blandness itself; (b) **light** —
-   a per-tile tint off low-frequency noise plus darkening toward the rock, in
-   Pixi, costing no art at all, which is most of what makes a Diablo cave read
-   as lit stone rather than wallpaper; (c) cover scattered under a noise MASK
-   (clumps where the mask says, nothing where it does not) instead of a flat
-   rate. The level-2 variant patches stay only where a material has a real
-   edge (a bed of grit); a "slightly different floor" is a variant tile, not a
-   region.
-
-**THE ART, and what each costs.** Every set is `create_topdown_tileset` asked
-the way `lit_round` was — standard, `shape_style: 'round'` — which is 3–4
-generations, not the 20–40 the pro patches cost. **THE ACCOUNT IS AT ZERO
-GENERATIONS UNTIL 2026-09-13 and bills credits ($22.72) until then**, so every
-ask below is spent with the user's word and judged by him before the next.
-
-- **The SHELF set, one a zone**: floor as BOTH terrains at `transition_size`
-  1. The generator's own help says that is how two heights of one material are
-  asked; three earlier tries said it would not draw one. Standard/round at ~4
-  generations is the cheap way to find out, and the sheet goes to the user
-  first. Its keys are the rock's 21, so `zoneTileAt` draws it with one new
-  argument and **rock wins at a corner** where a shelf meets the wall — the
-  wall layer already draws above.
-- **Floor VARIANTS**: `create_tiles_pro` in style mode with the zone's own
-  floor tile as the style image returns 16 variations in one call. One call a
-  zone.
-- **Stairs, ore vein, herb clump, fishing spot as OBJECTS**:
-  `create_map_object` with a rendered crop of OUR map as `background_image`
-  inpaints the thing into the picture it will stand in, so it matches by
-  construction. A face stair and a flat stair; a vein three cells wide; the
-  herb and the ripple re-asked the same way (*"I dont like how the ores and
-  the fish look"*).
-- **Water re-asked** — `fissure_pool` reads as ridged slabs — once the wreath
-  rule is in, since the shore tile is what a wreath cell wears.
-- **The account already holds art this repo never imported**: nine "abandoned
-  mine working" cliff sets whose rock TOP is textured and lit (a shelf you
-  could stand on, unlike the Fissure's pure black), a 64px "rocky cavern floor
-  → roof" set with wooden props and bugs in the floor, and a water → void set.
-  Look at them before asking for anything; the 64px one is twice the shipped
-  resolution and would be a decision about every zone.
-
-**Open questions for the user**, none of which blocks step 1:
-- Spend credits on the shelf sheet now (~4 generations), or wait for the reset?
-- Is the 64px "rocky cavern floor" on the account the direction he wants? It
-  is warmer and busier than what ships, and twice the pixel density.
-- Shelves per zone: raised chambers only, or also a ledge inside a big chamber
-  (same machinery, a noise lobe instead of a room)?
-
-**Order of work.** (1) the generator with shelves OFF by default so the game
-keeps shipping, `Grid.level`, rim refused by `walkable`, stairs as walkable
-props, lakes with a wreath, `OPEN_SEED` retired, the demo proving reachability
-and determinism; (2) the renderer — shelf keyed like rock, the face row, tint,
-variants by hash; (3) the art, one sheet at a time with approval; (4) resources
-by rule. The level builder gets the new cells as paint (shelf, rim, stair,
-deep, shallow), because it is what a floor is judged on.
-
----
+- [ ] **THE USER JUDGES THE SHELF.** `SHELVES=1 npm run peek -- out.png 4` or
+      the dev kit's toggle. What to look at: the south face reads as a cliff;
+      the north, east and west edges are a THIN DARK LINE only, which is the set
+      as generated — if that is too little, the answer is a runtime shadow band
+      on the floor cells beside a rim (a tint, no art), not a re-ask. Then set
+      `RAISE.fissure` (the prototype ran at 0.3–0.55) and ship it.
+- [ ] **THREE MORE SHELF SETS**, one per world, asked exactly as `raised()` in
+      `zoneset.mts` (standard, `shape_style: 'round'`, ~4 generations each)
+      off each world's own `FLOOR` tile, shown to the user before import. Then
+      `SHELF_SET` and `RAISE` for the Rot, the Cavern and the Seam. The stair
+      picture is the Fissure's stone; each world may want its own, asked the
+      same one-cent way into a crop of its own face.
+- [ ] **RESOURCES BY RULE.** Ore is a VEIN walked 3–5 cells along a north wall,
+      drawn IN the face; herbs are damp floor beside the wreath; a fishing spot
+      is a wreath cell with deep on one side and dry floor behind (`banks` is
+      that already). `placeNodes` asks the map for a family's spots instead of
+      a room; the pack guard stays the nearest pack. The prototype's step 7
+      has the rules; the ore gate wants loosening (0–17 cells a map).
+- [ ] **DETAIL THAT IS NOT A SHAPE.** (a) many pure floor tiles per zone —
+      `create_tiles_pro` style mode with the zone's floor tile as style image,
+      16 variants in one call — picked per cell by hash with skewed weights
+      (70/15/10/5); (b) LIGHT: a per-tile tint off low-frequency noise plus
+      darkening toward the rock, in Pixi, no art; (c) cover under a noise MASK.
+      The level-2 variant PATCHES (`FLOORS`) still draw as hard-edged regions;
+      once (a) lands they stay only where a material has a real edge.
+- [ ] **WATER RE-ASKED.** `fissure_pool` reads as ridged slabs and its chained
+      floor is a shade off the zone's, which draws a square halo round every
+      pool. Ask the shore again off the SAME floor tile and check the halo in
+      the builder before importing.
 
 ## Phase 9 — WHERE MATERIALS COME FROM: gathered, or off a body
 

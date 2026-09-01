@@ -13,6 +13,7 @@ import { ladderCharacter } from '../sim/loadout';
 import { mainSkillId, skillProgress } from '../sim/character';
 import { heal } from '../game/save';
 import { ZONES } from '../render/generated-tiles';
+import { raiseShare } from '../sim/grid';
 import { takeMet } from '../game/scenes';
 import { campaignDone } from '../ladder';
 import { pathToNotable } from '../skills-tree';
@@ -31,6 +32,7 @@ function el(tag: string, cls?: string, text?: string): HTMLElement {
 
 let game: GameState;
 let hooks: DevHooks;
+let shelves = false;
 
 export interface DevHooks {
   /** Drops into a room now, by scene id. */
@@ -222,6 +224,19 @@ function render(): void {
     hooks.build();
   };
   sets.append(lay);
+
+  // A LEVEL UP, forced: `RAISE` ships at zero until a world has a shelf set
+  // and a stair picture, and this is how a descent is shot with one anyway.
+  const up = el('button', 'mini devbtn') as HTMLButtonElement;
+  up.id = 'dev-shelves';
+  up.append(el('span', 'devbtn__name', shelves ? 'Shelves: forced on' : 'Shelves: as shipped'));
+  up.append(el('span', 'devbtn__what', 'every chamber that can stand a level up, from the next descent'));
+  up.onclick = () => {
+    shelves = !shelves;
+    raiseShare(shelves ? 1 : null);
+    render();
+  };
+  sets.append(up);
 
   const over = group('Start over', 'Wipes what you are playing and deals a stocked game.');
   const kit = el('button', 'mini devbtn devbtn--warn') as HTMLButtonElement;

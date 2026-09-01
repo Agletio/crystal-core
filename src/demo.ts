@@ -213,7 +213,7 @@ import {
   slotUsed,
   statPower,
 } from './mods';
-import { ENTRANCE, EXIT, FLOOR, TUNNEL, WALL, dist, generateMap, patchesFor, reachable, sceneMap } from './sim/grid';
+import { ENTRANCE, EXIT, FLOOR, TUNNEL, WALL, dist, generateMap, patchesFor, raiseShare, reachable, roomCenter, sceneMap } from './sim/grid';
 import type { Grid } from './sim/grid';
 import { CREATURE_FRAMES, GLOW, IDLE_CYCLE, STRIDE_CYCLE, framesOf, wellFormed } from './render/sprites';
 import { PORTRAITS } from './render/portraits';
@@ -2040,9 +2040,9 @@ rule('SPRITES — is the pixel art well formed?');
   };
 
   // WHAT ELSE IS ON THE FLOOR. A patch is DRESSING, so what it may never do is
-  // cut something off: WATER IS NOT WALKABLE and a pool between the hero and a
-  // body is a descent that never ends. Held off the rock by `OPEN_SEED`, so a
-  // walkable ring round one always exists — this is the proof of that, not a
+  // cut something off: the DEEP is not walkable and a pool between the hero
+  // and a body is a descent that never ends. Its wreath walks, and a lake that
+  // would strand a cell is refused whole — this is the proof of that, not a
   // sample of it.
   {
     let stranded = 0;
@@ -2062,7 +2062,7 @@ rule('SPRITES — is the pixel art well formed?');
           if (at === 0) continue;
           tiles++;
           seen.add(map.patches[at - 1]);
-          if (defs[at - 1]?.blocks) {
+          if (defs[at - 1]?.blocks && grid.deep(k % grid.width, Math.floor(k / grid.width))) {
             blocked++;
             water++;
           }
@@ -2104,6 +2104,56 @@ rule('SPRITES — is the pixel art well formed?');
       `all ${named.length} patches are emitted sets and every one of them lands`,
       `${missing.join(', ')} unemitted; ${unplaced.join(', ')} never placed`
     );
+  }
+
+  // A LEVEL UP. A chamber stands a level up with a RIM nobody walks, and the
+  // stairs are the proof: every walkable cell is reached from the hole, every
+  // shelf that stands is reached, the same seed lays the same floor, and a
+  // descent over shelves still ENDS. Forced to every chamber that can, since
+  // `RAISE` ships at zero until a world has its stair pictures.
+  {
+    raiseShare(1);
+    let stranded = 0;
+    let unreached = 0;
+    let differ = 0;
+    let shelves = 0;
+    let stairs = 0;
+    const maps = 24;
+    for (let i = 0; i < maps; i++) {
+      const map = generateMap([], new Rng(7100 + i * 3), 1, 1, 'fissure');
+      const again = generateMap([], new Rng(7100 + i * 3), 1, 1, 'fissure');
+      if (map.grid.tiles.some((t, k) => t !== again.grid.tiles[k])) differ++;
+      const { grid } = map;
+      const seen = reachable(grid, map.entrance);
+      for (let y = 0; y < grid.height; y++) {
+        for (let x = 0; x < grid.width; x++) if (grid.walkable(x, y) && !seen.has(y * grid.width + x)) stranded++;
+      }
+      shelves += map.raised.length;
+      stairs += map.props.filter((p) => p.id.startsWith('stair_')).length;
+      for (const r of map.raised) {
+        const c = roomCenter(map.rooms[r]);
+        if (!seen.has(c.y * grid.width + c.x)) unreached++;
+      }
+    }
+    let ended = 0;
+    for (let i = 0; i < 6; i++) {
+      const sim = new RunSim([], ladderCharacter(0, new Rng(4)), new Rng(7300 + i));
+      runToCompletion(sim, 400);
+      if (sim.state.status !== 'running') ended++;
+    }
+    raiseShare(null);
+    gauge(
+      `${(shelves / maps).toFixed(2)} chambers a level up a Fissure map with every one that can, ${(stairs / maps).toFixed(2)} stair cells`
+    );
+    check(
+      shelves > 0 && stranded === 0 && unreached === 0 && differ === 0,
+      'a shelf is reached by its stairs and cuts nothing off, and the same seed lays the same floor',
+      `${shelves} shelves, ${stranded} stranded cells, ${unreached} shelves unreached, ${differ} seeds differ`
+    );
+    // A stair with no picture is a line the hero crosses for no reason.
+    const stairArt = ['stair_s', 'stair_n', 'stair_e', 'stair_w'].filter((id) => !PROP_ART[id]);
+    check(stairs > 0 && stairArt.length === 0, 'and every side a stair climbs has its picture', `undrawn ${stairArt.join(', ')}`);
+    check(ended === 6, 'and a descent over shelves still ends', `${6 - ended} of 6 ran on`);
   }
 
   // THE LOCKS. Three a world, and BOTH frames of each — a shut one whose open
@@ -8563,20 +8613,24 @@ rule('THE ROGUE — is a second weapon worth the shield it costs?');
       `and carries you ${Math.round((running.after.pace / running.before.pace - 1) * 100)}% faster to the next`,
       `${running.after.pace} against ${running.before.pace}`
     );
-    // And COVER, which is on the way in rather than the way out.
-    const took = (nodes: string[], afterKill: boolean): number => {
+    // And COVER, which is on the way in rather than the way out. The kill is
+    // made in BOTH sims and only the node differs, so the two draw the same
+    // rolls and the whole gap is the guard — a kill in one alone moved the
+    // rng, and a hit rolls ±10%, which hid a 12% guard on some maps.
+    const took = (nodes: string[]): number => {
       const sim = new RunSim([], rogue(nodes, 'shiv', 'cudgel'), new Rng(808)) as any;
-      if (afterKill) sim.kill(sim.state.monsters[1] ?? sim.state.monsters[0]);
+      sim.kill(sim.state.monsters[1] ?? sim.state.monsters[0]);
       const hero = sim.state.hero;
       const was = hero.life;
       sim.dealDamage(sim.state.monsters[0], hero, 1, undefined);
       return was - hero.life;
     };
     const cover = ['rog_shadow_m0', 'rog_unseen', 'rog_vanishing_m0', 'rog_cover'];
+    const uncovered = cover.filter((n) => n !== 'rog_cover');
     check(
-      took(cover, true) < took(cover, false) * 0.95,
-      `and a kill covers you for ${Math.round((1 - took(cover, true) / took(cover, false)) * 100)}% of the next hit`,
-      `${took(cover, true).toFixed(1)} against ${took(cover, false).toFixed(1)}`
+      took(cover) < took(uncovered) * 0.95,
+      `and a kill covers you for ${Math.round((1 - took(cover) / took(uncovered)) * 100)}% of the next hit`,
+      `${took(cover).toFixed(1)} against ${took(uncovered).toFixed(1)}`
     );
   }
 
