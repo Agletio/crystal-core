@@ -247,7 +247,7 @@ a shelf nothing reaches comes down. A south stair carries the tall face, the
 other three a flat run of the same treads (`stair_e`/`stair_w` are the south
 picture turned at import — a TILE is never turned, a flat prop may be). `RAISE`
 is the share of a world's chambers that stand up and **IT SHIPS AT ZERO until
-the world has its shelf set**: only the Fissure has one; `raiseShare` is the
+the user has judged the shelf on a floor** (all four worlds have a set); `raiseShare` is the
 dev kit's override (`#dev-shelves`, `SHELVES=1` on `descent-peek`) and what the
 demo forces to prove every seed. Measured with every eligible chamber up: 2.8
 of 7 rooms a Fissure map stand, and a descent over them still ends.

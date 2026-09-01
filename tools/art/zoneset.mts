@@ -227,6 +227,12 @@ const ASK: Record<string, Record<string, unknown>> = {
   // WATER IS FUNCTIONAL — a fishing pool stands on it — and the rest is what
   // the rock does on its own.
   fissure_raised2: raised('fissure'),
+  // THE OTHER THREE SHELVES, asked as the Fissure's was: the one that shipped
+  // as `fissure_shelf` is `fissure_raised2` — never a failure, imported for
+  // nothing once the rim rule counted rock as high.
+  rot_shelf: raised('rot'),
+  cavern_shelf: raised('cavern'),
+  seam_shelf: raised('seam'),
   // FLOOR VARIATION is a patch whose other terrain is ANOTHER FLOOR. Every set
   // holds exactly ONE pure-floor tile — measured, 1 of 25 in all four — so the
   // open ground is one 32px square repeated, which is the blandness itself.

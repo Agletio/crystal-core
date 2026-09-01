@@ -240,6 +240,9 @@ export const ZONE: Partial<Record<MapTheme, string>> = {
  *  tool's full-tile face on every south edge. Keyed exactly as the rock is. */
 export const SHELF_SET: Partial<Record<MapTheme, string>> = {
   fissure: 'fissure_shelf',
+  demonic: 'rot_shelf',
+  prismatic: 'cavern_shelf',
+  seam: 'seam_shelf',
 };
 
 /** The share of a world's chambers that stand a level up. ZERO SHIPS until a

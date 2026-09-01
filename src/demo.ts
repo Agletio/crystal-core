@@ -214,7 +214,7 @@ import {
   slotUsed,
   statPower,
 } from './mods';
-import { ENTRANCE, EXIT, FLOOR, TUNNEL, WALL, dist, generateMap, patchesFor, raiseShare, reachable, roomCenter, sceneMap } from './sim/grid';
+import { ENTRANCE, EXIT, FLOOR, SHELF_SET, TUNNEL, WALL, dist, generateMap, patchesFor, raiseShare, reachable, roomCenter, sceneMap } from './sim/grid';
 import type { Grid } from './sim/grid';
 import { CREATURE_FRAMES, GLOW, IDLE_CYCLE, STRIDE_CYCLE, framesOf, wellFormed } from './render/sprites';
 import { PORTRAITS } from './render/portraits';
@@ -2125,10 +2125,12 @@ rule('SPRITES — is the pixel art well formed?');
     let differ = 0;
     let shelves = 0;
     let stairs = 0;
-    const maps = 24;
+    const worlds = MAP_THEMES.map((t) => t.id as MapTheme).filter((t) => SHELF_SET[t]);
+    const maps = 8 * worlds.length;
     for (let i = 0; i < maps; i++) {
-      const map = generateMap([], new Rng(7100 + i * 3), 1, 1, 'fissure');
-      const again = generateMap([], new Rng(7100 + i * 3), 1, 1, 'fissure');
+      const theme = worlds[i % worlds.length];
+      const map = generateMap([], new Rng(7100 + i * 3), 1, 1, theme);
+      const again = generateMap([], new Rng(7100 + i * 3), 1, 1, theme);
       if (map.grid.tiles.some((t, k) => t !== again.grid.tiles[k])) differ++;
       const { grid } = map;
       const seen = reachable(grid, map.entrance);
@@ -2150,7 +2152,7 @@ rule('SPRITES — is the pixel art well formed?');
     }
     raiseShare(null);
     gauge(
-      `${(shelves / maps).toFixed(2)} chambers a level up a Fissure map with every one that can, ${(stairs / maps).toFixed(2)} stair cells`
+      `${(shelves / maps).toFixed(2)} chambers a level up a map over ${worlds.length} worlds with every one that can, ${(stairs / maps).toFixed(2)} stair cells`
     );
     check(
       shelves > 0 && stranded === 0 && unreached === 0 && differ === 0,

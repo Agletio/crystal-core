@@ -100,7 +100,7 @@ time, so the north rim wears the same treads. The builder paints shelf and
 stair (`^`, `S`; `=` is derived), `shots` lays one, the demo forces every
 chamber up over 24 seeds and 6 descents and proves reachability, determinism
 and termination. **`RAISE` STILL SHIPS AT ZERO** — the user has not judged the
-shelf on a floor yet, and only the Fissure has a set.
+shelf on a floor yet.
 
 - [ ] **THE USER JUDGES THE SHELF.** `SHELVES=1 npm run peek -- out.png 4` or
       the dev kit's toggle. What to look at: the south face reads as a cliff;
@@ -108,12 +108,17 @@ shelf on a floor yet, and only the Fissure has a set.
       as generated — if that is too little, the answer is a runtime shadow band
       on the floor cells beside a rim (a tint, no art), not a re-ask. Then set
       `RAISE.fissure` (the prototype ran at 0.3–0.55) and ship it.
-- [ ] **THREE MORE SHELF SETS**, one per world, asked exactly as `raised()` in
-      `zoneset.mts` (standard, `shape_style: 'round'`, ~4 generations each)
-      off each world's own `FLOOR` tile, shown to the user before import. Then
-      `SHELF_SET` and `RAISE` for the Rot, the Cavern and the Seam. The stair
-      picture is the Fissure's stone; each world may want its own, asked the
-      same one-cent way into a crop of its own face.
+- [x] **THE OTHER THREE SHELF SETS** are asked, imported and wired
+      (`rot_shelf`, `cavern_shelf`, `seam_shelf` in `SHELF_SET`); the Rot's
+      first job died of server memory and was re-asked for nothing. The
+      Cavern's top matches its ground; the Rot's and the Seam's came back a
+      flatter, smoother texture than their floors — a different stone up top,
+      which may be right or may want a re-ask off the same tile. Shown to the
+      user as laid plans; `RAISE` waits on his word for all four.
+- [ ] **STAIRS PER WORLD.** The one stair picture is the Fissure's pale stone
+      and would sit wrong on the Rot's meat and the Seam's membrane. One
+      `create_map_object` inpaint per world into a crop of its own face, a cent
+      each, once the shelves are approved.
 - [x] **WHERE A FAMILY GROWS** — `wallFootSpots` and `dampSpots` in
       `grid.ts`, asked by `nodeSpot` before any tile: ore stands at the foot of
       a wall two deep (measured 17 of 17), a plant on damp floor where the room
