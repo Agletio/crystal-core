@@ -119,7 +119,8 @@ export class Grid {
 
   /** The DEEP of a blocking patch: a cell of it with the patch on all four
    *  sides. Its ring is the wreath, walked and drawn as the shore, which is
-   *  what lets water lie against a wall and still leave a way round. */
+   *  what lets water lie against a wall and still leave a way round. Three
+   *  sides broke the ring against a wall and most lakes were refused. */
   deep(x: number, y: number): boolean {
     const patch = this.patch[y * this.width + x];
     if (patch === 0 || !this.blocking[patch - 1]) return false;
@@ -684,7 +685,10 @@ function placeStairs(grid: Grid, rng: Rng, entrance: Vec2): MapProp[] {
       }
       if (lowered) break;
     }
-    if (!lowered) break; // a pocket the carve left, older than any of this
+    // A cell or two the mending left inside the rock is rock; anything bigger
+    // is a pocket the carve left, older than any of this, and stays.
+    if (!lowered && pocket.size <= 8) pocket.forEach((k) => (grid.tiles[k] = WALL));
+    else if (!lowered) break;
   }
   return props.filter((p) => {
     const side = p.id.slice(6) as Side;
@@ -868,6 +872,7 @@ function growPatch(
   index: number,
   def: PatchDef,
   keep: Set<number>,
+  ring: Set<number>,
   from: Vec2
 ): number[] {
   const taken: number[] = [];
@@ -882,11 +887,13 @@ function growPatch(
     // is drawn with its own set.
     if (grid.at(at.x, at.y) !== FLOOR || grid.patch[key] !== 0) continue;
     if (N4.some(([dx, dy]) => grid.at(at.x + dx, at.y + dy) === STAIR)) continue;
-    // A landmark keeps a dry ring: the way out standing in a pond is a hole
-    // in the water, and a lock in one is a chest nobody can walk up to.
+    // The hole and the way out keep a dry ring — one standing in a pond is a
+    // hole in the water. A room's middle keeps only its own cell: the wreath
+    // beside a lock walks, so the chest is still reached.
+    if (keep.has(key)) continue;
     let near = false;
     for (let dy = -1; dy <= 1 && !near; dy++) {
-      for (let dx = -1; dx <= 1; dx++) if (keep.has((at.y + dy) * grid.width + at.x + dx)) near = true;
+      for (let dx = -1; dx <= 1; dx++) if (ring.has((at.y + dy) * grid.width + at.x + dx)) near = true;
     }
     if (near) continue;
     if (grid.at(at.x, at.y - 1) === RIM) continue; // the face hangs into this cell
@@ -939,21 +946,29 @@ function placePatches(
   const defs = patchesFor(theme);
   if (defs.length === 0) return [];
   const spared = new Set(keep.map((v) => v.y * grid.width + v.x));
+  const ringed = new Set(keep.slice(0, 2).map((v) => v.y * grid.width + v.x));
   grid.blocking = defs.map((d) => !!d.blocks);
   // EVERY REACHABLE TILE, not just the landmarks: a monster stranded in a
   // pocket a pool cut off is a descent that never ends.
   let open = reachable(grid, keep[0]).size;
 
+  const deepAll = (): number => {
+    let n = 0;
+    for (let y = 0; y < grid.height; y++) for (let x = 0; x < grid.width; x++) if (grid.deep(x, y)) n++;
+    return n;
+  };
   defs.forEach((def, i) => {
     for (let n = 0; n < def.count; n++) {
       const from = seedFor(grid, rng, rooms);
       if (!from) continue;
-      const taken = growPatch(grid, rng, i + 1, def, spared, from);
+      const was = deepAll();
+      const taken = growPatch(grid, rng, i + 1, def, spared, ringed, from);
       if (taken.length === 0 || !def.blocks) continue;
       // Exactly its DEEP may go, and nothing behind it — Brogue's rule: a lake
       // that strands a dry cell is refused whole. A blob with no deep is a
-      // puddle and goes too.
-      const deep = taken.filter((key) => grid.deep(key % grid.width, Math.floor(key / grid.width))).length;
+      // puddle and goes too. Counted over the WHOLE grid: a blob that meets an
+      // older lake of the same set deepens that lake's wreath as well.
+      const deep = deepAll() - was;
       const now = reachable(grid, keep[0]).size;
       if (deep < 3 || now !== open - deep) {
         for (const key of taken) grid.patch[key] = 0;
@@ -963,6 +978,36 @@ function placePatches(
     }
   });
   return defs.map((d) => d.set);
+}
+
+/** WHERE A FAMILY GROWS, by rule, within a room's rectangle: ore at the foot of
+ *  a wall two deep (it is the rock), herbs on damp floor beside a wreath. A
+ *  scan, never a draw, so asking moves nothing else. */
+export function wallFootSpots(grid: Grid, room: Room): Vec2[] {
+  const out: Vec2[] = [];
+  for (let y = room.y; y < room.y + room.h; y++) {
+    for (let x = room.x; x < room.x + room.w; x++) {
+      if (!grid.walkable(x, y) || grid.at(x, y - 1) !== WALL || grid.at(x, y - 2) !== WALL) continue;
+      out.push({ x, y });
+    }
+  }
+  return out;
+}
+
+export function dampSpots(grid: Grid, room: Room): Vec2[] {
+  const out: Vec2[] = [];
+  const wet = (x: number, y: number): boolean => {
+    if (!grid.inBounds(x, y)) return false;
+    const patch = grid.patch[y * grid.width + x];
+    return patch !== 0 && !!grid.blocking[patch - 1];
+  };
+  for (let y = room.y; y < room.y + room.h; y++) {
+    for (let x = room.x; x < room.x + room.w; x++) {
+      if (!grid.walkable(x, y) || wet(x, y) || !N4.some(([dx, dy]) => wet(x + dx, y + dy))) continue;
+      out.push({ x, y });
+    }
+  }
+  return out;
 }
 
 /** Tiles to the nearest rock, capped at what `COVER_RATE` indexes. */

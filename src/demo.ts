@@ -164,6 +164,7 @@ import {
 import { hasGearArt } from './ui/icons';
 import { lootSpan } from './render/renderer';
 import { RunSim, TICK, runToCompletion, walkToMeeting } from './sim/run';
+import { tierForSet } from './sim/crystal';
 import { findPath } from './sim/pathfind';
 import { folkMet, gaveKey, hasMet, keyOwed, takeBoss, takeMet, whoIsDown } from './game/scenes';
 import { GRIND_COUNTERS, descentFacts, healTrials, takeGrinds } from './game/trials';
@@ -1071,12 +1072,17 @@ rule('DROPS — does the set decide what the map can give you?');
   // dropping, on the right bases, rolling nothing but the bottom rung.
   const best = new Map<number, number>();
 
+  // What a band's sets ALLOW is asked of the gate itself: the top tier drops
+  // 2.7% of the time at band 5, so ten runs miss it altogether one time in
+  // eight, and a check on the pieces was a coin.
+  const gate = new Map<number, number>();
   for (const band of [0, 1, 3, 5]) {
     const tiers = new Set<number>();
     let items = 0;
     let top = 99;
     for (const seed of [11, 29, 47, 63, 71, 89, 97, 103, 117, 131]) {
       const set = ladderSet(band, new Rng(400 + seed + band), pool);
+      gate.set(band, Math.max(gate.get(band) ?? 0, tierForSet(set)));
       const sim = new RunSim(set, ceiling(band), new Rng(seed * 31 + band));
       const f = runToCompletion(sim, 400);
       for (const item of f.loot.items) {
@@ -1106,10 +1112,11 @@ rule('DROPS — does the set decide what the map can give you?');
     [...low].join(', ')
   );
   check(
-    seen.get(5)?.has(3) === true,
-    'and the top of the ladder produces the six-modifier ones',
-    [...(seen.get(5) ?? [])].join(', ')
+    gate.get(5) === 3 && (gate.get(0) ?? 3) < 3,
+    'and the top of the ladder may drop the six-modifier ones, which the bottom may not',
+    `band 0 gate T${gate.get(0)}, band 5 gate T${gate.get(5)}`
   );
+  gauge(`band 5 dropped base tiers ${[...(seen.get(5) ?? [])].sort().join(', ')} in ten runs`);
   check(
     best.get(5)! < best.get(0)! && best.get(5)! === 1,
     'and only the top of the ladder rolls top-tier modifiers',
@@ -3444,6 +3451,32 @@ rule('GATHERING — is a node free, guarded, walked to and equally spread?');
   const least = Math.min(...counts);
   const most = Math.max(...counts);
   line(`  nodes a family over 12 descents: ${[...spread].map(([f, n]) => `${f} ${n}`).join(', ')}`);
+  // WHERE A FAMILY GROWS: ore stands at the foot of a wall, because it is the
+  // rock; a plant on damp floor where the room has any. A room with no such
+  // spot falls back, so the wall rule is a check and the damp one a gauge.
+  {
+    let ore = 0;
+    let footed = 0;
+    let plants = 0;
+    let damp = 0;
+    for (let i = 0; i < 12; i++) {
+      const sim = new RunSim(bareSet, digger, new Rng(1300 + i));
+      const { grid } = sim.state.map;
+      for (const node of sim.state.nodes) {
+        if (node.family === 'metal') {
+          ore++;
+          if (grid.at(node.x, node.y - 1) === WALL && grid.at(node.x, node.y - 2) === WALL) footed++;
+        }
+        if (node.family === 'cloth') {
+          plants++;
+          const wet = (x: number, y: number) => grid.inBounds(x, y) && grid.patch[y * grid.width + x] !== 0;
+          if ([[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => wet(node.x + dx, node.y + dy))) damp++;
+        }
+      }
+    }
+    check(ore > 0 && footed >= ore * 0.8, `ore stands at the foot of a wall — ${footed} of ${ore}`, `${ore - footed} of ${ore} on open floor`);
+    gauge(`${damp} of ${plants} plants stand on damp floor; the rest are in rooms with no water`);
+  }
   check(
     least > 0 && most <= least * 1.6,
     `and the ${GATHERED.length} gathered families come out level, being DEALT and not rolled`,

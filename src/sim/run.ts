@@ -6,7 +6,7 @@
  */
 import { Rng } from '../rng';
 import { SOLID_PROPS } from '../vignettes';
-import {generateMap, sceneMap, dist, hasLineOfSight, roomCenter } from './grid';
+import { generateMap, sceneMap, dist, hasLineOfSight, roomCenter, wallFootSpots, dampSpots } from './grid';
 import type { GameMap, Grid, Room, Vec2 } from './grid';
 import { findPath, nearestByPath } from './pathfind';
 import { AILMENT, AMBUSH, DAMAGE_TYPE_BY_ID, PASSIVE_DAMAGE, POTIONS, POTION_BY_ID } from '../data';
@@ -1131,7 +1131,7 @@ export class RunSim {
       if (pack === undefined) continue;
       const pool = family.id === 'fish' ? this.poolSpot(map, packRoom[pack]) : null;
       if (family.id === 'fish' && !pool) continue; // the room's water is out of reach
-      const at = pool?.stand ?? this.nodeSpot(map, packRoom[pack]);
+      const at = pool?.stand ?? this.nodeSpot(map, packRoom[pack], family.id);
       const other = family.also;
       const pair = other && this.rng.next() < 0.5
         ? { node: other[0], spent: other[1] }
@@ -1183,16 +1183,25 @@ export class RunSim {
   }
 
   /** A whole tile in the room that is not the middle, which is where a lock
-   *  stands. Falls back to the middle rather than dropping the node. */
-  private nodeSpot(map: GameMap, room: Room): Vec2 {
+   *  stands. WHERE A FAMILY GROWS comes first — ore at a wall's foot, a plant on
+   *  damp floor — and a room with no such spot falls back to any tile, and that
+   *  to the middle rather than dropping the node. */
+  private nodeSpot(map: GameMap, room: Room, family = ''): Vec2 {
     const middle = roomCenter(room);
+    const free = (x: number, y: number): boolean =>
+      map.grid.walkable(x, y) &&
+      !(x === Math.round(middle.x) && y === Math.round(middle.y)) &&
+      !map.props.some((p) => p.x === x && p.y === y && SOLID_PROPS.has(p.id));
+    const grows =
+      family === 'metal' ? wallFootSpots(map.grid, room)
+      : family === 'cloth' ? dampSpots(map.grid, room)
+      : [];
+    const spots = grows.filter((v) => free(v.x, v.y));
+    if (spots.length > 0) return spots[this.rng.int(0, spots.length - 1)];
     for (let tries = 0; tries < 12; tries++) {
       const x = room.x + this.rng.int(0, room.w - 1);
       const y = room.y + this.rng.int(0, room.h - 1);
-      if (!map.grid.walkable(x, y)) continue;
-      if (x === Math.round(middle.x) && y === Math.round(middle.y)) continue;
-      if (map.props.some((p) => p.x === x && p.y === y && SOLID_PROPS.has(p.id))) continue;
-      return { x, y };
+      if (free(x, y)) return { x, y };
     }
     return { x: Math.round(middle.x), y: Math.round(middle.y) };
   }

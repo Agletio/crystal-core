@@ -114,12 +114,16 @@ shelf on a floor yet, and only the Fissure has a set.
       `SHELF_SET` and `RAISE` for the Rot, the Cavern and the Seam. The stair
       picture is the Fissure's stone; each world may want its own, asked the
       same one-cent way into a crop of its own face.
-- [ ] **RESOURCES BY RULE.** Ore is a VEIN walked 3–5 cells along a north wall,
-      drawn IN the face; herbs are damp floor beside the wreath; a fishing spot
-      is a wreath cell with deep on one side and dry floor behind (`banks` is
-      that already). `placeNodes` asks the map for a family's spots instead of
-      a room; the pack guard stays the nearest pack. The prototype's step 7
-      has the rules; the ore gate wants loosening (0–17 cells a map).
+- [x] **WHERE A FAMILY GROWS** — `wallFootSpots` and `dampSpots` in
+      `grid.ts`, asked by `nodeSpot` before any tile: ore stands at the foot of
+      a wall two deep (measured 17 of 17), a plant on damp floor where the room
+      has any (17 of 20), a fishing spot on the deep with a wreath cell to
+      stand on. Still a node a pack, dealt round, guarded by its pack.
+- [ ] **ORE DRAWN IN THE FACE.** The node stands at the wall's foot now, but
+      the picture is still a boulder on the floor. The vein wants to be an
+      object inpainted into a crop of the real face, one cent, like the stair
+      — and *"I dont like how the ores and the fish look"* is the re-ask that
+      already stood in Phase 9.
 - [ ] **DETAIL THAT IS NOT A SHAPE.** (a) many pure floor tiles per zone —
       `create_tiles_pro` style mode with the zone's floor tile as style image,
       16 variants in one call — picked per cell by hash with skewed weights
