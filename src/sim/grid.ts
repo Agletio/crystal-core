@@ -205,8 +205,9 @@ export const ZONE: Partial<Record<MapTheme, string>> = {
   seam: 'seam_pro',
 };
 
-/** WHAT ELSE IS ON A ZONE'S FLOOR. `blocks` is whether a body may stand on it —
- *  WATER AND LAVA DO NOT — and it draws off the DRESSING rng. */
+/** THREE FLOOR LEVELS: rock 3, the walkable floor 2, and anything LOWER —
+ *  water, lava, blood — is 1. **LEVEL 1 IS NEVER WALKABLE**, so every entry
+ *  here blocks and a zone gets one or two. Floor VARIETY is level 2's. */
 export interface PatchDef {
   set: string;
   blocks?: boolean;
@@ -215,26 +216,12 @@ export interface PatchDef {
 }
 
 export const PATCHES: Partial<Record<MapTheme, PatchDef[]>> = {
-  fissure: [
-    { set: 'fissure_pool', blocks: true, most: 48, count: 4 },
-    { set: 'fissure_moss2', most: 34, count: 2 },
-    { set: 'fissure_rubble', most: 30, count: 2 },
-    { set: 'fissure_floor_cracked', most: 40, count: 2 },
-  ],
-  demonic: [
-    { set: 'rot_blood', most: 26, count: 2 },
-    { set: 'rot_flesh', most: 30, count: 2 },
-    { set: 'rot_bone', most: 30, count: 2 },
-  ],
-  prismatic: [
-    { set: 'cavern_pool', blocks: true, most: 48, count: 4 },
-    { set: 'cavern_ice', most: 32, count: 2 },
-    { set: 'cavern_growth2', most: 28, count: 2 },
-  ],
+  fissure: [{ set: 'fissure_pool', blocks: true, most: 48, count: 4 }],
+  demonic: [{ set: 'rot_blood', blocks: true, most: 44, count: 3 }],
+  prismatic: [{ set: 'cavern_pool', blocks: true, most: 48, count: 4 }],
   seam: [
     { set: 'seam_lava', blocks: true, most: 44, count: 3 },
     { set: 'seam_pool', blocks: true, most: 44, count: 2 },
-    { set: 'seam_ash', most: 32, count: 2 },
   ],
 };
 
@@ -330,8 +317,7 @@ export function wangKey(grid: Grid, x: number, y: number): number {
 }
 
 /** A PATCH's own corners, same base three. Its set was asked with the terrain
- *  as the LOWER, so a corner inside is 0 and one outside is 1 — inverted from
- *  the rock, which is why it is not a flag on `wangKey`. */
+ *  as the LOWER, so a corner inside is 0 — inverted from the rock. */
 export function patchKey(grid: Grid, x: number, y: number, index: number): number {
   const on = (cx: number, cy: number): boolean =>
     grid.inBounds(cx, cy) && grid.patch[cy * grid.width + cx] === index;
@@ -477,8 +463,8 @@ function block(grid: Grid, props: MapProp[], must: Vec2[]): void {
   }
 }
 
-/** A BLOB grown off a seed, taking neighbours at a falling chance so its edge
- *  is ragged. A tile the map MUST reach is never taken. */
+/** A BLOB grown off a seed, ragged at the edge. A tile the map MUST reach is
+ *  never taken. */
 function growPatch(
   grid: Grid,
   rng: Rng,
@@ -511,10 +497,8 @@ function growPatch(
 }
 
 /** How far from the rock a blocking patch is KEPT. A one-tile ring is not
- *  enough: `findPath` tests TILES and `fits` tests the whole BODY, so it is a
- *  route the pathfinder offers and no body can walk — measured, band 4 seed 29
- *  oscillated 300s eight tiles from a stationary monster. At 3 the ring is two
- *  tiles wide. It also makes water RARE: only a big chamber has room for one. */
+ *  enough: `findPath` tests TILES and `fits` the whole BODY, so it is a route
+ *  no body can walk — band 4 seed 29 oscillated 300s against one. */
 const OPEN_SEED = 3;
 
 /** A floor tile at least `off` from the rock, or null. */
@@ -531,8 +515,7 @@ function seedFor(grid: Grid, rng: Rng, rooms: Room[], off: number): Vec2 | null 
   return null;
 }
 
-/** Laid after the props, and undone WHOLE: half a pool is a shape nothing
- *  draws. */
+/** Laid after the props, undone WHOLE: half a pool is a shape nothing draws. */
 function placePatches(
   grid: Grid,
   rng: Rng,

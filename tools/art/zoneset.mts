@@ -179,7 +179,44 @@ const raised = (zone: string) => ({
   view: 'high top-down',
 });
 
+/** A LEVEL 2 VARIANT: the same floor, differently grained, meeting the real one
+ *  with NO boundary. `transition_size: 0` is what makes it a blend rather than
+ *  a shore — a drawn edge is what made the first round read as holes. */
+const floorOf = (zone: string, said: string) => ({
+  lower_description: said,
+  upper_description: FLOOR[zone].said,
+  upper_base_tile_id: FLOOR[zone].tile,
+  transition_size: 0,
+  mode: 'pro',
+  raggedness: 0.9,
+  spread_x: 0.5,
+  tile_size: { width: 32, height: 32 },
+  outline: 'lineless',
+  shading: 'detailed shading',
+  detail: 'highly detailed',
+  view: 'high top-down',
+});
+
 const ASK: Record<string, Record<string, unknown>> = {
+  // LEVEL 2: the walkable floor in more than one grain. Same LIGHT tone at
+  // both ends, so the eye reads one ground with texture, not two surfaces.
+  fissure_floor_grit: floorOf('fissure',
+    'the same pale dusty cave floor, LIGHT warm grey-brown, but coarser — packed '
+    + 'with small pale gravel and grit, SAME brightness as smooth floor, NOT dark, '
+    + 'NOT a pit, NOT a hole, NOT water, NOT a different level'),
+  fissure_floor_swept: floorOf('fissure',
+    'the same pale dusty cave floor, LIGHT warm grey-brown, but smoother and finer '
+    + '— drifted dust with faint wind lines, SAME brightness, NOT dark, NOT a pit, '
+    + 'NOT a hole, NOT water, NOT a different level'),
+  rot_floor_veined: floorOf('rot',
+    'the same pale dry membrane floor, LIGHT warm grey-pink, but veined — faint '
+    + 'darker capillaries running through it, SAME brightness, NOT dark, NOT red, '
+    + 'NOT a pit, NOT a hole, NOT a different level'),
+  cavern_floor_coarse: floorOf('cavern',
+    'the same crushed crystal grit floor, LIGHT lilac-white, but coarser — larger '
+    + 'broken crystal chips among the dust, SAME brightness, NOT dark, NOT purple, '
+    + 'NOT a pit, NOT a hole, NOT a different level'),
+
   // --- EVERY ZONE'S EXTRA TERRAINS ----------------------------------------
   //
   // *"the rooms are kinda bland… Id just add more this time so we dont have to

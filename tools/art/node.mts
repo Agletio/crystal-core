@@ -69,13 +69,19 @@ const ASKS: string[] = [
   'a stout stump of near-black timber with three cut logs stacked leaning against it, the wood grain visible on the ends',
   'a dead tree bole standing snapped off short, its dark bark peeling away in strips to show pale wood underneath',
   'a heavy fallen log of dark wood lying across the floor, one end broken open showing the pale grain inside',
-  // cloth — PLANT FIBRE. It is what the herb became: something you cut that
-  // grows down there, and it has to read as a growth rather than as grass.
-  'a dense clump of tall stiff fibrous stalks growing straight up out of the floor, dry and stringy, pale straw against the dark',
-  'a tight tussock of long reed-like stems bunched together, their tops frayed open into loose pale fibre',
-  'a low bush of coarse grey-green fibrous stems, each one splitting along its length into strands',
-  'a spray of stiff pale stalks growing in one clump out of the rock, ragged and uneven, the tallest gone to seed',
-  // fish — a POOL, and it must read as WATER at 40 pixels.
+  // cloth — A BUSH: a ROUNDED MASS from above, not a tussock of stalks. The
+  // first four came back side-on reeds where every other node is top-down.
+  'a small low rounded bush seen from above, dense dark foliage, tufts of pale cotton bolls showing all over it',
+  'a squat woody shrub from directly overhead, a rough circle of dark leaves with pale fibrous seed heads scattered through it',
+  'a compact round bush of grey-green leaves seen from the top, its stems splitting into loose pale hemp fibre at the tips',
+  'a low spreading bush from above, dark tangled branches with white fluffy fibre caught all through them',
+  // fish — RIPPLES that sit ON water rather than being water: the pool is a
+  // body of it now, and this marks where a fish is.
+  'a ring of concentric ripples spreading on a dark water surface, nothing in the middle, the water showing through',
+  'a patch of disturbed water, overlapping rings and a faint pale swirl, seen from straight above',
+  'two overlapping rings of ripple on dark water with a pale fin just breaking the surface between them',
+  'a soft circular swell on dark water, its rings catching a thin pale highlight, the water dark all round it',
+  // fish (old) — a POOL, and it must read as WATER at 40 pixels.
   'a small still pool of dark water in a rough basin of near-black rock, the surface flat and reflective, one pale shape moving under it',
   'a low round pool of black water rimmed with wet dark stone, its surface glassy, faint pale ripples across the middle',
   'a shallow pool of dark water held in a bowl of cracked rock, two pale fish just visible below the surface',
@@ -86,7 +92,7 @@ const [verb, arg, extra] = process.argv.slice(2);
 
 /** WHICH FOUR. The tool caps at 16 candidates, so a fifth family cannot ride
  *  the same call — `ask <family>` sends that family's four alone. */
-const FOUR: Record<string, number> = { metal: 0, hide: 4, wood: 8, cloth: 12, fish: 16 };
+const FOUR: Record<string, number> = { metal: 0, hide: 4, wood: 8, cloth: 12, ripple: 16, fish: 20 };
 
 if (verb === 'ask') {
   const at = FOUR[arg ?? ''];
