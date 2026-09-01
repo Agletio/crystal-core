@@ -218,7 +218,7 @@ export interface PatchDef {
 
 export const PATCHES: Partial<Record<MapTheme, PatchDef[]>> = {
   fissure: [
-    { set: 'fissure_pool', blocks: true, most: 26, count: 2 },
+    { set: 'fissure_pool', blocks: true, most: 48, count: 4 },
     { set: 'fissure_moss2', most: 34, count: 2 },
     { set: 'fissure_rubble', most: 30, count: 2 },
     { set: 'fissure_floor_cracked', most: 40, count: 2 },
@@ -229,13 +229,13 @@ export const PATCHES: Partial<Record<MapTheme, PatchDef[]>> = {
     { set: 'rot_bone', most: 30, count: 2 },
   ],
   prismatic: [
-    { set: 'cavern_pool', blocks: true, most: 26, count: 2 },
+    { set: 'cavern_pool', blocks: true, most: 48, count: 4 },
     { set: 'cavern_ice', most: 32, count: 2 },
     { set: 'cavern_growth2', most: 28, count: 2 },
   ],
   seam: [
-    { set: 'seam_lava', blocks: true, most: 22, count: 2 },
-    { set: 'seam_pool', blocks: true, most: 24, count: 1 },
+    { set: 'seam_lava', blocks: true, most: 44, count: 3 },
+    { set: 'seam_pool', blocks: true, most: 44, count: 2 },
     { set: 'seam_ash', most: 32, count: 2 },
   ],
 };
@@ -513,9 +513,12 @@ function growPatch(
   return taken;
 }
 
-/** How far from the rock a blocking patch is KEPT. At 2 it has a walkable ring
- *  round it, so the check after it is a proof rather than a filter. */
-const OPEN_SEED = 2;
+/** How far from the rock a blocking patch is KEPT. A one-tile ring is not
+ *  enough: `findPath` tests TILES and `fits` tests the whole BODY, so it is a
+ *  route the pathfinder offers and no body can walk — measured, band 4 seed 29
+ *  oscillated 300s eight tiles from a stationary monster. At 3 the ring is two
+ *  tiles wide. It also makes water RARE: only a big chamber has room for one. */
+const OPEN_SEED = 3;
 
 /** A floor tile at least `off` from the rock, or null. */
 function seedFor(grid: Grid, rng: Rng, rooms: Room[], off: number): Vec2 | null {
