@@ -20,9 +20,11 @@ All three are done:
    the hybrid power rule, cooking, and a counter that gambles instead of
    selling. The filter is gone with the heap it existed to sort.
 
-**NOTHING IS QUEUED.** What is left in this file is a PARKED phase, two small
-loose ends, the traps, and questions only the user can answer. Nothing here may
-be promoted without being asked.
+**TWO PHASES ARE QUEUED, and the user asked for BOTH in one breath** —
+*"make sure both are properly documented in todo and continue with both."*
+Phase 8 then Phase 9. Phase 3 is PARKED and is not the lowest-numbered thing to
+take; these are. Everything after them is a parked phase, the traps, and
+questions only the user can answer.
 
 **THE NAMES LANDED WITH PHASE 6**: the points are **TALLIES**, the web is
 **THE RECKONING**, the list of grinds is **THE LEDGER**. **The fourth was NOT
@@ -56,6 +58,118 @@ any more.** The turn was deleted and the fight rebuilt around what a build
 carries, so `BossDef.phases` is a cycle the boss runs and there is no verb left
 for a key to hold. Ask before adding one; it would be a mechanism, not a
 binding.
+
+---
+
+## Phase 8 — TERRAIN: the patches land on the floor, and WATER IS NOT WALKABLE
+
+**The art is DONE and inert.** Seventeen sets are in `generated-tiles.ts` and
+the renderer reads exactly one of them per zone, so thirteen terrains are data
+nothing looks at. `git log` at `0dec8b6`.
+
+**THE RULING IS THE USER'S: water is NOT walkable.** So a pool is a hole in the
+walkable set, and that is the whole of what makes this phase risky rather than
+decorative — everything below follows from it.
+
+**What each set IS.** A zone floor is a 25-tile set at `transition_size` 0.8–1.0
+— a full-tile cliff, which is why a wall spans two rows. A patch is a 16-tile
+set at 0.25 — a blend, no cliff. The plain 16 cover every corner combination,
+so a patch needs no `fitCorners` rescue that a zone floor needs.
+
+- [ ] **A THIRD TILE STATE, and `walkable` is where it is decided.**
+      `Grid.walkable` is `tile !== WALL && !solid`. Water has to fail it without
+      being WALL, because WALL is what `tileDecals` and `isWallFace` draw rock
+      for. Prefer a new tile value to `solid`: `solid` is furniture standing ON
+      a walkable tile and the tile under it is still floor, which is the
+      opposite of what a pool is.
+- [ ] **A RUN MUST ALWAYS END, and this is the phase that can break it.**
+      `runToCompletion` is bounded at 600s and a run that does not finish is a
+      MECHANISM failure, not a balance number. Carve the water BEFORE the
+      connectivity pass and treat it as wall for pathing, or a pool between the
+      hero and the exit is a descent that never returns.
+- [ ] **THE LIVELOCK PRECEDENT IS EXACTLY THIS SHAPE.** A gathering node across
+      a wall was inside its distance cap by line of sight and outside it once
+      he had walked round, and one run hit the 400s bound. Anything the hero
+      walks to that a pool can sit between is the same bug: a lock, a node, a
+      person, the exit.
+- [ ] **A patch is DRESSING, never difficulty.** It must draw off its own rng
+      like every other bit of dressing, or placing one moves the draw that
+      picks a monster and a seed stops replaying.
+- [ ] **The renderer picks a SECOND sheet per cell.** `buildProps` reads
+      `ZONES[map.zone]` and scores one Wang key; a patch is a second set over
+      the same grid. The scoring is the one answer both renderers read — put it
+      in `render/renderer.ts` rather than growing a second copy in `pixi.ts`.
+- [ ] **FLOOR VARIATION IS THE CHEAP HALF and it is worth doing first.**
+      Measured: every set holds exactly ONE pure-floor tile, 1 of 25 in all
+      four, so the open ground of every room is a single 32px square repeated.
+      `fissure_floor_cracked` is a floor variant that needs no walkability
+      question answered at all.
+- [ ] **Which patch goes in which zone is a TABLE**, beside `ZONE`. Thirteen
+      exist; a zone wants two or three, not all of them.
+- [ ] **`shots` is the proof.** A new terrain drawn wrong is invisible in every
+      check that does not look at it.
+
+**Not in this phase.** ELEVATION. It is a known plan and it costs no
+generations — a shelf is the rock set's own cliff with the pure-rock tiles
+swapped for the floor tile, per-tile because the key digits already say which is
+which (1 rock, 2 cut face). Three prompt attempts failed and the diagnosis is
+that the generator will not draw one material at two heights. It needs stairs as
+a prop and the pathfinder taught that a stair links two levels, which is its own
+phase.
+
+---
+
+## Phase 9 — WHERE MATERIALS COME FROM: gathered, or off a body
+
+**The rule the user settled**, after three passes: *"mining and fishing should
+be the only ones you just find sitting out"* → *"instead of dropping cloth from
+enemies we have hemp/cotton type materals you make into cloth? that can be the
+herbs."* What it comes to is not "nodes vs enemies" but **things that grow or
+sit in the rock are GATHERED; things that come off a body DROP.**
+
+| family | where | why |
+|---|---|---|
+| metal | gathered | ore in the rock |
+| cloth | gathered | plant fibre — hemp, flax. THE HERB-SHAPED THING |
+| wood | gathered | a deadfall is a thing sitting in the rock |
+| fish | gathered | a pool, which Phase 8 puts water under |
+| hide | **dropped** | skinned off what you killed |
+| gem | **dropped** | *"gems still from everything"* |
+
+**Wood is MY call, not the user's** — a monster dropping logs is the weirdness
+that created nodes. Flagged to him; reverse it if he says so.
+
+- [ ] **A PER-RUN DEPLETING BUDGET, never a per-kill rate.** This is the rule
+      that has bitten twice. Kills run 26 at the bare Fissure against 847 at the
+      deep end, so a rate that looks flat pays 1.5 a clear at one end and 84 at
+      the other. Follow `DropBand.gearPerRun` and `CURRENCY_DROP.perRun`: drawn
+      down body by body against what is LEFT to kill.
+- [ ] **SETTLE THE BUDGET TO A WHOLE NUMBER BEFORE SPREADING IT.**
+      `left / bodiesLeft` places exactly `left` only when `left` is an INTEGER;
+      on a fraction the run pays `left × H(bodies)` — 3.5 over 33 bodies and 7.4
+      over 850. A currency budget of 0.9 paid 1.29 a clear.
+- [ ] **DEALT, NEVER ROLLED survives for the gathered four.** `placeNodes`
+      shuffles the six families and deals one per node so a descent is one of
+      each. With two families off the floor the deck is FOUR, and the dropped
+      two need their own spread — *"relatively equal drop rates"* is only
+      sayable as a spread.
+- [ ] **THE CLOTH FAMILY'S RAW BECOMES A PLANT**, so its four materials need
+      new icons through `icons.json` → `icon.mts` → `portrait.mts`. The
+      PROCESSED half is still cloth and the loom is unchanged: `MaterialFamilyDef`
+      keeps `one: 'Bolt'` and gains a new `verb` and `node`.
+- [ ] **A FISHING POOL IS A NODE ON WATER**, which is the one place Phase 9
+      depends on Phase 8. `node_pool` is a ring of stones round a flat grey disc
+      today and reads as a fire pit at 40px — the user's complaint. It should
+      stand ON the water terrain rather than being a picture of water.
+- [ ] **THE ORE ART IS RE-ASKED.** *"I dont like how the ores and the fish
+      look."* Measured at 6x: the vein is nearly invisible and it reads as a
+      grey boulder beside the stump. A bad draw, not a wrong world — re-ask
+      before deciding it needs per-world art, which is 24 objects.
+- [ ] **`node_carcass` and `geode_amber` RETIRE** with the two families that
+      leave the floor. Cutting them lowers the comment ceiling too.
+- [ ] **The demo is what proves the rates.** A gathered family and a dropped one
+      must pay comparably over a run, at every band, and the check is a
+      `gauge()` where it is balance and a `check()` where it is mechanism.
 
 ---
 

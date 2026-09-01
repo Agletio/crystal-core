@@ -18,7 +18,7 @@ import { AURA, AURA_BY_ID,
   AILMENT_BY_ID,
   GEAR_BASE_BY_ID,
 } from '../data';
-import { ENTRANCE, EXIT, WALL, wangKey } from '../sim/grid';
+import { ENTRANCE, EXIT, WALL, patchKey, patchesAt, wangKey } from '../sim/grid';
 import { tileNoise } from '../noise';
 import { gearCanvas } from '../ui/webicons';
 import { ATTACK_POSE, DEATH_FADE } from '../sim/run';
@@ -552,6 +552,30 @@ export async function createPixiRenderer(
           sprite.scale.set(size);
           if (lit < 1) sprite.alpha = lit;
           (solid ? wallLayer : groundLayer).addChild(sprite);
+        }
+      }
+
+      // WHAT ELSE IS ON THE FLOOR, over the zone's own surface and under
+      // everything that stands on it. A patch set is 16 tiles keyed 0 and 1
+      // only — no cut face, because it is a blend and not a cliff — so it
+      // needs none of the nearest-key rescue the rock does.
+      for (let y = 0; y < grid.height; y++) {
+        for (let x = 0; x < grid.width; x++) {
+          if (rock(x, y)) continue;
+          for (const index of patchesAt(grid, x, y)) {
+            const name = map.patches[index - 1];
+            const kit = name ? ZONES[name] : undefined;
+            const skin = name ? zones.get(name) : undefined;
+            if (!kit || !skin) continue;
+            const key = patchKey(grid, x, y, index);
+            const found = kit.tiles.findIndex((t) => t.key === key);
+            if (found < 0) continue;
+            const sprite = new Sprite(skin[found]);
+            sprite.x = x;
+            sprite.y = y;
+            sprite.scale.set(1.002 / kit.grid);
+            groundLayer.addChild(sprite);
+          }
         }
       }
     }

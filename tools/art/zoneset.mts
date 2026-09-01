@@ -56,6 +56,11 @@ const RETONE: Record<string, Retone> = {
   lit_round: { sat: 0.5, mul: [0.66, 0.65, 0.63] },
 };
 
+// TONED WITH THE FLOOR IT SITS ON: chaining buys the SHAPE, not the tone.
+for (const name of ['fissure_pool', 'fissure_moss2', 'fissure_rubble', 'fissure_floor_cracked']) {
+  RETONE[name] = RETONE.lit_round;
+}
+
 function retone(png: Buffer, how: Retone): Buffer {
   const { width, height, rgba } = decodePng(png);
   for (let i = 0; i < rgba.length; i += 4) {

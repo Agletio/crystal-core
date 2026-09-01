@@ -61,12 +61,20 @@ export class Grid {
   /** Furniture standing on a walkable tile. A SECOND layer, because the tile
    *  under an altar is still floor and every renderer keys off `tiles`. */
   readonly solid: Uint8Array;
+  /** WHAT THE FLOOR IS MADE OF: 1-based into `GameMap.patches`, 0 for the
+   *  zone's own. A THIRD layer rather than a tile value, because a pool is
+   *  still floor to the carve and to `wangKey`. */
+  readonly patch: Uint8Array;
+  /** Which of those block, same 1-based index. On the grid so `walkable`
+   *  needs nothing passed to it. */
+  blocking: boolean[] = [];
 
   constructor(width: number, height: number) {
     this.width = width;
     this.height = height;
     this.tiles = new Uint8Array(width * height); // all WALL
     this.solid = new Uint8Array(width * height);
+    this.patch = new Uint8Array(width * height);
   }
 
   inBounds(x: number, y: number): boolean {
@@ -82,13 +90,18 @@ export class Grid {
     if (this.inBounds(x, y)) this.tiles[y * this.width + x] = tile;
   }
 
-  /** Walls block; everything else is walkable, sampled at the rounded tile. */
+  /** Walls block; everything else is walkable, sampled at the rounded tile.
+   *  WATER IS NOT WALKABLE and this is the ONE place it is decided — `findPath`
+   *  once tested `tiles`, walked the hero onto a brazier, and every repath came
+   *  back empty for the rest of a descent that never ended. */
   walkable(x: number, y: number): boolean {
     const tx = Math.round(x);
     const ty = Math.round(y);
     if (!this.inBounds(tx, ty)) return false;
-    const tile = this.tiles[ty * this.width + tx];
-    return tile !== WALL && !this.solid[ty * this.width + tx];
+    const at = ty * this.width + tx;
+    if (this.tiles[at] === WALL || this.solid[at]) return false;
+    const patch = this.patch[at];
+    return patch === 0 || !this.blocking[patch - 1];
   }
 
   /** Whether a BODY of this radius fits, not whether its centre does. Tile n
@@ -155,6 +168,8 @@ export interface GameMap {
   theme: MapTheme;
   /** Draw no ground of the zone's own: a scene brings its own surface. */
   bare?: boolean;
+  /** The patch sets on this map, in `Grid.patch`'s own 1-based order. */
+  patches: string[];
   /** Which generated tileset that surface is, when there is one. */
   zone?: string;
 }
@@ -188,6 +203,41 @@ export const ZONE: Partial<Record<MapTheme, string>> = {
   demonic: 'rot_round',
   prismatic: 'cavern_round',
   seam: 'seam_pro',
+};
+
+/** WHAT ELSE IS ON A ZONE'S FLOOR, drawn over the zone's own set. `blocks` is
+ *  whether a body may stand on it — WATER AND LAVA DO NOT. It is DRESSING, so
+ *  it draws off the dressing rng and moves no other draw. */
+export interface PatchDef {
+  set: string;
+  blocks?: boolean;
+  /** Tiles at most: something to walk round, never a second wall. */
+  most: number;
+  count: number;
+}
+
+export const PATCHES: Partial<Record<MapTheme, PatchDef[]>> = {
+  fissure: [
+    { set: 'fissure_pool', blocks: true, most: 26, count: 2 },
+    { set: 'fissure_moss2', most: 34, count: 2 },
+    { set: 'fissure_rubble', most: 30, count: 2 },
+    { set: 'fissure_floor_cracked', most: 40, count: 2 },
+  ],
+  demonic: [
+    { set: 'rot_blood', most: 26, count: 2 },
+    { set: 'rot_flesh', most: 30, count: 2 },
+    { set: 'rot_bone', most: 30, count: 2 },
+  ],
+  prismatic: [
+    { set: 'cavern_pool', blocks: true, most: 26, count: 2 },
+    { set: 'cavern_ice', most: 32, count: 2 },
+    { set: 'cavern_growth2', most: 28, count: 2 },
+  ],
+  seam: [
+    { set: 'seam_lava', blocks: true, most: 22, count: 2 },
+    { set: 'seam_pool', blocks: true, most: 24, count: 1 },
+    { set: 'seam_ash', most: 32, count: 2 },
+  ],
 };
 
 /** How far a passage wanders off the line between the rooms it joins, and how
@@ -279,6 +329,30 @@ export function wangKey(grid: Grid, x: number, y: number): number {
     grid.at(cx - 1, cy) === WALL && grid.at(cx, cy) === WALL;
   const one = (cx: number, cy: number): number => (solid(cx, cy) ? 1 : solid(cx, cy - 1) ? 2 : 0);
   return ((one(x, y) * 3 + one(x + 1, y)) * 3 + one(x, y + 1)) * 3 + one(x + 1, y + 1);
+}
+
+/** A PATCH's own corners, same base three. Its set was asked with the terrain
+ *  as the LOWER, so a corner inside is 0 and one outside is 1 — inverted from
+ *  the rock, which is why it is not a flag on `wangKey`. */
+export function patchKey(grid: Grid, x: number, y: number, index: number): number {
+  const on = (cx: number, cy: number): boolean =>
+    grid.inBounds(cx, cy) && grid.patch[cy * grid.width + cx] === index;
+  const one = (cx: number, cy: number): number =>
+    on(cx - 1, cy - 1) && on(cx, cy - 1) && on(cx - 1, cy) && on(cx, cy) ? 0 : 1;
+  return ((one(x, y) * 3 + one(x + 1, y)) * 3 + one(x, y + 1)) * 3 + one(x + 1, y + 1);
+}
+
+/** Every patch index touching the cell's own corners. */
+export function patchesAt(grid: Grid, x: number, y: number): number[] {
+  const seen = new Set<number>();
+  for (let cy = y - 1; cy <= y + 1; cy++) {
+    for (let cx = x - 1; cx <= x + 1; cx++) {
+      if (!grid.inBounds(cx, cy)) continue;
+      const at = grid.patch[cy * grid.width + cx];
+      if (at !== 0) seen.add(at);
+    }
+  }
+  return [...seen];
 }
 
 /**
@@ -404,6 +478,94 @@ function block(grid: Grid, props: MapProp[], must: Vec2[]): void {
     const seen = reachable(grid, must[0]);
     if (must.some((v) => !seen.has(v.y * grid.width + v.x))) grid.solid[key] = 0;
   }
+}
+
+/** A BLOB grown off a seed, taking neighbours at a falling chance so its edge
+ *  is ragged. A tile the map MUST reach is never taken. */
+function growPatch(
+  grid: Grid,
+  rng: Rng,
+  index: number,
+  def: PatchDef,
+  keep: Set<number>,
+  from: Vec2,
+  clear: number
+): number[] {
+  const taken: number[] = [];
+  const edge: Vec2[] = [from];
+  const seen = new Set<number>();
+  while (edge.length > 0 && taken.length < def.most) {
+    const at = edge.splice(rng.int(0, edge.length - 1), 1)[0];
+    const key = at.y * grid.width + at.x;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    // FLOOR only: a patch over a landmark hides the way out.
+    if (grid.at(at.x, at.y) !== FLOOR || keep.has(key) || grid.patch[key] !== 0) continue;
+    // Held off the rock, which makes it safe by CONSTRUCTION: a pool that never
+    // touches a wall has a walkable ring round it and cuts nothing off.
+    if (clear > 1 && offRock(grid, at.x, at.y) < clear) continue;
+    grid.patch[key] = index;
+    taken.push(key);
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+      if (rng.next() < 0.62) edge.push({ x: at.x + dx, y: at.y + dy });
+    }
+  }
+  return taken;
+}
+
+/** How far from the rock a blocking patch is KEPT. At 2 it has a walkable ring
+ *  round it, so the check after it is a proof rather than a filter. */
+const OPEN_SEED = 2;
+
+/** A floor tile at least `off` from the rock, or null. */
+function seedFor(grid: Grid, rng: Rng, rooms: Room[], off: number): Vec2 | null {
+  for (let tries = 0; tries < 24; tries++) {
+    const room = rooms[rng.int(0, rooms.length - 1)];
+    const at = {
+      x: room.x + rng.int(0, Math.max(0, room.w - 1)),
+      y: room.y + rng.int(0, Math.max(0, room.h - 1)),
+    };
+    if (grid.at(at.x, at.y) !== FLOOR) continue;
+    if (offRock(grid, at.x, at.y) >= off) return at;
+  }
+  return null;
+}
+
+/** Laid after the props, and undone WHOLE: half a pool is a shape nothing
+ *  draws. */
+function placePatches(
+  grid: Grid,
+  rng: Rng,
+  theme: MapTheme,
+  rooms: Room[],
+  keep: Vec2[]
+): string[] {
+  const defs = PATCHES[theme];
+  if (!defs) return [];
+  const spared = new Set(keep.map((v) => v.y * grid.width + v.x));
+  grid.blocking = defs.map((d) => !!d.blocks);
+  // EVERY REACHABLE TILE, not just the landmarks: a monster stranded in a
+  // pocket a pool cut off is a descent that never ends.
+  let open = reachable(grid, keep[0]).size;
+
+  defs.forEach((def, i) => {
+    for (let n = 0; n < def.count; n++) {
+      // Seeded in OPEN floor: from a wall it plugs the corner behind it.
+      const clear = def.blocks ? OPEN_SEED : 1;
+      const from = seedFor(grid, rng, rooms, clear);
+      if (!from) continue;
+      const taken = growPatch(grid, rng, i + 1, def, spared, from, clear);
+      if (taken.length === 0 || !def.blocks) continue;
+      // Exactly the tiles it took may go, and nothing behind them.
+      const now = reachable(grid, keep[0]).size;
+      if (now !== open - taken.length) {
+        for (const key of taken) grid.patch[key] = 0;
+      } else {
+        open = now;
+      }
+    }
+  });
+  return defs.map((d) => d.set);
 }
 
 /** Tiles to the nearest rock, capped at what `COVER_RATE` indexes. */
@@ -533,7 +695,7 @@ function carveCorridor(grid: Grid, a: Vec2, b: Vec2, rng: Rng, wobble: number): 
   }
 }
 
-function reachable(grid: Grid, from: Vec2): Set<number> {
+export function reachable(grid: Grid, from: Vec2): Set<number> {
   const seen = new Set<number>();
   const start = Math.round(from.y) * grid.width + Math.round(from.x);
   const queue = [start];
@@ -634,6 +796,7 @@ export function generateMap(
   // and growth are the WHOLE of it: a descent is what the rock did, and nothing
   // stands on its floor.
   const props: MapProp[] = [];
+  let patches: string[] = [];
   if (zone) {
     // Its own stream, or dressing a map moves which monsters spawn in it.
     const dress = new Rng(rng.int(1, 1e9));
@@ -646,9 +809,10 @@ export function generateMap(
     props.push(...dressWalls(grid, dress, [...keep, ...props]));
     props.unshift(...coverFloor(grid, dress));
     block(grid, props, keep);
+    patches = placePatches(grid, dress, theme, rooms, keep);
   }
 
-  return { grid, rooms, entrance, exit, props, vein, theme, bare: !!zone, zone };
+  return { grid, rooms, entrance, exit, props, vein, theme, bare: !!zone, zone, patches };
 }
 
 /**
@@ -706,5 +870,7 @@ export function sceneMap(plan: ScenePlan, theme: MapTheme, vein = 1): GameMap {
     props.unshift(...coverFloor(grid, new Rng(9001)).filter((p) => !taken.has(key(p))));
   }
   block(grid, props, [entrance, plan.stands]);
-  return { grid, rooms, entrance, exit: entrance, props, vein, theme, bare: !!zone, zone };
+  // An AUTHORED room takes none: what is on its floor is the author's, and a
+  // pool grown across a boss arena is the carve overruling them.
+  return { grid, rooms, entrance, exit: entrance, props, vein, theme, bare: !!zone, zone, patches: [] };
 }

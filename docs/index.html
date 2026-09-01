@@ -492,8 +492,7 @@
   /* A generated sheet, drawn NEAREST: a 32px tile judged through a bilinear
      resample is a judgement about the browser's filter, not about the art. */
   .devsheet { display: block; image-rendering: pixelated; border: 1px solid var(--edge); }
-  /* ALL OF THEM AT ONCE, which is the whole point of the screen: a wall of
-     128px sheets wraps to the window rather than one filling it. */
+  /* ALL AT ONCE: a wall of 128px sheets wraps rather than one filling it. */
   .devsheets { display: flex; flex-wrap: wrap; gap: 10px 12px; }
   .devsheetbox { width: 128px; }
   .devgroup__title { margin: 0; font-family: var(--display); font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--citrine); }

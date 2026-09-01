@@ -211,7 +211,7 @@ import {
   slotUsed,
   statPower,
 } from './mods';
-import { ENTRANCE, EXIT, FLOOR, TUNNEL, WALL, dist, generateMap, sceneMap } from './sim/grid';
+import { ENTRANCE, EXIT, FLOOR, PATCHES, TUNNEL, WALL, dist, generateMap, reachable, sceneMap } from './sim/grid';
 import type { Grid } from './sim/grid';
 import { CREATURE_FRAMES, GLOW, IDLE_CYCLE, STRIDE_CYCLE, framesOf, wellFormed } from './render/sprites';
 import { PORTRAITS } from './render/portraits';
@@ -2028,6 +2028,58 @@ rule('SPRITES — is the pixel art well formed?');
   const WALL_SET = new Set(WALL_PROPS.map((w) => w.id));
   const dressedMap = (seed: number, theme: MapTheme = 'fissure') =>
     generateMap([], new Rng(seed), 1, 1, theme);
+  // WHAT ELSE IS ON THE FLOOR. A patch is DRESSING, so what it may never do is
+  // cut something off: WATER IS NOT WALKABLE and a pool between the hero and a
+  // body is a descent that never ends. Held off the rock by `OPEN_SEED`, so a
+  // walkable ring round one always exists — this is the proof of that, not a
+  // sample of it.
+  {
+    let stranded = 0;
+    let blocked = 0;
+    let tiles = 0;
+    const seen = new Set<string>();
+    for (const theme of MAP_THEMES.map((t) => t.id as MapTheme)) {
+      const defs = PATCHES[theme] ?? [];
+      for (let i = 0; i < 14; i++) {
+        const map = dressedMap(6100 + i * 7, theme);
+        const { grid } = map;
+        // Every open tile reachable from the way in, against every open tile
+        // there is: a pocket the carve made and a pool sealed reads the same.
+        const open: number[] = [];
+        for (let y = 0; y < grid.height; y++) {
+          for (let x = 0; x < grid.width; x++) if (grid.walkable(x, y)) open.push(y * grid.width + x);
+        }
+        const found = reachable(grid, map.entrance);
+        if (open.some((key) => !found.has(key))) stranded++;
+        for (let k = 0; k < grid.patch.length; k++) {
+          const at = grid.patch[k];
+          if (at === 0) continue;
+          tiles++;
+          seen.add(map.patches[at - 1]);
+          if (defs[at - 1]?.blocks) blocked++;
+        }
+      }
+    }
+    gauge(
+      `${(tiles / 56).toFixed(0)} patch tiles a map, ${(blocked / 56).toFixed(1)} of them not walkable`
+    );
+    check(
+      stranded === 0,
+      'no patch strands a tile the carve had opened, over 56 maps in four worlds',
+      `${stranded} maps left something unreachable`
+    );
+    // A set nothing places is a set nobody sees, and a name that does not
+    // resolve draws NOTHING and fails nowhere.
+    const named = MAP_THEMES.flatMap((t) => (PATCHES[t.id as MapTheme] ?? []).map((d) => d.set));
+    const missing = named.filter((n) => !ZONES[n]);
+    const unplaced = named.filter((n) => !seen.has(n));
+    check(
+      missing.length === 0 && unplaced.length === 0,
+      `all ${named.length} patches are emitted sets and every one of them lands`,
+      `${missing.join(', ')} unemitted; ${unplaced.join(', ')} never placed`
+    );
+  }
+
   // THE LOCKS. Three a world, and BOTH frames of each — a shut one whose open
   // frame is missing is a chest that cannot be opened, and nothing else asks.
   {
