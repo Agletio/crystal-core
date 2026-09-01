@@ -141,9 +141,10 @@ out of the run's rng cost band 5 its tier 3 bases. `placeNodes` deals round
 `GATHERED` and `rollMaterialDrop` round `DROPPED`, so both halves are a spread
 rather than a roll. Measured, 3.2–8.2 a family against gathering's 20. The
 fishing spot is landed too: `poolSpot` stands `node_ripple` ON the water with a
-walkable neighbour, and a room with no pool grows no fish node at all. **It is
-UNDER-DEALT and that is unfixed** — 0.47 a run against 1.45 for the other three,
-because a spot needs a pool in its own room.
+walkable neighbour, and a room with no pool grows no fish node at all. **Fish is
+dealt the WET rooms first** — the packs are split by whether their room has a
+bank, and `banks()` SCANS a room rather than sampling it, so a two-tile pool is
+found. Measured over 12 descents: metal 17, cloth 20, wood 15, fish 17.
 
 - [ ] **THE CLOTH FAMILY'S FOUR MATERIALS STILL CARRY SPIDER-SILK NAMES.**
       `MaterialFamilyDef` is a plant already — `raw: 'fibre'`, `verb: 'Cut'`,
