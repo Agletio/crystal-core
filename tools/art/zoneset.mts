@@ -146,14 +146,10 @@ const patch = (zone: string, said: string, edge: string, ragged = 0.85) => ({
 const WET = 'wet dark stone at the waterline, the floor darkening as it goes under';
 
 /**
- * A RAISED SHELF OF THE SAME FLOOR — the zone in two storeys rather than one.
- *
- * It is the ROCK WALL'S OWN SHAPE: `transition_size: 1` is the full-tile cliff
- * every zone set is already built on, so a plateau lands in the SAME 21 Wang
- * keys the renderer already scores. What separates it from a wall is not the
- * art but the grid — a wall is unwalkable and a shelf is floor you can only
- * reach by a stair, which is a third tile state and a link the pathfinder has
- * to be told about.
+ * A RAISED SHELF OF THE SAME FLOOR. It is the ROCK WALL'S OWN SHAPE —
+ * `transition_size: 1` is the full-tile cliff every zone set is built on, so a
+ * plateau lands in the SAME 21 Wang keys. What separates it from a wall is the
+ * GRID: a wall is unwalkable, a shelf is floor reachable only by a stair.
  */
 const raised = (zone: string) => ({
   // THE TWO TERRAINS MUST DIFFER OR THE MODEL INVENTS THE DIFFERENCE. Asked as
@@ -185,7 +181,6 @@ const ASK: Record<string, Record<string, unknown>> = {
   // do this later."* One ask per patch, all chained off their own zone's floor.
   // WATER IS FUNCTIONAL — a fishing pool stands on it — and the rest is what
   // the rock does on its own.
-  // ELEVATION, one zone as the proof: the same floor on a shelf above itself.
   fissure_raised2: raised('fissure'),
   // FLOOR VARIATION is a patch whose other terrain is ANOTHER FLOOR. Every set
   // holds exactly ONE pure-floor tile — measured, 1 of 25 in all four — so the
@@ -207,6 +202,16 @@ const ASK: Record<string, Record<string, unknown>> = {
   fissure_moss: patch('fissure', 'a thick mat of dark wet moss and pale lichen creeping over the stone, '
     + 'deep desaturated green-grey, NOT bright green, NOT grass, NOT a lawn, NOT sunlit', 
     'ragged fronds of moss thinning out over bare stone'),
+  // Round one came back LIME. RETONE cannot repair a PATCH set: it runs over
+  // the WHOLE sheet and half of this one is the chained floor, which has to
+  // keep matching. So the colour is fixed in the ASK, excluding the family.
+  fissure_moss2: patch('fissure',
+    'a thick mat of wet moss and lichen creeping over the stone, ALMOST BLACK '
+    + 'green, very dark and heavily desaturated, dull and unlit, the stone '
+    + 'showing through it in places, NOT bright green, NOT lime, NOT emerald, '
+    + 'NOT grass green, NOT yellow-green, NOT neon, NOT vivid, NOT sunlit, '
+    + 'NOT a lawn, NOT foliage',
+    'ragged dark fronds thinning out over bare pale stone'),
   fissure_rubble: patch('fissure', 'a bed of loose broken scree and shattered stone, angular grey rubble '
     + 'in heaped fragments, NOT sand, NOT smooth, NOT gravel path',
     'the rubble thinning to bare floor at its edge'),
@@ -220,6 +225,15 @@ const ASK: Record<string, Record<string, unknown>> = {
   cavern_growth: patch('cavern', 'a dense field of pale violet crystal spines grown up out of the '
     + 'floor, lilac and white, faceted and glinting, NOT green, NOT blue, NOT grass',
     'the crystal thinning to loose grit at its edge'),
+  // Round one was a FLAT WASH: the noun did no work, so this describes the
+  // SHAPE — separate blades at separate angles — and excludes the wash.
+  cavern_growth2: patch('cavern',
+    'MANY SEPARATE angular crystal blades standing up out of the floor at '
+    + 'DIFFERENT angles, spread apart with gaps of pale grit showing between '
+    + 'them, each blade its own sharp facet catching a hard highlight, uneven '
+    + 'and messy, pale lilac and white, NOT a flat sheet, NOT a smooth wash, '
+    + 'NOT stripes, NOT an outline, NOT green, NOT blue',
+    'the blades getting shorter and further apart until only grit is left'),
   seam_lava: patch('seam', 'a channel of molten rock, black crust broken by cracks of glowing '
     + 'orange heat, NOT bright yellow, NOT lava lamp, NOT cartoon, NOT water',
     'blackened cooled crust at the rim, cracked and dull'),

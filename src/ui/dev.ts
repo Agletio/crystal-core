@@ -200,7 +200,7 @@ function render(): void {
   // `ZONES` straight, so a set emitted tomorrow is in here with no edit.
   const sets = group(
     'Tilesets',
-    `Every emitted set, drawn at ${SHEET_SCALE}x. A zone is one of these and each patch of terrain is another.`
+    'Every emitted set, drawn native. A zone is one of these and each patch of terrain is another.'
   );
   const look = el('button', 'mini devbtn') as HTMLButtonElement;
   look.id = 'dev-tilesets';
@@ -224,8 +224,9 @@ function render(): void {
   over.append(kit);
 }
 
-/** Big enough that a shore is a shore rather than a smudge. */
-const SHEET_SCALE = 3;
+/** NATIVE. A sheet is 128px and the point is seeing them ALL at once —
+ *  magnified, one fills the screen and the comparison is gone. */
+const SHEET_SCALE = 1;
 
 /**
  * THE SHEETS THEMSELVES, not a generated room. The tile PICKER lives in
@@ -244,10 +245,11 @@ function renderSheets(): void {
   back.onclick = render;
   host.append(back);
 
+  const wall = el('div', 'devsheets');
+  host.append(wall);
   for (const [name, set] of Object.entries(ZONES)) {
-    const box = el('div', 'devgroup');
-    box.append(el('h3', 'devgroup__title', name));
-    box.append(el('p', 'devgroup__why', `${set.tiles.length} tiles at ${set.grid}px`));
+    const box = el('div', 'devsheetbox');
+    box.append(el('div', 'dockcol__label', name));
     const img = new Image();
     img.src = set.png;
     img.alt = name;
@@ -260,7 +262,7 @@ function renderSheets(): void {
       img.style.width = `${img.naturalWidth * SHEET_SCALE}px`;
     };
     box.append(img);
-    host.append(box);
+    wall.append(box);
   }
 }
 
