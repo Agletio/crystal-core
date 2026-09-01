@@ -205,14 +205,12 @@ export const ZONE: Partial<Record<MapTheme, string>> = {
   seam: 'seam_pro',
 };
 
-/** WHAT ELSE IS ON A ZONE'S FLOOR, drawn over the zone's own set. `blocks` is
- *  whether a body may stand on it — WATER AND LAVA DO NOT. It is DRESSING, so
- *  it draws off the dressing rng and moves no other draw. */
+/** WHAT ELSE IS ON A ZONE'S FLOOR. `blocks` is whether a body may stand on it —
+ *  WATER AND LAVA DO NOT — and it draws off the DRESSING rng. */
 export interface PatchDef {
   set: string;
   blocks?: boolean;
-  /** Tiles at most: something to walk round, never a second wall. */
-  most: number;
+  most: number; // tiles at most: something to walk round, never a second wall
   count: number;
 }
 
