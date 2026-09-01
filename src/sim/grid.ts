@@ -62,11 +62,9 @@ export class Grid {
    *  under an altar is still floor and every renderer keys off `tiles`. */
   readonly solid: Uint8Array;
   /** WHAT THE FLOOR IS MADE OF: 1-based into `GameMap.patches`, 0 for the
-   *  zone's own. A layer rather than a tile, since a pool is still floor to
-   *  the carve and to `wangKey`. */
+   *  zone's own — a layer, since a pool is still floor to the carve. */
   readonly patch: Uint8Array;
-  /** Which of those block, same 1-based index. On the grid so `walkable`
-   *  needs nothing passed to it. */
+  /** Which of those block. On the grid so `walkable` takes no argument. */
   blocking: boolean[] = [];
 
   constructor(width: number, height: number) {
@@ -316,7 +314,7 @@ export function wangKey(grid: Grid, x: number, y: number): number {
   return ((one(x, y) * 3 + one(x + 1, y)) * 3 + one(x, y + 1)) * 3 + one(x + 1, y + 1);
 }
 
-/** A PATCH's own corners, same base three. Its set was asked with the terrain
+/** A PATCH's own corners, same base three: its set was asked with the terrain
  *  as the LOWER, so a corner inside is 0 — inverted from the rock. */
 export function patchKey(grid: Grid, x: number, y: number, index: number): number {
   const on = (cx: number, cy: number): boolean =>
