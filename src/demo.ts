@@ -3379,7 +3379,9 @@ rule('GATHERING — is a node free, guarded, walked to and equally spread?');
 
   // *"RELATIVELY EQUAL DROP RATES BETWEEN MATERIALS."* Dealt round rather than
   // rolled, so a hundred descents cannot starve one profession.
-  const spread = new Map<string, number>(MATERIAL_FAMILIES.map((f) => [f.id, 0]));
+  // The GATHERED four: hide and gem come off a body now, so asking the floor
+  // for them is asking a question whose answer is correctly zero.
+  const spread = new Map<string, number>(GATHERED.map((f) => [f.id, 0]));
   for (let i = 0; i < 12; i++) {
     const sim = new RunSim(bareSet, digger, new Rng(1300 + i));
     for (const node of sim.state.nodes) {
@@ -3392,7 +3394,7 @@ rule('GATHERING — is a node free, guarded, walked to and equally spread?');
   line(`  nodes a family over 12 descents: ${[...spread].map(([f, n]) => `${f} ${n}`).join(', ')}`);
   check(
     least > 0 && most <= least * 1.6,
-    'and the six families come out level, because they are DEALT and not rolled',
+    `and the ${GATHERED.length} gathered families come out level, being DEALT and not rolled`,
     `${least} at the least, ${most} at the most`
   );
 

@@ -548,6 +548,10 @@ export class RunSim {
   private readonly rng: Rng;
   /** Placement retries only. Fixed, so the same map places the same way. */
   private readonly retry = new Rng(7919);
+  /** MATERIALS OFF A BODY draw here. On the run's own stream they took a draw
+   *  per kill and reshuffled every gear roll after it — measured, band 5
+   *  stopped reaching a tier 3 base. */
+  private readonly bodyRng = new Rng(104729);
   private readonly queued: string[] = []; // presses waiting for the next tick
   private readonly options: RunOptions;
   private readonly skill: SkillDef;
@@ -3696,17 +3700,16 @@ export class RunSim {
 
   }
 
-  /** WHAT A BODY LEAVES: hide off what you killed, gems out of anything. Off
-   *  the same depleting budget gear is, and DEALT round the dropped families
-   *  the way `placeNodes` deals the gathered ones. */
+  /** WHAT A BODY LEAVES: hide, and gems out of anything. Off the same
+   *  depleting budget gear is, and DEALT round the dropped families. */
   private rollMaterialDrop(): void {
     this.budgets();
-    if (!this.rng.chance(this.materialLeft / this.bodiesLeft())) return;
+    if (!this.bodyRng.chance(this.materialLeft / this.bodiesLeft())) return;
     this.materialLeft--;
     const family = DROPPED[this.nextDropped++ % DROPPED.length];
     const def = MATERIALS.find((m) => m.world === this.set.theme && m.family === family.id);
     if (!def) return;
-    this.bankMaterial(def.id, this.rng.int(BODY_DROP.each[0], BODY_DROP.each[1]));
+    this.bankMaterial(def.id, this.bodyRng.int(BODY_DROP.each[0], BODY_DROP.each[1]));
   }
 
   /** Item level comes off the power band and the base's tier off that, so a
