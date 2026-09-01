@@ -12931,10 +12931,21 @@ rule('GRAFTS — do a corpse and a handful of dust buy what no drop can roll?');
     }
     return marked.size;
   };
+  // ONE HIT ON ONE STANDING BODY, because a descent's bodies are sampled
+  // live and a one-shot kill takes a bleeding body off the list in the same
+  // tick it was opened — three maps in a row read 0 of 41 that way.
+  const opened = (who: typeof bare.character): boolean => {
+    const sim = new RunSim([], who, new Rng(21)) as any;
+    const foe = sim.state.monsters[0];
+    foe.life = 1e7;
+    sim.dealDamage(sim.state.hero, foe, 1, undefined);
+    return foe.ailments.some((a: { id?: string }) => a.id === 'bleed');
+  };
+  check(opened(wearing.character), 'and a hit leaves one on the body it opened', 'no bleed after a hit');
   const bit = bleeding(wearing.character, 21);
-  check(bit > 0, `and every hit leaves one: ${bit} bodies bleeding in one descent`, String(bit));
+  gauge(`${bit} bodies seen bleeding across one descent, live bodies sampled a tick at a time`);
   check(
-    bleeding(bare.character, 21) === 0,
+    !opened(bare.character) && bleeding(bare.character, 21) === 0,
     'and nothing bleeds without it, so the line is the whole of what did it',
     'a bare chest left a body bleeding'
   );
