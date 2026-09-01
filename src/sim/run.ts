@@ -548,9 +548,8 @@ export class RunSim {
   private readonly rng: Rng;
   /** Placement retries only. Fixed, so the same map places the same way. */
   private readonly retry = new Rng(7919);
-  /** MATERIALS OFF A BODY draw here. On the run's own stream they took a draw
-   *  per kill and reshuffled every gear roll after it — measured, band 5
-   *  stopped reaching a tier 3 base. */
+  /** MATERIALS OFF A BODY draw here: on the run's own stream they took a draw
+   *  per kill and reshuffled every gear roll after it. */
   private readonly bodyRng = new Rng(104729);
   private readonly queued: string[] = []; // presses waiting for the next tick
   private readonly options: RunOptions;
