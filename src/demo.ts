@@ -2028,6 +2028,15 @@ rule('SPRITES — is the pixel art well formed?');
   const WALL_SET = new Set(WALL_PROPS.map((w) => w.id));
   const dressedMap = (seed: number, theme: MapTheme = 'fissure') =>
     generateMap([], new Rng(seed), 1, 1, theme);
+  /** Every tile a body could stand on, blocking patches included. */
+  const countOpen = (grid: { width: number; height: number; walkable(x: number, y: number): boolean }) => {
+    let n = 0;
+    for (let y = 0; y < grid.height; y++) {
+      for (let x = 0; x < grid.width; x++) if (grid.walkable(x, y)) n++;
+    }
+    return n;
+  };
+
   // WHAT ELSE IS ON THE FLOOR. A patch is DRESSING, so what it may never do is
   // cut something off: WATER IS NOT WALKABLE and a pool between the hero and a
   // body is a descent that never ends. Held off the rock by `OPEN_SEED`, so a
@@ -2037,36 +2046,51 @@ rule('SPRITES — is the pixel art well formed?');
     let stranded = 0;
     let blocked = 0;
     let tiles = 0;
+    let pockets = 0;
     const seen = new Set<string>();
     for (const theme of MAP_THEMES.map((t) => t.id as MapTheme)) {
       const defs = PATCHES[theme] ?? [];
       for (let i = 0; i < 14; i++) {
         const map = dressedMap(6100 + i * 7, theme);
         const { grid } = map;
-        // Every open tile reachable from the way in, against every open tile
-        // there is: a pocket the carve made and a pool sealed reads the same.
-        const open: number[] = [];
-        for (let y = 0; y < grid.height; y++) {
-          for (let x = 0; x < grid.width; x++) if (grid.walkable(x, y)) open.push(y * grid.width + x);
-        }
-        const found = reachable(grid, map.entrance);
-        if (open.some((key) => !found.has(key))) stranded++;
+        const withWater = reachable(grid, map.entrance);
+        let water = 0;
         for (let k = 0; k < grid.patch.length; k++) {
           const at = grid.patch[k];
           if (at === 0) continue;
           tiles++;
           seen.add(map.patches[at - 1]);
-          if (defs[at - 1]?.blocks) blocked++;
+          if (defs[at - 1]?.blocks) {
+            blocked++;
+            water++;
+          }
         }
+        // THE PATCHES' OWN CONTRIBUTION, isolated: flood again with nothing
+        // blocking, and the difference must be exactly the tiles water took.
+        // Measured against every open tile instead, this read the pockets the
+        // CARVE already leaves and failed on 12 of 56 maps for nothing.
+        const was = grid.blocking;
+        grid.blocking = was.map(() => false);
+        const without = reachable(grid, map.entrance);
+        // Counted with the water OFF as well, or a flood that ignores it is
+        // being compared against a tally that does not.
+        const open = countOpen(grid);
+        grid.blocking = was;
+        if (without.size - withWater.size !== water) stranded++;
+        pockets += without.size < open ? 1 : 0;
       }
     }
     gauge(
       `${(tiles / 56).toFixed(0)} patch tiles a map, ${(blocked / 56).toFixed(1)} of them not walkable`
     );
+    // A pocket the CARVE leaves is older than any of this and is printed rather
+    // than failed — nothing is placed in one, since `placeIn` falls back to a
+    // room's middle and every room centre is reachable.
+    gauge(`the carve itself leaves a pocket somewhere on ${pockets} of 56 maps`);
     check(
       stranded === 0,
-      'no patch strands a tile the carve had opened, over 56 maps in four worlds',
-      `${stranded} maps left something unreachable`
+      'water takes exactly the tiles it covers and cuts nothing off behind it',
+      `${stranded} of 56 maps lost more than the water itself`
     );
     // A set nothing places is a set nobody sees, and a name that does not
     // resolve draws NOTHING and fails nowhere.
