@@ -2218,8 +2218,7 @@ export const LADDER = {
  *  it. `raw` comes out of a descent and `processed` is what camp turns it into.
  *  `node` is what it looks like on a floor and `spent` the same object worked
  *  out; *"ore is mined, hide is skinned"* is `verb` on ONE mechanism. */
-/** THINGS THAT GROW OR SIT IN THE ROCK ARE GATHERED; THINGS OFF A BODY DROP. */
-export type MaterialSource = 'gathered' | 'dropped';
+export type MaterialSource = 'gathered' | 'dropped'; // rock: gathered. body: dropped.
 
 export interface MaterialFamilyDef {
   id: string;
@@ -2228,8 +2227,7 @@ export interface MaterialFamilyDef {
   processed: string;
   station: string;
   verb: string;
-  /** A node's two frames. A DROPPED family has none. */
-  node?: string;
+  node?: string; // a node's two frames; a DROPPED family has none
   spent?: string;
   from: MaterialSource;
   /** What ONE processed unit of it is called, so a stack reads as a thing
@@ -2241,8 +2239,10 @@ export const MATERIAL_FAMILIES: MaterialFamilyDef[] = [
   { id: 'metal', name: 'Metal', raw: 'ore', processed: 'bars', station: 'the smelter',
     verb: 'Mined', node: 'node_ore', spent: 'node_ore_spent', from: 'gathered', one: 'Bar' },
   // CLOTH IS A PLANT, which is where the herb went: something you cut.
+  // The fibre node is generated and waiting to be PICKED; a dangling id draws
+  // nothing, so until then this points at art that exists.
   { id: 'cloth', name: 'Cloth', raw: 'fibre', processed: 'bolts', station: 'the loom',
-    verb: 'Cut', node: 'node_fibre', spent: 'node_fibre_spent', from: 'gathered', one: 'Bolt' },
+    verb: 'Cut', node: 'cocoon', spent: 'web', from: 'gathered', one: 'Bolt' },
   { id: 'hide', name: 'Hide', raw: 'skins', processed: 'leather', station: 'the tanning frame',
     verb: 'Skinned', from: 'dropped', one: 'Leather' },
   // A DEADFALL sits in the rock like an outcrop, so wood is gathered. Not the
@@ -3594,8 +3594,8 @@ export const MEAL_BY_FISH: Record<string, MealDef> = Object.fromEntries(
  *  at the deep end. `perRun` is WHOLE: on a fraction a run pays `left ×
  *  H(bodies)`, 7.4 over 850. */
 export const BODY_DROP = {
-  /** DROPS a clear pays, NOT raw: each hands over `each`. Matched per FAMILY to
-   *  the gathered four, who share `GATHER.perRun` 6 nodes, so 2 want 3. */
+  /** DROPS a clear pays, NOT raw — each hands over `each`. Matched per FAMILY
+   *  to the gathered four sharing `GATHER.perRun` 6 nodes, so 2 want 3. */
   perRun: 3,
   each: [2, 5] as [number, number], // what ONE body hands over
 };

@@ -69,6 +69,12 @@ const ASKS: string[] = [
   'a stout stump of near-black timber with three cut logs stacked leaning against it, the wood grain visible on the ends',
   'a dead tree bole standing snapped off short, its dark bark peeling away in strips to show pale wood underneath',
   'a heavy fallen log of dark wood lying across the floor, one end broken open showing the pale grain inside',
+  // cloth — PLANT FIBRE. It is what the herb became: something you cut that
+  // grows down there, and it has to read as a growth rather than as grass.
+  'a dense clump of tall stiff fibrous stalks growing straight up out of the floor, dry and stringy, pale straw against the dark',
+  'a tight tussock of long reed-like stems bunched together, their tops frayed open into loose pale fibre',
+  'a low bush of coarse grey-green fibrous stems, each one splitting along its length into strands',
+  'a spray of stiff pale stalks growing in one clump out of the rock, ragged and uneven, the tallest gone to seed',
   // fish — a POOL, and it must read as WATER at 40 pixels.
   'a small still pool of dark water in a rough basin of near-black rock, the surface flat and reflective, one pale shape moving under it',
   'a low round pool of black water rimmed with wet dark stone, its surface glassy, faint pale ripples across the middle',
@@ -78,12 +84,21 @@ const ASKS: string[] = [
 
 const [verb, arg, extra] = process.argv.slice(2);
 
+/** WHICH FOUR. The tool caps at 16 candidates, so a fifth family cannot ride
+ *  the same call — `ask <family>` sends that family's four alone. */
+const FOUR: Record<string, number> = { metal: 0, hide: 4, wood: 8, cloth: 12, fish: 16 };
+
 if (verb === 'ask') {
+  const at = FOUR[arg ?? ''];
+  const want = at === undefined ? ASKS : ASKS.slice(at, at + 4);
+  if (at === undefined && ASKS.length > 16) {
+    throw new Error(`${ASKS.length} asks is over the 16 the tool returns — name a family`);
+  }
   const out = await callTool('create_1_direction_object', {
     description: `a thing on the floor of a cave worth stopping for. ${COMMON}`,
     view: 'top-down',
     style_images: STYLE.map(styleImage),
-    item_descriptions: ASKS.map((a) => `${a}. ${COMMON}`),
+    item_descriptions: want.map((a) => `${a}. ${COMMON}`),
   });
   console.log(out);
 } else if (verb === 'get') {

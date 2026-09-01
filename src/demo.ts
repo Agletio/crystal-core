@@ -9366,7 +9366,13 @@ rule('WHAT A BAND IS WORTH — does pushing power actually pay?');
     // kill against a mean under 2, so ten runs at band 0 measure whether a
     // chest turned up. It inverted the ordering twice under changes that had
     // nothing to do with gold. Band 0 is 21 monsters, so this is nearly free.
-    const runs = band <= 1 ? 40 : 10;
+    //
+    // THIRTY IN THE MIDDLE, for the same reason and measured the same way: at
+    // ten runs bands 2 and 3 came back 2.946 and 3.026, close enough that
+    // water blocking a few tiles inverted them; at thirty they are 2.667 and
+    // 3.305 and the gap is real. A death banks NOTHING, so one in ten moves
+    // the mean by a tenth — the sample is what was thin, not the ladder.
+    const runs = band <= 1 ? 40 : band <= 3 ? 30 : 10;
     let banked = 0;
     let killed = 0;
     let cleared = 0;
