@@ -75,7 +75,81 @@ const CAVE =
   'cold desaturated grey-brown broken stone, NOT olive, NOT khaki, NOT yellow, ' +
   'NOT green, NOT sandy, NOT warm brown';
 
+/** The Fissure's floor EXACTLY as the shipped set was asked for it, so the
+ *  chained water set is told the same thing the base tile already is. */
+const FISSURE_FLOOR_SAID =
+  'a pale dusty cave floor of fine dirt and gravel, LIGHT warm grey-brown, ' +
+  'brightly lit, NOT dark, NOT black, NOT charcoal, NOT green, NOT olive';
+/** `lit_round`'s own lower base tile, off `get_topdown_tileset`. */
+const FISSURE_FLOOR_TILE = '0f8b4d8e-4c25-431b-89fc-75ee0e6873ad';
+/** Colour named by EXCLUSION and the family excluded with it: every water
+ *  prompt drifts tropical, and this rock is unlit and cold. */
+const WATER =
+  'still black water, deep and cold and unlit, VERY DARK almost black, ' +
+  'NOT blue, NOT bright, NOT teal, NOT cyan, NOT turquoise, NOT tropical, ' +
+  'NOT green, NOT sunlit, NOT sparkling';
+
 const ASK: Record<string, Record<string, unknown>> = {
+  // --- WATER, chained off the FISSURE FLOOR THAT ALREADY SHIPS -------------
+  //
+  // `upper_base_tile_id` is the docs' "connected tilesets": the shipped set's
+  // own floor tile goes in as the upper terrain, so the shore meets the floor
+  // the game already draws rather than a second floor toned slightly apart —
+  // the checkerboard every mixing experiment here has failed on, avoided by
+  // construction rather than by a retone.
+  //
+  // WATER IS THE LOWER TERRAIN because it is lower: the floor drops into it,
+  // which is what the transition draws. Tone follows the rule the rock is
+  // under — the floor stays LIGHT and the water goes near-black, so a pool
+  // reads as depth rather than as a pale slab somebody laid down.
+  fissure_water_round: {
+    lower_description: WATER,
+    upper_description: FISSURE_FLOOR_SAID,
+    upper_base_tile_id: FISSURE_FLOOR_TILE,
+    transition_description: 'a dark wet waterline in shadow where the dry floor goes under',
+    shape_style: 'round',
+    transition_size: 0.5,
+    enhance: false,
+    tile_size: { width: 32, height: 32 },
+    outline: 'lineless',
+    shading: 'detailed shading',
+    detail: 'highly detailed',
+    view: 'high top-down',
+  },
+  // The same, let the model write its own descriptions — how `lit_round` was
+  // asked, and it is the one that shipped.
+  fissure_water_enhanced: {
+    lower_description: WATER,
+    upper_description: FISSURE_FLOOR_SAID,
+    upper_base_tile_id: FISSURE_FLOOR_TILE,
+    transition_description: 'a dark wet waterline in shadow where the dry floor goes under',
+    shape_style: 'round',
+    transition_size: 0.8,
+    enhance: true,
+    tile_size: { width: 32, height: 32 },
+    outline: 'lineless',
+    shading: 'detailed shading',
+    detail: 'highly detailed',
+    view: 'high top-down',
+  },
+  // A RAGGED shore. `pro` rejects shape_style and brings its own controls; a
+  // pool with a straight edge reads as a tank, so this is the one to beat.
+  fissure_water_pro: {
+    lower_description: WATER,
+    upper_description: FISSURE_FLOOR_SAID,
+    upper_base_tile_id: FISSURE_FLOOR_TILE,
+    transition_description: 'a dark wet waterline in shadow where the dry floor goes under',
+    mode: 'pro',
+    raggedness: 0.8,
+    spread_x: 0.4,
+    transition_size: 0.5,
+    tile_size: { width: 32, height: 32 },
+    outline: 'lineless',
+    shading: 'detailed shading',
+    detail: 'highly detailed',
+    view: 'high top-down',
+  },
+
   // A full-tile transition is the whole point: it is what makes the wall a
   // WALL rather than a kerb, and it is the thing the last set never had.
   pro_ragged: {
