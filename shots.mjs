@@ -182,7 +182,8 @@ const bubbleProbe = () => {
  *  end fails the run, so one nobody opened cannot quietly keep the old look. */
 const STATES = [
   'title', 'slots', 'pick', 'welcome', 'camp', 'camp-hover', 'camp-lit', 'fissure',
-  'dock', 'crystals', 'sheet', 'shop', 'stash', 'settings', 'history',
+  'dock', 'dock-currency', 'dock-materials',
+  'crystals', 'sheet', 'shop', 'stash', 'settings', 'history',
   'toast', 'itemmenu', 'confirm',
   'handover', 'descent', 'results',
   'scene', 'speech', 'lampwright',
@@ -439,6 +440,33 @@ for (const vp of VIEWPORTS) {
   await page.evaluate(() => document.getElementById('open-inventory')?.click());
   await page.waitForTimeout(250);
   await shoot('dock');
+
+  // ITS OTHER TWO TABS. Gear is a grid because the slot count IS the carry
+  // limit; these are LISTS, because neither has a limit to draw and a row can
+  // carry the name a 40px icon never could.
+  const dockH = async () =>
+    page.evaluate(() => Math.round(document.getElementById('dock').getBoundingClientRect().height));
+  const heights = { gear: await dockH() };
+  await page.evaluate(() => document.getElementById('inv-tab-currency')?.click());
+  await page.waitForTimeout(200);
+  await shoot('dock-currency');
+  heights.currency = await dockH();
+  await page.evaluate(() => document.getElementById('inv-tab-materials')?.click());
+  await page.waitForTimeout(200);
+  await shoot('dock-materials');
+  heights.materials = await dockH();
+  await page.evaluate(() => document.getElementById('inv-tab-gear')?.click());
+  await page.waitForTimeout(150);
+  // FOUR ROWS STAY FOUR ROWS. The dock is the one window whose height is a
+  // constant — everything else stops above it — so a tab that resized it would
+  // shove the Fissure around every time you looked at what you were carrying.
+  const spread = Math.max(...Object.values(heights)) - Math.min(...Object.values(heights));
+  if (spread > 1) {
+    problems.push(
+      `${vp.name}: the dock changes height between tabs — ` +
+        Object.entries(heights).map(([k, v]) => `${k} ${v}px`).join(', ')
+    );
+  }
 
   // THE COUNTER IS A PERSON'S: the Lampwright's lines come first and the shelf
   // is what follows the last one, so this walks the beats a player clicks.
@@ -706,13 +734,17 @@ for (const vp of VIEWPORTS) {
   await page.evaluate(() => {
     const piece = document.querySelector('#inv-gear .slot:not(.slot--empty)');
     piece?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    // Currency is a TAB now, and the bench does not switch it for you: gear is
+    // what the next item comes off, so it stays on top while you craft.
+    document.getElementById('inv-tab-currency')?.click();
     for (let i = 0; i < 6; i++) {
-      const making = [...document.querySelectorAll('#inv-currency .slot')].find((b) =>
+      const making = [...document.querySelectorAll('#inv-currency .ledgerrow')].find((b) =>
         /Making/.test(b.getAttribute('aria-label') ?? '')
       );
       if (!making || making.disabled) break;
       making.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     }
+    document.getElementById('inv-tab-gear')?.click();
   });
   await page.waitForTimeout(200);
   const modded = await page.$('#inv-gear .slot--modded');

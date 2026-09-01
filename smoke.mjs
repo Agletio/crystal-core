@@ -77,11 +77,16 @@ const dockItems = () => filled('#inv-gear');
 // own column is the only place one can be picked up and worked on.
 const benchCrystals = () => all('#craft-crystals .wornslot');
 const crystalCards = () => all('#crystals-list .crystal');
-const currencySlots = () => filled('#inv-currency');
+// Currency and material are ROWS on tabs of their own now — an icon, a name
+// and a count — because neither has a carry limit for a slot to make visible.
+const currencySlots = () => all('#inv-currency .ledgerrow');
 // Its own column, and drawn only while you are holding one. Nothing in it has
 // a click: a relic is carried to a person, never spent at the bench.
 const relicSlots = () => filled('#inv-relics');
-const materialSlots = () => filled('#inv-materials');
+const materialSlots = () => all('#inv-materials .ledgerrow');
+/** The dock's tabs. Every one renders whether or not it is the one on top, so
+ *  a harness reads any of them without clicking — but a person needs the click. */
+const dockTab = (which) => $(`inv-tab-${which}`);
 const named = (btn) => btn.getAttribute('aria-label') ?? '';
 
 // --- the way in: title, then a slot, then one question ---------------------
@@ -390,7 +395,7 @@ assert(invItems().length >= 4, 'dock populated', String(invItems().length));
 assert(all('#wallet .coin').length === 1, 'wallet shows gold only', text('wallet'));
 assert(text('wallet').includes('gold'), 'gold is held', text('wallet'));
 assert(
-  all('.dock .slot .icon').length ===
+  all('.dock .slot .icon, .dock .ledgerrow .icon').length ===
     invItems().length + currencySlots().length + relicSlots().length + materialSlots().length,
   'every item and every stack has an icon'
 );
@@ -400,7 +405,7 @@ assert(
 // made a Shard of Making a menu command rather than a thing you own.
 assert(currencySlots().length > 0, 'the dev kit stocks currency in the dock');
 assert(
-  currencySlots().every((b) => b.querySelector('.slot__n')),
+  currencySlots().every((b) => b.querySelector('.ledgerrow__n')),
   'every stack shows its count'
 );
 assert(
@@ -408,7 +413,19 @@ assert(
   'and says how many it holds out loud',
   named(currencySlots()[0])
 );
-assert(text('inv-currency').replace(/[0-9]/g, '') === '', 'currency is icons and counts, not names', text('inv-currency'));
+// A ROW READS ITS NAME. The 40px icon could only ever say what class a stack
+// was, so learning which silhouette was Making took the tooltip every time.
+assert(
+  currencySlots().every((b) => (b.querySelector('.ledgerrow__name')?.textContent ?? '').length > 3),
+  'and names itself, which a 40px icon could never do',
+  currencySlots()[0]?.querySelector('.ledgerrow__name')?.textContent ?? ''
+);
+// Grouped by CLASS, which is the word the counter and the tooltip already use.
+assert(
+  all('#inv-currency .ledgergroup').length > 1,
+  'and the column is grouped by class',
+  String(all('#inv-currency .ledgergroup').length)
+);
 
 // Gear and currency, and nothing else. A crystal is never spent, sold or
 // carried, so a dock column for it would be triage with nothing to triage.
@@ -499,7 +516,7 @@ const currencyButton = (name) =>
   currencySlots().find((b) => named(b).includes(name));
 
 const heldCount = (name) =>
-  Number(currencyButton(name)?.querySelector('.slot__n')?.textContent ?? 0) || 0;
+  Number(currencyButton(name)?.querySelector('.ledgerrow__n')?.textContent ?? 0) || 0;
 
 // A crystal's room comes from its LEVEL, so nothing opens a level 1 one.
 // The shard still CLICKS — it arms, and lights whatever else would take it —
@@ -862,12 +879,19 @@ assert(
   'the dock is deeper than the two rows it replaced',
   String(slotsIn('#inv-gear').length)
 );
-// Currency is the column that gave up the width: a stack is one slot however
-// deep it is, and there are only thirteen kinds.
+// Currency is the column that GAVE UP the width, and gear took all of it: the
+// slot count IS the carry limit, so a wider dock is a bigger bag rather than a
+// grid that lies about one.
 assert(
-  slotsIn('#inv-currency').length < slotsIn('#inv-gear').length,
-  'currency takes less room than the items it is spent on',
-  `${slotsIn('#inv-currency').length} vs ${slotsIn('#inv-gear').length}`
+  slotsIn('#inv-currency').length === 0 && slotsIn('#inv-gear').length >= 48,
+  'currency left the grid entirely and gear took the width',
+  `${slotsIn('#inv-currency').length} currency slots, ${slotsIn('#inv-gear').length} gear`
+);
+// THE DOCK IS ONE HEIGHT whatever tab is up. `shots` measures the pixels; this
+// is the structural half — every tab draws into the same dock.
+assert(
+  ['gear', 'currency', 'materials'].every((t) => !!dockTab(t)),
+  'and all three tabs are there to switch between'
 );
 // Filling up is something you watch approaching, not something the report
 // tells you afterwards.
@@ -2839,10 +2863,31 @@ $('dev-kit').click();
   $('work-close').click();
 
   // THE VERB IS ON THE STACK. The processed fish IS the meal, so eating one is
-  // an action on it rather than a second recipe behind a second screen.
+  // an action on it rather than a second recipe behind a second screen — and a
+  // row you can CLICK is what makes it reachable at all. The slots this
+  // replaced were disabled with no menu, so "Eat it" existed and could not be
+  // got at from anywhere in the game.
   $('open-inventory').click();
-  const cooked = all('#inv-materials .slot:not(.slot--empty)');
+  dockTab('materials').click();
+  const cooked = all('#inv-materials .ledgerrow');
   assert(cooked.length > 0, 'the dock is holding cooked material', String(cooked.length));
+  const fish = cooked.find((b) => !b.disabled && /fish|fin/i.test(named(b)));
+  assert(!!fish, 'and a cooked fish is a row you can click', cooked.map(named).join(' | ').slice(0, 90));
+  fish.click();
+  const items = () => all('#itemmenu .itemmenu__item');
+  const eat = items().find((b) => /eat it/i.test(b.textContent ?? ''));
+  assert(!!eat, 'whose menu offers to eat it', items().map((b) => b.textContent).join(' | '));
+  assert(!eat.disabled, 'and it is not greyed out, because the fish is cooked');
+  eat.click();
+  // AND IT LANDED: the kitchen is where what you are under is printed.
+  $('camp-kitchen').click();
+  assert(
+    /You are on /.test($('work-note').textContent ?? ''),
+    'and eating it is what the kitchen then says you are under',
+    $('work-note').textContent?.slice(-90)
+  );
+  $('work-close').click();
+  dockTab('gear').click();
 }
 
 // --- THE ANVIL: what a heap of material could become ----------------------

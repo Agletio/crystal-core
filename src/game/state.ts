@@ -53,7 +53,10 @@ export const SAVE_VERSION = 2;
  *  the limit is visible rather than discovered. Crystals are not in here: one
  *  is never spent, sold or carried, and `GameState.crystals` takes every one. */
 export const CARRY: Record<'gear', number> = {
-  gear: 32,
+  // TWELVE COLUMNS of four. Currency and material moved to tabs of their own,
+  // and the grid took the width they left — the slot count IS the limit, so a
+  // wider dock is a bigger bag rather than a grid that lies about one.
+  gear: 48,
 };
 
 /** What shuts the Fissure. Read BETWEEN runs and never during one, so a

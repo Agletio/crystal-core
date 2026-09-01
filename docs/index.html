@@ -1158,6 +1158,7 @@
      exactly its capacity, so the widths ARE the capacities: gear gets most of
      the dock, currency the rest. */
   .dock__cols { display: flex; flex-wrap: wrap; gap: 20px; }
+  .dock__head .settabs { margin: 0 auto 0 0; }
   .dockcol { min-width: 0; }
   .dockcol__head { display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px; }
   .dockcol__label { font-family: var(--display); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 6px; }
@@ -1217,12 +1218,42 @@
   .slot--unique { border-color: var(--ember); box-shadow: inset 0 0 0 1px rgba(196,72,58,.45); }
   .slot--perfect { border-color: var(--gem-hi); box-shadow: inset 0 0 0 1px rgba(251,237,198,.45); }
 
-  /* Currency stacks. Class colours the border, matching the icon's fill, so
-     rarity reads from the grid before you've learned a single silhouette. */
-  .slot--basic    { border-color: rgba(150,132,104,.5); }
-  .slot--uncommon { border-color: rgba(95,217,164,.45); }
-  .slot--rare     { border-color: rgba(111,199,232,.5); }
-  .slot--exotic   { border-color: rgba(232,184,75,.55); }
+  /* A LEDGER, not a grid: an icon, a name and a number. Neither currency nor
+     material has a carry limit, so there is no capacity for a slot to make
+     visible — and eight shards over 28 materials in two states apiece is a list
+     you READ, where a bag is a thing you scan. Groups wrap into columns so the
+     dock keeps its height. */
+  /* FOUR ROWS STAY FOUR ROWS. The dock is the one window whose height is a
+     constant — every popup stops above it — so a tab holding one row must
+     still stand as tall as the gear grid, or looking at what you carry would
+     shove the Fissure around. `shots` measures all three and fails on a gap. */
+  .ledgercols {
+    display: flex; flex-wrap: wrap; gap: 4px 26px; align-items: flex-start;
+    min-height: 207px; align-content: flex-start;
+    max-height: 207px; overflow-y: auto;
+  }
+  .ledgergroup { min-width: 214px; }
+  .ledgerrow {
+    display: grid; grid-template-columns: 22px 1fr auto; align-items: center; gap: 9px;
+    width: 100%; padding: 3px 6px; text-align: left;
+    background: none; border: 1px solid transparent;
+    font-family: var(--body); font-size: 12px; color: var(--text);
+  }
+  .ledgerrow:hover:not(:disabled) { background: var(--ink); border-color: var(--edge-lit); }
+  .ledgerrow__name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ledgerrow__n { color: var(--citrine); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .ledgerrow--off { opacity: .45; }
+  .ledgerrow--on { background: var(--edge); border-color: var(--citrine); }
+  /* Class on the NAME, where the D3 shape puts it: rarity reads down the column
+     without a border to hunt for. */
+  .ledgerrow--basic    .ledgerrow__name { color: var(--text-dim); }
+  .ledgerrow--uncommon .ledgerrow__name { color: var(--verdite); }
+  .ledgerrow--rare     .ledgerrow__name { color: var(--quartz); }
+  .ledgerrow--exotic   .ledgerrow__name { color: var(--citrine); }
+  /* Raw is dim and worked is bright: the one distinction a station cares about,
+     said in the colour so the list is scannable without reading every noun. */
+  .ledgerrow--raw  .ledgerrow__name { color: var(--text-dim); }
+  .ledgerrow--done .ledgerrow__name { color: var(--chalk); }
   /* The count is the point of a stack, so it sits on the icon rather than in
      a hover. Boxed against the void so it stays legible over any silhouette. */
   .slot__n {
@@ -2205,10 +2236,18 @@
   <div class="panel dock" id="dock" hidden>
     <div class="dock__head">
       <p class="panel__title">Inventory</p>
+      <!-- THREE TABS OVER ONE DOCK. Gear is SLOTS because the slot count IS the
+           carry limit; currency and material are ROWS because neither has a
+           limit to make visible, and a row can carry a name a 40px icon cannot. -->
+      <div class="settabs">
+        <button class="mini mini--on" id="inv-tab-gear">Equipment</button>
+        <button class="mini" id="inv-tab-currency">Currency</button>
+        <button class="mini" id="inv-tab-materials">Materials</button>
+      </div>
       <div class="wallet" id="wallet"></div>
       <button class="mini" id="inv-close">Close</button>
     </div>
-    <div class="dock__cols">
+    <div class="dock__cols" id="inv-pane-gear">
       <div class="dockcol">
         <div class="dockcol__head">
           <div class="dockcol__label" id="inv-gear-label">Equipment</div>
@@ -2217,10 +2256,6 @@
         </div>
         <div class="slots" id="inv-gear"></div>
       </div>
-      <div class="dockcol">
-        <div class="dockcol__label">Currency</div>
-        <div class="slots" id="inv-currency"></div>
-      </div>
       <!-- LAST, and drawn only when you are holding one: nothing sells a relic
            and nothing at the bench sees it, so an empty column every run would
            be a permanent reminder of a thing that happens rarely. -->
@@ -2228,11 +2263,9 @@
         <div class="dockcol__label">Carrying</div>
         <div class="slots" id="inv-relics"></div>
       </div>
-      <div class="dockcol" id="inv-materials-col" hidden>
-        <div class="dockcol__label" id="inv-materials-label">Materials</div>
-        <div class="slots" id="inv-materials"></div>
-      </div>
     </div>
+    <div class="ledgercols" id="inv-currency" hidden></div>
+    <div class="ledgercols" id="inv-materials" hidden></div>
   </div>
 </div>
 

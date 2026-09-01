@@ -229,6 +229,18 @@ LOT; what you do not want is dismantled at the anvil or sold across the counter.
 `KIND_VARIETY` is what weights a drop's KIND now, AUTHORED and never counted —
 counted off content volume, ten ring implicits took rings to 39% of every drop.
 
+**THE DOCK IS THREE TABS, and only ONE of them is a grid.** Gear is SLOTS
+because the slot count IS the carry limit — 48, twelve columns of four, and
+running out is something you watch approaching. Currency and material are
+LEDGER ROWS — an icon, a name, a count, grouped under a heading — because
+`carryRoom` is `Infinity` for both and a slot can only make a capacity visible
+that exists. A row also carries the NAME a 40px icon never could. **The dock is
+ONE HEIGHT whatever tab is up**: every popup stops above it, so a tab holding
+one row still stands as tall as the grid, and `shots` measures all three and
+fails on a gap. **A ROW IS CLICKABLE and that is the point** — the material
+slots it replaced were disabled with no menu, which left "Eat it" on a cooked
+fish reachable from nowhere in the game.
+
 **CLICKING A PERSON ASKS WHAT YOU WANT OF THEM** — *"a menu that says like
 Dialogue option / Shop / Exit"* — `options()` in `src/ui/talk.ts`: their words,
 their counter, the way out, each with an id a harness names rather than its

@@ -14,11 +14,12 @@ import { attachTooltip, hideTooltip } from './tooltip';
 import { closeMenu, openMenu } from './menu';
 import type { ItemAction } from './menu';
 import { balance, isPerfect } from '../economy';
-import { CURRENCIES, MATERIALS } from '../data';
+import { CURRENCIES, MATERIAL_FAMILIES, MATERIALS } from '../data';
+import type { MaterialDef } from '../data';
 import { CARRY, fitsSlot, relicsIn, sendToEnd, sortInventory, swapItems } from '../game/state';
 import { EQUIP_SLOTS } from '../data';
 import type { GameState } from '../game/state';
-import type { CurrencyDef, Item } from '../types';
+import type { CurrencyClass, CurrencyDef, Item } from '../types';
 
 const $ = (id: string) => document.getElementById(id)!;
 
@@ -52,14 +53,25 @@ export interface CurrencyHandler {
   blocked?(currency: CurrencyDef): string | null;
 }
 
-/**
- * Currency slots drawn, held or not. There is no carry limit on currency, so
- * this is only about a fixed shape; for items the slot count IS the limit.
- */
-const CURRENCY_SLOTS = 16;
 /** How many relic slots the column draws when there is anything in it. */
 const RELIC_SLOTS = 4;
-const MATERIAL_SLOTS = 8;
+
+/** Rarity, ascending. A RECORD rather than a list, so adding a class fails to
+ *  compile here instead of silently dropping its currencies off the column. */
+const CLASS_ORDER: Record<CurrencyClass, number> = {
+  basic: 0, uncommon: 1, rare: 2, exotic: 3,
+};
+const CURRENCY_CLASSES = (Object.keys(CLASS_ORDER) as CurrencyClass[]).sort(
+  (a, b) => CLASS_ORDER[a] - CLASS_ORDER[b]
+);
+
+/**
+ * WHICH TAB IS UP. UI state and never saved, and STICKY across opens — the
+ * bench does not switch it, because gear is what you pick the NEXT item to
+ * craft from and a screen that hid it would cost more than the click it saved.
+ */
+type DockTab = 'gear' | 'currency' | 'materials';
+let tab: DockTab = 'gear';
 
 /**
  * Rows in every dock column. The grid states both dimensions — an auto-filled
@@ -134,6 +146,12 @@ export function initInventory(state: GameState): void {
   };
 
   ($('inv-close') as HTMLButtonElement).onclick = closeInventory;
+  for (const which of ['gear', 'currency', 'materials'] as DockTab[]) {
+    ($(`inv-tab-${which}`) as HTMLButtonElement).onclick = () => {
+      tab = which;
+      renderInventory();
+    };
+  }
 }
 
 /** A window, and the only one whose home is a corner. Drawn on the way open:
@@ -203,40 +221,64 @@ function currencyTooltip(currency: CurrencyDef, stock: number): string {
   return lines.join('\n');
 }
 
-/** Only what you own: the empty slots are a container, not a catalogue. */
+/** ONE ROW: an icon, a name and a count. A group is drawn only if you hold
+ *  something in it — the list is what you OWN, never a catalogue of what
+ *  exists, which is a shelf and belongs at the counter. */
+function ledgerRow(
+  icon: SVGSVGElement,
+  name: string,
+  n: number,
+  cls: string
+): HTMLButtonElement {
+  const row = el('button', `ledgerrow ledgerrow--${cls}`) as HTMLButtonElement;
+  row.append(icon);
+  row.append(el('span', 'ledgerrow__name', name));
+  row.append(el('span', 'ledgerrow__n', String(n)));
+  return row;
+}
+
+function ledgerGroup(host: HTMLElement, label: string): HTMLElement {
+  const group = el('div', 'ledgergroup');
+  group.append(el('div', 'dockcol__label', label));
+  host.append(group);
+  return group;
+}
+
+/** Only what you own, grouped by CLASS — the word the counter and the tooltip
+ *  already use, so rarity reads down the column without a border to hunt for. */
 function renderCurrencies(): void {
   if (!game) return;
   const host = $('inv-currency');
   host.replaceChildren();
-  sizeGrid(host, CURRENCY_SLOTS);
 
   let owned = 0;
-  for (const currency of CURRENCIES) {
-    const stock = balance(game.wallet, currency.id);
-    if (stock < 1) continue;
-    owned++;
+  for (const cls of CURRENCY_CLASSES) {
+    const held = CURRENCIES.filter(
+      (c) => c.class === cls && balance(game!.wallet, c.id) > 0
+    );
+    if (held.length === 0) continue;
+    const group = ledgerGroup(host, cls);
 
-    const action = currencyHandler?.actionFor(currency) ?? null;
-    const btn = el('button', `slot slot--currency slot--${currency.class}`) as HTMLButtonElement;
-    btn.append(currencyIcon(currency, 30));
-    // The count is the whole reason a stack is one slot rather than N, so it
-    // is on the icon and not a hover away.
-    btn.append(el('span', 'slot__n', String(stock)));
-    attachTooltip(btn, () => currencyTooltip(currency, stock));
+    for (const currency of held) {
+      owned++;
+      const stock = balance(game.wallet, currency.id);
+      const action = currencyHandler?.actionFor(currency) ?? null;
+      const row = ledgerRow(currencyIcon(currency, 20), currency.name, stock, cls);
+      attachTooltip(row, () => currencyTooltip(currency, stock));
 
-    if (action) {
-      btn.onclick = action.run;
-      btn.setAttribute('aria-label', `${action.label}: ${currency.name} (${stock} held)`);
-    } else {
-      btn.disabled = true;
-      btn.classList.add('slot--off');
-      btn.setAttribute('aria-label', `${currency.name} (${stock} held)`);
+      if (action) {
+        row.onclick = action.run;
+        row.setAttribute('aria-label', `${action.label}: ${currency.name} (${stock} held)`);
+      } else {
+        row.disabled = true;
+        row.classList.add('ledgerrow--off');
+        row.setAttribute('aria-label', `${currency.name} (${stock} held)`);
+      }
+      group.append(row);
     }
-    host.append(btn);
   }
-
-  for (let i = owned; i < CURRENCY_SLOTS; i++) {
-    host.append(el('div', 'slot slot--empty'));
+  if (owned === 0) {
+    host.append(el('p', 'empty', 'No currency. It comes up out of a descent.'));
   }
 }
 
@@ -493,38 +535,62 @@ function renderRelics(): void {
   }
 }
 
-/** WHAT A DESCENT DUG UP, in the order the table declares so a column does not
- *  reshuffle itself between runs. Its own column for the reason a relic has
- *  one: nothing sells a material and nothing at the bench sees it yet. */
+/**
+ * WHAT A DESCENT DUG UP, grouped by the FAMILY a station works — so the list is
+ * read in the same order the camp is walked. Raw before processed within a
+ * family, in table order, so a group never reshuffles itself between runs.
+ *
+ * Every stack is drawn: this is a list rather than a grid precisely because 28
+ * materials in two states apiece is 56 stacks, which no dock column could hold.
+ */
 function renderMaterials(): void {
   if (!game) return;
-  // Table order, raw before processed, so a column never reshuffles itself
-  // between runs and the two stacks of one row sit together.
-  const rows = game.materials ?? [];
-  const held = MATERIALS.flatMap((def) =>
-    rows.filter((i) => i.base === def.id).sort((a, b) => (a.meta.done ? 1 : 0) - (b.meta.done ? 1 : 0))
-  ).filter((i) => ((i.meta.n as number) ?? 0) > 0);
-  $('inv-materials-col').hidden = held.length === 0;
-  // CAPPED, and the label carries the rest. Twenty-eight materials in two
-  // states apiece is fifty-six stacks, and a dock column that tall is a dock
-  // that scrolls — the stations screen is where the whole list belongs.
-  $('inv-materials-label').textContent =
-    held.length > MATERIAL_SLOTS ? `Materials ${MATERIAL_SLOTS}/${held.length}` : 'Materials';
+  const rows = (game.materials ?? []).filter((i) => ((i.meta.n as number) ?? 0) > 0);
   const host = $('inv-materials');
   host.replaceChildren();
-  if (held.length === 0) return;
-  sizeGrid(host, MATERIAL_SLOTS);
 
-  for (const item of held.slice(0, MATERIAL_SLOTS)) {
-    const btn = el('button', 'slot slot--gear slot--off') as HTMLButtonElement;
-    btn.disabled = true;
-    btn.append(itemIcon(item, 30));
-    btn.append(el('span', 'slot__n', String((item.meta.n as number) ?? 0)));
-    attachTooltip(btn, () => itemCard(item));
-    host.append(btn);
+  // The families a station works, then whatever belongs to none — a world's
+  // UNIQUE, which is used exactly as it came up.
+  const groups: Array<{ label: string; of: (def: MaterialDef) => boolean }> = [
+    ...MATERIAL_FAMILIES.map((f) => ({ label: f.name, of: (d: MaterialDef) => d.family === f.id })),
+    { label: 'Unworked', of: (d: MaterialDef) => d.family === null },
+  ];
+
+  let owned = 0;
+  for (const group of groups) {
+    const held = MATERIALS.filter(group.of).flatMap((def) =>
+      rows
+        .filter((i) => i.base === def.id)
+        .sort((a, b) => (a.meta.done ? 1 : 0) - (b.meta.done ? 1 : 0))
+    );
+    if (held.length === 0) continue;
+    const column = ledgerGroup(host, group.label);
+
+    for (const item of held) {
+      owned++;
+      const n = (item.meta.n as number) ?? 0;
+      const row = ledgerRow(itemIcon(item, 20), item.name, n, item.meta.done ? 'done' : 'raw');
+      attachTooltip(row, () => tooltip(item));
+      // THE MENU IS THE WHOLE POINT of a row you can click: eating a cooked
+      // fish lives here, and a disabled slot is what made it unreachable.
+      const actions = actionsFor(item);
+      if (actions.length === 0) {
+        row.disabled = true;
+        row.classList.add('ledgerrow--off');
+        row.setAttribute('aria-label', `${item.name} (${n} held)`);
+      } else {
+        row.onclick = (e) => showMenu(item, (e as MouseEvent).clientX, (e as MouseEvent).clientY);
+        row.addEventListener('contextmenu', (e) => {
+          e.preventDefault();
+          showMenu(item, (e as MouseEvent).clientX, (e as MouseEvent).clientY);
+        });
+        row.setAttribute('aria-label', `${item.name} (${n} held)`);
+      }
+      column.append(row);
+    }
   }
-  for (let i = held.length; i < MATERIAL_SLOTS; i++) {
-    host.append(el('div', 'slot slot--empty'));
+  if (owned === 0) {
+    host.append(el('p', 'empty', 'Nothing gathered. It comes up out of a descent.'));
   }
 }
 
@@ -534,6 +600,13 @@ export function renderInventory(): void {
   renderCurrencies();
   renderRelics();
   renderMaterials();
+
+  for (const which of ['gear', 'currency', 'materials'] as DockTab[]) {
+    $(`inv-tab-${which}`).classList.toggle('mini--on', tab === which);
+  }
+  $('inv-pane-gear').hidden = tab !== 'gear';
+  $('inv-currency').hidden = tab !== 'currency';
+  $('inv-materials').hidden = tab !== 'materials';
 
   const items = game.inventory.filter((i) => i.kind === 'gear');
   fill($(GEAR_HOST), items.filter((i) => itemMatches(i, find)));
