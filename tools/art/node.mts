@@ -90,8 +90,7 @@ const ASKS: string[] = [
 
 const [verb, arg, extra] = process.argv.slice(2);
 
-/** WHICH FOUR. The tool caps at 16 candidates, so a fifth family cannot ride
- *  the same call — `ask <family>` sends that family's four alone. */
+/** WHICH FOUR: the tool caps at 16, so `ask <family>` sends four alone. */
 const FOUR: Record<string, number> = { metal: 0, hide: 4, wood: 8, cloth: 12, ripple: 16, fish: 20 };
 
 if (verb === 'ask') {
@@ -110,9 +109,12 @@ if (verb === 'ask') {
 } else if (verb === 'get') {
   const out = await callTool('get_object', { object_id: arg, include_preview: false });
   console.log(fields(out));
-  for (const [i, url] of urlsIn(out).entries()) {
-    if (!/frame_|\.png/.test(url)) continue;
-    const file = `tools/art/cache/node_${extra ?? 'x'}_${i}.png`;
+  // BY THE OBJECT'S OWN FRAME INDEX: a grid starts at frame_2, so numbering by
+  // url position hands `pick` indices the server refuses.
+  for (const url of urlsIn(out)) {
+    const at = /frame_(\d+)/.exec(url)?.[1];
+    if (!at) continue;
+    const file = `tools/art/cache/node_${extra ?? 'x'}_${at}.png`;
     writeFileSync(file, await download(url));
     console.log(`wrote ${file}`);
   }

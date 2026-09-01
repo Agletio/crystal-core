@@ -2229,6 +2229,8 @@ export interface MaterialFamilyDef {
   verb: string;
   node?: string; // a node's two frames; a DROPPED family has none
   spent?: string;
+  /** A SECOND pair, drawn instead half the time, so one plant is not wallpaper. */
+  also?: [string, string];
   from: MaterialSource;
   /** What ONE processed unit of it is called, so a stack reads as a thing
    *  rather than as a plural stuck on a name. */
@@ -2239,10 +2241,9 @@ export const MATERIAL_FAMILIES: MaterialFamilyDef[] = [
   { id: 'metal', name: 'Metal', raw: 'ore', processed: 'bars', station: 'the smelter',
     verb: 'Mined', node: 'node_ore', spent: 'node_ore_spent', from: 'gathered', one: 'Bar' },
   // CLOTH IS A PLANT, which is where the herb went: something you cut.
-  // The fibre node is generated and waiting to be PICKED; a dangling id draws
-  // nothing, so until then this points at art that exists.
   { id: 'cloth', name: 'Cloth', raw: 'fibre', processed: 'bolts', station: 'the loom',
-    verb: 'Cut', node: 'cocoon', spent: 'web', from: 'gathered', one: 'Bolt' },
+    verb: 'Cut', node: 'node_fibre', spent: 'node_fibre_spent',
+    also: ['node_fibre2', 'node_fibre2_spent'], from: 'gathered', one: 'Bolt' },
   { id: 'hide', name: 'Hide', raw: 'skins', processed: 'leather', station: 'the tanning frame',
     verb: 'Skinned', from: 'dropped', one: 'Leather' },
   // A DEADFALL sits in the rock like an outcrop, so wood is gathered. Not the
@@ -2252,7 +2253,9 @@ export const MATERIAL_FAMILIES: MaterialFamilyDef[] = [
   { id: 'gem', name: 'Gem', raw: 'rough', processed: 'cut stones', station: "the jeweller's",
     verb: 'Prised', from: 'dropped', one: 'Gem' },
   { id: 'fish', name: 'Fish', raw: 'a catch', processed: 'meals', station: 'the kitchen',
-    verb: 'Netted', node: 'node_pool', spent: 'node_pool_spent', from: 'gathered', one: 'Meal' },
+  // RIPPLES ON the water: a body of it is the map's job now.
+    verb: 'Netted', node: 'node_ripple', spent: 'node_ripple_spent',
+    from: 'gathered', one: 'Meal' },
 ];
 
 /** Derived: a family changing source moves both with one edit. */

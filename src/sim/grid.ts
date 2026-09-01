@@ -518,17 +518,33 @@ const OPEN_SEED = 3;
 /** A floor tile at least `off` from the rock. BIGGEST CHAMBERS FIRST: a
  *  two-tile margin leaves nothing at all in a small room. */
 function seedFor(grid: Grid, rng: Rng, rooms: Room[], off: number): Vec2 | null {
-  const roomy = [...rooms].sort((a, b) => b.w * b.h - a.w * a.h).slice(0, 4);
-  for (let tries = 0; tries < 40; tries++) {
-    const room = roomy[rng.int(0, roomy.length - 1)];
-    const at = {
-      x: room.x + rng.int(0, Math.max(0, room.w - 1)),
-      y: room.y + rng.int(0, Math.max(0, room.h - 1)),
-    };
-    if (grid.at(at.x, at.y) !== FLOOR) continue;
-    if (offRock(grid, at.x, at.y) >= off) return at;
+  // WIDEST FIRST, and a DRY room before one that already holds water: a fishing
+  // spot needs a pool in its OWN room, so concentrating it starves fish.
+  const roomy = [...rooms].sort((a, b) => b.w * b.h - a.w * a.h);
+  const dry = roomy.filter((r) => !holdsPatch(grid, r));
+  for (const list of [dry.length > 0 ? dry : roomy, roomy]) {
+    for (let tries = 0; tries < 30; tries++) {
+      const room = list[rng.int(0, Math.max(0, Math.min(list.length, 5) - 1))];
+      if (!room) continue;
+      const at = {
+        x: room.x + rng.int(0, Math.max(0, room.w - 1)),
+        y: room.y + rng.int(0, Math.max(0, room.h - 1)),
+      };
+      if (grid.at(at.x, at.y) !== FLOOR) continue;
+      if (offRock(grid, at.x, at.y) >= off) return at;
+    }
   }
   return null;
+}
+
+/** Whether any of this room already carries a patch. */
+function holdsPatch(grid: Grid, room: Room): boolean {
+  for (let y = room.y; y < room.y + room.h; y++) {
+    for (let x = room.x; x < room.x + room.w; x++) {
+      if (grid.inBounds(x, y) && grid.patch[y * grid.width + x] !== 0) return true;
+    }
+  }
+  return false;
 }
 
 /** Laid after the props, undone WHOLE: half a pool is a shape nothing draws. */

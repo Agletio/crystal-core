@@ -3259,7 +3259,9 @@ rule('MATERIALS AND PROFESSIONS — is the table a thing a recipe could read?');
   // Only the GATHERED ones: a dropped family stands nothing on the floor, so
   // asking it for a picture is asking for art nobody would ever see.
   const unseen = GATHERED.flatMap((f) =>
-    [f.node, f.spent].filter((id) => !id || !PROP_ART[id]).map((id) => `${f.id}→${id}`)
+    [f.node, f.spent, ...(f.also ?? [])]
+      .filter((id) => !id || !PROP_ART[id])
+      .map((id) => `${f.id}→${id}`)
   );
   check(
     unseen.length === 0,

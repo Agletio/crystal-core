@@ -1117,9 +1117,15 @@ export class RunSim {
       const def = world.find((m) => m.family === family.id);
       if (!def) continue;
       const pack = packs[i];
-      // A FISHING SPOT WANTS WATER; a room without any takes an ordinary spot.
+      // NO WATER, NO SPOT: ripples on dry rock is a picture of a thing that is
+      // not there, so the run is a node short rather than holding a wrong one.
       const pool = family.id === 'fish' ? this.poolSpot(map, packRoom[pack]) : null;
+      if (family.id === 'fish' && !pool) continue;
       const at = pool?.stand ?? this.nodeSpot(map, packRoom[pack]);
+      const other = family.also;
+      const pair = other && this.rng.next() < 0.5
+        ? { node: other[0], spent: other[1] }
+        : { node: family.node ?? '', spent: family.spent ?? '' };
       this.nodesDown.push({
         id: this.nextNode++,
         x: at.x,
@@ -1130,12 +1136,13 @@ export class RunSim {
         n: this.rng.int(GATHER.yield[0], GATHER.yield[1]),
         ...(i === carries && unique ? { also: unique.id } : {}),
         ...(pool ? { on: pool.on } : {}),
-        // The deck is GATHERED, so both frames are always there.
-        art: { node: family.node ?? '', spent: family.spent ?? '' },
+        // The deck is GATHERED, so both frames are always there. A family with
+        // a second pair draws either, so a room of one plant is not wallpaper.
+        art: pair,
         at: map.props.length,
       });
       const drawn = pool?.on ?? at;
-      map.props.push({ id: family.node ?? '', x: drawn.x, y: drawn.y });
+      map.props.push({ id: pair.node, x: drawn.x, y: drawn.y });
     }
   }
 

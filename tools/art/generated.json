@@ -4741,6 +4741,51 @@
    "tone": 0.2,
    "dull": 0.15,
    "with": "geode_amber"
+  },
+  {
+   "id": "node_fibre",
+   "object": "c9422951-6eb7-465d-877e-6973b2fde7b4",
+   "tiles": 1.15,
+   "tone": 0.2,
+   "dull": 0.15
+  },
+  {
+   "id": "node_fibre_spent",
+   "object": "77cbcc61-e547-413f-ac08-dbbce20e3a62",
+   "tiles": 1.15,
+   "tone": 0.2,
+   "dull": 0.15,
+   "with": "node_fibre"
+  },
+  {
+   "id": "node_fibre2",
+   "object": "171e1854-cd04-4ed5-95e0-49c39cf91db5",
+   "tiles": 1.15,
+   "tone": 0.2,
+   "dull": 0.15
+  },
+  {
+   "id": "node_fibre2_spent",
+   "object": "94c31c72-bea7-4b77-9dc6-6dc5ac2038c6",
+   "tiles": 1.15,
+   "tone": 0.2,
+   "dull": 0.15,
+   "with": "node_fibre2"
+  },
+  {
+   "id": "node_ripple",
+   "object": "3103c032-d0a4-416a-ad77-314fff7beb01",
+   "tiles": 1.4,
+   "tone": 0.2,
+   "dull": 0.15
+  },
+  {
+   "id": "node_ripple_spent",
+   "object": "1447eacf-4e3e-4577-af75-bdd84e8e8a38",
+   "tiles": 1.4,
+   "tone": 0.2,
+   "dull": 0.15,
+   "with": "node_ripple"
   }
  ]
 }
