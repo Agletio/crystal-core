@@ -82,17 +82,10 @@ const FISSURE_FLOOR_SAID =
   'brightly lit, NOT dark, NOT black, NOT charcoal, NOT green, NOT olive';
 /** `lit_round`'s own lower base tile, off `get_topdown_tileset`. */
 const FISSURE_FLOOR_TILE = '0f8b4d8e-4c25-431b-89fc-75ee0e6873ad';
-/**
- * OVER-EXCLUDED ONCE, and it came back a HOLE. Asked as "VERY DARK almost
- * black" with blue, teal, cyan, turquoise and green all excluded, there was no
- * hue left for water to be made of and all three candidates read as a chasm —
- * the deleted `VOID` by accident. *Exclude only what you mean.*
- *
- * What makes water read at 32px is a SURFACE, not a colour: something
- * reflected in it and a flat highlight. So the hue comes back as a cold
- * blue-grey, the reflection is asked for outright, and the exclusions are cut
- * to the drift actually observed — tropical brightness.
- */
+/** OVER-EXCLUDED ONCE and it came back a HOLE: with blue, teal, cyan and green
+ *  all excluded there was no hue left for water to be made of. What makes it
+ *  read at 32px is a SURFACE — a reflection and a flat highlight — so those are
+ *  asked for outright and the exclusions are cut to the drift observed. */
 const WATER =
   'the flat still surface of deep cold water, dark blue-grey, ' +
   'MIRROR-SMOOTH and REFLECTIVE, the pale stone of the bank reflected in it ' +
@@ -103,11 +96,9 @@ const WATER =
 const ASK: Record<string, Record<string, unknown>> = {
   // --- WATER, round 2: a SHORE, not a cliff -------------------------------
   //
-  // The first three asked `transition_size` 0.5 and 0.8, which is the CLIFF
-  // the rock sets are built on — the docs' own scale is 0 sharp, 0.25 medium,
-  // 0.5 wide, 1.0 full-tile cliff. A shoreline is a blend, so every one of
-  // them drew rock columns dropping into the dark and read as a pit with a
-  // lip. 0.25, and the transition says WET rather than SHEER.
+  // `transition_size` 0.5 and 0.8 are what the ROCK sets are built on — the
+  // scale is 0 sharp, 0.25 medium, 1.0 full cliff — so round one drew rock
+  // columns dropping into the dark. A shoreline is a BLEND.
   fissure_shore: {
     lower_description: WATER,
     upper_description: FISSURE_FLOOR_SAID,
@@ -123,8 +114,7 @@ const ASK: Record<string, Record<string, unknown>> = {
     detail: 'highly detailed',
     view: 'high top-down',
   },
-  // The same shore let the model write it, which is how `lit_round` was asked
-  // and `lit_round` is the one that shipped.
+  // Let the model write it, which is how `lit_round` was asked.
   fissure_shore_enhanced: {
     lower_description: WATER,
     upper_description: FISSURE_FLOOR_SAID,
@@ -140,10 +130,8 @@ const ASK: Record<string, Record<string, unknown>> = {
     detail: 'highly detailed',
     view: 'high top-down',
   },
-  // A RAGGED waterline. Of the first three the `pro` shore was the only one
-  // whose edge was not drawn with a ruler, and a pool with a straight edge
-  // reads as a tank — so the shape is worth keeping even though its floor
-  // drifted warmer than the one that ships.
+  // A RAGGED waterline: a pool with an edge drawn by a ruler reads as a tank,
+  // and the round shores put a cobble kerb round it that reads as BUILT.
   fissure_shore_pro: {
     lower_description: WATER,
     upper_description: FISSURE_FLOOR_SAID,
@@ -160,18 +148,13 @@ const ASK: Record<string, Record<string, unknown>> = {
     detail: 'highly detailed',
     view: 'high top-down',
   },
-  // --- WATER, chained off the FISSURE FLOOR THAT ALREADY SHIPS -------------
+  // --- WATER round 1, kept as the measured proof of both faults ------------
   //
   // `upper_base_tile_id` is the docs' "connected tilesets": the shipped set's
-  // own floor tile goes in as the upper terrain, so the shore meets the floor
-  // the game already draws rather than a second floor toned slightly apart —
-  // the checkerboard every mixing experiment here has failed on, avoided by
-  // construction rather than by a retone.
-  //
-  // WATER IS THE LOWER TERRAIN because it is lower: the floor drops into it,
-  // which is what the transition draws. Tone follows the rule the rock is
-  // under — the floor stays LIGHT and the water goes near-black, so a pool
-  // reads as depth rather than as a pale slab somebody laid down.
+  // own floor tile IS the upper terrain, so the shore meets the floor the game
+  // draws rather than a second floor toned apart — the checkerboard every
+  // mixing experiment here has failed on, avoided by construction.
+  // WATER IS THE LOWER TERRAIN because it is lower: the floor drops into it.
   fissure_water_round: {
     lower_description: WATER,
     upper_description: FISSURE_FLOOR_SAID,
