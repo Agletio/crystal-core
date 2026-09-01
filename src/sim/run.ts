@@ -1106,21 +1106,31 @@ export class RunSim {
     if (wanted <= 0) return;
 
     // DEALT ROUND, never rolled: four draws could come up all metal, and
-    // *"relatively equal drop rates"* is only sayable as a spread. Only the
-    // GATHERED families are dealt — hide and gem come off a body.
+    // *"relatively equal drop rates"* is only sayable as a spread.
     const deck = this.rng.shuffle(GATHERED.map((f) => f.id));
     const packs = this.rng.shuffle(Array.from({ length: packCount }, (_, i) => i));
     const carries = unique ? this.rng.int(0, wanted - 1) : -1;
+
+    // A CONSTRAINED FAMILY IS DEALT THE ROOMS THAT CAN TAKE IT: 24% hold water,
+    // so a fish turn on the shuffled pack was dry three times in four.
+    const wet: number[] = [];
+    const dry: number[] = [];
+    for (const pack of packs) {
+      (this.banks(map, packRoom[pack]).length ? wet : dry).push(pack);
+    }
+    const take = (family: string): number | undefined =>
+      family === 'fish' ? wet.shift() : (dry.shift() ?? wet.shift());
 
     for (let i = 0; i < wanted; i++) {
       const family = MATERIAL_FAMILY_BY_ID[deck[i % deck.length]];
       const def = world.find((m) => m.family === family.id);
       if (!def) continue;
-      const pack = packs[i];
       // NO WATER, NO SPOT: ripples on dry rock is a picture of a thing that is
       // not there, so the run is a node short rather than holding a wrong one.
+      const pack = take(family.id);
+      if (pack === undefined) continue;
       const pool = family.id === 'fish' ? this.poolSpot(map, packRoom[pack]) : null;
-      if (family.id === 'fish' && !pool) continue;
+      if (family.id === 'fish' && !pool) continue; // the room's water is out of reach
       const at = pool?.stand ?? this.nodeSpot(map, packRoom[pack]);
       const other = family.also;
       const pair = other && this.rng.next() < 0.5
@@ -1146,19 +1156,31 @@ export class RunSim {
     }
   }
 
-  /** A WATER tile with a bank to stand on, or null where a room has none. */
-  private poolSpot(map: GameMap, room: Room): { stand: Vec2; on: Vec2 } | null {
+  /** Every water tile with a bank. A SCAN, so sorting packs by it moves no draw. */
+  private banks(map: GameMap, room: Room): { stand: Vec2; on: Vec2 }[] {
     const grid = map.grid;
-    for (let tries = 0; tries < 24; tries++) {
-      const x = room.x + this.rng.int(0, room.w - 1);
-      const y = room.y + this.rng.int(0, room.h - 1);
-      if (!grid.inBounds(x, y) || grid.patch[y * grid.width + x] === 0) continue;
-      if (grid.walkable(x, y)) continue; // a patch he can stand on is not water
-      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
-        if (grid.walkable(x + dx, y + dy)) return { stand: { x: x + dx, y: y + dy }, on: { x, y } };
+    const found: { stand: Vec2; on: Vec2 }[] = [];
+    for (let y = room.y; y < room.y + room.h; y++) {
+      for (let x = room.x; x < room.x + room.w; x++) {
+        if (!grid.inBounds(x, y)) continue;
+        const patch = grid.patch[y * grid.width + x];
+        if (patch === 0 || !grid.blocking[patch - 1]) continue;
+        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+          if (!grid.walkable(x + dx, y + dy)) continue;
+          found.push({ stand: { x: x + dx, y: y + dy }, on: { x, y } });
+          break;
+        }
       }
     }
-    return null;
+    return found;
+  }
+
+  /** One of them, or null. Sampling 24 tiles instead missed a pool of nine in a
+   *  room of two hundred a third of the time — a coin deciding what "dealt,
+   *  never rolled" exists to prevent, and fish paid 0.33 a run against 1.17. */
+  private poolSpot(map: GameMap, room: Room): { stand: Vec2; on: Vec2 } | null {
+    const found = this.banks(map, room);
+    return found.length ? found[this.rng.int(0, found.length - 1)] : null;
   }
 
   /** A whole tile in the room that is not the middle, which is where a lock
