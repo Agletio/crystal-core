@@ -749,6 +749,7 @@ src/game/forge.ts  MAKING A BASE: the recipe off the base, the window off the le
 src/render/        renderer seam: canvas2d fallback, pixi default
 src/render/generated-*.ts   art as data — never edited by hand
 src/ui/            one module per screen; talk.ts is a person in the camp
+src/ui/builder.ts  THE LEVEL BUILDER: paint a floor with the real sets and props
 tools/art/         the generator, over MCP: bodies.json asks, generated.json answers
 tools/*-peek.mjs   screenshots off the committed bundle
 src/demo.ts        the checks; src/mods-check.ts the modifier sweep

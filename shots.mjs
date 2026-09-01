@@ -189,6 +189,7 @@ const STATES = [
   'scene', 'speech', 'lampwright',
   'skills', 'skill-list', 'skill-web', 'move-web', 'trade', 'trials', 'proving',
   'bench', 'tooltip', 'glossary', 'graft', 'stations', 'anvil', 'jewellery',
+  'builder',
 ];
 
 const browser = await chromium.launch();
@@ -841,6 +842,48 @@ for (const vp of VIEWPORTS) {
   } catch {
     problems.push(`${vp.name}: talking to the Osteomancer never reached his bench`);
   }
+
+  // THE LEVEL BUILDER, laid out with a real plan in it. Dev-only, but it draws
+  // the game's own tilesets through the renderer's own picker, so a floor that
+  // stopped drawing here is a floor that stopped drawing everywhere.
+  await page.evaluate(() => document.getElementById('open-dev')?.click());
+  await page.waitForTimeout(150);
+  await page.evaluate(() => document.getElementById('dev-builder')?.click());
+  await page.waitForTimeout(1200);
+  const laid = await page.evaluate(() => {
+    const W = 40, H = 24;
+    const rows = [];
+    for (let y = 0; y < H; y++) {
+      let row = '';
+      for (let x = 0; x < W; x++) {
+        const dx = (x - 20) / 17, dy = (y - 12) / 10;
+        if (dx * dx + dy * dy > 1) { row += '#'; continue; }
+        const px = (x - 12) / 5, py = (y - 15) / 4;
+        row += px * px + py * py < 1 ? '1' : '.';
+      }
+      rows.push(row);
+    }
+    const props = [{ id: 'node_ore', x: 27, y: 9 }, { id: 'cairn', x: 15, y: 7 }];
+    document.getElementById('builder-plan').value = JSON.stringify({ theme: 'fissure', rows, props });
+    document.getElementById('builder-load').click();
+    return true;
+  });
+  await page.waitForTimeout(500);
+  if (laid) await shoot('builder');
+  // A canvas of one colour is a canvas that drew nothing — the sheets decode
+  // ASYNC, and a draw that beats them is silently a black rectangle.
+  const flat = await page.evaluate(() => {
+    const canvas = document.getElementById('builder-canvas');
+    const ctx = canvas?.getContext('2d');
+    if (!ctx) return 'no canvas';
+    const px = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+    const seen = new Set();
+    for (let i = 0; i < px.length; i += 4 * 97) seen.add(`${px[i]},${px[i + 1]},${px[i + 2]}`);
+    return seen.size < 12 ? `the floor drew ${seen.size} colours` : null;
+  });
+  if (flat) problems.push(`${vp.name}/builder: ${flat}`);
+  await page.evaluate(() => document.getElementById('builder-close')?.click());
+  await page.waitForTimeout(150);
 
   const spilled = await page.evaluate(() => {
     const wrap = document.querySelector('.webwrap')?.getBoundingClientRect();

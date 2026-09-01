@@ -110,6 +110,7 @@ import {
 import { initSaveData, openSaveData, closeSaveData, isSaveDataOpen } from './ui/savedata';
 import { initSettings, openSettings, closeSettings, isSettingsOpen } from './ui/settings';
 import { initDev, openDev, closeDev, isDevOpen } from './ui/dev';
+import { initBuilder, openBuilder, closeBuilder, isBuilderOpen } from './ui/builder';
 import { initKeys } from './ui/keys';
 import { initTitle } from './ui/title';
 import { dressRail, syncParkedPanels, toggleFullscreen, toggleParkedPanels } from './ui/rail';
@@ -240,7 +241,9 @@ initDev(game, {
   enterRoom: enterRoomNow,
   restock: () => restart('dev'),
   refresh: refreshRunPanels,
+  build: openBuilder,
 });
+initBuilder();
 initConfirm();
 // A loaded backup replaces everything, so every screen has to look again.
 initSaveData(
@@ -436,6 +439,7 @@ const SCREENS: Record<
   save: { el: 'savedata', open: openSaveData, close: closeSaveData, isOpen: isSaveDataOpen },
   settings: { el: 'settings', open: () => openSettings(), close: closeSettings, isOpen: isSettingsOpen },
   dev: { el: 'dev', open: openDev, close: closeDev, isOpen: isDevOpen },
+  builder: { el: 'builder', open: openBuilder, close: closeBuilder, isOpen: isBuilderOpen },
 };
 
 initWindows(Object.fromEntries(Object.entries(SCREENS).map(([id, s]) => [id, s.el])));

@@ -18,7 +18,7 @@ import { AURA, AURA_BY_ID,
   AILMENT_BY_ID,
   GEAR_BASE_BY_ID,
 } from '../data';
-import { ENTRANCE, EXIT, WALL, patchKey, patchesAt, wangKey } from '../sim/grid';
+import { ENTRANCE, EXIT, WALL, patchesAt } from '../sim/grid';
 import { tileNoise } from '../noise';
 import { gearCanvas } from '../ui/webicons';
 import { ATTACK_POSE, DEATH_FADE } from '../sim/run';
@@ -68,6 +68,8 @@ import {
   lootBeam,
   lootSpan,
   vfxColour,
+  patchTileAt,
+  zoneTileAt,
   ZOOM_MIN,
 } from './renderer';
 import {
@@ -112,8 +114,6 @@ import { SKILL_BY_ID } from '../data';
  *  does not end on a straight lit line with nothing past it. */
 const EDGE = 4;
 
-/** A corner's place in the base-three key, high to low. */
-const PLACE = [27, 9, 3, 1];
 const FLOATER_LIFE = 1.1;
 
 /** The face's own geometry is `vignettes`': the grid refuses to stand a body
@@ -447,19 +447,6 @@ export async function createPixiRenderer(
   }
 
   /**
-   * A cell's four CORNERS in base three: 0 floor, 1 rock, 2 the cut face. A
-   * corner is rock only where all four cells round it are, and it is the FACE
-   * where the corner one row above is — which is what puts the cliff in the
-   * cell BELOW the boundary and makes a wall two rows tall.
-   */
-  function cornerAt(grid: GameMap['grid'], cx: number, cy: number): number {
-    const rock = (px: number, py: number): boolean =>
-      grid.at(px - 1, py - 1) === WALL && grid.at(px, py - 1) === WALL &&
-      grid.at(px - 1, py) === WALL && grid.at(px, py) === WALL;
-    return rock(cx, cy) ? 1 : rock(cx, cy - 1) ? 2 : 0;
-  }
-
-  /**
    * The ground, and the props standing on it. A tileset is the WHOLE surface,
    * so the zone's own rock and decals stand down for one.
    */
@@ -472,68 +459,11 @@ export async function createPixiRenderer(
     const art = map.zone ? zones.get(map.zone) : null;
     if (set && art) {
       const { grid } = map;
-      // The four wall-CONTINUATION tiles share their corners with a twin and
-      // are told apart by what stands above or below them, so a tile is scored
-      // rather than looked up: corners first, then each row it agrees with.
-      // A set answers 21 of the 81 keys, so a cell whose corners it has no
-      // picture for takes the NEAREST it does — the cut face is BETWEEN floor
-      // and rock, so trading it for either is one step where trading floor for
-      // rock is three. Without this a key nothing draws is a black hole.
-      //
-      // Building the missing keys out of QUADRANTS of the present ones was
-      // tried and is REVERTED: a quadrant's picture is not decided by its own
-      // corner, so a quarter taken for its corner value brings whatever else
-      // was in that quarter with it — which put pale slivers of floor inside
-      // solid rock. Measured against this fallback on the same view, the
-      // composites are the worse of the two.
-      const near = new Map<number, number>();
-      const nearest = (key: number): number => {
-        const found = near.get(key);
-        if (found !== undefined) return found;
-        const mine = PLACE.map((p) => Math.floor(key / p) % 3);
-        let best = 0;
-        let cost = Infinity;
-        for (const tile of set.tiles) {
-          let apart = 0;
-          for (let c = 0; c < 4; c++) {
-            const theirs = Math.floor(tile.key / PLACE[c]) % 3;
-            apart += mine[c] === theirs ? 0 : mine[c] === 2 || theirs === 2 ? 1 : 3;
-          }
-          if (apart < cost) {
-            cost = apart;
-            best = tile.key;
-          }
-        }
-        near.set(key, best);
-        return best;
-      };
-      // `over` and `under` are the pattern's rows above and below the tile's
-      // own two corner rows, and they are CORNER values — read as the cell's
-      // tile type instead, the twins are picked at random, and what that shows
-      // is the wall's lip tile repeating all the way down a face as a pale line
-      // running up it.
+      // Which tile draws a cell is `zoneTileAt`'s, in `renderer.ts`, because
+      // it is the one answer every surface has to read.
       const pick = (x: number, y: number): Texture | null => {
-        const key = nearest(wangKey(grid, x, y));
-        const want = [
-          cornerAt(grid, x, y - 1),
-          cornerAt(grid, x + 1, y - 1),
-          cornerAt(grid, x, y + 2),
-          cornerAt(grid, x + 1, y + 2),
-        ];
-        let best = -1;
-        let score = -Infinity;
-        set.tiles.forEach((tile, i) => {
-          if (tile.key !== key) return;
-          let mine = 0;
-          [tile.over[1], tile.over[2], tile.under[1], tile.under[2]].forEach((asked, k) => {
-            if (asked !== 255) mine += asked === want[k] ? 2 : -3;
-          });
-          if (mine > score) {
-            score = mine;
-            best = i;
-          }
-        });
-        return best < 0 ? null : art[best];
+        const found = zoneTileAt(set, grid, x, y);
+        return found < 0 ? null : art[found];
       };
       const size = 1.002 / set.grid;
       const rock = (x: number, y: number): boolean =>
@@ -556,9 +486,7 @@ export async function createPixiRenderer(
       }
 
       // WHAT ELSE IS ON THE FLOOR, over the zone's own surface and under
-      // everything that stands on it. A patch set is 16 tiles keyed 0 and 1
-      // only — no cut face, because it is a blend and not a cliff — so it
-      // needs none of the nearest-key rescue the rock does.
+      // everything that stands on it. Which tile is `patchTileAt`'s.
       for (let y = 0; y < grid.height; y++) {
         for (let x = 0; x < grid.width; x++) {
           if (rock(x, y)) continue;
@@ -567,8 +495,7 @@ export async function createPixiRenderer(
             const kit = name ? ZONES[name] : undefined;
             const skin = name ? zones.get(name) : undefined;
             if (!kit || !skin) continue;
-            const key = patchKey(grid, x, y, index);
-            const found = kit.tiles.findIndex((t) => t.key === key);
+            const found = patchTileAt(kit, grid, x, y, index);
             if (found < 0) continue;
             const sprite = new Sprite(skin[found]);
             sprite.x = x;

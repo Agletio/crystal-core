@@ -3,9 +3,10 @@
  * (a WebGL and a 2D context cannot share a canvas), and works in TILE UNITS —
  * scale and camera are its own business.
  */
-import { ENTRANCE, EXIT, TUNNEL, WALL } from '../sim/grid';
+import { ENTRANCE, EXIT, TUNNEL, WALL, patchKey, wangKey } from '../sim/grid';
 import type { RunState } from '../sim/run';
-import type { Vec2 } from '../sim/grid';
+import type { Grid, Vec2 } from '../sim/grid';
+import type { ZoneSet } from './generated-tiles';
 import type { AuraDef, MapTheme } from '../types';
 import { patchNoise, tileNoise } from '../noise';
 
@@ -691,6 +692,88 @@ export function isWallFace(at: (x: number, y: number) => number, x: number, y: n
     }
   }
   return false;
+}
+
+/** A corner's place in the base-three key, high to low. */
+const PLACE = [27, 9, 3, 1];
+
+/** Rock only where all four cells round it are, the FACE where the corner one
+ *  row above is — the cliff in the cell BELOW makes a wall two rows tall. */
+function cornerAt(grid: Grid, cx: number, cy: number): number {
+  const rock = (px: number, py: number): boolean =>
+    grid.at(px - 1, py - 1) === WALL && grid.at(px, py - 1) === WALL &&
+    grid.at(px - 1, py) === WALL && grid.at(px, py) === WALL;
+  return rock(cx, cy) ? 1 : rock(cx, cy - 1) ? 2 : 0;
+}
+
+const NEAREST = new WeakMap<ZoneSet, Map<number, number>>();
+
+/** The nearest key a set holds — it answers 21 of the 81, and a key nothing
+ *  draws is a black hole. The cut face is BETWEEN floor and rock, so trading it
+ *  for either is one step where floor for rock is three. Synthesising the
+ *  missing keys out of QUADRANTS is WRONG and looks right on paper: a
+ *  quadrant's picture is not decided by its own corner. */
+function nearestKey(set: ZoneSet, key: number): number {
+  let seen = NEAREST.get(set);
+  if (!seen) NEAREST.set(set, (seen = new Map()));
+  const found = seen.get(key);
+  if (found !== undefined) return found;
+  const mine = PLACE.map((p) => Math.floor(key / p) % 3);
+  let best = 0;
+  let cost = Infinity;
+  for (const tile of set.tiles) {
+    let apart = 0;
+    for (let c = 0; c < 4; c++) {
+      const theirs = Math.floor(tile.key / PLACE[c]) % 3;
+      apart += mine[c] === theirs ? 0 : mine[c] === 2 || theirs === 2 ? 1 : 3;
+    }
+    if (apart < cost) {
+      cost = apart;
+      best = tile.key;
+    }
+  }
+  seen.set(key, best);
+  return best;
+}
+
+/** WHICH TILE OF A SET DRAWS A CELL — an index into `set.tiles`, -1 for none.
+ *  Here because scoring a key is the one answer every surface has to read.
+ *  `over`/`under` are the rows either side of the tile's own two and they are
+ *  CORNER values — read as tile type instead, the four wall CONTINUATIONS are
+ *  picked at random and the lip repeats down a face as a pale line. */
+export function zoneTileAt(set: ZoneSet, grid: Grid, x: number, y: number): number {
+  const key = nearestKey(set, wangKey(grid, x, y));
+  const want = [
+    cornerAt(grid, x, y - 1),
+    cornerAt(grid, x + 1, y - 1),
+    cornerAt(grid, x, y + 2),
+    cornerAt(grid, x + 1, y + 2),
+  ];
+  let best = -1;
+  let score = -Infinity;
+  set.tiles.forEach((tile, i) => {
+    if (tile.key !== key) return;
+    let mine = 0;
+    [tile.over[1], tile.over[2], tile.under[1], tile.under[2]].forEach((asked, k) => {
+      if (asked !== 255) mine += asked === want[k] ? 2 : -3;
+    });
+    if (mine > score) {
+      score = mine;
+      best = i;
+    }
+  });
+  return best;
+}
+
+/** Every corner OUTSIDE: the set's picture there is the surrounding terrain
+ *  drawn again in a tone toned separately — a halo of the wrong floor squaring
+ *  every pool off into its bounding box. A patch set is 16 keys of 0 and 1
+ *  only, being a blend and not a cliff, so it needs no nearest-key rescue. */
+const PATCH_CLEAR = 40;
+export function patchTileAt(kit: ZoneSet, grid: Grid, x: number, y: number, index: number): number {
+  const key = patchKey(grid, x, y, index);
+  if (key === PATCH_CLEAR) return -1;
+  return kit.tiles.findIndex((t) => t.key === key);
 }
 
 export const ROCK_DEPTH = 2; // tiles of rock drawn past the floor they wall in

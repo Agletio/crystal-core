@@ -39,6 +39,8 @@ export interface DevHooks {
   restock: () => void;
   /** Everything that reads the character, after this menu has moved it. */
   refresh: () => void;
+  /** Opens the level builder, which is a window of its own. */
+  build: () => void;
 }
 
 /**
@@ -208,6 +210,18 @@ function render(): void {
   look.append(el('span', 'devbtn__what', `${Object.keys(ZONES).length} emitted`));
   look.onclick = () => renderSheets();
   sets.append(look);
+
+  // A sheet shows whether two terrains read apart; only a LAID FLOOR shows
+  // what the carve does with them, and this is one laid by hand.
+  const lay = el('button', 'mini devbtn') as HTMLButtonElement;
+  lay.id = 'dev-builder';
+  lay.append(el('span', 'devbtn__name', 'Level builder'));
+  lay.append(el('span', 'devbtn__what', 'paint a floor with the real sets and props'));
+  lay.onclick = () => {
+    close();
+    hooks.build();
+  };
+  sets.append(lay);
 
   const over = group('Start over', 'Wipes what you are playing and deals a stocked game.');
   const kit = el('button', 'mini devbtn devbtn--warn') as HTMLButtonElement;
