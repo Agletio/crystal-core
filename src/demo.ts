@@ -2482,9 +2482,12 @@ rule('MAP SHAPE — do chambers, passages and veins survive generation?');
         if (tile === WALL) continue;
         if (tile === TUNNEL) tunnels++;
         if (tile === FLOOR) rooms++;
-        // Furniture is the OTHER reason a carved tile blocks, and a legitimate
-        // one. What this is watching for is a tile CONSTANT nothing walks on.
-        if (!grid.solid[y * grid.width + x] && !grid.walkable(x, y)) unwalkable++;
+        // Furniture and WATER are the two DECLARED reasons a carved tile
+        // blocks, and both are legitimate. What this watches for is a tile
+        // CONSTANT nothing walks on, which nothing declares.
+        const at = y * grid.width + x;
+        const pool = grid.patch[at] !== 0 && grid.blocking[grid.patch[at] - 1];
+        if (!grid.solid[at] && !pool && !grid.walkable(x, y)) unwalkable++;
       }
     }
 
