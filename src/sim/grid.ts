@@ -5,7 +5,7 @@
  */
 import { Rng } from '../rng';
 import { computeStat } from '../mods';
-import { tileNoise } from '../noise';
+import { patchNoise, tileNoise } from '../noise';
 import type { MapTheme, RolledMod } from '../types';
 import type { ScenePlan } from '../scenes';
 import {
@@ -1025,6 +1025,9 @@ function offRock(grid: Grid, x: number, y: number): number {
   return COVER_RATE.length;
 }
 
+/** Where cover may land at all: below `cut` of a slow noise, nothing. */
+const COVER_MASK = { scale: 5, cut: 0.38 };
+
 /** Loose stone and dust, DRIFTED at the foot of the rock and thinning to almost
  *  nothing in the open. It claims no tile, so nothing is asked. */
 export function coverFloor(grid: Grid, rng: Rng): MapProp[] {
@@ -1034,7 +1037,10 @@ export function coverFloor(grid: Grid, rng: Rng): MapProp[] {
       if (!grid.walkable(x, y) && grid.at(x, y) !== FLOOR) continue;
       const above = grid.at(x, y - 1); // it DRAWS the face: stone would land up the wall
       if (above === WALL || above === RIM) continue;
-      if (!rng.chance(COVER_RATE[offRock(grid, x, y) - 1])) continue;
+      // Under a MASK, so what lands lands in clumps: a flat rate is graph paper
+      // at a coarser scale. The draw is still made, so the mask moves nothing.
+      const roll = rng.chance(COVER_RATE[offRock(grid, x, y) - 1]);
+      if (!roll || patchNoise(x, y, COVER_MASK.scale, 64) < COVER_MASK.cut) continue;
       out.push({ id: weighted(COVER_PROPS, rng.next()), x, y });
     }
   }

@@ -129,13 +129,17 @@ shelf on a floor yet.
       object inpainted into a crop of the real face, one cent, like the stair
       — and *"I dont like how the ores and the fish look"* is the re-ask that
       already stood in Phase 9.
-- [ ] **DETAIL THAT IS NOT A SHAPE.** (a) many pure floor tiles per zone —
-      `create_tiles_pro` style mode with the zone's floor tile as style image,
-      16 variants in one call — picked per cell by hash with skewed weights
-      (70/15/10/5); (b) LIGHT: a per-tile tint off low-frequency noise plus
-      darkening toward the rock, in Pixi, no art; (c) cover under a noise MASK.
-      The level-2 variant PATCHES (`FLOORS`) still draw as hard-edged regions;
-      once (a) lands they stay only where a material has a real edge.
+- [x] **THE LIGHT AND THE MASK.** `groundLight` in `render/renderer.ts` is
+      the one per-cell shade — a slow drift and a slope down to 0.78 at the
+      rock's foot off how open the five-by-five is — worn by every tile of a
+      cell in Pixi and laid as a wash in the builder; `coverFloor` lands under
+      `COVER_MASK`, so stone comes in clumps. No art spent.
+- [ ] **MANY FLOOR TILES.** `create_tiles_pro` style mode with the zone's
+      floor tile as style image returns 16 variants in one call; pick per cell
+      by hash with skewed weights (70/15/10/5). The level-2 variant PATCHES
+      (`FLOORS`) still draw as hard-edged rectangles — the ugliest thing left
+      on a Fissure floor — and once the variants land they stay only where a
+      material has a real edge, or go.
 - [ ] **WATER RE-ASKED.** `fissure_pool` reads as ridged slabs and its chained
       floor is a shade off the zone's, which draws a square halo round every
       pool. Ask the shore again off the SAME floor tile and check the halo in

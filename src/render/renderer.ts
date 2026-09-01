@@ -775,6 +775,20 @@ export function patchTileAt(kit: ZoneSet, grid: Grid, x: number, y: number, inde
 
 export const ROCK_DEPTH = 2; // tiles of rock drawn past the floor they wall in
 
+/** How lit a GROUND cell is, 0..1: a slow drift so an open floor is not one
+ *  flat colour, and darker at the rock's foot. */
+export const LIGHT = { low: 0.8, foot: 0.78, scale: 7 };
+export function groundLight(grid: Grid, x: number, y: number): number {
+  const drift = LIGHT.low + (1 - LIGHT.low) * patchNoise(x, y, LIGHT.scale, 71);
+  // How OPEN the five-by-five round the cell is, so the shade at a wall's foot
+  // is a slope and never two rings with an edge between them.
+  let open = 0;
+  for (let dy = -2; dy <= 2; dy++) {
+    for (let dx = -2; dx <= 2; dx++) if (grid.at(x + dx, y + dy) !== WALL) open++;
+  }
+  return drift * (LIGHT.foot + (1 - LIGHT.foot) * (open / 25));
+}
+
 /** How lit a rock tile is, by how far it sits from the nearest thing that is
  *  not rock: 1 at the cut face, 0 past `ROCK_DEPTH`. A generated tileset covers
  *  the whole padded grid, and two thousand rock tiles read as wallpaper. */

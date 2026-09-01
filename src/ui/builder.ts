@@ -9,7 +9,7 @@
  */
 import { FLOOR, Grid, SHELF, STAIR, RIM, WALL, high, patchesAt, patchesFor, rimShelves, wangKey } from '../sim/grid';
 import { SHELF_SET, ZONE } from '../sim/grid';
-import { patchTileAt, zoneTileAt } from '../render/renderer';
+import { groundLight, patchTileAt, zoneTileAt } from '../render/renderer';
 import { ZONES } from '../render/generated-tiles';
 import { PROP_ART } from '../render/generated-props';
 import { makeProp } from '../render/sprites';
@@ -198,6 +198,17 @@ function draw(): void {
     const wide = art.tiles * zoom;
     const tall = wide * (canvasOf.height / canvasOf.width);
     ctx.drawImage(canvasOf, (prop.x + 0.5) * zoom - wide / 2, (prop.y + 1) * zoom - tall, wide, tall);
+  }
+
+  // THE LIGHT, the renderer's own per-cell shade laid as a wash.
+  for (let y = 0; y < grid.height; y++) {
+    for (let x = 0; x < grid.width; x++) {
+      if (grid.at(x, y) === WALL) continue;
+      const dark = 1 - groundLight(grid, x, y);
+      if (dark <= 0) continue;
+      ctx.fillStyle = `rgba(0,0,0,${dark.toFixed(3)})`;
+      ctx.fillRect(x * zoom, y * zoom, zoom, zoom);
+    }
   }
 
   if (lines) {

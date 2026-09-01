@@ -70,6 +70,7 @@ import {
   vfxColour,
   patchTileAt,
   zoneTileAt,
+  groundLight,
   ZOOM_MIN,
 } from './renderer';
 import {
@@ -466,6 +467,12 @@ export async function createPixiRenderer(
         return found < 0 ? null : art[found];
       };
       const size = 1.002 / set.grid;
+      // THE LIGHT: every tile of one cell wears the same shade, so a shelf or a
+      // pool drawn over the ground cannot stand out as a brighter square.
+      const shade = (x: number, y: number): number => {
+        const v = Math.round(groundLight(grid, x, y) * 255);
+        return (v << 16) | (v << 8) | v;
+      };
       const rock = (x: number, y: number): boolean =>
         x < 0 || y < 0 || x >= grid.width || y >= grid.height || grid.at(x, y) === WALL;
       const deep = (x: number, y: number) => grid.at(x, y);
@@ -481,6 +488,7 @@ export async function createPixiRenderer(
           sprite.y = y;
           sprite.scale.set(size);
           if (lit < 1) sprite.alpha = lit;
+          if (!solid) sprite.tint = shade(x, y);
           (solid ? wallLayer : groundLayer).addChild(sprite);
         }
       }
@@ -501,6 +509,7 @@ export async function createPixiRenderer(
             sprite.x = x;
             sprite.y = y;
             sprite.scale.set(1.002 / shelfSet.grid);
+            sprite.tint = shade(x, y);
             groundLayer.addChild(sprite);
           }
         }
@@ -522,6 +531,7 @@ export async function createPixiRenderer(
             sprite.x = x;
             sprite.y = y;
             sprite.scale.set(1.002 / kit.grid);
+            sprite.tint = shade(x, y);
             groundLayer.addChild(sprite);
           }
         }
