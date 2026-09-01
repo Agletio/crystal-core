@@ -10199,7 +10199,12 @@ rule('WHERE THE GOLD COMES FROM — is selling worth the walk to the counter?');
    *  whole of what selling scales by. */
   const each: number[] = [];
   for (let band = 0; band < DROP_BANDS.length; band += 2) {
-    const runs = 6;
+    // TWENTY AT THE SHALLOW END. Gear is 0.25 a run by decision, so six runs
+    // see NO gear at all 18% of the time and the share reads 0% — measured,
+    // band 0 over 6 runs banked 0 pieces and over 20 banked 10 for a 9.3%
+    // share. What is asserted is that the tap is not dry, so the sample has to
+    // be able to tell a dry tap from a slow one.
+    const runs = band <= 2 ? 20 : 6;
     let banked = 0;
     let sold = 0;
     let drops = 0;
@@ -10362,7 +10367,9 @@ rule('WHAT A SET FARMS — is where you go a decision or a formality?');
     let secs = 0;
     let gold = 0;
     let sale = 0;
-    for (let i = 0; i < 8; i++) {
+    // Twenty at the shallow end, for the reason the band-worth table carries:
+    // at 0.25 gear a run, eight runs read a dry tap one time in ten.
+    for (let i = 0; i < (band <= 2 ? 20 : 8); i++) {
       const set = ladderSet(band, new Rng(4000 + band * 31 + i), pool);
       const sim = new RunSim(set, ceiling(band), new Rng(700 + band * 17 + i));
       const s = runToCompletion(sim, 600);
