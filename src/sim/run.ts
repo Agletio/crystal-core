@@ -638,8 +638,7 @@ export class RunSim {
   private sweptFrom = 0;
   private gearLeft = 0;
   private materialLeft = 0;
-  /** Which dropped family is next. A COUNTER, so the two alternate. */
-  private nextDropped = 0;
+  private nextDropped = 0; // which dropped family is next, so the two alternate
   private currencyLeft = 0;
   private budgeted = false;
   private byId = new Map<number, Entity>();
