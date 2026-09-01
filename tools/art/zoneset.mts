@@ -93,7 +93,87 @@ const WATER =
   'NOT tropical, NOT bright, NOT sunlit, NOT turquoise, NOT a hole, ' +
   'NOT a pit, NOT empty black';
 
+
+/** A ZONE'S OWN FLOOR, off `get_topdown_tileset`. Every extra terrain chains
+ *  off these, so a shore meets the floor the game already draws rather than a
+ *  second floor toned apart — the checkerboard, avoided by construction. */
+const FLOOR: Record<string, { tile: string; said: string }> = {
+  fissure: { tile: FISSURE_FLOOR_TILE, said: FISSURE_FLOOR_SAID },
+  rot: {
+    tile: 'e5c25607-e66e-4416-9b6c-a594d1394c19',
+    said: 'a floor of pale dry membrane and shed skin, LIGHT warm grey-pink raw '
+      + 'membrane, pale and dry, brightly lit, NOT dark, NOT black, NOT red',
+  },
+  cavern: {
+    tile: 'a19842a7-ea93-46c5-a894-63c21cf786f2',
+    said: 'a floor of crushed crystal grit, LIGHT lilac-white floor of fine '
+      + 'crystal dust and grit, brightly lit, NOT dark, NOT black, NOT purple',
+  },
+  seam: {
+    tile: '8f1fb67b-4e50-409a-82c8-3842617ed9b3',
+    said: 'a floor of pale membrane crusted with crystal grit, LIGHT warm '
+      + 'grey-pink, pale and dry, brightly lit, NOT dark, NOT black, NOT red',
+  },
+};
+
+/** The model's OWN rewrite of `WATER`, read back off `fissure_shore_enhanced`.
+ *  `enhance` is shape_style-only and `pro` refuses shape_style, so the only way
+ *  to put the better surface on pro's ragged shore is to say its words. */
+const WATER_SAID =
+  'deep cold water with a mirror-smooth and reflective surface showing pale '
+  + 'stone reflections near the edge and scattered flat pale specular '
+  + 'highlights, dark blue-grey in layered tones with deep shadows and bright '
+  + 'surface gleams';
+
+/** A patch of terrain lying IN the floor rather than standing over it: a shore
+ *  and a blend, never the full-tile cliff the rock sets are built on. */
+const patch = (zone: string, said: string, edge: string, ragged = 0.85) => ({
+  lower_description: said,
+  upper_description: FLOOR[zone].said,
+  upper_base_tile_id: FLOOR[zone].tile,
+  transition_description: edge,
+  mode: 'pro',
+  raggedness: ragged,
+  spread_x: 0.35,
+  transition_size: 0.25,
+  tile_size: { width: 32, height: 32 },
+  outline: 'lineless',
+  shading: 'detailed shading',
+  detail: 'highly detailed',
+  view: 'high top-down',
+});
+
+const WET = 'wet dark stone at the waterline, the floor darkening as it goes under';
+
 const ASK: Record<string, Record<string, unknown>> = {
+  // --- EVERY ZONE'S EXTRA TERRAINS ----------------------------------------
+  //
+  // *"the rooms are kinda bland… Id just add more this time so we dont have to
+  // do this later."* One ask per patch, all chained off their own zone's floor.
+  // WATER IS FUNCTIONAL — a fishing pool stands on it — and the rest is what
+  // the rock does on its own.
+  fissure_pool: patch('fissure', WATER_SAID, WET),
+  fissure_moss: patch('fissure', 'a thick mat of dark wet moss and pale lichen creeping over the stone, '
+    + 'deep desaturated green-grey, NOT bright green, NOT grass, NOT a lawn, NOT sunlit', 
+    'ragged fronds of moss thinning out over bare stone'),
+  fissure_rubble: patch('fissure', 'a bed of loose broken scree and shattered stone, angular grey rubble '
+    + 'in heaped fragments, NOT sand, NOT smooth, NOT gravel path',
+    'the rubble thinning to bare floor at its edge'),
+  rot_blood: patch('rot', 'a still pool of thick dark blood, deep blackened crimson, glossy and '
+    + 'reflective, NOT bright red, NOT pink, NOT magenta, NOT water, NOT clear',
+    'a dark drying rim where the blood has soaked into the membrane'),
+  rot_flesh: patch('rot', 'a bed of raw wet open meat, glistening dark red-brown muscle, NOT bright '
+    + 'red, NOT pink, NOT magenta, NOT stone, NOT rock',
+    'the membrane splitting where the raw meat opens through it'),
+  cavern_pool: patch('cavern', WATER_SAID + ', faintly lit from below', WET),
+  cavern_growth: patch('cavern', 'a dense field of pale violet crystal spines grown up out of the '
+    + 'floor, lilac and white, faceted and glinting, NOT green, NOT blue, NOT grass',
+    'the crystal thinning to loose grit at its edge'),
+  seam_lava: patch('seam', 'a channel of molten rock, black crust broken by cracks of glowing '
+    + 'orange heat, NOT bright yellow, NOT lava lamp, NOT cartoon, NOT water',
+    'blackened cooled crust at the rim, cracked and dull'),
+  seam_pool: patch('seam', WATER_SAID, WET),
+
   // --- WATER, round 2: a SHORE, not a cliff -------------------------------
   //
   // `transition_size` 0.5 and 0.8 are what the ROCK sets are built on — the
