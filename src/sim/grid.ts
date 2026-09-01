@@ -285,16 +285,10 @@ export const PATCHES: Partial<Record<MapTheme, PatchDef[]>> = {
   ],
 };
 
-/** LEVEL 2: the walkable floor in another grain, asked at `transition_size` 0
- *  so there is no boundary at all. Nothing here ever blocks. */
-export const FLOORS: Partial<Record<MapTheme, PatchDef[]>> = {
-  fissure: [
-    { set: 'fissure_floor_grit', most: 70, count: 3 },
-    { set: 'fissure_floor_swept', most: 70, count: 3 },
-  ],
-  demonic: [{ set: 'rot_floor_veined', most: 70, count: 3 }],
-  prismatic: [{ set: 'cavern_floor_coarse', most: 70, count: 3 }],
-};
+/** LEVEL 2: the walkable floor in another MATERIAL with a real edge. Nothing
+ *  here ever blocks. Empty: a region of another grain drew as a hard-edged
+ *  rectangle, and the grain is per cell now (`grainAt`). */
+export const FLOORS: Partial<Record<MapTheme, PatchDef[]>> = {};
 
 /** Both, level 1 first, in the order `Grid.patch` indexes them. */
 export const patchesFor = (theme: MapTheme): PatchDef[] =>

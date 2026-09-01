@@ -252,6 +252,16 @@ dev kit's override (`#dev-shelves`, `SHELVES=1` on `descent-peek`) and what the
 demo forces to prove every seed. Measured with every eligible chamber up: 2.8
 of 7 rooms a Fissure map stand, and a descent over them still ends.
 
+**A FLOOR IS ONE TILE, AND THE LIGHT AND THE GRAIN ARE WHAT VARY IT.** A set
+holds one pure floor tile, and two thousand of it read as wallpaper; a region
+laid in another set read as a rectangle. So variation is PER CELL and never a
+shape: `groundLight` is a slow drift with a slope down to 0.78 at the rock's
+foot, worn by every tile of a cell so a shelf or a pool cannot stand out as a
+brighter square, and `grainAt` lays one of the zone's sixteen generated MARKS
+(`src/render/generated-grain.ts`, asked in the shipped tile's own style, sorted
+light to heavy) over 30% of cells, skewed to the light ones. Both are hashes
+off the cell, never draws, and the builder draws them the same way.
+
 **A LAKE IS A DEEP CORE IN A SHALLOW WREATH.** Brogue's rule: a blocking patch's
 DEEP is every cell of it with the patch on all four sides (`Grid.deep`), and its
 ring walks, drawn as the shore. So water lies against a wall and still leaves a

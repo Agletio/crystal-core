@@ -9,7 +9,8 @@
  */
 import { FLOOR, Grid, SHELF, STAIR, RIM, WALL, high, patchesAt, patchesFor, rimShelves, wangKey } from '../sim/grid';
 import { SHELF_SET, ZONE } from '../sim/grid';
-import { groundLight, patchTileAt, zoneTileAt } from '../render/renderer';
+import { GRAIN, grainAt, groundLight, patchTileAt, zoneTileAt } from '../render/renderer';
+import { GRAIN as GRAIN_SHEETS } from '../render/generated-grain';
 import { ZONES } from '../render/generated-tiles';
 import { PROP_ART } from '../render/generated-props';
 import { makeProp } from '../render/sprites';
@@ -66,7 +67,7 @@ let ready = false;
 
 async function decode(): Promise<void> {
   await Promise.all(
-    Object.entries(ZONES).map(async ([id, set]) => {
+    [...Object.entries(ZONES), ...Object.entries(GRAIN_SHEETS).map(([z, g]) => [`grain:${z}`, g] as const)].map(async ([id, set]) => {
       const img = new Image();
       img.src = set.png;
       try {
@@ -152,6 +153,22 @@ function draw(): void {
         ctx.drawImage(sheet, box[0], box[1], box[2], box[3], x * zoom, y * zoom, zoom, zoom);
       }
     }
+  }
+
+  // THE GRAIN over a plain floor cell, the renderer's own pick.
+  const grainSheet = GRAIN_SHEETS[theme];
+  const grainImg = grainSheet ? sheets.get(`grain:${theme}`) : undefined;
+  if (grainSheet && grainImg) {
+    ctx.globalAlpha = GRAIN.alpha;
+    for (let y = 0; y < grid.height; y++) {
+      for (let x = 0; x < grid.width; x++) {
+        if (grid.at(x, y) === WALL || wangKey(grid, x, y) !== 0) continue;
+        const mark = grainAt(grainSheet.count, x, y);
+        if (mark < 0) continue;
+        ctx.drawImage(grainImg, mark * grainSheet.grid, 0, grainSheet.grid, grainSheet.grid, x * zoom, y * zoom, zoom, zoom);
+      }
+    }
+    ctx.globalAlpha = 1;
   }
 
   // A SHELF over the floor, keyed as the rock is; rock wins at a corner.

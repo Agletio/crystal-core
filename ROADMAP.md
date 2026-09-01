@@ -134,12 +134,20 @@ shelf on a floor yet.
       rock's foot off how open the five-by-five is — worn by every tile of a
       cell in Pixi and laid as a wash in the builder; `coverFloor` lands under
       `COVER_MASK`, so stone comes in clumps. No art spent.
-- [ ] **MANY FLOOR TILES.** `create_tiles_pro` style mode with the zone's
-      floor tile as style image returns 16 variants in one call; pick per cell
-      by hash with skewed weights (70/15/10/5). The level-2 variant PATCHES
-      (`FLOORS`) still draw as hard-edged rectangles — the ugliest thing left
-      on a Fissure floor — and once the variants land they stay only where a
-      material has a real edge, or go.
+- [x] **THE GRAIN.** `tools/art/grain.mts` → `src/render/generated-grain.ts`:
+      sixteen MARKS a zone off `create_tiles_pro` in style mode with the
+      shipped floor tile as the style image, ten cents a zone, sorted light to
+      heavy; `grainAt` in `render/renderer.ts` hashes a cell to none (70%) or
+      to one skewed toward the light end, laid over the floor at 0.4 in Pixi
+      and the builder. A whole tile that comes back is dropped at emit — the
+      Cavern's came back whole TWICE, sparse wording and all, so the Cavern
+      has no grain and its glinting floor carries itself; do not ask a third
+      time. The level-2 variant PATCHES are gone from `FLOORS` (their sets
+      stay emitted).
+- [ ] **THE GRAIN STILL READS AS CELLS.** Marks fill their own square, so a
+      marked cell is a square of marks beside a plain one. If the user sees
+      the checker, the answer is marks asked SMALLER than a tile and placed
+      off-grid like cover, or fewer heavier ones — not more alpha.
 - [ ] **WATER RE-ASKED.** `fissure_pool` reads as ridged slabs and its chained
       floor is a shade off the zone's, which draws a square halo round every
       pool. Ask the shore again off the SAME floor tile and check the halo in

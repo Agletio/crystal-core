@@ -71,8 +71,11 @@ import {
   patchTileAt,
   zoneTileAt,
   groundLight,
+  grainAt,
+  GRAIN,
   ZOOM_MIN,
 } from './renderer';
+import { GRAIN as GRAIN_SHEETS } from './generated-grain';
 import {
   ATTACK_FRAME,
   CELL,
@@ -413,6 +416,28 @@ export async function createPixiRenderer(
    *  sliced on first use instead, the draw runs before the image has loaded
    *  and the whole floor is silently missing. */
   const zones = new Map<string, Texture[]>();
+  /** The grain, one texture a mark, decoded where the zone sheets are. */
+  const grains = new Map<string, Texture[]>();
+  for (const [zone, sheet] of Object.entries(GRAIN_SHEETS)) {
+    const img = new Image();
+    img.src = sheet.png;
+    try {
+      await img.decode();
+    } catch {
+      continue;
+    }
+    const made: Texture[] = [];
+    for (let i = 0; i < sheet.count; i++) {
+      const one = document.createElement('canvas');
+      one.width = sheet.grid;
+      one.height = sheet.grid;
+      one.getContext('2d')?.drawImage(img, i * sheet.grid, 0, sheet.grid, sheet.grid, 0, 0, sheet.grid, sheet.grid);
+      const texture = Texture.from(one);
+      texture.source.scaleMode = 'nearest';
+      made.push(texture);
+    }
+    grains.set(zone, made);
+  }
   for (const [id, set] of Object.entries(ZONES)) {
     const sheet = new Image();
     sheet.src = set.png;
@@ -490,6 +515,18 @@ export async function createPixiRenderer(
           if (lit < 1) sprite.alpha = lit;
           if (!solid) sprite.tint = shade(x, y);
           (solid ? wallLayer : groundLayer).addChild(sprite);
+          // THE GRAIN over the floor, one of the zone's marks or none.
+          const marks = solid ? undefined : grains.get(map.theme);
+          const mark = marks ? grainAt(marks.length, x, y) : -1;
+          if (marks && mark >= 0 && wangKey(grid, x, y) === 0) {
+            const grain = new Sprite(marks[mark]);
+            grain.x = x;
+            grain.y = y;
+            grain.scale.set(1.002 / GRAIN_SHEETS[map.theme].grid);
+            grain.alpha = GRAIN.alpha;
+            grain.tint = shade(x, y);
+            groundLayer.addChild(grain);
+          }
         }
       }
 
