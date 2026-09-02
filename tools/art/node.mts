@@ -14,7 +14,7 @@
  *   pick <id> <indices>
  *   spent <id>   — the same four, worked out
  */
-import { writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { callTool, download, fields, urlsIn } from './mcp.mts';
 import { encodePng } from './png.mts';
 import { PROP_ART } from '../../src/render/generated-props.ts';
@@ -86,12 +86,22 @@ const ASKS: string[] = [
   'a low round pool of black water rimmed with wet dark stone, its surface glassy, faint pale ripples across the middle',
   'a shallow pool of dark water held in a bowl of cracked rock, two pale fish just visible below the surface',
   'an oval pool of near-black water set into wet stone, the surface mirror-flat with a single pale fin breaking it',
+  // metal, round two — a LOW outcrop ON THE FLOOR, never in a wall.
+  'a low flat outcrop of warm grey-brown cave stone lying on open ground, wider than it is tall, cracked open along the top to show a seam of dull silver-grey metal',
+  'a broad low mound of dark grey-brown rock spread flat on the floor, three rusted orange-brown ore veins branching across its top',
+  'a low scatter of broken grey-brown stone lumps lying together on the ground, the biggest split to show a glint of pale raw metal',
+  'a squat rounded boulder of warm grey-brown rock sitting on open floor, a thick band of dark blue-grey iron ore wrapped round its middle',
+  // metal, round three — variations on the one he liked: a low heap of slate flakes, copper threads.
+  'a low loose heap of dark blue-grey slate flakes lying flat on the floor, spread out and scattered at its edges, thin threads of rust-orange copper wound between the flakes',
+  'a flat pile of broken dark stone shards piled a few deep, loose chips scattered round it, fine bright orange metal threads showing in the cracks between them',
+  'a low spread of angular dark slate fragments lying on the ground in a rough mound, a few thin veins of dull copper-orange metal snaking across the top flakes',
+  'a shallow scattered heap of dark flat rock chips, wider than it is tall, with thin glinting threads of raw orange-brown metal caught between the pieces',
 ];
 
 const [verb, arg, extra] = process.argv.slice(2);
 
 /** WHICH FOUR: the tool caps at 16, so `ask <family>` sends four alone. */
-const FOUR: Record<string, number> = { metal: 0, hide: 4, wood: 8, cloth: 12, ripple: 16, fish: 20 };
+const FOUR: Record<string, number> = { metal: 0, hide: 4, wood: 8, cloth: 12, ripple: 16, fish: 20, metal2: 24, metal3: 28 };
 
 if (verb === 'ask') {
   const at = FOUR[arg ?? ''];
@@ -99,10 +109,14 @@ if (verb === 'ask') {
   if (at === undefined && ASKS.length > 16) {
     throw new Error(`${ASKS.length} asks is over the 16 the tool returns — name a family`);
   }
+  // LIKE=<png>: a candidate he picked, as a style image, so a re-ask varies it.
+  const like = process.env.LIKE
+    ? [{ base64: readFileSync(process.env.LIKE).toString('base64'), format: 'png' as const }]
+    : [];
   const out = await callTool('create_1_direction_object', {
     description: `a thing on the floor of a cave worth stopping for. ${COMMON}`,
     view: 'top-down',
-    style_images: STYLE.map(styleImage),
+    style_images: [...STYLE.map(styleImage), ...like],
     item_descriptions: want.map((a) => `${a}. ${COMMON}`),
   });
   console.log(out);

@@ -3600,9 +3600,9 @@ rule('GATHERING — is a node free, guarded, walked to and equally spread?');
   const nodes = counts.reduce((a, b) => a + b, 0);
   line(`  nodes a family over 40 descents: ${[...spread].map(([f, n]) => `${f} ${n}`).join(', ')}; fish ${fish}`);
   gauge(`${(nodes / 40).toFixed(2)} dry nodes a descent, ${(handed / 40).toFixed(2)} units; ${Math.round((100 * ones) / Math.max(1, nodes + fish))}% of nodes hand over one`);
-  // WHERE A FAMILY GROWS: ore stands at the foot of a wall, because it is the
-  // rock; a plant on damp floor where the room has any. A room with no such
-  // spot falls back, so the wall rule is a check and the damp one a gauge.
+  // WHERE A FAMILY GROWS: ore on open floor clear of the rock, never in a
+  // wall; a plant on damp floor where the room has any. A room with no such
+  // spot falls back, so the open rule is a check and the damp one a gauge.
   {
     let ore = 0;
     let footed = 0;
@@ -3614,7 +3614,12 @@ rule('GATHERING — is a node free, guarded, walked to and equally spread?');
       for (const node of sim.state.nodes) {
         if (node.family === 'metal') {
           ore++;
-          if (grid.at(node.x, node.y - 1) === WALL && grid.at(node.x, node.y - 2) === WALL) footed++;
+          // Clear of the rock: no wall within two cells, none within three above.
+          let clear = true;
+          for (let dy = -3; dy <= 2 && clear; dy++) {
+            for (let dx = -2; dx <= 2; dx++) if (grid.at(node.x + dx, node.y + dy) === WALL) clear = false;
+          }
+          if (clear) footed++;
         }
         if (node.family === 'cloth') {
           plants++;
@@ -3623,7 +3628,7 @@ rule('GATHERING — is a node free, guarded, walked to and equally spread?');
         }
       }
     }
-    check(ore > 0 && footed >= ore * 0.8, `ore stands at the foot of a wall — ${footed} of ${ore}`, `${ore - footed} of ${ore} on open floor`);
+    check(ore > 0 && footed >= ore * 0.8, `ore stands on open floor clear of the rock — ${footed} of ${ore}`, `${ore - footed} of ${ore} against a wall`);
     gauge(`${damp} of ${plants} plants stand on damp floor; the rest are in rooms with no water`);
   }
   check(

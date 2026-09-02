@@ -6,7 +6,7 @@
  */
 import { Rng } from '../rng';
 import { SOLID_PROPS } from '../vignettes';
-import { generateMap, sceneMap, dist, hasLineOfSight, roomCenter, wallFootSpots, dampSpots } from './grid';
+import { generateMap, sceneMap, dist, hasLineOfSight, roomCenter, openSpots, dampSpots } from './grid';
 import type { GameMap, Grid, Room, Vec2 } from './grid';
 import { findPath, nearestByPath } from './pathfind';
 import { AILMENT, AMBUSH, DAMAGE_TYPE_BY_ID, PASSIVE_DAMAGE, POTIONS, POTION_BY_ID } from '../data';
@@ -1205,7 +1205,7 @@ export class RunSim {
   }
 
   /** A whole tile in the room that is not the middle, which is where a lock
-   *  stands. WHERE A FAMILY GROWS comes first — ore at a wall's foot, a plant on
+   *  stands. WHERE A FAMILY GROWS comes first — ore on open floor, a plant on
    *  damp floor — and a room with no such spot falls back to any tile, and that
    *  to the middle rather than dropping the node. */
   private nodeSpot(map: GameMap, room: Room, family = ''): Vec2 {
@@ -1215,7 +1215,7 @@ export class RunSim {
       !(x === Math.round(middle.x) && y === Math.round(middle.y)) &&
       !map.props.some((p) => p.x === x && p.y === y && SOLID_PROPS.has(p.id));
     const grows =
-      family === 'metal' ? wallFootSpots(map.grid, room)
+      family === 'metal' ? openSpots(map.grid, room)
       : family === 'cloth' ? dampSpots(map.grid, room)
       : [];
     const spots = grows.filter((v) => free(v.x, v.y));

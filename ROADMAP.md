@@ -119,11 +119,21 @@ shelf on a floor yet.
       and would sit wrong on the Rot's meat and the Seam's membrane. One
       `create_map_object` inpaint per world into a crop of its own face, a cent
       each, once the shelves are approved.
-- [x] **WHERE A FAMILY GROWS** — `wallFootSpots` and `dampSpots` in
-      `grid.ts`, asked by `nodeSpot` before any tile: ore stands at the foot of
-      a wall two deep (measured 17 of 17), a plant on damp floor where the room
-      has any (17 of 20), a fishing spot on the deep with a wreath cell to
-      stand on. Still a node a pack, dealt round, guarded by its pack.
+- [x] **WHERE A FAMILY GROWS** — `openSpots` and `dampSpots` in `grid.ts`,
+      asked by `nodeSpot` before any tile: ore ON OPEN FLOOR clear of the rock
+      (*"have it not placed inside walls"* — a node at a wall's foot drew
+      under the face), a plant on damp floor where the room has any, a fishing
+      spot on the water beside its bank. Still a node a pack, dealt round,
+      guarded by its pack.
+- [ ] **THE ORE PICTURE, in review.** *"The ore design looks horrible in this
+      zone… give me some samples."* Three batches of sixteen through
+      `node.mts`: A (`bd5b743b…`, the roster's style), B (`0f69b2c5…`, low
+      outcrops on open ground), C (`9057e3bb…`, variations on A's number 11,
+      the low heap of slate flakes with copper threads he pointed at, with
+      that candidate as a style image — `LIKE=<png>`). Each laid on the
+      Fissure floor at 3x and numbered (`sheet.mts`, scratch). Waiting on his
+      picks; then `node.mts pick`, `spent`, the rows in `generated.json`
+      swapped to the new object id, `tables.mts props`.
 - [ ] **ORE DRAWN IN THE FACE, AND THE FISH.** The node stands at the wall's
       foot now, but the picture is still a boulder on the floor. **Inpainting
       into a crop does NOT do this**: a vein in the face, a rusted band and a

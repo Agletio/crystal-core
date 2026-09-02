@@ -1151,15 +1151,24 @@ function encloses(grid: Grid, x: number, y: number): boolean {
   return runs > 1;
 }
 
-/** WHERE A FAMILY GROWS, by rule, within a room's rectangle: ore at the foot of
- *  a wall two deep (it is the rock), herbs on damp floor beside a wreath. A
+/** WHERE A FAMILY GROWS, by rule, within a room's rectangle: ore ON OPEN FLOOR
+ *  clear of every wall — *"have it not placed inside walls"*: no rock within
+ *  two cells, none within three to the north, where a face hangs down over the
+ *  cell a picture grows up into — and herbs on damp floor beside water. A
  *  scan, never a draw, so asking moves nothing else. */
-export function wallFootSpots(grid: Grid, room: Room): Vec2[] {
+export function openSpots(grid: Grid, room: Room): Vec2[] {
   const out: Vec2[] = [];
   for (let y = room.y; y < room.y + room.h; y++) {
     for (let x = room.x; x < room.x + room.w; x++) {
-      if (!grid.walkable(x, y) || grid.at(x, y - 1) !== WALL || grid.at(x, y - 2) !== WALL) continue;
-      out.push({ x, y });
+      if (!grid.walkable(x, y)) continue;
+      let clear = true;
+      for (let dy = -3; dy <= 2 && clear; dy++) {
+        for (let dx = -2; dx <= 2; dx++) {
+          const t = grid.at(x + dx, y + dy);
+          if (t !== FLOOR && t !== TUNNEL && t !== ENTRANCE && t !== EXIT) clear = false;
+        }
+      }
+      if (clear) out.push({ x, y });
     }
   }
   return out;
