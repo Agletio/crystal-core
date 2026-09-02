@@ -132,6 +132,11 @@ shelf on a floor yet.
       where the context is already a shape (the south stair's cliff). The
       road is `node.mts`: `create_1_direction_object` with the roster's style
       images, sixteen candidates a call, shown to the user, then picked.
+      **ASKED, IN REVIEW, WAITING ON HIS NUMBER**: ore `bd5b743b-ac61-4545-86b4-0a54a40b480d`,
+      ripple `19ecfdea-3b2b-4b0f-97bc-50df7b84b637` (65 cents the pair;
+      `node.mts get <id> <tag>` writes the sixteen to the cache). Then
+      `node.mts pick <id> <n>`, `spent`, the rows in `generated.json` swapped
+      to the new object ids, `tables.mts props`.
 - [x] **THE LIGHT AND THE MASK.** `groundLight` in `render/renderer.ts` is
       the one per-cell shade — a slow drift and a slope down to 0.78 at the
       rock's foot off how open the five-by-five is — worn by every tile of a
