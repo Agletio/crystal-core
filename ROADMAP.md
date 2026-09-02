@@ -210,9 +210,11 @@ found. Measured over 12 descents: metal 17, cloth 20, wood 15, fish 17.
       `PROP_ART` id as a placeable object, so they are a palette entry now.
       `geode_amber` is also a `style` image in `node.mts` and `chest.mts`, and a
       style image is what keeps the next generation matching the roster.
-- [ ] **The demo is what proves the rates.** A gathered family and a dropped one
-      must pay comparably over a run, at every band, and the check is a
-      `gauge()` where it is balance and a `check()` where it is mechanism.
+- [x] **The demo proves the rates.** Both roads into crafting pay at both ends
+      of the ladder (a `check`), and what they pay is a `gauge`: measured on a
+      ceiling character, 18.8 gathered against 10.0 dropped a descent at the
+      bare Fissure and 18.8 against 9.2 deep — dropped pays half, at every
+      band, which is the balance pass's number and not this phase's.
 
 ---
 

@@ -3438,6 +3438,44 @@ rule('GATHERING — is a node free, guarded, walked to and equally spread?');
     `${ratio.toFixed(2)}× the materials against ${bodyRatio.toFixed(1)}× the bodies`
   );
 
+  // GATHERED AND DROPPED PAY COMPARABLY, at both ends: a family that comes off
+  // a body is not a rarer road into crafting than one sitting in the rock. A
+  // ceiling character, since a run that dies banks nothing. Mechanism: both
+  // halves pay at all; the ratio is printed.
+  {
+    const paid = (crystals: Item[], who: Character, seed: number) => {
+      const sim = new RunSim(crystals, who, new Rng(seed));
+      runToCompletion(sim, 600);
+      let gathered = 0;
+      let dropped = 0;
+      for (const item of sim.state.loot.items) {
+        if (item.kind !== 'material') continue;
+        const family = MATERIAL_BY_ID[item.base]?.family;
+        const n = item.meta.n ?? 1;
+        if (GATHERED.some((f) => f.id === family)) gathered += n;
+        else if (DROPPED.some((f) => f.id === family)) dropped += n;
+      }
+      return { gathered, dropped, cleared: sim.state.status === 'cleared' };
+    };
+    const ends: [string, Item[], Character][] = [['bare', bareSet, ceiling(0)], ['deep', deepSet, ceiling(6)]];
+    let fails = 0;
+    for (const [name, crystals, who] of ends) {
+      let g = 0;
+      let d = 0;
+      let cleared = 0;
+      for (let i = 0; i < 6; i++) {
+        const got = paid(crystals, who, 950 + i);
+        g += got.gathered;
+        d += got.dropped;
+        if (got.cleared) cleared++;
+      }
+      line(`  ${name}: ${(g / 6).toFixed(1)} gathered and ${(d / 6).toFixed(1)} dropped a descent, ${cleared}/6 cleared`);
+      gauge(`${name}: dropped pays ${(d / Math.max(1, g)).toFixed(2)}× what is gathered`);
+      if (g === 0 || d === 0) fails++;
+    }
+    check(fails === 0, 'both roads into crafting pay at both ends of the ladder', `${fails} end(s) with a road paying nothing`);
+  }
+
   // *"RELATIVELY EQUAL DROP RATES BETWEEN MATERIALS."* Dealt round rather than
   // rolled, so a hundred descents cannot starve one profession.
   // The GATHERED four: hide and gem come off a body now, so asking the floor
