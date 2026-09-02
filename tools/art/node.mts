@@ -96,12 +96,17 @@ const ASKS: string[] = [
   'a flat pile of broken dark stone shards piled a few deep, loose chips scattered round it, fine bright orange metal threads showing in the cracks between them',
   'a low spread of angular dark slate fragments lying on the ground in a rough mound, a few thin veins of dull copper-orange metal snaking across the top flakes',
   'a shallow scattered heap of dark flat rock chips, wider than it is tall, with thin glinting threads of raw orange-brown metal caught between the pieces',
+  // the Rot's own — a FLESHY ore, the same low heap in meat rather than stone.
+  'a low heap of raw dark red-brown meat lumps lying flat on the floor, veined with thin pale sinew, a few dull metallic nodules of dark iron grown through the flesh',
+  'a shallow mound of glistening wet muscle tissue spread on the ground, torn open at the top to show a cluster of dark blood-red iron crystals growing inside',
+  'a flat pile of dark fleshy tumours lying loose and scattered at the edges, pale tendons wound between them, small dull rust-red metal beads embedded all through',
+  'a low spread of raw wet meat and gristle lying on open floor, wider than it is tall, dark iron-red ore lumps knotted into it like clots',
 ];
 
 const [verb, arg, extra] = process.argv.slice(2);
 
 /** WHICH FOUR: the tool caps at 16, so `ask <family>` sends four alone. */
-const FOUR: Record<string, number> = { metal: 0, hide: 4, wood: 8, cloth: 12, ripple: 16, fish: 20, metal2: 24, metal3: 28 };
+const FOUR: Record<string, number> = { metal: 0, hide: 4, wood: 8, cloth: 12, ripple: 16, fish: 20, metal2: 24, metal3: 28, rot: 32 };
 
 if (verb === 'ask') {
   const at = FOUR[arg ?? ''];
@@ -169,6 +174,19 @@ if (verb === 'ask') {
       'rock shell, its hollow dark and bare, with a few dull broken stubs where ' +
       'the crystal was snapped off. NO glow, NO light inside it, NO whole ' +
       'crystals.' + KEEP,
+    deadlight:
+      'THE SAME HEAP AFTER IT HAS BEEN PICKED OVER. The black lumps are entirely ' +
+      'gone: what is left is a low scatter of dark dust and a few dull broken ' +
+      'chips and the pale bone sticks lying loose. NO whole lumps, NO glint.' + KEEP,
+    quick_marrow:
+      'THE SAME HEAP AFTER IT HAS BEEN CUT OPEN AND EMPTIED. The dark red ' +
+      'nodules are entirely gone: what is left is the same low spread of pale ' +
+      'torn flesh and loose sinew, collapsed and flat, with empty sockets where ' +
+      'the nodules sat. NO nodules, NO metal, NO glint.' + KEEP,
+    measured_dust:
+      'THE SAME ROCK AFTER ITS CRYSTALS HAVE BEEN SNAPPED OFF. The crystal points ' +
+      'are entirely gone: what is left is the low grey rock base with dull broken ' +
+      'stubs where they stood and grit scattered round it. NO whole crystals.' + KEEP,
     fish:
       'THE SAME POOL AFTER IT HAS BEEN FISHED OUT AND DRAINED. The water is ' +
       'entirely gone: what is left is the empty stone basin, its floor wet dark ' +

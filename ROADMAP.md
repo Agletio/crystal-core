@@ -125,15 +125,38 @@ shelf on a floor yet.
       under the face), a plant on damp floor where the room has any, a fishing
       spot on the water beside its bank. Still a node a pack, dealt round,
       guarded by its pack.
-- [ ] **THE ORE PICTURE, in review.** *"The ore design looks horrible in this
-      zone… give me some samples."* Three batches of sixteen through
-      `node.mts`: A (`bd5b743b…`, the roster's style), B (`0f69b2c5…`, low
-      outcrops on open ground), C (`9057e3bb…`, variations on A's number 11,
-      the low heap of slate flakes with copper threads he pointed at, with
-      that candidate as a style image — `LIKE=<png>`). Each laid on the
-      Fissure floor at 3x and numbered (`sheet.mts`, scratch). Waiting on his
-      picks; then `node.mts pick`, `spent`, the rows in `generated.json`
-      swapped to the new object id, `tables.mts props`.
+- [x] **THE ORE PICTURE.** *"The ore design looks horrible in this zone… give
+      me some samples."* Three batches of sixteen through `node.mts` — A
+      (`bd5b743b…`), B (`0f69b2c5…`, low outcrops on open ground), C
+      (`9057e3bb…`, variations on A's 11, the heap of slate flakes with copper
+      threads, with that candidate as a style image: `LIKE=<png>`) — laid on
+      the Fissure floor at 3x and numbered. **His picks, from C**: 1, 2 and 3
+      are the ore everywhere (`node_ore`, `node_ore2`, `node_ore3`, a room
+      drawing any of the three — `MaterialFamilyDef.also` is a LIST now); 13
+      is the Fissure's own (`node_deadlight`) and 4 the Cavern's
+      (`node_dust`). **A WORLD'S UNIQUE IS A NODE OF ITS OWN** now rather
+      than riding on top of one: `family: 'unique'`, at `GATHER.uniqueChance`
+      a run (measured 6 in 100), on open floor, wearing `MaterialDef.node` or
+      the ore's where a world has none yet. Each picked frame's mined-out
+      state was asked (`node.mts spent`, `deadlight` and `measured_dust`
+      wordings added) and the ten objects imported.
+- [x] **THE ROT'S OWN ORE** — *"we need a new one for rot like some kind of
+      fleshy looking ore"*: batch `6d45cc09…` (`node.mts ask rot`, C's 1 as
+      the style image), **his pick 2**, its spent state asked with a
+      `quick_marrow` wording, `node_marrow` imported, on
+      `MATERIALS.quick_marrow`. **The Seam's** (`fault_glass`) has no picture
+      and wears the ore's until asked.
+- [x] **NOTHING STANDS IN THE WATER, AND THE RIPPLE MOVES.** *"Make sure the
+      ground clutter rocks don't spawn on water"* — cover is laid before the
+      lake and any of it on a wet cell is dropped after (measured 0 of 7,903
+      on 40 maps). *"The ripples look like 2 ripples one with a shark in it…
+      if there is a way to make it an actual moving ripple even if it's
+      contained to that size that would be ideal"* — the fishing spot is
+      drawn by the renderer now, `rippleRings` in `render/renderer.ts`: two
+      rings a cycle spreading from the cell's middle to 0.42 of a tile and
+      fading, phased off the node's id, gone once fished; `node_ripple` and
+      its spent frame stay in `PROP_ART` for the builder and are never
+      painted on a map (`LIVE_PROPS`).
 - [ ] **ORE DRAWN IN THE FACE, AND THE FISH.** The node stands at the wall's
       foot now, but the picture is still a boulder on the floor. **Inpainting
       into a crop does NOT do this**: a vein in the face, a rusted band and a

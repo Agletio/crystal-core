@@ -775,6 +775,21 @@ export function patchTileAt(kit: ZoneSet, grid: Grid, x: number, y: number, inde
 
 export const ROCK_DEPTH = 2; // tiles of rock drawn past the floor they wall in
 
+/** A FISHING SPOT IS ONE RIPPLE THAT MOVES — *"an actual moving ripple even
+ *  if it's contained to that size"* — rings spreading from the cell's middle
+ *  and fading, one after another, never past `RIPPLE.reach` of a tile. The
+ *  picture is drawn from this, so the prop ids here are never painted. */
+export const RIPPLE = { period: 2.4, rings: 2, start: 0.14, reach: 0.42, alpha: 0.85, width: 0.1 };
+export const LIVE_PROPS = new Set(['node_ripple', 'node_ripple_spent']);
+export function rippleRings(elapsed: number, phase: number): { r: number; alpha: number }[] {
+  const out: { r: number; alpha: number }[] = [];
+  for (let i = 0; i < RIPPLE.rings; i++) {
+    const t = ((elapsed + phase) / RIPPLE.period + i / RIPPLE.rings) % 1;
+    out.push({ r: RIPPLE.start + (RIPPLE.reach - RIPPLE.start) * t, alpha: RIPPLE.alpha * (1 - t) });
+  }
+  return out;
+}
+
 /** THE GRAIN a ground cell wears over its floor tile: -1 for none, else an
  *  index into the zone's sheet, light to heavy. A hash, never a draw. */
 export const GRAIN = { bare: 0.7, alpha: 0.4, skew: 3 };

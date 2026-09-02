@@ -162,7 +162,7 @@ import {
   sellPrice,
 } from './economy';
 import { hasGearArt } from './ui/icons';
-import { lootSpan } from './render/renderer';
+import { LIVE_PROPS, RIPPLE, lootSpan, rippleRings } from './render/renderer';
 import { RunSim, TICK, runToCompletion, walkToMeeting } from './sim/run';
 import { tierForSet } from './sim/crystal';
 import { findPath } from './sim/pathfind';
@@ -2211,6 +2211,36 @@ rule('SPRITES — is the pixel art well formed?');
     testLevel(false);
   }
 
+  // NOTHING STANDS IN THE WATER, and the ripple is drawn moving: rings that
+  // never leave the cell, fade to nothing, and are gone once the spot is
+  // fished — the prop ids behind them stay in the roster for the builder.
+  {
+    let wetCover = 0;
+    let cover = 0;
+    for (let i = 0; i < 24; i++) {
+      const map = dressedMap(6300 + i * 7, 'fissure');
+      for (const p of map.props) {
+        if (!COVER_SET.has(p.id)) continue;
+        cover++;
+        if (map.grid.wet(p.x, p.y)) wetCover++;
+      }
+    }
+    check(cover > 0 && wetCover === 0, `no cover stands in the water — ${cover} pieces laid`, `${wetCover} on a wet cell`);
+    let out = 0;
+    let dark = 0;
+    for (let t = 0; t < 60; t++) {
+      for (const ring of rippleRings(t * 0.1, 3)) {
+        if (ring.r < 0 || ring.r > 0.5) out++;
+        if (ring.alpha < 0 || ring.alpha > 1) dark++;
+      }
+    }
+    check(
+      out === 0 && dark === 0 && [...LIVE_PROPS].every((id) => PROP_ART[id]),
+      `the ripple stays inside its cell and its ${RIPPLE.rings} rings fade cleanly`,
+      `${out} rings past the cell, ${dark} with an alpha off the scale`
+    );
+  }
+
   // A LEVEL UP. A chamber stands a level up with a RIM nobody walks, and the
   // stairs are the proof: every walkable cell is reached from the hole, every
   // shelf that stands is reached, the same seed lays the same floor, and a
@@ -3416,7 +3446,7 @@ rule('MATERIALS AND PROFESSIONS — is the table a thing a recipe could read?');
   // Only the GATHERED ones: a dropped family stands nothing on the floor, so
   // asking it for a picture is asking for art nobody would ever see.
   const unseen = GATHERED.flatMap((f) =>
-    [f.node, f.spent, ...(f.also ?? [])]
+    [f.node, f.spent, ...(f.also ?? []).flat(), ...MATERIALS.flatMap((m) => (m.node ? [m.node, m.spent] : []))]
       .filter((id) => !id || !PROP_ART[id])
       .map((id) => `${f.id}→${id}`)
   );
@@ -3587,6 +3617,7 @@ rule('GATHERING — is a node free, guarded, walked to and equally spread?');
   for (let i = 0; i < 40; i++) {
     const sim = new RunSim(bareSet, digger, new Rng(1300 + i));
     for (const node of sim.state.nodes) {
+      if (node.family === 'unique') continue; // its own node, at its own chance
       spread.set(node.family, (spread.get(node.family) ?? 0) + 1);
       handed += node.n;
       if (node.n === 1) ones++;

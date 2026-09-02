@@ -11,6 +11,7 @@ import type { ScenePlan } from '../scenes';
 import {
   COVER_PROPS,
   COVER_RATE,
+  COVER_SET,
   SOLID_PROPS,
   VIGNETTES,
   WALL_PROPS,
@@ -1483,6 +1484,10 @@ export function generateMap(
     props.unshift(...coverFloor(grid, dress));
     block(grid, props, keep);
     patches = design ? placeLakes(grid, dress, rooms, keep, design.lake) : placePatches(grid, dress, theme, rooms, keep);
+    // Cover was laid before the water and a stone in a lake is a stone in a lake.
+    for (let i = props.length - 1; i >= 0; i--) {
+      if (COVER_SET.has(props[i].id) && grid.wet(props[i].x, props[i].y)) props.splice(i, 1);
+    }
   }
 
   return { grid, rooms, entrance, exit, props, vein, theme, bare: !!zone, zone, patches, raised: standing, plain: !!design };

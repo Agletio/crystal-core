@@ -4676,18 +4676,93 @@
     },
     {
       "id": "node_ore",
-      "object": "b75c8590-8673-496a-98be-5618c2190f71",
+      "object": "70a124a0-38f9-420d-8051-f08f781cb648",
       "tiles": 1.15,
       "tone": 0.2,
       "dull": 0.15
     },
     {
       "id": "node_ore_spent",
-      "object": "7cb2b301-a00a-40f6-88de-9c33023251b1",
+      "object": "722a1ae6-8090-438e-a005-8beed74d5b3b",
       "tiles": 1.15,
       "tone": 0.2,
       "dull": 0.15,
       "with": "node_ore"
+    },
+    {
+      "id": "node_ore2",
+      "object": "467a47a0-c45f-4d13-b25a-e4b3ff7547c3",
+      "tiles": 1.15,
+      "tone": 0.2,
+      "dull": 0.15
+    },
+    {
+      "id": "node_ore2_spent",
+      "object": "f42e4e64-17d2-4765-98e6-331d7ddf9884",
+      "tiles": 1.15,
+      "tone": 0.2,
+      "dull": 0.15,
+      "with": "node_ore2"
+    },
+    {
+      "id": "node_ore3",
+      "object": "e73b211d-d018-4943-825c-7cb21162543f",
+      "tiles": 1.15,
+      "tone": 0.2,
+      "dull": 0.15
+    },
+    {
+      "id": "node_ore3_spent",
+      "object": "4304428b-30aa-47e4-85db-f2c08836a42f",
+      "tiles": 1.15,
+      "tone": 0.2,
+      "dull": 0.15,
+      "with": "node_ore3"
+    },
+    {
+      "id": "node_deadlight",
+      "object": "7347cfad-0403-45b7-8c24-7e7b2aa2e4d9",
+      "tiles": 1.15,
+      "tone": 0.2,
+      "dull": 0.15
+    },
+    {
+      "id": "node_deadlight_spent",
+      "object": "754b6380-623b-45fb-9ebe-5ae6a655218b",
+      "tiles": 1.15,
+      "tone": 0.2,
+      "dull": 0.15,
+      "with": "node_deadlight"
+    },
+    {
+      "id": "node_dust",
+      "object": "2f986e55-063f-4c1a-b75a-cb1dffe1e378",
+      "tiles": 1.15,
+      "tone": 0.2,
+      "dull": 0.15
+    },
+    {
+      "id": "node_dust_spent",
+      "object": "29481a7e-c89c-469b-8b48-f8a4aca5db52",
+      "tiles": 1.15,
+      "tone": 0.2,
+      "dull": 0.15,
+      "with": "node_dust"
+    },
+    {
+      "id": "node_marrow",
+      "object": "77b5d4d2-78fb-45af-8897-72fed69b1909",
+      "tiles": 1.15,
+      "tone": 0.2,
+      "dull": 0.15
+    },
+    {
+      "id": "node_marrow_spent",
+      "object": "09ffd235-5c88-49af-93a3-c108244f3566",
+      "tiles": 1.15,
+      "tone": 0.2,
+      "dull": 0.15,
+      "with": "node_marrow"
     },
     {
       "id": "node_carcass",

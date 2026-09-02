@@ -518,7 +518,13 @@ should have ore veins but when it does have it just have it give 1 most of the
 time, same concept with all the floor spawn stuff"*: 1.5 nodes a bare clear,
 `GATHER.single` of them handing over exactly one, and the amounts are the
 balance lever. **FISH RIDES THE WATER, outside the count**: one spot a lake,
-none on a dry map. **PLACED AFTER THE PACKS**, so how much ore a
+none on a dry map. **THE FISHING SPOT IS ONE RIPPLE THAT MOVES**, drawn by the renderer off
+`rippleRings` and never a painted prop (`LIVE_PROPS`) — *"an actual moving
+ripple even if it's contained to that size"* — and nothing else stands in the
+water: cover on a wet cell is dropped. **A WORLD'S UNIQUE IS A NODE OF ITS OWN**, never dealt, at
+`GATHER.uniqueChance` a run, in its own picture (`MaterialDef.node`) or the
+ore's where none has been asked; the ore itself is three pictures a room draws
+any of (`MaterialFamilyDef.also`), *his picks*. **PLACED AFTER THE PACKS**, so how much ore a
 run holds cannot move what is fighting in it. **IT IS TAKEN ON THE WAY, NEVER
 FETCHED BACK** — `GATHER.near` is what he steps aside for with a pack still
 standing and `GATHER.walk` the sweep once nothing is left, because

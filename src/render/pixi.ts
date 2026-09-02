@@ -73,6 +73,9 @@ import {
   groundLight,
   grainAt,
   GRAIN,
+  LIVE_PROPS,
+  RIPPLE,
+  rippleRings,
   ZOOM_MIN,
 } from './renderer';
 import { GRAIN as GRAIN_SHEETS } from './generated-grain';
@@ -583,6 +586,7 @@ export async function createPixiRenderer(
     const cover = map.props.filter((p) => COVER_SET.has(p.id));
     const over = map.props.filter((p) => !COVER_SET.has(p.id)).sort((a, b) => a.y - b.y);
     for (const prop of [...cover, ...over]) {
+      if (LIVE_PROPS.has(prop.id)) continue; // drawn moving, off the node itself
       const art = PROP_ART[prop.id];
       const canvas = art ? propTextures(prop.id) : null;
       if (!art || !canvas) continue;
@@ -1380,8 +1384,6 @@ export async function createPixiRenderer(
 
   function drawProps(state: RunState): void {
     propLayer.clear();
-    const floor = livingFloor;
-    if (!floor) return;
     const { grid } = state.map;
     const at = (gx: number, gy: number) => grid.at(gx, gy);
     const tile = world.scale.x;
@@ -1390,6 +1392,21 @@ export async function createPixiRenderer(
     const x1 = Math.min(grid.width, Math.ceil((viewW() - world.position.x) / tile) + 1);
     const y1 = Math.min(grid.height, Math.ceil((viewH() - world.position.y) / tile) + 1);
 
+    // THE RIPPLE, on the water a fishing spot sits on, until it is fished out —
+    // whatever floor the zone has, since a generated one has no living decals.
+    for (const node of state.nodes) {
+      if (node.family !== 'fish' || node.taken || !node.on) continue;
+      const { x, y } = node.on;
+      if (x < x0 - 1 || x > x1 || y < y0 - 1 || y > y1) continue;
+      for (const ring of rippleRings(state.elapsed, node.id * 0.7)) {
+        propLayer
+          .circle(x + 0.5, y + 0.5, ring.r)
+          .stroke({ color: toHexNumber(palette.chalk), alpha: ring.alpha, width: RIPPLE.width });
+      }
+    }
+
+    const floor = livingFloor;
+    if (!floor) return;
     for (let y = y0; y < y1; y++) {
       for (let x = x0; x < x1; x++) {
         for (const d of livingDecals(floor, at, x, y, state.elapsed)) {

@@ -362,10 +362,9 @@ export interface GatherNode {
   pack: number; // whose falling frees it
   family: string;
   /** The `MaterialDef` id this world's version of that family is, and how many
-   *  it hands over. `also` is the world's UNIQUE, riding on top of one node. */
+   *  it hands over. A `family` of `unique` is the world's own, a node apart. */
   material: string;
   n: number;
-  also?: string;
   art: { node: string; spent: string };
   /** WHERE THE PICTURE GOES when that is not where he stands: ripples sit ON
    *  the water and `x`/`y` stay the bank, so every walk rule is untouched. */
@@ -1111,7 +1110,6 @@ export class RunSim {
     // *"relatively equal drop rates"* is only sayable as a spread.
     const deck = this.rng.shuffle(GATHERED.filter((f) => f.id !== 'fish').map((f) => f.id));
     const packs = this.rng.shuffle(Array.from({ length: packCount }, (_, i) => i));
-    const carries = unique ? this.rng.int(0, wanted - 1) : -1;
 
     // EVERY LAKE CARRIES A FISHING SPOT, off the count first, and a dry map
     // grows none: ripples on rock are a picture of a thing that is not there.
@@ -1135,29 +1133,32 @@ export class RunSim {
       const pack = rest.shift()!;
       laid.push({ family: deck[i % deck.length], pack, room: packRoom[pack], pool: null });
     }
+    // THE WORLD'S UNIQUE IS A NODE OF ITS OWN, rare, in its own picture or the ore's.
+    if (unique && rest.length > 0 && this.rng.chance(GATHER.uniqueChance)) {
+      const pack = rest.shift()!;
+      laid.push({ family: 'unique', pack, room: packRoom[pack], pool: null });
+    }
 
+    const metal = MATERIAL_FAMILY_BY_ID.metal;
     for (let i = 0; i < laid.length; i++) {
       const { pack, pool, room } = laid[i];
-      const family = MATERIAL_FAMILY_BY_ID[laid[i].family];
-      const def = world.find((m) => m.family === family.id);
+      const rare = laid[i].family === 'unique';
+      const family = rare ? metal : MATERIAL_FAMILY_BY_ID[laid[i].family];
+      const def = rare ? unique : world.find((m) => m.family === family.id);
       if (!def || (family.id === 'fish' && !pool)) continue;
       const at = pool?.stand ?? this.nodeSpot(map, room, family.id);
-      const other = family.also;
-      const pair = other && this.rng.next() < 0.5
-        ? { node: other[0], spent: other[1] }
-        : { node: family.node ?? '', spent: family.spent ?? '' };
+      const pairs = [[family.node ?? '', family.spent ?? ''], ...(family.also ?? [])];
+      const [node, spent] = rare && def.node ? [def.node, def.spent ?? ''] : pairs[this.rng.int(0, pairs.length - 1)];
+      const pair = { node, spent };
       this.nodesDown.push({
         id: this.nextNode++,
         x: at.x,
         y: at.y,
         pack,
-        family: family.id,
+        family: rare ? 'unique' : family.id,
         material: def.id,
-        n: this.rng.next() < GATHER.single ? 1 : this.rng.int(GATHER.yield[0], GATHER.yield[1]),
-        ...(i === carries && unique ? { also: unique.id } : {}),
+        n: rare || this.rng.next() < GATHER.single ? 1 : this.rng.int(GATHER.yield[0], GATHER.yield[1]),
         ...(pool ? { on: pool.on } : {}),
-        // The deck is GATHERED, so both frames are always there. A family with
-        // a second pair draws either, so a room of one plant is not wallpaper.
         art: pair,
         at: map.props.length,
       });
@@ -1215,7 +1216,7 @@ export class RunSim {
       !(x === Math.round(middle.x) && y === Math.round(middle.y)) &&
       !map.props.some((p) => p.x === x && p.y === y && SOLID_PROPS.has(p.id));
     const grows =
-      family === 'metal' ? openSpots(map.grid, room)
+      family === 'metal' || family === 'unique' ? openSpots(map.grid, room)
       : family === 'cloth' ? dampSpots(map.grid, room)
       : [];
     const spots = grows.filter((v) => free(v.x, v.y));
@@ -4137,15 +4138,9 @@ export class RunSim {
 
     const family = MATERIAL_FAMILY_BY_ID[node.family];
     this.bankMaterial(node.material, node.n);
+    const rare = node.family === 'unique' ? MATERIAL_BY_ID[node.material] : undefined;
     this.state.floaters.push({
-      x: node.x, y: node.y, text: `${family?.verb ?? 'Took'} ${node.n}`, age: 0, crit: false,
-      on: 'monster', kind: 'loot',
-    });
-    if (!node.also) return;
-    this.bankMaterial(node.also, 1);
-    const rare = MATERIAL_BY_ID[node.also];
-    this.state.floaters.push({
-      x: node.x, y: node.y - 0.6, text: rare?.name ?? node.also, age: 0, crit: true,
+      x: node.x, y: node.y, text: rare ? rare.name : `${family?.verb ?? 'Mined'} ${node.n}`, age: 0, crit: !!rare,
       on: 'monster', kind: 'loot',
     });
   }

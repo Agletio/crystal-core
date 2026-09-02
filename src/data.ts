@@ -2229,8 +2229,8 @@ export interface MaterialFamilyDef {
   verb: string;
   node?: string; // a node's two frames; a DROPPED family has none
   spent?: string;
-  /** A SECOND pair, drawn instead half the time, so one plant is not wallpaper. */
-  also?: [string, string];
+  /** MORE pairs, a room drawing any of them evenly, so one plant is not wallpaper. */
+  also?: [string, string][];
   from: MaterialSource;
   /** What ONE processed unit of it is called, so a stack reads as a thing
    *  rather than as a plural stuck on a name. */
@@ -2239,11 +2239,12 @@ export interface MaterialFamilyDef {
 
 export const MATERIAL_FAMILIES: MaterialFamilyDef[] = [
   { id: 'metal', name: 'Metal', raw: 'ore', processed: 'bars', station: 'the smelter',
-    verb: 'Mined', node: 'node_ore', spent: 'node_ore_spent', from: 'gathered', one: 'Bar' },
+    verb: 'Mined', node: 'node_ore', spent: 'node_ore_spent',
+    also: [['node_ore2', 'node_ore2_spent'], ['node_ore3', 'node_ore3_spent']], from: 'gathered', one: 'Bar' },
   // CLOTH IS A PLANT, which is where the herb went: something you cut.
   { id: 'cloth', name: 'Cloth', raw: 'fibre', processed: 'bolts', station: 'the loom',
     verb: 'Cut', node: 'node_fibre', spent: 'node_fibre_spent',
-    also: ['node_fibre2', 'node_fibre2_spent'], from: 'gathered', one: 'Bolt' },
+    also: [['node_fibre2', 'node_fibre2_spent']], from: 'gathered', one: 'Bolt' },
   { id: 'hide', name: 'Hide', raw: 'skins', processed: 'leather', station: 'the tanning frame',
     verb: 'Skinned', from: 'dropped', one: 'Leather' },
   // A DEADFALL sits in the rock like an outcrop, so wood is gathered. Not the
@@ -2275,6 +2276,9 @@ export interface MaterialDef {
   family: string | null;
   icon: string;
   description: string;
+  /** A UNIQUE'S OWN NODE, the two frames; without one it wears the ore's. */
+  node?: string;
+  spent?: string;
 }
 
 /** TWENTY-FOUR VERSIONS AND FOUR UNIQUES. Wood in a crystal cavern is a NAMING
@@ -2293,6 +2297,7 @@ export const MATERIALS: MaterialDef[] = [
   { id: 'blindfish', name: 'Blindfish', world: 'fissure', family: 'fish', icon: 'mat_blindfish',
     description: 'Pale and eyeless. It has never needed either.' },
   { id: 'deadlight', name: 'Deadlight', world: 'fissure', family: null, icon: 'mat_deadlight',
+    node: 'node_deadlight', spent: 'node_deadlight_spent',
     description: 'A candle still burning that warms nothing and lights nothing.' },
 
   { id: 'lattice_ore', name: 'Lattice Ore', world: 'prismatic', family: 'metal', icon: 'mat_lattice_ore',
@@ -2308,6 +2313,7 @@ export const MATERIALS: MaterialDef[] = [
   { id: 'palefin', name: 'Palefin', world: 'prismatic', family: 'fish', icon: 'mat_palefin',
     description: 'Out of the warm pools the crystal keeps.' },
   { id: 'measured_dust', name: 'Measured Dust', world: 'prismatic', family: null, icon: 'mat_measured_dust',
+    node: 'node_dust', spent: 'node_dust_spent',
     description: 'What is left when the rock has finished deciding.' },
 
   { id: 'bloodiron', name: 'Bloodiron', world: 'demonic', family: 'metal', icon: 'mat_bloodiron',
@@ -2323,6 +2329,7 @@ export const MATERIALS: MaterialDef[] = [
   { id: 'sumpfish', name: 'Sumpfish', world: 'demonic', family: 'fish', icon: 'mat_sumpfish',
     description: 'Hauled out of water warmer than it has any right to be.' },
   { id: 'quick_marrow', name: 'Quick Marrow', world: 'demonic', family: null, icon: 'mat_quick_marrow',
+    node: 'node_marrow', spent: 'node_marrow_spent',
     description: 'The bone stopped. What is in it did not.' },
 
   { id: 'seamsteel', name: 'Seamsteel', world: 'seam', family: 'metal', icon: 'mat_seamsteel',
@@ -3521,8 +3528,8 @@ export const GATHER = {
    *  ask forbids. */
   walk: 22,
   near: 9, // and how far he steps aside for one with a pack still standing
-  /** A world's UNIQUE belongs to no family, so it is never one of the six the
-   *  run spreads — it rides ON TOP of a node, at this chance, for one. */
+  /** A world's UNIQUE belongs to no family, so it is never dealt — it is a
+   *  node of its own, at this chance a run, handing over one. */
   uniqueChance: 0.07,
 };
 

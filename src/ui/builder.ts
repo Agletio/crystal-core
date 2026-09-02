@@ -7,7 +7,7 @@
  *
  * What comes out is a PLAN: one character a tile and a list of objects.
  */
-import { FLOOR, Grid, SHELF, STAIR, RIM, WALL, high, patchesAt, patchesFor, rimShelves, wangKey } from '../sim/grid';
+import { DESIGN, FLOOR, Grid, SHELF, STAIR, RIM, WALL, high, patchesAt, patchesFor, rimShelves, wangKey } from '../sim/grid';
 import { SHELF_SET, ZONE } from '../sim/grid';
 import { GRAIN, grainAt, groundLight, patchTileAt, zoneTileAt } from '../render/renderer';
 import { GRAIN as GRAIN_SHEETS } from '../render/generated-grain';
@@ -84,7 +84,7 @@ async function decode(): Promise<void> {
 
 /** The patch sets of this world, in `Grid.patch`'s own 1-based order — the
  *  same list a generated map indexes, so an index means one thing. */
-const setsFor = (t: MapTheme) => patchesFor(t);
+const setsFor = (t: MapTheme) => (DESIGN[t] ? [DESIGN[t]!.lake] : patchesFor(t));
 
 function reset(): void {
   grid = new Grid(WIDE, TALL); // all rock: a floor is CARVED, like the real one
@@ -141,7 +141,7 @@ function draw(): void {
   ctx.clearRect(0, 0, w, h); // the stage's own ground shows through
   if (!ready) return;
 
-  const name = ZONE[theme];
+  const name = DESIGN[theme]?.zone ?? ZONE[theme]; // a designed world draws its own family
   const set = name ? ZONES[name] : undefined;
   const sheet = name ? sheets.get(name) : undefined;
   if (set && sheet) {
@@ -158,7 +158,7 @@ function draw(): void {
   // THE GRAIN over a plain floor cell, the renderer's own pick.
   const grainSheet = GRAIN_SHEETS[theme];
   const grainImg = grainSheet ? sheets.get(`grain:${theme}`) : undefined;
-  if (grainSheet && grainImg) {
+  if (grainSheet && grainImg && !DESIGN[theme]) { // a designed floor is plain
     ctx.globalAlpha = GRAIN.alpha;
     for (let y = 0; y < grid.height; y++) {
       for (let x = 0; x < grid.width; x++) {
@@ -220,7 +220,7 @@ function draw(): void {
   // THE LIGHT, the renderer's own per-cell shade laid as a wash.
   for (let y = 0; y < grid.height; y++) {
     for (let x = 0; x < grid.width; x++) {
-      if (grid.at(x, y) === WALL) continue;
+      if (grid.at(x, y) === WALL || DESIGN[theme]) continue;
       const dark = 1 - groundLight(grid, x, y);
       if (dark <= 0) continue;
       ctx.fillStyle = `rgba(0,0,0,${dark.toFixed(3)})`;
