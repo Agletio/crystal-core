@@ -124,11 +124,14 @@ shelf on a floor yet.
       a wall two deep (measured 17 of 17), a plant on damp floor where the room
       has any (17 of 20), a fishing spot on the deep with a wreath cell to
       stand on. Still a node a pack, dealt round, guarded by its pack.
-- [ ] **ORE DRAWN IN THE FACE.** The node stands at the wall's foot now, but
-      the picture is still a boulder on the floor. The vein wants to be an
-      object inpainted into a crop of the real face, one cent, like the stair
-      — and *"I dont like how the ores and the fish look"* is the re-ask that
-      already stood in Phase 9.
+- [ ] **ORE DRAWN IN THE FACE, AND THE FISH.** The node stands at the wall's
+      foot now, but the picture is still a boulder on the floor. **Inpainting
+      into a crop does NOT do this**: a vein in the face, a rusted band and a
+      fish rising were asked into real crops and all three came back as the
+      crop repainted, exactly as the flat stair had — the inpainter only draws
+      where the context is already a shape (the south stair's cliff). The
+      road is `node.mts`: `create_1_direction_object` with the roster's style
+      images, sixteen candidates a call, shown to the user, then picked.
 - [x] **THE LIGHT AND THE MASK.** `groundLight` in `render/renderer.ts` is
       the one per-cell shade — a slow drift and a slope down to 0.78 at the
       rock's foot off how open the five-by-five is — worn by every tile of a
