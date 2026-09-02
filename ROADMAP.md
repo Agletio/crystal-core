@@ -148,10 +148,13 @@ shelf on a floor yet.
       marked cell is a square of marks beside a plain one. If the user sees
       the checker, the answer is marks asked SMALLER than a tile and placed
       off-grid like cover, or fewer heavier ones — not more alpha.
-- [ ] **WATER RE-ASKED.** `fissure_pool` reads as ridged slabs and its chained
-      floor is a shade off the zone's, which draws a square halo round every
-      pool. Ask the shore again off the SAME floor tile and check the halo in
-      the builder before importing.
+- [x] **THE HALO IS GONE BY MEASUREMENT.** `SITS_ON` in `zoneset.mts`: a
+      patch set is toned to the floor it sits on at emit, by the gain between
+      its own outside tile and the zone's floor tile (the Fissure's pool drew
+      its floor 14% dark). No generation spent.
+- [ ] **WATER RE-ASKED?** `fissure_pool` still reads as ridged slabs at tile
+      size — the user's word on whether it does, before a re-ask off the same
+      floor tile (pro, ~30 generations, or standard/round at ~4).
 
 ## Phase 9 — WHERE MATERIALS COME FROM: gathered, or off a body
 

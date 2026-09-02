@@ -64,6 +64,15 @@ for (const name of [
   RETONE[name] = RETONE.lit_round;
 }
 
+/** Which zone floor a patch set is laid on, for the gain measured at emit. */
+const SITS_ON: Record<string, string> = {
+  fissure_pool: 'lit_round',
+  rot_blood: 'rot_round',
+  cavern_pool: 'cavern_round',
+  seam_lava: 'seam_pro',
+  seam_pool: 'seam_pro',
+};
+
 function retone(png: Buffer, how: Retone): Buffer {
   const { width, height, rgba } = decodePng(png);
   for (let i = 0; i < rgba.length; i += 4) {
@@ -699,18 +708,56 @@ if (process.argv[2] === 'ask') {
   }
 } else if (process.argv[2] === 'emit') {
   const TERRAIN: Record<string, number> = { lower: 0, upper: 1, transition: 2 };
+  const keyOf = (t: any): number =>
+    ((TERRAIN[t.corners.NW] * 3 + TERRAIN[t.corners.NE]) * 3 + TERRAIN[t.corners.SW]) * 3 + TERRAIN[t.corners.SE];
+  /** The mean colour of one tile of a sheet, by corner key. */
+  const meanOf = (png: Buffer, meta: any, key: number): number[] => {
+    const t = meta.tileset_data.tiles.find((t: any) => keyOf(t) === key);
+    const img = decodePng(png);
+    const sum = [0, 0, 0];
+    let n = 0;
+    for (let y = 0; y < t.bounding_box.height; y++) {
+      for (let x = 0; x < t.bounding_box.width; x++) {
+        const i = ((t.bounding_box.y + y) * img.width + t.bounding_box.x + x) * 4;
+        if (img.rgba[i + 3] === 0) continue;
+        for (let c = 0; c < 3; c++) sum[c] += img.rgba[i + c];
+        n++;
+      }
+    }
+    return sum.map((v) => v / Math.max(1, n));
+  };
+  const toned = (name: string): Buffer => {
+    const raw = readFileSync(`${OUT}/${name}.png`);
+    const how = RETONE[name];
+    return how ? retone(raw, how) : raw;
+  };
   const want = process.argv.slice(3);
   const body = want.map((name) => {
   const meta = JSON.parse(readFileSync(`${OUT}/${name}.json`, 'utf8'));
-  const raw = readFileSync(`${OUT}/${name}.png`);
   const how = RETONE[name];
-  const png = (how ? retone(raw, how) : raw).toString('base64');
+  let sheet = toned(name);
   if (how) console.log(`  ${name}: retoned, sat ${how.sat}, mul ${how.mul.join('/')}`);
+  // TONED TO THE FLOOR IT SITS ON, by measurement: a chained set draws the
+  // floor again in its own rendition, and every corner of a pool outside the
+  // water wears that floor, so a shade off is a square halo round it. The
+  // whole sheet takes the gain, tiles interlocking at their edges.
+  const under = SITS_ON[name];
+  if (under) {
+    const floor = meanOf(toned(under), JSON.parse(readFileSync(`${OUT}/${under}.json`, 'utf8')), 0);
+    const mine = meanOf(sheet, meta, 40);
+    const gain = floor.map((f, c) => f / Math.max(1, mine[c]));
+    const img = decodePng(sheet);
+    for (let i = 0; i < img.rgba.length; i += 4) {
+      if (img.rgba[i + 3] === 0) continue;
+      for (let c = 0; c < 3; c++) img.rgba[i + c] = Math.max(0, Math.min(255, Math.round(img.rgba[i + c] * gain[c])));
+    }
+    sheet = encodePng(img.width, img.height, img.rgba as any);
+    console.log(`  ${name}: toned to ${under}'s floor, gain ${gain.map((g) => g.toFixed(2)).join('/')}`);
+  }
+  const png = sheet.toString('base64');
   // A corner in base three, high to low, exactly as the renderer keys a cell.
   const tiles = meta.tileset_data.tiles.map((t: any) => ({
-    key:
-      ((TERRAIN[t.corners.NW] * 3 + TERRAIN[t.corners.NE]) * 3 + TERRAIN[t.corners.SW]) * 3 +
-      TERRAIN[t.corners.SE],
+    key: keyOf(t),
     // What is ABOVE and BELOW the tile, 255 where it does not care. The four
     // wall-continuation tiles share their corners with a twin and are told
     // apart by nothing else.
