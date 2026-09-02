@@ -2185,7 +2185,10 @@ rule('SPRITES — is the pixel art well formed?');
         wetRooms++;
         const spot = sim.state.nodes.find((n) => n.family === 'fish' && n.on && lake.has(n.on.y * grid.width + n.on.x));
         const on = spot?.on;
-        if (spot && on && grid.walkable(spot.x, spot.y) && Math.abs(on.x - spot.x) + Math.abs(on.y - spot.y) === 1) fished++;
+        // The ripple sits on a cell drawn wholly as water, the bank one or
+        // two tiles off along a cardinal.
+        const off = on ? [Math.abs(on.x - spot.x), Math.abs(on.y - spot.y)] : [9, 9];
+        if (spot && on && grid.walkable(spot.x, spot.y) && Math.min(...off) === 0 && Math.max(...off) <= 2) fished++;
       }
       runToCompletion(sim, 600);
       if (sim.state.status !== 'running') ended++;

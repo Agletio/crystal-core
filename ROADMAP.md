@@ -173,18 +173,20 @@ shelf on a floor yet.
       has the rock set's floor mean exactly, 44% of pixels identical) — with
       chambers of 8–14 by 6–10 and WHOLE lakes: every cell blocks, a cell of
       plain floor all round (`shoreClear`: no face, no shelf), `encloses`
-      refusing a cell that would cut the dry ground in two, `fatten` keeping
-      only cells inside a full two-by-two (A LAKE IS DRAWN AT ITS CORNERS, so a
-      one-cell arm blocked and drew nothing), 20–80 cells on 39 of 40 maps.
-      Every wet room carries a fishing spot on water drawn at least half wet
-      beside a bank, off the gather count first and capped at fish's equal
+      refusing a cell that would cut the dry ground in two, grown ROUND off
+      its seed and `fatten`ed to cells inside a full three-by-three
+      (`LAKE_FAT`: A LAKE IS DRAWN AT ITS CORNERS, so a run of cells draws a
+      tile narrower than it is — *"water should be a minimum of two tile
+      width so the ripples fit"*), 20–77 cells on 38 of 40 maps with chambers
+      of 10–16 by 7–12. Every lake carries a fishing spot on a cell drawn
+      WHOLLY as water (every neighbour wet), the bank one or two tiles off
+      along a cardinal, off the gather count first and capped at fish's equal
       share (uncapped, the Fissure's seven small lakes took fish to 26 of 72
-      nodes). Measured over 12 shipped descents: fish 18, metal 20, cloth 18,
-      wood 16. Nothing shipped reads the toggle while it is off; the worlds'
-      lakes keep their wreath. Seen on the shot: `groundLight`'s drift reads
-      as square patches on this flatter floor — a per-cell tint on a tile
-      with less grain to hide it; the fix, if he minds, is a smoother drift
-      (bigger `LIGHT.scale`) rather than a re-ask.
+      nodes). Measured over 12 shipped descents: fish 17, metal 20, cloth 19,
+      wood 16. `groundLight`'s blocky drift is OFF on the test level — *"what's
+      up with the different shading of tiles? It looks weird"* — the foot
+      slope stays. Nothing shipped reads the toggle while it is off; the
+      worlds' lakes keep their wreath and their drift.
 - [ ] **WORK THE DESIGN OUT THERE.** What the user judges next on the test
       level, in order: the family's look (the face came back a warm brown, not
       the Fissure's near-black), the lake's size and shore, the ripple, then

@@ -270,10 +270,12 @@ that to test until we get a good level design."* `TEST_LEVEL` in
 `descent-peek` — swaps the next descent onto its own family (`test_round`, and
 `test_pool` chained off that set's floor tile in the same mode, so one floor is
 drawn everywhere) and its own rules: bigger chambers, WHOLE lakes nobody walks,
-a cell of plain floor all round them, a fishing spot on every one. **A SHIPPED
-SET IS NEVER EDITED**: what is judged good here becomes a world's by asking
-that world's family the same way. Nothing shipped reads the flag while it is
-off.
+a cell of plain floor all round them, every cell inside a full three-by-three
+(a lake is drawn at its CORNERS, so a run of cells draws a tile narrower than
+it is, and two tiles of water is what a ripple fits in), a fishing spot on a
+cell drawn wholly as water, and no light drift on the floor. **A SHIPPED SET IS
+NEVER EDITED**: what is judged good here becomes a world's by asking that
+world's family the same way. Nothing shipped reads the flag while it is off.
 
 **A LAKE IS A DEEP CORE IN A SHALLOW WREATH.** Brogue's rule: a blocking patch's
 DEEP is every cell of it with the patch on all four sides (`Grid.deep`), and its

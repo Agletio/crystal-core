@@ -6,7 +6,7 @@
  */
 import { Rng } from '../rng';
 import { SOLID_PROPS } from '../vignettes';
-import { generateMap, sceneMap, dist, hasLineOfSight, patchKey, roomCenter, wallFootSpots, dampSpots } from './grid';
+import { generateMap, sceneMap, dist, hasLineOfSight, roomCenter, wallFootSpots, dampSpots } from './grid';
 import type { GameMap, Grid, Room, Vec2 } from './grid';
 import { findPath, nearestByPath } from './pathfind';
 import { AILMENT, AMBUSH, DAMAGE_TYPE_BY_ID, PASSIVE_DAMAGE, POTIONS, POTION_BY_ID } from '../data';
@@ -1174,15 +1174,25 @@ export class RunSim {
     const found: { stand: Vec2; on: Vec2 }[] = [];
     for (let y = room.y; y < room.y + room.h; y++) {
       for (let x = room.x; x < room.x + room.w; x++) {
-        // Water nobody walks, beside a cell somebody stands on, drawn at least half water.
+        // Water nobody walks, drawn WHOLLY as water (a lake is drawn at its
+        // corners, so that is every neighbour wet), with a cell somebody
+        // stands on one or two tiles off along a cardinal.
         if (!grid.wet(x, y) || grid.walkable(x, y)) continue;
-        const key = patchKey(grid, x, y, grid.patch[y * grid.width + x]);
-        if ([27, 9, 3, 1].filter((d) => Math.floor(key / d) % 3 === 0).length < 2) continue;
-        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
-          if (!grid.walkable(x + dx, y + dy)) continue;
-          found.push({ stand: { x: x + dx, y: y + dy }, on: { x, y } });
-          break;
+        let whole = true;
+        for (let dy = -1; dy <= 1 && whole; dy++) {
+          for (let dx = -1; dx <= 1; dx++) if (!grid.wet(x + dx, y + dy)) whole = false;
         }
+        if (!whole) continue;
+        let stand: Vec2 | null = null;
+        for (let r = 1; r <= 2 && !stand; r++) {
+          for (const [dx, dy] of [[r, 0], [-r, 0], [0, r], [0, -r]] as const) {
+            if (grid.walkable(x + dx, y + dy)) {
+              stand = { x: x + dx, y: y + dy };
+              break;
+            }
+          }
+        }
+        if (stand) found.push({ stand, on: { x, y } });
       }
     }
     return found;

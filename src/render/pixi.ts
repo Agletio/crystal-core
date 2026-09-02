@@ -495,7 +495,7 @@ export async function createPixiRenderer(
       // THE LIGHT: every tile of one cell wears the same shade, so a shelf or a
       // pool drawn over the ground cannot stand out as a brighter square.
       const shade = (x: number, y: number): number => {
-        const v = Math.round(groundLight(grid, x, y) * 255);
+        const v = Math.round(groundLight(grid, x, y, map.zone !== TEST_LEVEL.zone) * 255);
         return (v << 16) | (v << 8) | v;
       };
       const rock = (x: number, y: number): boolean =>

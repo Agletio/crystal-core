@@ -288,7 +288,7 @@ export const TEST_LEVEL = {
   zone: 'test_round',
   /** Chambers big enough to seat a whole lake with a bank all round: at the
    *  worlds' 5–9 by 4–7, two maps in forty could. */
-  room: { w: [8, 14] as [number, number], h: [6, 10] as [number, number] },
+  room: { w: [10, 16] as [number, number], h: [7, 12] as [number, number] },
   lake: { set: 'test_pool', blocks: true, chance: 1, count: [1, 2] as [number, number], least: 20, most: 80 },
 };
 export const LAKE_SHORE = 1;
@@ -909,13 +909,19 @@ function growPatch(
   keep: Set<number>,
   ring: Set<number>,
   from: Vec2,
-  fits: (x: number, y: number) => boolean = () => true
+  fits: (x: number, y: number) => boolean = () => true,
+  round = false // nearest the seed first, so the blob is a disc that survives fattening
 ): number[] {
   const taken: number[] = [];
   const edge: Vec2[] = [from];
   const seen = new Set<number>();
   while (edge.length > 0 && taken.length < def.most) {
-    const at = edge.splice(rng.int(0, edge.length - 1), 1)[0];
+    let pick = rng.int(0, edge.length - 1);
+    if (round) {
+      pick = 0;
+      for (let i = 1; i < edge.length; i++) if (dist(edge[i], from) < dist(edge[pick], from)) pick = i;
+    }
+    const at = edge.splice(pick, 1)[0];
     const key = at.y * grid.width + at.x;
     if (seen.has(key)) continue;
     seen.add(key);
@@ -1054,7 +1060,7 @@ function placeLakes(grid: Grid, rng: Rng, rooms: Room[], keep: Vec2[]): string[]
     for (let tries = 0; tries < 12; tries++) {
       const from = seedFor(grid, rng, rooms, fits);
       if (!from) break;
-      const taken = fatten(grid, growPatch(grid, rng, 1, def, spared, ringed, from, fits));
+      const taken = fatten(grid, growPatch(grid, rng, 1, def, spared, ringed, from, fits, true));
       const now = reachable(grid, keep[0]).size;
       if (taken.length >= def.least && now === open - taken.length) {
         open = now;
@@ -1070,17 +1076,25 @@ function placeLakes(grid: Grid, rng: Rng, rooms: Room[], keep: Vec2[]): string[]
  *  the eight neighbours walked as a ring, and the dry ones in more than one
  *  run means a room's middle or a corridor's mouth about to be cut off. */
 /** A LAKE IS DRAWN AT ITS CORNERS: a corner tile shows water only where all
- *  four cells round it are wet, so a one-cell arm blocks and draws nothing.
- *  Every cell kept sits in a full two-by-two; the rest is handed back. */
+ *  four cells round it are wet, so a run of cells draws one tile narrower
+ *  than it is, and a one-cell arm blocks and draws nothing. Every cell kept
+ *  sits in a full `LAKE_FAT` square — three, so the water drawn is never
+ *  under two tiles wide and a ripple has a cell drawn wholly as water to sit
+ *  on. The rest is handed back. */
+export const LAKE_FAT = 3;
 function fatten(grid: Grid, taken: number[]): number[] {
   const wet = (x: number, y: number) => grid.inBounds(x, y) && grid.patch[y * grid.width + x] !== 0;
-  const square = (x: number, y: number) => wet(x, y) && wet(x + 1, y) && wet(x, y + 1) && wet(x + 1, y + 1);
+  const square = (x: number, y: number) => {
+    for (let dy = 0; dy < LAKE_FAT; dy++) for (let dx = 0; dx < LAKE_FAT; dx++) if (!wet(x + dx, y + dy)) return false;
+    return true;
+  };
   let kept = taken;
   for (let pass = 0; pass < 64; pass++) {
     const thin = kept.filter((key) => {
       const x = key % grid.width;
       const y = Math.floor(key / grid.width);
-      return !(square(x, y) || square(x - 1, y) || square(x, y - 1) || square(x - 1, y - 1));
+      for (let dy = 1 - LAKE_FAT; dy <= 0; dy++) for (let dx = 1 - LAKE_FAT; dx <= 0; dx++) if (square(x + dx, y + dy)) return false;
+      return true;
     });
     if (thin.length === 0) break;
     for (const key of thin) grid.patch[key] = 0;
