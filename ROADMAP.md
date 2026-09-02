@@ -196,12 +196,11 @@ dealt the WET rooms first** — the packs are split by whether their room has a
 bank, and `banks()` SCANS a room rather than sampling it, so a two-tile pool is
 found. Measured over 12 descents: metal 17, cloth 20, wood 15, fish 17.
 
-- [ ] **THE CLOTH FAMILY'S FOUR MATERIALS STILL CARRY SPIDER-SILK NAMES.**
-      `MaterialFamilyDef` is a plant already — `raw: 'fibre'`, `verb: 'Cut'`,
-      the bush nodes — but `wickcloth`, `glassweave`, `rotsilk` and `weldcloth`
-      are woven things, and their icons are cloth. New icons through
-      `icons.json` → `icon.mts` → `portrait.mts`. **The ids do not move**: a
-      save points at them, so it is `name` and `description` that change.
+- [x] **THE CLOTH FAMILY IS FIBRE NOW.** Wickflax, Glasshemp, Rotcotton and
+      Seamflax — the ids `wickcloth`, `glassweave`, `rotsilk`, `weldcloth`
+      stay, since a save points at them — with descriptions that grow and
+      icons that are a bundle of stalks or a boll on a stem, re-asked through
+      `icons.json` → `icon.mts` → `portrait.mts`.
 - [ ] **THE ORE ART IS RE-ASKED.** *"I dont like how the ores and the fish
       look."* Measured at 6x: the vein is nearly invisible and it reads as a
       grey boulder beside the stump. A bad draw, not a wrong world — re-ask

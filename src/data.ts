@@ -2282,8 +2282,8 @@ export interface MaterialDef {
 export const MATERIALS: MaterialDef[] = [
   { id: 'pale_iron', name: 'Pale Iron', world: 'fissure', family: 'metal', icon: 'mat_pale_iron',
     description: 'Ore out of the old workings, more rust than iron.' },
-  { id: 'wickcloth', name: 'Wickcloth', world: 'fissure', family: 'cloth', icon: 'mat_wickcloth',
-    description: 'Coarse lamp-wick, spun for burning rather than wearing.' },
+  { id: 'wickcloth', name: 'Wickflax', world: 'fissure', family: 'cloth', icon: 'mat_wickcloth',
+    description: 'Pale flax off the lamp shelves. It was grown for wicks, and it spins.' },
   { id: 'sump_hide', name: 'Sump Hide', world: 'fissure', family: 'hide', icon: 'mat_sump_hide',
     description: 'Skinned off something that drowned in the low workings.' },
   { id: 'propwood', name: 'Propwood', world: 'fissure', family: 'wood', icon: 'mat_propwood',
@@ -2297,8 +2297,8 @@ export const MATERIALS: MaterialDef[] = [
 
   { id: 'lattice_ore', name: 'Lattice Ore', world: 'prismatic', family: 'metal', icon: 'mat_lattice_ore',
     description: 'Ore the crystal grew through instead of round.' },
-  { id: 'glassweave', name: 'Glassweave', world: 'prismatic', family: 'cloth', icon: 'mat_glassweave',
-    description: 'Thread drawn fine enough from crystal to be tied.' },
+  { id: 'glassweave', name: 'Glasshemp', world: 'prismatic', family: 'cloth', icon: 'mat_glassweave',
+    description: 'A fibre that grew up through the crystal, and pulls as fine as glass thread.' },
   { id: 'shardhide', name: 'Shardhide', world: 'prismatic', family: 'hide', icon: 'mat_shardhide',
     description: 'What grew a shell down here instead of a skin.' },
   { id: 'quartzwood', name: 'Quartzwood', world: 'prismatic', family: 'wood', icon: 'mat_quartzwood',
@@ -2312,8 +2312,8 @@ export const MATERIALS: MaterialDef[] = [
 
   { id: 'bloodiron', name: 'Bloodiron', world: 'demonic', family: 'metal', icon: 'mat_bloodiron',
     description: 'Ore that stays wet however long it is left out.' },
-  { id: 'rotsilk', name: 'Rotsilk', world: 'demonic', family: 'cloth', icon: 'mat_rotsilk',
-    description: 'Spun by something that had a use for it first.' },
+  { id: 'rotsilk', name: 'Rotcotton', world: 'demonic', family: 'cloth', icon: 'mat_rotsilk',
+    description: 'Grey bolls off a bush that feeds on what lies under it.' },
   { id: 'rotting_leather', name: 'Rotting Leather', world: 'demonic', family: 'hide', icon: 'mat_rotting_leather',
     description: 'It was going to rot anyway. Tanned, it takes longer.' },
   { id: 'gallwood', name: 'Gallwood', world: 'demonic', family: 'wood', icon: 'mat_gallwood',
@@ -2327,8 +2327,8 @@ export const MATERIALS: MaterialDef[] = [
 
   { id: 'seamsteel', name: 'Seamsteel', world: 'seam', family: 'metal', icon: 'mat_seamsteel',
     description: 'Two metals fused at a join neither one made.' },
-  { id: 'weldcloth', name: 'Weldcloth', world: 'seam', family: 'cloth', icon: 'mat_weldcloth',
-    description: 'Woven from both sides at once, and it meets.' },
+  { id: 'weldcloth', name: 'Seamflax', world: 'seam', family: 'cloth', icon: 'mat_weldcloth',
+    description: 'Grown across the join, one fibre on each side, and it spins as one.' },
   { id: 'fusedhide', name: 'Fusedhide', world: 'seam', family: 'hide', icon: 'mat_fusedhide',
     description: 'Scaled along one flank and furred along the other.' },
   { id: 'knitwood', name: 'Knitwood', world: 'seam', family: 'wood', icon: 'mat_knitwood',
