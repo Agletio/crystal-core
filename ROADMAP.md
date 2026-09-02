@@ -187,12 +187,34 @@ shelf on a floor yet.
       up with the different shading of tiles? It looks weird"* — the foot
       slope stays. Nothing shipped reads the toggle while it is off; the
       worlds' lakes keep their wreath and their drift.
-- [ ] **WORK THE DESIGN OUT THERE.** What the user judges next on the test
-      level, in order: the family's look (the face came back a warm brown, not
-      the Fissure's near-black), the lake's size and shore, the ripple, then
-      shelves and stairs on the same family (`test_shelf` chained off the same
-      floor tile, one ask). When a design is good it becomes a world's, by
-      re-asking that world's family the same way — never by editing a shipped
+- [x] **THE FISSURE TOOK THE DESIGN.** *"Fix that and then you can push to
+      the main fissure levels."* `DESIGN` in `src/sim/grid.ts` names which
+      worlds run a `LevelDesign` — the Fissure runs `TEST_LEVEL` itself, so
+      the family, the chambers, the whole lakes and the fishing spots are the
+      Fissure's now, and `GameMap.plain` turns the light drift and the grain
+      off on a designed floor: *"there's still kinda the harsh color lines in
+      the floors"* — a per-cell tint is a hard line at every cell, whatever
+      noise drives it. **THE MAP GROWS WITH ITS CHAMBERS** (`LevelDesign.scale`
+      1.7): at the worlds' size the bigger chambers seated 3.9 rooms to 7 and
+      the same packs in half the rooms took Rimespike's first descent to 7 of
+      10; scaled, 7.0 rooms and every skill clears it 10 of 10. The other
+      three worlds are untouched until judged.
+      Left over from the swap: the Fissure's cover props (rubble, stones) and
+      `fissure_shelf` were toned to `lit_round`'s floor; `lit_round` and its
+      grain are emitted but nothing draws them.
+- [x] **MATERIALS ARE SCARCE.** *"Not every floor should have ore veins but
+      when it does have it just have it give 1 most of the time, same concept
+      with all the floor spawn stuff."* `GATHER.perRun` 1.5 nodes a bare
+      clear, `GATHER.single` 0.75 of them handing over one and the rest 2–3;
+      fish rides the water OUTSIDE the count, one spot a lake, lakes on 60% of
+      maps; `BODY_DROP` 1 drop a clear of 1–2. Measured over 40 Fissure
+      descents: metal 23, wood 18, cloth 18, fish 37 (26 wet maps), 3.4 units
+      a descent, 72% of nodes handing over one. Recipes were costed against
+      the old rates — the balance pass reads `CRAFT`'s costs against these.
+- [ ] **WORK THE DESIGN ON.** Next on the test level, in order: the face
+      (warm brown, not the Fissure's near-black), then shelves and stairs on
+      the same family (`test_shelf` chained off the same floor tile, one
+      ask). A world takes a design through `DESIGN`, never through an edited
       set.
 - [ ] **WATER RE-ASKED?** `fissure_pool` still reads as ridged slabs at tile
       size — moot if the test level's family becomes the Fissure's.

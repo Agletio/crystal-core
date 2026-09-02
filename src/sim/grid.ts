@@ -209,6 +209,8 @@ export interface GameMap {
   bare?: boolean;
   /** The patch sets on this map, in `Grid.patch`'s own 1-based order. */
   patches: string[];
+  /** A designed floor: no light drift, no grain — one tile, flat. */
+  plain?: boolean;
   /** Which generated tileset that surface is, when there is one. */
   zone?: string;
   /** Which rooms stand a level up, by index into `rooms`. */
@@ -284,20 +286,38 @@ export function raiseShare(share: number | null): void {
  * `LAKE_SHORE` cells of plain floor all round it, so a shore tile never shares
  * a cell with a rock face or a shelf.
  */
-export const TEST_LEVEL = {
-  zone: 'test_round',
+export interface LevelDesign {
+  zone: string;
   /** Chambers big enough to seat a whole lake with a bank all round: at the
    *  worlds' 5–9 by 4–7, two maps in forty could. */
-  room: { w: [10, 16] as [number, number], h: [7, 12] as [number, number] },
-  lake: { set: 'test_pool', blocks: true, chance: 1, count: [1, 2] as [number, number], least: 20, most: 80 },
+  room: { w: [number, number]; h: [number, number] };
+  /** The map grows with its chambers, or the same packs land in half the
+   *  rooms: at the worlds' size the bigger chambers seated 3.9 rooms to 7. */
+  scale: number;
+  lake: { set: string; blocks: boolean; chance: number; count: [number, number]; least: number; most: number };
+}
+
+export const TEST_LEVEL: LevelDesign = {
+  zone: 'test_round',
+  room: { w: [10, 16], h: [7, 12] },
+  scale: 1.7,
+  lake: { set: 'test_pool', blocks: true, chance: 0.6, count: [1, 2], least: 20, most: 80 },
 };
 export const LAKE_SHORE = 1;
+
+/** WHICH WORLDS HAVE TAKEN THE TEST LEVEL'S DESIGN — *"then you can push to
+ *  the main fissure levels."* A world here draws no light drift and no grain:
+ *  a per-cell tint is a hard line at every cell, and that is what he saw. */
+export const DESIGN: Partial<Record<MapTheme, LevelDesign>> = {
+  fissure: TEST_LEVEL,
+};
 
 let forcedTest = false;
 export function testLevel(on: boolean): void {
   forcedTest = on;
 }
 export const isTestLevel = (): boolean => forcedTest;
+const designFor = (theme: MapTheme): LevelDesign | undefined => (forcedTest ? TEST_LEVEL : DESIGN[theme]);
 
 /** The smallest interior a shelf keeps; under it the chamber comes back down. */
 const SHELF_LEAST = 6;
@@ -1046,8 +1066,7 @@ function shoreFits(grid: Grid, x: number, y: number): boolean {
 /** THE TEST LEVEL'S LAKES: whole, off the rock, refused if they strand a cell
  *  or come out a puddle. The roll for how many is taken whatever it says, so a
  *  dry map moves no draw the next one reads. */
-function placeLakes(grid: Grid, rng: Rng, rooms: Room[], keep: Vec2[]): string[] {
-  const def = TEST_LEVEL.lake;
+function placeLakes(grid: Grid, rng: Rng, rooms: Room[], keep: Vec2[], def: LevelDesign['lake']): string[] {
   const spared = new Set(keep.map((v) => v.y * grid.width + v.x));
   const ringed = new Set(keep.slice(0, 2).map((v) => v.y * grid.width + v.x));
   grid.blocking = [def.blocks];
@@ -1336,8 +1355,10 @@ export function generateMap(
 ): GameMap {
   const layout = computeStat(1, mods, 'layoutComplexity') * sizeScale;
 
-  const width = clamp(Math.round(42 * Math.sqrt(layout)), 26, 104);
-  const height = clamp(Math.round(28 * Math.sqrt(layout)), 20, 70);
+  const design = designFor(theme);
+  const grown = design?.scale ?? 1;
+  const width = clamp(Math.round(42 * grown * Math.sqrt(layout)), 26, 104);
+  const height = clamp(Math.round(28 * grown * Math.sqrt(layout)), 20, 70);
   const grid = new Grid(width, height);
 
   const target = clamp(Math.round(7 * layout), 4, 30);
@@ -1345,8 +1366,8 @@ export function generateMap(
 
   // Attempts scale with the target: a bigger map needs more tries to fill.
   for (let attempt = 0; attempt < 90 * target && rooms.length < target; attempt++) {
-    const w = forcedTest ? rng.int(...TEST_LEVEL.room.w) : rng.int(5, 9);
-    const h = forcedTest ? rng.int(...TEST_LEVEL.room.h) : rng.int(4, 7);
+    const w = design ? rng.int(...design.room.w) : rng.int(5, 9);
+    const h = design ? rng.int(...design.room.h) : rng.int(4, 7);
     const candidate: Room = {
       x: rng.int(1, Math.max(1, width - w - 2)),
       y: rng.int(1, Math.max(1, height - h - 2)),
@@ -1407,7 +1428,7 @@ export function generateMap(
     if (!reachable(grid, entrance).has(c.y * grid.width + c.x)) carveCorridor(grid, entrance, c, rng, 0);
   }
 
-  const zone = forcedTest ? TEST_LEVEL.zone : ZONE[theme];
+  const zone = design ? design.zone : ZONE[theme];
   // Fitted BEFORE the shelves and the landmarks: a cell opened beside a rim is
   // a pocket nothing reaches, and one opened beside the hole moves it.
   if (zone) fitCorners(grid, zone);
@@ -1452,10 +1473,10 @@ export function generateMap(
     props.push(...dressWalls(grid, dress, [...keep, ...props]));
     props.unshift(...coverFloor(grid, dress));
     block(grid, props, keep);
-    patches = forcedTest ? placeLakes(grid, dress, rooms, keep) : placePatches(grid, dress, theme, rooms, keep);
+    patches = design ? placeLakes(grid, dress, rooms, keep, design.lake) : placePatches(grid, dress, theme, rooms, keep);
   }
 
-  return { grid, rooms, entrance, exit, props, vein, theme, bare: !!zone, zone, patches, raised: standing };
+  return { grid, rooms, entrance, exit, props, vein, theme, bare: !!zone, zone, patches, raised: standing, plain: !!design };
 }
 
 /**

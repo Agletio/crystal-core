@@ -269,13 +269,19 @@ that to test until we get a good level design."* `TEST_LEVEL` in
 `src/sim/grid.ts`, behind `testLevel()` — the dev kit's toggle and `TEST=1` on
 `descent-peek` — swaps the next descent onto its own family (`test_round`, and
 `test_pool` chained off that set's floor tile in the same mode, so one floor is
-drawn everywhere) and its own rules: bigger chambers, WHOLE lakes nobody walks,
+drawn everywhere) and its own rules: bigger chambers on a map grown to match
+(`LevelDesign.scale`, or the same packs land in half the rooms), WHOLE lakes nobody walks,
 a cell of plain floor all round them, every cell inside a full three-by-three
 (a lake is drawn at its CORNERS, so a run of cells draws a tile narrower than
 it is, and two tiles of water is what a ripple fits in), a fishing spot on a
 cell drawn wholly as water, and no light drift on the floor. **A SHIPPED SET IS
-NEVER EDITED**: what is judged good here becomes a world's by asking that
-world's family the same way. Nothing shipped reads the flag while it is off.
+NEVER EDITED**: what is judged good here becomes a world's through `DESIGN`,
+which names the worlds running a `LevelDesign` — **THE FISSURE RUNS THE TEST
+LEVEL'S**, *"then you can push to the main fissure levels"* — and a designed
+floor is `GameMap.plain`: no light drift and no grain, because a per-cell tint
+is a hard line at every cell whatever noise drives it, and *"the harsh color
+lines in the floors"* were exactly that. The other three worlds keep their
+sets, their wreath lakes and their light until judged.
 
 **A LAKE IS A DEEP CORE IN A SHALLOW WREATH.** Brogue's rule: a blocking patch's
 DEEP is every cell of it with the patch on all four sides (`Grid.deep`), and its
@@ -507,7 +513,12 @@ families are shuffled and dealt round the nodes, so a descent is one of each
 rather than six draws that could come up all metal — *"relatively equal drop
 rates between materials"* is only sayable as a spread. **A COUNT, NOT A RATE**:
 `GATHER.perRun` × `RunSet.yield`, read off the SET without running it, because
-the pack count IS the difficulty. **PLACED AFTER THE PACKS**, so how much ore a
+the pack count IS the difficulty. **AND IT IS SCARCE** — *"not every floor
+should have ore veins but when it does have it just have it give 1 most of the
+time, same concept with all the floor spawn stuff"*: 1.5 nodes a bare clear,
+`GATHER.single` of them handing over exactly one, and the amounts are the
+balance lever. **FISH RIDES THE WATER, outside the count**: one spot a lake,
+none on a dry map. **PLACED AFTER THE PACKS**, so how much ore a
 run holds cannot move what is fighting in it. **IT IS TAKEN ON THE WAY, NEVER
 FETCHED BACK** — `GATHER.near` is what he steps aside for with a pack still
 standing and `GATHER.walk` the sweep once nothing is left, because

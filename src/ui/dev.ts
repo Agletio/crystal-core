@@ -244,7 +244,7 @@ function render(): void {
   const test = el('button', 'mini devbtn') as HTMLButtonElement;
   test.id = 'dev-test';
   test.append(el('span', 'devbtn__name', testing ? 'Test level: on' : 'Test level: off'));
-  test.append(el('span', 'devbtn__what', `${TEST_LEVEL.zone}, whole lakes fished from the bank, from the next descent`));
+  test.append(el('span', 'devbtn__what', `${TEST_LEVEL.zone} and its rules on the next descent, whatever the world`));
   test.onclick = () => {
     testing = !testing;
     testLevel(testing);

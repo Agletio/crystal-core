@@ -1124,16 +1124,14 @@ export class RunSim {
       return packs.reduce((best, pack) =>
         dist(roomCenter(packRoom[pack]), mid) < dist(roomCenter(packRoom[best]), mid) ? pack : best, packs[0]);
     };
-    const share = Math.min(wanted, Math.ceil(wanted / GATHERED.length)); // fish's equal share
+    // FISH RIDES THE WATER, outside the count: one spot a lake, none on a dry map.
     for (const room of wetRooms) {
-      if (laid.length >= share) break;
       laid.push({ family: 'fish', pack: guardOf(room), room, pool: this.poolSpot(map, room) });
     }
-    // The rest are DEALT round the dry families, wet rooms last, so a pool's
-    // room is not also where the ore stands.
+    // The count is DEALT round the dry families, wet rooms last.
     const dry = packs.filter((pack) => !wetRooms.includes(packRoom[pack]));
     const rest = [...dry, ...packs.filter((pack) => wetRooms.includes(packRoom[pack]))];
-    for (let i = 0; laid.length < wanted && rest.length > 0; i++) {
+    for (let i = 0; i < wanted && rest.length > 0; i++) {
       const pack = rest.shift()!;
       laid.push({ family: deck[i % deck.length], pack, room: packRoom[pack], pool: null });
     }
@@ -1155,7 +1153,7 @@ export class RunSim {
         pack,
         family: family.id,
         material: def.id,
-        n: this.rng.int(GATHER.yield[0], GATHER.yield[1]),
+        n: this.rng.next() < GATHER.single ? 1 : this.rng.int(GATHER.yield[0], GATHER.yield[1]),
         ...(i === carries && unique ? { also: unique.id } : {}),
         ...(pool ? { on: pool.on } : {}),
         // The deck is GATHERED, so both frames are always there. A family with

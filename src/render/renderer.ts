@@ -785,10 +785,8 @@ export function grainAt(count: number, x: number, y: number): number {
 
 /** How lit a GROUND cell is, 0..1: a slow drift, darker at the rock's foot. */
 export const LIGHT = { low: 0.8, foot: 0.78, scale: 7 };
-export function groundLight(grid: Grid, x: number, y: number, drifting = true): number {
-  // The drift is BLOCKY at the cell and the test level wears none of it: on a
-  // floor with less grain to hide it, it read as patches of tiles.
-  const drift = drifting ? LIGHT.low + (1 - LIGHT.low) * patchNoise(x, y, LIGHT.scale, 71) : 1;
+export function groundLight(grid: Grid, x: number, y: number): number {
+  const drift = LIGHT.low + (1 - LIGHT.low) * patchNoise(x, y, LIGHT.scale, 71);
   let open = 0; // how open the five-by-five is: a slope, never two rings
 
   for (let dy = -2; dy <= 2; dy++) {

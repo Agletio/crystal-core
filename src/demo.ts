@@ -214,7 +214,7 @@ import {
   slotUsed,
   statPower,
 } from './mods';
-import { ENTRANCE, EXIT, FLOOR, LAKE_SHORE, SHELF_SET, TEST_LEVEL, TUNNEL, WALL, dist, generateMap, patchesFor, raiseShare, reachable, roomCenter, sceneMap, shoreClear, testLevel } from './sim/grid';
+import { DESIGN, ENTRANCE, EXIT, FLOOR, LAKE_SHORE, SHELF_SET, TEST_LEVEL, TUNNEL, WALL, dist, generateMap, patchesFor, raiseShare, reachable, roomCenter, sceneMap, shoreClear, testLevel } from './sim/grid';
 import type { Grid } from './sim/grid';
 import { CREATURE_FRAMES, GLOW, IDLE_CYCLE, STRIDE_CYCLE, framesOf, wellFormed } from './render/sprites';
 import { PORTRAITS } from './render/portraits';
@@ -1076,6 +1076,10 @@ rule('DROPS — does the set decide what the map can give you?');
   // 2.7% of the time at band 5, so ten runs miss it altogether one time in
   // eight, and a check on the pieces was a coin.
   const gate = new Map<number, number>();
+  // And the MODIFIER tier the band's item level lets in, measured by rolling
+  // a piece at that level two hundred times rather than off ten runs' luck:
+  // the best tier rolled seldom enough at the top that ten runs missed it.
+  const allowed = new Map<number, number>();
   for (const band of [0, 1, 3, 5]) {
     const tiers = new Set<number>();
     let items = 0;
@@ -1083,6 +1087,12 @@ rule('DROPS — does the set decide what the map can give you?');
     for (const seed of [11, 29, 47, 63, 71, 89, 97, 103, 117, 131]) {
       const set = ladderSet(band, new Rng(400 + seed + band), pool);
       gate.set(band, Math.max(gate.get(band) ?? 0, tierForSet(set)));
+      const ilvl = runSet(set).band.ilvl;
+      for (let i = 0; i < 20; i++) {
+        for (const mod of rollGear('bulwark_body_t1', ilvl, 2, pool, new Rng(seed * 100 + i)).mods) {
+          allowed.set(band, Math.min(allowed.get(band) ?? 99, mod.tier));
+        }
+      }
       const sim = new RunSim(set, ceiling(band), new Rng(seed * 31 + band));
       const f = runToCompletion(sim, 400);
       for (const item of f.loot.items) {
@@ -1117,10 +1127,11 @@ rule('DROPS — does the set decide what the map can give you?');
     `band 0 gate T${gate.get(0)}, band 5 gate T${gate.get(5)}`
   );
   gauge(`band 5 dropped base tiers ${[...(seen.get(5) ?? [])].sort().join(', ')} in ten runs`);
+  gauge(`ten runs rolled T${best.get(0)} at band 0 and T${best.get(5)} at band 5`);
   check(
-    best.get(5)! < best.get(0)! && best.get(5)! === 1,
-    'and only the top of the ladder rolls top-tier modifiers',
-    `band 0 reached T${best.get(0)}, band 5 reached T${best.get(5)}`
+    allowed.get(5) === 1 && (allowed.get(0) ?? 1) > 1,
+    'and only the top of the ladder may roll top-tier modifiers',
+    `band 0 lets in T${allowed.get(0)}, band 5 lets in T${allowed.get(5)}`
   );
 }
 
@@ -2069,7 +2080,7 @@ rule('SPRITES — is the pixel art well formed?');
           if (at === 0) continue;
           tiles++;
           seen.add(map.patches[at - 1]);
-          if (defs[at - 1]?.blocks && grid.deep(k % grid.width, Math.floor(k / grid.width))) {
+          if (defs[at - 1]?.blocks !== false && !grid.walkable(k % grid.width, Math.floor(k / grid.width))) {
             blocked++;
             water++;
           }
@@ -2103,7 +2114,9 @@ rule('SPRITES — is the pixel art well formed?');
     );
     // A set nothing places is a set nobody sees, and a name that does not
     // resolve draws NOTHING and fails nowhere.
-    const named = MAP_THEMES.flatMap((t) => patchesFor(t.id as MapTheme).map((d) => d.set));
+    // A designed world lays its own lake set and never its table's.
+    const named = MAP_THEMES.flatMap((t) =>
+      DESIGN[t.id as MapTheme] ? [DESIGN[t.id as MapTheme]!.lake.set] : patchesFor(t.id as MapTheme).map((d) => d.set));
     const missing = named.filter((n) => !ZONES[n]);
     const unplaced = named.filter((n) => !seen.has(n));
     check(
@@ -3565,17 +3578,28 @@ rule('GATHERING — is a node free, guarded, walked to and equally spread?');
   // rolled, so a hundred descents cannot starve one profession.
   // The GATHERED four: hide and gem come off a body now, so asking the floor
   // for them is asking a question whose answer is correctly zero.
+  // Nodes are SCARCE now — *"not every floor should have ore veins"* — so
+  // the deal is a run or two of nodes at a time and the spread is read over
+  // 40 descents. Fish rides the water and is counted apart.
   const spread = new Map<string, number>(GATHERED.map((f) => [f.id, 0]));
-  for (let i = 0; i < 12; i++) {
+  let handed = 0;
+  let ones = 0;
+  for (let i = 0; i < 40; i++) {
     const sim = new RunSim(bareSet, digger, new Rng(1300 + i));
     for (const node of sim.state.nodes) {
       spread.set(node.family, (spread.get(node.family) ?? 0) + 1);
+      handed += node.n;
+      if (node.n === 1) ones++;
     }
   }
+  const fish = spread.get('fish') ?? 0;
+  spread.delete('fish');
   const counts = [...spread.values()];
   const least = Math.min(...counts);
   const most = Math.max(...counts);
-  line(`  nodes a family over 12 descents: ${[...spread].map(([f, n]) => `${f} ${n}`).join(', ')}`);
+  const nodes = counts.reduce((a, b) => a + b, 0);
+  line(`  nodes a family over 40 descents: ${[...spread].map(([f, n]) => `${f} ${n}`).join(', ')}; fish ${fish}`);
+  gauge(`${(nodes / 40).toFixed(2)} dry nodes a descent, ${(handed / 40).toFixed(2)} units; ${Math.round((100 * ones) / Math.max(1, nodes + fish))}% of nodes hand over one`);
   // WHERE A FAMILY GROWS: ore stands at the foot of a wall, because it is the
   // rock; a plant on damp floor where the room has any. A room with no such
   // spot falls back, so the wall rule is a check and the damp one a gauge.
@@ -7429,7 +7453,9 @@ rule('THREE SLOTS — one that kills, one always on, one that moves you');
           const m = { ...sim.state.monsters[0], id: 900 + i, x: hero.x + 0.4 * (i + 1), y: hero.y, dead: false, ailments: [] as unknown[] };
           return m;
         });
-        const victim = { ...bodies[0], id: 899, x: hero.x, y: hero.y, ailments: [{ id: 'bleed', stacks: 1 }] };
+        // A SMALL corpse: what bursts off the body is drawn at the body's own
+        // size, and a big first monster would read as the aura's circle.
+        const victim = { ...bodies[0], id: 899, x: hero.x, y: hero.y, radius: 0.5, ailments: [{ id: 'bleed', stacks: 1 }] };
         sim.state.monsters = [victim, ...bodies];
         sim.spreadAilments(victim);
         const caught = bodies.filter((m: any) => m.ailments.length > 0).length;
@@ -8366,11 +8392,13 @@ rule('TRADE RULES — does each one actually change what the sim does?');
   {
     // Deep enough that he is actually hurt: his own Spirit regenerates a
     // level-50 hero through a shallow set without a mouthful being drunk, and
-    // a flask nobody drinks says nothing about the Still.
+    // a flask nobody drinks says nothing about the Still. Band 5, where the
+    // Fissure's wide chambers still hurt him — band 4 drank the two he came
+    // with and no more.
     const still = descend(
       armed(['alc_condensate_m0', 'alc_still', 'alc_condensate_m1', 'alc_cascade']),
-      9091,
-      4
+      9092,
+      5
     );
     line(
       `  the Still over one descent: ${still.sim.state.drunk} charges drunk, ` +
@@ -10497,7 +10525,7 @@ rule('WHERE THE GOLD COMES FROM — is selling worth the walk to the counter?');
   // mechanism rather than a supply: a descent gathers `GATHER.perRun` nodes of
   // 2–5 each for nothing, so buying has to stay well under that per clear.
   {
-    const gathered = GATHER.perRun * ((GATHER.yield[0] + GATHER.yield[1]) / 2);
+    const gathered = GATHER.perRun * (GATHER.single + (1 - GATHER.single) * ((GATHER.yield[0] + GATHER.yield[1]) / 2));
     const bought = perRun / MATERIAL_PRICE.fissure;
     gauge(
       `a bare clear gathers ${gathered.toFixed(0)} raw and its gold buys ` +
@@ -11632,16 +11660,18 @@ rule('THE COLLECTION — do crystals arrive, and do they grow?');
         'no key drops before its boss has been put down',
         JSON.stringify(unopened.state.loot.currency)
       );
+      // 120 clears: at 0.2% a kill, forty expected two keys and missed every
+      // one of them one time in eight.
       let dropped = 0;
-      for (let seed = 0; seed < 40; seed++) {
+      for (let seed = 0; seed < 120; seed++) {
         const run = new RunSim([], g.character, new Rng(900 + seed), { beaten: [bossId] });
         runToCompletion(run, 400);
         dropped += Object.entries(run.state.loot.currency)
           .filter(([id]) => BOSS_KEY_BY_ID[id])
           .reduce((n, [, amount]) => n + amount, 0);
       }
-      check(dropped > 0, 'and one does once it has been', `${dropped} in 40 bare clears`);
-      gauge(`a way back drops ${dropped} times in 40 bare clears`);
+      check(dropped > 0, 'and one does once it has been', `${dropped} in 120 bare clears`);
+      gauge(`a way back drops ${dropped} times in 120 bare clears`);
 
       // And a room never drops the key that opens it, or the loop feeds itself.
       const inRoom = new RunSim([], g.character, new Rng(900), {

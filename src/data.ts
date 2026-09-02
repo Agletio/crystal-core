@@ -3511,8 +3511,9 @@ export const LOCK = {
  * metal.
  */
 export const GATHER = {
-  perRun: 6, // one of each family at the bare Fissure, riding run LENGTH
-  yield: [2, 5] as [number, number], // what one node hands over
+  perRun: 1.5, // nodes a bare Fissure clear grows, riding run LENGTH; a fishing spot rides the water instead
+  single: 0.75, // the share of nodes handing over exactly ONE
+  yield: [2, 3] as [number, number], // what the rest hand over
   reach: 1.2, // the lock's own: it is the same walk
   /** HOW FAR HE WILL GO OUT OF HIS WAY for one, in tiles. Unbounded, the
    *  nearest free node outranks advancing whenever nothing is in range, and a
@@ -3597,10 +3598,10 @@ export const MEAL_BY_FISH: Record<string, MealDef> = Object.fromEntries(
  *  at the deep end. `perRun` is WHOLE: on a fraction a run pays `left ×
  *  H(bodies)`, 7.4 over 850. */
 export const BODY_DROP = {
-  /** DROPS a clear pays, NOT raw — each hands over `each`. Matched per FAMILY
-   *  to the gathered four sharing `GATHER.perRun` 6 nodes, so 2 want 3. */
-  perRun: 3,
-  each: [2, 5] as [number, number], // what ONE body hands over
+  /** DROPS a clear pays, NOT raw — each hands over `each`. Scarce like the
+   *  floor's nodes: *"make all the materials less common."* */
+  perRun: 1,
+  each: [1, 2] as [number, number], // what ONE body hands over
 };
 
 export const CURRENCY_DROP = {
