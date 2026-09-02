@@ -214,7 +214,7 @@ import {
   slotUsed,
   statPower,
 } from './mods';
-import { ENTRANCE, EXIT, FLOOR, SHELF_SET, TUNNEL, WALL, dist, generateMap, patchesFor, raiseShare, reachable, roomCenter, sceneMap } from './sim/grid';
+import { ENTRANCE, EXIT, FLOOR, LAKE_SHORE, SHELF_SET, TEST_LEVEL, TUNNEL, WALL, dist, generateMap, patchesFor, raiseShare, reachable, roomCenter, sceneMap, shoreClear, testLevel } from './sim/grid';
 import type { Grid } from './sim/grid';
 import { CREATURE_FRAMES, GLOW, IDLE_CYCLE, STRIDE_CYCLE, framesOf, wellFormed } from './render/sprites';
 import { PORTRAITS } from './render/portraits';
@@ -2111,6 +2111,88 @@ rule('SPRITES — is the pixel art well formed?');
       `all ${named.length} patches are emitted sets and every one of them lands`,
       `${missing.join(', ')} unemitted; ${unplaced.join(', ')} never placed`
     );
+  }
+
+  // THE TEST LEVEL, forced: whole lakes nobody walks, kept off every rock face
+  // and shelf by a cell of plain floor, stranding nothing; every wet room
+  // fished from its bank; a descent over it ends; its family is emitted.
+  {
+    testLevel(true);
+    let wetMaps = 0;
+    let lakes = 0;
+    let walked = 0;
+    let dirty = 0;
+    let stranded = 0;
+    for (let i = 0; i < 24; i++) {
+      const map = dressedMap(6300 + i * 7, 'fissure');
+      const { grid } = map;
+      let water = 0;
+      for (let y = 0; y < grid.height; y++) {
+        for (let x = 0; x < grid.width; x++) {
+          if (!grid.wet(x, y)) continue;
+          water++;
+          if (grid.walkable(x, y)) walked++;
+          for (let dy = -LAKE_SHORE; dy <= LAKE_SHORE; dy++) {
+            for (let dx = -LAKE_SHORE; dx <= LAKE_SHORE; dx++) {
+              if (!grid.wet(x + dx, y + dy) && !shoreClear(grid, x + dx, y + dy)) dirty++;
+            }
+          }
+        }
+      }
+      if (water > 0) wetMaps++;
+      lakes += water;
+      const withWater = reachable(grid, map.entrance).size;
+      const was = grid.blocking;
+      grid.blocking = was.map(() => false);
+      const without = reachable(grid, map.entrance).size;
+      grid.blocking = was;
+      if (without - withWater !== water) stranded++;
+    }
+    gauge(`the test level: ${wetMaps} of 24 maps hold water, ${(lakes / Math.max(1, wetMaps)).toFixed(0)} wet cells a wet map`);
+    check(walked === 0 && dirty === 0, 'no test water walks, and every shore cell is plain floor', `${walked} walk, ${dirty} shore cells dirty`);
+    check(stranded === 0 && wetMaps > 0, 'a test lake takes exactly its own cells and strands nothing', `${stranded} of 24 maps lost more`);
+    check(
+      !!ZONES[TEST_LEVEL.zone] && !!ZONES[TEST_LEVEL.lake.set],
+      `${TEST_LEVEL.zone} and ${TEST_LEVEL.lake.set} are emitted`,
+      'a test set is missing'
+    );
+    let fished = 0;
+    let wetRooms = 0;
+    let ended = 0;
+    const testSet = [makeCrystal(1), makeCrystal(1), makeCrystal(1), makeCrystal(1)];
+    const tester = ladderCharacter(6, new Rng(11));
+    for (let i = 0; i < 6; i++) {
+      const sim = new RunSim(testSet, tester, new Rng(1900 + i));
+      const { grid } = sim.state.map;
+      // Every LAKE, flooded from its first cell, holds a spot on its water
+      // beside a dry cell the hero stands on.
+      const seen = new Set<number>();
+      for (let k = 0; k < grid.patch.length; k++) {
+        if (grid.patch[k] === 0 || seen.has(k)) continue;
+        const lake = new Set<number>([k]);
+        const edge = [k];
+        while (edge.length > 0) {
+          const c = edge.pop()!;
+          seen.add(c);
+          for (const step of [1, -1, grid.width, -grid.width]) {
+            const n = c + step;
+            if (n >= 0 && n < grid.patch.length && grid.patch[n] !== 0 && !lake.has(n)) {
+              lake.add(n);
+              edge.push(n);
+            }
+          }
+        }
+        wetRooms++;
+        const spot = sim.state.nodes.find((n) => n.family === 'fish' && n.on && lake.has(n.on.y * grid.width + n.on.x));
+        const on = spot?.on;
+        if (spot && on && grid.walkable(spot.x, spot.y) && Math.abs(on.x - spot.x) + Math.abs(on.y - spot.y) === 1) fished++;
+      }
+      runToCompletion(sim, 600);
+      if (sim.state.status !== 'running') ended++;
+    }
+    check(wetRooms > 0 && fished === wetRooms, `every lake on the test level is fished from its bank — ${fished} of ${wetRooms}`, `${wetRooms - fished} lakes without a spot on the water beside a dry cell`);
+    check(ended === 6, 'and a descent over the test level ends', `${6 - ended} of 6 still running`);
+    testLevel(false);
   }
 
   // A LEVEL UP. A chamber stands a level up with a RIM nobody walks, and the

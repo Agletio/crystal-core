@@ -6,7 +6,7 @@
  */
 import { Rng } from '../rng';
 import { SOLID_PROPS } from '../vignettes';
-import { generateMap, sceneMap, dist, hasLineOfSight, roomCenter, wallFootSpots, dampSpots } from './grid';
+import { generateMap, sceneMap, dist, hasLineOfSight, patchKey, roomCenter, wallFootSpots, dampSpots } from './grid';
 import type { GameMap, Grid, Room, Vec2 } from './grid';
 import { findPath, nearestByPath } from './pathfind';
 import { AILMENT, AMBUSH, DAMAGE_TYPE_BY_ID, PASSIVE_DAMAGE, POTIONS, POTION_BY_ID } from '../data';
@@ -629,6 +629,8 @@ export class RunSim {
   private putDown: Hoard[] = []; // `spawn` runs BEFORE `this.state` exists
   private nextNode = 0;
   private nodesDown: GatherNode[] = [];
+  /** The node he is on his way to, held past the step-aside cap. */
+  private aside: number | null = null;
   private statsFor = new Map<string, CombatStats>(); // per kind, ability and RANK
   /** Read once: rolled per death, and only ever when something bought it. */
   private wellChance = 0;
@@ -1107,31 +1109,41 @@ export class RunSim {
 
     // DEALT ROUND, never rolled: four draws could come up all metal, and
     // *"relatively equal drop rates"* is only sayable as a spread.
-    const deck = this.rng.shuffle(GATHERED.map((f) => f.id));
+    const deck = this.rng.shuffle(GATHERED.filter((f) => f.id !== 'fish').map((f) => f.id));
     const packs = this.rng.shuffle(Array.from({ length: packCount }, (_, i) => i));
     const carries = unique ? this.rng.int(0, wanted - 1) : -1;
 
-    // A CONSTRAINED FAMILY IS DEALT THE ROOMS THAT CAN TAKE IT: 24% hold water,
-    // so a fish turn on the shuffled pack was dry three times in four.
-    const wet: number[] = [];
-    const dry: number[] = [];
-    for (const pack of packs) {
-      (this.banks(map, packRoom[pack]).length ? wet : dry).push(pack);
+    // EVERY LAKE CARRIES A FISHING SPOT, off the count first, and a dry map
+    // grows none: ripples on rock are a picture of a thing that is not there.
+    const laid: { family: string; pack: number; room: Room; pool: { stand: Vec2; on: Vec2 } | null }[] = [];
+    const wetRooms = map.rooms.filter((room) => this.banks(map, room).length > 0);
+    const guardOf = (room: Room): number => {
+      const own = packs.find((pack) => packRoom[pack] === room);
+      if (own !== undefined) return own;
+      const mid = roomCenter(room);
+      return packs.reduce((best, pack) =>
+        dist(roomCenter(packRoom[pack]), mid) < dist(roomCenter(packRoom[best]), mid) ? pack : best, packs[0]);
+    };
+    const share = Math.min(wanted, Math.ceil(wanted / GATHERED.length)); // fish's equal share
+    for (const room of wetRooms) {
+      if (laid.length >= share) break;
+      laid.push({ family: 'fish', pack: guardOf(room), room, pool: this.poolSpot(map, room) });
     }
-    const take = (family: string): number | undefined =>
-      family === 'fish' ? wet.shift() : (dry.shift() ?? wet.shift());
+    // The rest are DEALT round the dry families, wet rooms last, so a pool's
+    // room is not also where the ore stands.
+    const dry = packs.filter((pack) => !wetRooms.includes(packRoom[pack]));
+    const rest = [...dry, ...packs.filter((pack) => wetRooms.includes(packRoom[pack]))];
+    for (let i = 0; laid.length < wanted && rest.length > 0; i++) {
+      const pack = rest.shift()!;
+      laid.push({ family: deck[i % deck.length], pack, room: packRoom[pack], pool: null });
+    }
 
-    for (let i = 0; i < wanted; i++) {
-      const family = MATERIAL_FAMILY_BY_ID[deck[i % deck.length]];
+    for (let i = 0; i < laid.length; i++) {
+      const { pack, pool, room } = laid[i];
+      const family = MATERIAL_FAMILY_BY_ID[laid[i].family];
       const def = world.find((m) => m.family === family.id);
-      if (!def) continue;
-      // NO WATER, NO SPOT: ripples on dry rock is a picture of a thing that is
-      // not there, so the run is a node short rather than holding a wrong one.
-      const pack = take(family.id);
-      if (pack === undefined) continue;
-      const pool = family.id === 'fish' ? this.poolSpot(map, packRoom[pack]) : null;
-      if (family.id === 'fish' && !pool) continue; // the room's water is out of reach
-      const at = pool?.stand ?? this.nodeSpot(map, packRoom[pack], family.id);
+      if (!def || (family.id === 'fish' && !pool)) continue;
+      const at = pool?.stand ?? this.nodeSpot(map, room, family.id);
       const other = family.also;
       const pair = other && this.rng.next() < 0.5
         ? { node: other[0], spent: other[1] }
@@ -1162,8 +1174,10 @@ export class RunSim {
     const found: { stand: Vec2; on: Vec2 }[] = [];
     for (let y = room.y; y < room.y + room.h; y++) {
       for (let x = room.x; x < room.x + room.w; x++) {
-        if (!grid.inBounds(x, y)) continue;
-        if (!grid.deep(x, y)) continue; // the wreath is walked; a ripple sits on the deep
+        // Water nobody walks, beside a cell somebody stands on, drawn at least half water.
+        if (!grid.wet(x, y) || grid.walkable(x, y)) continue;
+        const key = patchKey(grid, x, y, grid.patch[y * grid.width + x]);
+        if ([27, 9, 3, 1].filter((d) => Math.floor(key / d) % 3 === 0).length < 2) continue;
         for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
           if (!grid.walkable(x + dx, y + dy)) continue;
           found.push({ stand: { x: x + dx, y: y + dy }, on: { x, y } });
@@ -4083,7 +4097,8 @@ export class RunSim {
     for (const node of this.state.nodes) {
       if (!node.free || node.taken || node.left) continue;
       const d = dist(hero, node);
-      if (d > within) {
+      // Once set off for, kept: a spot nine tiles off and twenty round the water livelocked the cap.
+      if (d > within && node.id !== this.aside) {
         if (over) node.left = true;
         continue;
       }
@@ -4094,9 +4109,11 @@ export class RunSim {
     }
     if (!near) return false;
     if (far > GATHER.reach && this.advance(hero, near, dt)) {
+      this.aside = near.id;
       this.face(hero, near.x, near.y);
       return true;
     }
+    this.aside = null;
     hero.path = [];
     this.face(hero, near.x, near.y);
     this.settleAction(hero, false);

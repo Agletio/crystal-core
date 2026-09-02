@@ -13,7 +13,7 @@ import { ladderCharacter } from '../sim/loadout';
 import { mainSkillId, skillProgress } from '../sim/character';
 import { heal } from '../game/save';
 import { ZONES } from '../render/generated-tiles';
-import { raiseShare } from '../sim/grid';
+import { TEST_LEVEL, raiseShare, testLevel } from '../sim/grid';
 import { takeMet } from '../game/scenes';
 import { campaignDone } from '../ladder';
 import { pathToNotable } from '../skills-tree';
@@ -33,6 +33,7 @@ function el(tag: string, cls?: string, text?: string): HTMLElement {
 let game: GameState;
 let hooks: DevHooks;
 let shelves = false;
+let testing = false;
 
 export interface DevHooks {
   /** Drops into a room now, by scene id. */
@@ -237,6 +238,19 @@ function render(): void {
     render();
   };
   sets.append(up);
+
+  // THE TEST LEVEL: the next descent is generated on the test family with the
+  // test rules, whatever is socketed. The only door to it.
+  const test = el('button', 'mini devbtn') as HTMLButtonElement;
+  test.id = 'dev-test';
+  test.append(el('span', 'devbtn__name', testing ? 'Test level: on' : 'Test level: off'));
+  test.append(el('span', 'devbtn__what', `${TEST_LEVEL.zone}, whole lakes fished from the bank, from the next descent`));
+  test.onclick = () => {
+    testing = !testing;
+    testLevel(testing);
+    render();
+  };
+  sets.append(test);
 
   const over = group('Start over', 'Wipes what you are playing and deals a stocked game.');
   const kit = el('button', 'mini devbtn devbtn--warn') as HTMLButtonElement;

@@ -18,7 +18,7 @@ import { AURA, AURA_BY_ID,
   AILMENT_BY_ID,
   GEAR_BASE_BY_ID,
 } from '../data';
-import { ENTRANCE, EXIT, SHELF_SET, WALL, high, patchesAt, wangKey } from '../sim/grid';
+import { ENTRANCE, EXIT, SHELF_SET, TEST_LEVEL, WALL, high, patchesAt, wangKey } from '../sim/grid';
 import { tileNoise } from '../noise';
 import { gearCanvas } from '../ui/webicons';
 import { ATTACK_POSE, DEATH_FADE } from '../sim/run';
@@ -516,7 +516,9 @@ export async function createPixiRenderer(
           if (!solid) sprite.tint = shade(x, y);
           (solid ? wallLayer : groundLayer).addChild(sprite);
           // THE GRAIN over the floor, one of the zone's marks or none.
-          const marks = solid ? undefined : grains.get(map.theme);
+          // The grain is a world's own, asked in its floor's style; the test
+          // level's floor has none yet.
+          const marks = solid || map.zone === TEST_LEVEL.zone ? undefined : grains.get(map.theme);
           const mark = marks ? grainAt(marks.length, x, y) : -1;
           if (marks && mark >= 0 && wangKey(grid, x, y) === 0) {
             const grain = new Sprite(marks[mark]);

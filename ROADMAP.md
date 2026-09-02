@@ -160,9 +160,40 @@ shelf on a floor yet.
       patch set is toned to the floor it sits on at emit, by the gain between
       its own outside tile and the zone's floor tile (the Fissure's pool drew
       its floor 14% dark). No generation spent.
+- [x] **THE TEST LEVEL.** *"Just stop messing with existing tiles. Make a
+      whole new tileset and make a new map that's only accessible in the dev
+      menu. We will use that to test until we get a good level design."*
+      `TEST_LEVEL` in `src/sim/grid.ts`, behind `testLevel()`: the dev menu's
+      `Test level` toggle (`TEST=1` on `descent-peek`) puts the next descent
+      on its own family — `test_round` (`965b0da6-10b2-45e1-9804-fd54bcbb023a`:
+      standard, round, transition 1, the floor asked at the tone it ships at,
+      no retone; its floor tile `69624969-25f7-4dfd-9197-84bf190205ca`) and
+      `test_pool` (`072d1766-3216-4a4f-8812-7126effd6481`) chained
+      off that floor tile IN THE SAME MODE (measured: the pool's floor tile
+      has the rock set's floor mean exactly, 44% of pixels identical) — with
+      chambers of 8–14 by 6–10 and WHOLE lakes: every cell blocks, a cell of
+      plain floor all round (`shoreClear`: no face, no shelf), `encloses`
+      refusing a cell that would cut the dry ground in two, `fatten` keeping
+      only cells inside a full two-by-two (A LAKE IS DRAWN AT ITS CORNERS, so a
+      one-cell arm blocked and drew nothing), 20–80 cells on 39 of 40 maps.
+      Every wet room carries a fishing spot on water drawn at least half wet
+      beside a bank, off the gather count first and capped at fish's equal
+      share (uncapped, the Fissure's seven small lakes took fish to 26 of 72
+      nodes). Measured over 12 shipped descents: fish 18, metal 20, cloth 18,
+      wood 16. Nothing shipped reads the toggle while it is off; the worlds'
+      lakes keep their wreath. Seen on the shot: `groundLight`'s drift reads
+      as square patches on this flatter floor — a per-cell tint on a tile
+      with less grain to hide it; the fix, if he minds, is a smoother drift
+      (bigger `LIGHT.scale`) rather than a re-ask.
+- [ ] **WORK THE DESIGN OUT THERE.** What the user judges next on the test
+      level, in order: the family's look (the face came back a warm brown, not
+      the Fissure's near-black), the lake's size and shore, the ripple, then
+      shelves and stairs on the same family (`test_shelf` chained off the same
+      floor tile, one ask). When a design is good it becomes a world's, by
+      re-asking that world's family the same way — never by editing a shipped
+      set.
 - [ ] **WATER RE-ASKED?** `fissure_pool` still reads as ridged slabs at tile
-      size — the user's word on whether it does, before a re-ask off the same
-      floor tile (pro, ~30 generations, or standard/round at ~4).
+      size — moot if the test level's family becomes the Fissure's.
 
 ## Phase 9 — WHERE MATERIALS COME FROM: gathered, or off a body
 

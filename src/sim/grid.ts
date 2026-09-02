@@ -81,6 +81,9 @@ export class Grid {
   readonly patch: Uint8Array;
   /** Which of those block. On the grid so `walkable` takes no argument. */
   blocking: boolean[] = [];
+  /** The TEST LEVEL's rule: every cell of a blocking patch blocks, where a
+   *  world's lake blocks only its deep and its wreath walks. */
+  wholeLakes = false;
 
   constructor(width: number, height: number) {
     this.width = width;
@@ -114,7 +117,14 @@ export class Grid {
     const at = ty * this.width + tx;
     const tile = this.tiles[at];
     if (tile === WALL || tile === RIM || this.solid[at]) return false;
-    return !this.deep(tx, ty);
+    return this.wholeLakes ? !this.wet(tx, ty) : !this.deep(tx, ty);
+  }
+
+  /** A cell of a blocking patch, whether or not it walks. */
+  wet(x: number, y: number): boolean {
+    if (!this.inBounds(x, y)) return false;
+    const patch = this.patch[y * this.width + x];
+    return patch !== 0 && !!this.blocking[patch - 1];
   }
 
   /** The DEEP of a blocking patch: a cell of it with the patch on all four
@@ -260,6 +270,34 @@ let forcedRaise: number | null = null;
 export function raiseShare(share: number | null): void {
   forcedRaise = share;
 }
+
+/**
+ * THE TEST LEVEL: a map only the dev menu reaches, on a tileset family of its
+ * own, where the level design is worked out before any world takes it.
+ * *"Make a whole new tileset and make a new map that's only accessible in the
+ * dev menu. We will use that to test until we get a good level design."*
+ * Nothing shipped reads it unless the toggle is on: the generator swaps its
+ * surface and its water rules and nothing else.
+ *
+ * ITS WATER IS WHOLE: every cell of a lake blocks and it is fished from the
+ * bank, where the worlds' lakes still keep a walkable wreath. A lake keeps
+ * `LAKE_SHORE` cells of plain floor all round it, so a shore tile never shares
+ * a cell with a rock face or a shelf.
+ */
+export const TEST_LEVEL = {
+  zone: 'test_round',
+  /** Chambers big enough to seat a whole lake with a bank all round: at the
+   *  worlds' 5–9 by 4–7, two maps in forty could. */
+  room: { w: [8, 14] as [number, number], h: [6, 10] as [number, number] },
+  lake: { set: 'test_pool', blocks: true, chance: 1, count: [1, 2] as [number, number], least: 20, most: 80 },
+};
+export const LAKE_SHORE = 1;
+
+let forcedTest = false;
+export function testLevel(on: boolean): void {
+  forcedTest = on;
+}
+export const isTestLevel = (): boolean => forcedTest;
 
 /** The smallest interior a shelf keeps; under it the chamber comes back down. */
 const SHELF_LEAST = 6;
@@ -867,10 +905,11 @@ function growPatch(
   grid: Grid,
   rng: Rng,
   index: number,
-  def: PatchDef,
+  def: { most: number },
   keep: Set<number>,
   ring: Set<number>,
-  from: Vec2
+  from: Vec2,
+  fits: (x: number, y: number) => boolean = () => true
 ): number[] {
   const taken: number[] = [];
   const edge: Vec2[] = [from];
@@ -882,7 +921,7 @@ function growPatch(
     seen.add(key);
     // The GROUND only: a patch over a landmark hides the way out, and a shelf
     // is drawn with its own set.
-    if (grid.at(at.x, at.y) !== FLOOR || grid.patch[key] !== 0) continue;
+    if (grid.at(at.x, at.y) !== FLOOR || grid.patch[key] !== 0 || !fits(at.x, at.y)) continue;
     if (N4.some(([dx, dy]) => grid.at(at.x + dx, at.y + dy) === STAIR)) continue;
     // The hole and the way out keep a dry ring — one standing in a pond is a
     // hole in the water. A room's middle keeps only its own cell: the wreath
@@ -904,7 +943,12 @@ function growPatch(
 /** A floor tile to grow a patch from. BIGGEST CHAMBERS FIRST, and a DRY room
  *  before one that already holds water, since a fishing spot needs a pool in
  *  its OWN room. */
-function seedFor(grid: Grid, rng: Rng, rooms: Room[]): Vec2 | null {
+function seedFor(
+  grid: Grid,
+  rng: Rng,
+  rooms: Room[],
+  fits: (x: number, y: number) => boolean = (x, y) => offRock(grid, x, y) >= 2
+): Vec2 | null {
   const roomy = [...rooms].sort((a, b) => b.w * b.h - a.w * a.h);
   const dry = roomy.filter((r) => !holdsPatch(grid, r));
   for (const list of [dry.length > 0 ? dry : roomy, roomy]) {
@@ -916,7 +960,7 @@ function seedFor(grid: Grid, rng: Rng, rooms: Room[]): Vec2 | null {
         y: room.y + rng.int(0, Math.max(0, room.h - 1)),
       };
       // Seeded a tile in from the rock, so the deep has somewhere to be.
-      if (grid.at(at.x, at.y) === FLOOR && offRock(grid, at.x, at.y) >= 2) return at;
+      if (grid.at(at.x, at.y) === FLOOR && fits(at.x, at.y)) return at;
     }
   }
   return null;
@@ -975,6 +1019,103 @@ function placePatches(
     }
   });
   return defs.map((d) => d.set);
+}
+
+/** Whether a cell may take a SHORE tile: plain dry ground wearing the zone's
+ *  own floor tile and no shelf tile, so a lake's edge is the only thing drawn
+ *  there. The same question the demo asks of every test lake. */
+export function shoreClear(grid: Grid, x: number, y: number): boolean {
+  const tile = grid.at(x, y);
+  if (tile !== FLOOR && tile !== TUNNEL && tile !== ENTRANCE && tile !== EXIT) return false;
+  return wangKey(grid, x, y) === 0 && wangKey(grid, x, y, high) === 0;
+}
+
+function shoreFits(grid: Grid, x: number, y: number): boolean {
+  for (let dy = -LAKE_SHORE; dy <= LAKE_SHORE; dy++) {
+    for (let dx = -LAKE_SHORE; dx <= LAKE_SHORE; dx++) if (!shoreClear(grid, x + dx, y + dy)) return false;
+  }
+  return true;
+}
+
+/** THE TEST LEVEL'S LAKES: whole, off the rock, refused if they strand a cell
+ *  or come out a puddle. The roll for how many is taken whatever it says, so a
+ *  dry map moves no draw the next one reads. */
+function placeLakes(grid: Grid, rng: Rng, rooms: Room[], keep: Vec2[]): string[] {
+  const def = TEST_LEVEL.lake;
+  const spared = new Set(keep.map((v) => v.y * grid.width + v.x));
+  const ringed = new Set(keep.slice(0, 2).map((v) => v.y * grid.width + v.x));
+  grid.blocking = [def.blocks];
+  grid.wholeLakes = true;
+  let open = reachable(grid, keep[0]).size;
+  const lakes = rng.next() < def.chance ? rng.int(def.count[0], def.count[1]) : 0;
+  const fits = (x: number, y: number) => shoreFits(grid, x, y) && !encloses(grid, x, y);
+  for (let n = 0; n < lakes; n++) {
+    // A seed lands where little fits as often as not, so a lake tries a few.
+    for (let tries = 0; tries < 12; tries++) {
+      const from = seedFor(grid, rng, rooms, fits);
+      if (!from) break;
+      const taken = fatten(grid, growPatch(grid, rng, 1, def, spared, ringed, from, fits));
+      const now = reachable(grid, keep[0]).size;
+      if (taken.length >= def.least && now === open - taken.length) {
+        open = now;
+        break;
+      }
+      for (const key of taken) grid.patch[key] = 0;
+    }
+  }
+  return [def.set];
+}
+
+/** Whether taking this cell for water would split the dry ground round it:
+ *  the eight neighbours walked as a ring, and the dry ones in more than one
+ *  run means a room's middle or a corridor's mouth about to be cut off. */
+/** A LAKE IS DRAWN AT ITS CORNERS: a corner tile shows water only where all
+ *  four cells round it are wet, so a one-cell arm blocks and draws nothing.
+ *  Every cell kept sits in a full two-by-two; the rest is handed back. */
+function fatten(grid: Grid, taken: number[]): number[] {
+  const wet = (x: number, y: number) => grid.inBounds(x, y) && grid.patch[y * grid.width + x] !== 0;
+  const square = (x: number, y: number) => wet(x, y) && wet(x + 1, y) && wet(x, y + 1) && wet(x + 1, y + 1);
+  let kept = taken;
+  for (let pass = 0; pass < 64; pass++) {
+    const thin = kept.filter((key) => {
+      const x = key % grid.width;
+      const y = Math.floor(key / grid.width);
+      return !(square(x, y) || square(x - 1, y) || square(x, y - 1) || square(x - 1, y - 1));
+    });
+    if (thin.length === 0) break;
+    for (const key of thin) grid.patch[key] = 0;
+    kept = kept.filter((key) => grid.patch[key] !== 0);
+  }
+  // Thinning can cut a blob in two; the biggest piece is the lake.
+  const left = new Set(kept);
+  let biggest: number[] = [];
+  while (left.size > 0) {
+    const piece: number[] = [];
+    const edge = [left.values().next().value as number];
+    left.delete(edge[0]);
+    while (edge.length > 0) {
+      const key = edge.pop()!;
+      piece.push(key);
+      for (const step of [1, -1, grid.width, -grid.width]) {
+        const next = key + step;
+        if (left.has(next)) {
+          left.delete(next);
+          edge.push(next);
+        }
+      }
+    }
+    if (piece.length > biggest.length) biggest = piece;
+  }
+  for (const key of kept) if (!biggest.includes(key)) grid.patch[key] = 0;
+  return biggest;
+}
+
+function encloses(grid: Grid, x: number, y: number): boolean {
+  const ring = [[-1, -1], [0, -1], [1, -1], [1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0]] as const;
+  const dry = ring.map(([dx, dy]) => grid.walkable(x + dx, y + dy));
+  let runs = 0;
+  for (let i = 0; i < 8; i++) if (dry[i] && !dry[(i + 7) % 8]) runs++;
+  return runs > 1;
 }
 
 /** WHERE A FAMILY GROWS, by rule, within a room's rectangle: ore at the foot of
@@ -1190,8 +1331,8 @@ export function generateMap(
 
   // Attempts scale with the target: a bigger map needs more tries to fill.
   for (let attempt = 0; attempt < 90 * target && rooms.length < target; attempt++) {
-    const w = rng.int(5, 9);
-    const h = rng.int(4, 7);
+    const w = forcedTest ? rng.int(...TEST_LEVEL.room.w) : rng.int(5, 9);
+    const h = forcedTest ? rng.int(...TEST_LEVEL.room.h) : rng.int(4, 7);
     const candidate: Room = {
       x: rng.int(1, Math.max(1, width - w - 2)),
       y: rng.int(1, Math.max(1, height - h - 2)),
@@ -1252,7 +1393,7 @@ export function generateMap(
     if (!reachable(grid, entrance).has(c.y * grid.width + c.x)) carveCorridor(grid, entrance, c, rng, 0);
   }
 
-  const zone = ZONE[theme];
+  const zone = forcedTest ? TEST_LEVEL.zone : ZONE[theme];
   // Fitted BEFORE the shelves and the landmarks: a cell opened beside a rim is
   // a pocket nothing reaches, and one opened beside the hole moves it.
   if (zone) fitCorners(grid, zone);
@@ -1297,7 +1438,7 @@ export function generateMap(
     props.push(...dressWalls(grid, dress, [...keep, ...props]));
     props.unshift(...coverFloor(grid, dress));
     block(grid, props, keep);
-    patches = placePatches(grid, dress, theme, rooms, keep);
+    patches = forcedTest ? placeLakes(grid, dress, rooms, keep) : placePatches(grid, dress, theme, rooms, keep);
   }
 
   return { grid, rooms, entrance, exit, props, vein, theme, bare: !!zone, zone, patches, raised: standing };

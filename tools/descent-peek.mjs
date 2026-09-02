@@ -144,6 +144,11 @@ if (process.env.SHELVES) {
   await page.evaluate(() => document.getElementById('dev-shelves')?.click());
   await page.waitForTimeout(150);
 }
+// TEST=1 shoots the TEST LEVEL — the dev menu's own family and rules.
+if (process.env.TEST) {
+  await page.evaluate(() => document.getElementById('dev-test')?.click());
+  await page.waitForTimeout(150);
+}
 await page.evaluate(() => document.getElementById('dev-kit')?.click());
 await page.waitForTimeout(400);
 await page.evaluate(() => document.getElementById('confirm-yes')?.click());

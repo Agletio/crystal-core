@@ -262,6 +262,19 @@ brighter square, and `grainAt` lays one of the zone's sixteen generated MARKS
 light to heavy) over 30% of cells, skewed to the light ones. Both are hashes
 off the cell, never draws, and the builder draws them the same way.
 
+**THE TEST LEVEL IS WHERE A LEVEL DESIGN IS WORKED OUT, and it is the dev
+menu's alone.** *"Just stop messing with existing tiles. Make a whole new
+tileset and make a new map that's only accessible in the dev menu. We will use
+that to test until we get a good level design."* `TEST_LEVEL` in
+`src/sim/grid.ts`, behind `testLevel()` — the dev kit's toggle and `TEST=1` on
+`descent-peek` — swaps the next descent onto its own family (`test_round`, and
+`test_pool` chained off that set's floor tile in the same mode, so one floor is
+drawn everywhere) and its own rules: bigger chambers, WHOLE lakes nobody walks,
+a cell of plain floor all round them, a fishing spot on every one. **A SHIPPED
+SET IS NEVER EDITED**: what is judged good here becomes a world's by asking
+that world's family the same way. Nothing shipped reads the flag while it is
+off.
+
 **A LAKE IS A DEEP CORE IN A SHALLOW WREATH.** Brogue's rule: a blocking patch's
 DEEP is every cell of it with the patch on all four sides (`Grid.deep`), and its
 ring walks, drawn as the shore. So water lies against a wall and still leaves a

@@ -99,6 +99,15 @@ const FISSURE_FLOOR_SAID =
   'brightly lit, NOT dark, NOT black, NOT charcoal, NOT green, NOT olive';
 /** `lit_round`'s own lower base tile, off `get_topdown_tileset`. */
 const FISSURE_FLOOR_TILE = '0f8b4d8e-4c25-431b-89fc-75ee0e6873ad';
+
+/** THE TEST LEVEL'S floor, asked at the tone it ships at — the Fissure's was
+ *  asked bright and retoned, and a chained set is then told a floor nobody
+ *  sees. `TEST_FLOOR_TILE` is `test_round`'s lower base tile; empty until that
+ *  set exists, and `ask` skips anything chained off an empty id. */
+const TEST_FLOOR_SAID =
+  'a dim dusty cave floor of fine dirt and gravel, muted warm grey-brown stone, ' +
+  'low even light, NOT bright, NOT sandy, NOT yellow, NOT black, NOT green, NOT olive';
+const TEST_FLOOR_TILE = '69624969-25f7-4dfd-9197-84bf190205ca';
 /** OVER-EXCLUDED ONCE and it came back a HOLE: with blue, teal, cyan and green
  *  all excluded there was no hue left for water to be made of. What makes it
  *  read at 32px is a SURFACE — a reflection and a flat highlight — so those are
@@ -493,6 +502,45 @@ const ASK: Record<string, Record<string, unknown>> = {
     detail: 'highly detailed',
     view: 'high top-down',
   },
+
+  // --- THE TEST LEVEL'S OWN FAMILY -----------------------------------------
+  //
+  // *"Make a whole new tileset and make a new map that's only accessible in
+  // the dev menu."* One family in ONE mode: the rock set first, then every
+  // other terrain chained off ITS floor tile in the same mode, so the floor
+  // every set draws is one rendition. The floor is asked at the tone it ships
+  // at rather than retoned after, so a chained set is told the truth.
+  test_round: {
+    lower_description: TEST_FLOOR_SAID,
+    upper_description:
+      'a mass of near-black rock, VERY DARK charcoal almost black, unlit, ' +
+      'NOT pale, NOT light grey, NOT brown, NOT sandy',
+    transition_description: 'a sheer near-black cut rock face dropping to the floor',
+    shape_style: 'round',
+    transition_size: 1,
+    enhance: false,
+    tile_size: { width: 32, height: 32 },
+    outline: 'lineless',
+    shading: 'detailed shading',
+    detail: 'highly detailed',
+    view: 'high top-down',
+  },
+  // WATER, in the rock set's own mode, its floor the rock set's floor. A
+  // shore and never a cliff: 0.2 on the continuous scale `shape_style` opens.
+  test_pool: {
+    lower_description: WATER,
+    upper_description: TEST_FLOOR_SAID,
+    upper_base_tile_id: TEST_FLOOR_TILE,
+    transition_description: 'a thin dark wet line where the dry floor goes under the water',
+    shape_style: 'round',
+    transition_size: 0.2,
+    enhance: false,
+    tile_size: { width: 32, height: 32 },
+    outline: 'lineless',
+    shading: 'detailed shading',
+    detail: 'highly detailed',
+    view: 'high top-down',
+  },
 };
 
 /** Every set below is written off its zone's OWN line in `MAP_THEMES` and its
@@ -691,9 +739,15 @@ if (process.argv[2] === 'ask') {
   const asked: Record<string, string> = existsSync(LEDGER)
     ? JSON.parse(readFileSync(LEDGER, 'utf8'))
     : {};
+  const only = process.argv.slice(3); // named sets, or every one not yet asked
   for (const [name, args] of Object.entries(ASK)) {
+    if (only.length > 0 && !only.includes(name)) continue;
     if (asked[name]) {
       console.log(`${name}: already ${asked[name]}`);
+      continue;
+    }
+    if (['lower_base_tile_id', 'upper_base_tile_id'].some((k) => k in args && !args[k])) {
+      console.log(`${name}: waits on a base tile that does not exist yet`);
       continue;
     }
     const said = await callTool('create_topdown_tileset', args);
@@ -799,7 +853,9 @@ ${body.join('\n')}
   console.log(`wrote src/render/generated-tiles.ts: ${want.join(', ')}`);
 } else {
   const asked: Record<string, string> = JSON.parse(readFileSync(LEDGER, 'utf8'));
+  const only = process.argv.slice(3); // named sets, or the whole ledger
   for (const [name, id] of Object.entries(asked)) {
+    if (only.length > 0 && !only.includes(name)) continue;
     const said = await callTool('get_topdown_tileset', { tileset_id: id });
     const f = fields(said);
     const status = f.status ?? '?';
