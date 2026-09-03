@@ -20,11 +20,12 @@ All three are done:
    the hybrid power rule, cooking, and a counter that gambles instead of
    selling. The filter is gone with the heap it existed to sort.
 
-**TWO PHASES ARE QUEUED, and the user asked for BOTH in one breath** —
-*"make sure both are properly documented in todo and continue with both."*
-Phase 8 then Phase 9. Phase 3 is PARKED and is not the lowest-numbered thing to
-take; these are. Everything after them is a parked phase, the traps, and
-questions only the user can answer.
+**PHASE 10 IS THE LOWEST THING TO TAKE** — *"add all this to the roadmap so it
+survives context clear and then just start working unless you have a
+question."* Five steps, in order, each pushed as it goes green. Phase 8 and 9
+hold only what waits on the user's judgement. Phase 3 is PARKED and is not the
+lowest-numbered thing to take. Everything after them is a parked phase, the
+traps, and questions only the user can answer.
 
 **THE NAMES LANDED WITH PHASE 6**: the points are **TALLIES**, the web is
 **THE RECKONING**, the list of grinds is **THE LEDGER**. **The fourth was NOT
@@ -303,7 +304,101 @@ found. Measured over 12 descents: metal 17, cloth 20, wood 15, fish 17.
 
 ---
 
-## Phase 3 — A quest log instead of a pointing finger
+## Phase 10 — THE CAMP'S WORK: what gathering looks like, who does the work, and reading the anvil
+
+**The user's asks, in one message, after judging the water perfect.** Five
+steps in the order below; each is pushed as it goes green. Where he left a
+call to me, the call is written here so a fresh context does not re-decide it.
+
+- [ ] **STEP 1 — WOOD GOES.** *"For wood I say let's just scrap it entirely.
+      We can just do without it and it doesn't make sense to be gathering wood
+      in the fissure anyways."* The `wood` family, its four versions
+      (Propwood, Quartzwood, Gallwood, Knitwood), Woodworking and the sawbench
+      all leave the tables — five families, five professions, five stations.
+      `WEAPON_PROFESSIONS`: a bow is Leatherworking, a staff Weaving, a wand
+      Jewelling, a shield Blacksmithing. The `sawbench` hotspot leaves
+      `src/scenes/camp.ts` — the bench in the picture is scenery now, and
+      repainting the camp is a generation nobody asked for. `heal()` drops a
+      wood stack and a wood job off an old save. `node_stump` and the
+      `mat_*wood` icons stay as data for the builder; nothing draws them on a
+      map. The Phase 9 table and the "wood is my call" paragraph go with it.
+- [ ] **STEP 2 — GATHERING IS SEEN.** *"Rename all the gather things instead
+      of saying netted or mined just do like + x 'Material Name' so you know
+      how many of each you got"* — the floater is `+2 Pale Iron`, the unique
+      `+1 Deadlight` in its crit ink, and `MaterialFamilyDef.verb` stays for
+      the stations' prose only. *"Make it pause just slightly when gathering…
+      it just feels so wrong right now how quickly it just instantly grabs
+      stuff. I don't want it to feel slow but I want it to look like you're
+      actually gathering something. Maybe we just have to commit to some 2
+      frame animations? just mining and fishing?"* **No body frames are
+      generated**: `GATHER.pause` is seconds he stands at the node, and while
+      he stands there he HOLDS A TOOL through the held-weapon seam
+      (`src/render/held.ts` — a tool is a `HeldSpec` whose picture is a
+      generated ICON, exactly as a sword's is). Mining and cutting play the
+      body's own ATTACK frames with a pickaxe or a sickle in the hand, which
+      is a real swing at the ore for free; fishing holds the IDLE with a rod
+      out at `reach`. Three icons through `icons.json` → `icon.mts` →
+      `portrait.mts`, shown to him. `Entity.tool` is set by `stepNode` for the
+      pause and cleared by `takeNode`; a headless run pays the same seconds,
+      so the demo's termination checks cover it. Nothing new joins
+      `src/ui/icons.ts`.
+- [ ] **STEP 3 — PROCESSING RUNS ON A CLOCK.** *"I do want to just change the
+      materials to process on a timer. I think it's fine you still want to go
+      and run stuff to clear it while it's processing anyway but it's annoying
+      to be close to finishing one having to go in and out to see if they are
+      ready… I'm open to push back on this."* **Taken, with the one cost said
+      out loud**: a job that finishes on the wall clock finishes while the
+      browser is shut and while it is left open, so processing is the one
+      thing in the game a player can wait out — which is what he asked for,
+      and it pays materials rather than power. `WorkJob.doneAt` is an epoch
+      millisecond, `WORK.minutes` a batch, read through ONE `clock()` in
+      `src/game/work.ts` that the demo sets forward; `collectWork` is asked on
+      load, on the report and whenever the stations screen renders, and the
+      screen counts down once a second while it is open. `heal()` turns an
+      old job's `left` descents into a `doneAt`. `advanceWork` and the
+      "advances on descents" rule leave `CLAUDE.md`; the meal still burns on
+      CLEARS.
+- [ ] **STEP 4 — WORKERS, AND THE STATIONS SCREEN AROUND THEM.** *"Clearly
+      show the work slots. I think we can do this by having you just find
+      generic workers in the fissure you rescue and they come back to camp.
+      You can start with finding one immediately and unlocking the first slot
+      and as you progress you find more, say like 1 per area like fissure,
+      prism, flowering. Then later we can add some to the proving ground when
+      we get there. Then for the work slots it clearly shows what worker
+      you're assigning it to and what that worker is currently doing."*
+      `WORKERS` in `src/data.ts`: four, each a name and WHERE they stand —
+      Fissure depth 1 (the one you find immediately), then one at the middle
+      of each zone. **A worker is a person with one line and no room**: a
+      `SceneDef` with `worker: true`, placed by `whoIsDown` at ITS OWN depth
+      (`SceneDef.at`) ahead of the scheduled meeting, walked past like anybody
+      else, in the camp from then on — **RESCUED is his word for these**, and
+      `greets` says so; the crafting people still live down there. **The
+      body is the `wanderer`'s** (the trade-less hero look, already
+      generated); a body of their own is one ask for the day he wants one.
+      In the camp an idle worker stands by the tent and a working one at the
+      station of the job, so the picture says who is busy. `WORK.slots` is
+      GONE: the slots are the workers found. A job carries `worker`, the
+      load button names the idle worker it will go to (*"Hob will smelt
+      it"*), and the stations screen opens on a ROW OF WORKERS — a card each:
+      name, what they are on and the time left, or *idle* — above the raw
+      stacks. Clicking a worker in the camp opens that screen. Proving Ground
+      workers are the backlog's.
+- [ ] **STEP 5 — THE ANVIL IS READ, NOT DECODED.** *"The crafting menus need
+      to be cleaned up a lot, it has way too much stuff on single pages. Clean
+      up the actual boxes so it's clear what items are needed and what level
+      is required — seems blended — and add more filters so you can filter
+      down to like just t1 weapons or t2 or maybe just filter by level. I
+      think you can do better without much guidance there."* A card is THREE
+      BLOCKS: the piece (icon, name, the window your level buys), the LEVEL
+      line per profession said as *Blacksmithing 20 — you are 4* and coloured
+      have/lack, and a NEEDS ledger — one row a part with the processed
+      material's icon, *held / wanted* as two numbers and the world count —
+      then the button. Filters beside the kind tabs: TIER (all, 1, 2, 3) and
+      *can make now*, and a sort by level asked. The bench (`src/ui/craft.ts`)
+      is looked at with the same eye and cut where it is crowded. `shots`
+      judges both.
+
+
 
 **Not next, and deliberately.** The tutorial was deleted outright so the opening
 can be PLAYED with nothing explaining it. This is what teaching eventually
