@@ -101,6 +101,8 @@ async function makeCharacter() {
     await page.waitForTimeout(300);
     await page.evaluate(() => document.getElementById('skills-equip')?.click());
     await page.waitForTimeout(200);
+    await page.evaluate(() => document.getElementById('confirm-yes')?.click()); // displacing the slot's skill asks first
+    await page.waitForTimeout(200);
     await page.evaluate(() => document.getElementById('skills-close')?.click());
     await page.waitForTimeout(400);
   }
@@ -216,6 +218,31 @@ if (hold) {
   await page.waitForTimeout(200);
 }
 
+// THE WORLD IS THE PROVING GROUND'S INFLUENCE, not the sockets': a depth runs
+// in its zone's own world whatever is socketed, and the kit's climb is shut
+// past The Answering, so another world is reached through the Proving Ground
+// tab and its influence button; the Seam is the one the sockets open.
+const INFLUENCE = { rot: 'The Rot', cavern: 'The Cavern', seam: null };
+if (zone in INFLUENCE) {
+  await page.evaluate(() => document.getElementById('camp-crack')?.click());
+  await page.waitForTimeout(300);
+  const found = await page.evaluate((want) => {
+    const tab = [...document.querySelectorAll('.climbtab')].find((t) => t.textContent?.startsWith('The Proving Ground'));
+    if (!tab || tab.disabled) return 'no Proving Ground tab';
+    tab.click();
+    if (!want) return true;
+    const button = [...document.querySelectorAll('.influence')].find((b) => b.textContent?.trim() === want);
+    if (!button) return `no influence reads as "${want}"`;
+    button.click();
+    return true;
+  }, INFLUENCE[zone]);
+  if (found !== true) {
+    console.error(`descent-peek: ${found}`);
+    process.exit(1);
+  }
+  await page.waitForTimeout(300);
+}
+
 await page.evaluate(() => document.getElementById('run-launch')?.click());
 // GATHER=1 shoots the first GATHER instead of the eighth second: the page says
 // what tool the hero is holding, and the burst starts the moment it is one.
@@ -252,7 +279,11 @@ for (let i = 0; i < legs; i++) {
 await page.waitForTimeout(800);
 
 if ((await page.evaluate(() => document.body.dataset.runPhase)) !== 'running') {
-  console.error('descent-peek: nothing launched a descent');
+  const why = await page.evaluate(() => {
+    const open = [...document.querySelectorAll('.modal:not([hidden]), .pick:not([hidden])')].map((m) => m.id);
+    return `phase ${document.body.dataset.runPhase}, open: ${open.join(' ') || 'nothing'}`;
+  });
+  console.error(`descent-peek: nothing launched a descent — ${why}`);
   process.exit(1);
 }
 

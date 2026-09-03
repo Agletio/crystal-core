@@ -514,9 +514,16 @@ shown to the user first; DECISION means it argues with a rule already in
       GENERATIONS (`faces.png`, `desktop-graft.png`, `gather.png`).
 - [ ] **THE HARNESS GAPS**, the director's second-worst: `descent-peek`'s
       zone lands on The Answering whatever is socketed, `boss-peek` finds no
-      keyhole, Shockwave fails with "nothing launched a descent". CODE, and
-      until it is done the Rot, Cavern and Seam floors have never been
-      judged.
+      keyhole, Shockwave fails with "nothing launched a descent". MOSTLY
+      DONE: a depth runs in its zone's world whatever is socketed and the
+      kit's climb is shut past The Answering, so `descent-peek <zone>` goes
+      through the Proving Ground tab and its INFLUENCE button (`rot_z4.png`,
+      `cavern_z4.png` — the first pictures of either floor, and both wear
+      the per-cell light drift the Fissure lost); `boss-peek` opens the
+      Proving Ground tab before it looks for the keyhole and arms it. LEFT:
+      Shockwave still launches nothing — the peek now prints the phase and
+      the open windows at the failure (`phase menu, open: nothing`), so the
+      next pass starts there.
 
 ## Phase 3 — A quest log instead of a pointing finger
 
