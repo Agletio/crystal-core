@@ -1,0 +1,28 @@
+{
+ "_": "What to SAY to the generator for a RAIL GLYPH, one row per rail button. `tools/art/icon.mts rail.json` asks and downloads; `portrait.mts <id> <png> 16 icons` puts one in `src/render/generated-icons.ts` at 16 across, which is the size the rail draws it. Four inks so a glyph stays a glyph: the rail is read at a glance, and a picture there is a sticker.",
+ "_how": "Each is ONE emblem, bold and simple, filling the frame, drawn in stone-grey on nothing with one gold accent. Asked at 64 and imported at 16, so a mark under four generated pixels across is gone.",
+ "size": 64,
+ "grid": 16,
+ "how": " A single simple EMBLEM for a small stone button: one bold flat shape filling the frame, thick clean edges, drawn in pale bone-grey with one small warm gold accent, on a transparent background, seen straight on, no perspective. NOT detailed, NOT shaded, NOT textured, NOT a scene, NOT a character, NOT text, NOT a border, NOT a frame, NOT a circle round it, NOT thin lines, NOT several objects.",
+ "inks": [
+  "#0B0A0C",
+  "#3A3540",
+  "#8E8A94",
+  "#D8D2C8",
+  "#F2EDE4",
+  "#D9A441"
+ ],
+ "icons": [
+  { "id": "rail_inventory", "say": "a closed square-cornered BAG with a strap across the top and a gold clasp in the middle of the flap." },
+  { "id": "rail_craft", "say": "a blacksmith's ANVIL seen from the side, the horn to the left, the flat top edge lit gold." },
+  { "id": "rail_character", "say": "a standing FIGURE in a plain hooded cloak, arms at the sides, faceless, a gold pin at the throat." },
+  { "id": "rail_skills", "say": "two crossed straight SWORDS, blades up, hilts down, a gold point where they cross." },
+  { "id": "rail_trade", "say": "a small hanging LANTERN on a short hook, the flame inside it gold." },
+  { "id": "rail_history", "say": "an open BOOK seen from above, two pages, a gold ribbon marker down the middle." },
+  { "id": "rail_save", "say": "a thick-walled cylindrical stone JAR with a flat lid, a gold band round the lid." },
+  { "id": "rail_settings", "say": "a plain six-toothed COG, a gold dot at its hub." },
+  { "id": "rail_hide", "say": "a single thick V-shaped ARROWHEAD pointing down, two thick bars meeting at a gold point at the bottom, alone in empty space with nothing round it. NOT a circle, NOT a disc, NOT a coin, NOT a badge, NOT a button, NOT a ring, NOT a background shape." },
+  { "id": "rail_full", "say": "four right-angled corner BRACKETS at the four corners of the frame, pointing outward, the top-left one gold." },
+  { "id": "rail_dev", "say": "a small stone MASK with two empty eye holes, a gold mark on its brow." }
+ ]
+}

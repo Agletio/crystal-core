@@ -4176,7 +4176,7 @@
    "id": "mouth_stair",
    "tiles": 2,
    "size": 128,
-   "say": "A SPIRAL STAIRCASE cut down into a pale stone cave floor, seen from DIRECTLY ABOVE looking straight down. The STEPS ARE THE SUBJECT and fill most of the opening: eight or nine separate wedge-shaped stone treads winding clockwise around a central post, each tread clearly separated from the next by a dark line of shadow, each catching light on its flat top face so you can count them. Only the small gap at the very centre is black. The outer rim is broken uneven rock. Pale warm grey stone #8E8279 on the lit treads, #5A5249 on their shadowed sides, #2A2622 in the gaps between them. Worn, chipped, dusty, ancient. NOT an empty hole, NOT a black pit, NOT a well, NOT a smooth funnel, NOT a barrel, NOT a tunnel, NOT featureless, NOT bright, NOT colourful.",
+   "say": "A SQUARE SHAFT cut straight down into a pale stone cave floor, seen from DIRECTLY ABOVE looking straight down: the opening is a ragged-edged square of NEAR-BLACK, the dark of it is the subject and fills most of the frame, and at one edge of the opening the TOP OF A WOODEN LADDER leans out — two dark timber rails and the top two rungs, and nothing else inside the dark. A narrow rim of broken uneven pale grey rock round the opening, a thin band of shadow just inside the rim. Pale warm grey stone #8E8279 on the rim, #5A5249 in its shadow, #14120F in the shaft. Worn, chipped, dusty, ancient. NOT a spiral, NOT stairs, NOT steps, NOT treads, NOT spokes, NOT a wheel, NOT a turbine, NOT a gear, NOT a well, NOT round, NOT a circle, NOT a funnel, NOT a barrel, NOT bright, NOT colourful.",
    "tone": 0.5,
    "dull": 0.55
   },

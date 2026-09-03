@@ -634,31 +634,34 @@
   .slotgroup__label { font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 6px; }
   .facets { display: flex; gap: 6px; flex-wrap: wrap; }
 
+  /* A modifier slot is the generated SOCKET plate the skill slots wear, and the
+     tier is a round stone set in it: one fixture below the windows, no vector
+     hexagon. `--gem` is the tier's ink; an empty socket sets none. */
   .facet {
-    width: 42px; height: 48px; padding: 0;
+    width: 48px; height: 48px; padding: 0;
     position: relative;
-    border: none; background: none;
+    border: none; background: transparent; background-image: var(--fix-socket);
+    background-size: 100% 100%; image-rendering: pixelated;
     display: grid; place-items: center;
-    clip-path: polygon(50% 0%, 100% 26%, 100% 74%, 50% 100%, 0% 74%, 0% 26%);
     transition: transform .12s steps(3), filter .12s steps(3);
   }
-  .facet--empty { background: var(--ink); box-shadow: inset 0 0 0 2px var(--edge); }
-  /* A filled facet is a cut STONE rather than a flat swatch: its own grit, a
-     dark rim, and a lit top edge — the clip keeps an inset shadow, so no
-     drop shadow is asked of it. */
-  .facet--set {
-    background-image: linear-gradient(rgba(255,226,170,.22), transparent 40%, rgba(0,0,0,.28)), var(--grit);
-    box-shadow: inset 0 0 0 2px rgba(0,0,0,.35), inset 0 3px 0 rgba(255,255,255,.18);
+  .facet::before {
+    content: ''; width: 26px; height: 26px; border-radius: 50%;
+    background-color: var(--ink); background-image: radial-gradient(circle at 38% 32%, rgba(255,255,255,.55), transparent 38%);
+    box-shadow: inset 0 0 0 2px rgba(0,0,0,.45), 0 0 6px currentColor; /* the tier's ink is the button's colour */
   }
+  .facet--empty { color: transparent; }
+  .facet--empty::before { box-shadow: inset 0 0 0 2px var(--edge); }
+  .facet__tier { position: absolute; }
   .facet--set:hover { transform: translateY(-3px); filter: brightness(1.18); }
   .facet--focus { transform: translateY(-3px); filter: brightness(1.25); }
   .facet__tier { font-family: var(--display); font-size: 10px; color: var(--ink); }
 
-  .facet--amethyst { background: var(--amethyst); }
-  .facet--citrine  { background: var(--citrine); }
-  .facet--quartz   { background: var(--quartz); }
-  .facet--verdite  { background: var(--verdite); }
-  .facet--ember    { background: var(--ember); }
+  .facet--amethyst { color: var(--amethyst); } .facet--amethyst::before { background-color: var(--amethyst); }
+  .facet--citrine  { color: var(--citrine); }  .facet--citrine::before  { background-color: var(--citrine); }
+  .facet--quartz   { color: var(--quartz); }   .facet--quartz::before   { background-color: var(--quartz); }
+  .facet--verdite  { color: var(--verdite); }  .facet--verdite::before  { background-color: var(--verdite); }
+  .facet--ember    { color: var(--ember); }    .facet--ember::before    { background-color: var(--ember); }
 
   /* Two columns, because a Brilliant item carries six modifiers plus its
      implicit and one column of those is taller than the window has left after

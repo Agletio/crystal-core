@@ -444,11 +444,12 @@ first. When the phase is whole, `/critique` runs again; done is all three at 8.
       wheel), and the shore is the water set's own rim tiles. The stray
       stroke was not found on any shot this pass; the director names its
       screen next time.
-- [ ] **THE CAMP IS STRETCHED UNEVENLY.** 688×384 to 1280×800 is 1.86x by
+- [x] **THE CAMP IS STRETCHED UNEVENLY.** 688×384 to 1280×800 is 1.86x by
       2.08x, so every camp pixel is a rectangle 12% taller than it is wide;
-      the fire-ring stones come out lozenge-shaped. Only the purist saw it;
-      the picture was told to fill the window on purpose, so this is a
-      question for the user before it is work.
+      the fire-ring stones come out lozenge-shaped. DONE at the user's word:
+      `fit()` in `src/ui/camp.ts` takes ONE scale on both axes, the largest
+      that fits the picture whole, and the stage's own ground shows either
+      side (`desktop-camp.png`).
 
 **THE SECOND REVIEW (2026-09-03b, commit `5dc6865`): 5 / 5 / 6.** Eighteen
 pictures approved, every first-pass fault FIXED or BETTER, and the critics'
@@ -506,17 +507,29 @@ shown to the user first; DECISION means it argues with a rule already in
       `camp_socket` (lit once filled) through `makeProp`, the sheet over the
       picture is gone, and only the set's readout keeps a dark plate
       (`desktop-proving.png`).
-- [ ] **ORDINARY DAMAGE DIGITS.** *"Ghost-grey on khaki — `275`, `5460`,
+- [x] **ORDINARY DAMAGE DIGITS.** *"Ghost-grey on khaki — `275`, `5460`,
       `88` are close to invisible; give them the bone-with-shadow the HUD
-      numerals got."* DECISION: `floaterInk` makes ordinary damage the ink
-      of the rock on purpose (`crop-floater-x5.png`, `cast-arc.png`).
-- [ ] **ONE CHROME.** *"Frame the inventory dock and tooltips like the
+      numerals got."* DONE at the user's word ("just do what the critics
+      say"): `floaterInk` sets ordinary damage in bone on a dark edge.
+- [x] **ONE CHROME.** *"Frame the inventory dock and tooltips like the
       window, replace the CSS hexagons with the plate the skill slots use,
-      and pick one plate for bars, skills and potions."* DECISION (the
-      retired head band) and GENERATION (the socket plate)
-      (`desktop-sheet.png`, `desktop-tooltip.png`, `crop-hud-x3.png`).
-- [ ] **TWO PORTRAIT FIDELITIES** and **THE WAY-IN WHEEL** — as above,
-      GENERATIONS (`faces.png`, `desktop-graft.png`, `gather.png`).
+      and pick one plate for bars, skills and potions."* DONE: the dock
+      wears `--fix-win` at the window's own size and the tooltip at half
+      of it; a bench facet is the `socket` fixture with a round stone of
+      the tier's ink set in it, no hexagon (`desktop-sheet.png`). The
+      potion arches stay: they are their own generated plate.
+- [x] **TWO PORTRAIT FIDELITIES** and **THE WAY-IN WHEEL** — DONE, both
+      generations: `tools/art/faces.json` asked the Geometer and the
+      Osteomancer as busts at the Lampwright's 96 and `portrait.mts` put
+      them in the generated table over the hand-drawn rows
+      (`faces_new.png`); `mouth_stair` was re-asked as a square near-black
+      shaft with a ladder's top at one edge (`wayin_z4.png`).
+- [x] **THE RAIL GLYPHS.** *"The rail is eight 1-bit 16px glyphs."* DONE:
+      `tools/art/rail.json` asked eleven emblems in four inks at 64,
+      imported at 16 as `rail_<screen>` in the icon table, and
+      `screenIcon` draws a generated one first, the hand grid only for a
+      button nobody has asked one for (`desktop-camp.png`). The chevron was
+      re-asked once to lose the disc the generator put round it.
 - [x] **THE HARNESS GAPS**, the director's second-worst: `descent-peek`'s
       zone lands on The Answering whatever is socketed, `boss-peek` finds no
       keyhole, Shockwave fails with "nothing launched a descent". DONE: a depth runs in its zone's world whatever is socketed and the
@@ -704,18 +717,14 @@ be picked up — they are decisions the user has not made. Ask before acting.
   the Proving Ground's tab. One `zoneset.mts` generation would fix it, and it
   needs the `art` skill and an approval before anything is dressed.
 
-**FROM THE ART REVIEW (Phase 11).**
-
-- **Does the carved frame come back on the dock, the bubble and the tooltip?**
-  Three critics read the flat panels as "one game below the carved windows";
-  the user retired the head band as "a brown box drawn round everything it
-  touched". Both cannot hold. A NEW fixture (thinner, no brown) is one
-  generation, shown first — or the flat panel with its hairline stays and the
-  critics are answered on the other faults.
-- **The rail glyphs and the bench's sockets.** Both are generations
-  (`uikit.mts` pieces), and a design is shown before either is spent.
-- **The camp is stretched 1.86× by 2.08×** (item 10) — fill the window, or
-  letterbox to one scale and lose the bench-against-the-edge fit.
+**FROM THE ART REVIEW (Phase 11)** — answered: *"Just do what the critics say
+unless it's going to be a massive overhaul."* So the window's frame is on the
+dock and the tooltip, the rail glyphs and the bench stones are generated, the
+camp stands at one scale, and damage digits are bone. What that ruling leaves
+undone is the overhauls: the Warrior and Rogue as real clusters (two bodies,
+~68 generations each), a regrade of every shipped floor set to the camp's
+warm ramp (four new sets, and a judged design floor among them), and the
+lake shore (the water set the user called perfect).
 
 1. **Does kiting come back as a PASSIVE that pays for it?** The user's own
    shape, after having it removed: *"I think later we can make a passive that
