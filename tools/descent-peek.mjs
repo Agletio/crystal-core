@@ -75,7 +75,8 @@ page.on('console', (m) => {
  *  skill. Every new game runs that gate, and the dev kit IS a new game — so
  *  this is walked twice or the second one sits on the hall forever. */
 async function makeCharacter() {
-  await page.evaluate(() => document.getElementById('pick-aethermancer')?.click());
+  // TRADE=<id> picks another figure in the hall; a trade's own skill needs no swap.
+  await page.evaluate((id) => document.getElementById(`pick-${id}`)?.click(), process.env.TRADE ?? 'aethermancer');
   await page.waitForTimeout(250);
   await page.evaluate(() => document.getElementById('pick-take')?.click());
   await page.waitForTimeout(250);

@@ -517,18 +517,18 @@ shown to the user first; DECISION means it argues with a rule already in
       (`desktop-sheet.png`, `desktop-tooltip.png`, `crop-hud-x3.png`).
 - [ ] **TWO PORTRAIT FIDELITIES** and **THE WAY-IN WHEEL** — as above,
       GENERATIONS (`faces.png`, `desktop-graft.png`, `gather.png`).
-- [ ] **THE HARNESS GAPS**, the director's second-worst: `descent-peek`'s
+- [x] **THE HARNESS GAPS**, the director's second-worst: `descent-peek`'s
       zone lands on The Answering whatever is socketed, `boss-peek` finds no
-      keyhole, Shockwave fails with "nothing launched a descent". MOSTLY
-      DONE: a depth runs in its zone's world whatever is socketed and the
+      keyhole, Shockwave fails with "nothing launched a descent". DONE: a depth runs in its zone's world whatever is socketed and the
       kit's climb is shut past The Answering, so `descent-peek <zone>` goes
       through the Proving Ground tab and its INFLUENCE button (`rot_z4.png`,
       `cavern_z4.png` — the first pictures of either floor, and both wear
       the per-cell light drift the Fissure lost); `boss-peek` opens the
-      Proving Ground tab before it looks for the keyhole and arms it. LEFT:
-      Shockwave still launches nothing — the peek now prints the phase and
-      the open windows at the failure (`phase menu, open: nothing`), so the
-      next pass starts there.
+      Proving Ground tab before it looks for the keyhole and arms it.
+      Shockwave never launched because it was swapped onto an AETHERMANCER
+      holding a wand: `TRADE=warrior` picks Mahthar in the hall and his own
+      swing is the first cast (`shock.png`). The peek also prints the phase
+      and the open windows when nothing launches.
 
 ## Phase 3 — A quest log instead of a pointing finger
 
