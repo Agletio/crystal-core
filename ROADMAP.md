@@ -491,10 +491,15 @@ shown to the user first; DECISION means it argues with a rule already in
       rock's interior and take its mean a step below the face's shadow row;
       regrade the Fissure sand and rock to the camp's warm ramp; tone the
       arena tile's crescent into the sand so the lattice stops showing."*
-      The rock marks can be CODE (a hash off `grainAt` over the apron); a
-      regrade of a shipped set is a GENERATION and *"a shipped set is never
-      edited"* makes it a new set (`crop-rock-void-x4.png`, `fissure-z9.png`,
-      `crop-arena-grain-x3.png`).
+      MARKS DONE: `rockMarks` in `src/render/pixi.ts` hashes short dark
+      dashes, `ROCK_MARKS.dark` of the way from the rock's mean to black,
+      over a six-tile period and tiles them with the apron; an all-rock cell
+      inside the grid is no longer given its own tile, so the apron and its
+      marks show wherever the rock is and nowhere a face or a floor is
+      (`marks_z0.png`, `marks_z9.png`). LEFT: a regrade of a shipped set is
+      a GENERATION and *"a shipped set is never edited"* makes it a new set;
+      the arena's crescent lattice is the design floor's own grain
+      (`crop-arena-grain-x3.png`).
 - [x] **THE PROVING GROUND'S SOCKETS.** *"Four text fields over a dimmed
       picture; draw them as the crack's clawed sockets, laid on the art at
       full brightness."* DONE: each socket button carries the generated

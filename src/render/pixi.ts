@@ -120,6 +120,32 @@ import { SKILL_BY_ID } from '../data';
  *  does not end on a straight lit line with nothing past it. */
 const EDGE = 4;
 const APRON = 96; // tiles of rock top laid past the grid on every side: further than any zoom sees
+/** The rock's marks: `per` a tile over a `tiles`-square period, each `px` of
+ *  the tile's own grid, `dark` of the way from the rock's mean to black. */
+const ROCK_MARKS = { tiles: 6, per: 0.45, px: 2, dark: 0.3 };
+const rockMarkSheets = new Map<string, Texture>();
+function rockMarks(grid: number, rock: string): Texture {
+  const key = `${grid}:${rock}`;
+  const held = rockMarkSheets.get(key);
+  if (held) return held;
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = grid * ROCK_MARKS.tiles;
+  const ctx = canvas.getContext('2d')!;
+  ctx.fillStyle = mix(rock, '#000000', ROCK_MARKS.dark);
+  let seed = 7;
+  const next = (): number => ((seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff);
+  const count = Math.round(ROCK_MARKS.per * ROCK_MARKS.tiles * ROCK_MARKS.tiles);
+  for (let i = 0; i < count; i++) {
+    const x = Math.floor(next() * canvas.width);
+    const y = Math.floor(next() * canvas.height);
+    const long = next() < 0.5; // a short dash either way rather than a dot
+    ctx.fillRect(x, y, ROCK_MARKS.px * (long ? 2 : 1), ROCK_MARKS.px * (long ? 1 : 2));
+  }
+  const texture = Texture.from(canvas);
+  texture.source.scaleMode = 'nearest';
+  rockMarkSheets.set(key, texture);
+  return texture;
+}
 /** An aura is LIGHT OFF THE BODY, never its six-tile reach drawn on the floor:
  *  a soft radial glow this many tiles across, at this many times the aura's
  *  own alpha — three critics read the reach as "a debug radius". */
@@ -546,12 +572,26 @@ export async function createPixiRenderer(
         apron.y = -APRON;
         apron.tileScale.set(size);
         groundLayer.addChildAt(apron, 0); // under the floor, so only what no tile covers shows it
+        // MARKS IN THE ROCK, a step darker than its mean, hashed over a few
+        // tiles and tiled with the apron: the interior was one flat value
+        // lighter than its own face shadow — *"put grain in the rock's
+        // interior"*. Every all-rock cell shows the apron, so they are
+        // everywhere the rock is and nowhere a face or a floor is.
+        const marks = new TilingSprite({
+          texture: rockMarks(set.grid, set.rock),
+          width: APRON * 2 + grid.width,
+          height: APRON * 2 + grid.height,
+        });
+        marks.x = -APRON;
+        marks.y = -APRON;
+        marks.tileScale.set(size);
+        groundLayer.addChildAt(marks, 1);
       }
       for (let y = -EDGE; y < grid.height + EDGE; y++) {
         for (let x = -EDGE; x < grid.width + EDGE; x++) {
           const solid = rock(x, y);
           const texture = pick(x, y);
-          if (!texture) continue;
+          if (!texture || texture === top) continue; // all-rock is the apron's already, marks and all
           const sprite = new Sprite(texture);
           sprite.x = x;
           sprite.y = y;
