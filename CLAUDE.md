@@ -291,8 +291,10 @@ which names the worlds running a `LevelDesign` — **THE FISSURE RUNS THE TEST
 LEVEL'S**, *"then you can push to the main fissure levels"* — and a designed
 floor is `GameMap.plain`: no light drift and no grain, because a per-cell tint
 is a hard line at every cell whatever noise drives it, and *"the harsh color
-lines in the floors"* were exactly that. The other three worlds keep their
-sets, their wreath lakes and their light until judged.
+lines in the floors"* were exactly that. **EVERY MAP IS PLAIN NOW**: the other
+three worlds were judged on their first pictures and their light drift read as
+a mosaic of rectangles, so the drift and the grain are off everywhere; the
+sets and the wreath lakes stay until judged.
 
 **A LAKE IS A DEEP CORE IN A SHALLOW WREATH.** Brogue's rule: a blocking patch's
 DEEP is every cell of it with the patch on all four sides (`Grid.deep`), and its

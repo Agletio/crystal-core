@@ -12,7 +12,7 @@ import { attachTooltip } from './tooltip';
 
 function dress(button: HTMLElement, game: GameState): void {
   const label = button.textContent?.trim() ?? '';
-  const icon = screenIcon(button.id);
+  const icon = screenIcon(button.id, 24); // a 16-grid glyph at 18 is a smudge in a 34px socket
   if (!icon) return;
   button.replaceChildren(icon);
 

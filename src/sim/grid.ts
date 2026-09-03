@@ -1490,7 +1490,9 @@ export function generateMap(
     }
   }
 
-  return { grid, rooms, entrance, exit, props, vein, theme, bare: !!zone, zone, patches, raised: standing, plain: !!design };
+  // PLAIN everywhere: a per-cell tint is a hard line at every cell, and the
+  // three shipped sets wore it as a mosaic of rectangles once they were seen.
+  return { grid, rooms, entrance, exit, props, vein, theme, bare: !!zone, zone, patches, raised: standing, plain: true };
 }
 
 /**
@@ -1555,6 +1557,6 @@ export function sceneMap(plan: ScenePlan, theme: MapTheme, vein = 1): GameMap {
   // pool grown across a boss arena is the carve overruling them.
   return {
     grid, rooms, entrance, exit: entrance, props, vein, theme, bare: !!zone, zone,
-    patches: [], raised: [], plain: !!design,
+    patches: [], raised: [], plain: true,
   };
 }

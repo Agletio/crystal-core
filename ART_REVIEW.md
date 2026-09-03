@@ -199,3 +199,108 @@ frames beside it are what hold the pick.
 5. Redraw Rimespike with a dark root, lit tips and a floor shadow, and
    Fireball's trail as ember-to-smoke (`crop-rimespike-x5.png`,
    `crop-fireball-flight-x4.png`).
+
+## 2026-09-03c — the third review, after the critics' code items
+
+Commit `cd4ef06`. The director's shoot was cut off by a usage limit and a
+second run judged the 120 pictures already taken plus nineteen crops; **20
+approved**. Every second-pass item that was code or a small generation is
+judged FIXED (the aura, the lamp on every body, the carved dock and
+tooltip, the socket-plate facets, the generated rail glyphs, bone digits,
+the ember trail, the rooted spike, the two busts, the shaft) and three
+BETTER (the camp at one scale but letterboxed, the rock's dashes with the
+interior still lighter than the face's shadow, the socket plates over a
+translucent panel). The Rot and the Cavern were judged for the first time.
+The list is in `art-review/2026-09-03c/APPROVED.md`.
+
+**The director's three worst faults:**
+
+1. The light drift on the three shipped sets is quantised into hard-edged
+   rectangles one to four tiles a side — a mosaic at zoom 0 and 4, the
+   checker the designed floor went `plain` to avoid.
+2. The Seam is still unseen: the `seam` socketing is not at the top level
+   `seamSocketed` asks for.
+3. The arena sand's crescent repeats on a fixed diagonal lattice under the
+   boss, and the boss's slam telegraph is a flat translucent red disc with a
+   smooth vector rim eight tiles across.
+
+| critic | bodies | floors | ui | effects | consistency | **overall** | compared to |
+|---|---|---|---|---|---|---|---|
+| the pixel-art purist | 5 | 5 | 7 | 5 | 5 | **5** | Halls of Torment, Death Must Die, Loop Hero |
+| the UI reviewer | 5 | 5 | 7 | 4 | 4 | **5** | Halls of Torment, Loop Hero, Death Must Die |
+| the Steam shopper | 5 | 5 | 7 | 4 | 4 | **5** | Halls of Torment, Death Must Die, Loop Hero |
+
+**Where they agree, in one line each:** the camp, the title, the carved
+chrome and the four busts are one finished product and would sit beside Loop
+Hero; the descent is where it falls over — the Rot and Cavern floors are a
+patchwork of lighter rectangles, the hero at ship zoom is an unedged smudge,
+the boss's slam is two red vector discs, Creeping Blight is a lime ring with
+no pool and Shockwave three sand squares, a Cavern pack dies into one stacked
+lozenge, the stations window covers nine of the rail's buttons, and the cast
+hall still asks a new player to pick between two finished bodies and two
+blocks of noise. The shopper: *"it is a 9 shell around a 4 fight, and a
+shopper buys the fight."*
+
+**Facts the critics could not know:** the per-cell light was switched off on
+every world the same hour (`GameMap.plain` is true everywhere); the hero does
+wear the rim every monster wears, at the same strength, and at zoom 4 it is
+one pixel; the Warrior and Rogue bodies and a regrade of the floor sets are
+the two overhauls the user ruled out.
+
+**The pixel-art purist, fix first:**
+
+1. `rot-z4.png` / `cavern-z4.png` / `seam-z4.png` — the per-cell light drift
+   draws as a mosaic of lighter rectangles with a hard edge at every cell;
+   sample it across the tile or turn it off for those worlds.
+2. `boss/boss-07.png` / `crop-telegraph-rim-x3.png` — the slam telegraph is
+   two anti-aliased 2 px red vector discs eight tiles wide; redraw as a
+   hard-edged one-pixel ring in the sand's own shadow with a single-step
+   tint fill.
+3. `fissure-z4.png` / `cast-arc.png` — the hero at ship zoom is a 12 px dark
+   smudge no brighter than the cover beside him; a lit rim or a lighter
+   cloak so the body is the brightest thing on the floor.
+4. `crop-cavern-corpses-x4.png` / `cavern-z0.png` — eight crawlers die into
+   one identical lozenge stacked seven deep and a body without death frames
+   fades upright as a tan ghost; a fall direction and a second frame, and
+   fall rather than fade.
+5. `desktop-pick.png` / `crop-cast-hall-x2.png` — the Warrior and Rogue are
+   noise blocks beside two finished bodies on the first screen after the
+   title.
+
+**The UI reviewer, fix first:**
+
+1. `rot-z4.png` / `cavern-z4.png` — the light drift is a mosaic of
+   hard-edged 1–4 tile rectangles; per pixel, or off as the Fissure's
+   `plain`.
+2. `desktop-stations.png` / `desktop-anvil.png` / `desktop-jewellery.png` —
+   windows stack over the crafting window, run off an 800 px view and hide
+   nine of eleven rail buttons; one frame footprint, stop above the dock,
+   rail on top.
+3. `boss/boss-07.png` / `crop-blight-ring-x2.png` / `crop-boss-cyan-blob-x4.png`
+   — the slam disc, the Blight ring and the Chill marker are smooth vector
+   primitives on pixel art; hard-edged pixel rings in the floor's own
+   shadow with at most one step of tint fill.
+4. `desktop-descent.png` at 1280×800 — the hero has no lamp edge and reads
+   as a 20 px smudge, the rail glyphs are 12 px specks with 8 px letters;
+   rim the hero like every monster, draw the rail at 24 px.
+5. `crop-cavern-corpses-x4.png` — eight kills stack one identical lozenge and
+   unframed bodies fade upright; a fall direction, and fall rather than fade.
+
+**The Steam shopper, fix first:**
+
+1. `rot-z4.png` / `cavern-z4.png` / `seam-z4.png` — the floor light drift is
+   a hard-edged rectangle patchwork; per pixel, or off as the designed
+   Fissure does.
+2. `boss/boss-07.png` / `boss/boss-04.png` — the slam telegraph is two flat
+   translucent red discs with a smooth rim; a hard-edged pixel ring in the
+   sand's own dark and at most a step of tint fill.
+3. `fissure-z4.png` / `cast-arc.png` — the hero at ship zoom is a 14 px navy
+   figure with no rim and no readable pose; the lamp edge every monster
+   wears and a silhouette that reads at that size.
+4. `desktop-descent.png` / `cast-shockwave.png` — Creeping Blight is a
+   lime-yellow ring brighter than anything on the floor with nothing in the
+   pool, and Shockwave is three sand-coloured squares; an olive-filled pool,
+   a visible sweep ring at its real reach.
+5. `desktop-stations.png` / `desktop-anvil.png` — the window sits over the
+   rail and hides nine of eleven buttons, and runs off the bottom of an
+   800 px view.

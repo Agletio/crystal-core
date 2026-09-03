@@ -163,10 +163,11 @@ for (const want of SOCKETS[zone] ?? []) {
   await page.evaluate(() => document.getElementById('camp-socket0')?.click());
   await page.waitForTimeout(250);
   const put = await page.evaluate((family) => {
-    const cards = [...document.querySelectorAll('#crystals-list .crystal')];
-    const card = cards.find(
+    const cards = [...document.querySelectorAll('#crystals-list .crystal')].filter(
       (c) => c.textContent?.includes(family) && /unsocketed/i.test(c.textContent ?? '')
     );
+    // The TOP level first: the Seam opens only on level-4 crystals of both aura worlds.
+    const card = cards.find((c) => /Level 4\b/.test(c.textContent ?? '')) ?? cards[0];
     const button = card?.querySelector('button.mini');
     if (!button) return false;
     button.click();

@@ -281,7 +281,7 @@
      light; the two-worlds wall this replaced was the busiest picture in the
      game behind the smallest text in it. */
   .title {
-    position: fixed; inset: 0; z-index: 60;
+    position: fixed; inset: 0; z-index: 80;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     gap: 26px; cursor: pointer; text-align: center;
     background-color: var(--ink); background-image: var(--grit);
@@ -441,7 +441,7 @@
   /* Opened FROM the title it is the whole screen, not a window: there is
      nothing behind it yet to be a window over. */
   .modal--full {
-    bottom: 0; z-index: 55; pointer-events: auto;
+    bottom: 0; z-index: 75; pointer-events: auto;
     background-color: var(--ink); background-image: var(--grit);
   }
   .modal--full .modal__card { width: min(720px, calc(100vw - 40px)); }
@@ -456,7 +456,7 @@
      window band is `Z_BASE + one per REGISTERED screen`, so these three climb
      with the screen COUNT — at 32 the thirteenth window tied the scrim. */
   .corner {
-    position: fixed; right: 16px; bottom: 22px; z-index: 44;
+    position: fixed; right: 16px; bottom: 22px; z-index: 64;
     display: flex; flex-direction: column; align-items: flex-end; gap: 8px;
   }
   /* The rail is an ACTION BAR: a carved stone plate with brass end caps, and
@@ -1021,7 +1021,7 @@
     background: repeating-linear-gradient(90deg, transparent 0 calc(10% - 1px), rgba(0,0,0,.55) calc(10% - 1px) 10%);
   }
   .shout {
-    position: fixed; left: 0; top: 0; z-index: 46; pointer-events: none;
+    position: fixed; left: 0; top: 0; z-index: 66; pointer-events: none;
     transform: translate(calc(-50% + var(--sx, 0px)), calc(-100% + var(--sy, 0px)));
     padding: 5px 11px; max-width: 240px;
     background-color: var(--panel); background-image: var(--grit); background-clip: padding-box;
@@ -1695,7 +1695,7 @@
   /* A QUESTION stops you, and a beat does too: scrim on, click swallowed. Over
      the whole window band, since raising one on focus would otherwise let a
      screen you touched earlier paint through the scrim. Still under the rail. */
-  .modal--stop { background: rgba(6,4,2,.86); pointer-events: auto; z-index: 42; }
+  .modal--stop { background: rgba(6,4,2,.86); pointer-events: auto; z-index: 62; }
   .modal__card { pointer-events: auto; }
   /* A window is dragged by its HEAD, and the drag is a delta on top of whatever
      the layout decided — so a window nobody moves is exactly where it was, and
@@ -1713,7 +1713,7 @@
      transform hangs it above the head rather than on it. Over every window and
      every scrim. TWO classes on the card, because `.modal__card` is one and
      sets a width later in this same sheet. */
-  .speech, .modal--speech { z-index: 46; }
+  .speech, .modal--speech { z-index: 66; }
   .speech {
     position: fixed; left: 0; top: 0;
     transform: translate(calc(-50% + var(--sx, 0px)), calc(-100% + var(--sy, 0px)));

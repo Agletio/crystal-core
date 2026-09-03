@@ -48,6 +48,9 @@ import {
   sweepRing,
   fireBurst,
   fireShades,
+  pixelRing,
+  FIRE_PX,
+  onGrid,
   fireSparks,
   clampZoom,
   floorColour,
@@ -98,6 +101,7 @@ import {
   makeSheet,
   makeVfx,
   rankedKey,
+  LAMP,
 } from './sprites';
 import { PROP_ART } from './generated-props';
 import { ZONES } from './generated-tiles';
@@ -169,7 +173,7 @@ export async function createPixiRenderer(
 
   /** Uploaded on first use, beside the canvases: an eager loop here would pay
    *  the boot cost the lazy sheet exists to avoid. */
-  function texturesFor(sprite: string, rank: MonsterRank, lit = false): Texture[] | null {
+  function texturesFor(sprite: string, rank: MonsterRank, lit = 0): Texture[] | null {
     const key = rankedKey(sprite, rank, lit);
     const already = textures.get(key);
     if (already !== undefined) return already;
@@ -316,7 +320,7 @@ export async function createPixiRenderer(
    *  body carries the lamp: dark bodies on pale floors were black cut-outs. */
   function framesFor(e: Entity): Texture[] {
     return (
-      texturesFor(e.sprite, e.rank, true) ??
+      texturesFor(e.sprite, e.rank, e.kind === 'hero' ? LAMP.hero : LAMP.body) ??
       texturesFor(e.sprite, 'common') ??
       texturesFor('grub', 'common')!
     );
@@ -831,6 +835,16 @@ export async function createPixiRenderer(
    *  out over the void. A quarter tile proud of the foot, or the feet float. */
   const anchorY = (e: Entity): number => bodyFoot(e.sprite) - FOOT_DROP / Math.max(0.1, e.scale);
 
+  /** How far a body with no death frames has keeled over, signed: it falls the
+   *  way it faced, over the first half of the fade, and only then goes — a fall
+   *  that fades as it goes is a ghost lying down. Alternate bodies fall the other
+   *  way, so a pack put down on one spot is not one lozenge stacked. */
+  const keel = (e: Entity): number => {
+    if (!e.dead || GENERATED[e.sprite]?.states.death) return 0;
+    const way = (Math.cos(e.facing) >= 0 ? 1 : -1) * (e.id % 2 ? 1 : -1);
+    return Math.min(1, (e.deathAge / DEATH_FADE) * 2) * 1.35 * way;
+  };
+
   function spriteFor(e: Entity): Sprite {
     let s = sprites.get(e.id);
     if (!s) {
@@ -887,11 +901,11 @@ export async function createPixiRenderer(
     const per = (e.scale * world.scale.x) / (s.texture.width || CELL);
     const want = per > 1.05 ? 'nearest' : 'linear';
     if (s.texture.source.scaleMode !== want) s.texture.source.scaleMode = want;
-    s.alpha = (1 - fade) * (1 - sunk);
-    // A body with DEATH FRAMES lies down in them; the keel-over is only for a
-    // hand-drawn one with no fall of its own — over real frames it read as a
-    // translucent silhouette that kept standing.
-    s.rotation = GENERATED[e.sprite]?.states.death ? 0 : fade * 1.2;
+    // A body with DEATH FRAMES lies down in them and fades; one with none
+    // keels over whole first, so it is never a translucent silhouette standing.
+    const gone = GENERATED[e.sprite]?.states.death ? fade : Math.max(0, (fade - 0.5) * 2);
+    s.alpha = (1 - gone) * (1 - sunk);
+    s.rotation = keel(e);
 
     // Lunge toward whatever it's hitting; recoil when hit. Only where there
     // are no FRAMES for it: over a real swing the transform is a second motion
@@ -1032,7 +1046,7 @@ export async function createPixiRenderer(
     const size = (1 / (texture.width || CELL)) * spec.size * (1 - fade * 0.5);
     h.scale.set(size);
     h.scale.x = Math.abs(h.scale.x) * (facingEast ? 1 : -1);
-    h.rotation = (spec.turn + hand.turn) * (facingEast ? 1 : -1) + fade * 1.2;
+    h.rotation = (spec.turn + hand.turn) * (facingEast ? 1 : -1) + keel(e);
     h.alpha = body.alpha;
     h.tint = body.tint;
     if (sunk > 0) h.y += sunk * 0.8;
@@ -1150,8 +1164,15 @@ export async function createPixiRenderer(
         const stacks = e.ailments.reduce((n, a) => n + (a.id === def.id ? 1 : 0), 0);
         if (stacks === 0) continue;
         const colour = toHexNumber(damageColour(palette, def.type));
+        const edge = toHexNumber(palette.void);
         for (const m of ailmentMarks(def.id, stacks, head, e.scale, state.elapsed)) {
-          vfxLayer.circle(cx(e.x) + m.x, cy(e.y) + m.y, m.r).fill({ color: colour, alpha: m.alpha });
+          // A whole block on the sprite grid with a dark edge, never a disc: a
+          // smooth cyan circle over a pixel body is a cursor.
+          const side = Math.max(FIRE_PX * 2, onGrid(m.r * 2));
+          const x = onGrid(cx(e.x) + m.x - side / 2);
+          const y = onGrid(cy(e.y) + m.y - side / 2);
+          vfxLayer.rect(x - FIRE_PX, y - FIRE_PX, side + FIRE_PX * 2, side + FIRE_PX * 2).fill({ color: edge, alpha: m.alpha * 0.6 });
+          vfxLayer.rect(x, y, side, side).fill({ color: colour, alpha: m.alpha });
         }
       }
     }
@@ -1227,19 +1248,18 @@ export async function createPixiRenderer(
       // poisonDrops — so the pool is drawn to exactly what the sim poisoned.
       if (fx.kind === 'blight_field') {
         const radius = poisonFieldRadius(Math.hypot(to.x - from.x, to.y - from.y), t);
-        // TINTED TO THE TYPE it deals, poison included: the still is asked
-        // dark and comes back lime, and the tint is what pulls it to venom.
-        const ink = toHexNumber(damageColour(palette, fx.damageType));
+        // TINTED DARK to the type it deals, poison included: the still is asked
+        // dark and comes back lime, and a lime disc over pale floor is a ring
+        // rather than a pool. Nine of these lie on top of each other over a
+        // cast, so the pool is dark rather than heavy, or it is a lid.
+        const ink = toHexNumber(mix(damageColour(palette, fx.damageType), palette.void, 0.45));
         const pool = vfxTexture('poison_pool');
         if (pool) {
-          // Faint, because a cast lasts 10s at nearly one a second and up to
-          // nine of these lie on top of each other: at any weight that reads
-          // it stacks into a solid lid over the fight.
           const s = effectSprite(pool, radius * 2, true);
           s.anchor.set(0.5, 0.5);
           s.x = cx(from.x);
           s.y = cy(from.y);
-          s.alpha = Math.max(0, 0.62 * (1 - t * t));
+          s.alpha = Math.max(0, 0.85 * (1 - t * t));
           s.tint = ink;
         }
 
@@ -1265,10 +1285,8 @@ export async function createPixiRenderer(
         // Second point carries the radius, same contract as the poison field.
         const radius = Math.hypot(to.x - from.x, to.y - from.y);
         const grown = burstRadius(radius, t);
-        // Dark, not tinted: a translucent flame-coloured disc muddies the floor.
-        vfxLayer
-          .circle(cx(from.x), cy(from.y), grown)
-          .fill({ color: toHexNumber(palette.void), alpha: Math.max(0, 0.3 * (1 - t)) });
+        // A dark ring of whole blocks at the reach, never a translucent disc.
+        blocks(pixelRing(from, grown, 3, 0.5 * (1 - t)), fx.damageType, 1);
 
         // Laid to the radius the sim used, turned off the position so two a
         // tile apart are not one picture twice. The blocks under it carry the
@@ -1519,14 +1537,20 @@ export async function createPixiRenderer(
         .circle(cx(a.x), cy(a.y), a.r)
         .stroke({ color: toHexNumber(groupColour(palette, a.group)), alpha: 0.32, width: 0.07 });
     }
-    // THE FALL, on the floor and under the bodies: it fills as its fuse burns
-    // down, so how long you have left is the picture rather than a number.
+    // THE FALL, on the floor and under the bodies: a hard ring of blocks at the
+    // edge, a dark one a block outside it so it reads on any floor, and a
+    // second ring growing out from the centre as the fuse burns down, so how
+    // long you have left is the picture rather than a number. Whole blocks on
+    // the floor's grid, because a smooth disc under pixel bodies is a decal.
+    const shades = fireShades(palette, 'fire');
     for (const ring of state.circles) {
       const gone = 1 - Math.max(0, ring.fuse) / Math.max(0.01, ring.of);
-      const colour = toHexNumber(palette.ember);
-      auraLayer.circle(ring.x, ring.y, ring.r).fill({ color: colour, alpha: 0.1 + gone * 0.28 });
-      auraLayer.circle(ring.x, ring.y, ring.r * gone).fill({ color: colour, alpha: 0.22 });
-      auraLayer.circle(ring.x, ring.y, ring.r).stroke({ color: colour, alpha: 0.9, width: 0.09 });
+      const rings = [
+        ...pixelRing(ring, ring.r + FIRE_PX * 2, 3, 0.55),
+        ...pixelRing(ring, ring.r, 0, 0.9),
+        ...pixelRing(ring, ring.r * gone, 2, 0.5 + gone * 0.4),
+      ];
+      for (const p of rings) auraLayer.rect(cx(p.x), cy(p.y), p.size, p.size).fill({ color: toHexNumber(shades[p.shade]), alpha: p.alpha });
     }
     const lit = new Set<number>();
     for (const m of state.monsters) {

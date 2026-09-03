@@ -63,6 +63,13 @@ edge; one added on top is a slab and grown inward it eats a thin limb.
 `glowed` falls off squared. Generated art carries no accent and no halo — `x`,
 `b` and `o` are applied at runtime off `MonsterRank`.
 
+**The LAMP is on the body's OWN edge pixels.** `rimLit` pulls a body's top
+edge `RIM.top` of the way to lamplight and its sides `RIM.side`, symmetric
+because a facing is a flip; `LAMP` is how much of that a body takes — every
+monster 1, the hero 1.4, because at ship zoom he is a 12px figure in a pack
+and the one you have to find. It is keyed into the texture cache
+(`rankedKey`), so a strength is a set of frames and never a filter.
+
 ### States and facings
 
 `GeneratedArt.states` maps a name to a RUN of indexes in one flat `frames`

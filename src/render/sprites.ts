@@ -30,9 +30,9 @@ type PixelArt = {
    *  it. A solid border is a low-resolution convention and reads as a sticker
    *  once the art under it stops being chunky. */
   glow?: { colour: string; reach: number };
-  /** Lamplight on the body's own edge pixels: what keeps the one DARK body on
-   *  the floor from being a shape. The silhouette is untouched. */
-  rim?: string;
+  /** Lamplight on the body's own edge pixels: what keeps a DARK body on the
+   *  floor from being a shape. `share` scales `RIM`; the silhouette is untouched. */
+  rim?: { ink: string; share: number };
 };
 
 /** Every frame must be square and match the grid it declares: a short row
@@ -88,8 +88,8 @@ function drawPixels(ctx: CanvasRenderingContext2D, art: PixelArt, size = CELL): 
     }
   }
   if (art.rim) {
-    const [r, g, b] = inkBytes(art.rim);
-    rimLit(data, [r, g, b], size);
+    const [r, g, b] = inkBytes(art.rim.ink);
+    rimLit(data, [r, g, b], size, art.rim.share);
   }
   if (art.glow) {
     const [r, g, b] = inkBytes(art.glow.colour);
@@ -104,17 +104,23 @@ function drawPixels(ctx: CanvasRenderingContext2D, art: PixelArt, size = CELL): 
  *  read as the lamp moving. */
 export const RIM = { top: 0.8, side: 0.45 };
 
+/** How much of `RIM` a body takes, and 0 is none. The hero takes more than a
+ *  monster: he is the one body you have to find at ship zoom, in a pack. */
+export const LAMP = { body: 1, hero: 1.4 };
+
 /** Light on the body's OWN outermost pixels, never a pixel added round them: an
  *  outline grown outward is a slab, and this eats nothing. */
-export function rimLit(data: Uint8ClampedArray, [r, g, b]: [number, number, number], size: number): void {
+export function rimLit(data: Uint8ClampedArray, [r, g, b]: [number, number, number], size: number, share = 1): void {
   const solid = (x: number, y: number): boolean =>
     x >= 0 && y >= 0 && x < size && y < size && data[(y * size + x) * 4 + 3] > 0;
+  const top = Math.min(1, RIM.top * share);
+  const side = Math.min(1, RIM.side * share);
   const lit: [number, number][] = [];
   for (let y = 0; y < size; y++)
     for (let x = 0; x < size; x++) {
       if (!solid(x, y)) continue;
-      const share = !solid(x, y - 1) ? RIM.top : !solid(x - 1, y) || !solid(x + 1, y) ? RIM.side : 0;
-      if (share > 0) lit.push([(y * size + x) * 4, share]);
+      const take = !solid(x, y - 1) ? top : !solid(x - 1, y) || !solid(x + 1, y) ? side : 0;
+      if (take > 0) lit.push([(y * size + x) * 4, take]);
     }
   for (const [at, share] of lit) {
     data[at] = Math.round(data[at] + (r - data[at]) * share);
@@ -180,7 +186,7 @@ function generatedArt(
   sprite: string,
   frame: number,
   rank: MonsterRank,
-  lit: boolean
+  lit: number
 ): PixelArt | null {
   const art = GENERATED[sprite];
   if (!art) return null;
@@ -189,7 +195,7 @@ function generatedArt(
     grid: art.grid,
     rows: art.frames[Math.min(frame, art.frames.length - 1)],
     key: art.key,
-    rim: lit ? mix(palette.citrine, palette.chalk, 0.5) : undefined,
+    rim: lit > 0 ? { ink: mix(palette.citrine, palette.chalk, 0.5), share: lit } : undefined,
     // Reach is in DESTINATION pixels and the numbers are `CELL`'s, so a body
     // drawn at its own smaller grid needs it scaled or the light swallows it.
     glow: glow
@@ -411,7 +417,7 @@ export function monsterArt(
   sprite: string,
   frame: number,
   rank: MonsterRank,
-  lit = false
+  lit = 0
 ): PixelArt | null {
   const art = BEASTIARY[sprite];
   if (!art) return generatedArt(palette, sprite, frame, rank, lit);
@@ -428,7 +434,7 @@ export function monsterArt(
   return {
     grid: art.grid,
     rows: drawn,
-    rim: lit ? mix(palette.citrine, palette.chalk, 0.5) : undefined,
+    rim: lit > 0 ? { ink: mix(palette.citrine, palette.chalk, 0.5), share: lit } : undefined,
     glow: GLOW[rank] ? { colour: GLOW[rank]!.colour(palette), reach: GLOW[rank]!.reach } : undefined,
     key: {
       '#': mix(palette.rockDeep, palette.void, 0.6),
@@ -445,13 +451,13 @@ export function monsterArt(
 }
 
 /** How a creature, its rank and whether the lamp is on it name one set of frames. */
-export const rankedKey = (sprite: string, rank: MonsterRank, lit = false): string =>
-  `${sprite}:${rank}${lit ? ':lit' : ''}`;
+export const rankedKey = (sprite: string, rank: MonsterRank, lit = 0): string =>
+  `${sprite}:${rank}${lit > 0 ? `:lit${lit}` : ''}`;
 
 /** Frames for one creature at one rank, or null when nothing draws that sprite.
- *  `lit` is the hero's: the one body the lamp is on. */
+ *  `lit` is a `LAMP` share: how much of the rim light the body takes. */
 export type SpriteSheet = {
-  frames(sprite: string, rank: MonsterRank, lit?: boolean): HTMLCanvasElement[] | null;
+  frames(sprite: string, rank: MonsterRank, lit?: number): HTMLCanvasElement[] | null;
 };
 
 export const SPRITE_KINDS = ['hero', ...Object.keys(BEASTIARY), ...Object.keys(GENERATED)] as const;
@@ -509,7 +515,7 @@ function drawCreature(
   palette: Palette,
   rank: MonsterRank,
   size = CELL,
-  lit = false
+  lit = 0
 ): void {
   const art = monsterArt(palette, sprite, frame, rank, lit);
   if (art) drawPixels(ctx, art, size);
@@ -530,7 +536,7 @@ export function makeSheet(palette: Palette): SpriteSheet | null {
   const drawn = new Map<string, HTMLCanvasElement[]>();
 
   return {
-    frames(sprite, rank, lit = false) {
+    frames(sprite, rank, lit = 0) {
       if (!DRAWABLE.has(sprite)) return null;
       const key = rankedKey(sprite, rank, lit);
       const already = drawn.get(key);

@@ -543,6 +543,56 @@ shown to the user first; DECISION means it argues with a rule already in
       swing is the first cast (`shock.png`). The peek also prints the phase
       and the open windows when nothing launches.
 
+**THE THIRD REVIEW (2026-09-03c, commit `cd4ef06`): 5 / 5 / 5, UI at 7 from
+all three.** *"A 9 shell around a 4 fight, and a shopper buys the fight."*
+Twenty pictures approved. The user's ruling stands — *"just do what the
+critics say unless it's going to be a massive overhaul"* — so every CODE item
+is taken and the two overhauls are left where they were.
+
+- [x] **THE LIGHT-DRIFT MOSAIC** — all three, first. *"The per-cell light
+      drift draws as a mosaic of lighter rectangles with a hard edge at every
+      cell; per pixel, or off as the Fissure's `plain`."* DONE: `plain` is
+      true on every map, so the Rot, the Cavern and the Seam are as flat as
+      the designed Fissure (`rot_plain.png`).
+- [x] **THE SLAM TELEGRAPH.** *"Two anti-aliased red vector discs eight
+      tiles wide; a hard-edged ring in the sand's own shadow with a single
+      step of tint fill."* DONE: `pixelRing` in `render/renderer.ts` lays
+      whole blocks on the floor's grid, each cell once; a Fall is an ember
+      ring at its reach, a dark ring one block outside it, and a core ring
+      growing from the centre as the fuse burns (`boss/boss-07.png`).
+- [x] **THE HERO AT SHIP ZOOM.** *"A 12 px dark smudge no brighter than the
+      cover beside him; rim the hero like every monster."* DONE: `LAMP` in
+      `render/sprites.ts` is how much of `RIM` a body takes and the hero takes
+      1.4× a monster's, keyed into the texture cache, so his top edge is full
+      lamplight and his sides more than half (`dust-06.png`).
+- [x] **BLIGHT, SHOCKWAVE AND THE CHILL MARKER.** *"Creeping Blight is a lime
+      ring with nothing in the pool, Shockwave is three sand-coloured
+      squares, the Chill marker is a smooth cyan disc."* DONE: the pool is
+      tinted 45% to the void at 0.85 alpha, so it is a dark green pool with
+      drops rather than a ring (`blight-03.png`); a PHYSICAL hit gets a DUST
+      ramp in `fireShades` — four greys, no heat — and the burst's translucent
+      disc is a dark `pixelRing` at its reach (`shock.png`); an ailment mark
+      is a whole block on the sprite grid with a dark edge, never a circle.
+      The Leap landing's sweep ring is dark blocks too.
+- [x] **WINDOWS OVER THE RAIL.** *"The stations window hides nine of eleven
+      rail buttons; rail on top."* DONE: the band above the windows moved up
+      by twenty — scrim 62, rail 64, speech 66, the full sheet 75, the title
+      80 — so `Z_BASE` holds 42 screens before a window reaches the rail
+      (`windows.ts`). `shots` and `drag` both hold the rail over a raised
+      window.
+- [x] **THE RAIL GLYPHS.** *"12 px specks with 8 px letters; draw the rail
+      at 24 px."* DONE: `screenIcon(id, 24)` in `rail.ts`, in the same 34px
+      socket (`boss/boss-04.png`).
+- [x] **THE CAVERN CORPSES** — the code half. *"Eight crawlers die into one
+      identical lozenge stacked seven deep, and a body without death frames
+      fades upright as a tan ghost; a fall direction, and fall rather than
+      fade."* DONE: `keel` in `render/pixi.ts` — a body with no death frames
+      keels over WHOLE across the first half of its fade, the way it faced
+      and alternate bodies the other way, and only then goes; its held weapon
+      falls with it. LEFT: a second death frame is a GENERATION.
+- [ ] **THE CAST HALL'S WARRIOR AND ROGUE** — still the overhaul the user
+      ruled out (~68 generations a body).
+
 ## Phase 3 — A quest log instead of a pointing finger
 
 **Not next, and deliberately.** The tutorial was deleted outright so the opening

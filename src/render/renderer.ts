@@ -1613,14 +1613,18 @@ export interface FirePixel {
 }
 
 /** One logical fire pixel, in tiles. Matches the sprite grid at 16 per cell. */
-const FIRE_PX = 1 / 16;
+export const FIRE_PX = 1 / 16;
 const ARC_HOLD = 0.6; // share of a bolt's life at full alpha before it goes
 
-const onGrid = (n: number): number => Math.round(n / FIRE_PX) * FIRE_PX;
+export const onGrid = (n: number): number => Math.round(n / FIRE_PX) * FIRE_PX;
 
 export function fireShades(palette: Palette, type: string): [string, string, string, string] {
   // Fire gets a real red → orange → yellow ramp; every other type is the same
   // ramp tinted. The fourth is SMOKE: the type's colour gone dark.
+  if (type === 'physical') {
+    const dust = (dark: number): string => mix(palette.chalk, palette.void, dark);
+    return [dust(0.7), dust(0.55), dust(0.4), dust(0.85)]; // a blow raises DUST, never heat: the hot ramp put sand squares on a sand floor
+  }
   const outer = type === 'fire' ? palette.flame : damageColour(palette, type);
   return [
     outer,
@@ -1779,9 +1783,32 @@ export function sweepRing(origin: Vec2, radius: number, t: number): FirePixel[] 
       x: onGrid(origin.x + Math.cos(angle) * grown * (0.97 + noise * 0.06)),
       y: onGrid(origin.y + Math.sin(angle) * grown * (0.97 + noise * 0.06)),
       size: FIRE_PX * (noise > 0.7 ? 2 : 1),
-      shade: noise > 0.7 ? 2 : 1,
+      shade: noise > 0.7 ? 0 : 3, // a dark ring on the floor, never sand
       alpha: (1 - t) * 0.9,
     });
+  }
+  return pixels;
+}
+
+/**
+ * A closed ring of whole blocks on the floor's grid: the boundary of a Fall is
+ * a promise about where the ground gives, so it is a hard line and not a glow.
+ * Each cell once, or two blocks on one cell stack their alpha into a spot.
+ */
+export function pixelRing(origin: Vec2, radius: number, shade: number, alpha: number): FirePixel[] {
+  const pixels: FirePixel[] = [];
+  if (radius <= 0) return pixels;
+  const size = FIRE_PX * 2;
+  const count = Math.max(12, Math.round((radius * Math.PI * 2) / FIRE_PX));
+  const taken = new Set<string>();
+  for (let i = 0; i < count; i++) {
+    const angle = (i / count) * Math.PI * 2;
+    const x = Math.floor((origin.x + Math.cos(angle) * radius) / size) * size;
+    const y = Math.floor((origin.y + Math.sin(angle) * radius) / size) * size;
+    const key = `${x},${y}`;
+    if (taken.has(key)) continue;
+    taken.add(key);
+    pixels.push({ x, y, size, shade, alpha });
   }
   return pixels;
 }
