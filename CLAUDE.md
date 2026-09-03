@@ -206,7 +206,13 @@ The sawbench in the picture is scenery: **THERE IS NO WOOD** — *"it doesn't
 make sense to be gathering wood in the fissure anyways"* — so a bow is
 Leatherworking's, a staff Weaving's and a wand Jewelling's.
 **THE ANVIL IS WHERE A BASE IS MADE**, which is a different verb from the
-bench's. Everything else is still on the rail, and a screen with neither a
+bench's. **Its card is THREE BLOCKS** — the piece and the window your level
+buys, then a NEEDS LEDGER of one row a thing wanted (`.forgeneed`: the
+profession level, every stack a part eats with its icon, the world's own
+material) said as *held / wanted* and lit or dim, then the button — and the
+list is FILTERED beside the kind tabs: one tier or every tier, and *Can make
+now*. *"Clean up the actual boxes so it's clear what items are needed and
+what level is required."* Everything else is still on the rail, and a screen with neither a
 button nor a hotspot is one somebody will lose.
 
 **A COUNTER BELONGS TO A PERSON, and the shop is the Lampwright's.** *"The shop

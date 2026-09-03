@@ -1371,6 +1371,14 @@
 
   /* --- the collection -------------------------------------------------- */
   .crystals { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 8px; }
+  /* THE ANVIL'S NEEDS LEDGER: one row a thing wanted, held against wanted as two numbers. */
+  .forgeneeds { display: flex; flex-direction: column; gap: 2px; padding: 4px 0; border-top: 1px solid var(--edge); border-bottom: 1px solid var(--edge); }
+  .forgeneed { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-dim); }
+  .forgeneed__what { flex: 1; }
+  .forgeneed__n { font-variant-numeric: tabular-nums; }
+  .forgeneed--ok .forgeneed__n { color: var(--citrine); }
+  .forgeneed--short { color: var(--text); }
+  .forgeneed--short .forgeneed__n { color: var(--hurt); }
   .crystal { border: 1px solid var(--edge); border-left-width: 3px; border-left-color: var(--amethyst); padding: 8px 9px; display: flex; flex-direction: column; gap: 4px; }
   /* The four that a run actually reads, told apart from the shelf behind them. */
   .crystal--socket { background: var(--edge); border-left-color: var(--citrine); }
@@ -2457,6 +2465,7 @@
     </div>
     <div class="modal__body">
       <div class="climbtabs" id="forge-tabs"></div>
+      <div class="climbtabs" id="forge-filters"></div>
       <p class="skillhead__sub" id="forge-note"></p>
       <div class="crystals" id="forge-list"></div>
     </div>

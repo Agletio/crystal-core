@@ -10,6 +10,7 @@ import {
   CRAFT,
   GEAR_BASES,
   JEWEL_IMPLICITS,
+  MATERIALS,
   MATERIAL_FAMILY_BY_ID,
   PROFESSION_BY_ID,
 } from '../data';
@@ -20,17 +21,19 @@ import {
   liftFor,
   perfectChanceAt,
   recipeFor,
+  uniqueFor,
+  versionsFor,
   whyNotCraft,
 } from '../game/forge';
 import type { CraftPart, CraftRecipe } from '../game/forge';
-import { collectWork } from '../game/work';
+import { collectWork, professionAt } from '../game/work';
 import type { GameState } from '../game/state';
 import { Rng } from '../rng';
 import { itemIcon } from './icons';
 import { itemCard } from './itemcard';
 import { attachTooltip } from './tooltip';
 import { note } from './history';
-import { makeGear } from '../economy';
+import { makeGear, makeMaterial } from '../economy';
 
 const $ = (id: string) => document.getElementById(id)!;
 
@@ -57,9 +60,37 @@ const KINDS = [
   { id: 'amulet', name: 'Amulets' },
 ];
 let shown = KINDS[0].id;
+/** THE FILTERS, beside the kind tabs: a tier, or only what you can make now.
+ *  *"Filter down to like just t1 weapons or t2."* 0 is every tier. */
+let tierShown = 0;
+let makeableOnly = false;
 
 export const forgeMakeId = (baseId: string): string => `forge-make-${baseId}`;
 export const forgeTabId = (kind: string): string => `forge-tab-${kind}`;
+export const forgeTierId = (tier: number): string => `forge-tier-${tier}`;
+
+function filters(): void {
+  const host = $('forge-filters');
+  host.replaceChildren();
+  for (const tier of [0, 1, 2, 3]) {
+    const btn = el('button', 'mini climbtab', tier === 0 ? 'Every tier' : `Tier ${tier}`) as HTMLButtonElement;
+    btn.id = forgeTierId(tier);
+    btn.classList.toggle('climbtab--on', tier === tierShown);
+    btn.onclick = () => {
+      tierShown = tier;
+      render();
+    };
+    host.append(btn);
+  }
+  const can = el('button', 'mini climbtab', 'Can make now') as HTMLButtonElement;
+  can.id = 'forge-makeable';
+  can.classList.toggle('climbtab--on', makeableOnly);
+  can.onclick = () => {
+    makeableOnly = !makeableOnly;
+    render();
+  };
+  host.append(can);
+}
 
 function tabs(): void {
   const host = $('forge-tabs');
@@ -84,15 +115,6 @@ export function saysPart(part: CraftPart): string {
   const one = family?.one ?? 'unit';
   const many = `${part.wants} ${one}${part.wants === 1 ? '' : 's'}`;
   return part.versions === 1 ? many : `${many} from each of ${part.versions} worlds`;
-}
-
-/** What it asks for, in the station's own words. */
-function saysRecipe(recipe: CraftRecipe): string[] {
-  const out = recipe.parts.map(
-    (part) => `${PROFESSION_BY_ID[part.profession]?.name} ${part.level} · ${saysPart(part)}`
-  );
-  if (recipe.unique > 0) out.push(`${recipe.unique} of a world's own material`);
-  return out;
 }
 
 /** THE WINDOW YOUR LEVEL BUYS, said as the two ends of it — the whole reason
@@ -129,6 +151,22 @@ const windowWidth = (level: number): number =>
 const windowLow = (level: number): number => windowShare(level) * (1 - windowWidth(level));
 const windowHigh = (level: number): number => windowLow(level) + windowWidth(level);
 
+/** One row of the NEEDS ledger: an icon, a name, and held against wanted as
+ *  two numbers — lit when it is enough, dim when it is not. */
+function needRow(icon: Element | null, what: string, held: number, wanted: number): HTMLElement {
+  const row = el('div', `forgeneed ${held >= wanted ? 'forgeneed--ok' : 'forgeneed--short'}`);
+  if (icon) row.append(icon);
+  row.append(el('span', 'forgeneed__what', what));
+  row.append(el('span', 'forgeneed__n', `${held} / ${wanted}`));
+  return row;
+}
+
+/**
+ * A CARD IS THREE BLOCKS — the piece, the LEVEL a profession must be at said
+ * against the level you are, and the NEEDS ledger — then the button. *"Clean
+ * up the actual boxes so it's clear what items are needed and what level is
+ * required."*
+ */
 function baseCard(base: GearBase, recipe: CraftRecipe): HTMLElement {
   const card = el('div', `crystal crystal--t${recipe.tier}`);
   const preview = makeGear(base.id, base.ilvl ?? 1);
@@ -142,7 +180,33 @@ function baseCard(base: GearBase, recipe: CraftRecipe): HTMLElement {
   attachTooltip(head, () => itemCard(preview));
   card.append(head);
 
-  for (const line of saysRecipe(recipe)) card.append(el('div', 'chosen__mod', line));
+  const needs = el('div', 'forgeneeds');
+  for (const part of recipe.parts) {
+    const who = PROFESSION_BY_ID[part.profession];
+    const at = professionAt(game, part.profession).level;
+    needs.append(needRow(null, `${who?.name ?? part.profession} level`, at, part.level));
+    const family = MATERIAL_FAMILY_BY_ID[who?.family ?? ''];
+    const one = family?.one ?? 'unit';
+    const ready = versionsFor(game, part);
+    // The icon is a version you hold enough of, or the family's first: the
+    // SHAPE says which stack, the numbers say whether it is enough.
+    const shown = ready[0] ?? MATERIALS.find((m) => m.family === family?.id);
+    const icon = shown ? itemIcon(makeMaterial(shown, 1, true), 22) : null;
+    if (part.versions === 1) {
+      const most = Math.max(0, ...MATERIALS.filter((m) => m.family === family?.id)
+        .map((m) => (game.materials ?? []).find((i) => i.base === m.id && i.meta.done)?.meta.n as number ?? 0));
+      needs.append(needRow(icon, `${one}s`, most, part.wants));
+    } else {
+      needs.append(needRow(icon, `worlds with ${part.wants} ${one}s`, ready.length, part.versions));
+    }
+  }
+  if (recipe.unique > 0) {
+    const rare = uniqueFor(game);
+    const held = rare ? ((game.materials ?? []).find((i) => i.base === rare.id)?.meta.n as number) ?? 0 : 0;
+    const icon = rare ? itemIcon(makeMaterial(rare, 1), 22) : null;
+    needs.append(needRow(icon, rare ? rare.name : "a world's own material", held, recipe.unique));
+  }
+  card.append(needs);
 
   const level = craftLevel(game, recipe);
   const odds = Math.round(perfectChanceAt(level) * 100);
@@ -167,18 +231,27 @@ export function render(): void {
   if (!game) return;
   for (const done of collectWork(game)) note(`${done.item.name} came off the station: +${done.job.n}`);
   tabs();
+  filters();
   const host = $('forge-list');
   host.replaceChildren();
 
-  const rows = GEAR_BASES.filter((b) => b.kind === shown)
+  const all = GEAR_BASES.filter((b) => b.kind === shown)
     .map((base) => ({ base, recipe: recipeFor(base.id) }))
     .filter((row): row is { base: GearBase; recipe: CraftRecipe } => row.recipe !== null)
     .sort((a, b) => a.recipe.tier - b.recipe.tier || a.base.name.localeCompare(b.base.name));
+  const rows = all.filter(
+    (row) => (tierShown === 0 || row.recipe.tier === tierShown)
+      && (!makeableOnly || whyNotCraft(game, row.recipe) === null)
+  );
   for (const row of rows) host.append(baseCard(row.base, row.recipe));
-  if (rows.length === 0) host.append(el('p', 'empty', 'Nothing here is made at an anvil.'));
+  if (rows.length === 0) {
+    host.append(el('p', 'empty', all.length === 0
+      ? 'Nothing here is made at an anvil.'
+      : makeableOnly ? 'Nothing here you can make yet. The ledger on each card says what is short.' : 'Nothing at that tier here.'));
+  }
 
-  const made = rows.filter((row) => whyNotCraft(game, row.recipe) === null).length;
-  $('forge-count').textContent = `${made} of ${rows.length} you can make`;
+  const made = all.filter((row) => whyNotCraft(game, row.recipe) === null).length;
+  $('forge-count').textContent = `${made} of ${all.length} you can make`;
   $('forge-note').textContent =
     'Materials decide what a piece IS. Every modifier on it is still the bench\'s, ' +
     'and the level you work at decides how well it comes out.';

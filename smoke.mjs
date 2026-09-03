@@ -2931,6 +2931,37 @@ $('dev-kit').click();
     'and a row you cannot make says what it wanted, in numbers',
     stopped[0]?.querySelector('button')?.textContent
   );
+  // A CARD IS THREE BLOCKS: the piece, then a NEEDS LEDGER — the profession
+  // level and every stack it eats, held against wanted as two numbers — then
+  // the button. *"Clear what items are needed and what level is required."*
+  assert(
+    rows().every((row) => row.querySelectorAll('.forgeneed').length >= 2),
+    'every card carries a needs ledger: the level it asks and the stacks it eats',
+    String(rows()[0]?.querySelectorAll('.forgeneed').length)
+  );
+  assert(
+    rows().every((row) => /level\s*\d+ \/ \d+/.test(row.querySelector('.forgeneed')?.textContent ?? '')),
+    'each level line said as where you are against what it wants',
+    rows()[0]?.querySelector('.forgeneed')?.textContent
+  );
+  // THE FILTERS: a tier alone, or only what you can make now. *"Filter down
+  // to like just t1 weapons or t2."*
+  const before = rows().length;
+  $('forge-tier-1').click();
+  assert(
+    rows().length > 0 && rows().length < before && rows().every((row) => /Tier 1/.test(row.textContent ?? '')),
+    'tier 1 alone lists only tier 1 pieces',
+    `${rows().length} of ${before}`
+  );
+  $('forge-makeable').click();
+  assert(
+    rows().every((row) => !row.querySelector('button')?.disabled),
+    'and "can make now" leaves nothing you cannot',
+    String(rows().length)
+  );
+  $('forge-makeable').click();
+  $('forge-tier-0').click();
+  assert(rows().length === before, 'and every tier again is the whole list', `${rows().length} of ${before}`);
   // JEWELLERY IS TWENTY IMPLICITS OVER TWO DRAWINGS. What tells two rings
   // apart is the COLOUR, so a shared silhouette is the point rather than a gap.
   $('forge-tab-ring').click();
