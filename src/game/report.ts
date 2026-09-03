@@ -6,7 +6,7 @@
 import { bagsFull, bankLoot, grantFirstClear } from './state';
 import type { GameState } from './state';
 import { advanceSocketed, spendSocketed } from './crystals';
-import { advanceWork, professionAt, spendMeal } from './work';
+import { collectWork, professionAt, spendMeal } from './work';
 import type { Finished } from './work';
 import type { ModBurn } from './crystals';
 import type { CrystalGain } from './crystals';
@@ -101,12 +101,12 @@ export function buildReport(game: GameState, run: RunState, left = false): RunRe
     // this is what makes a socket spent on a fresh one cost something.
     levelled = advanceSocketed(game, run.set);
     burnt = spendSocketed(game);
-    // THE STATIONS MOVE ON A CLEAR and on nothing else. A walk out keeps the
-    // loot and buys no progress, and a job is progress.
-    worked = advanceWork(game);
     // WHAT YOU ATE burns down on a clear too, off the same rule.
     eaten = spendMeal(game);
   }
+  // THE STATIONS RUN ON THE CLOCK, so what finished while you were down there
+  // is collected whether you cleared, died or walked.
+  worked = collectWork(game);
 
   // XP is earned either way — you learned something on the way to dying.
   const xp = Math.round(run.xpGained);

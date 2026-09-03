@@ -2816,11 +2816,11 @@ $('dev-kit').click();
     'five professions, five tabs',
     String(all('#work-tabs .climbtab').length)
   );
-  // WITH NOTHING DUG UP the panel still reads: it says where the raw comes
-  // from rather than showing an empty grid.
+  // THE KIT'S RAW IS IN THE BAG, so the tab lists it with what a batch makes
+  // and the MINUTES it takes: a job's cost is said before it is loaded.
   assert(
-    /descent/i.test($('work-raw').textContent ?? ''),
-    'and with nothing in the bag it says where the raw comes from',
+    /\d+ → \d+ Bolts?, \d+ minutes/.test($('work-raw').textContent ?? ''),
+    'and a raw stack says what a batch of it becomes, and the minutes it takes',
     $('work-raw').textContent?.slice(0, 60)
   );
   assert(

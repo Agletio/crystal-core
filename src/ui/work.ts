@@ -9,12 +9,15 @@
 import { MATERIAL_BY_ID, MATERIAL_FAMILIES, PROFESSIONS, THEME_BY_ID, WORK } from '../data';
 import type { MaterialFamilyDef } from '../data';
 import {
+  collectWork,
   jobsIn,
+  leftOn,
   loadWork,
   professionAt,
   professionFor,
   rawHeld,
   saysJob,
+  saysLeft,
   whyNotWork,
   xpToNext,
 } from '../game/work';
@@ -76,7 +79,7 @@ function rawCard(family: MaterialFamilyDef, item: any): HTMLElement {
   card.append(head);
 
   card.append(
-    el('div', 'crystal__grow', `${WORK.batch} → ${WORK.batch} ${family.one}s, over ${WORK.clears} descents`)
+    el('div', 'crystal__grow', `${WORK.batch} → ${WORK.batch} ${family.one}s, ${WORK.minutes} minutes`)
   );
 
   const why = whyNotWork(game, def);
@@ -96,6 +99,8 @@ function rawCard(family: MaterialFamilyDef, item: any): HTMLElement {
 
 export function render(): void {
   if (!game) return;
+  // WHAT THE CLOCK FINISHED comes off the stations first, and says so.
+  for (const done of collectWork(game)) note(`${done.item.name} came off the station: +${done.job.n}`);
   tabs();
   const family = MATERIAL_FAMILIES.find((f) => f.id === shown) ?? MATERIAL_FAMILIES[0];
   const profession = professionFor(family.id);
@@ -112,7 +117,7 @@ export function render(): void {
     : '';
   $('work-note').textContent =
     `${profession?.name} works ${family.name.toLowerCase()} at ${family.station}: ` +
-    `${family.raw} into ${family.processed}, ${WORK.clears} descents a batch.${eating}`;
+    `${family.raw} into ${family.processed}, ${WORK.minutes} minutes a batch.${eating}`;
   ($('work-bar') as HTMLElement).style.width = `${Math.round((at.xp / need) * 100)}%`;
   $('work-xp').textContent = `Level ${at.level} — ${Math.floor(at.xp)} / ${need} to the next`;
 
@@ -133,13 +138,12 @@ export function render(): void {
     card.append(el('div', 'crystal__name', saysJob(job)));
     const which = PROFESSIONS.find((p) => p.id === job.profession);
     card.append(
-      el('div', 'quest__detail',
-        `${which?.name ?? job.profession} — ${job.left} ${job.left === 1 ? 'descent' : 'descents'} left`)
+      el('div', 'quest__detail', `${which?.name ?? job.profession} — ${saysLeft(leftOn(job))} left`)
     );
     jobs.append(card);
   }
   if (jobsIn(game).length === 0) {
-    jobs.append(el('p', 'empty', 'Nothing on any of them. Load a batch and go down.'));
+    jobs.append(el('p', 'empty', 'Nothing on any of them. Load a batch; it runs while you are away.'));
   }
   $('work-slots').textContent = `${jobsIn(game).length}/${WORK.slots} loaded`;
 }
@@ -149,10 +153,17 @@ export function openWork(family?: string): void {
   if (family && MATERIAL_FAMILIES.some((f) => f.id === family)) shown = family;
   $('work').hidden = false;
   render();
+  // The clock is on screen, so it COUNTS DOWN: a number that only moves when
+  // you reopen the window is the going in and out the ask was about.
+  if (ticking === null) ticking = globalThis.setInterval(render, 1000);
 }
+
+let ticking: ReturnType<typeof setInterval> | null = null;
 
 export function closeWork(): void {
   $('work').hidden = true;
+  if (ticking !== null) globalThis.clearInterval(ticking);
+  ticking = null;
   onChanged?.();
 }
 

@@ -23,6 +23,7 @@ import {
   whyNotCraft,
 } from '../game/forge';
 import type { CraftPart, CraftRecipe } from '../game/forge';
+import { collectWork } from '../game/work';
 import type { GameState } from '../game/state';
 import { Rng } from '../rng';
 import { itemIcon } from './icons';
@@ -164,6 +165,7 @@ function baseCard(base: GearBase, recipe: CraftRecipe): HTMLElement {
 
 export function render(): void {
   if (!game) return;
+  for (const done of collectWork(game)) note(`${done.item.name} came off the station: +${done.job.n}`);
   tabs();
   const host = $('forge-list');
   host.replaceChildren();

@@ -554,20 +554,27 @@ an outcrop is the rock itself. **GEAR IS THE LUCKY EXCEPTION NOW** —
 `DropBand.gearPerRun` is 0.25 to 0.30, one piece every four clears, *"so when
 you do finally get a piece it'll feel good."*
 
-**PROCESSING ADVANCES ON DESCENTS, NEVER ON A CLOCK.** *"A smelter job is N
-clears long: load it, go down, come back to bars."* `WORK` and `GameState.jobs`;
-`advanceWork` is called from `buildReport` inside the CLEARED branch beside
-`spendSocketed`, so a death moves no job and neither does walking out — what a
-walk does not buy is progress. The idling is the descending, which already
-chains, and nothing here can be farmed by an open browser. **RAW AND PROCESSED
+**PROCESSING RUNS ON THE CLOCK.** *"Change the materials to process on a
+timer. I think it's fine you still want to go and run stuff to clear it while
+it's processing anyway but it's annoying having to go in and out to see if
+they are ready."* `WORK.minutes` a batch and `WorkJob.doneAt` an epoch
+millisecond, read through ONE `clock()` in `src/game/work.ts` that the demo
+sets forward; `collectWork` takes what the clock finished off the stations
+wherever the bag is next read — the report (cleared, died or walked), the
+stations screen, the anvil, a load — and the stations screen counts down once
+a second while it is open. **The cost is said out loud**: a job finishes while
+the browser is shut and while it is left open, so processing is the one thing
+in the game a player can wait out, and it pays materials, never power. The
+meal still burns on CLEARS. `heal()` turns a job written in descents into a
+`doneAt`. **RAW AND PROCESSED
 ARE TWO STACKS OF ONE ROW**: `Item.meta.done` and `stackKey`, named for
 `MaterialFamilyDef.one`, rather than 28 more rows and 28 more icons. **THE SLOT
 IS THE WHOLE COST** — `WORK.slots` is three over every station and the raw
 leaves the bag on LOAD, since a job you could cancel for a refund is a slot that
 costs nothing to fill. **A JOB IS ONE FOR ONE**, so nothing is lost and nothing
 minted. **XP IS FLAT AND NEVER BY WORLD**, or the no-tiers rule breaks in the
-easiest place: measured, level 2 is one batch and 99 is 1,972 of them, 1,315
-descents with every slot full. A zone-unique is worked by nothing at all.
+easiest place: measured, level 2 is one batch and 99 is 1,972 of them, 55
+hours with every slot full. A zone-unique is worked by nothing at all.
 
 **JEWELLERY IS TEN IMPLICITS, and it is JEWELLING's whole output.**
 `JEWEL_IMPLICITS` — Elemental and Occult Resistance, % Life, % Mana and one per

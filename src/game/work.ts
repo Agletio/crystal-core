@@ -1,11 +1,11 @@
 /**
  * PROCESSING: raw out of a descent turned into what a recipe can use, at a
- * station in the camp, over DESCENTS rather than over a clock.
+ * station in the camp, over WALL-CLOCK MINUTES.
  *
- * *"A smelter job is N clears long: load it, go down, come back to bars."* The
- * idling is the descending, which already chains, so nothing here can be farmed
- * by an open browser — the one thing universal automation forbids of anything
- * that pays while you are away.
+ * *"Process on a timer… it's fine you still want to go and run stuff to clear
+ * it while it's processing anyway."* A job finishes at `doneAt` whatever you
+ * are doing, and is COLLECTED wherever the bag is next read — the report, the
+ * stations, the anvil, a load — through one `clock()` a harness sets forward.
  */
 import {
   MATERIAL_BY_ID,
@@ -24,17 +24,25 @@ import type { Item, RolledMod } from '../types';
 import type { Rng } from '../rng';
 import { liftFor, qualityRoll } from './forge';
 
-/** One batch loaded at a station. `left` is DESCENTS, counted down by a CLEAR
- *  and by nothing else — a walk out banks no progress anywhere in the game. */
+/** One batch loaded at a station. `doneAt` is the epoch millisecond it is
+ *  finished at; loaded again on a later day it is simply done. */
 export interface WorkJob {
   id: string;
   profession: string;
   material: string;
   n: number;
-  left: number;
+  doneAt: number;
 }
 
 let nextJob = 1;
+
+/** THE CLOCK, one seam: a harness sets it forward instead of waiting. */
+let clock: () => number = () => Date.now();
+export const setClock = (fn: () => number): void => {
+  clock = fn;
+};
+export const now = (): number => clock();
+export const minutesMs = (minutes: number): number => minutes * 60_000;
 
 export const jobsIn = (game: GameState): WorkJob[] => game.jobs ?? [];
 
@@ -105,7 +113,7 @@ export function loadWork(game: GameState, def: MaterialDef): WorkJob | null {
     profession: profession.id,
     material: def.id,
     n: WORK.batch,
-    left: WORK.clears,
+    doneAt: clock() + minutesMs(WORK.minutes),
   };
   game.jobs = [...jobsIn(game), job];
   return job;
@@ -118,17 +126,26 @@ export interface Finished {
   levels: number;
 }
 
+/** Seconds a job has left on the clock, floored at none. */
+export const leftOn = (job: WorkJob): number => Math.max(0, (job.doneAt - clock()) / 1000);
+
+/** A time left said as `m:ss`, so the screen counts down in one shape. */
+export function saysLeft(seconds: number): string {
+  const s = Math.ceil(seconds);
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+}
+
 /**
- * ONE DESCENT'S WORTH, on a CLEAR and never on a death. Every job loaded moves
- * together: they are all standing in the same camp while you are down there.
+ * WHAT THE CLOCK HAS FINISHED, taken off the stations and into the bag. Asked
+ * wherever the bag is next read, so a job done overnight is bars by the time
+ * the anvil opens.
  */
-export function advanceWork(game: GameState): Finished[] {
+export function collectWork(game: GameState): Finished[] {
   const out: Finished[] = [];
   const kept: WorkJob[] = [];
   for (const job of jobsIn(game)) {
-    const left = job.left - 1;
-    if (left > 0) {
-      kept.push({ ...job, left });
+    if (leftOn(job) > 0) {
+      kept.push(job);
       continue;
     }
     const def = MATERIAL_BY_ID[job.material];

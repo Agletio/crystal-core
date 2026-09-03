@@ -2369,16 +2369,16 @@ export const PROFESSION_BY_ID: Record<string, ProfessionDef> = Object.fromEntrie
 export const PROFESSION = { maxLevel: 99, xpTo1: 20, curve: 1.05 };
 
 /**
- * A JOB AT A STATION, and it ADVANCES ON DESCENTS. *"A smelter job is N clears
- * long."* Genuinely idle — the idling is the descending, which already chains —
- * and unfarmable by an open browser, which is what universal automation demands
- * of anything paying while you are away. A DEATH advances nothing, the rule a
- * crystal's `uses` is already under. ONE FOR ONE, so what a job COSTS is the
- * descents and the slot rather than a conversion rate to optimise.
+ * A JOB AT A STATION, and it RUNS ON THE CLOCK. *"Change the materials to
+ * process on a timer… it's annoying having to go in and out to see if they are
+ * ready."* Wall-clock minutes, so it finishes whether you are down a hole, in
+ * the camp or gone: the one thing in the game a player can wait out, and it
+ * pays materials rather than power. ONE FOR ONE: what a job COSTS is the
+ * minutes and the slot, never a conversion rate.
  */
 export const WORK = {
   batch: 4, // raw a job eats, and processed it hands back
-  clears: 2, // descents it takes
+  minutes: 5, // wall-clock minutes a batch takes
   slots: 3, // jobs loaded at once, over every station: the whole of the cost
   // FLAT, never by world: a Seam job paying more would be a TIER in the one
   // place the no-tiers rule is easiest to break.

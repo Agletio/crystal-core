@@ -185,10 +185,13 @@ import {
   jobsIn,
   loadWork,
   mealRuns,
+  minutesMs,
   professionAt,
+  setClock,
   whyNotWork,
   xpToNext as workXpToNext,
 } from './game/work';
+import type { WorkJob } from './game/work';
 import {
   craftBase,
   dismantle,
@@ -3697,7 +3700,7 @@ rule('GATHERING — is a node free, guarded, walked to and equally spread?');
       `he stands ${stood.toFixed(2)}s at a node with the tool in hand and the bare body under it, and the weapon comes back — ${taken} taken`,
       `${stood.toFixed(2)}s stood, bare ${bare}, weapon back ${back}, ${taken} taken`
     );
-    check(named === taken, `and every one floats up as "+n Name" — ${named} of ${taken}`);
+    check(named === taken, `and every one floats up as "+n Name" — ${named} of ${taken}`, `${named} of ${taken}`);
   }
   check(
     least > 0 && most <= least * 1.6,
@@ -3733,11 +3736,11 @@ rule('GATHERING — is a node free, guarded, walked to and equally spread?');
 }
 
 // ===========================================================================
-rule('THE STATIONS — does a job advance on descents, and never on a clock?');
+rule('THE STATIONS — does a job run on the clock, and on nothing else?');
 
-// STEP 3: *"A smelter job is N clears long: load it, go down, come back to
-// bars."* What has to hold is that NOTHING here moves without a descent, that a
-// job neither loses nor mints, and that the whole loop runs headless.
+// *"Process on a timer."* What has to hold is that NOTHING here moves but the
+// minutes, that a job neither loses nor mints, and that the whole loop runs
+// headless with the clock set forward rather than waited for.
 {
   const fresh = createGame('fresh');
   check(
@@ -3792,36 +3795,47 @@ rule('THE STATIONS — does a job advance on descents, and never on a clock?');
     String((heldNow?.meta.n as number) ?? 0)
   );
 
-  // A DEATH ADVANCES NOTHING, which is the rule a crystal's `uses` is under:
-  // what a walk out does not buy is PROGRESS, and a job is progress.
-  const before = jobsIn(shop).map((j) => j.left).join(',');
+  // THE CLOCK AND NOTHING ELSE: a death, a clear and a walk out move no job on
+  // their own. The minutes do, and they are set forward here rather than
+  // waited for — through the one seam the game reads.
+  let at = Date.now();
+  setClock(() => at);
+  const before = jobsIn(shop).map((j) => j.doneAt).join(',');
   const died = new RunSim([makeCrystal(1)], ladderCharacter(1, new Rng(3)), new Rng(1));
   died.state.status = 'died';
   buildReport(shop, died.state);
   check(
-    jobsIn(shop).map((j) => j.left).join(',') === before,
-    'and a death moves no job at all: what a run does not clear, it does not bank',
-    `${before} -> ${jobsIn(shop).map((j) => j.left).join(',')}`
+    jobsIn(shop).map((j) => j.doneAt).join(',') === before,
+    'and a death moves no job at all: the clock does, and it has not',
+    `${before} -> ${jobsIn(shop).map((j) => j.doneAt).join(',')}`
   );
 
-  // A WALK OUT KEEPS THE LOOT AND BUYS NO PROGRESS, so it moves no job either.
   const cleared = new RunSim([makeCrystal(1)], ladderCharacter(1, new Rng(3)), new Rng(1));
   cleared.state.status = 'cleared';
   buildReport(shop, cleared.state, true);
+  buildReport(shop, cleared.state);
   check(
-    jobsIn(shop).map((j) => j.left).join(',') === before,
-    'and neither does walking out with what you found',
-    jobsIn(shop).map((j) => j.left).join(',')
+    jobsIn(shop).map((j) => j.doneAt).join(',') === before,
+    'and neither does a walk out or a clear: nothing here counts descents',
+    jobsIn(shop).map((j) => j.doneAt).join(',')
   );
 
-  // A CLEAR, and the WHOLE of it: one for one, banked, and paid in XP.
+  // A SECOND SHORT it is still on; the minute up, the WHOLE of it comes off:
+  // one for one, banked on the report, and paid in XP.
   const wanted = jobsIn(shop).map((j) => ({ ...j }));
-  let report = buildReport(shop, cleared.state);
-  for (let i = 1; i < WORK.clears; i++) report = buildReport(shop, cleared.state);
+  at += minutesMs(WORK.minutes) - 1000;
+  buildReport(shop, cleared.state);
+  check(
+    jobsIn(shop).length === wanted.length,
+    'a second short of the batch every job is still on the station',
+    `${jobsIn(shop).length} of ${wanted.length}`
+  );
+  at += 1000;
+  const report = buildReport(shop, cleared.state);
   const done = report.worked;
   check(
     done.length === wanted.length && jobsIn(shop).length === 0,
-    `and ${WORK.clears} clears takes every one of them off the station`,
+    `and ${WORK.minutes} minutes takes every one of them off, collected on the report`,
     `${done.length} finished, ${jobsIn(shop).length} still on`
   );
   const minted = done.filter((d) => ((d.item.meta.n as number) ?? 0) !== WORK.batch);
@@ -3855,7 +3869,7 @@ rule('THE STATIONS — does a job advance on descents, and never on a clock?');
   jobs = Math.ceil(banked / (WORK.xp * WORK.batch));
   line(
     `  level ${PROFESSION.maxLevel} is ${banked.toLocaleString()} xp — ${jobs.toLocaleString()} batches, ` +
-      `${Math.ceil((jobs * WORK.clears) / WORK.slots).toLocaleString()} descents with every slot full`
+      `${Math.ceil((jobs * WORK.minutes) / WORK.slots / 60).toLocaleString()} hours with every slot full`
   );
   // A LEVEL HAS TO BE FELT IN THE FIRST HOUR, or the whole mechanism is a wall
   // pretending to be a curve.
@@ -3868,7 +3882,7 @@ rule('THE STATIONS — does a job advance on descents, and never on a clock?');
   // A JOB POINTS AT A TABLE, and a save that outlives the table takes the job
   // with it rather than paying out something that no longer exists.
   const rotted = createGame('fresh');
-  rotted.jobs = [{ id: 'job_x', profession: 'nobody', material: 'nothing', n: 4, left: 1 }];
+  rotted.jobs = [{ id: 'job_x', profession: 'nobody', material: 'nothing', n: 4, doneAt: 1 }];
   const healed = heal(rotted);
   check(
     rotted.jobs.length === 0 && healed.items > 0,
@@ -3888,6 +3902,7 @@ rule('THE STATIONS — does a job advance on descents, and never on a clock?');
     const sim = new RunSim(kit, loop.character, new Rng(2200 + ran));
     runToCompletion(sim, 600);
     ran++;
+    at += Math.round(sim.state.elapsed * 1000); // the descent took its own seconds
     if (sim.state.status !== 'cleared') continue;
     anyDone += buildReport(loop, sim.state).worked.length;
     // Load whatever came up, which is what a player would do.
@@ -3899,6 +3914,17 @@ rule('THE STATIONS — does a job advance on descents, and never on a clock?');
     'and the whole loop runs headless: dug up, loaded, descended, worked',
     `${ran} descents, ${anyDone} jobs off, ${madeAny} processed stacks`
   );
+
+  // A SAVE WRITTEN IN DESCENTS: each one it had left is a batch's minutes.
+  const dated = createGame('fresh');
+  dated.jobs = [{ id: 'job_o', profession: 'blacksmithing', material: 'pale_iron', n: 4, left: 2 } as unknown as WorkJob];
+  heal(dated);
+  check(
+    dated.jobs.length === 1 && Math.abs(dated.jobs[0].doneAt - (at + minutesMs(WORK.minutes) * 2)) < 5000,
+    'and a job written in descents is healed onto the clock, a batch a descent',
+    `${dated.jobs.length} jobs, done at ${dated.jobs[0]?.doneAt}`
+  );
+  setClock(() => Date.now());
 }
 
 // ===========================================================================

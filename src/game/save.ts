@@ -9,6 +9,7 @@ import { SAVE_VERSION, addItem, createGame, findAnywhere, giftWeapon, wornItems 
 import { takeMet } from './scenes';
 import { ownedCrystals } from './crystals';
 import { healTrials } from './trials';
+import { collectWork, minutesMs, now } from './work';
 import { fullUses } from '../mods';
 import { crystalFamily } from '../sim/crystal';
 import type { GameState } from './state';
@@ -39,6 +40,7 @@ import {
   MATERIAL_BY_ID,
   MEAL_BY_FISH,
   PROFESSION_BY_ID,
+  WORK,
 } from '../data';
 import { nodeById, replayTreeNodes, treeFor, treePointsFor } from '../skills-tree';
 import { TRADE_BY_ID, replayTradeNodes, tradePointsFor } from '../trades';
@@ -383,10 +385,16 @@ export function heal(game: GameState): Healed {
   // into a table that has moved is the worse answer.
   const jobs = Array.isArray(game.jobs) ? game.jobs : [];
   game.jobs = jobs.filter((job) => {
+    // Written when a job counted DESCENTS: each one left is a batch's minutes.
+    const old = (job as { left?: number }).left;
+    if (job && !Number.isFinite(job.doneAt) && Number.isFinite(old) && (old ?? 0) > 0) {
+      job.doneAt = now() + minutesMs(WORK.minutes) * (old ?? 0);
+    }
+    delete (job as { left?: number }).left;
     const ok =
       job && MATERIAL_BY_ID[job.material] !== undefined &&
       PROFESSION_BY_ID[job.profession] !== undefined &&
-      Number.isFinite(job.left) && job.left > 0 && Number.isFinite(job.n) && job.n > 0;
+      Number.isFinite(job.doneAt) && Number.isFinite(job.n) && job.n > 0;
     if (!ok) out.items++;
     return ok;
   });
@@ -585,7 +593,9 @@ export function heal(game: GameState): Healed {
  */
 export function applySave(game: GameState, save: GameState): Healed {
   Object.assign(game, createGame('fresh'), save);
-  return heal(game);
+  const out = heal(game);
+  collectWork(game); // what the clock finished while the save sat
+  return out;
 }
 
 /** A file the player can keep. */
