@@ -841,6 +841,9 @@ if (process.argv[2] === 'ask') {
     console.log(`  ${name}: calmed, ${blobs.size} colours over ${folded} px folded into rgb(${flat >> 16},${(flat >> 8) & 255},${flat & 255})`);
   }
   const png = sheet.toString('base64');
+  // THE ROCK'S OWN COLOUR: the mean of the all-upper tile, which is what the
+  // renderer paints the void past the grid, so the rock never ends on a line.
+  const top = meanOf(sheet, meta, 40).map((c) => Math.round(c).toString(16).padStart(2, '0')).join('');
   // A corner in base three, high to low, exactly as the renderer keys a cell.
   const tiles = meta.tileset_data.tiles.map((t: any) => ({
     key: keyOf(t),
@@ -853,6 +856,7 @@ if (process.argv[2] === 'ask') {
   }));
   return `  ${name}: {
     grid: ${meta.tile_size.width ?? meta.tile_size},
+    rock: '#${top}',
     tiles: ${JSON.stringify(tiles)},
     png: 'data:image/png;base64,${png}',
   },`;
@@ -873,6 +877,8 @@ export interface ZoneTile {
 
 export interface ZoneSet {
   grid: number;
+  /** The mean of the all-upper tile: what the void past the grid is painted. */
+  rock: string;
   png: string;
   tiles: ZoneTile[];
 }

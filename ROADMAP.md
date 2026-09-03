@@ -310,24 +310,36 @@ words, from `ART_REVIEW.md` 2026-09-03.** Ordered by how many of the four
 named it first. Anything that spends a generation shows the user a design
 first. When the phase is whole, `/critique` runs again; done is all three at 8.
 
-- [ ] **THE ROCK PAST THE FACE IS A FLAT GREY MASK ON BLACK VOID** — every
-      critic's first line. Beyond the two-row face the rock is one `#1c1c1c`
+- [x] **THE ROCK PAST THE FACE IS A FLAT GREY MASK ON BLACK VOID** — every
+      critic's first line. DONE: `wallFade` is gone from the draw, the rock's
+      top tile is a `TilingSprite` APRON 96 tiles past the grid under the
+      floor, and the void is painted `ZoneSet.rock` — the mean of the
+      all-rock tile, written at emit — so at zoom 9 the map is sand and faces
+      on one grey with no line anywhere (`apron2_z9.png`). Beyond the two-row face the rock is one `#1c1c1c`
       plane with faint tile seams, ending in an axis-aligned stair-step
       against pure black one to three tiles out; a third of the view at zoom
       0, the whole map a sand shape with a grey border at zoom 9. Draw the
       rock's top surface and the void at ONE value out to the viewport, or
       push `EDGE` tiles past the grid with no boundary inside the view.
       (`fault-rock-top-mask.png`, `fissure-z9.png`)
-- [ ] **THE WANDERER'S FIRST LINE IS PINNED OVER 26 OF 41 SCREENS.** The
-      opening bubble and its NEXT button sit over the sheet, the webs, the
-      climb, the dock, the shop, the stations, the anvil. First a harness
-      fault — `shots.mjs` never presses Next before opening windows — and
-      then a design question: should a bubble outlive the camp it was said in?
-- [ ] **THE XP BAR IS SATURATED COBALT WITH WHITE TICKS, FULL AT 0/0.** On
-      every camp screen; in a descent the same bar is dark stone with a gold
-      hairline, which is what it should be everywhere, and 0/0 is empty.
-      (`fault-xpbar-camp.png`)
-- [ ] **THE EFFECTS ARE OFF THE FLOOR'S PIXEL GRID, OR ABSENT.** Creeping
+- [x] **THE WANDERER'S FIRST LINE IS PINNED OVER 26 OF 41 SCREENS.** It was
+      the Answering Hall's own line, still up after `shots.mjs` pressed Go
+      back out of the arena. DONE: `dismissSpeech` in `src/ui/speech.ts`,
+      called by `setPhase` whenever the phase leaves `scene` — a bubble never
+      outlives its room, and it grants like Escape does.
+- [x] **THE XP BAR IS SATURATED COBALT WITH WHITE TICKS, FULL AT 0/0.** DONE:
+      `--xp` is the frame's brass (`--edge-lit`'s value), and a need of 0
+      draws an empty bar on the HUD and on the sheet. The ticks stay: they
+      are the frame's own edge inks. (`fault-xpbar-camp.png`)
+- [ ] **THE EFFECTS ARE OFF THE FLOOR'S PIXEL GRID, OR ABSENT.** PARTLY DONE:
+      a monster's aura is `AURA_STEPS` stacked circles thinning to its reach,
+      no rim (`drawAuras`); the Blight pool is TINTED to the poison colour
+      like every other type, which is what pulls the lime to venom. The pool
+      re-asked at 192 for density came back a rimmed cartoon splat, exactly
+      the renderer skill's *"a wide floor stain comes back as an object"*, so
+      the 96 still stays and its density is a known limit. LEFT: Fireball's
+      trail and burst, Arc Lightning's arc and Rimespike's spike checked at
+      ship size. Creeping
       Blight is a `#b5e04a` lime ring at 3x the floor's pixel size with a
       black core, the loudest thing on any screen; Fireball is a 12px orange
       dot with no trail and no burst; Arc Lightning draws no arc across five

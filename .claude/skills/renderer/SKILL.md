@@ -240,9 +240,13 @@ the GRID first: **what a set cannot draw, the carve must not make.**
 - **Decode the sheet where the renderer is already awaited.** Sliced on first
   use, the draw runs before the image loads and the entire floor is silently
   missing.
-- **The rock does not stop at the GRID.** It is drawn `EDGE` tiles past it on
-  every side, or a chamber near the boundary ends on a straight lit line with
-  flat colour past it.
+- **The rock does not stop at the GRID, and it does not fade.** The keyed
+  tiles are drawn `EDGE` tiles past it on every side; under them the all-rock
+  tile is a `TilingSprite` APRON `APRON` tiles past the grid, at full strength,
+  and the void beyond THAT is painted `ZoneSet.rock` — the mean of that tile,
+  written at emit — so rock and void are one value out to any viewport. A
+  fade into black past the face was tried and every critic's first line was
+  the grey mask and its stair-stepped edge against the void.
 - **A LANDMARK keeps a tile of floor all round it.** `clearSpot` — the way down
   is drawn two tiles across and CENTRED, so one stamped a step from the rock
   has half its rim inside the wall. Only a GENERATED map is moved; an authored

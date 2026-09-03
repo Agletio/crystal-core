@@ -39,6 +39,12 @@ function show(): void {
   stood = null;
 }
 
+/** The room is LEFT with a line still up: the bubble goes with it, granting
+ *  like Escape does — one that outlived its room sat over 26 of 41 screens. */
+export function dismissSpeech(): void {
+  if (isSpeaking()) finish();
+}
+
 /** Every line has been said, or somebody pressed Escape through the lot. */
 function finish(): void {
   $('speech').hidden = true;

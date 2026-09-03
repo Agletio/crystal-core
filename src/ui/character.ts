@@ -453,7 +453,7 @@ function renderStats(): void {
   $('sheet-level').textContent = String(game.character.level);
   $('sheet-xp-text').textContent = `${game.character.xp} / ${need}`;
   ($('sheet-xp-fill') as HTMLElement).style.width =
-    `${Math.min(100, (game.character.xp / need) * 100)}%`;
+    `${need > 0 ? Math.min(100, (game.character.xp / need) * 100) : 0}%`;
 }
 
 /** Id of one slot's section, so the run panel's icon can open the sheet at it. */

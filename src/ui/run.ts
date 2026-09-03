@@ -46,6 +46,7 @@ import type { GameState } from '../game/state';
 import { crystalProgress } from '../game/crystals';
 import { bossBeaten, hasMet, takeBoss, takeMet, whoIsDown } from '../game/scenes';
 import { hasWorker, takeWorker, workerDown } from '../game/work';
+import { dismissSpeech } from './speech';
 import { WORKERS, WORKER_SPRITE, workerMark } from '../data';
 import { descentFacts, takeGrinds } from '../game/trials';
 import { SCENES, SCENE_BY_ID } from '../scenes';
@@ -166,6 +167,7 @@ function setPhase(next: Phase): void {
   // The crack is a window and closes when you go down it: a card offering the
   // way in, over a descent already under way, is a way in twice.
   if (next !== 'scene') closeFissure();
+  if (next !== 'scene') dismissSpeech(); // a line does not outlive the room it was said in
   if (next !== 'menu') closeCamp();
   $('run-stagewrap').hidden = next === 'menu';
   $('run-results').hidden = next !== 'results';
@@ -937,7 +939,7 @@ function renderReadout(): void {
   $('run-level').textContent = String(game.character.level);
   $('run-xp-text').textContent = `${game.character.xp} / ${need}`;
   ($('run-xp-fill') as HTMLElement).style.width =
-    `${Math.min(100, (game.character.xp / need) * 100)}%`;
+    `${need > 0 ? Math.min(100, (game.character.xp / need) * 100) : 0}%`; // 0/0 is EMPTY, never full
 
   syncCooldowns();
   syncBossBar();

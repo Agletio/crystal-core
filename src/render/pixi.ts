@@ -12,7 +12,7 @@
  * can fail — no WebGL, headless, a hostile driver. It returns null then, and
  * the caller falls back to canvas2d.
  */
-import { Application, Container, Graphics, Sprite, Text, Texture } from 'pixi.js';
+import { Application, Container, Graphics, Sprite, Text, Texture, TilingSprite } from 'pixi.js';
 import { AURA, AURA_BY_ID,
   AILMENTS,
   AILMENT_BY_ID,
@@ -53,7 +53,6 @@ import {
   floorColour,
   floorPalette,
   isWallFace,
-  wallFade,
   mix,
   poisonDrops,
   poisonFieldRadius,
@@ -120,6 +119,8 @@ import { SKILL_BY_ID } from '../data';
 /** How far past the grid the rock is drawn, so a chamber near the boundary
  *  does not end on a straight lit line with nothing past it. */
 const EDGE = 4;
+const APRON = 96; // tiles of rock top laid past the grid on every side: further than any zoom sees
+const AURA_STEPS = 6; // stacked circles an aura thins over, centre to reach
 
 const FLOATER_LIFE = 1.1;
 
@@ -504,19 +505,27 @@ export async function createPixiRenderer(
       };
       const rock = (x: number, y: number): boolean =>
         x < 0 || y < 0 || x >= grid.width || y >= grid.height || grid.at(x, y) === WALL;
-      const deep = (x: number, y: number) => grid.at(x, y);
+      // THE ROCK GOES ON: its top tile is laid under everything out past any
+      // camera, at full strength, so the map is never a sand shape with a grey
+      // border on black — *"draw the rock's top surface and the void at ONE
+      // value out to the viewport."* The keyed tiles above it draw the faces.
+      const top = art[set.tiles.findIndex((t) => t.key === 40)];
+      if (top) {
+        const apron = new TilingSprite({ texture: top, width: APRON * 2 + grid.width, height: APRON * 2 + grid.height });
+        apron.x = -APRON;
+        apron.y = -APRON;
+        apron.tileScale.set(size);
+        groundLayer.addChildAt(apron, 0); // under the floor, so only what no tile covers shows it
+      }
       for (let y = -EDGE; y < grid.height + EDGE; y++) {
         for (let x = -EDGE; x < grid.width + EDGE; x++) {
           const solid = rock(x, y);
-          const lit = solid ? wallFade(deep, x, y) : 1; // into the black behind it
-          if (lit <= 0) continue;
           const texture = pick(x, y);
           if (!texture) continue;
           const sprite = new Sprite(texture);
           sprite.x = x;
           sprite.y = y;
           sprite.scale.set(size);
-          if (lit < 1) sprite.alpha = lit;
           if (!solid) sprite.tint = shade(x, y);
           (solid ? wallLayer : groundLayer).addChild(sprite);
           // THE GRAIN over the floor, one of the zone's marks or none.
@@ -655,7 +664,10 @@ export async function createPixiRenderer(
       rockShade: palette.rockDeep,
       shade: palette.void,
     };
-    app.renderer.background.color = bare ? 0x000000 : toHexNumber(palette.rockDeep);
+    // Past the apron the void is the rock top's OWN colour, so the two never
+    // meet on a line; a hand-drawn zone keeps `rockDeep`.
+    const past = map.zone ? ZONES[map.zone]?.rock : undefined;
+    app.renderer.background.color = past ? toHexNumber(past) : bare ? 0x000000 : toHexNumber(palette.rockDeep);
     const floor = floorPalette(palette, map.vein, map.theme);
     const at = (gx: number, gy: number) => grid.at(gx, gy);
 
@@ -1141,12 +1153,9 @@ export async function createPixiRenderer(
       // poisonDrops — so the pool is drawn to exactly what the sim poisoned.
       if (fx.kind === 'blight_field') {
         const radius = poisonFieldRadius(Math.hypot(to.x - from.x, to.y - from.y), t);
-        // Baked GREEN, and a Converted Blight deals something else. White for
-        // poison leaves the picture exactly as drawn.
-        const ink =
-          fx.damageType === 'poison'
-            ? 0xffffff
-            : toHexNumber(damageColour(palette, fx.damageType));
+        // TINTED TO THE TYPE it deals, poison included: the still is asked
+        // dark and comes back lime, and the tint is what pulls it to venom.
+        const ink = toHexNumber(damageColour(palette, fx.damageType));
         const pool = vfxTexture('poison_pool');
         if (pool) {
           // Faint, because a cast lasts 10s at nearly one a second and up to
@@ -1446,10 +1455,13 @@ export async function createPixiRenderer(
       if (!def) continue;
       const look = auraLook(palette, def);
       const colour = toHexNumber(look.colour);
-      auraLayer.circle(m.x, m.y, AURA.radius).fill({ color: colour, alpha: look.alpha });
-      auraLayer
-        .circle(m.x, m.y, AURA.radius)
-        .stroke({ color: colour, alpha: Math.min(1, look.alpha * 2.5), width: 0.04 });
+      // A SOFT FALL-OFF, never a filled disc with a rim: stacked circles thin
+      // toward the reach, so it reads as light off the body rather than as a
+      // radius somebody drew — *"a five-tile translucent yellow disc"*.
+      for (let i = 0; i < AURA_STEPS; i++) {
+        const share = 1 - i / AURA_STEPS;
+        auraLayer.circle(m.x, m.y, AURA.radius * share).fill({ color: colour, alpha: (look.alpha * 2) / AURA_STEPS });
+      }
     }
   }
 
