@@ -1614,6 +1614,7 @@ export interface FirePixel {
 
 /** One logical fire pixel, in tiles. Matches the sprite grid at 16 per cell. */
 const FIRE_PX = 1 / 16;
+const ARC_HOLD = 0.6; // share of a bolt's life at full alpha before it goes
 
 const onGrid = (n: number): number => Math.round(n / FIRE_PX) * FIRE_PX;
 
@@ -1805,8 +1806,8 @@ export function iceSpikes(at: Vec2, t: number): FirePixel[] {
       pixels.push({
         x: onGrid(foot + lean * along * 0.35),
         y: onGrid(at.y - step * FIRE_PX),
-        size: FIRE_PX * (along > 0.7 ? 1 : 2), // a blade tapers toward its point
-        shade: along > 0.55 ? 2 : 1,
+        size: FIRE_PX * (along > 0.7 ? 1 : along > 0.35 ? 2 : 3), // a blade tapers toward its point
+        shade: along > 0.75 ? 2 : along > 0.4 ? 1 : 0, // the TYPE's colour at the root, white only at the tip
         alpha,
       });
     }
@@ -1977,16 +1978,30 @@ export function lightningArc(from: Vec2, to: Vec2, t: number): FirePixel[] {
     for (let s = 0; s <= steps; s++) {
       const x = a.x + (b.x - a.x) * (s / steps);
       const y = a.y + (b.y - a.y) * (s / steps);
-      pixels.push({ x: onGrid(x), y: onGrid(y), size: FIRE_PX, shade: 2, alpha: 1 - t });
-      // A cooler sheath on one side: a filament with a glow, not a rope.
+      // The bolt HOLDS and then goes, rather than fading from its first frame:
+      // at ship size a two-pixel line at half alpha was no line at all.
+      const held = t < ARC_HOLD ? 1 : 1 - (t - ARC_HOLD) / (1 - ARC_HOLD);
+      pixels.push({ x: onGrid(x), y: onGrid(y), size: FIRE_PX, shade: 2, alpha: held });
+      // The type's own colour either side of the white core, so the bolt is
+      // three blocks wide and READS as lightning rather than as a scratch.
+      for (const side of [-1, 1]) {
+        pixels.push({
+          x: onGrid(x + nx * FIRE_PX * side),
+          y: onGrid(y + ny * FIRE_PX * side),
+          size: FIRE_PX,
+          shade: 0,
+          alpha: held * 0.75,
+        });
+      }
+      // A flare further out on one side: a filament with a glow, not a rope.
       const flare = tileNoise(i * 9 + s, salt, 67);
       if (flare > 0.55) {
         pixels.push({
-          x: onGrid(x + nx * FIRE_PX * (flare > 0.8 ? 2 : 1)),
-          y: onGrid(y + ny * FIRE_PX * (flare > 0.8 ? 2 : 1)),
+          x: onGrid(x + nx * FIRE_PX * (flare > 0.8 ? 3 : 2)),
+          y: onGrid(y + ny * FIRE_PX * (flare > 0.8 ? 3 : 2)),
           size: FIRE_PX,
           shade: flare > 0.8 ? 0 : 1,
-          alpha: (1 - t) * 0.7,
+          alpha: held * 0.5,
         });
       }
     }

@@ -345,6 +345,7 @@ export function createCanvasRenderer(host: HTMLElement, palette: Palette): Rende
 
   function drawVfx(v: View, state: RunState): void {
     for (const fx of state.vfx) {
+      if (fx.age < 0) continue; // waiting for the ball that lands it
       const t = Math.min(1, fx.age / fx.ttl);
       const colour = vfxColour(palette, fx.kind, fx.damageType);
       const from = fx.points[0];

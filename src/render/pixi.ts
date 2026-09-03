@@ -1153,6 +1153,7 @@ export async function createPixiRenderer(
     // Skill and impact effects. Each kind gets a different SHAPE, not just a
     // different colour — at melee range two lines are indistinguishable.
     for (const fx of state.vfx) {
+      if (fx.age < 0) continue; // waiting for the ball that lands it
       const t = Math.min(1, fx.age / fx.ttl);
       const colour = toHexNumber(vfxColour(palette, fx.kind, fx.damageType));
       const alpha = Math.max(0, 1 - t);

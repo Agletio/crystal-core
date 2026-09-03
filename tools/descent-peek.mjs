@@ -224,7 +224,7 @@ if (process.env.GATHER) {
     if (await page.evaluate(() => document.body.dataset.heroTool)) break;
     await page.waitForTimeout(100);
   }
-} else {
+} else if (!process.env.CAST) {
   await page.waitForTimeout(8000);
 }
 // The kit leaves a screen open and the point is the floor. Escape shuts
@@ -284,6 +284,20 @@ async function frame() {
 // SPACED: taken back to back they are all the same instant, which is no use at
 // all for the thing `shots` exists for — watching an effect run.
 const APART = 220;
+// CAST=1: the page HOLDS its own sim on the first effect, and the frames are
+// that instant — an effect is over in a fifth of a second and a screenshot
+// takes most of that, so a poll from out here would always be a frame late.
+if (process.env.CAST) {
+  await page.evaluate((after) => {
+    document.body.dataset.holdOn = 'cast';
+    document.body.dataset.holdDelay = after; // AFTER=<sim seconds> past the first effect, for a flight
+  }, process.env.AFTER ?? '0');
+  for (let i = 0; i < 1200; i++) {
+    if (await page.evaluate(() => document.body.dataset.hold)) break;
+    await page.waitForTimeout(40);
+  }
+  await page.waitForTimeout(60);
+}
 for (let i = 0; i + 1 < Number(shots); i++) {
   await writeFile(out.replace(/\.png$/, `-${String(i).padStart(2, '0')}.png`), await frame());
   await page.waitForTimeout(APART);

@@ -44,7 +44,7 @@ export interface SkillUse {
   /** Area of Effect grows AREA, so radius goes by the square root. */
   areaRadius(base: number): number;
   /** Points are in tile units. Only the skill knows the shape of what it did. */
-  vfx(kind: string, points: Vec2[], ttl?: number): void;
+  vfx(kind: string, points: Vec2[], ttl?: number, delay?: number): void; // delay: seconds before it shows
   /** BEHIND a body, if there is anywhere to stand: only the sim knows tiles. */
   blink(target: Entity): void;
 }
@@ -70,6 +70,7 @@ const num = (v: unknown, fallback: number): number =>
   typeof v === 'number' ? v : fallback;
 
 const IMPACT_TTL = 0.8; // what a shot LEAVES boils up and breaks apart, and outlives the shot
+const FLIGHT = { speed: 9, least: 0.3, arrives: 1 / 1.8 }; // a ball: tiles/s, shortest flight, share of its picture at which `fireBolt` lands
 const CONE_MOUTH = 0.95; // the Burst under a Cone's mouth, in tiles
 
 /** Which enemies the Projectiles past the first take. Nearest by default; a
@@ -269,23 +270,32 @@ export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
     const castMultiplier = castScale(g, use.castIndex);
     const scale = (e: Entity) => castMultiplier * targetScale(use, e);
 
+    // A BALL flies and a bolt of lightning does not: a flight is timed off the
+    // distance so the trail is on screen, and what it leaves waits for it.
+    const flies = kind !== 'arc';
+    const flight = (a: Vec2, b: Vec2): number =>
+      flies ? Math.max(FLIGHT.least, Math.hypot(b.x - a.x, b.y - a.y) / FLIGHT.speed) : 0.3;
+    const lands = (ttl: number): number => (flies ? ttl * FLIGHT.arrives : 0);
+
     const struck = new Set<Entity>();
-    const strike = (target: Entity, falloff: number): boolean => {
+    const strike = (target: Entity, falloff: number, after = 0): boolean => {
       if (target.dead || struck.has(target)) return false;
       struck.add(target);
       use.hit(target, falloff * scale(target));
       // A cloud over the thing it hit, for a skill that leaves one.
-      if (impact) use.vfx(impact, [{ x: target.x, y: target.y }], IMPACT_TTL);
+      if (impact) use.vfx(impact, [{ x: target.x, y: target.y }], IMPACT_TTL, after);
       burstFrom(use, target, scale, true);
       return true;
     };
 
     // --- the shot ---------------------------------------------------------
-    strike(use.primary, 1);
+    const shot = flight(use.user, use.primary);
+    strike(use.primary, 1, lands(shot));
     use.vfx(kind, [
       { x: use.user.x, y: use.user.y },
       { x: use.primary.x, y: use.primary.y },
-    ]);
+    ], shot);
+    let at = lands(shot); // when the ball is at `last`, for the next leg to start from
 
     // The one grant that cares about GEOMETRY rather than proximity, which is
     // what keeps it distinct from chain on an auto-targeting skill.
@@ -305,8 +315,10 @@ export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
         .slice(0, pierce);
 
       for (const { e } of behind) {
-        if (!strike(e, num(g.pierceDamage, PROJECTILE.pierceDamage))) continue;
-        use.vfx(kind, [{ x: last.x, y: last.y }, { x: e.x, y: e.y }]);
+        const leg = flight(last, e);
+        if (!strike(e, num(g.pierceDamage, PROJECTILE.pierceDamage), at + lands(leg))) continue;
+        use.vfx(kind, [{ x: last.x, y: last.y }, { x: e.x, y: e.y }], leg, at);
+        at += lands(leg);
         last = e;
       }
     }
@@ -325,8 +337,10 @@ export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
         g.chainDamage,
         num(use.skill.params?.chainDamage, PROJECTILE.arcDamage)
       );
-      if (!strike(next, falloff)) break;
-      use.vfx(kind, [{ x: from.x, y: from.y }, { x: next.x, y: next.y }]);
+      const leg = flight(from, next);
+      if (!strike(next, falloff, at + lands(leg))) break;
+      use.vfx(kind, [{ x: from.x, y: from.y }, { x: next.x, y: next.y }], leg, at);
+      at += lands(leg);
       last = next;
     }
 

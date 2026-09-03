@@ -1497,8 +1497,8 @@ export class RunSim {
     if (dx * dx + dy * dy > 1e-6) e.facing = Math.atan2(dy, dx);
   }
 
-  private emit(kind: string, points: Vec2[], damageType: string, ttl: number): void {
-    this.state.vfx.push({ kind, points, damageType, age: 0, ttl });
+  private emit(kind: string, points: Vec2[], damageType: string, ttl: number, delay = 0): void {
+    this.state.vfx.push({ kind, points, damageType, age: -delay, ttl }); // under 0 it is not drawn yet
   }
 
   /** Where in the boss's cycle we are, and how long this phase has run — the
@@ -2778,8 +2778,8 @@ export class RunSim {
         this.applyAilment(user, target, multiplier, seconds, skill, spread),
       leave: (target) => this.applyTyped(user, target, user.stats.damageByType),
       areaRadius: (base) => this.areaRadius(user, base),
-      vfx: (kind, points, ttl = 0.3) =>
-        this.emit(kind, points, skill.damageTypes[0] ?? 'physical', ttl),
+      vfx: (kind, points, ttl = 0.3, delay = 0) =>
+        this.emit(kind, points, skill.damageTypes[0] ?? 'physical', ttl, delay),
       blink: (target) => this.stepBehind(user, target),
     });
 

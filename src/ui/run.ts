@@ -1142,6 +1142,7 @@ function frame(now: number): void {
     // honest fix.
     accumulator += dt;
     let steps = 0;
+    if (document.body.dataset.hold) accumulator = 0; // a harness looking at one instant; the draw goes on
     while (accumulator >= TICK && steps < 400) {
       sim.step(TICK);
       accumulator -= TICK;
@@ -1149,6 +1150,13 @@ function frame(now: number): void {
     }
     absorbEvents();
     document.body.dataset.heroTool = sim.state.hero.tool ?? ''; // what a harness reads to catch a gather
+    document.body.dataset.effects = String(sim.state.vfx.length); // and to catch a cast
+    // Asked to hold on the first effect, the page holds ITSELF: a harness
+    // polling from outside is frames behind, and a bolt lives for fewer.
+    const asks = document.body.dataset;
+    if (asks.holdOn === 'cast' && sim.state.vfx.length > 0 && !asks.holdAt)
+      asks.holdAt = String(sim.state.elapsed + Number(asks.holdDelay ?? 0)); // sim seconds past the first effect
+    if (asks.holdAt && sim.state.elapsed >= Number(asks.holdAt)) asks.hold = '1';
 
     if (sim.state.status !== 'running') {
       setLeaveLabel();

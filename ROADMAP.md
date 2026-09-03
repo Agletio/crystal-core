@@ -331,15 +331,26 @@ first. When the phase is whole, `/critique` runs again; done is all three at 8.
       `--xp` is the frame's brass (`--edge-lit`'s value), and a need of 0
       draws an empty bar on the HUD and on the sheet. The ticks stay: they
       are the frame's own edge inks. (`fault-xpbar-camp.png`)
-- [ ] **THE EFFECTS ARE OFF THE FLOOR'S PIXEL GRID, OR ABSENT.** PARTLY DONE:
+- [x] **THE EFFECTS ARE OFF THE FLOOR'S PIXEL GRID, OR ABSENT.** DONE:
       a monster's aura is `AURA_STEPS` stacked circles thinning to its reach,
       no rim (`drawAuras`); the Blight pool is TINTED to the poison colour
       like every other type, which is what pulls the lime to venom. The pool
       re-asked at 192 for density came back a rimmed cartoon splat, exactly
       the renderer skill's *"a wide floor stain comes back as an object"*, so
-      the 96 still stays and its density is a known limit. LEFT: Fireball's
-      trail and burst, Arc Lightning's arc and Rimespike's spike checked at
-      ship size. Creeping
+      the 96 still stays and its density is a known limit. **The three
+      "absent" effects were TIMING, not drawing**: a projectile's picture
+      lived 0.3s whatever the distance, so a Fireball landed at 0.17s and no
+      screenshot ever held one. `FLIGHT` in `src/sim/skills.ts` times a
+      BALL's flight off the distance (9 tiles/s) and what it leaves waits
+      for it (`Vfx.age` starts below zero and neither renderer draws it
+      until 0); a bolt of lightning stays instant. The arc holds full alpha
+      for `ARC_HOLD` of its life and wears the type's colour either side of
+      its white core; a Rimespike blade is cold-coloured at the root and
+      three blocks wide there. Seen at ship size (`hold_arc.png`,
+      `hold_fire_a.png`, `hold_rime.png`) through the new harness knob:
+      `CAST=1 descent-peek` makes the page hold its own sim on the first
+      effect (`data-hold-on`, `data-hold`), `AFTER=<s>` that many sim
+      seconds later, for a flight. Creeping
       Blight is a `#b5e04a` lime ring at 3x the floor's pixel size with a
       black core, the loudest thing on any screen; Fireball is a 12px orange
       dot with no trail and no burst; Arc Lightning draws no arc across five
