@@ -164,19 +164,12 @@ shelf on a floor yet.
       blobs and their shade, 946 pixels sheet-wide — into it at emit, the
       shore rim and the dark waterline untouched. No generation spent; only
       `test_pool` changed in `generated-tiles.ts`.
-- [ ] **ORE DRAWN IN THE FACE, AND THE FISH.** The node stands at the wall's
-      foot now, but the picture is still a boulder on the floor. **Inpainting
-      into a crop does NOT do this**: a vein in the face, a rusted band and a
-      fish rising were asked into real crops and all three came back as the
-      crop repainted, exactly as the flat stair had — the inpainter only draws
-      where the context is already a shape (the south stair's cliff). The
-      road is `node.mts`: `create_1_direction_object` with the roster's style
-      images, sixteen candidates a call, shown to the user, then picked.
-      **ASKED, IN REVIEW, WAITING ON HIS NUMBER**: ore `bd5b743b-ac61-4545-86b4-0a54a40b480d`,
-      ripple `19ecfdea-3b2b-4b0f-97bc-50df7b84b637` (65 cents the pair;
-      `node.mts get <id> <tag>` writes the sixteen to the cache). Then
-      `node.mts pick <id> <n>`, `spent`, the rows in `generated.json` swapped
-      to the new object ids, `tables.mts props`.
+- [x] **ORE IN THE FACE WAS DROPPED FOR ORE ON THE FLOOR.** Inpainting a vein
+      into a crop of the face came back as the crop repainted three times —
+      the inpainter only draws where the context is already a shape — and the
+      user's answer was the open-floor heap above. Both review batches
+      (`bd5b743b…`, `19ecfdea…`) are superseded by his picks and the drawn
+      ripple; nothing is waiting on a number.
 - [x] **THE LIGHT AND THE MASK.** `groundLight` in `render/renderer.ts` is
       the one per-cell shade — a slow drift and a slope down to 0.78 at the
       rock's foot off how open the five-by-five is — worn by every tile of a
@@ -256,8 +249,6 @@ shelf on a floor yet.
       the same family (`test_shelf` chained off the same floor tile, one
       ask). A world takes a design through `DESIGN`, never through an edited
       set.
-- [ ] **WATER RE-ASKED?** `fissure_pool` still reads as ridged slabs at tile
-      size — moot if the test level's family becomes the Fissure's.
 
 ## Phase 9 — WHERE MATERIALS COME FROM: gathered, or off a body
 
@@ -296,10 +287,9 @@ found. Measured over 12 descents: metal 17, cloth 20, wood 15, fish 17.
       stay, since a save points at them — with descriptions that grow and
       icons that are a bundle of stalks or a boll on a stem, re-asked through
       `icons.json` → `icon.mts` → `portrait.mts`.
-- [ ] **THE ORE ART IS RE-ASKED.** *"I dont like how the ores and the fish
-      look."* Measured at 6x: the vein is nearly invisible and it reads as a
-      grey boulder beside the stump. A bad draw, not a wrong world — re-ask
-      before deciding it needs per-world art, which is 24 objects.
+- [x] **THE ORE ART IS RE-ASKED.** *"I dont like how the ores and the fish
+      look."* Landed in Phase 8: three base ores for every world, a unique
+      node a world, and the fish is a drawn ripple.
 - [ ] **`node_carcass` AND `geode_amber` NO LONGER RETIRE.** They were dead
       data when hide and gem left the floor; the level builder offers every
       `PROP_ART` id as a placeable object, so they are a palette entry now.
