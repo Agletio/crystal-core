@@ -27,3 +27,6 @@ tools/art/cache/
 
 # Session scratch: anything named *.tmp.* is a throwaway probe.
 *.tmp.*
+
+# The creative director's pictures (`/critique`). The report, ART_REVIEW.md, is committed.
+art-review/
