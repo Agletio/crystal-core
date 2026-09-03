@@ -1443,7 +1443,7 @@ function renderSkillIcons(): void {
     const held = SKILL_BY_ID[equippedSkill(game.character, slot.id) ?? ''];
     const cell = el('button', `mini skillslot${held ? '' : ' skillslot--empty'}`) as HTMLButtonElement;
     cell.id = `run-skill-${slot.id}`;
-    cell.append(held ? skillIcon(held.id, 34) : el('span', 'skillslot__none', slot.name[0]));
+    cell.append(held ? skillIcon(held.id, 34) : el('span', 'skillslot__none'));
     // Built once and written per frame: a slot that rebuilt to count down
     // would throw away whatever the cursor was over.
     const cool = el('span', 'skillslot__cool');

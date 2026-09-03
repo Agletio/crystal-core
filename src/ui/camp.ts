@@ -54,6 +54,7 @@ const STRETCH = 1.3;
 
 /** `--citrine`, which the canvas cannot read a token for. */
 const RIM = '#fcde6f';
+const RIM_FALL: [number, number][] = [[1, 0.55], [2, 0.2]]; // ring out from the body, and its alpha
 
 /** FILLS THE WINDOW, and the two axes are allowed to differ. Cover is not on:
  *  the bench is against the left edge and the shelf against the right, so a
@@ -354,13 +355,21 @@ function body(
   // is the person rather than a box round them.
   if (rim) {
     ctx.fillStyle = RIM;
-    for (let y = -1; y <= art.grid; y++) {
-      for (let x = -1; x <= art.grid; x++) {
-        if (solid(x, y)) continue;
-        if (!solid(x - 1, y) && !solid(x + 1, y) && !solid(x, y - 1) && !solid(x, y + 1)) continue;
-        ctx.fillRect(left + x * s, top + y * s, s, s);
+    const near = (x: number, y: number, d: number): boolean =>
+      solid(x - d, y) || solid(x + d, y) || solid(x, y - d) || solid(x, y + d);
+    // LIGHT rather than an outline: two rings falling off, so the edge glows
+    // instead of being drawn round the body in one opaque stroke.
+    for (const [ring, alpha] of RIM_FALL) {
+      ctx.globalAlpha = alpha;
+      for (let y = -2; y <= art.grid + 1; y++) {
+        for (let x = -2; x <= art.grid + 1; x++) {
+          if (solid(x, y) || (ring > 1 && near(x, y, 1))) continue;
+          if (!near(x, y, ring) && !(ring > 1 && (solid(x - 1, y - 1) || solid(x + 1, y - 1) || solid(x - 1, y + 1) || solid(x + 1, y + 1)))) continue;
+          ctx.fillRect(left + x * s, top + y * s, s, s);
+        }
       }
     }
+    ctx.globalAlpha = 1;
   }
   for (let y = 0; y < art.grid; y++) {
     const row = frames[y];

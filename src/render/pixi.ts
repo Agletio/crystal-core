@@ -197,6 +197,13 @@ export async function createPixiRenderer(
   // What the zone does rather than what it is: redrawn every frame, over the
   // map that was built once.
   const propLayer = new Graphics();
+  // The ripple is drawn in a layer scaled DOWN by `RIPPLE_PX`, so a ring a third
+  // of a tile across is a circle of many segments rather than a heptagon: the
+  // segment count is decided off the radius in local units, before the scale.
+  const RIPPLE_PX = 64;
+  const rippleLayer = new Graphics();
+  rippleLayer.scale.set(1 / RIPPLE_PX);
+  propLayer.addChild(rippleLayer);
   // Under the bodies: an aura is a field on the floor, not a badge on a monster.
   const auraLayer = new Graphics();
   const vfxLayer = new Graphics();
@@ -1316,12 +1323,16 @@ export async function createPixiRenderer(
     for (let i = groundDrawn; i < groundArt.length; i++) groundArt[i].visible = false;
   }
 
+  /** The shell's own face, so a word on the floor is set like a word on a card. */
+  const face = (): string =>
+    getComputedStyle(document.documentElement).getPropertyValue('--body').trim() || 'serif';
+
   /** WHAT IT IS, under its own beam, in screen space so any zoom reads. */
   function drawLootNames(state: RunState): void {
     state.ground.forEach((drop, i) => {
       let label = dropNames[i];
       if (!label) {
-        label = new Text({ text: '', style: { fontFamily: 'monospace', fontSize: 12, fill: 0xffffff } });
+        label = new Text({ text: '', style: { fontFamily: face(), fontSize: 12, fill: 0xffffff } });
         label.anchor.set(0.5, 0);
         textLayer.addChild(label);
         dropNames[i] = label;
@@ -1350,7 +1361,7 @@ export async function createPixiRenderer(
       if (!label) {
         label = new Text({
           text: '',
-          style: { fontFamily: 'monospace', fontSize: 16, fill: 0xffffff },
+          style: { fontFamily: face(), fontSize: 16, fill: 0xffffff },
         });
         label.anchor.set(0.5);
         textLayer.addChild(label);
@@ -1399,6 +1410,7 @@ export async function createPixiRenderer(
 
   function drawProps(state: RunState): void {
     propLayer.clear();
+    rippleLayer.clear();
     const { grid } = state.map;
     const at = (gx: number, gy: number) => grid.at(gx, gy);
     const tile = world.scale.x;
@@ -1414,9 +1426,9 @@ export async function createPixiRenderer(
       const { x, y } = node.on;
       if (x < x0 - 1 || x > x1 || y < y0 - 1 || y > y1) continue;
       for (const ring of rippleRings(state.elapsed, node.id * 0.7)) {
-        propLayer
-          .circle(x + 0.5, y + 0.5, ring.r)
-          .stroke({ color: toHexNumber(palette.chalk), alpha: ring.alpha, width: RIPPLE.width });
+        rippleLayer
+          .circle((x + 0.5) * RIPPLE_PX, (y + 0.5) * RIPPLE_PX, ring.r * RIPPLE_PX)
+          .stroke({ color: toHexNumber(palette.chalk), alpha: ring.alpha, width: RIPPLE.width * RIPPLE_PX });
       }
     }
 

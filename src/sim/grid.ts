@@ -373,7 +373,7 @@ function islandsIn(r: Room, spare: Vec2[]): { x: number; y: number; r: number }[
     const at = {
       x: cx + Math.cos(turn) * (r.w / 2) * from,
       y: cy + Math.sin(turn) * (r.h / 2) * from,
-      r: 0.9 + tileNoise(r.x + i, r.y + i, 58) * 0.5,
+      r: 1.5 + tileNoise(r.x + i, r.y + i, 58) * 0.6, // never under 1.5: a one-cell island is a barrel
     };
     // Never over what a room was authored around: a hand-placed prop is a fact
     // about the room and an island is the carve being interesting.

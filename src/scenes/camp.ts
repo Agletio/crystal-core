@@ -141,7 +141,10 @@ export const CAMP_STATION_FOOT: Record<string, { x: number; y: number }> = {
  *  The furnace is drawn lit, so still light on it would read painted. */
 export const CAMP_GLOW = [
   { id: 'crack', x: 304, y: 0, w: 72, h: 205, hue: '#fcde6f', period: 5.2, depth: 0.2 },
-  { id: 'fire', x: 300, y: 214, w: 92, h: 68, hue: '#ff9a3c', period: 1.7, depth: 0.32 },
+  { id: 'fire', x: 300, y: 214, w: 92, h: 68, hue: '#ff9a3c', period: 1.7, depth: 0.5 },
+  // The pile itself, hot: the one lit thing in the picture has to read lit
+  // from across the camp, and the wide glow alone left it a cold heap.
+  { id: 'fire_core', x: 322, y: 224, w: 48, h: 36, hue: '#ffd27a', period: 0.9, depth: 0.7 },
   { id: 'furnace', x: 42, y: 143, w: 48, h: 44, hue: '#ff9a3c', period: 2.9, depth: 0.26 },
 ];
 

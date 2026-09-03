@@ -390,6 +390,21 @@ first. When the phase is whole, `/critique` runs again; done is all three at 8.
       every word; the descent's bar everywhere. (`fault-bench-hexagons.png`,
       `camp-crop-rail.png`, `fault-skillslots-PM.png`, `fault-hint-text.png`,
       `fault-hud-bars.png`)
+      PARTLY DONE, the CSS half: a count on a window's head is set in the
+      body face; the pack label and the floater take `--body` off the
+      document; an empty skill slot is an empty ring; the camera hint is
+      plated like the two buttons beside it; the slim HUD numerals are 11px
+      bone with a shadow; the station and anvil cards borrow `.crystal` and
+      only `#crystals` wears its amethyst rule now; a shut pip is `--text-dim`;
+      a set facet carries grit, a dark rim and a lit top edge. LEFT, and each
+      is a decision rather than work: the head-band fixture was RETIRED at
+      the user's word ("a brown box drawn round everything it touched"), so
+      putting a frame on the dock, the bubble and the tooltip reverses that
+      and is asked below; the rail glyphs and the socket fixture are
+      generations, shown first; the trade web opens FRAMED by decision (45
+      nodes fit, and a web you cannot see the shape of is one nobody plans
+      through); `shots` finds no overflow at 1280×800 on the anvil or the
+      jewellery, so that fault wants the director's own viewport named.
 - [ ] **TWO PORTRAIT FIDELITIES.** The Geometer and the Osteomancer are
       hand-drawn 48-grids beside the Glasswright and the Lampwright at four
       times the detail. Two busts through the portrait pipeline
@@ -407,6 +422,17 @@ first. When the phase is whole, `/critique` runs again; done is all three at 8.
       stray stroke. (`crop-lake-edge-x4.png`, `fault-ripple-octagon.png`,
       `fault-way-in-wheel.png`, `camp-crop-fire.png`,
       `fault-hotspot-outline.png`)
+      PARTLY DONE: the ripple is drawn in a Graphics scaled down by 64, so
+      Pixi picks its segments off a radius of 20 rather than 0.3 and the ring
+      is round; an island is never under 1.5 tiles across, so the carve makes
+      no one-cell pillar; a hovered person's edge is two rings of light
+      falling off (`RIM_FALL`) rather than one opaque stroke; the fire wears a
+      hot core glow (`fire_core` in `CAMP_GLOW`) over the wide one. LEFT, and
+      both are generations shown first: the way in and out is the
+      `mouth_stair` PROP (the generator drew a ladder shaft from above as a
+      wheel), and the shore is the water set's own rim tiles. The stray
+      stroke was not found on any shot this pass; the director names its
+      screen next time.
 - [ ] **THE CAMP IS STRETCHED UNEVENLY.** 688×384 to 1280×800 is 1.86x by
       2.08x, so every camp pixel is a rectangle 12% taller than it is wide;
       the fire-ring stones come out lozenge-shaped. Only the purist saw it;
@@ -586,6 +612,19 @@ be picked up — they are decisions the user has not made. Ask before acting.
 - **The Seam has no cross-section of its own.** It borrows The Flowering's on
   the Proving Ground's tab. One `zoneset.mts` generation would fix it, and it
   needs the `art` skill and an approval before anything is dressed.
+
+**FROM THE ART REVIEW (Phase 11).**
+
+- **Does the carved frame come back on the dock, the bubble and the tooltip?**
+  Three critics read the flat panels as "one game below the carved windows";
+  the user retired the head band as "a brown box drawn round everything it
+  touched". Both cannot hold. A NEW fixture (thinner, no brown) is one
+  generation, shown first — or the flat panel with its hairline stays and the
+  critics are answered on the other faults.
+- **The rail glyphs and the bench's sockets.** Both are generations
+  (`uikit.mts` pieces), and a design is shown before either is spent.
+- **The camp is stretched 1.86× by 2.08×** (item 10) — fill the window, or
+  letterbox to one scale and lose the bench-against-the-edge fit.
 
 1. **Does kiting come back as a PASSIVE that pays for it?** The user's own
    shape, after having it removed: *"I think later we can make a passive that

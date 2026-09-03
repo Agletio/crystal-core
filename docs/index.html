@@ -259,10 +259,21 @@
   h1 { font-family: var(--display); font-size: 20px; font-weight: 700; letter-spacing: .04em; margin: 0; color: var(--bone); text-shadow: 2px 2px 0 var(--cut); }
   h1 span { color: var(--rust); }
   .sub { font-size: 12px; color: var(--text-dim); }
+  /* The camera hint sits on the FLOOR beside two plated buttons, so it takes
+     the same plate: words laid bare on sand are the one thing there unframed. */
+  #run-camhint {
+    padding: 4px 9px; background-color: var(--panel); background-clip: padding-box;
+    border: 1px solid var(--edge); border-radius: var(--r); letter-spacing: .06em; text-transform: uppercase; font-size: 10px;
+  }
   /* Wraps for the same reason <header> does: one unbreakable row overflows,
      and that drags the whole page sideways rather than just the bar. */
   .seedbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 12px; color: var(--text-dim); }
   .seedbar code { color: var(--citrine); }
+  /* A count on a window's head is set in the shell's face: a monospace figure
+     beside a serif title is a second typeface for no reason a player can see. */
+  .seedbar code, .panel__head code, .dock__head code, .modal__head code {
+    font-family: var(--body); font-size: inherit; font-variant-numeric: tabular-nums;
+  }
 
   /* --- the title ---------------------------------------------------------
      The mark and the wordmark on a ceremonial PLAQUE — a generated frame —
@@ -632,7 +643,13 @@
     transition: transform .12s steps(3), filter .12s steps(3);
   }
   .facet--empty { background: var(--ink); box-shadow: inset 0 0 0 2px var(--edge); }
-  .facet--set { box-shadow: inset 0 0 0 2px rgba(0,0,0,.35); }
+  /* A filled facet is a cut STONE rather than a flat swatch: its own grit, a
+     dark rim, and a lit top edge — the clip keeps an inset shadow, so no
+     drop shadow is asked of it. */
+  .facet--set {
+    background-image: linear-gradient(rgba(255,226,170,.22), transparent 40%, rgba(0,0,0,.28)), var(--grit);
+    box-shadow: inset 0 0 0 2px rgba(0,0,0,.35), inset 0 3px 0 rgba(255,255,255,.18);
+  }
   .facet--set:hover { transform: translateY(-3px); filter: brightness(1.18); }
   .facet--focus { transform: translateY(-3px); filter: brightness(1.25); }
   .facet__tier { font-family: var(--display); font-size: 10px; color: var(--ink); }
@@ -815,7 +832,7 @@
   .hud__name { font-family: var(--display); letter-spacing: .1em; text-transform: uppercase; color: var(--bone); }
   .hud__level { color: var(--text-dim); }
   .hud__level b { color: var(--citrine); }
-  .hp--slim .hp__text { font-size: 9px; line-height: 1; }
+  .hp--slim .hp__text { font-size: 11px; line-height: 1; color: var(--bone); text-shadow: 0 1px 0 var(--ink), 0 0 2px var(--ink); }
 
   /* Flush with the floor, and UNDER everything: read at a glance, never clicked,
      so a window over it costs nothing. `margin: 0` is load-bearing — a fixed box
@@ -950,6 +967,8 @@
     position: relative;
   }
   .skillslot--empty { opacity: .45; }
+  /* An empty slot is an empty SOCKET, not a letter: the tooltip names the slot. */
+  .skillslot__none { width: 12px; height: 12px; border-radius: 50%; border: 1px solid var(--edge-lit); }
   /* The TURN bar, over the HUD and only in a boss fight. Wider than a skill
      slot because it carries a word, and lit on the face that is live. */
   /* THE THING IN THE ROOM WITH YOU, across the top: a boss is the one enemy
@@ -1378,7 +1397,10 @@
   .forgeneed--ok .forgeneed__n { color: var(--citrine); }
   .forgeneed--short { color: var(--text); }
   .forgeneed--short .forgeneed__n { color: var(--hurt); }
-  .crystal { border: 1px solid var(--edge); border-left-width: 3px; border-left-color: var(--amethyst); padding: 8px 9px; display: flex; flex-direction: column; gap: 4px; }
+  /* The card the stations and the anvil borrow; only a CRYSTAL wears amethyst. */
+  #crystals .crystal { border-left-color: var(--amethyst); }
+  #crystals .crystal--socket { border-left-color: var(--citrine); }
+  .crystal { border: 1px solid var(--edge); border-left-width: 3px; border-left-color: var(--edge-lit); padding: 8px 9px; display: flex; flex-direction: column; gap: 4px; }
   /* The four that a run actually reads, told apart from the shelf behind them. */
   .crystal--socket { background: var(--edge); border-left-color: var(--citrine); }
   .crystal__head { display: flex; align-items: center; gap: 8px; }
@@ -1508,7 +1530,7 @@
   .pip--done { background: var(--edge); color: var(--text); }
   /* A CHALLENGE FLOOR, marked before you walk into it. */
   .pip--next { border-color: var(--citrine); color: var(--citrine); }
-  .pip--shut { cursor: default; color: var(--edge-lit); }
+  .pip--shut { cursor: default; color: var(--text-dim); opacity: .7; }
   /* Where you are pointed, ringed rather than outlined: a station is round. */
   .pip--here { box-shadow: 0 0 0 2px var(--citrine); color: var(--bone); }
   .pip:hover:not(:disabled) { background: var(--panel-lit); }
