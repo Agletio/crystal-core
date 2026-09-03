@@ -696,7 +696,7 @@ for (const vp of VIEWPORTS) {
   });
   await page.waitForTimeout(500);
 
-  // THE STATIONS, off the smelter and with the kit's raw in the bag: six tabs,
+  // THE STATIONS, off the smelter and with the kit's raw in the bag: five tabs,
   // an XP bar and a column of loadable batches. Taken here rather than on a
   // fresh game, where the panel is nothing but its empty line.
   await page.evaluate(() => document.getElementById('camp-smelter')?.click());

@@ -2247,10 +2247,6 @@ export const MATERIAL_FAMILIES: MaterialFamilyDef[] = [
     also: [['node_fibre2', 'node_fibre2_spent']], from: 'gathered', one: 'Bolt' },
   { id: 'hide', name: 'Hide', raw: 'skins', processed: 'leather', station: 'the tanning frame',
     verb: 'Skinned', from: 'dropped', one: 'Leather' },
-  // A DEADFALL sits in the rock like an outcrop, so wood is gathered. Not the
-  // user's ruling: a monster dropping LOGS is what made nodes exist.
-  { id: 'wood', name: 'Wood', raw: 'logs', processed: 'staves', station: 'the sawbench',
-    verb: 'Felled', node: 'node_stump', spent: 'node_stump_spent', from: 'gathered', one: 'Stave' },
   { id: 'gem', name: 'Gem', raw: 'rough', processed: 'cut stones', station: "the jeweller's",
     verb: 'Prised', from: 'dropped', one: 'Gem' },
   { id: 'fish', name: 'Fish', raw: 'a catch', processed: 'meals', station: 'the kitchen',
@@ -2281,8 +2277,8 @@ export interface MaterialDef {
   spent?: string;
 }
 
-/** TWENTY-FOUR VERSIONS AND FOUR UNIQUES. Wood in a crystal cavern is a NAMING
- *  problem and never a reason to drop a family from a world. */
+/** TWENTY VERSIONS AND FOUR UNIQUES: every family in every world, named for
+ *  the world — a naming problem is never a reason to drop a family from one. */
 export const MATERIALS: MaterialDef[] = [
   { id: 'pale_iron', name: 'Pale Iron', world: 'fissure', family: 'metal', icon: 'mat_pale_iron',
     description: 'Ore out of the old workings, more rust than iron.' },
@@ -2290,8 +2286,6 @@ export const MATERIALS: MaterialDef[] = [
     description: 'Pale flax off the lamp shelves. It was grown for wicks, and it spins.' },
   { id: 'sump_hide', name: 'Sump Hide', world: 'fissure', family: 'hide', icon: 'mat_sump_hide',
     description: 'Skinned off something that drowned in the low workings.' },
-  { id: 'propwood', name: 'Propwood', world: 'fissure', family: 'wood', icon: 'mat_propwood',
-    description: 'Pit props, pulled before the roof needed them.' },
   { id: 'lampstone', name: 'Lampstone', world: 'fissure', family: 'gem', icon: 'mat_lampstone',
     description: 'Holds a light it was never given.' },
   { id: 'blindfish', name: 'Blindfish', world: 'fissure', family: 'fish', icon: 'mat_blindfish',
@@ -2306,8 +2300,6 @@ export const MATERIALS: MaterialDef[] = [
     description: 'A fibre that grew up through the crystal, and pulls as fine as glass thread.' },
   { id: 'shardhide', name: 'Shardhide', world: 'prismatic', family: 'hide', icon: 'mat_shardhide',
     description: 'What grew a shell down here instead of a skin.' },
-  { id: 'quartzwood', name: 'Quartzwood', world: 'prismatic', family: 'wood', icon: 'mat_quartzwood',
-    description: 'A mineral growth with a grain. It saws like timber.' },
   { id: 'clearheart', name: 'Clearheart', world: 'prismatic', family: 'gem', icon: 'mat_clearheart',
     description: 'Cut once, a long way down, and never clouded.' },
   { id: 'palefin', name: 'Palefin', world: 'prismatic', family: 'fish', icon: 'mat_palefin',
@@ -2322,8 +2314,6 @@ export const MATERIALS: MaterialDef[] = [
     description: 'Grey bolls off a bush that feeds on what lies under it.' },
   { id: 'rotting_leather', name: 'Rotting Leather', world: 'demonic', family: 'hide', icon: 'mat_rotting_leather',
     description: 'It was going to rot anyway. Tanned, it takes longer.' },
-  { id: 'gallwood', name: 'Gallwood', world: 'demonic', family: 'wood', icon: 'mat_gallwood',
-    description: 'A swelling that hardened. Nothing planted it.' },
   { id: 'marrowstone', name: 'Marrowstone', world: 'demonic', family: 'gem', icon: 'mat_marrowstone',
     description: 'Porous, warm, and it keeps a red light inside.' },
   { id: 'sumpfish', name: 'Sumpfish', world: 'demonic', family: 'fish', icon: 'mat_sumpfish',
@@ -2338,8 +2328,6 @@ export const MATERIALS: MaterialDef[] = [
     description: 'Grown across the join, one fibre on each side, and it spins as one.' },
   { id: 'fusedhide', name: 'Fusedhide', world: 'seam', family: 'hide', icon: 'mat_fusedhide',
     description: 'Scaled along one flank and furred along the other.' },
-  { id: 'knitwood', name: 'Knitwood', world: 'seam', family: 'wood', icon: 'mat_knitwood',
-    description: 'Two growths that met and carried on as one.' },
   { id: 'joinstone', name: 'Joinstone', world: 'seam', family: 'gem', icon: 'mat_joinstone',
     description: 'Red on one side of the line and clear on the other.' },
   { id: 'riftfin', name: 'Riftfin', world: 'seam', family: 'fish', icon: 'mat_riftfin',
@@ -2352,7 +2340,7 @@ export const MATERIAL_BY_ID: Record<string, MaterialDef> = Object.fromEntries(
   MATERIALS.map((m) => [m.id, m])
 );
 
-/** SIX PROFESSIONS, ONE PER FAMILY. A hybrid armour family asks for the two
+/** FIVE PROFESSIONS, ONE PER FAMILY. A hybrid armour family asks for the two
  *  professions its `ARMOUR_FAMILIES.archetypes` name. */
 export interface ProfessionDef {
   id: string;
@@ -2363,10 +2351,9 @@ export interface ProfessionDef {
 
 export const PROFESSIONS: ProfessionDef[] = [
   { id: 'blacksmithing', name: 'Blacksmithing', family: 'metal', makes: 'melee armour, and most weapons' },
-  { id: 'weaving', name: 'Weaving', family: 'cloth', makes: 'spell armour' },
-  { id: 'leatherworking', name: 'Leatherworking', family: 'hide', makes: 'rogue armour' },
-  { id: 'woodworking', name: 'Woodworking', family: 'wood', makes: 'bows, staves and hafts' },
-  { id: 'jewelling', name: 'Jewelling', family: 'gem', makes: 'every ring and amulet' },
+  { id: 'weaving', name: 'Weaving', family: 'cloth', makes: 'spell armour, and staves' },
+  { id: 'leatherworking', name: 'Leatherworking', family: 'hide', makes: 'rogue armour, and bows' },
+  { id: 'jewelling', name: 'Jewelling', family: 'gem', makes: 'every ring and amulet, and wands' },
   { id: 'cooking', name: 'Cooking', family: 'fish', makes: 'the meals a buff comes out of' },
 ];
 
@@ -2436,18 +2423,19 @@ export const ARCHETYPE_PROFESSION: Record<string, string> = {
   rogue: 'leatherworking',
 };
 
-/** A weapon has no archetypes, so its family says who makes it — *"a sword is
- *  mostly Blacksmithing, a bow mostly Woodworking, a staff between."* */
+/** A weapon has no archetypes, so its family says who makes it: iron is the
+ *  smith's, and the three that are not iron go to the profession whose
+ *  archetype swings them. */
 export const WEAPON_PROFESSIONS: Record<string, string[]> = {
   sword: ['blacksmithing'],
   sword2h: ['blacksmithing'],
   dagger: ['blacksmithing'],
   mace: ['blacksmithing'],
   mace2h: ['blacksmithing'],
-  bow: ['woodworking', 'leatherworking'],
-  staff: ['woodworking', 'weaving'],
-  wand: ['woodworking', 'jewelling'],
-  shield: ['blacksmithing', 'woodworking'],
+  bow: ['leatherworking'],
+  staff: ['weaving'],
+  wand: ['jewelling'],
+  shield: ['blacksmithing'],
 };
 
 /** THE PROVING GROUND: one area past the climb, at a set floor. *"A set

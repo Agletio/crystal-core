@@ -263,13 +263,9 @@ sit in the rock are GATHERED; things that come off a body DROP.**
 |---|---|---|
 | metal | gathered | ore in the rock |
 | cloth | gathered | plant fibre — hemp, flax. THE HERB-SHAPED THING |
-| wood | gathered | a deadfall is a thing sitting in the rock |
 | fish | gathered | a pool, which Phase 8 puts water under |
 | hide | **dropped** | skinned off what you killed |
 | gem | **dropped** | *"gems still from everything"* |
-
-**Wood is MY call, not the user's** — a monster dropping logs is the weirdness
-that created nodes. Flagged to him; reverse it if he says so.
 
 **THE SPREAD IS LANDED.** `BODY_DROP.perRun` is 3 whole drops of 2–5 each,
 drawn down body by body through the same `budgets()` the gear and currency
@@ -310,7 +306,7 @@ found. Measured over 12 descents: metal 17, cloth 20, wood 15, fish 17.
 steps in the order below; each is pushed as it goes green. Where he left a
 call to me, the call is written here so a fresh context does not re-decide it.
 
-- [ ] **STEP 1 — WOOD GOES.** *"For wood I say let's just scrap it entirely.
+- [x] **STEP 1 — WOOD GOES.** *"For wood I say let's just scrap it entirely.
       We can just do without it and it doesn't make sense to be gathering wood
       in the fissure anyways."* The `wood` family, its four versions
       (Propwood, Quartzwood, Gallwood, Knitwood), Woodworking and the sawbench

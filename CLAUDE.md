@@ -187,7 +187,7 @@ cannot drift off the thing it sits on. It FILLS the window and the two axes
 scale independently — the bench is against one edge and the shelf against the
 other, so a cover crop takes a verb off the screen. There is no map, no carve
 and no walk: sixteen hotspots — the crack, four sockets in the rock, the bench,
-the shelf, the tent, the fire, the ANVIL and six STATIONS — and what MOVES is light, wind and idling bodies
+the shelf, the tent, the fire, the ANVIL and five STATIONS — and what MOVES is light, wind and idling bodies
 on one canvas over the art. Everybody you have met stands about in it and clicking one
 goes to their room — a person's hotspot is their own body's grid, where that
 body was drawn. **THE FISSURE IS REACHED FROM THE CAMP AND NOWHERE ELSE** —
@@ -197,10 +197,13 @@ PICTURE'S ALONE**: the STASH is the shelf, the CRYSTALS are the four sockets
 (which open that screen whether or not one is in them — taking a crystal back
 is the Fissure card's own sockets' job, and a filled socket that unsocketed
 instead would leave no door at all), and THE RECKONING is the FIRE, the one lit
-thing in the art nothing else claimed. **THE STATIONS ARE SIX MORE DOORS INTO
-ONE ROOM** — the smelter, the loom, the tanning frame, the kitchen, the sawbench
-and the jeweller's, each opening the stations screen on its own tab, because a
+thing in the art nothing else claimed. **THE STATIONS ARE FIVE MORE DOORS INTO
+ONE ROOM** — the smelter, the loom, the tanning frame, the kitchen and the
+jeweller's, each opening the stations screen on its own tab, because a
 smelter and a loom differ in the word and the picture and never the mechanism.
+The sawbench in the picture is scenery: **THERE IS NO WOOD** — *"it doesn't
+make sense to be gathering wood in the fissure anyways"* — so a bow is
+Leatherworking's, a staff Weaving's and a wand Jewelling's.
 **THE ANVIL IS WHERE A BASE IS MADE**, which is a different verb from the
 bench's. Everything else is still on the rail, and a screen with neither a
 button nor a hotspot is one somebody will lose.

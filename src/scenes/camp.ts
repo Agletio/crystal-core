@@ -97,12 +97,6 @@ export const CAMP_HOTSPOTS: Hotspot[] = [
     says: 'The kitchen. What you hauled out of a pool, made worth eating.',
   },
   {
-    id: 'sawbench',
-    x: 172, y: 305, w: 84, h: 58,
-    opens: 'work', family: 'wood',
-    says: 'The sawbench. Logs cut down to staves.',
-  },
-  {
     id: 'jeweller',
     x: 472, y: 325, w: 62, h: 41,
     opens: 'work', family: 'gem',

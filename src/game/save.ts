@@ -390,6 +390,9 @@ export function heal(game: GameState): Healed {
     if (!ok) out.items++;
     return ok;
   });
+  for (const id of Object.keys(game.character.professions ?? {})) { // a cut profession takes its level
+    if (!PROFESSION_BY_ID[id]) delete game.character.professions![id];
+  }
   // Same rule as every other container: a base that is gone takes its entry.
   game.sold = (Array.isArray(game.sold) ? game.sold : []).filter((e) => {
     const ok = e && e.item && baseExists(e.item) && Number.isFinite(e.price);

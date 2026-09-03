@@ -1127,8 +1127,8 @@ assert(document.body.dataset.runPhase === 'menu', 'which is home, and not a desc
 // The crack, four sockets, the bench, the shelf, the fire, the tent, the anvil
 // and one station a profession: everything on the picture there is to click.
 assert(
-  document.querySelectorAll('#camp-hotspots .camp__hot').length === 16,
-  'with everything on the picture there is to click, the fire, the anvil and six stations among them',
+  document.querySelectorAll('#camp-hotspots .camp__hot').length === 15,
+  'with everything on the picture there is to click, the fire, the anvil and five stations among them',
   String(document.querySelectorAll('#camp-hotspots .camp__hot').length)
 );
 // The Fissure window is the sockets and the one button, and nothing else:
@@ -2799,7 +2799,7 @@ $('dev-kit').click();
   assert($('trade').hidden === true, 'and it closes again');
 }
 
-// --- THE STATIONS: six doors into one room, and a job that moves on a clear -
+// --- THE STATIONS: five doors into one room, and a job that moves on a clear -
 {
   // NOT ON THE RAIL, like the shelf and the fire: the station in the picture
   // is the way in, and it opens on its OWN tab.
@@ -2812,8 +2812,8 @@ $('dev-kit').click();
     $('work-tabs').textContent?.slice(0, 60)
   );
   assert(
-    all('#work-tabs .climbtab').length === 6,
-    'six professions, six tabs',
+    all('#work-tabs .climbtab').length === 5,
+    'five professions, five tabs',
     String(all('#work-tabs .climbtab').length)
   );
   // WITH NOTHING DUG UP the panel still reads: it says where the raw comes
