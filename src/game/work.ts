@@ -15,8 +15,12 @@ import {
   PROFESSION,
   PROFESSIONS,
   WORK,
+  WORKERS,
+  WORKER_BY_ID,
+  workerMark,
 } from '../data';
-import type { MaterialDef, ProfessionDef } from '../data';
+import type { MaterialDef, ProfessionDef, WorkerDef } from '../data';
+import type { MapTheme } from '../types';
 import { makeMaterial } from '../economy';
 import { addItem } from './state';
 import type { GameState } from './state';
@@ -24,15 +28,41 @@ import type { Item, RolledMod } from '../types';
 import type { Rng } from '../rng';
 import { liftFor, qualityRoll } from './forge';
 
-/** One batch loaded at a station. `doneAt` is the epoch millisecond it is
- *  finished at; loaded again on a later day it is simply done. */
+/** One batch loaded at a station, and WHO is on it. `doneAt` is the epoch
+ *  millisecond it is finished at; loaded again on a later day it is done. */
 export interface WorkJob {
   id: string;
   profession: string;
   material: string;
   n: number;
   doneAt: number;
+  worker: string;
 }
+
+// --- the workers: found, rescued, and every one a slot ----------------------
+
+export const hasWorker = (game: GameState, id: string): boolean =>
+  (game.given ?? []).includes(workerMark(id));
+
+export function takeWorker(game: GameState, id: string): void {
+  if (WORKER_BY_ID[id] && !hasWorker(game, id)) game.given = [...(game.given ?? []), workerMark(id)];
+}
+
+/** Everybody rescued so far, in the table's order. */
+export const workersFound = (game: GameState): WorkerDef[] =>
+  WORKERS.filter((w) => hasWorker(game, w.id));
+
+/** WHO STANDS AT THIS DEPTH of this world, not yet rescued. Placed like anybody
+ *  else met down there, and ahead of them: a worker's depth is his own. */
+export const workerDown = (game: GameState, theme: MapTheme, rung: number): WorkerDef | undefined =>
+  WORKERS.find((w) => w.world === theme && w.rung === rung && !hasWorker(game, w.id));
+
+export const jobOf = (game: GameState, workerId: string): WorkJob | undefined =>
+  jobsIn(game).find((j) => j.worker === workerId);
+
+/** The first rescued worker with nothing on, or nobody. */
+export const idleWorker = (game: GameState): WorkerDef | undefined =>
+  workersFound(game).find((w) => !jobOf(game, w.id));
 
 let nextJob = 1;
 
@@ -88,21 +118,22 @@ export function payXp(game: GameState, id: string, xp: number): number {
  *  that does nothing and will not say why is the same as one that is missing. */
 export function whyNotWork(game: GameState, def: MaterialDef): string | null {
   if (!def.family) return 'Nothing works this. It is used as it came up.';
-  if (jobsIn(game).length >= WORK.slots) {
-    return `Every station is loaded — ${WORK.slots} jobs at once.`;
-  }
+  const found = workersFound(game);
+  if (found.length === 0) return 'Nobody to work it. Workers are found down the Fissure.';
+  if (!idleWorker(game)) return `Every worker is busy — ${found.length} of ${found.length}.`;
   const held = (game.materials ?? []).find((i) => i.base === def.id && !i.meta.done);
   const n = (held?.meta.n as number) ?? 0;
   if (n < WORK.batch) return `${WORK.batch} needed, ${n} held.`;
   return null;
 }
 
-/** Load one batch. The raw leaves the bag NOW — a job you can cancel for a
- *  refund is a slot that costs nothing to fill. */
+/** Load one batch onto the first idle worker. The raw leaves the bag NOW — a
+ *  job you can cancel for a refund is a slot that costs nothing to fill. */
 export function loadWork(game: GameState, def: MaterialDef): WorkJob | null {
   if (whyNotWork(game, def)) return null;
   const profession = PROFESSIONS.find((p) => p.family === def.family);
-  if (!profession) return null;
+  const worker = idleWorker(game);
+  if (!profession || !worker) return null;
   const held = (game.materials ?? []).find((i) => i.base === def.id && !i.meta.done);
   if (!held) return null;
 
@@ -114,6 +145,7 @@ export function loadWork(game: GameState, def: MaterialDef): WorkJob | null {
     material: def.id,
     n: WORK.batch,
     doneAt: clock() + minutesMs(WORK.minutes),
+    worker: worker.id,
   };
   game.jobs = [...jobsIn(game), job];
   return job;

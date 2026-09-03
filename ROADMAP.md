@@ -392,7 +392,10 @@ call to me, the call is written here so a fresh context does not re-decide it.
       old job's `left` descents into a `doneAt`. `advanceWork` and the
       "advances on descents" rule leave `CLAUDE.md`; the meal still burns on
       CLEARS.
-- [ ] **STEP 5 — WORKERS, AND THE STATIONS SCREEN AROUND THEM.** *"Clearly
+- [x] **STEP 5 — WORKERS, AND THE STATIONS SCREEN AROUND THEM.** Landed as
+      their OWN table (`WORKERS`), not scene people: every `SceneDef` needs a
+      portrait and a generic worker has none, so `workerDown` places them and
+      `absorbMeeting` rescues them beside the people's schedule. *"Clearly
       show the work slots. I think we can do this by having you just find
       generic workers in the fissure you rescue and they come back to camp.
       You can start with finding one immediately and unlocking the first slot

@@ -10,6 +10,8 @@ import { MATERIAL_BY_ID, MATERIAL_FAMILIES, PROFESSIONS, THEME_BY_ID, WORK } fro
 import type { MaterialFamilyDef } from '../data';
 import {
   collectWork,
+  idleWorker,
+  jobOf,
   jobsIn,
   leftOn,
   loadWork,
@@ -19,6 +21,7 @@ import {
   saysJob,
   saysLeft,
   whyNotWork,
+  workersFound,
   xpToNext,
 } from '../game/work';
 import type { GameState } from '../game/state';
@@ -82,14 +85,17 @@ function rawCard(family: MaterialFamilyDef, item: any): HTMLElement {
     el('div', 'crystal__grow', `${WORK.batch} → ${WORK.batch} ${family.one}s, ${WORK.minutes} minutes`)
   );
 
+  // THE BUTTON NAMES THE WORKER it goes to, so who is being assigned is read
+  // before the click rather than found afterwards.
   const why = whyNotWork(game, def);
-  const button = el('button', 'mini', why ? why : `Work ${WORK.batch}`) as HTMLButtonElement;
+  const idle = idleWorker(game);
+  const button = el('button', 'mini', why ?? `${idle?.name} works ${WORK.batch}`) as HTMLButtonElement;
   button.id = workLoadId(def.id);
   button.disabled = why !== null;
   button.onclick = () => {
     const job = loadWork(game, def);
     if (!job) return;
-    note(`Loaded ${WORK.batch} ${def.name} onto ${family.station}`);
+    note(`${idle?.name} loads ${WORK.batch} ${def.name} onto ${family.station}`);
     render();
     onChanged?.();
   };
@@ -131,21 +137,27 @@ export function render(): void {
     );
   }
 
+  // ONE CARD A WORKER: who they are, what they are on and the time left, or
+  // idle. The slots ARE the workers, so an empty list says where they are found.
   const jobs = $('work-jobs');
   jobs.replaceChildren();
-  for (const job of jobsIn(game)) {
+  const found = workersFound(game);
+  for (const w of found) {
+    const job = jobOf(game, w.id);
     const card = el('div', 'quest');
-    card.append(el('div', 'crystal__name', saysJob(job)));
-    const which = PROFESSIONS.find((p) => p.id === job.profession);
+    card.id = `work-worker-${w.id}`;
+    card.append(el('div', 'crystal__name', job ? `${w.name} — ${saysJob(job)}` : `${w.name} — idle`));
+    const which = job ? PROFESSIONS.find((p) => p.id === job.profession) : undefined;
     card.append(
-      el('div', 'quest__detail', `${which?.name ?? job.profession} — ${saysLeft(leftOn(job))} left`)
+      el('div', 'quest__detail',
+        job ? `${which?.name ?? job.profession} — ${saysLeft(leftOn(job))} left` : 'Load a batch at a station.')
     );
     jobs.append(card);
   }
-  if (jobsIn(game).length === 0) {
-    jobs.append(el('p', 'empty', 'Nothing on any of them. Load a batch; it runs while you are away.'));
+  if (found.length === 0) {
+    jobs.append(el('p', 'empty', 'Nobody to work them yet. Workers are found down the Fissure and come back with you.'));
   }
-  $('work-slots').textContent = `${jobsIn(game).length}/${WORK.slots} loaded`;
+  $('work-slots').textContent = `${jobsIn(game).length}/${found.length} workers busy`;
 }
 
 /** Opened by a station in the camp, ON that station's own tab. */

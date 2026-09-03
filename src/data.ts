@@ -2379,11 +2379,37 @@ export const PROFESSION = { maxLevel: 99, xpTo1: 20, curve: 1.05 };
 export const WORK = {
   batch: 4, // raw a job eats, and processed it hands back
   minutes: 5, // wall-clock minutes a batch takes
-  slots: 3, // jobs loaded at once, over every station: the whole of the cost
   // FLAT, never by world: a Seam job paying more would be a TIER in the one
   // place the no-tiers rule is easiest to break.
   xp: 6,
 };
+
+/** WORKERS: the station slots are PEOPLE, found at ONE depth of one world's
+ *  zone and RESCUED — *"start with finding one immediately and unlocking the
+ *  first slot, and as you progress you find more, say one per area."* */
+export interface WorkerDef {
+  id: string;
+  name: string;
+  world: MapTheme;
+  rung: number;
+  greets: string;
+}
+
+export const WORKERS: WorkerDef[] = [
+  { id: 'hob', name: 'Hob', world: 'fissure', rung: 1,
+    greets: 'Get me up out of this and I will work whatever you put in front of me.' },
+  { id: 'nell', name: 'Nell', world: 'fissure', rung: 7,
+    greets: 'Three days down here. I can smelt, weave, tan, cook or cut. Take me up.' },
+  { id: 'wat', name: 'Wat', world: 'prismatic', rung: 7,
+    greets: 'I came down for the glass and the glass kept me. Show me the way out and I am yours.' },
+  { id: 'ida', name: 'Ida', world: 'demonic', rung: 8,
+    greets: 'Nothing here eats a body that keeps moving. I have been moving. Let me stop, at your camp.' },
+];
+
+export const WORKER_BY_ID: Record<string, WorkerDef> = Object.fromEntries(WORKERS.map((w) => [w.id, w]));
+export const workerMark = (id: string): string => `worker:${id}`; // the `given` entry a rescue leaves
+/** The body a worker wears: the trade-less hero look, already generated. */
+export const WORKER_SPRITE = 'wanderer';
 
 /**
  * CRAFTING. **MATERIALS DECIDE WHAT AN ITEM IS; CURRENCY DECIDES WHAT IS ON

@@ -9,7 +9,7 @@ import { SAVE_VERSION, addItem, createGame, findAnywhere, giftWeapon, wornItems 
 import { takeMet } from './scenes';
 import { ownedCrystals } from './crystals';
 import { healTrials } from './trials';
-import { collectWork, minutesMs, now } from './work';
+import { collectWork, hasWorker, minutesMs, now, workersFound } from './work';
 import { fullUses } from '../mods';
 import { crystalFamily } from '../sim/crystal';
 import type { GameState } from './state';
@@ -398,6 +398,17 @@ export function heal(game: GameState): Healed {
     if (!ok) out.items++;
     return ok;
   });
+  // A JOB NAMES ITS WORKER. One naming nobody rescued goes to whoever is idle,
+  // and with nobody idle it is lost — the raw is already spent either way.
+  for (const job of [...game.jobs]) {
+    if (hasWorker(game, job.worker) && game.jobs.filter((j) => j.worker === job.worker)[0] === job) continue;
+    const free = workersFound(game).find((w) => !game.jobs.some((j) => j !== job && j.worker === w.id));
+    if (free) job.worker = free.id;
+    else {
+      game.jobs = game.jobs.filter((j) => j !== job);
+      out.items++;
+    }
+  }
   for (const id of Object.keys(game.character.professions ?? {})) { // a cut profession takes its level
     if (!PROFESSION_BY_ID[id]) delete game.character.professions![id];
   }

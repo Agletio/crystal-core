@@ -45,6 +45,8 @@ import { bagsFull, crystalsIn, socketed, unsocket } from '../game/state';
 import type { GameState } from '../game/state';
 import { crystalProgress } from '../game/crystals';
 import { bossBeaten, hasMet, takeBoss, takeMet, whoIsDown } from '../game/scenes';
+import { hasWorker, takeWorker, workerDown } from '../game/work';
+import { WORKERS, WORKER_SPRITE, workerMark } from '../data';
 import { descentFacts, takeGrinds } from '../game/trials';
 import { SCENES, SCENE_BY_ID } from '../scenes';
 import type { Hotspot } from '../scenes/camp';
@@ -471,8 +473,11 @@ function renderKeySocket(grid: HTMLElement): void {
 // Run
 // ---------------------------------------------------------------------------
 
-/** What the sim needs of a meeting: who to stand there, and which sprite. */
+/** What the sim needs of a meeting: who to stand there, and which sprite. A
+ *  WORKER at his own depth comes first; the people are on their schedule. */
 const meetsIn = (theme: MapTheme, rung: number) => {
+  const worker = workerDown(game, theme, rung);
+  if (worker) return { id: workerMark(worker.id), sprite: WORKER_SPRITE };
   const def = whoIsDown(game, theme, rung);
   return def ? { id: def.id, sprite: def.who } : undefined;
 };
@@ -1060,7 +1065,17 @@ function renderResults(report: RunReport, run: RunState): void {
  *  stops. Marked here because the sim knows no `GameState`. */
 function absorbMeeting(): void {
   const id = sim?.state.found;
-  if (!id || hasMet(game, id)) return;
+  if (!id) return;
+  // A WORKER is RESCUED by the same walk past: the mark is the slot.
+  const worker = WORKERS.find((w) => workerMark(w.id) === id);
+  if (worker) {
+    if (hasWorker(game, worker.id)) return;
+    takeWorker(game, worker.id);
+    note(`${worker.name}: ${worker.greets}`, 'add', sim?.state.elapsed);
+    renderBadges();
+    return;
+  }
+  if (hasMet(game, id)) return;
   const def = SCENE_BY_ID[id];
   takeMet(game, id);
   if (def?.greets) note(`${def.name}: ${def.greets}`, 'add', sim?.state.elapsed);

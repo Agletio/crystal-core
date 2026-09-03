@@ -120,6 +120,23 @@ export const CAMP_SPOTS = [
   { x: 300, y: 330 },
 ];
 
+/** Where a WORKER stands: idle, by the tent, in order; working, at the foot of
+ *  the station of the job, keyed by the material family — so the picture says
+ *  who is busy before the screen does. */
+export const CAMP_WORKER_SPOTS = [
+  { x: 598, y: 218 },
+  { x: 646, y: 240 },
+  { x: 556, y: 244 },
+  { x: 618, y: 262 },
+];
+export const CAMP_STATION_FOOT: Record<string, { x: number; y: number }> = {
+  metal: { x: 78, y: 218 },
+  cloth: { x: 424, y: 196 },
+  hide: { x: 486, y: 190 },
+  fish: { x: 470, y: 276 },
+  gem: { x: 456, y: 372 },
+};
+
 /** WHAT MOVES: light breathing over what burns, `period` a cycle in seconds.
  *  The furnace is drawn lit, so still light on it would read painted. */
 export const CAMP_GLOW = [

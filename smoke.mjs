@@ -2824,8 +2824,8 @@ $('dev-kit').click();
     $('work-raw').textContent?.slice(0, 60)
   );
   assert(
-    /Load a batch/i.test($('work-jobs').textContent ?? '') && /0\/3/.test($('work-slots').textContent ?? ''),
-    'and nothing is on any station yet',
+    /Load a batch/i.test($('work-jobs').textContent ?? '') && /0\/\d+ workers busy/.test($('work-slots').textContent ?? ''),
+    'and nothing is on any station yet: every worker the kit rescued is idle',
     `${$('work-jobs').textContent?.slice(0, 40)} · ${$('work-slots').textContent}`
   );
 
@@ -2844,6 +2844,22 @@ $('dev-kit').click();
   );
   $('work-close').click();
   assert($('work').hidden === true, 'and it closes again');
+
+  // THE WORKERS ARE THE SLOTS: the kit rescued all four, each a card on the
+  // screen and a body in the camp on its own layer, and a body opens the
+  // stations rather than a conversation.
+  $('camp-smelter').click();
+  assert(
+    all('#work-jobs .quest').length === 4 && /idle/i.test($('work-jobs').textContent ?? ''),
+    'four rescued workers are four cards, every one idle',
+    String(all('#work-jobs .quest').length)
+  );
+  $('work-close').click();
+  const crew = all('#camp-workers .camp__hot');
+  assert(crew.length === 4, 'and four bodies stand in the camp on the workers\' own layer', String(crew.length));
+  crew[0].click();
+  assert($('work').hidden === false && $('parley').hidden === true, 'and clicking one opens the stations, not a conversation');
+  $('work-close').click();
 }
 
 // --- COOKING: a buff that lasts RUNS --------------------------------------

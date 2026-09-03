@@ -18,6 +18,8 @@ import {
   START_PRESETS,
   GRINDS,
   MATERIALS,
+  WORKERS,
+  workerMark,
   PROVING,
   CRYSTAL_ILVL,
   UNIQUE_BY_ID,
@@ -243,7 +245,11 @@ export function resetGame(game: GameState, mode: StartMode): void {
   // waits at the mouth and every room is one click off the Fissure.
   game.given =
     mode === 'dev'
-      ? ['weapon', 'crystal', ...SCENES.filter((s) => !s.encounter).map((s) => metMark(s.id))]
+      ? [
+          'weapon', 'crystal',
+          ...SCENES.filter((s) => !s.encounter).map((s) => metMark(s.id)),
+          ...WORKERS.map((w) => workerMark(w.id)), // and RESCUED everybody
+        ]
       : [];
   // The dev kit is handed every crystal in the game, so its quests are already
   // answered — left open, the first dangerous descent pays out four duplicates.

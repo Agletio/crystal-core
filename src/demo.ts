@@ -192,6 +192,8 @@ import {
   xpToNext as workXpToNext,
 } from './game/work';
 import type { WorkJob } from './game/work';
+import { idleWorker, takeWorker, workerDown, workersFound } from './game/work';
+import { WORKERS } from './data';
 import {
   craftBase,
   dismantle,
@@ -3750,10 +3752,32 @@ rule('THE STATIONS — does a job run on the clock, and on nothing else?');
     `${jobsIn(fresh).length} jobs`
   );
 
+  // THE SLOTS ARE THE WORKERS. With nobody rescued nothing is worked and the
+  // button says so; the first one stands at depth 1 of the Fissure, and is
+  // there until walked past, and never twice.
+  const ore = MATERIAL_BY_ID.pale_iron;
+  const nobody = whyNotWork(fresh, ore);
+  const hob = workerDown(fresh, 'fissure', 1);
+  check(
+    nobody !== null && /nobody/i.test(nobody) && hob !== undefined && hob.id === WORKERS[0].id,
+    `with nobody rescued a batch is refused, and ${hob?.name ?? 'nobody'} stands at depth 1 of the Fissure`,
+    nobody ?? 'it went ahead'
+  );
+  takeWorker(fresh, WORKERS[0].id);
+  check(
+    workerDown(fresh, 'fissure', 1) === undefined && workersFound(fresh).length === 1 && idleWorker(fresh)?.id === WORKERS[0].id,
+    'and once rescued he is a slot in the camp and stands down there no more',
+    `${workersFound(fresh).length} found`
+  );
+  check(
+    WORKERS.every((w) => LADDER.zones.some((z) => z.world === w.world && w.rung >= 1 && w.rung < z.rungs)),
+    `and every one of the ${WORKERS.length} workers stands on a depth that exists, short of the boss`,
+    WORKERS.map((w) => `${w.id} ${w.world} ${w.rung}`).join(', ')
+  );
+
   // NOTHING IS WORKED THAT WAS NOT DUG UP. A batch you cannot afford is refused
   // and SAYS SO — a button that greys out and will not say why is one nobody
   // learns from.
-  const ore = MATERIAL_BY_ID.pale_iron;
   const refused = whyNotWork(fresh, ore);
   check(
     refused !== null && /\d/.test(refused) && loadWork(fresh, ore) === null,
@@ -3771,18 +3795,21 @@ rule('THE STATIONS — does a job run on the clock, and on nothing else?');
     whyNotWork(fresh, unique) ?? 'a station took it'
   );
 
-  // THE SLOT CAP IS THE WHOLE OF WHAT A JOB COSTS, beyond the descents.
+  // A WORKER IS THE WHOLE OF WHAT A JOB COSTS, beyond the minutes: with all of
+  // them rescued, every one takes a batch and the next is refused by name.
   const shop = createGame('fresh');
+  for (const w of WORKERS) takeWorker(shop, w.id);
   for (const def of MATERIALS.filter((m) => m.family !== null)) {
     addItem(shop, makeMaterial(def, WORK.batch * 4));
   }
   const loaded = MATERIALS.filter((m) => m.family !== null)
     .map((def) => loadWork(shop, def))
-    .filter(Boolean);
+    .filter((j): j is WorkJob => j !== null);
   check(
-    loaded.length === WORK.slots && jobsIn(shop).length === WORK.slots,
-    `and ${WORK.slots} jobs is every station loaded, whatever is in the bag`,
-    `${loaded.length} took`
+    loaded.length === WORKERS.length && jobsIn(shop).length === WORKERS.length
+      && new Set(loaded.map((j) => j.worker)).size === WORKERS.length,
+    `and ${WORKERS.length} jobs is every worker busy, each on a job of their own, whatever is in the bag`,
+    `${loaded.length} took, ${new Set(loaded.map((j) => j.worker)).size} workers`
   );
 
   // THE RAW LEAVES THE BAG NOW. A job you could cancel for a refund is a slot
@@ -3869,7 +3896,7 @@ rule('THE STATIONS — does a job run on the clock, and on nothing else?');
   jobs = Math.ceil(banked / (WORK.xp * WORK.batch));
   line(
     `  level ${PROFESSION.maxLevel} is ${banked.toLocaleString()} xp — ${jobs.toLocaleString()} batches, ` +
-      `${Math.ceil((jobs * WORK.minutes) / WORK.slots / 60).toLocaleString()} hours with every slot full`
+      `${Math.ceil((jobs * WORK.minutes) / WORKERS.length / 60).toLocaleString()} hours with every worker busy`
   );
   // A LEVEL HAS TO BE FELT IN THE FIRST HOUR, or the whole mechanism is a wall
   // pretending to be a curve.
@@ -3882,7 +3909,7 @@ rule('THE STATIONS — does a job run on the clock, and on nothing else?');
   // A JOB POINTS AT A TABLE, and a save that outlives the table takes the job
   // with it rather than paying out something that no longer exists.
   const rotted = createGame('fresh');
-  rotted.jobs = [{ id: 'job_x', profession: 'nobody', material: 'nothing', n: 4, doneAt: 1 }];
+  rotted.jobs = [{ id: 'job_x', profession: 'nobody', material: 'nothing', n: 4, doneAt: 1, worker: 'hob' }];
   const healed = heal(rotted);
   check(
     rotted.jobs.length === 0 && healed.items > 0,
@@ -3895,6 +3922,7 @@ rule('THE STATIONS — does a job run on the clock, and on nothing else?');
   // there is no step in this a player has to be present for.
   const loop = createGame('fresh');
   loop.character = ladderCharacter(6, new Rng(11));
+  for (const w of WORKERS) takeWorker(loop, w.id);
   const kit = [makeCrystal(1), makeCrystal(1), makeCrystal(1), makeCrystal(1)];
   let ran = 0;
   let anyDone = 0;
@@ -3917,6 +3945,7 @@ rule('THE STATIONS — does a job run on the clock, and on nothing else?');
 
   // A SAVE WRITTEN IN DESCENTS: each one it had left is a batch's minutes.
   const dated = createGame('fresh');
+  takeWorker(dated, 'hob');
   dated.jobs = [{ id: 'job_o', profession: 'blacksmithing', material: 'pale_iron', n: 4, left: 2 } as unknown as WorkJob];
   heal(dated);
   check(

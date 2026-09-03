@@ -25,8 +25,10 @@ import type { Hotspot } from '../scenes/camp';
 import { SCENE_ART } from '../render/generated-scene';
 import { GENERATED } from '../render/generated-art';
 import { heroSpriteFor } from '../sim/appearance';
-import { RUN_SLOTS } from '../data';
+import { MATERIAL_BY_ID, RUN_SLOTS, WORKER_SPRITE } from '../data';
 import { folkMet } from '../game/scenes';
+import { jobOf, saysJob, workersFound } from '../game/work';
+import { CAMP_STATION_FOOT, CAMP_WORKER_SPOTS } from '../scenes/camp';
 import { crystalIcon } from './icons';
 import { showTooltip, hideTooltip } from './tooltip';
 import { syncTalk, wants } from './talk';
@@ -118,11 +120,38 @@ function mount(spot: Hotspot, host = 'camp-hotspots'): HTMLButtonElement {
   return btn;
 }
 
+/** Where a worker stands: the station of the job, or the i-th idle spot. */
+function workerSpot(id: string, i: number): { x: number; y: number } {
+  const job = jobOf(game, id);
+  const family = job ? MATERIAL_BY_ID[job.material]?.family : undefined;
+  const idle = CAMP_WORKER_SPOTS[i % CAMP_WORKER_SPOTS.length];
+  return family ? CAMP_STATION_FOOT[family] ?? idle : idle;
+}
+
 /** A PERSON is a hotspot too, and theirs moves: it is wherever their body was
  *  drawn, which is a spot and the size of that body's own grid. */
 function mountFolk(): void {
   const host = $('camp-folk');
   host.replaceChildren();
+  // A WORKER opens the stations, on the tab of whatever they are on — on a
+  // layer of their own, so the people stay the people.
+  $('camp-workers').replaceChildren();
+  workersFound(game).forEach((w, i) => {
+    const grid = (GENERATED[WORKER_SPRITE]?.grid ?? 32) * CAMP_HERO_SCALE;
+    const at = workerSpot(w.id, i);
+    const job = jobOf(game, w.id);
+    const btn = mount(
+      {
+        id: `worker-${w.id}`,
+        x: at.x - grid / 2, y: at.y - grid, w: grid, h: grid,
+        opens: 'work', family: job ? MATERIAL_BY_ID[job.material]?.family ?? undefined : undefined,
+        says: `${w.name}. ${job ? saysJob(job) : 'Idle. Load a batch at a station.'}`,
+      },
+      'camp-workers'
+    );
+    btn.addEventListener('pointerenter', () => { lit = 100 + i; });
+    btn.addEventListener('pointerleave', () => { if (lit === 100 + i) lit = -1; });
+  });
   folkMet(game).forEach((def, i) => {
     const grid = (GENERATED[def.who]?.grid ?? 32) * CAMP_HERO_SCALE;
     const at = CAMP_SPOTS[i % CAMP_SPOTS.length];
@@ -288,6 +317,12 @@ function draw(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, at: numb
   met.forEach((who, i) => {
     const spot = CAMP_SPOTS[i % CAMP_SPOTS.length];
     body(ctx, who.who, spot.x, spot.y, at, i * 0.7, i === lit);
+  });
+  // THE WORKERS: idle by the tent, or at the foot of the station of the job,
+  // so the picture says who is busy before the screen does.
+  workersFound(game).forEach((w, i) => {
+    const spot = workerSpot(w.id, i);
+    body(ctx, WORKER_SPRITE, spot.x, spot.y, at, 2 + i * 0.9, lit === 100 + i);
   });
   body(ctx, heroSpriteFor(game.character), CAMP_STAND.x, CAMP_STAND.y, at, 0, false);
 }

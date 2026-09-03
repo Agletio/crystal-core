@@ -568,13 +568,24 @@ in the game a player can wait out, and it pays materials, never power. The
 meal still burns on CLEARS. `heal()` turns a job written in descents into a
 `doneAt`. **RAW AND PROCESSED
 ARE TWO STACKS OF ONE ROW**: `Item.meta.done` and `stackKey`, named for
-`MaterialFamilyDef.one`, rather than 28 more rows and 28 more icons. **THE SLOT
-IS THE WHOLE COST** — `WORK.slots` is three over every station and the raw
+`MaterialFamilyDef.one`, rather than 28 more rows and 28 more icons. **THE SLOTS ARE
+PEOPLE, and a WORKER is the whole cost** — *"find generic workers in the
+fissure you rescue and they come back to camp… clearly shows what worker
+you're assigning it to and what that worker is currently doing."* `WORKERS` in
+`src/data.ts`: four, each standing at ONE depth of one world's zone (Hob at
+depth 1 of the Fissure, the one you find immediately), placed by `workerDown`
+ahead of the people's schedule and RESCUED by the same walk past
+(`worker:<id>` in `given`), wearing the `wanderer` body because a bust nobody
+has generated is a face nobody can talk to. `WorkJob.worker` names who is on
+it, the load button names the idle worker it goes to, the stations screen is
+one card a worker, and in the camp an idle one stands by the tent and a busy
+one at the foot of the station of the job (`CAMP_STATION_FOOT`), opening the
+stations on that tab. The dev kit rescues all four. The raw
 leaves the bag on LOAD, since a job you could cancel for a refund is a slot that
 costs nothing to fill. **A JOB IS ONE FOR ONE**, so nothing is lost and nothing
 minted. **XP IS FLAT AND NEVER BY WORLD**, or the no-tiers rule breaks in the
-easiest place: measured, level 2 is one batch and 99 is 1,972 of them, 55
-hours with every slot full. A zone-unique is worked by nothing at all.
+easiest place: measured, level 2 is one batch and 99 is 1,972 of them, 42
+hours with all four workers busy. A zone-unique is worked by nothing at all.
 
 **JEWELLERY IS TEN IMPLICITS, and it is JEWELLING's whole output.**
 `JEWEL_IMPLICITS` — Elemental and Occult Resistance, % Life, % Mana and one per
@@ -719,8 +730,9 @@ Lampwright's crystal, the Lambengolmor's key, the ossuary's and the orrery's
 benches. **A MARK over the head says somebody is holding something** — `wants()`
 in `src/ui/talk.ts`, the same question `offer` answers, asked before the
 conversation instead of after — so a picture is never swept for the one person
-whose mind has changed. Nobody is being RESCUED: they live down there, and
-`greets` says so. **The one `plan` left is the ANSWERING HALL**, because a boss fight
+whose mind has changed. The crafting people are never RESCUED: they live down there, and
+`greets` says so. The WORKERS are — that is his word for them — and they are
+their own table, not scenes. **The one `plan` left is the ANSWERING HALL**, because a boss fight
 needs a floor with nothing on it.
 
 **CRIT CHANCE IS THE SKILL'S, and gear only SCALES it.** `SkillDef.critChance`
