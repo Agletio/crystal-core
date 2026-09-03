@@ -120,7 +120,10 @@ import { SKILL_BY_ID } from '../data';
  *  does not end on a straight lit line with nothing past it. */
 const EDGE = 4;
 const APRON = 96; // tiles of rock top laid past the grid on every side: further than any zoom sees
-const AURA_STEPS = 6; // stacked circles an aura thins over, centre to reach
+/** An aura is LIGHT OFF THE BODY, never its six-tile reach drawn on the floor:
+ *  a soft radial glow this many tiles across, at this many times the aura's
+ *  own alpha — three critics read the reach as "a debug radius". */
+const AURA_GLOW = { span: 3, alpha: 5, px: 96 };
 
 const FLOATER_LIFE = 1.1;
 
@@ -206,6 +209,25 @@ export async function createPixiRenderer(
   propLayer.addChild(rippleLayer);
   // Under the bodies: an aura is a field on the floor, not a badge on a monster.
   const auraLayer = new Graphics();
+  /** The glow under each aura body, one sprite of the one radial texture. */
+  const auraGlowLayer = new Container();
+  const glows = new Map<number, Sprite>();
+  let glowTexture: Texture | null = null;
+  function glowTex(): Texture {
+    if (glowTexture) return glowTexture;
+    const canvas = document.createElement('canvas');
+    canvas.width = canvas.height = AURA_GLOW.px;
+    const ctx = canvas.getContext('2d')!;
+    const half = AURA_GLOW.px / 2;
+    const fade = ctx.createRadialGradient(half, half, 0, half, half, half);
+    fade.addColorStop(0, 'rgba(255,255,255,1)');
+    fade.addColorStop(0.45, 'rgba(255,255,255,0.45)');
+    fade.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = fade;
+    ctx.fillRect(0, 0, AURA_GLOW.px, AURA_GLOW.px);
+    glowTexture = Texture.from(canvas);
+    return glowTexture;
+  }
   const vfxLayer = new Graphics();
   // A generated effect is a PICTURE, so it cannot be drawn into the blocks
   // layer beside the lightning that wraps it.
@@ -221,7 +243,7 @@ export async function createPixiRenderer(
   const textLayer = new Container();
 
   world.addChild(
-    groundLayer, wallLayer, mapLayer, propLayer, auraLayer, lootLayer, lootArtLayer, vfxGroundLayer,
+    groundLayer, wallLayer, mapLayer, propLayer, auraLayer, auraGlowLayer, lootLayer, lootArtLayer, vfxGroundLayer,
     entityLayer, vfxLayer, vfxArtLayer
   );
   app.stage.addChild(world, textLayer);
@@ -264,11 +286,11 @@ export async function createPixiRenderer(
     dying: Math.min(1, e.deathAge / DEATH_FADE),
   });
 
-  /** A creature's frames at its rank, falling back to the common ones. The
-   *  hero's carry the lamp: he is the one dark body on every pale floor. */
+  /** A creature's frames at its rank, falling back to the common ones. Every
+   *  body carries the lamp: dark bodies on pale floors were black cut-outs. */
   function framesFor(e: Entity): Texture[] {
     return (
-      texturesFor(e.sprite, e.rank, e.kind === 'hero') ??
+      texturesFor(e.sprite, e.rank, true) ??
       texturesFor(e.sprite, 'common') ??
       texturesFor('grub', 'common')!
     );
@@ -1466,20 +1488,28 @@ export async function createPixiRenderer(
       auraLayer.circle(ring.x, ring.y, ring.r * gone).fill({ color: colour, alpha: 0.22 });
       auraLayer.circle(ring.x, ring.y, ring.r).stroke({ color: colour, alpha: 0.9, width: 0.09 });
     }
+    const lit = new Set<number>();
     for (const m of state.monsters) {
       if (m.dead || !m.aura) continue;
       const def = AURA_BY_ID[m.aura];
       if (!def) continue;
       const look = auraLook(palette, def);
-      const colour = toHexNumber(look.colour);
-      // A SOFT FALL-OFF, never a filled disc with a rim: stacked circles thin
-      // toward the reach, so it reads as light off the body rather than as a
-      // radius somebody drew — *"a five-tile translucent yellow disc"*.
-      for (let i = 0; i < AURA_STEPS; i++) {
-        const share = 1 - i / AURA_STEPS;
-        auraLayer.circle(m.x, m.y, AURA.radius * share).fill({ color: colour, alpha: (look.alpha * 2) / AURA_STEPS });
+      let glow = glows.get(m.id);
+      if (!glow) {
+        glow = new Sprite(glowTex());
+        glow.anchor.set(0.5);
+        auraGlowLayer.addChild(glow);
+        glows.set(m.id, glow);
       }
+      glow.visible = true;
+      glow.tint = toHexNumber(look.colour);
+      glow.alpha = look.alpha * AURA_GLOW.alpha;
+      glow.width = glow.height = AURA_GLOW.span;
+      glow.x = m.x;
+      glow.y = m.y;
+      lit.add(m.id);
     }
+    for (const [id, glow] of glows) if (!lit.has(id)) glow.visible = false;
   }
 
   function draw(state: RunState, emerge = 1): void {
@@ -1487,6 +1517,8 @@ export async function createPixiRenderer(
       // New run: drop every sprite, the ids belong to a dead sim.
       for (const s of sprites.values()) s.destroy();
       sprites.clear();
+      for (const g of glows.values()) g.destroy();
+      glows.clear();
       buildMap(state.map);
     }
 

@@ -428,6 +428,7 @@ export function monsterArt(
   return {
     grid: art.grid,
     rows: drawn,
+    rim: lit ? mix(palette.citrine, palette.chalk, 0.5) : undefined,
     glow: GLOW[rank] ? { colour: GLOW[rank]!.colour(palette), reach: GLOW[rank]!.reach } : undefined,
     key: {
       '#': mix(palette.rockDeep, palette.void, 0.6),

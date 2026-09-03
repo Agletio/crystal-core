@@ -457,17 +457,22 @@ each first. CODE means a session can take it; GENERATION means a design is
 shown to the user first; DECISION means it argues with a rule already in
 `CLAUDE.md` and is asked under Open questions.
 
-- [ ] **THE AURA DISC** — all three, first. *"A ten-tile banded olive circle
+- [x] **THE AURA DISC** — all three, first. *"A ten-tile banded olive circle
       with a hard rim under every Rot, Cavern and Seam pack, laid over sand
       and rock alike — the largest shape in any fight, and it means
-      nothing."* Make it a glow on the BODIES, or a fall-off no wider than
-      the pack, never a rimmed circle (`crop-seam-aura-disc-x2.png`,
-      `crop-rot-disc-x2.png`, `cavern-z4.png`). CODE: `drawAuras`.
-- [ ] **EVERY BODY A LAMPLIT EDGE.** *"Give the hero and every monster a
+      nothing."* DONE: an aura is one radial-gradient SPRITE under its
+      carrier, `AURA_GLOW.span` tiles across, tinted the family's ink, and
+      the six-tile reach is no longer drawn at all — a soft pool of light
+      off the body and nothing else (`aura_z6.png`). The reach is still the
+      rule the sim runs; if it needs showing, it is a question of how, not a
+      disc.
+- [x] **EVERY BODY A LAMPLIT EDGE.** *"Give the hero and every monster a
       lamplit edge and 2–3 luma steps off the sand at ship zoom; every floor
-      monster a mid-tone plane so it is not a black cut-out."* The hero has
-      `rimLit`; hand it to every body through the same `lit` flag
-      (`crop-hero-x6.png`, `fissure-z0.png`, `fissure-z4.png`). CODE.
+      monster a mid-tone plane so it is not a black cut-out."* DONE: every
+      body's frames take `rimLit` — `framesFor` asks `lit` for all, and the
+      hand-drawn bestiary carries `rim` beside its rank glow — so a maroon
+      back on sand has a gold top edge (`rim_all.png`). The mid-tone PLANE
+      is the bodies' own art and stays a generation.
 - [ ] **THE CAST HALL'S WARRIOR AND ROGUE.** *"Real three-value clusters and
       a rim light, or a card ground three steps lighter than their darks;
       and draw all four at 3x, not 6x, so the second screen is not a
