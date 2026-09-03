@@ -3662,6 +3662,43 @@ rule('GATHERING — is a node free, guarded, walked to and equally spread?');
     check(ore > 0 && footed >= ore * 0.8, `ore stands on open floor clear of the rock — ${footed} of ${ore}`, `${ore - footed} of ${ore} against a wall`);
     gauge(`${damp} of ${plants} plants stand on damp floor; the rest are in rooms with no water`);
   }
+  // GATHERING IS SEEN: he stands at a node for `GATHER.pause` with the family's
+  // tool in his hand and the bare body under it, his weapon comes back after,
+  // and what he took floats up as `+n Name`. Stepped tick by tick.
+  {
+    let stood = 0;
+    let taken = 0;
+    let named = 0;
+    let bare = true;
+    let back = true;
+    for (let i = 0; i < 6; i++) {
+      const sim = new RunSim(bareSet, digger, new Rng(1300 + i));
+      const worn = sim.state.hero.sprite;
+      let run = 0;
+      let guard = Math.ceil(600 / TICK);
+      while (sim.state.status === 'running' && guard-- > 0) {
+        const before = sim.state.nodes.filter((n) => n.taken).length;
+        sim.step(TICK);
+        const hero = sim.state.hero;
+        if (hero.tool) {
+          run += TICK;
+          if (hero.sprite !== worn.split('_')[0]) bare = false;
+        } else run = 0;
+        stood = Math.max(stood, run);
+        const after = sim.state.nodes.filter((n) => n.taken).length;
+        if (after === before) continue;
+        taken += after - before;
+        if (hero.tool !== undefined || hero.sprite !== worn) back = false;
+        if (sim.state.floaters.some((f) => /^\+\d+ \S/.test(f.text))) named++;
+      }
+    }
+    check(
+      taken > 0 && stood >= GATHER.pause - TICK * 2 && bare && back,
+      `he stands ${stood.toFixed(2)}s at a node with the tool in hand and the bare body under it, and the weapon comes back — ${taken} taken`,
+      `${stood.toFixed(2)}s stood, bare ${bare}, weapon back ${back}, ${taken} taken`
+    );
+    check(named === taken, `and every one floats up as "+n Name" — ${named} of ${taken}`);
+  }
   check(
     least > 0 && most <= least * 1.6,
     `and the ${GATHERED.length} gathered families come out level, being DEALT and not rolled`,

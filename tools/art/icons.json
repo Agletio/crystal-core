@@ -649,6 +649,18 @@
   {
    "id": "mat_fault_glass",
    "say": "a jagged shard of dark glass with a hairline crack of white light running through it"
+  },
+  {
+   "id": "tool_pick",
+   "say": "a single miner's pickaxe standing upright and filling the frame, a straight dark wooden haft with a narrow curved head of pitted grey iron across its top, one end drawn to a point and the other a short flat wedge. NOT an axe, NOT a hammer, NOT a mattock, NOT a scythe, NOT a weapon."
+  },
+  {
+   "id": "tool_sickle",
+   "say": "a small harvesting knife seen from the side: a short round dark wooden handle at the bottom, and above it ONE thin narrow blade of dull dark grey iron that curves smoothly into a HOOK like a bird's claw, the point bending back down toward the handle. The blade is THIN, as thin as a finger, and dark. NOT blue, NOT steel-blue, NOT wide, NOT an axe head, NOT a pickaxe, NOT a hammer, NOT a straight blade, NOT a scythe on a pole, NOT a hook on a chain."
+  },
+  {
+   "id": "tool_rod",
+   "say": "a single plain fishing rod standing upright and filling the frame, a long thin dark cane pole with a pale cord tied at its tip hanging straight down one side to a small round cork float. NOT a staff, NOT a spear, NOT a whip, NOT a wand, NOT a net."
   }
  ]
 }

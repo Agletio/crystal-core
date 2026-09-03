@@ -22,7 +22,7 @@ All three are done:
 
 **PHASE 10 IS THE LOWEST THING TO TAKE** — *"add all this to the roadmap so it
 survives context clear and then just start working unless you have a
-question."* Five steps, in order, each pushed as it goes green. Phase 8 and 9
+question."* Six steps, in order, each pushed as it goes green. Phase 8 and 9
 hold only what waits on the user's judgement. Phase 3 is PARKED and is not the
 lowest-numbered thing to take. Everything after them is a parked phase, the
 traps, and questions only the user can answer.
@@ -302,8 +302,9 @@ found. Measured over 12 descents: metal 17, cloth 20, wood 15, fish 17.
 
 ## Phase 10 — THE CAMP'S WORK: what gathering looks like, who does the work, and reading the anvil
 
-**The user's asks, in one message, after judging the water perfect.** Five
-steps in the order below; each is pushed as it goes green. Where he left a
+**The user's asks, in one message, after judging the water perfect, and the
+creative director asked for in the next.** Six steps in the order below; each
+is pushed as it goes green. Where he left a
 call to me, the call is written here so a fresh context does not re-decide it.
 
 - [x] **STEP 1 — WOOD GOES.** *"For wood I say let's just scrap it entirely.
@@ -318,7 +319,7 @@ call to me, the call is written here so a fresh context does not re-decide it.
       wood stack and a wood job off an old save. `node_stump` and the
       `mat_*wood` icons stay as data for the builder; nothing draws them on a
       map. The Phase 9 table and the "wood is my call" paragraph go with it.
-- [ ] **STEP 2 — GATHERING IS SEEN.** *"Rename all the gather things instead
+- [x] **STEP 2 — GATHERING IS SEEN.** *"Rename all the gather things instead
       of saying netted or mined just do like + x 'Material Name' so you know
       how many of each you got"* — the floater is `+2 Pale Iron`, the unique
       `+1 Deadlight` in its crit ink, and `MaterialFamilyDef.verb` stays for
@@ -338,7 +339,32 @@ call to me, the call is written here so a fresh context does not re-decide it.
       pause and cleared by `takeNode`; a headless run pays the same seconds,
       so the demo's termination checks cover it. Nothing new joins
       `src/ui/icons.ts`.
-- [ ] **STEP 3 — PROCESSING RUNS ON A CLOCK.** *"I do want to just change the
+- [ ] **STEP 3 — THE CREATIVE DIRECTOR, and the critics.** *"Create a
+      specialized agent whose entire job is to be the creative director. This
+      agent will write no code, the entire job will be to take screenshots of
+      the game at many different points judging the art, UI design, themes and
+      general flow of the game's art. Once it has approved a set of
+      screenshots it will periodically (not often — once large art changes
+      are made, but probably quite a bit to catch up with what we have now)
+      send these to other agents who will act as indie game critics judging
+      the art compared to other mainstream super popular Steam indie games.
+      They will rate the art strictly on a 1–10 scale offering feedback as to
+      why if possible. We will iterate until all critics give an 8/10 or
+      higher."* Asked ASAP, after the step in flight. **Two agent
+      definitions and one skill**, because a subagent cannot spawn agents:
+      `.claude/agents/creative-director.md` (shoots the game with the peek
+      tools and `shots.mjs`, reads the pictures, judges them against the
+      game's own notes, writes no code, hands back an APPROVED SET and a
+      list of faults), `.claude/agents/art-critic.md` (reads a set, rates it
+      1–10 against named Steam indie games — Hades, Dead Cells, Stardew
+      Valley, Hyper Light Drifter, Loop Hero, Halls of Torment — and says
+      why), and `.claude/skills/critique/SKILL.md`, the loop the main session
+      runs: director → three critics in parallel → scores and reasons into
+      `ART_REVIEW.md` → below 8 from any critic is art work for the roadmap,
+      then re-run. The director is run after every large art change and at
+      the end of every phase until the first 8s land; the report is what the
+      user reads.
+- [ ] **STEP 4 — PROCESSING RUNS ON A CLOCK.** *"I do want to just change the
       materials to process on a timer. I think it's fine you still want to go
       and run stuff to clear it while it's processing anyway but it's annoying
       to be close to finishing one having to go in and out to see if they are
@@ -354,7 +380,7 @@ call to me, the call is written here so a fresh context does not re-decide it.
       old job's `left` descents into a `doneAt`. `advanceWork` and the
       "advances on descents" rule leave `CLAUDE.md`; the meal still burns on
       CLEARS.
-- [ ] **STEP 4 — WORKERS, AND THE STATIONS SCREEN AROUND THEM.** *"Clearly
+- [ ] **STEP 5 — WORKERS, AND THE STATIONS SCREEN AROUND THEM.** *"Clearly
       show the work slots. I think we can do this by having you just find
       generic workers in the fissure you rescue and they come back to camp.
       You can start with finding one immediately and unlocking the first slot
@@ -379,7 +405,7 @@ call to me, the call is written here so a fresh context does not re-decide it.
       name, what they are on and the time left, or *idle* — above the raw
       stacks. Clicking a worker in the camp opens that screen. Proving Ground
       workers are the backlog's.
-- [ ] **STEP 5 — THE ANVIL IS READ, NOT DECODED.** *"The crafting menus need
+- [ ] **STEP 6 — THE ANVIL IS READ, NOT DECODED.** *"The crafting menus need
       to be cleaned up a lot, it has way too much stuff on single pages. Clean
       up the actual boxes so it's clear what items are needed and what level
       is required — seems blended — and add more filters so you can filter

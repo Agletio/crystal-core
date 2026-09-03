@@ -1131,6 +1131,7 @@ function frame(now: number): void {
       steps++;
     }
     absorbEvents();
+    document.body.dataset.heroTool = sim.state.hero.tool ?? ''; // what a harness reads to catch a gather
 
     if (sim.state.status !== 'running') {
       setLeaveLabel();

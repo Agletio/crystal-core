@@ -258,6 +258,7 @@ export interface Entity {
   /** `HELD` rows pinned at each hand. The body never changes for either. */
   held?: string;
   offhand?: string;
+  tool?: string; // a `HELD` row in the main hand INSTEAD of the weapon, while gathering
   /** How much of a tile the art covers. */
   scale: number;
   /** Common, magic or rare. Drives size, halo and what it is worth. */
@@ -630,6 +631,9 @@ export class RunSim {
   private nodesDown: GatherNode[] = [];
   /** The node he is on his way to, held past the step-aside cap. */
   private aside: number | null = null;
+  private gathering: { id: number; left: number } | null = null; // the node he STANDS AT, tool in hand
+  private bare = ''; // the hero's body with nothing in its hands, for the tool to sit in
+  private worn = ''; // and the body that draws his weapon, put back when the tool is down
   private statsFor = new Map<string, CombatStats>(); // per kind, ability and RANK
   /** Read once: rolled per death, and only ever when something bought it. */
   private wellChance = 0;
@@ -697,6 +701,8 @@ export class RunSim {
     this.passiveScale = { physical: passiveScale(lines, 'physical'), cold: passiveScale(lines, 'cold') };
 
     const worn = heroSpriteFor(character);
+    this.worn = worn;
+    this.bare = worn.split('_')[0];
     const hero: Entity = {
       id: 0,
       kind: 'hero',
@@ -1738,6 +1744,7 @@ export class RunSim {
       // In range is not enough — you have to be able to see it. Without this a
       // ranged attack happily shoots through a wall.
       if (d <= this.reachTo(hero, target) && this.canSee(hero, target)) {
+        this.dropTool(); // a body in reach outranks the ore; the node waits
         hero.path = [];
         this.face(hero, target.x, target.y);
         // You STAND IN IT. Giving ground while the skill recovered was tried
@@ -4125,23 +4132,52 @@ export class RunSim {
     this.aside = null;
     hero.path = [];
     this.face(hero, near.x, near.y);
-    this.settleAction(hero, false);
-    this.takeNode(near);
+    // HE STANDS AT IT for `GATHER.pause`, tool in hand: a pick or a hook is
+    // swung through the body's own attack frames, a rod is held out at rest.
+    let at = this.gathering;
+    if (!at || at.id !== near.id) {
+      at = { id: near.id, left: GATHER.pause };
+      this.gathering = at;
+      this.takeUp(MATERIAL_FAMILY_BY_ID[near.family]?.tool ?? 'pick');
+    }
+    if (hero.tool === 'rod') this.settleAction(hero, false);
+    else if (hero.actionTimer <= 0) {
+      hero.action = 'attack';
+      hero.actionTimer = ATTACK_POSE;
+    }
+    at.left -= dt;
+    if (at.left <= 0) this.takeNode(near);
     return true;
   }
 
-  /** What comes out of it, once he is standing over it. */
+  /** The tool into the main hand and the weapon out of it: a variant body
+   *  DRAWS what it holds, so the bare body stands in until the tool is down. */
+  private takeUp(tool: string): void {
+    const hero = this.state.hero;
+    hero.tool = tool;
+    hero.sprite = this.bare;
+  }
+
+  private dropTool(): void {
+    const hero = this.state.hero;
+    this.gathering = null;
+    if (hero.tool === undefined) return;
+    delete hero.tool;
+    hero.sprite = this.worn;
+  }
+
+  /** What comes out of it, once he has stood at it. */
   private takeNode(node: GatherNode): void {
+    this.dropTool();
     node.taken = true;
     const prop = this.state.map.props[node.at];
     if (prop && prop.id === node.art.node) prop.id = node.art.spent;
 
-    const family = MATERIAL_FAMILY_BY_ID[node.family];
     this.bankMaterial(node.material, node.n);
-    const rare = node.family === 'unique' ? MATERIAL_BY_ID[node.material] : undefined;
+    const def = MATERIAL_BY_ID[node.material];
     this.state.floaters.push({
-      x: node.x, y: node.y, text: rare ? rare.name : `${family?.verb ?? 'Mined'} ${node.n}`, age: 0, crit: !!rare,
-      on: 'monster', kind: 'loot',
+      x: node.x, y: node.y, text: `+${node.n} ${def?.name ?? node.material}`, age: 0,
+      crit: node.family === 'unique', on: 'monster', kind: 'loot',
     });
   }
 

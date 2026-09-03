@@ -2214,7 +2214,7 @@ export const LADDER = {
 // prismatic cloth, so the shallow end stays an ingredient at the deep end and a
 // tier is how many DIFFERENT versions a recipe demands.
 
-/** One of the six things gear is made OF, and the one profession that works
+/** One of the five things gear is made OF, and the one profession that works
  *  it. `raw` comes out of a descent and `processed` is what camp turns it into.
  *  `node` is what it looks like on a floor and `spent` the same object worked
  *  out; *"ore is mined, hide is skinned"* is `verb` on ONE mechanism. */
@@ -2229,6 +2229,8 @@ export interface MaterialFamilyDef {
   verb: string;
   node?: string; // a node's two frames; a DROPPED family has none
   spent?: string;
+  /** The `HELD` row he holds while gathering it, for `GATHER.pause` seconds. */
+  tool?: string;
   /** MORE pairs, a room drawing any of them evenly, so one plant is not wallpaper. */
   also?: [string, string][];
   from: MaterialSource;
@@ -2239,11 +2241,11 @@ export interface MaterialFamilyDef {
 
 export const MATERIAL_FAMILIES: MaterialFamilyDef[] = [
   { id: 'metal', name: 'Metal', raw: 'ore', processed: 'bars', station: 'the smelter',
-    verb: 'Mined', node: 'node_ore', spent: 'node_ore_spent',
+    verb: 'Mined', node: 'node_ore', spent: 'node_ore_spent', tool: 'pick',
     also: [['node_ore2', 'node_ore2_spent'], ['node_ore3', 'node_ore3_spent']], from: 'gathered', one: 'Bar' },
   // CLOTH IS A PLANT, which is where the herb went: something you cut.
   { id: 'cloth', name: 'Cloth', raw: 'fibre', processed: 'bolts', station: 'the loom',
-    verb: 'Cut', node: 'node_fibre', spent: 'node_fibre_spent',
+    verb: 'Cut', node: 'node_fibre', spent: 'node_fibre_spent', tool: 'hook',
     also: [['node_fibre2', 'node_fibre2_spent']], from: 'gathered', one: 'Bolt' },
   { id: 'hide', name: 'Hide', raw: 'skins', processed: 'leather', station: 'the tanning frame',
     verb: 'Skinned', from: 'dropped', one: 'Leather' },
@@ -2251,7 +2253,7 @@ export const MATERIAL_FAMILIES: MaterialFamilyDef[] = [
     verb: 'Prised', from: 'dropped', one: 'Gem' },
   { id: 'fish', name: 'Fish', raw: 'a catch', processed: 'meals', station: 'the kitchen',
   // RIPPLES ON the water: a body of it is the map's job now.
-    verb: 'Netted', node: 'node_ripple', spent: 'node_ripple_spent',
+    verb: 'Netted', node: 'node_ripple', spent: 'node_ripple_spent', tool: 'rod',
     from: 'gathered', one: 'Meal' },
 ];
 
@@ -3510,6 +3512,7 @@ export const GATHER = {
   single: 0.75, // the share of nodes handing over exactly ONE
   yield: [2, 3] as [number, number], // what the rest hand over
   reach: 1.2, // the lock's own: it is the same walk
+  pause: 1.0, // seconds he stands at one with the family's `tool` in hand; a headless run pays them too
   /** HOW FAR HE WILL GO OUT OF HIS WAY for one, in tiles. Unbounded, the
    *  nearest free node outranks advancing whenever nothing is in range, and a
    *  deep map's far corner cost one descent 165 seconds — the backtracking the

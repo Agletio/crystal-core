@@ -52,6 +52,12 @@ export const HELD: Record<string, HeldSpec> = {
     icon: 'gear_shield', grip: [0.5, 0.45], size: 0.5, turn: 0,
     track: 'off', reach: -0.05, behind: true,
   },
+  // THE GATHERING TOOLS, in the main hand INSTEAD of the weapon for the length
+  // of `GATHER.pause`: swung through the body's own attack frames, or a rod
+  // held out over the water at rest.
+  pick: { icon: 'tool_pick', grip: [0.5, 0.72], size: 1.05, turn: Math.PI + 0.5 },
+  hook: { icon: 'tool_sickle', grip: [0.5, 0.8], size: 0.75, turn: Math.PI + 0.5 },
+  rod: { icon: 'tool_rod', grip: [0.5, 0.88], size: 1.5, turn: 2.6, reach: 0.12 },
 };
 
 export interface Hand {

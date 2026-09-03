@@ -217,7 +217,16 @@ if (hold) {
 }
 
 await page.evaluate(() => document.getElementById('run-launch')?.click());
-await page.waitForTimeout(8000);
+// GATHER=1 shoots the first GATHER instead of the eighth second: the page says
+// what tool the hero is holding, and the burst starts the moment it is one.
+if (process.env.GATHER) {
+  for (let i = 0; i < 600; i++) {
+    if (await page.evaluate(() => document.body.dataset.heroTool)) break;
+    await page.waitForTimeout(100);
+  }
+} else {
+  await page.waitForTimeout(8000);
+}
 // The kit leaves a screen open and the point is the floor. Escape shuts
 // whatever is on top, and space puts the camera back on the hero.
 for (let i = 0; i < 3; i++) {

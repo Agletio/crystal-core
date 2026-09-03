@@ -14,6 +14,7 @@ touch that domain, not before.
 | `systems` | `src/sim/`, `src/data.ts`, `src/trees/`, `src/trades/`, `src/moves/`, `src/trials/`, `src/game/`, `src/crafting.ts` |
 | `screens` | `src/ui/`, `src/web.ts`, `docs/index.html` |
 | `harness` | a failing, flaking or hanging check; adding one |
+| `critique` | judging the ART: the creative director shoots and approves a set, three critics score it 1–10 against Steam's pixel-art indies — after a large art change, and at the end of every phase until all three give 8 |
 
 ## The cycle
 
@@ -532,7 +533,16 @@ bubbles on the water look bad."* **A WORLD'S UNIQUE IS A NODE OF ITS OWN**, neve
 `GATHER.uniqueChance` a run, in its own picture (`MaterialDef.node`) or the
 ore's where none has been asked; the ore itself is three pictures a room draws
 any of (`MaterialFamilyDef.also`), *his picks*. **PLACED AFTER THE PACKS**, so how much ore a
-run holds cannot move what is fighting in it. **IT IS TAKEN ON THE WAY, NEVER
+run holds cannot move what is fighting in it. **GATHERING IS SEEN**: he stands
+at a node for `GATHER.pause` seconds with the family's `tool` in his main hand
+— a `HELD` row whose picture is a generated icon, exactly as a sword's is — the
+pick and the hook swung through the body's OWN attack frames, the rod held out
+at rest, and the weapon and the off hand out of the picture for as long as it
+lasts (`Entity.tool`, and the BARE body under it, since a variant body draws
+what it holds). *"It just feels so wrong right now how quickly it just
+instantly grabs stuff."* A body coming into reach drops the tool and the node
+waits. What he took floats up as **`+2 Pale Iron`**, never a verb — *"so you
+know how many of each you got."* **IT IS TAKEN ON THE WAY, NEVER
 FETCHED BACK** — `GATHER.near` is what he steps aside for with a pack still
 standing and `GATHER.walk` the sweep once nothing is left, because
 `acquireTarget` reaches the whole map and would otherwise carry him off before

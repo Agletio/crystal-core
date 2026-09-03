@@ -249,9 +249,9 @@ export async function createPixiRenderer(
     through: through(e),
     elapsed,
     walked: e.walked,
-    skill: e.skillId,
+    skill: e.tool ? null : e.skillId, // a swing at the ore is the plain attack, never the spell's cast
     facing: e.facing,
-    spell: casting(e),
+    spell: e.tool ? false : casting(e),
     dead: e.dead,
     dying: Math.min(1, e.deathAge / DEATH_FADE),
   });
@@ -911,7 +911,9 @@ export async function createPixiRenderer(
     sunk: number,
     elapsed: number
   ): void {
-    const art = slot === 'main' ? e.held : e.offhand;
+    // A TOOL takes the main hand and empties the other: nobody fishes with a
+    // shield up.
+    const art = slot === 'main' ? e.tool ?? e.held : e.tool ? undefined : e.offhand;
     const texture = art ? heldTexture(art) : null;
     const spec = art ? HELD[art] : undefined;
     const key = `${e.id}:${slot}`;
