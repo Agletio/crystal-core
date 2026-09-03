@@ -184,9 +184,10 @@ use art and then make objects clickable on it… we don't need the characters to
 move around"*. One generated 688×384 scene in `src/render/generated-scene.ts`;
 `src/scenes/camp.ts` is every rectangle and every anchor measured in THAT
 picture's own pixels, and `src/ui/camp.ts` scales the whole stage, so a hotspot
-cannot drift off the thing it sits on. It FILLS the window and the two axes
-scale independently — the bench is against one edge and the shelf against the
-other, so a cover crop takes a verb off the screen. There is no map, no carve
+cannot drift off the thing it sits on. It is scaled WHOLE at one scale on both
+axes, the largest that fits — a pixel of it is a square, and the bench against
+one edge and the shelf against the other are never cropped; what the window
+has over the picture's shape is the stage's own ground. There is no map, no carve
 and no walk: sixteen hotspots — the crack, four sockets in the rock, the bench,
 the shelf, the tent, the fire, the ANVIL and five STATIONS — and what MOVES is light, wind and idling bodies
 on one canvas over the art. Everybody you have met stands about in it and clicking one

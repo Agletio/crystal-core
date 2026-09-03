@@ -48,29 +48,25 @@ let started = 0;
  *  so nothing CSS can do reaches it. */
 let lit = -1;
 
-/** How far a window may be off the picture's own shape before the picture is
- *  let go of rather than pulled: past this it reads as squashed. */
-const STRETCH = 1.3;
-
 /** `--citrine`, which the canvas cannot read a token for. */
 const RIM = '#fcde6f';
 const RIM_FALL: [number, number][] = [[1, 0.55], [2, 0.2]]; // ring out from the body, and its alpha
 
-/** FILLS THE WINDOW, and the two axes are allowed to differ. Cover is not on:
- *  the bench is against the left edge and the shelf against the right, so a
- *  crop takes a verb off the screen. A 16:10 window is a 12% pull on a 16:9
- *  picture, which reads as a wider room; past `STRETCH` the excess axis is
- *  let go and the black comes back rather than the camp looking wrong. */
+/** ONE SCALE on both axes, the largest that fits the picture WHOLE: a pixel
+ *  of the camp is a square, and the bench and the shelf against their edges
+ *  are never cropped — what the window has over the picture's shape is the
+ *  stage's own ground either side. Pulled to fill, a 16:10 window made every
+ *  pixel 12% taller than it was wide and the fire-ring stones lozenges. */
 function fit(): void {
   const art = SCENE_ART[CAMP_ART];
   if (!art) return;
   const box = $('camp').getBoundingClientRect();
   const wide = (box.width || globalThis.innerWidth) / art.w;
   const tall = (box.height || globalThis.innerHeight) / art.h;
-  const most = Math.min(wide, tall) * STRETCH;
+  const scale = String(Math.max(0.2, Math.min(wide, tall)));
   const style = $('camp-stage').style;
-  style.setProperty('--camp-sx', String(Math.max(0.2, Math.min(wide, most))));
-  style.setProperty('--camp-sy', String(Math.max(0.2, Math.min(tall, most))));
+  style.setProperty('--camp-sx', scale);
+  style.setProperty('--camp-sy', scale);
 }
 
 export function initCamp(

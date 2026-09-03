@@ -223,7 +223,7 @@ export function floaterInk(
   if (f.kind === 'note') return { fill: palette.chalk, ...lit };
   if (f.on === 'hero') return { fill: palette.hurt, edge: palette.chalk };
   if (f.crit) return { fill: palette.citrine, ...lit };
-  return { fill: palette.void, edge: palette.chalk };
+  return { fill: palette.bone, ...lit }; // pale on a dark edge: the rock's own ink on khaki was invisible at ship size
 }
 
 /** HOW BIG A DROP LIES ON THE FLOOR, as its LONGEST side in tiles — the long
