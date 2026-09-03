@@ -100,3 +100,102 @@ shopper (the title and the camp); the picture the game actually is, a fight
 on a floor, would tell that same shopper it was generated within a second…
 the strip is a Stardew-quality camp in front of a Halls of Torment floor that
 Halls of Torment would not ship."*
+
+## 2026-09-03b — the second review, after Phase 11's first eight items
+
+Commit `5dc6865`. Shot with `shots.mjs` (41 screens), `descent-peek` at four
+socketings and three zooms, three bursts, three held casts (`CAST=1`),
+`boss-peek` and `face-peek`; 118 pictures, **18 approved as they stand** (up
+from 4). The director judged every first-pass fault: the rock mask, the
+stuck bubble, the cobalt bar, the arena floor, Fireball's flight, the Arc,
+the shell's CSS faults, the round ripple and the hover light are FIXED; the
+hero's edge, the cast hall and the corpse are BETTER. The list is in
+`art-review/2026-09-03b/APPROVED.md`.
+
+**The director's three worst faults:**
+
+1. The aura disc — a translucent olive disc up to ten tiles across with
+   concentric banding and a hard edge under every Rot, Cavern and Seam pack,
+   laid over sand and rock alike; the largest shape in any descent that is
+   not the map, and it reads as a debug radius.
+2. Three worlds and the boss are still unjudged — `descent-peek`'s socketing
+   lands on The Answering's sand every time and `boss-peek` prints no
+   keyhole; the Rot, Cavern and Seam tilesets and every telegraph have never
+   been looked at.
+3. Rimespike is a flat cyan slab — one tone, serrated top, no dark root, no
+   lit tip, no shadow on the sand.
+
+| critic | bodies | floors | ui | effects | consistency | **overall** | compared to |
+|---|---|---|---|---|---|---|---|
+| the pixel-art purist | 4 | 5 | 6 | 4 | 4 | **5** | Halls of Torment, Death Must Die, Loop Hero |
+| the UI reviewer | 5 | 4 | 6 | 5 | 4 | **5** | Halls of Torment, Hades, Loop Hero |
+| the Steam shopper | 5 | 6 | 7 | 5 | 5 | **6** | Halls of Torment, Death Must Die, Loop Hero |
+
+**Where they agree, in one line each:** the camp, the title, the carved
+windows, the seam climb and the Fireball web are one finished game and would
+sit beside Loop Hero; the descent under the crack is a second, desaturated
+one — one khaki tile, a flat grey rock fill, black cut-out monsters, a hero
+you cannot pick out of his shadow; the aura disc is the largest shape in any
+fight and means nothing; the Arc is the one effect that reads and Rimespike
+and the Fireball trail are not there yet; the cast hall is crisp now and the
+Warrior and Rogue still have no silhouette. The shopper: *"a shopper
+comparing it to Halls of Torment sees a camp they like and a fight they
+don't believe."*
+
+**Facts the critics could not know**, said once and left for the next run:
+ordinary damage numbers are "the ink of the rock" by decision (`floaterInk`),
+and the UI reviewer's invisible `275` is that decision at ship size; the
+head-band frame the purist and the UI reviewer want back on the dock and the
+tooltip was retired at the user's word; `gather.png` was approved as "the
+pick raised" and shows the hero idle — a director's slip, and the burst
+frames beside it are what hold the pick.
+
+**The pixel-art purist, fix first:**
+
+1. Kill the banded olive aura disc under Rot/Cavern/Seam packs
+   (`crop-seam-aura-disc-x2.png`, `crop-rot-disc-x2.png`); a body tint or a
+   pack-wide falloff, never a rimmed circle.
+2. Give the cast-hall Warrior and Rogue real three-value clusters and a rim
+   light (`crop-cast-hall-warrior-x3.png`), and every floor monster a
+   mid-tone plane so it is not a black cut-out (`fissure-z0.png`).
+3. Regrade the Fissure sand and rock to the camp's warm ramp and put marks in
+   the all-rock tile a step darker than the face shadow (`fissure-z4.png`,
+   `crop-rock-void-x4.png`).
+4. Regenerate the Geometer and Osteomancer portraits at the Lampwright's
+   fidelity (`faces.png`, `desktop-graft.png`).
+5. Rimespike needs a dark root and lit tips, Fireball an ember-to-smoke trail,
+   and the way-in wheel a re-ask as a shaft (`crop-rimespike-x5.png`,
+   `crop-fireball-flight-x4.png`, `gather.png`).
+
+**The UI reviewer, fix first:**
+
+1. Remove the ten-tile olive aura disc under Rot/Cavern/Seam packs
+   (`crop-seam-aura-disc-x2.png`, `rot-z4.png`); make it a glow on the
+   bodies no wider than the pack.
+2. Give the cast hall Warrior and Rogue a lit edge or a lighter card ground,
+   and draw all four at 3x not 6x (`desktop-pick.png`,
+   `crop-cast-hall-warrior-x3.png`).
+3. Ordinary damage digits are ghost-grey on khaki (`crop-floater-x5.png`,
+   `cast-arc.png`); use the bone-with-shadow the HUD numerals got.
+4. Proving Ground sockets are four text fields over a dimmed picture
+   (`desktop-proving.png`); draw them as the crack's clawed sockets on the
+   art at full brightness.
+5. One chrome: frame the inventory dock and tooltips like the window, replace
+   the CSS hexagons, and use one plate style across bars, skill slots and
+   potions (`desktop-sheet.png`, `desktop-tooltip.png`, `crop-hud-x3.png`).
+
+**The Steam shopper, fix first:**
+
+1. Remove the ten-tile banded aura disc under Rot/Cavern/Seam packs
+   (`crop-seam-aura-disc-x2.png`, `cavern-z4.png`); make it a glow on the
+   bodies no wider than the pack.
+2. Give the hero and every monster a lamplit edge and 2–3 luma steps off the
+   sand at ship zoom (`crop-hero-x6.png`, `fissure-z4.png`).
+3. Grain the rock interior and drop its mean below the face's shadow row
+   (`crop-rock-void-x4.png`, `fissure-z9.png`); tone the arena tile's
+   crescent into the sand (`crop-arena-grain-x3.png`, `desktop-scene.png`).
+4. Rebuild the Warrior and Rogue cast-hall cards with a lit edge or a lighter
+   ground (`desktop-pick.png`, `crop-cast-hall-warrior-x3.png`).
+5. Redraw Rimespike with a dark root, lit tips and a floor shadow, and
+   Fireball's trail as ember-to-smoke (`crop-rimespike-x5.png`,
+   `crop-fireball-flight-x4.png`).
