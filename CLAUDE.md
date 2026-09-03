@@ -521,7 +521,11 @@ balance lever. **FISH RIDES THE WATER, outside the count**: one spot a lake,
 none on a dry map. **THE FISHING SPOT IS ONE RIPPLE THAT MOVES**, drawn by the renderer off
 `rippleRings` and never a painted prop (`LIVE_PROPS`) — *"an actual moving
 ripple even if it's contained to that size"* — and nothing else stands in the
-water: cover on a wet cell is dropped. **A WORLD'S UNIQUE IS A NODE OF ITS OWN**, never dealt, at
+water: cover on a wet cell is dropped, and **THE WATER ITSELF IS FLAT** —
+`CALM` in `zoneset.mts` folds every colour the water tile holds besides its
+commonest into that one at emit, because the generator paints three pale blobs
+on a tile and two thousand tiles of it is a grid of blobs: *"the repeating
+bubbles on the water look bad."* **A WORLD'S UNIQUE IS A NODE OF ITS OWN**, never dealt, at
 `GATHER.uniqueChance` a run, in its own picture (`MaterialDef.node`) or the
 ore's where none has been asked; the ore itself is three pictures a room draws
 any of (`MaterialFamilyDef.also`), *his picks*. **PLACED AFTER THE PACKS**, so how much ore a

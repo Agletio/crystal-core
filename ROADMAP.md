@@ -157,6 +157,13 @@ shelf on a floor yet.
       fading, phased off the node's id, gone once fished; `node_ripple` and
       its spent frame stay in `PROP_ART` for the builder and are never
       painted on a map (`LIVE_PROPS`).
+- [x] **THE WATER IS FLAT.** *"The repeating bubbles on the water look bad.
+      Maybe just have nothing or something that blends better."* Nothing:
+      `CALM` in `zoneset.mts` takes the all-water tile's commonest colour
+      (rgb 48,69,80) and folds the six other colours it holds — three pale
+      blobs and their shade, 946 pixels sheet-wide — into it at emit, the
+      shore rim and the dark waterline untouched. No generation spent; only
+      `test_pool` changed in `generated-tiles.ts`.
 - [ ] **ORE DRAWN IN THE FACE, AND THE FISH.** The node stands at the wall's
       foot now, but the picture is still a boulder on the floor. **Inpainting
       into a crop does NOT do this**: a vein in the face, a rusted band and a

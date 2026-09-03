@@ -73,6 +73,14 @@ const SITS_ON: Record<string, string> = {
   seam_pool: 'seam_pro',
 };
 
+/**
+ * Sets whose LOWER terrain is laid FLAT at emit: every colour the all-lower
+ * tile holds besides its commonest one is folded into that one, sheet-wide.
+ * The generator paints three pale blobs on a tile of water, and two thousand
+ * of the tile is the same three blobs on a grid.
+ */
+const CALM = ['test_pool'];
+
 function retone(png: Buffer, how: Retone): Buffer {
   const { width, height, rgba } = decodePng(png);
   for (let i = 0; i < rgba.length; i += 4) {
@@ -807,6 +815,30 @@ if (process.argv[2] === 'ask') {
     }
     sheet = encodePng(img.width, img.height, img.rgba as any);
     console.log(`  ${name}: toned to ${under}'s floor, gain ${gain.map((g) => g.toFixed(2)).join('/')}`);
+  }
+  if (CALM.includes(name)) {
+    const img = decodePng(sheet);
+    const b = meta.tileset_data.tiles.find((t: any) => keyOf(t) === 0).bounding_box;
+    const pack = (i: number): number => (img.rgba[i] << 16) | (img.rgba[i + 1] << 8) | img.rgba[i + 2];
+    const count = new Map<number, number>();
+    for (let y = 0; y < b.height; y++) {
+      for (let x = 0; x < b.width; x++) {
+        const k = pack(((b.y + y) * img.width + b.x + x) * 4);
+        count.set(k, (count.get(k) ?? 0) + 1);
+      }
+    }
+    const flat = [...count].sort((p, q) => q[1] - p[1])[0][0];
+    const blobs = new Set([...count.keys()].filter((k) => k !== flat));
+    let folded = 0;
+    for (let i = 0; i < img.rgba.length; i += 4) {
+      if (img.rgba[i + 3] === 0 || !blobs.has(pack(i))) continue;
+      img.rgba[i] = flat >> 16;
+      img.rgba[i + 1] = (flat >> 8) & 255;
+      img.rgba[i + 2] = flat & 255;
+      folded++;
+    }
+    sheet = encodePng(img.width, img.height, img.rgba as any);
+    console.log(`  ${name}: calmed, ${blobs.size} colours over ${folded} px folded into rgb(${flat >> 16},${(flat >> 8) & 255},${flat & 255})`);
   }
   const png = sheet.toString('base64');
   // A corner in base three, high to low, exactly as the renderer keys a cell.
