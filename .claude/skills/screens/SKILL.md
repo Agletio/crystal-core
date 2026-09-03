@@ -85,6 +85,12 @@ the flask bar at 1280**, which is the width `shots` judges at — the corner nev
 lifts, at the user's word. Adding a rail button widens the row; re-check that
 clearance.
 
+**A rail glyph is GENERATED**: `tools/art/rail.json` asks one emblem per
+button in four inks at 64, `portrait.mts <id> <png> 16 icons` imports it as
+`rail_<screen>`, and `screenIcon` draws that before the hand grid in
+`screenicons.ts`, which is only the fallback for a button nobody has asked
+one for. Adding a rail button is a row in that file and one generation.
+
 **A rail button's ID outlives its presentation.** `open-shop`, `open-craft`,
 `open-character`, `open-save` and the rest are what every harness names.
 Rearrange freely; renaming an id is a much bigger job than it looks.
@@ -148,15 +154,16 @@ as `--fix-<id>` at boot by `src/ui/fixtures.ts`. `theme-check` treats the
 `--fix-` prefix as runtime. A fixture is authored at the CSS pixel size it
 displays at so a 9-slice's corners draw 1:1.
 
-- **ONE FRAME DOES THE WHOLE SHELL, and it is `head`.** Every panel, chat
-  bubble, web menu and trial row is `border: 6px solid transparent` with 16px
-  ends and `border-image: var(--fix-head) 6 16 / 6px 16px round`, at the art's
-  own scale so no row of it is resampled. `card` was a 14px riveted band and
-  is no longer referenced by the stylesheet at all — *the user's call: "the
-  chats have that same border as the old ui, replace that border everywhere it
-  exists with the new one"*. `win` is still the big WINDOW frame at 30, and
-  `socket` is no longer worn by the rail: a riveted socket behind every icon
-  was a second frame inside the first, in another metal.
+- **ONE FRAME DOES THE WHOLE SHELL, and it is `win`.** The window's carved
+  frame at 30 (`border-image: var(--fix-win) 30 / 30px round`) is on every
+  `.modal__card`, on the DOCK at the same size, and on the TOOLTIP at half
+  (`30 / 15px`). The `head` band that used to frame every panel was retired
+  as *"a brown box drawn round everything it touched"*, and `card` is not
+  referenced at all. Three critics then read the flat dock and tooltip as
+  "one game below the carved windows", and the user's word was to do what
+  they say — so the window's frame went on, not a second band. `socket` is
+  worn by the skill slots and by the bench's modifier facets (a round stone
+  of the tier's ink set in it, no vector hexagon), never by the rail.
 - **The `border` SHORTHAND resets `border-image`.** A later rule with
   `border: 1px solid …` silently kills an earlier fixture at equal specificity —
   the HUD vessels drew nothing until their rule moved BELOW the base `.hp` block.

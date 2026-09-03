@@ -748,10 +748,11 @@ crit line on a piece of gear is *increased* Critical Chance, so 10% base and
 100% increased is 20%. FLAT crit stays a tree and trade line, which is what
 keeps a web able to change what a build is capable of rather than nudging it.
 
-**A FLOATING NUMBER IS DARK WITH A LIT EDGE** — pale text washed out over
-lamplit stone. `floaterInk` in `render/renderer.ts` is the one seam: green is
-life arriving (a pickup, a heal), `--hurt` is life leaving, citrine is coin and
-a Critical, and ordinary damage is the ink of the rock. **An IDLE is a breath,
+**A FLOATING NUMBER IS PALE ON A DARK EDGE.** `floaterInk` in
+`render/renderer.ts` is the one seam: green is life arriving (a pickup, a
+heal), `--hurt` is life leaving, citrine is coin and a Critical, and ordinary
+damage is bone — dark on khaki was invisible at ship size, three critics said
+so, and the user's word was to do what they say. **An IDLE is a breath,
 never a gesture**: `idleTravel` measures how far a body's inked box shifts
 between idle frames and anything past `IDLE_CALM` holds its first frame, so the
 loud few stand still while the calm majority still moves.
