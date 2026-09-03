@@ -350,20 +350,29 @@ first. When the phase is whole, `/critique` runs again; done is all three at 8.
       fall-off, and check every skill's geometry at ship size.
       (`fault-ground-ring.png`, `fault-rot-disc.png`, `fireball-02.png`,
       `arc-00.png`)
-- [ ] **THE ARENA AND THE SHELF ARE OTHER SETS.** The Answering's floor is a
-      grid of ~8-tile cool-grey squares with visible seams and no rock in view
-      — stand it on the Fissure family with rock round it. The raised shelf
+- [ ] **THE ARENA AND THE SHELF ARE OTHER SETS.** ARENA DONE: `sceneMap`
+      read `ZONE[theme]`, the set the Fissure had moved off, so The Answering
+      stood on `lit_round`; it takes the world's `designFor` now, zone and
+      `plain` both, and stands on the same sand as the descent
+      (`desktop-scene.png`). The room stays 39×31 wide by design — the Fall
+      needs somewhere to go — so no face is in view at the default zoom.
+      SHELF LEFT, and it is Phase 8's: a `test_shelf` chained off the test
+      floor tile is one ask, made once the user has judged the shelf at all. The raised shelf
       is a paler speckled slab with a course of black bricks and ladder-tile
       stairs — it must be the sand tile lit a step up. (`fault-arena-floor.png`,
       `fault-shelf-floor.png`)
-- [ ] **THE HERO IS A SMUDGE AT SHIP SIZE, THE CORPSE STANDS, THE CAST HALL
-      IS MUSH.** Rim-light the hero or give him a lit accent so he is not a
-      black-violet shape on sand; a corpse fading to a translucent tan
-      silhouette that keeps standing is a fall nobody believes; the cast hall
-      scales four 96-frame idles ~6x with a smooth pass into noise with no
-      silhouette — draw them NEAREST at an integer scale or off a generated
-      design sheet. (`crop-hero-x4.png`, `gather-06.png`,
-      `fault-cast-hall-bodies.png`)
+- [x] **THE HERO IS A SMUDGE AT SHIP SIZE, THE CORPSE STANDS, THE CAST HALL
+      IS MUSH.** DONE, all three: `rimLit` in `src/render/sprites.ts` pulls
+      the hero's own top-edge pixels `RIM.top` toward lamplight and the two
+      sides `RIM.side`, symmetric because a facing is a flip, baked into his
+      frames alone (`SpriteSheet.frames(sprite, rank, lit)`) — a pale gold
+      edge on the helm, the shield and the sword arm at ship size
+      (`hero_rim2.png`); a body with death frames no longer takes the
+      fall's rotation on top of them; the cast hall's figures are sized by
+      `fit()` in `src/ui/pick.ts` to a WHOLE multiple of their ink box, the
+      blur is off them and the ground carries the shadow, so every pixel is
+      one square (`desktop-pick.png`). The mottle still on the Warrior and
+      the Rogue is their own art at 5x, not the resample.
 - [ ] **SHELL PARITY — one game below the carved windows.** The dock is a
       flat panel with a hairline under carved stone; the speech bubble, the
       item card and the tooltip are the same flat box; the bench's modifier

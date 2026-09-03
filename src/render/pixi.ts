@@ -140,12 +140,12 @@ export async function createPixiRenderer(
 
   /** Uploaded on first use, beside the canvases: an eager loop here would pay
    *  the boot cost the lazy sheet exists to avoid. */
-  function texturesFor(sprite: string, rank: MonsterRank): Texture[] | null {
-    const key = rankedKey(sprite, rank);
+  function texturesFor(sprite: string, rank: MonsterRank, lit = false): Texture[] | null {
+    const key = rankedKey(sprite, rank, lit);
     const already = textures.get(key);
     if (already !== undefined) return already;
 
-    const frames = sheet!.frames(sprite, rank);
+    const frames = sheet!.frames(sprite, rank, lit);
     const made =
       frames?.map((canvas) => {
         const texture = Texture.from(canvas);
@@ -257,10 +257,11 @@ export async function createPixiRenderer(
     dying: Math.min(1, e.deathAge / DEATH_FADE),
   });
 
-  /** A creature's frames at its rank, falling back to the common ones. */
+  /** A creature's frames at its rank, falling back to the common ones. The
+   *  hero's carry the lamp: he is the one dark body on every pale floor. */
   function framesFor(e: Entity): Texture[] {
     return (
-      texturesFor(e.sprite, e.rank) ??
+      texturesFor(e.sprite, e.rank, e.kind === 'hero') ??
       texturesFor(e.sprite, 'common') ??
       texturesFor('grub', 'common')!
     );
@@ -818,7 +819,10 @@ export async function createPixiRenderer(
     const want = per > 1.05 ? 'nearest' : 'linear';
     if (s.texture.source.scaleMode !== want) s.texture.source.scaleMode = want;
     s.alpha = (1 - fade) * (1 - sunk);
-    s.rotation = fade * 1.2;
+    // A body with DEATH FRAMES lies down in them; the keel-over is only for a
+    // hand-drawn one with no fall of its own — over real frames it read as a
+    // translucent silhouette that kept standing.
+    s.rotation = GENERATED[e.sprite]?.states.death ? 0 : fade * 1.2;
 
     // Lunge toward whatever it's hitting; recoil when hit. Only where there
     // are no FRAMES for it: over a real swing the transform is a second motion

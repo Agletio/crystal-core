@@ -110,6 +110,21 @@ function paint(canvas: HTMLCanvasElement, sprite: string, frame: number): void {
 /** The idle run, or the first frame for a body that has no idle of its own. */
 const idleRun = (sprite: string): number[] => GENERATED[sprite]?.states.idle ?? [0];
 
+const ROOM = { share: 0.3, least: 150, most: 300 }; // how tall a figure may stand, CSS px
+/** A body is magnified by a WHOLE number, never less than this: a fractional
+ *  scale draws one row of pixels a step wider than the next and the figure
+ *  reads as a mosaic. */
+const LEAST_SCALE = 3;
+
+function fit(): void {
+  const room = Math.min(ROOM.most, Math.max(ROOM.least, window.innerHeight * ROOM.share));
+  for (const canvas of document.querySelectorAll<HTMLCanvasElement>('.pickfig__body')) {
+    const scale = Math.max(LEAST_SCALE, Math.floor(room / canvas.height));
+    canvas.style.width = `${canvas.width * scale}px`;
+    canvas.style.height = `${canvas.height * scale}px`;
+  }
+}
+
 function figure(trade: BuiltTrade): HTMLElement {
   const sprite = bodyOf(trade);
   const stand = el('button', 'pickfig') as HTMLButtonElement;
@@ -226,6 +241,7 @@ function render(): void {
   // Nothing is spent yet, so nothing is greyed out: a level gate on the screen
   // a character is MADE on would be a choice you cannot make.
   for (const trade of TRADES) host.append(figure(trade));
+  fit();
   const box = $('pick-say');
   box.replaceChildren();
   box.hidden = true;
@@ -254,4 +270,5 @@ export function maybeShowPick(): boolean {
 export function initPick(state: GameState, chosen: () => void): void {
   game = state;
   onChosen = chosen;
+  window.addEventListener('resize', fit);
 }

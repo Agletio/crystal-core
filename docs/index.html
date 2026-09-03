@@ -381,15 +381,14 @@
     background: none; background-image: none; border: 0; box-shadow: none;
     padding: 6px 10px; cursor: pointer; color: inherit;
   }
-  /* The canvas is the sprite's own INK, cropped, and this is what magnifies it,
-     so the browser's nearest-neighbour is the only resample. Height is what is
-     fixed: a body is as wide as it is, and forcing a square squashes it. */
+  /* The canvas is the sprite's own INK, cropped, and `fit()` in pick.ts sizes
+     it to a WHOLE multiple so the browser's nearest-neighbour is the only
+     resample and every pixel is one square. No blur may touch it: a soft
+     shadow behind hard pixels reads as a smear, so the ground takes the shadow. */
   .pickfig__body {
-    height: clamp(150px, 30vh, 300px); width: auto;
     image-rendering: pixelated;
-    filter: drop-shadow(0 10px 12px rgba(0,0,0,.8));
+    background: radial-gradient(ellipse 46% 7% at 50% 100%, rgba(0,0,0,.75), rgba(0,0,0,0) 100%);
     transition: transform .12s ease-out;
-    transform-origin: 50% 100%;
   }
   .pickfig__name {
     font-family: var(--display); font-size: 12px; letter-spacing: .18em;

@@ -30,6 +30,9 @@ type PixelArt = {
    *  it. A solid border is a low-resolution convention and reads as a sticker
    *  once the art under it stops being chunky. */
   glow?: { colour: string; reach: number };
+  /** Lamplight on the body's own edge pixels: what keeps the one DARK body on
+   *  the floor from being a shape. The silhouette is untouched. */
+  rim?: string;
 };
 
 /** Every frame must be square and match the grid it declares: a short row
@@ -84,11 +87,40 @@ function drawPixels(ctx: CanvasRenderingContext2D, art: PixelArt, size = CELL): 
       data[at + 3] = a;
     }
   }
+  if (art.rim) {
+    const [r, g, b] = inkBytes(art.rim);
+    rimLit(data, [r, g, b], size);
+  }
   if (art.glow) {
     const [r, g, b] = inkBytes(art.glow.colour);
     glowed(data, [r, g, b], art.glow.reach, size);
   }
   ctx.putImageData(image, 0, 0);
+}
+
+/** How far an edge pixel is pulled toward the light: the top edge takes the
+ *  lamp overhead, the two sides half of it. Symmetric across the body because
+ *  a facing is a FLIP, and a light that swapped sides with the facing would
+ *  read as the lamp moving. */
+export const RIM = { top: 0.8, side: 0.45 };
+
+/** Light on the body's OWN outermost pixels, never a pixel added round them: an
+ *  outline grown outward is a slab, and this eats nothing. */
+export function rimLit(data: Uint8ClampedArray, [r, g, b]: [number, number, number], size: number): void {
+  const solid = (x: number, y: number): boolean =>
+    x >= 0 && y >= 0 && x < size && y < size && data[(y * size + x) * 4 + 3] > 0;
+  const lit: [number, number][] = [];
+  for (let y = 0; y < size; y++)
+    for (let x = 0; x < size; x++) {
+      if (!solid(x, y)) continue;
+      const share = !solid(x, y - 1) ? RIM.top : !solid(x - 1, y) || !solid(x + 1, y) ? RIM.side : 0;
+      if (share > 0) lit.push([(y * size + x) * 4, share]);
+    }
+  for (const [at, share] of lit) {
+    data[at] = Math.round(data[at] + (r - data[at]) * share);
+    data[at + 1] = Math.round(data[at + 1] + (g - data[at + 1]) * share);
+    data[at + 2] = Math.round(data[at + 2] + (b - data[at + 2]) * share);
+  }
 }
 
 /** Light off the body: rings of the rank's ink in the TEXTURE, so it costs no
@@ -143,7 +175,13 @@ export const GLOW: Record<MonsterRank, { colour: (p: Palette) => string; reach: 
 /** A generated body: its own grid, key and frames. `BEASTIARY` is asked FIRST,
  *  so an id in both tables is a generated body that never draws — silent, and
  *  the demo fails a shared id for it. */
-function generatedArt(palette: Palette, sprite: string, frame: number, rank: MonsterRank): PixelArt | null {
+function generatedArt(
+  palette: Palette,
+  sprite: string,
+  frame: number,
+  rank: MonsterRank,
+  lit: boolean
+): PixelArt | null {
   const art = GENERATED[sprite];
   if (!art) return null;
   const glow = GLOW[rank];
@@ -151,6 +189,7 @@ function generatedArt(palette: Palette, sprite: string, frame: number, rank: Mon
     grid: art.grid,
     rows: art.frames[Math.min(frame, art.frames.length - 1)],
     key: art.key,
+    rim: lit ? mix(palette.citrine, palette.chalk, 0.5) : undefined,
     // Reach is in DESTINATION pixels and the numbers are `CELL`'s, so a body
     // drawn at its own smaller grid needs it scaled or the light swallows it.
     glow: glow
@@ -371,10 +410,11 @@ export function monsterArt(
   palette: Palette,
   sprite: string,
   frame: number,
-  rank: MonsterRank
+  rank: MonsterRank,
+  lit = false
 ): PixelArt | null {
   const art = BEASTIARY[sprite];
-  if (!art) return generatedArt(palette, sprite, frame, rank);
+  if (!art) return generatedArt(palette, sprite, frame, rank, lit);
   const accent: Record<MonsterRank, string> = {
     common: mix(art.tone.shade(palette), art.tone.mass(palette), 0.5),
     magic: art.tone.eye(palette),
@@ -403,11 +443,15 @@ export function monsterArt(
   };
 }
 
-/** How a creature and its rank name one set of frames. */
-export const rankedKey = (sprite: string, rank: MonsterRank): string => `${sprite}:${rank}`;
+/** How a creature, its rank and whether the lamp is on it name one set of frames. */
+export const rankedKey = (sprite: string, rank: MonsterRank, lit = false): string =>
+  `${sprite}:${rank}${lit ? ':lit' : ''}`;
 
-/** Frames for one creature at one rank, or null when nothing draws that sprite. */
-export type SpriteSheet = { frames(sprite: string, rank: MonsterRank): HTMLCanvasElement[] | null };
+/** Frames for one creature at one rank, or null when nothing draws that sprite.
+ *  `lit` is the hero's: the one body the lamp is on. */
+export type SpriteSheet = {
+  frames(sprite: string, rank: MonsterRank, lit?: boolean): HTMLCanvasElement[] | null;
+};
 
 export const SPRITE_KINDS = ['hero', ...Object.keys(BEASTIARY), ...Object.keys(GENERATED)] as const;
 
@@ -463,9 +507,10 @@ function drawCreature(
   frame: number,
   palette: Palette,
   rank: MonsterRank,
-  size = CELL
+  size = CELL,
+  lit = false
 ): void {
-  const art = monsterArt(palette, sprite, frame, rank);
+  const art = monsterArt(palette, sprite, frame, rank, lit);
   if (art) drawPixels(ctx, art, size);
 }
 
@@ -484,9 +529,9 @@ export function makeSheet(palette: Palette): SpriteSheet | null {
   const drawn = new Map<string, HTMLCanvasElement[]>();
 
   return {
-    frames(sprite, rank) {
+    frames(sprite, rank, lit = false) {
       if (!DRAWABLE.has(sprite)) return null;
-      const key = rankedKey(sprite, rank);
+      const key = rankedKey(sprite, rank, lit);
       const already = drawn.get(key);
       if (already) return already;
 
@@ -498,7 +543,7 @@ export function makeSheet(palette: Palette): SpriteSheet | null {
       for (let frame = 0; frame < framesOf(sprite); frame++) {
         const made = cell(size);
         if (!made) return null;
-        drawCreature(made.ctx, sprite, frame, palette, rank, size);
+        drawCreature(made.ctx, sprite, frame, palette, rank, size, lit);
         frames.push(made.canvas);
       }
       drawn.set(key, frames);

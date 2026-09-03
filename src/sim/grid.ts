@@ -1528,7 +1528,10 @@ export function clearSpot(grid: Grid, want: Vec2): Vec2 {
 }
 
 export function sceneMap(plan: ScenePlan, theme: MapTheme, vein = 1): GameMap {
-  const zone = ZONE[theme];
+  // THE WORLD'S OWN FLOOR, design included: an arena on the set a world has
+  // moved off is *"a grid of grey squares from another set"*.
+  const design = designFor(theme);
+  const zone = design ? design.zone : ZONE[theme];
   const rooms = [plan.room];
   const grid = new Grid(plan.room.x + plan.room.w + 2, plan.room.y + plan.room.h + 2);
   const spare = [...plan.props, plan.entrance, plan.stands];
@@ -1550,5 +1553,8 @@ export function sceneMap(plan: ScenePlan, theme: MapTheme, vein = 1): GameMap {
   block(grid, props, [entrance, plan.stands]);
   // An AUTHORED room takes none: what is on its floor is the author's, and a
   // pool grown across a boss arena is the carve overruling them.
-  return { grid, rooms, entrance, exit: entrance, props, vein, theme, bare: !!zone, zone, patches: [], raised: [] };
+  return {
+    grid, rooms, entrance, exit: entrance, props, vein, theme, bare: !!zone, zone,
+    patches: [], raised: [], plain: !!design,
+  };
 }
