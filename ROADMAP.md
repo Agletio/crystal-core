@@ -476,14 +476,17 @@ shown to the user first; DECISION means it argues with a rule already in
 - [ ] **THE CAST HALL'S WARRIOR AND ROGUE.** *"Real three-value clusters and
       a rim light, or a card ground three steps lighter than their darks;
       and draw all four at 3x, not 6x, so the second screen is not a
-      magnified sprite sheet."* The ground and the scale are CODE
-      (`fit()`, `.pickfig`); the clusters are the bodies' own art and a
-      GENERATION (`crop-cast-hall-warrior-x3.png`, `desktop-pick.png`).
-- [ ] **RIMESPIKE AND THE FIREBALL TRAIL.** *"Rimespike is a flat cyan
+      magnified sprite sheet."* CODE HALF DONE: `ROOM.most` caps a figure
+      at 4x and each stands on a lit radial ground (`desktop-pick.png`).
+      LEFT: the clusters are the bodies' own art and a GENERATION
+      (`crop-cast-hall-warrior-x3.png`).
+- [x] **RIMESPIKE AND THE FIREBALL TRAIL.** *"Rimespike is a flat cyan
       slab: a dark root, lit tips and a shadow on the sand. Fireball's trail
-      is four sand-coloured squares: ember fading to smoke."* CODE:
-      `iceSpikes`, `fireBolt`, `fireShades` (`crop-rimespike-x5.png`,
-      `crop-fireball-flight-x4.png`).
+      is four sand-coloured squares: ember fading to smoke."* DONE:
+      `fireShades` carries a fourth SMOKE shade (the type's colour toward
+      the void); a blade is dark at the root, the type's colour up its body
+      and white only at the tip, over one shadow row; the far tail of a
+      ball is smoke at half alpha (`rime_new2.png`, `fire_trail.png`).
 - [ ] **THE ROCK'S INTERIOR AND THE DESCENT'S PALETTE.** *"Put grain in the
       rock's interior and take its mean a step below the face's shadow row;
       regrade the Fissure sand and rock to the camp's warm ramp; tone the
@@ -492,10 +495,12 @@ shown to the user first; DECISION means it argues with a rule already in
       regrade of a shipped set is a GENERATION and *"a shipped set is never
       edited"* makes it a new set (`crop-rock-void-x4.png`, `fissure-z9.png`,
       `crop-arena-grain-x3.png`).
-- [ ] **THE PROVING GROUND'S SOCKETS.** *"Four text fields over a dimmed
+- [x] **THE PROVING GROUND'S SOCKETS.** *"Four text fields over a dimmed
       picture; draw them as the crack's clawed sockets, laid on the art at
-      full brightness."* `camp_socket` / `camp_socket_lit` exist as props.
-      CODE (`desktop-proving.png`).
+      full brightness."* DONE: each socket button carries the generated
+      `camp_socket` (lit once filled) through `makeProp`, the sheet over the
+      picture is gone, and only the set's readout keeps a dark plate
+      (`desktop-proving.png`).
 - [ ] **ORDINARY DAMAGE DIGITS.** *"Ghost-grey on khaki — `275`, `5460`,
       `88` are close to invisible; give them the bone-with-shadow the HUD
       numerals got."* DECISION: `floaterInk` makes ordinary damage the ink

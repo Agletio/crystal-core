@@ -1618,14 +1618,15 @@ const ARC_HOLD = 0.6; // share of a bolt's life at full alpha before it goes
 
 const onGrid = (n: number): number => Math.round(n / FIRE_PX) * FIRE_PX;
 
-export function fireShades(palette: Palette, type: string): [string, string, string] {
+export function fireShades(palette: Palette, type: string): [string, string, string, string] {
   // Fire gets a real red → orange → yellow ramp; every other type is the same
-  // ramp tinted, so a converted Fireball keeps the shapes and changes colour.
+  // ramp tinted. The fourth is SMOKE: the type's colour gone dark.
   const outer = type === 'fire' ? palette.flame : damageColour(palette, type);
   return [
     outer,
     mix(outer, palette.flameCore, 0.5),
     mix(outer, palette.flameCore, 0.88),
+    mix(outer, palette.void, 0.72),
   ];
 }
 
@@ -1663,12 +1664,12 @@ export function fireBolt(from: Vec2, to: Vec2, t: number): FirePixel[] {
     const py = from.y + (to.y - from.y) * back;
     const wobble = tileNoise(Math.round(px * 12), Math.round(py * 12), 17 + i) - 0.5;
     const spread = 0.05 + i * 0.022;
-    pixels.push({
+    pixels.push({ // ember to SMOKE: the far tail is dark, not the ball's colour thinned to sand
       x: onGrid(px + wobble * spread),
       y: onGrid(py + wobble * spread - i * 0.01),
-      size: FIRE_PX * (i > 6 ? 1 : i > 3 ? 2 : 3),
-      shade: i > 6 ? 0 : i > 3 ? 1 : 2,
-      alpha: (1.15 - i / (TAIL + 1)) * (1 - t * 0.5),
+      size: FIRE_PX * (i > 6 ? 2 : i > 3 ? 2 : 3),
+      shade: i > 6 ? 3 : i > 3 ? 0 : 1,
+      alpha: (i > 6 ? 0.55 : 1.05) * (1 - i / (TAIL + 2)) * (1 - t * 0.5),
     });
   }
 
@@ -1796,6 +1797,9 @@ export function iceSpikes(at: Vec2, t: number): FirePixel[] {
   const up = Math.min(1, t * 3); // they arrive fast and then stand and fade
   const alpha = 1 - Math.max(0, (t - 0.35) / 0.65);
 
+  for (let dx = -0.5; dx <= 0.5; dx += FIRE_PX * 2) { // a shadow row under the cluster, so the blades STAND
+    pixels.push({ x: onGrid(at.x + dx), y: onGrid(at.y + FIRE_PX), size: FIRE_PX * 2, shade: 3, alpha: alpha * 0.4 });
+  }
   for (let i = 0; i < 5; i++) { // a fifth of a tile apart; at an eighth they merge
     const noise = tileNoise(i, Math.round(at.x * 16 + at.y * 32), 29);
     const lean = (i - 2) * 0.2 + (noise - 0.5) * 0.06;
@@ -1807,7 +1811,8 @@ export function iceSpikes(at: Vec2, t: number): FirePixel[] {
         x: onGrid(foot + lean * along * 0.35),
         y: onGrid(at.y - step * FIRE_PX),
         size: FIRE_PX * (along > 0.7 ? 1 : along > 0.35 ? 2 : 3), // a blade tapers toward its point
-        shade: along > 0.75 ? 2 : along > 0.4 ? 1 : 0, // the TYPE's colour at the root, white only at the tip
+        // DARK at the root, the type's colour up the body, white only at the tip.
+        shade: along > 0.78 ? 2 : along > 0.45 ? 1 : along > 0.2 ? 0 : 3,
         alpha,
       });
     }

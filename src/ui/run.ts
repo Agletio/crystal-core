@@ -70,6 +70,7 @@ import { openWork } from './work';
 import { openForge } from './forge';
 import { createCanvasRenderer } from '../render/canvas2d';
 import { createPixiRenderer } from '../render/pixi';
+import { makeProp } from '../render/sprites';
 import { ZOOM_STEP, clampZoom, defaultZoom, readPalette } from '../render/renderer';
 import type { Palette, Renderer } from '../render/renderer';
 import type { Vec2 } from '../sim/grid';
@@ -326,6 +327,13 @@ function renderSockets(grid: HTMLElement): void {
     const button = el('button', 'socket') as HTMLButtonElement;
     button.id = `run-socket-${slot.id}`;
     button.classList.toggle('socket--full', !!held);
+    // THE CRACK'S OWN SOCKET, lit once something is in it: the same clawed
+    // recess the camp picture has, so the wall and the tab are one object.
+    const art = makeProp(held ? 'camp_socket_lit' : 'camp_socket');
+    if (art) {
+      art.className = 'socket__art';
+      button.append(art);
+    }
     // An empty socket is the question "what goes in here", and the answer is
     // a screen, not a bag: crystals are compared before one of them goes in.
     button.onclick = () => {

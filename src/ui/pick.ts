@@ -110,7 +110,7 @@ function paint(canvas: HTMLCanvasElement, sprite: string, frame: number): void {
 /** The idle run, or the first frame for a body that has no idle of its own. */
 const idleRun = (sprite: string): number[] => GENERATED[sprite]?.states.idle ?? [0];
 
-const ROOM = { share: 0.3, least: 150, most: 300 }; // how tall a figure may stand, CSS px
+const ROOM = { share: 0.3, least: 150, most: 200 }; // how tall a figure may stand, CSS px: 3x to 4x of a 48 grid, never a sprite sheet at 6x
 /** A body is magnified by a WHOLE number, never less than this: a fractional
  *  scale draws one row of pixels a step wider than the next and the figure
  *  reads as a mosaic. */
