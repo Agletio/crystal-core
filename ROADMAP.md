@@ -22,8 +22,9 @@ All three are done:
 
 **PHASE 10 IS THE LOWEST THING TO TAKE** — *"add all this to the roadmap so it
 survives context clear and then just start working unless you have a
-question."* Six steps, in order, each pushed as it goes green. Phase 8 and 9
-hold only what waits on the user's judgement. Phase 3 is PARKED and is not the
+question."* Six steps, in order, each pushed as it goes green. **Phase 11 is
+the art review's work** — three critics at 5/10, `ART_REVIEW.md` — and comes
+after it. Phase 8 and 9 hold only what waits on the user's judgement. Phase 3 is PARKED and is not the
 lowest-numbered thing to take. Everything after them is a parked phase, the
 traps, and questions only the user can answer.
 
@@ -339,7 +340,9 @@ call to me, the call is written here so a fresh context does not re-decide it.
       pause and cleared by `takeNode`; a headless run pays the same seconds,
       so the demo's termination checks cover it. Nothing new joins
       `src/ui/icons.ts`.
-- [ ] **STEP 3 — THE CREATIVE DIRECTOR, and the critics.** *"Create a
+- [x] **STEP 3 — THE CREATIVE DIRECTOR, and the critics.** Built and run
+      once: `ART_REVIEW.md` holds the first report — three critics, 5/10
+      overall each — and Phase 11 below is their work. *"Create a
       specialized agent whose entire job is to be the creative director. This
       agent will write no code, the entire job will be to take screenshots of
       the game at many different points judging the art, UI design, themes and
@@ -364,7 +367,16 @@ call to me, the call is written here so a fresh context does not re-decide it.
       then re-run. The director is run after every large art change and at
       the end of every phase until the first 8s land; the report is what the
       user reads.
-- [ ] **STEP 4 — PROCESSING RUNS ON A CLOCK.** *"I do want to just change the
+      **THE FIRST RUN FOUND THE HARNESS SHORT** — three things the director
+      could not shoot, each a tool fault and not an art one: `descent-peek
+      <zone>` sockets crystals but a descent is the CAMPAIGN zone's world now,
+      so every socketing lands on The Answering's sand and the Rot, Cavern and
+      Seam floors went unjudged (it needs a depth or the Proving Ground's
+      influence); `boss-peek` prints `keyhole: no keyhole` and shoots an
+      ordinary descent, so no boss cycle was seen; Shockwave is not on the
+      Aethermancer's welcome shelf, so the third effect burst was Rimespike.
+      Fix the tools before the second review, or the same three holes recur.
+- [x] **STEP 4 — PROCESSING RUNS ON A CLOCK.** *"I do want to just change the
       materials to process on a timer. I think it's fine you still want to go
       and run stuff to clear it while it's processing anyway but it's annoying
       to be close to finishing one having to go in and out to see if they are
@@ -420,7 +432,96 @@ call to me, the call is written here so a fresh context does not re-decide it.
       is looked at with the same eye and cut where it is crowded. `shots`
       judges both.
 
+## Phase 11 — THE ART REVIEW'S WORK: what three critics at 5/10 said to fix
 
+**Every line below is a critic's `fix_first` or the director's fault, in their
+words, from `ART_REVIEW.md` 2026-09-03.** Ordered by how many of the four
+named it first. Anything that spends a generation shows the user a design
+first. When the phase is whole, `/critique` runs again; done is all three at 8.
+
+- [ ] **THE ROCK PAST THE FACE IS A FLAT GREY MASK ON BLACK VOID** — every
+      critic's first line. Beyond the two-row face the rock is one `#1c1c1c`
+      plane with faint tile seams, ending in an axis-aligned stair-step
+      against pure black one to three tiles out; a third of the view at zoom
+      0, the whole map a sand shape with a grey border at zoom 9. Draw the
+      rock's top surface and the void at ONE value out to the viewport, or
+      push `EDGE` tiles past the grid with no boundary inside the view.
+      (`fault-rock-top-mask.png`, `fissure-z9.png`)
+- [ ] **THE WANDERER'S FIRST LINE IS PINNED OVER 26 OF 41 SCREENS.** The
+      opening bubble and its NEXT button sit over the sheet, the webs, the
+      climb, the dock, the shop, the stations, the anvil. First a harness
+      fault — `shots.mjs` never presses Next before opening windows — and
+      then a design question: should a bubble outlive the camp it was said in?
+- [ ] **THE XP BAR IS SATURATED COBALT WITH WHITE TICKS, FULL AT 0/0.** On
+      every camp screen; in a descent the same bar is dark stone with a gold
+      hairline, which is what it should be everywhere, and 0/0 is empty.
+      (`fault-xpbar-camp.png`)
+- [ ] **THE EFFECTS ARE OFF THE FLOOR'S PIXEL GRID, OR ABSENT.** Creeping
+      Blight is a `#b5e04a` lime ring at 3x the floor's pixel size with a
+      black core, the loudest thing on any screen; Fireball is a 12px orange
+      dot with no trail and no burst; Arc Lightning draws no arc across five
+      frames; Rimespike shows a number and no spike; every Rot and Cavern pack
+      stands in a five-tile translucent yellow disc with a lime rim (the aura's
+      reach as a filled circle). Re-ask the stills at the floor's own pixel
+      density toned to venom, draw an aura as glow on the BODIES or a soft
+      fall-off, and check every skill's geometry at ship size.
+      (`fault-ground-ring.png`, `fault-rot-disc.png`, `fireball-02.png`,
+      `arc-00.png`)
+- [ ] **THE ARENA AND THE SHELF ARE OTHER SETS.** The Answering's floor is a
+      grid of ~8-tile cool-grey squares with visible seams and no rock in view
+      — stand it on the Fissure family with rock round it. The raised shelf
+      is a paler speckled slab with a course of black bricks and ladder-tile
+      stairs — it must be the sand tile lit a step up. (`fault-arena-floor.png`,
+      `fault-shelf-floor.png`)
+- [ ] **THE HERO IS A SMUDGE AT SHIP SIZE, THE CORPSE STANDS, THE CAST HALL
+      IS MUSH.** Rim-light the hero or give him a lit accent so he is not a
+      black-violet shape on sand; a corpse fading to a translucent tan
+      silhouette that keeps standing is a fall nobody believes; the cast hall
+      scales four 96-frame idles ~6x with a smooth pass into noise with no
+      silhouette — draw them NEAREST at an integer scale or off a generated
+      design sheet. (`crop-hero-x4.png`, `gather-06.png`,
+      `fault-cast-hall-bodies.png`)
+- [ ] **SHELL PARITY — one game below the carved windows.** The dock is a
+      flat panel with a hairline under carved stone; the speech bubble, the
+      item card and the tooltip are the same flat box; the bench's modifier
+      slots are flat vector hexagons in `#c8473a`/`#6cc3e6`/`#d9a13a`; the
+      rail is 1-bit 16px glyphs with 7px keybind letters; window headers
+      carry a monospace ("1 owned · 0/4 socketed", "0/3 loaded", "10 of 33
+      you can make", the seed); the pack label and the pickup floater are a
+      bitmap sans where every other word is the serif; empty skill slots
+      print a serif P and M; the hint line lies unplated on the sand; the HUD
+      numerals are ~9px on green; a `#8a4dff` left rule on station and anvil
+      cards is the only violet that is not an amethyst; the anvil and
+      jewellery windows run off an 800px view; unlit seam numerals are
+      invisible; the trade web opens at a 14px node. Fixtures for the dock,
+      the bubble and the sockets; generated rail glyphs; the shell face for
+      every word; the descent's bar everywhere. (`fault-bench-hexagons.png`,
+      `camp-crop-rail.png`, `fault-skillslots-PM.png`, `fault-hint-text.png`,
+      `fault-hud-bars.png`)
+- [ ] **TWO PORTRAIT FIDELITIES.** The Geometer and the Osteomancer are
+      hand-drawn 48-grids beside the Glasswright and the Lampwright at four
+      times the detail. Two busts through the portrait pipeline
+      (`create_portrait_character`), designs shown first. (`faces.png`)
+- [ ] **THE FLOOR'S SMALL FAULTS.** The lake's shore is a tan kerb LIGHTER
+      than the sand with a scalloped lump every tile, so the water sits in a
+      raised tray — the shore should be a dip; the ripple is a 2px seven-sided
+      polygon — more sides or an anti-aliased circle; the way in and out are
+      a sixteen-spoke wheel that reads as a turbine — a hole reads by its
+      dark; one-tile rock pillars are capsule columns with a flat grey top
+      that read as barrels — the carve should not make a one-tile island; the
+      fire pit is cold while the smelter glows — the one lit thing is not lit;
+      a hovered person gets an opaque one-pixel yellow outline — light, never
+      an outline; a black wavy prop one tile wide lies on open floor as a
+      stray stroke. (`crop-lake-edge-x4.png`, `fault-ripple-octagon.png`,
+      `fault-way-in-wheel.png`, `camp-crop-fire.png`,
+      `fault-hotspot-outline.png`)
+- [ ] **THE CAMP IS STRETCHED UNEVENLY.** 688×384 to 1280×800 is 1.86x by
+      2.08x, so every camp pixel is a rectangle 12% taller than it is wide;
+      the fire-ring stones come out lozenge-shaped. Only the purist saw it;
+      the picture was told to fill the window on purpose, so this is a
+      question for the user before it is work.
+
+## Phase 3 — A quest log instead of a pointing finger
 
 **Not next, and deliberately.** The tutorial was deleted outright so the opening
 can be PLAYED with nothing explaining it. This is what teaching eventually
