@@ -826,9 +826,10 @@ sort on the same spot takes the new damage and starts its rise again, because
 a pool ticking eight times a second printed a column of figures up the body it
 was killing. **It is sized off the TILE and capped well under a body** — a
 number taller than what it happened to was the biggest thing in a fight.
-**A BODY CASTS A CONTACT SHADOW** (`SHADOW` in `render/pixi.ts`), at its own
-spot, which is its feet: with none, every body was a sticker laid on paper.
-**AND NOTHING IS DRAWN ON ITS EDGE.** A lamplit rim was tried on every body and
+**NOTHING IS DRAWN UNDER A BODY AND NOTHING ON ITS EDGE.** A contact shadow
+was drawn under every body and DELETED at the user's word — *"there is a shadow
+behind the character looks weird just remove it"* — so a body meets the floor
+on its own art alone. A lamplit rim was tried on every body and
 DELETED — *"it's eating into their art instead of adding a border"* — because it
 recoloured the body's own outermost pixels, which is the silhouette. A rank's
 `glow` lies OUTSIDE the art and is the only light a body wears.

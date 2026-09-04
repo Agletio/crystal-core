@@ -154,8 +154,6 @@ function rockMarks(grid: number, rock: string): Texture {
 /** An aura is LIGHT OFF THE BODY, never its six-tile reach drawn on the floor:
  *  a soft radial glow this many tiles across, at this many times the aura's
  *  own alpha — three critics read the reach as "a debug radius". */
-/** A body's own contact shadow, in fractions of its `scale`. */
-const SHADOW = { wide: 0.3, tall: 0.11, alpha: 0.34, most: 1.8 };
 
 const AURA_GLOW = { span: 3, alpha: 5, px: 96 };
 
@@ -1638,19 +1636,6 @@ export async function createPixiRenderer(
     }
     for (const [id, glow] of glows) if (!lit.has(id)) glow.visible = false;
 
-    // WHERE A BODY MEETS THE FLOOR. Nothing on any floor cast one, so every
-    // rock, body and prop read as a sticker laid on paper. At the entity's own
-    // spot, which IS its feet — `anchorY` hangs the drawing off that.
-    for (const e of [...state.monsters, ...state.folk, state.hero]) {
-      if (e.dead && e.deathAge >= DEATH_FADE) continue;
-      const fade = e.dead ? 1 - Math.min(1, e.deathAge / DEATH_FADE) : 1;
-      // CAPPED, because a shadow is contact and not mass: straight off `scale`
-      // the boss stood on a three-tile oval, the largest shape in the frame.
-      const span = Math.min(e.scale, SHADOW.most);
-      auraLayer
-        .ellipse(cx(e.x), cy(e.y), span * SHADOW.wide, span * SHADOW.tall)
-        .fill({ color: toHexNumber(palette.void), alpha: SHADOW.alpha * fade });
-    }
   }
 
   function draw(state: RunState, emerge = 1): void {

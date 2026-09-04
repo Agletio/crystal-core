@@ -682,9 +682,6 @@ three lists is the ART the user ruled out.
       it and gold over a third of it; nine landed first time, and the pouch and
       the Fill mark were re-asked with the noun that fought removed
       (`rail.png`).
-- [x] **THE SHADOW AT BOSS SIZE.** *"A 190x60 px uniform oval three tiles wide,
-      the largest shape in the frame."* DONE: `SHADOW.most` caps it, because a
-      contact shadow is contact and not mass.
 - [x] **A CLIPPED ROW'S AFFORDANCE.** The brass thumb shipped and the fifth
       pass still found none, because **a scrollbar cannot be photographed** —
       Playwright runs headless Chromium with `--hide-scrollbars`, so no shot
