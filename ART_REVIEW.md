@@ -389,3 +389,43 @@ bottom was real and is fixed.
    mid-row.
 5. Redraw the Cavern beetle with legs and a death frame, widen the stalk
    monster, and replace the 40 px Chill square with one fixed-size frost mark.
+
+---
+
+## 2026-09-04e — commit `125b78d` — A VERIFICATION, NOT A SCORED RUN
+
+The director shot 121 pictures and approved 16, against the nine things the
+fourth review's code fixes claimed. No critic scored this build: what it
+found sent more work back, and the critics run on what comes after it.
+
+| what was claimed | what the pictures show |
+|---|---|
+| the Blight pool is one union at one alpha | **fixed** — a dull olive stain darker than the floor, one flat alpha, a hard cell-stepped edge, no falloff and no stacking |
+| one number a body | **fixed** — four bodies, four floaters, no column in any of twelve fight frames |
+| floaters and drop names halved | **fixed** — ~12 px against ~20 px bodies at zoom 4, the same ratio at zooms 1 and 2 |
+| an ailment mark is a fixed size in tiles | **fixed as SIZE** — the boss's Chill is a 14 px chip, not a 40 px slab; still a featureless square rather than a frost glyph |
+| a body casts a contact shadow | **landed, and it broke at boss size** — a ~190x60 px oval three tiles wide, the largest shape in the frame |
+| no window runs off the bottom | **fixed** |
+| a clipped row has an affordance | **NOT fixed** — no thumb in any of nine windows |
+| one tab lit at a time | **fixed** in the stations and the anvil; the Proving Ground's influence row still reads as two |
+| the cast hall is not blurred | **fixed** — the chosen figure's pixels are square and hard-edged at x3 |
+| the rail glyphs read at 24 px | **NO** — three of ten have a nameable silhouette; seven are the same bone blob at the same value, told apart by the keybind letter |
+
+**What that sent back, and what was done about it, on top of `125b78d`:**
+
+- **The shadow is CAPPED** (`SHADOW.most`), because a shadow is contact and not
+  mass — off `scale` alone the boss stood on a three-tile rug.
+- **A scrollbar can never be photographed.** The panels do scroll and the track
+  is reserved, but every headless shot this repo judges is taken by Playwright
+  with `--hide-scrollbars`, so no thumb can appear in one. The thumb is brass
+  now for a player, and **the affordance a picture can show is a FADE**: the
+  foot of every window body fades into the frame, so a cut row says there is
+  more under it.
+- **THE RAIL GLYPHS WERE RE-ASKED.** The fault was in the words, not the size:
+  every emblem was asked "in pale bone-grey with one small warm gold accent",
+  which is one value, and one value at 16 px on a dark plate is a blob whatever
+  it depicts. Re-asked with a thick near-black outline round the whole shape,
+  open gaps inside it and gold over a third of it. Nine of eleven landed first
+  time; the pouch came back a badge and the corner brackets a disc, and both
+  were re-asked with the noun that fought removed — the pouch by its shape, and
+  Fill as two nested squares. All eleven imported and shipped.

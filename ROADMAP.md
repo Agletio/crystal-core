@@ -643,11 +643,34 @@ three lists is the ART the user ruled out.
       (`sh1-01.png`). Props are next and are a bigger sweep.
 - [ ] **THE FLOOR DECAL'S LATTICE.** *"The arena's crescent repeats on a fixed
       ~55 px diagonal with a constant period; offset its position AND which
-      mark by a per-cell hash."* CODE, not yet taken — `grainAt` is off on every
-      world now, so what repeats is the SET's own tile decal.
-- [ ] **THE RAIL GLYPHS, again.** The UI reviewer says nine near-identical pale
-      blobs; the purist says they now read. A conflict, left for the next run
-      to settle rather than argued down here.
+      mark by a per-cell hash."* CODE, not yet taken, and it is a QUESTION
+      rather than a job: `grainAt` is exactly that hash and it is switched off
+      with the light drift under the one `plain` flag, on the floor the user
+      judged. Separating the two puts grain back on an approved look. **Ask
+      before doing it.**
+- [x] **THE RAIL GLYPHS, again** — the fifth pass settled the conflict against
+      them: three of ten had a nameable silhouette and seven were the same bone
+      blob at the same value. DONE, and the fault was the WORDS: every emblem
+      was asked "in pale bone-grey with one small warm gold accent", and one
+      value at 16 px on a dark plate is a blob whatever it depicts. Re-asked
+      with a thick near-black outline round the whole shape, open gaps inside
+      it and gold over a third of it; nine landed first time, and the pouch and
+      the Fill mark were re-asked with the noun that fought removed
+      (`rail.png`).
+- [x] **THE SHADOW AT BOSS SIZE.** *"A 190x60 px uniform oval three tiles wide,
+      the largest shape in the frame."* DONE: `SHADOW.most` caps it, because a
+      contact shadow is contact and not mass.
+- [x] **A CLIPPED ROW'S AFFORDANCE.** The brass thumb shipped and the fifth
+      pass still found none, because **a scrollbar cannot be photographed** —
+      Playwright runs headless Chromium with `--hide-scrollbars`, so no shot
+      this repo judges can ever show one. The thumb stays for a player, and the
+      affordance a picture CAN show is a FADE at the foot of every window body.
+- [ ] **THE PROVING GROUND'S INFLUENCE ROW** still reads as two lit buttons
+      (selected gold against hovered orange), where the stations and the anvil
+      now read as one. Its buttons are not `.climbtab`.
+- [ ] **AN AILMENT MARK IS A SQUARE, not a glyph.** Fixed in SIZE; the purist
+      wants a frost shape for Chill and a flame for Burn. A generated icon each,
+      or authored geometry beside `pixelRing`.
 - [ ] **THE ROT AND THE CAVERN, AND THE TWO BODIES** — all three critics, and
       all of it the art the user ruled out: the Rot's floor and its rock as a
       palisade, the Cavern's lavender against the camp's palette, the shared

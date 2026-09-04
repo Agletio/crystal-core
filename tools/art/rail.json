@@ -3,7 +3,7 @@
  "_how": "Each is ONE emblem, bold and simple, filling the frame, drawn in stone-grey on nothing with one gold accent. Asked at 64 and imported at 16, so a mark under four generated pixels across is gone.",
  "size": 64,
  "grid": 16,
- "how": " A single simple EMBLEM for a small stone button: one bold flat shape filling the frame, thick clean edges, drawn in pale bone-grey with one small warm gold accent, on a transparent background, seen straight on, no perspective. NOT detailed, NOT shaded, NOT textured, NOT a scene, NOT a character, NOT text, NOT a border, NOT a frame, NOT a circle round it, NOT thin lines, NOT several objects.",
+ "how": " A single simple EMBLEM for a small stone button, read at a glance from its OUTLINE alone: one bold shape filling the frame with a DISTINCTIVE outline and wide open gaps inside it, never a solid lump, drawn in pale bone-grey with a thick near-black outline round the whole shape and warm gold covering about a third of it, on a transparent background, seen straight on, no perspective. NOT detailed, NOT shaded, NOT textured, NOT a scene, NOT a character, NOT text, NOT a border, NOT a frame, NOT a circle round it, NOT thin lines, NOT several objects, NOT one flat pale mass, NOT low contrast.",
  "inks": [
   "#0B0A0C",
   "#3A3540",
@@ -13,7 +13,7 @@
   "#D9A441"
  ],
  "icons": [
-  { "id": "rail_inventory", "say": "a closed square-cornered BAG with a strap across the top and a gold clasp in the middle of the flap." },
+  { "id": "rail_inventory", "say": "a wide POUCH shaped like a trapezoid, narrow at the top and wide at the bottom, with a folded flap over the top edge and a gold buckle on the flap, and a thin strap looping up from each side. NOT a badge, NOT a disc, NOT a coin, NOT a shield, NOT a rounded square, NOT a box." },
   { "id": "rail_craft", "say": "a blacksmith's ANVIL seen from the side, the horn to the left, the flat top edge lit gold." },
   { "id": "rail_character", "say": "a standing FIGURE in a plain hooded cloak, arms at the sides, faceless, a gold pin at the throat." },
   { "id": "rail_skills", "say": "two crossed straight SWORDS, blades up, hilts down, a gold point where they cross." },
@@ -22,7 +22,7 @@
   { "id": "rail_save", "say": "a thick-walled cylindrical stone JAR with a flat lid, a gold band round the lid." },
   { "id": "rail_settings", "say": "a plain six-toothed COG, a gold dot at its hub." },
   { "id": "rail_hide", "say": "a single thick V-shaped ARROWHEAD pointing down, two thick bars meeting at a gold point at the bottom, alone in empty space with nothing round it. NOT a circle, NOT a disc, NOT a coin, NOT a badge, NOT a button, NOT a ring, NOT a background shape." },
-  { "id": "rail_full", "say": "four right-angled corner BRACKETS at the four corners of the frame, pointing outward, the top-left one gold." },
+  { "id": "rail_full", "say": "a small SQUARE standing inside a larger SQUARE with a wide empty gap all the way round between the two, both drawn as thick outlines only and nothing whatever inside the inner one, the inner square gold. NOT a disc, NOT a circle, NOT a solid shape, NOT a filled middle, NOT a single square." },
   { "id": "rail_dev", "say": "a small stone MASK with two empty eye holes, a gold mark on its brow." }
  ]
 }
