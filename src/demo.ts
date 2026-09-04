@@ -3622,7 +3622,12 @@ rule('GATHERING — is a node free, guarded, walked to and equally spread?');
   // Nodes are SCARCE now — *"not every floor should have ore veins"* — so
   // the deal is a run or two of nodes at a time and the spread is read over
   // 40 descents. Fish rides the water and is counted apart.
-  const spread = new Map<string, number>(GATHERED.map((f) => [f.id, 0]));
+  // Seeded from what his TOOLS can work, not from every family there is: a
+  // family he carries no tool for is ABSENT from the deck rather than thinned,
+  // so counting it as a zero would read as an unfair deal rather than a choice.
+  const spread = new Map<string, number>(
+    GATHERED.filter((f) => gatherableFamilies(digger).includes(f.id)).map((f) => [f.id, 0])
+  );
   let handed = 0;
   let ones = 0;
   for (let i = 0; i < 40; i++) {
@@ -3650,8 +3655,13 @@ rule('GATHERING — is a node free, guarded, walked to and equally spread?');
     let footed = 0;
     let plants = 0;
     let damp = 0;
-    for (let i = 0; i < 12; i++) {
-      const sim = new RunSim(bareSet, digger, new Rng(1300 + i));
+    // BOTH TOOLS, because the deck only deals what one of them can work: with
+    // the pick alone there is not a plant on the floor to measure.
+    for (let i = 0; i < 24; i++) {
+      const who = i < 12
+        ? { ...digger, toolSlots: { gather: 'pick' } }
+        : { ...digger, toolSlots: { gather: 'sickle' } };
+      const sim = new RunSim(bareSet, who, new Rng(1300 + (i % 12)));
       const { grid } = sim.state.map;
       for (const node of sim.state.nodes) {
         if (node.family === 'metal') {
@@ -3710,13 +3720,18 @@ rule('GATHERING — is a node free, guarded, walked to and equally spread?');
     );
     check(named === taken, `and every one floats up as "+n Name" — ${named} of ${taken}`, `${named} of ${taken}`);
   }
-  // LEVEL AMONG WHAT THE TOOLS CAN WORK, which is the whole set the deck now
-  // holds: a family nobody carries the tool for is not thinned, it is ABSENT.
+  // THE DECK IS EXACTLY WHAT THE TOOLS CAN WORK — both ways round, so neither
+  // a family he cannot open nor a missing one he can gets past. The old check
+  // here held the dry families LEVEL against each other; only one dry family is
+  // ever dealt now, so that reads 61 against 61 and proves nothing. What
+  // replaces it is this and the pick-against-sickle count below.
   const carried = gatherableFamilies(digger);
+  const dryCarried = GATHERED.filter((f) => f.id !== 'fish' && carried.includes(f.id)).map((f) => f.id);
+  const grew = [...spread.keys()].filter((f) => (spread.get(f) ?? 0) > 0);
   check(
-    least > 0 && most <= least * 1.6 && [...spread.keys()].every((f) => carried.includes(f)),
-    `and the ${counts.length} families his tools can work come out level, being DEALT and not rolled`,
-    `${least} at the least, ${most} at the most, over ${[...spread.keys()].join('+')}`
+    least > 0 && grew.every((f) => carried.includes(f)) && dryCarried.every((f) => grew.includes(f)),
+    `the floor grows ${grew.join('+')} and nothing else — exactly what his tools can work, both ways round`,
+    `grew ${grew.join('+')}, carries ${dryCarried.join('+')}, least ${least}`
   );
 
   // A TOOL DECIDES WHAT THE FLOOR HOLDS. The same seed with a sickle instead of
