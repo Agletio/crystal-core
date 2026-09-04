@@ -286,8 +286,11 @@ every tile — *"the harsh color lines in the floors"*. Sampled BETWEEN cells
 (`WASH_PER_TILE` a tile each way, stretched smoothly between) there is no
 boundary for a line to land on, and the foot slope is bilinear over the four
 surrounding cells for the same reason. The builder samples it the same way, or
-it would show lines the real floor does not have. `GameMap.plain` is left
-governing the GRAIN alone, which no map draws.
+it would show lines the real floor does not have. **IT COVERS THE ROCK TOO**: a
+WALL tile draws its top `FACE_HEAD` as ground, so washing only the floor left
+that strip at full brightness — a pale band hugging every rock edge, reading as
+another tile and as floor you could stand on. `GameMap.plain` is left governing
+the GRAIN alone, which no map draws.
 
 **THE TEST LEVEL IS WHERE A LEVEL DESIGN IS WORKED OUT, and it is the dev
 menu's alone.** *"Just stop messing with existing tiles. Make a whole new

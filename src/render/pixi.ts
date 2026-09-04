@@ -643,42 +643,6 @@ export async function createPixiRenderer(
         }
       }
 
-      // THE WASH, LAST AND OVER THE LOT. One field multiplied across the whole
-      // floor — the drift and the slope down to the rock's foot together — so
-      // the tiles themselves are drawn at full strength and identical, and the
-      // variation belongs to something that does not know where a tile ends.
-      // `WASH_PER_TILE` samples a tile each way and the texture is stretched
-      // smoothly between them, which is why no edge can appear: at ONE sample
-      // a tile this is exactly the per-cell mosaic it replaces.
-      {
-        const per = WASH_PER_TILE;
-        const w = grid.width * per;
-        const h = grid.height * per;
-        const canvas = document.createElement('canvas');
-        canvas.width = w;
-        canvas.height = h;
-        const ctx = canvas.getContext('2d')!;
-        const image = ctx.createImageData(w, h);
-        for (let j = 0; j < h; j++) {
-          for (let i = 0; i < w; i++) {
-            const v = Math.round(groundWash(grid, (i + 0.5) / per, (j + 0.5) / per) * 255);
-            const at = (j * w + i) * 4;
-            image.data[at] = v;
-            image.data[at + 1] = v;
-            image.data[at + 2] = v;
-            image.data[at + 3] = 255;
-          }
-        }
-        ctx.putImageData(image, 0, 0);
-        const texture = Texture.from(canvas);
-        texture.source.scaleMode = 'linear'; // the ONE place linear is right: it is light, and it has no edge to keep
-        const sprite = new Sprite(texture);
-        sprite.width = grid.width;
-        sprite.height = grid.height;
-        sprite.blendMode = 'multiply';
-        groundLayer.addChild(sprite);
-      }
-
       // WHAT ELSE IS ON THE FLOOR, over the zone's own surface and under
       // everything that stands on it. Which tile is `patchTileAt`'s.
       for (let y = 0; y < grid.height; y++) {
@@ -751,6 +715,52 @@ export async function createPixiRenderer(
         sprite.scale.set(mouthArt.tiles / mouthTex.width);
         groundLayer.addChild(sprite);
       }
+    }
+
+    // THE WASH, LAST AND OVER EVERY TILE THERE IS. One field multiplied across
+    // the whole map — the drift and the slope to the rock's foot together — so
+    // tiles are drawn identical and at full strength and the variation belongs
+    // to something that does not know where a tile ends.
+    //
+    // IT COVERS THE ROCK TOO, and that is the point: a WALL tile draws its top
+    // `FACE_HEAD` as ground, and washing only the floor left that strip at full
+    // brightness — a pale band hugging every rock edge, reading as a different
+    // tile and, worse, as floor you could stand on. It is one sprite over both
+    // layers rather than two, or the floor is multiplied twice.
+    //
+    // `WASH_PER_TILE` samples a tile each way, stretched smoothly between them:
+    // at ONE sample a tile this is exactly the per-cell mosaic it replaces.
+    {
+      const grid = map.grid;
+      const per = WASH_PER_TILE;
+      const from = -EDGE;
+      const w = (grid.width + EDGE * 2) * per;
+      const h = (grid.height + EDGE * 2) * per;
+      const canvas = document.createElement('canvas');
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d')!;
+      const image = ctx.createImageData(w, h);
+      for (let j = 0; j < h; j++) {
+        for (let i = 0; i < w; i++) {
+          const v = Math.round(groundWash(grid, from + (i + 0.5) / per, from + (j + 0.5) / per) * 255);
+          const at = (j * w + i) * 4;
+          image.data[at] = v;
+          image.data[at + 1] = v;
+          image.data[at + 2] = v;
+          image.data[at + 3] = 255;
+        }
+      }
+      ctx.putImageData(image, 0, 0);
+      const texture = Texture.from(canvas);
+      texture.source.scaleMode = 'linear'; // the one place linear is right: it is light, and light has no edge to keep
+      const sprite = new Sprite(texture);
+      sprite.x = from;
+      sprite.y = from;
+      sprite.width = grid.width + EDGE * 2;
+      sprite.height = grid.height + EDGE * 2;
+      sprite.blendMode = 'multiply';
+      wallLayer.addChild(sprite);
     }
   }
 
