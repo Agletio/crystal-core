@@ -12,6 +12,7 @@ import {
   MATERIAL_FAMILY_BY_ID,
   MEAL,
   MEAL_BY_FISH,
+  PROCESSING,
   PROFESSION,
   PROFESSIONS,
   WORK,
@@ -139,7 +140,7 @@ export const jobSize = (game: GameState, id: string): number =>
  *  job you can cancel for a refund is a slot that costs nothing to fill. */
 export function loadWork(game: GameState, def: MaterialDef): WorkJob | null {
   if (whyNotWork(game, def)) return null;
-  const profession = PROFESSIONS.find((p) => p.family === def.family);
+  const profession = PROCESSING.find((p) => p.family === def.family);
   const worker = idleWorker(game);
   if (!profession || !worker) return null;
   const held = (game.materials ?? []).find((i) => i.base === def.id && !i.meta.done);

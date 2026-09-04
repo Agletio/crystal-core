@@ -303,6 +303,67 @@ found. Measured over 12 descents: metal 17, cloth 20, wood 15, fish 17.
 
 ---
 
+## Phase 12 — A TOOL DECIDES WHAT YOU GATHER, and gathering is its own ladder
+
+**HIS DESIGN, and it takes priority over the numbered order.** *"I think we add
+an equipment slot for gathering… you can only collect one at a time, if you
+don't have the correct one equipped you don't gather it."* It replaces the
+`Character.focus` stacked deck that was proposed here and rejected in favour of
+this: a tool you EQUIP is a physical readable thing where a preference toggle
+was a hidden number, and it shows on the character screen.
+
+**GEM IS THE UNIVERSAL MATERIAL AND HAS NO TOOL** — *"just have that be the one
+'universal' material. All things require it and everyone can use them. They can
+just drop randomly from everything kills, ore, fishing whatever it's fine just
+don't spam too many of them."* So it leaves the dropped DEAL entirely and rides
+its own small budget off any source, and every recipe asks for some.
+
+**HIDE IS A DROP THE KNIFE UNLOCKS** — *"just make it drop randomly off mobs but
+it won't drop unless you have the skinning knife equipped."* No node, no walk,
+no animation: the knife is a GATE on `rollMaterialDrop` and an icon.
+
+**THE DEAL ONLY DEALS WHAT YOUR TOOLS CAN WORK.** A run that dealt a cloth node
+to a hero carrying a pick would pay a third of its materials and leave art on
+the floor nobody may touch, which is the "nothing is ever prevented" rule
+broken. Same node count, same total; the TOOL decides which pile it lands in.
+
+**FOUR GATHERING SKILLS, LEVELLED BY USE** — *"the levels should be separate and
+increased by actually using the tools."* Mining, Harvesting (the sickle cuts a
+plant, so it is not Farming and not Woodcutting), Skinning and Fishing, beside
+the five processing professions. One `ProfessionDef.kind` tells them apart, so
+`professionAt`, `payXp` and `xpToNext` are untouched and the Works still lists
+only the five that have a station.
+
+**THE PROFESSIONS TAB IS A RUNESCAPE SKILLS PAGE** — *"a little icon for each
+skill and your associated level… click on a skill and get a little breakdown of
+unlocks by level."* Named Professions because that is already the code's word,
+the same trade The Works made. **THE UNLOCK ROWS ARE DERIVED**: `CRAFT.needs`
+already says a tier's level and the tool table already says an upgrade's, so an
+authored list would be a second copy that goes stale. Authored prose only where
+nothing derives it.
+
+Steps, each pushed as it goes green:
+
+1. **Tables and state.** `ProfessionDef.kind`, the four gathering rows, derived
+   `PROCESSING`/`GATHERING`. `TOOLS` and `TOOL_SLOTS` — the rod's slot is always
+   the rod, the other takes pick, sickle or knife. Tools are NOT `Item`s and
+   never touch the bag: `Character.tools` is what you own and
+   `Character.toolSlots` what is equipped, healed so an old save starts with the
+   basic four.
+2. **The sim.** Gem on its own budget from any source; hide gated on the knife;
+   nodes dealt only among families whose tool is equipped; a gather pays the
+   gathering skill's xp.
+3. **Every recipe wants gem**, and the rate is MEASURED — *"don't spam too many
+   of them"* is a balance number, so print it.
+4. **The anvil upgrades a tool** for gold and that family's own material, gated
+   on the gathering level.
+5. **The Professions tab**, nine skills, derived unlock rows.
+6. **The knife's icon**, generated — the one thing here that spends a
+   generation, and it is an ICON, so there is no rotation and no animation.
+7. Demo and smoke checks, whole suite, roadmap, push.
+
+---
+
 ## Phase 11 — THE ART REVIEW'S WORK: what three critics at 5/10 said to fix
 
 **Every line below is a critic's `fix_first` or the director's fault, in their

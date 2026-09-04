@@ -2342,26 +2342,59 @@ export const MATERIAL_BY_ID: Record<string, MaterialDef> = Object.fromEntries(
   MATERIALS.map((m) => [m.id, m])
 );
 
-/** FIVE PROFESSIONS, ONE PER FAMILY. A hybrid armour family asks for the two
- *  professions its `ARMOUR_FAMILIES.archetypes` name. */
+/**
+ * NINE PROFESSIONS: five that WORK a family at a station and four that GATHER
+ * one with a tool. `kind` is the whole of what tells them apart, so one
+ * `professionAt`, one `payXp` and one `xpToNext` serve both and the Works still
+ * lists only what has a station. A hybrid armour family asks for the two
+ * PROCESSING professions its `ARMOUR_FAMILIES.archetypes` name.
+ */
 export interface ProfessionDef {
   id: string;
   name: string;
   family: string;
   makes: string;
+  kind: 'process' | 'gather';
+  icon: string;
 }
 
 export const PROFESSIONS: ProfessionDef[] = [
-  { id: 'blacksmithing', name: 'Blacksmithing', family: 'metal', makes: 'melee armour, and most weapons' },
-  { id: 'weaving', name: 'Weaving', family: 'cloth', makes: 'spell armour, and staves' },
-  { id: 'leatherworking', name: 'Leatherworking', family: 'hide', makes: 'rogue armour, and bows' },
-  { id: 'jewelling', name: 'Jewelling', family: 'gem', makes: 'every ring and amulet, and wands' },
-  { id: 'cooking', name: 'Cooking', family: 'fish', makes: 'the meals a buff comes out of' },
+  { id: 'blacksmithing', name: 'Blacksmithing', family: 'metal', kind: 'process', icon: 'mat_pale_iron',
+    makes: 'melee armour, and most weapons' },
+  { id: 'weaving', name: 'Weaving', family: 'cloth', kind: 'process', icon: 'mat_wickcloth',
+    makes: 'spell armour, and staves' },
+  { id: 'leatherworking', name: 'Leatherworking', family: 'hide', kind: 'process', icon: 'mat_sump_hide',
+    makes: 'rogue armour, and bows' },
+  { id: 'jewelling', name: 'Jewelling', family: 'gem', kind: 'process', icon: 'mat_lampstone',
+    makes: 'every ring and amulet, and wands' },
+  { id: 'cooking', name: 'Cooking', family: 'fish', kind: 'process', icon: 'mat_blindfish',
+    makes: 'the meals a buff comes out of' },
+  // GATHERED WITH A TOOL, and levelled by using it. Gem is on none of them: it
+  // is the universal material and falls out of everything.
+  { id: 'mining', name: 'Mining', family: 'metal', kind: 'gather', icon: 'tool_pick',
+    makes: 'ore, out of a vein in the rock' },
+  { id: 'harvesting', name: 'Harvesting', family: 'cloth', kind: 'gather', icon: 'tool_sickle',
+    makes: 'fibre, cut off what grows down there' },
+  { id: 'skinning', name: 'Skinning', family: 'hide', kind: 'gather', icon: 'tool_knife',
+    makes: 'skins, off what you put down' },
+  { id: 'fishing', name: 'Fishing', family: 'fish', kind: 'gather', icon: 'tool_rod',
+    makes: 'a catch, out of standing water' },
 ];
 
 export const PROFESSION_BY_ID: Record<string, ProfessionDef> = Object.fromEntries(
   PROFESSIONS.map((p) => [p.id, p])
 );
+
+/** Derived, so a profession changing kind moves both lists with one edit. */
+export const PROCESSING = PROFESSIONS.filter((p) => p.kind === 'process');
+export const GATHERING = PROFESSIONS.filter((p) => p.kind === 'gather');
+
+/** Who WORKS a family at a station, and who GATHERS it. A family has exactly
+ *  one of each, except gem, which nothing gathers. */
+export const processorOf = (family: string): ProfessionDef | undefined =>
+  PROCESSING.find((p) => p.family === family);
+export const gathererOf = (family: string): ProfessionDef | undefined =>
+  GATHERING.find((p) => p.family === family);
 
 /** NOTHING CAPS A PROFESSION — *"you can freely level them all but it just
  *  costs your time"* — so the early choice is what is real. `xpTo1` is the
@@ -3548,7 +3581,81 @@ export const GATHER = {
   /** A world's UNIQUE belongs to no family, so it is never dealt — it is a
    *  node of its own, at this chance a run, handing over one. */
   uniqueChance: 0.07,
+  xpPerRaw: 5, // xp a gathering profession banks per RAW, so its ladder is climbed by gathering alone
 };
+
+/**
+ * A TOOL DECIDES WHAT YOU GATHER. *"You can only collect one at a time — if you
+ * don't have the correct one equipped you don't gather it."* A tool is NOT an
+ * `Item`: it never enters the bag, rolls a modifier or sells. **The deal only
+ * deals what your tools can work** — a cloth node put in front of a hero
+ * carrying a pick would pay nothing and stand there unusable, which is the
+ * never-prevented rule broken. Same node count either way.
+ */
+export interface ToolRungDef {
+  name: string;
+  at: number; // the GATHERING level that opens it
+  gold: number;
+  eats: number; // processed material of the tool's `eats` family
+  more: number; // extra RAW every node of its family hands over
+}
+
+export interface ToolDef {
+  id: string;
+  name: string;
+  slot: string;
+  skill: string; // the gathering profession it levels
+  family: string;
+  icon: string;
+  // Blades are the smith's and a line is spun, so nothing is paid for in its
+  // own output: every tool pulls on a profession other than the one it feeds.
+  eats: string;
+  rungs: ToolRungDef[];
+}
+
+/** THE ROD IS ITS OWN SLOT AND ALWAYS ON — *"a separate equip that is always
+ *  on"* — because water is outside the node count, so it costs the other
+ *  families nothing. The other slot is the CHOICE. */
+export interface ToolSlotDef {
+  id: string;
+  name: string;
+  blurb: string;
+}
+
+export const TOOL_SLOTS: ToolSlotDef[] = [
+  { id: 'gather', name: 'Tool', blurb: 'What you can take off the floor. One at a time.' },
+  { id: 'rod', name: 'Rod', blurb: 'Water is outside the count, so this costs the others nothing.' },
+];
+
+export const TOOLS: ToolDef[] = [
+  { id: 'pick', name: 'Pick', slot: 'gather', skill: 'mining', family: 'metal',
+    icon: 'tool_pick', eats: 'metal', rungs: [
+      { name: 'Chipped Pick', at: 1, gold: 0, eats: 0, more: 0 },
+      { name: 'Lamped Pick', at: 20, gold: 900, eats: 12, more: 1 },
+      { name: 'Seamed Pick', at: 50, gold: 6500, eats: 30, more: 2 },
+    ] },
+  { id: 'sickle', name: 'Sickle', slot: 'gather', skill: 'harvesting', family: 'cloth',
+    icon: 'tool_sickle', eats: 'metal', rungs: [
+      { name: 'Chipped Sickle', at: 1, gold: 0, eats: 0, more: 0 },
+      { name: 'Lamped Sickle', at: 20, gold: 900, eats: 12, more: 1 },
+      { name: 'Seamed Sickle', at: 50, gold: 6500, eats: 30, more: 2 },
+    ] },
+  { id: 'knife', name: 'Skinning Knife', slot: 'gather', skill: 'skinning', family: 'hide',
+    icon: 'tool_knife', eats: 'metal', rungs: [
+      { name: 'Chipped Knife', at: 1, gold: 0, eats: 0, more: 0 },
+      { name: 'Lamped Knife', at: 20, gold: 900, eats: 12, more: 1 },
+      { name: 'Seamed Knife', at: 50, gold: 6500, eats: 30, more: 2 },
+    ] },
+  { id: 'rod', name: 'Rod', slot: 'rod', skill: 'fishing', family: 'fish',
+    icon: 'tool_rod', eats: 'cloth', rungs: [
+      { name: 'Bent Rod', at: 1, gold: 0, eats: 0, more: 0 },
+      { name: 'Lamped Rod', at: 20, gold: 900, eats: 12, more: 1 },
+      { name: 'Seamed Rod', at: 50, gold: 6500, eats: 30, more: 2 },
+    ] },
+];
+
+export const TOOL_BY_ID: Record<string, ToolDef> = Object.fromEntries(TOOLS.map((t) => [t.id, t]));
+export const toolsForSlot = (slot: string): ToolDef[] => TOOLS.filter((t) => t.slot === slot);
 
 /** What each world pays in, on top of what every world pays, read off the SHARE
  *  of the run it holds. Three different currencies deliberately: they cannot be
