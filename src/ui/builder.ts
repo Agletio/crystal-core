@@ -9,7 +9,7 @@
  */
 import { DESIGN, FLOOR, Grid, SHELF, STAIR, RIM, WALL, high, patchesAt, patchesFor, rimShelves, wangKey } from '../sim/grid';
 import { SHELF_SET, ZONE } from '../sim/grid';
-import { GRAIN, grainAt, groundLight, patchTileAt, zoneTileAt } from '../render/renderer';
+import { GRAIN, WASH_PER_TILE, grainAt, groundWash, patchTileAt, zoneTileAt } from '../render/renderer';
 import { GRAIN as GRAIN_SHEETS } from '../render/generated-grain';
 import { ZONES } from '../render/generated-tiles';
 import { PROP_ART } from '../render/generated-props';
@@ -217,14 +217,18 @@ function draw(): void {
     ctx.drawImage(canvasOf, (prop.x + 0.5) * zoom - wide / 2, (prop.y + 1) * zoom - tall, wide, tall);
   }
 
-  // THE LIGHT, the renderer's own per-cell shade laid as a wash.
-  for (let y = 0; y < grid.height; y++) {
-    for (let x = 0; x < grid.width; x++) {
-      if (grid.at(x, y) === WALL || DESIGN[theme]) continue;
-      const dark = 1 - groundLight(grid, x, y, !!DESIGN[theme]);
+  // THE WASH, sampled BETWEEN cells exactly as the renderer samples it — a
+  // builder painting it per cell would show lines the real floor does not have,
+  // which is the whole thing this replaces.
+  const per = WASH_PER_TILE;
+  const step = zoom / per;
+  for (let j = 0; j < grid.height * per; j++) {
+    for (let i = 0; i < grid.width * per; i++) {
+      if (grid.at(Math.floor(i / per), Math.floor(j / per)) === WALL) continue;
+      const dark = 1 - groundWash(grid, (i + 0.5) / per, (j + 0.5) / per);
       if (dark <= 0) continue;
       ctx.fillStyle = `rgba(0,0,0,${dark.toFixed(3)})`;
-      ctx.fillRect(x * zoom, y * zoom, zoom, zoom);
+      ctx.fillRect(i * step, j * step, Math.ceil(step), Math.ceil(step));
     }
   }
 

@@ -804,18 +804,36 @@ export function grainAt(count: number, x: number, y: number): number {
 }
 
 /** How lit a GROUND cell is, 0..1: a slow drift, darker at the rock's foot. */
-export const LIGHT = { low: 0.8, foot: 0.78, scale: 7 };
-export function groundLight(grid: Grid, x: number, y: number, plain = false): number {
-  // Only the DRIFT makes a mosaic — a tint decided per CELL is a hard line at
-  // every cell — so a designed floor keeps the FOOT, a slope over several
-  // tiles: a floor at one value up to the rock is a hole in the ground.
-  const drift = plain ? 1 : LIGHT.low + (1 - LIGHT.low) * patchNoise(x, y, LIGHT.scale, 71);
-  let open = 0;
+export const LIGHT = { low: 0.62, foot: 0.78, scale: 5 };
+export const WASH_PER_TILE = 4; // samples a TILE each way; ONE is the per-cell mosaic this replaces
 
+function openness(grid: Grid, x: number, y: number): number { // the slope to the rock's foot
+  let open = 0;
   for (let dy = -2; dy <= 2; dy++) {
     for (let dx = -2; dx <= 2; dx++) if (grid.at(x + dx, y + dy) !== WALL) open++;
   }
-  return drift * (LIGHT.foot + (1 - LIGHT.foot) * (open / 25));
+  return open / 25;
+}
+
+/**
+ * THE WASH, at any point BETWEEN cells — *"a gradient ON TOP of those tiles…
+ * not just giving a recolor to entire tiles or you're going to get sharp
+ * lines."* `patchNoise` always took floats and was only ever CALLED at whole
+ * cells, which is what turned a gradient into a mosaic with an edge at every
+ * tile. The foot is bilinear over the four surrounding cells for that reason.
+ */
+export function groundWash(grid: Grid, fx: number, fy: number): number {
+  const drift = LIGHT.low + (1 - LIGHT.low) * patchNoise(fx, fy, LIGHT.scale, 71);
+  const x0 = Math.floor(fx);
+  const y0 = Math.floor(fy);
+  const tx = fx - x0;
+  const ty = fy - y0;
+  const top = openness(grid, x0, y0) + (openness(grid, x0 + 1, y0) - openness(grid, x0, y0)) * tx;
+  const low =
+    openness(grid, x0, y0 + 1)
+    + (openness(grid, x0 + 1, y0 + 1) - openness(grid, x0, y0 + 1)) * tx;
+  const foot = top + (low - top) * ty;
+  return drift * (LIGHT.foot + (1 - LIGHT.foot) * foot);
 }
 
 /** How lit a rock tile is, by how far it sits from the nearest thing that is

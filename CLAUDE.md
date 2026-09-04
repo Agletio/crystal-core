@@ -269,15 +269,25 @@ dev kit's override (`#dev-shelves`, `SHELVES=1` on `descent-peek`) and what the
 demo forces to prove every seed. Measured with every eligible chamber up: 2.8
 of 7 rooms a Fissure map stand, and a descent over them still ends.
 
-**A FLOOR IS ONE TILE, AND THE LIGHT AND THE GRAIN ARE WHAT VARY IT.** A set
-holds one pure floor tile, and two thousand of it read as wallpaper; a region
-laid in another set read as a rectangle. So variation is PER CELL and never a
-shape: `groundLight` is a slow drift with a slope down to 0.78 at the rock's
-foot, worn by every tile of a cell so a shelf or a pool cannot stand out as a
-brighter square, and `grainAt` lays one of the zone's sixteen generated MARKS
-(`src/render/generated-grain.ts`, asked in the shipped tile's own style, sorted
-light to heavy) over 30% of cells, skewed to the light ones. Both are hashes
-off the cell, never draws, and the builder draws them the same way.
+**A FLOOR IS ONE TILE AND THE WASH IS WHAT VARIES IT — AND THE WASH IS NEVER
+PER CELL.** A set holds one pure floor tile, and two thousand of it read as
+wallpaper; measured, three of the four ship almost perfectly flat (a spread of
+2.3 to 5.6 luma, a wrap seam of 1 to 4), so the tiles were never the problem.
+**NOTHING IS TINTED PER CELL any more** — not the floor, not the shelf, not a
+pool. Every tile is drawn at full strength and `groundWash` is multiplied over
+the whole floor as ONE field: *"once the floor is generated… generate a gradient
+ON TOP of those tiles… make sure it's not just giving a recolor to entire tiles
+or you're going to get sharp lines."*
+
+**AND THE FIX WAS WHERE IT WAS SAMPLED, not what it computed.** `patchNoise` is
+smoothstepped and always took floats; it was only ever CALLED at whole cells,
+and that is the whole of what turned a gradient into a mosaic with an edge at
+every tile — *"the harsh color lines in the floors"*. Sampled BETWEEN cells
+(`WASH_PER_TILE` a tile each way, stretched smoothly between) there is no
+boundary for a line to land on, and the foot slope is bilinear over the four
+surrounding cells for the same reason. The builder samples it the same way, or
+it would show lines the real floor does not have. `GameMap.plain` is left
+governing the GRAIN alone, which no map draws.
 
 **THE TEST LEVEL IS WHERE A LEVEL DESIGN IS WORKED OUT, and it is the dev
 menu's alone.** *"Just stop messing with existing tiles. Make a whole new
@@ -297,10 +307,9 @@ which names the worlds running a `LevelDesign` — **THE FISSURE RUNS THE TEST
 LEVEL'S**, *"then you can push to the main fissure levels"* — and a designed
 floor is `GameMap.plain`: no light drift and no grain, because a per-cell tint
 is a hard line at every cell whatever noise drives it, and *"the harsh color
-lines in the floors"* were exactly that. **EVERY MAP IS PLAIN NOW**: the other
-three worlds were judged on their first pictures and their light drift read as
-a mosaic of rectangles, so the drift and the grain are off everywhere; the
-sets and the wreath lakes stay until judged.
+lines in the floors"* were exactly that. The drift is BACK everywhere as the
+wash above, which is what the mosaic of rectangles was really complaining
+about; the grain stays off, each mark carrying its own edge.
 
 **A LAKE IS A DEEP CORE IN A SHALLOW WREATH.** Brogue's rule: a blocking patch's
 DEEP is every cell of it with the patch on all four sides (`Grid.deep`), and its

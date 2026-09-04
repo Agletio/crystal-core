@@ -73,7 +73,8 @@ import {
   vfxColour,
   patchTileAt,
   zoneTileAt,
-  groundLight,
+  groundWash,
+  WASH_PER_TILE,
   grainAt,
   GRAIN,
   LIVE_PROPS,
@@ -566,10 +567,6 @@ export async function createPixiRenderer(
       // THE LIGHT: every tile of one cell wears the same shade, so a shelf or a
       // pool drawn over the ground cannot stand out as a brighter square. A
       // A PLAIN floor wears no per-cell drift, but keeps the wall-foot slope.
-      const shade = (x: number, y: number): number => {
-        const v = Math.round(groundLight(grid, x, y, map.plain) * 255);
-        return (v << 16) | (v << 8) | v;
-      };
       const rock = (x: number, y: number): boolean =>
         x < 0 || y < 0 || x >= grid.width || y >= grid.height || grid.at(x, y) === WALL;
       // THE ROCK GOES ON: its top tile is laid under everything out past any
@@ -607,7 +604,6 @@ export async function createPixiRenderer(
           sprite.x = x;
           sprite.y = y;
           sprite.scale.set(size);
-          if (!solid) sprite.tint = shade(x, y);
           (solid ? wallLayer : groundLayer).addChild(sprite);
           // THE GRAIN over the floor, one of the zone's marks or none. A PLAIN
           // floor is without it: tried back on with the drift still off, and
@@ -621,7 +617,6 @@ export async function createPixiRenderer(
             grain.y = y;
             grain.scale.set(1.002 / GRAIN_SHEETS[map.theme].grid);
             grain.alpha = GRAIN.alpha;
-            grain.tint = shade(x, y);
             groundLayer.addChild(grain);
           }
         }
@@ -643,10 +638,45 @@ export async function createPixiRenderer(
             sprite.x = x;
             sprite.y = y;
             sprite.scale.set(1.002 / shelfSet.grid);
-            sprite.tint = shade(x, y);
             groundLayer.addChild(sprite);
           }
         }
+      }
+
+      // THE WASH, LAST AND OVER THE LOT. One field multiplied across the whole
+      // floor — the drift and the slope down to the rock's foot together — so
+      // the tiles themselves are drawn at full strength and identical, and the
+      // variation belongs to something that does not know where a tile ends.
+      // `WASH_PER_TILE` samples a tile each way and the texture is stretched
+      // smoothly between them, which is why no edge can appear: at ONE sample
+      // a tile this is exactly the per-cell mosaic it replaces.
+      {
+        const per = WASH_PER_TILE;
+        const w = grid.width * per;
+        const h = grid.height * per;
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d')!;
+        const image = ctx.createImageData(w, h);
+        for (let j = 0; j < h; j++) {
+          for (let i = 0; i < w; i++) {
+            const v = Math.round(groundWash(grid, (i + 0.5) / per, (j + 0.5) / per) * 255);
+            const at = (j * w + i) * 4;
+            image.data[at] = v;
+            image.data[at + 1] = v;
+            image.data[at + 2] = v;
+            image.data[at + 3] = 255;
+          }
+        }
+        ctx.putImageData(image, 0, 0);
+        const texture = Texture.from(canvas);
+        texture.source.scaleMode = 'linear'; // the ONE place linear is right: it is light, and it has no edge to keep
+        const sprite = new Sprite(texture);
+        sprite.width = grid.width;
+        sprite.height = grid.height;
+        sprite.blendMode = 'multiply';
+        groundLayer.addChild(sprite);
       }
 
       // WHAT ELSE IS ON THE FLOOR, over the zone's own surface and under
@@ -665,7 +695,6 @@ export async function createPixiRenderer(
             sprite.x = x;
             sprite.y = y;
             sprite.scale.set(1.002 / kit.grid);
-            sprite.tint = shade(x, y);
             groundLayer.addChild(sprite);
           }
         }
