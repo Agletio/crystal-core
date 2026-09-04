@@ -566,9 +566,9 @@ export async function createPixiRenderer(
       const size = 1.002 / set.grid;
       // THE LIGHT: every tile of one cell wears the same shade, so a shelf or a
       // pool drawn over the ground cannot stand out as a brighter square. A
-      // PLAIN floor wears none: a per-cell tint is a hard line at every cell.
+      // A PLAIN floor wears no per-cell drift, but keeps the wall-foot slope.
       const shade = (x: number, y: number): number => {
-        const v = map.plain ? 255 : Math.round(groundLight(grid, x, y) * 255);
+        const v = Math.round(groundLight(grid, x, y, map.plain) * 255);
         return (v << 16) | (v << 8) | v;
       };
       const rock = (x: number, y: number): boolean =>

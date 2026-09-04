@@ -805,9 +805,12 @@ export function grainAt(count: number, x: number, y: number): number {
 
 /** How lit a GROUND cell is, 0..1: a slow drift, darker at the rock's foot. */
 export const LIGHT = { low: 0.8, foot: 0.78, scale: 7 };
-export function groundLight(grid: Grid, x: number, y: number): number {
-  const drift = LIGHT.low + (1 - LIGHT.low) * patchNoise(x, y, LIGHT.scale, 71);
-  let open = 0; // how open the five-by-five is: a slope, never two rings
+export function groundLight(grid: Grid, x: number, y: number, plain = false): number {
+  // Only the DRIFT makes a mosaic — a tint decided per CELL is a hard line at
+  // every cell — so a designed floor keeps the FOOT, a slope over several
+  // tiles: a floor at one value up to the rock is a hole in the ground.
+  const drift = plain ? 1 : LIGHT.low + (1 - LIGHT.low) * patchNoise(x, y, LIGHT.scale, 71);
+  let open = 0;
 
   for (let dy = -2; dy <= 2; dy++) {
     for (let dx = -2; dx <= 2; dx++) if (grid.at(x + dx, y + dy) !== WALL) open++;
@@ -1795,11 +1798,8 @@ export function sweepRing(origin: Vec2, radius: number, t: number): FirePixel[] 
   return pixels;
 }
 
-/**
- * A closed ring of whole blocks on the floor's grid: the boundary of a Fall is
- * a promise about where the ground gives, so it is a hard line and not a glow.
- * Each cell once, or two blocks on one cell stack their alpha into a spot.
- */
+/** A closed ring of blocks on the floor's grid, each cell once: the boundary of
+ *  a Fall is a promise about where the ground gives, so it is a hard line. */
 export function pixelRing(origin: Vec2, radius: number, shade: number, alpha: number): FirePixel[] {
   const pixels: FirePixel[] = [];
   if (radius <= 0) return pixels;
@@ -1818,9 +1818,9 @@ export function pixelRing(origin: Vec2, radius: number, shade: number, alpha: nu
   return pixels;
 }
 
-/** The ring FILLED IN: a field on the floor, as cells rather than a disc, so a
- *  caller holding overlapping fields draws each cell ONCE — nine translucent
- *  pools over a ten-second cast summed to a lid brighter than the floor. */
+/** The ring FILLED IN, as cells rather than a disc, so a caller holding
+ *  overlapping fields draws each cell ONCE — nine translucent pools over a
+ *  ten-second cast summed to a lid brighter than the floor. */
 export function pixelDisc(origin: Vec2, radius: number): FirePixel[] {
   const pixels: FirePixel[] = [];
   if (radius <= 0) return pixels;

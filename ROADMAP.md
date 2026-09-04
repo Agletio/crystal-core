@@ -665,6 +665,18 @@ three lists is the ART the user ruled out.
       Playwright runs headless Chromium with `--hide-scrollbars`, so no shot
       this repo judges can ever show one. The thumb stays for a player, and the
       affordance a picture CAN show is a FADE at the foot of every window body.
+- [x] **THE WALL HAS NO FOOT** — the sixth pass, and a regression of ours.
+      *"The floor's value is identical right up to the wall."* DONE:
+      `groundLight` is a per-cell DRIFT times a wall-foot SLOPE, and `plain`
+      was switching off both. Only the drift makes a mosaic; the foot is a
+      slope over several tiles. Split, so every world keeps its flat floor and
+      darkens into the rock (`foot.png`).
+- [ ] **THE CAST HALL IS NOT BLURRED — IT IS 14 PIXELS WIDE.** Probed:
+      `image-rendering` computes to `pixelated`, no transform, every canvas at a
+      whole multiple. The ink boxes are 19x39, 12x39, 14x38 and 15x39 ART
+      pixels, and at fourteen across there is no silhouette to read at any
+      filter. The excluded overhaul, and no CSS reaches it. **Do not chase this
+      as a rendering fault again.**
 - [ ] **THE PROVING GROUND'S INFLUENCE ROW** still reads as two lit buttons
       (selected gold against hovered orange), where the stations and the anvil
       now read as one. Its buttons are not `.climbtab`.

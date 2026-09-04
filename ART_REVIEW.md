@@ -429,3 +429,42 @@ found sent more work back, and the critics run on what comes after it.
   time; the pouch came back a badge and the corner brackets a disc, and both
   were re-asked with the noun that fought removed — the pouch by its shape, and
   Fill as two nested squares. All eleven imported and shipped.
+
+---
+
+## 2026-09-04f — commit `c3faa37` — the sixth pass, and what it sent back
+
+125 shot, 20 approved. Four screens the brief asked for are deliberately NOT
+in the set — the Rot and Cavern floors, the boss, the gather and the shop —
+because none is store-page material; they are cited as fault evidence instead.
+
+**The three verifications.** The rail glyphs are **7 of 11** with a nameable
+silhouette, up from 3 of 10, and the shapes landed — but all eleven are still
+one near-white value on one near-black plate and the promised gold is a bead,
+so the row still reads as marks of equal weight. The contact shadow is
+**fixed** at boss size. The foot fade **works**: a cut row reads as
+continuing, though the cue is the card's gold rule dissolving rather than the
+words, and it only reaches `.modal__body` — the Proving Ground's inner stats
+panel still clips with no fade.
+
+**Its three worst faults, and what they turned out to be:**
+
+1. **The cast hall's bodies** — *"bilinear-smoothed, the Warrior a checkerboard
+   with no head-torso-limb separation."* PROBED, and the smoothing is NOT
+   there: `image-rendering` computes to `pixelated`, the transform is `none`
+   and every canvas is scaled by a whole number. What IS there is the source:
+   the four bodies' ink boxes are **19x39, 12x39, 14x38 and 15x39 art pixels**.
+   At fourteen pixels across there is no silhouette to read at any filter, and
+   the softness in a crop is the crop's own downscale. It is the excluded
+   overhaul, and no CSS reaches it.
+2. **The rock is a flat void with no foot** — *"the floor's value is identical
+   right up to the wall."* TRUE, and it was a regression of ours: `groundLight`
+   is a per-cell DRIFT times a wall-foot SLOPE, and `plain` was switching off
+   both. Only the drift makes a mosaic — a tint decided per cell is a hard line
+   at every cell — where the foot is a slope over several tiles. Split, so
+   every world keeps its flat floor AND darkens into the rock (`foot.png`).
+   What is left of the fault is the face itself, which is the shipped set.
+3. **A Fireball's head is a soft radial gradient and its impact a rounded
+   orange square**, beside an Arc Lightning that is stepped and on-grid. NOT
+   taken: the VFX stills are generated art, and re-asking them is a design the
+   user approves rather than a session's call.

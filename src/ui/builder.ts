@@ -221,7 +221,7 @@ function draw(): void {
   for (let y = 0; y < grid.height; y++) {
     for (let x = 0; x < grid.width; x++) {
       if (grid.at(x, y) === WALL || DESIGN[theme]) continue;
-      const dark = 1 - groundLight(grid, x, y);
+      const dark = 1 - groundLight(grid, x, y, !!DESIGN[theme]);
       if (dark <= 0) continue;
       ctx.fillStyle = `rgba(0,0,0,${dark.toFixed(3)})`;
       ctx.fillRect(x * zoom, y * zoom, zoom, zoom);
