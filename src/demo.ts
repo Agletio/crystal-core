@@ -4048,6 +4048,9 @@ rule('THE WORKS — does a job run on the clock, and on nothing else?');
   {
     const shed = createGame('fresh');
     const pick = TOOL_BY_ID.pick;
+    // He has BEEN to the smith: a reforge is a second tool, not the first.
+    shed.character.tools = { pick: 0 };
+    shed.character.toolSlots = { gather: 'pick' };
     const said: string[] = [];
     said.push(whyNotUpgrade(shed, pick) ?? 'went ahead');
     shed.character.professions = { mining: { level: 25, xp: 0 } };
@@ -4064,27 +4067,41 @@ rule('THE WORKS — does a job run on the clock, and on nothing else?');
       `${said.join(' | ')} -> ${got?.name ?? 'nothing'}`
     );
     // AND IT TAKES MORE OUT OF EVERY NODE, which is the whole of what it buys.
+    const chipped = createGame('fresh');
+    chipped.character.tools = { pick: 0 };
+    chipped.character.toolSlots = { gather: 'pick' };
     check(
-      toolMore(shed.character, 'metal') === pick.rungs[1].more && toolMore(createGame('fresh').character, 'metal') === 0,
+      toolMore(shed.character, 'metal') === pick.rungs[1].more
+        && toolMore(chipped.character, 'metal') === 0,
       `and the reforged pick takes +${pick.rungs[1].more} out of every node where the chipped one takes +0`,
-      `${toolMore(shed.character, 'metal')} against 0`
+      `${toolMore(shed.character, 'metal')} against ${toolMore(chipped.character, 'metal')}`
+    );
+    // AND A HERO HOLDING NOTHING GATHERS NOTHING, which is where one starts.
+    check(
+      gatherableFamilies(createGame('fresh').character).length === 0,
+      'and a new character owns no tool at all, so the floor grows nothing for him',
+      gatherableFamilies(createGame('fresh').character).join(', ')
     );
   }
 
-  // A SAVE POINTING AT A TOOL THAT IS GONE falls back to the slot's first
-  // rather than to nothing: gathering nothing and saying nothing is the worst
-  // of the three outcomes.
+  // A SAVE POINTING AT A TOOL THAT IS GONE falls back to one you OWN, and to
+  // nothing only when you own none: a slot naming a tool nobody gave you is a
+  // lie, where an empty slot is the state everybody starts in.
   {
     const rotted = createGame('fresh');
     rotted.character.tools = { pick: 1, ghost: 3 };
     rotted.character.toolSlots = { gather: 'ghost', rod: 'rod' };
     heal(rotted);
+    const bare = createGame('fresh');
+    bare.character.toolSlots = { gather: 'pick' }; // never given one
+    heal(bare);
     check(
       rotted.character.tools?.ghost === undefined && rotted.character.tools?.pick === 1
         && toolIn(rotted.character, 'gather')?.id === 'pick'
-        && gatherableFamilies(rotted.character).length === TOOL_SLOTS.length,
-      'a save naming a tool that no longer exists keeps the rungs it can and falls back to a real tool',
-      `${JSON.stringify(rotted.character.tools)} ${JSON.stringify(rotted.character.toolSlots)}`
+        && toolIn(rotted.character, 'rod') === undefined
+        && toolIn(bare.character, 'gather') === undefined,
+      'a save naming a tool that is gone falls back to one you own, and a slot naming one you were never given empties',
+      `${JSON.stringify(rotted.character.toolSlots)} ${JSON.stringify(bare.character.toolSlots)}`
     );
   }
 

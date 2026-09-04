@@ -61,6 +61,14 @@ export function loadoutMods(equipment: Record<string, Item>): number {
  * What the power band below hands you, for asking whether this one is reachable
  * at all. Walks the tree at random, so it is a floor, not a forecast.
  */
+/** EVERY TOOL, at its basic rung. A MEASURED character is a CEILING and a
+ *  played one has been to the smith, so a hero holding nothing would measure
+ *  the first four depths rather than the band. Both builders call it. */
+export function armTools(character: Character): void {
+  character.tools = Object.fromEntries(TOOLS.map((t) => [t.id, 0]));
+  character.toolSlots = { gather: 'pick', rod: 'rod' };
+}
+
 export function ladderCharacter(
   band: number,
   rng: Rng,
@@ -88,10 +96,7 @@ export function ladderCharacter(
       Math.floor(points / ATTRIBUTES.length) + (i < points % ATTRIBUTES.length ? 1 : 0);
   });
 
-  // EVERY TOOL, at its basic rung: a measured character is a CEILING, and a
-  // played one has been to the smith.
-  character.tools = Object.fromEntries(TOOLS.map((t) => [t.id, 0]));
-  character.toolSlots = { gather: 'pick', rod: 'rod' };
+  armTools(character);
 
   const progress = skillProgress(character, skillId);
   const tree = treeFor(skillId);
@@ -321,6 +326,7 @@ function played(shortlist: Character[], band: number, rng: Rng): Character | nul
     best = character;
   }
   void rng;
+  if (best) armTools(best);
   return best;
 }
 
