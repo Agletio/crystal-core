@@ -231,15 +231,15 @@ export function floaterInk(
  *  both land at the size they should look. JEWELLERY IS ONLY SLIGHTLY SMALLER
  *  THAN THE SMALLEST GEAR, the user's call, so a ring is not a speck. */
 export const LOOT_SPAN: Record<string, number> = {
-  weapon: 0.92,
-  weapon2h: 1.2, // a two-hander is the biggest thing that drops
-  shield: 0.86,
-  body: 0.88,
-  helmet: 0.62,
-  boots: 0.62,
-  gloves: 0.56,
-  amulet: 0.52,
-  ring: 0.5,
+  weapon: 0.66,
+  weapon2h: 0.86, // a two-hander is the biggest thing that drops
+  shield: 0.62,
+  body: 0.63,
+  helmet: 0.45,
+  boots: 0.45,
+  gloves: 0.4,
+  amulet: 0.38,
+  ring: 0.36,
 };
 
 /** The span for one base. `weapon` is the fallback for an unsized kind. */
@@ -348,6 +348,11 @@ export function bossTelegraph(
  * only THICKENS it — twelve Burns as twelve times the marks is a body nobody
  * can see, so the count caps into a fraction and size carries the rest.
  */
+/** A mark's radius, in TILES and never in the body's size: a boss at scale 5
+ *  wore a slab of sky blue where a beetle wore a speck. Where it GOES is the
+ *  body's, which is what keeps it over the head. */
+const MARK_R = 0.075;
+
 export function ailmentMarks(
   id: string,
   stacks: number,
@@ -373,7 +378,7 @@ export function ailmentMarks(
       out.push({
         x: Math.cos(a) * size * 0.3,
         y: -head * 0.55 + Math.sin(a) * size * 0.14,
-        r: size * (0.05 + weight * 0.035),
+        r: MARK_R * (1 + weight * 0.5),
         alpha: 0.55 + 0.45 * Math.sin(elapsed * 3 + seed),
       });
       continue;
@@ -384,7 +389,7 @@ export function ailmentMarks(
     out.push({
       x: across * (1 - t * 0.4),
       y: -head * 0.35 - up * t * size * 0.5,
-      r: size * (0.045 + weight * 0.03) * (1 - t * 0.55),
+      r: MARK_R * (1 + weight * 0.4) * (1 - t * 0.45),
       alpha: (1 - t) * (0.6 + weight * 0.4),
     });
   }
@@ -1809,6 +1814,29 @@ export function pixelRing(origin: Vec2, radius: number, shade: number, alpha: nu
     if (taken.has(key)) continue;
     taken.add(key);
     pixels.push({ x, y, size, shade, alpha });
+  }
+  return pixels;
+}
+
+/** The ring FILLED IN: a field on the floor, as cells rather than a disc, so a
+ *  caller holding overlapping fields draws each cell ONCE — nine translucent
+ *  pools over a ten-second cast summed to a lid brighter than the floor. */
+export function pixelDisc(origin: Vec2, radius: number): FirePixel[] {
+  const pixels: FirePixel[] = [];
+  if (radius <= 0) return pixels;
+  const size = FIRE_PX * 2;
+  const reach = Math.ceil(radius / size);
+  const ox = Math.floor(origin.x / size) * size;
+  const oy = Math.floor(origin.y / size) * size;
+  for (let iy = -reach; iy <= reach; iy++) {
+    for (let ix = -reach; ix <= reach; ix++) {
+      const x = ox + ix * size;
+      const y = oy + iy * size;
+      const dx = x + size / 2 - origin.x;
+      const dy = y + size / 2 - origin.y;
+      if (dx * dx + dy * dy > radius * radius) continue;
+      pixels.push({ x, y, size, shade: 0, alpha: 1 });
+    }
   }
   return pixels;
 }

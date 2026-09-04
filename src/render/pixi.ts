@@ -49,6 +49,7 @@ import {
   fireBurst,
   fireShades,
   pixelRing,
+  pixelDisc,
   FIRE_PX,
   onGrid,
   fireSparks,
@@ -153,6 +154,9 @@ function rockMarks(grid: number, rock: string): Texture {
 /** An aura is LIGHT OFF THE BODY, never its six-tile reach drawn on the floor:
  *  a soft radial glow this many tiles across, at this many times the aura's
  *  own alpha — three critics read the reach as "a debug radius". */
+/** A body's own contact shadow, in fractions of its `scale`. */
+const SHADOW = { wide: 0.3, tall: 0.11, alpha: 0.34 };
+
 const AURA_GLOW = { span: 3, alpha: 5, px: 96 };
 
 const FLOATER_LIFE = 1.1;
@@ -268,6 +272,10 @@ export async function createPixiRenderer(
   const lootArtLayer = new Container();
   const lootArt: Sprite[] = [];
   const vfxGroundLayer = new Container();
+  /** Fields lying ON the floor, under the bodies and under the ground sprites:
+   *  one shape a frame, so overlapping pools cannot stack their alpha. */
+  const vfxGround = new Graphics();
+  vfxGroundLayer.addChild(vfxGround);
   const vfxArtLayer = new Container();
   const entityLayer = new Container();
   const textLayer = new Container();
@@ -1120,6 +1128,7 @@ export async function createPixiRenderer(
 
   function drawOverlays(state: RunState): void {
     vfxLayer.clear();
+    vfxGround.clear();
     drawLoot(state);
     effectsDrawn = 0;
     groundDrawn = 0;
@@ -1233,6 +1242,30 @@ export async function createPixiRenderer(
     for (const m of state.monsters) if (m !== state.boss) bar(m, 0.7, palette.ember);
     bar(state.hero, 1.1, palette.verdite, true);
 
+    // EVERY POOL AT ONCE, each cell drawn once. A cast drops one a second for
+    // ten seconds over nearly one spot, so nine translucent discs summed into a
+    // lime lid brighter than the floor; a union cannot, however many fall.
+    {
+      const cells = new Map<string, { x: number; y: number; size: number }>();
+      let ink = 0;
+      let lit = 0;
+      for (const fx of state.vfx) {
+        if (fx.kind !== 'blight_field' || fx.age < 0) continue;
+        const from = fx.points[0];
+        const to = fx.points[1] ?? from;
+        if (!from) continue;
+        const t = Math.min(1, fx.age / fx.ttl);
+        const radius = poisonFieldRadius(Math.hypot(to.x - from.x, to.y - from.y), t);
+        ink = toHexNumber(mix(damageColour(palette, fx.damageType), palette.void, 0.55));
+        lit = Math.max(lit, 0.8 * (1 - t * t)); // the freshest pool sets the tone
+        for (const p of pixelDisc(from, radius)) cells.set(`${p.x},${p.y}`, p);
+      }
+      if (cells.size > 0 && lit > 0) {
+        for (const p of cells.values()) vfxGround.rect(cx(p.x), cy(p.y), p.size, p.size);
+        vfxGround.fill({ color: ink, alpha: lit });
+      }
+    }
+
     // Skill and impact effects. Each kind gets a different SHAPE, not just a
     // different colour — at melee range two lines are indistinguishable.
     for (const fx of state.vfx) {
@@ -1248,20 +1281,7 @@ export async function createPixiRenderer(
       // poisonDrops — so the pool is drawn to exactly what the sim poisoned.
       if (fx.kind === 'blight_field') {
         const radius = poisonFieldRadius(Math.hypot(to.x - from.x, to.y - from.y), t);
-        // TINTED DARK to the type it deals, poison included: the still is asked
-        // dark and comes back lime, and a lime disc over pale floor is a ring
-        // rather than a pool. Nine of these lie on top of each other over a
-        // cast, so the pool is dark rather than heavy, or it is a lid.
-        const ink = toHexNumber(mix(damageColour(palette, fx.damageType), palette.void, 0.45));
-        const pool = vfxTexture('poison_pool');
-        if (pool) {
-          const s = effectSprite(pool, radius * 2, true);
-          s.anchor.set(0.5, 0.5);
-          s.x = cx(from.x);
-          s.y = cy(from.y);
-          s.alpha = Math.max(0, 0.85 * (1 - t * t));
-          s.tint = ink;
-        }
+        const ink = toHexNumber(mix(damageColour(palette, fx.damageType), palette.void, 0.55));
 
         // Globs coming DOWN into it. Stretched along the fall and squashed as
         // they land, which is the whole of what makes it rain rather than
@@ -1421,7 +1441,7 @@ export async function createPixiRenderer(
       const beam = lootBeam(palette, drop.rank);
       label.visible = true;
       label.text = drop.item.name;
-      const px = Math.max(8, Math.min(18, tile * 0.4));
+      const px = Math.max(7, Math.min(13, tile * 0.26));
       label.style.fontSize = px;
       // INK, with the RANK in the edge rather than in the letter: pale on pale
       // stone washed out, and the beam over it already says how good it is.
@@ -1454,8 +1474,10 @@ export async function createPixiRenderer(
       // A TICK is smaller and wears its ailment's colour, so a stream of them
       // reads as the poison working rather than as the swing landing.
       const ticked = f.tick ? AILMENT_BY_ID[f.tick] : undefined;
-      const size = f.crit ? 0.75 : ticked ? 0.42 : 0.6;
-      const px = Math.max(9, Math.min(28, tile * size));
+      const size = f.crit ? 0.5 : ticked ? 0.28 : 0.4;
+      // NEVER taller than what it happened to: a floor of 9px over 8px bodies
+      // made the number the biggest thing in a fight at the zoom people watch at.
+      const px = Math.max(7, Math.min(19, tile * size));
       const ink = floaterInk(palette, f, ticked ? damageColour(palette, ticked.type) : undefined);
       label.style.fontSize = px;
       label.style.fill = toHexNumber(ink.fill);
@@ -1574,6 +1596,17 @@ export async function createPixiRenderer(
       lit.add(m.id);
     }
     for (const [id, glow] of glows) if (!lit.has(id)) glow.visible = false;
+
+    // WHERE A BODY MEETS THE FLOOR. Nothing on any floor cast one, so every
+    // rock, body and prop read as a sticker laid on paper. At the entity's own
+    // spot, which IS its feet — `anchorY` hangs the drawing off that.
+    for (const e of [...state.monsters, ...state.folk, state.hero]) {
+      if (e.dead && e.deathAge >= DEATH_FADE) continue;
+      const fade = e.dead ? 1 - Math.min(1, e.deathAge / DEATH_FADE) : 1;
+      auraLayer
+        .ellipse(cx(e.x), cy(e.y), e.scale * SHADOW.wide, e.scale * SHADOW.tall)
+        .fill({ color: toHexNumber(palette.void), alpha: SHADOW.alpha * fade });
+    }
   }
 
   function draw(state: RunState, emerge = 1): void {

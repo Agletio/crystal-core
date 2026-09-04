@@ -750,11 +750,19 @@ crit line on a piece of gear is *increased* Critical Chance, so 10% base and
 100% increased is 20%. FLAT crit stays a tree and trade line, which is what
 keeps a web able to change what a build is capable of rather than nudging it.
 
-**A FLOATING NUMBER IS PALE ON A DARK EDGE.** `floaterInk` in
-`render/renderer.ts` is the one seam: green is life arriving (a pickup, a
-heal), `--hurt` is life leaving, citrine is coin and a Critical, and ordinary
-damage is bone — dark on khaki was invisible at ship size, three critics said
-so, and the user's word was to do what they say. **An IDLE is a breath,
+**A FLOATING NUMBER IS PALE ON A DARK EDGE, AND THERE IS ONE A BODY.**
+`floaterInk` in `render/renderer.ts` is the one seam: green is life arriving (a
+pickup, a heal), `--hurt` is life leaving, citrine is coin and a Critical, and
+ordinary damage is bone — dark on khaki was invisible at ship size, three
+critics said so, and the user's word was to do what they say. **`bank()` in
+`src/sim/run.ts` is the only way one is raised**: a live number of the same
+sort on the same spot takes the new damage and starts its rise again, because
+a pool ticking eight times a second printed a column of figures up the body it
+was killing. **It is sized off the TILE and capped well under a body** — a
+number taller than what it happened to was the biggest thing in a fight.
+**A BODY CASTS A CONTACT SHADOW** (`SHADOW` in `render/pixi.ts`), at its own
+spot, which is its feet: with none, every body was a sticker laid on paper.
+**An IDLE is a breath,
 never a gesture**: `idleTravel` measures how far a body's inked box shifts
 between idle frames and anything past `IDLE_CALM` holds its first frame, so the
 loud few stand still while the calm majority still moves.
@@ -765,7 +773,9 @@ Prismatic deliberately none. Dealing the type applies it, at a chance you BUY
 and never get free; past 100% you apply a second. A damage ailment scales by its
 OWN tags and nothing else, so Spell, Attack and Critical never reach one, and
 crit is out of them in both directions — it comes back only as the guaranteed
-Critical on a body thawing out of a Freeze. **Ailments are the HERO'S**: a
+Critical on a body thawing out of a Freeze. **A MARK'S SIZE IS IN TILES AND
+NEVER THE BODY'S** (`MARK_R`): keyed off `scale`, a boss wore a slab of sky
+blue where a beetle wore a speck. **Ailments are the HERO'S**: a
 monster's difficulty is what a crystal rolls, and a second unweighed source is
 one no danger number accounts for.
 

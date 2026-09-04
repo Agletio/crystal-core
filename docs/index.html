@@ -192,9 +192,8 @@
      rendering. Make hidden actually mean hidden. */
   [hidden] { display: none !important; }
 
-  /* App shell: the page itself never scrolls. Regions that can overflow get
-     their own scrollbar, so the frame stays put like an application window
-     rather than a document. */
+  /* App shell: the page never scrolls, and a region that can overflow gets its
+     own scrollbar, so the frame stays put like an application window. */
   html, body {
     margin: 0;
     /* dvh, not vh: on mobile Safari `vh` is the height with the browser chrome
@@ -408,7 +407,11 @@
   }
   .pickfig:hover .pickfig__name, .pickfig--on .pickfig__name { opacity: 1; color: var(--citrine); }
   .pickfig:hover .pickfig__body { transform: translateY(-3px); }
-  .pickfig--on .pickfig__body { transform: translateY(-3px) scale(1.06); }
+  /* A LIFT and never a scale: `fit()` sizes the canvas to a whole multiple and a
+     1.06 on top is a fractional resample, so the figure a player chose was the
+     one drawn blurred. The ground says which is picked. */
+  .pickfig--on .pickfig__body { transform: translateY(-6px); }
+  .pickfig--on { background: radial-gradient(ellipse 78% 66% at 50% 55%, var(--panel-lit), transparent 100%); }
 
   .picksay {
     position: relative; z-index: 1;
@@ -704,9 +707,8 @@
   .runcols { display: grid; grid-template-columns: minmax(0,1.7fr) minmax(0,1fr); gap: 20px; align-items: start; }
   @media (max-width: 900px) { .runcols { grid-template-columns: 1fr; } }
 
-  /* Watching a map is an application screen, not a document, so the page never
-     grows a scrollbar mid-run. Only the loot list scrolls, and only once it
-     has to. */
+  /* Watching a map is an application screen, so the page never grows a
+     scrollbar mid-run; only the loot list scrolls, and only once it has to. */
   .viewport--locked { overflow: hidden; }
   .viewport--locked #view-run { height: 100%; }
   #run-stagewrap { display: flex; flex-direction: column; gap: 12px; height: 100%; min-height: 0; }
@@ -1511,7 +1513,9 @@
      so a rung cannot drift off the chamber it sits in. */
   .climbtabs { display: flex; justify-content: center; gap: 6px; margin-bottom: 8px; }
   .climbtab__done { color: var(--text-dim); font-size: 10px; }
-  .climbtab--on { border-color: var(--citrine); color: var(--citrine); }
+  /* THE ONE THAT IS UP IS FILLED: a tab under the pointer and the tab you are
+     reading were two lit tabs, and a tint cannot imitate a plate. */
+  .climbtab--on { border-color: var(--citrine); color: var(--citrine); background-color: var(--panel-lit); }
   .climbtab--on .climbtab__done { color: var(--citrine); }
   .climbtab--shut { border-style: dashed; }
   .climbseam {
@@ -1777,7 +1781,14 @@
      the box allows. */
   .modal__head--who { justify-content: flex-start; align-items: flex-end; gap: 14px; padding-bottom: 0; }
   .modal__title { font-family: var(--display); font-size: 17px; letter-spacing: .1em; text-transform: uppercase; margin: 0; color: var(--citrine); text-shadow: 2px 2px 0 rgba(0,0,0,.9); }
-  .modal__body { padding: 16px 18px; overflow-y: auto; }
+  .modal__body { padding: 16px 18px; overflow-y: auto; scrollbar-gutter: stable; }
+  /* A ROW CUT BY THE FRAME with no thumb beside it reads as a broken layout
+     rather than a list. The shell's own brass, always drawn. */
+  *::-webkit-scrollbar { width: 10px; height: 10px; }
+  *::-webkit-scrollbar-track { background-color: var(--ink); }
+  *::-webkit-scrollbar-thumb { background-color: var(--edge); border: 2px solid var(--ink); border-radius: var(--r); }
+  *::-webkit-scrollbar-thumb:hover { background-color: var(--edge-lit); }
+  *::-webkit-scrollbar-corner { background-color: var(--ink); }
 
   /* The stats side is the wider one now: it carries the damage workings, and a
      line of those wrapped three times is not a breakdown anyone reads. */

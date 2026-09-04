@@ -4,9 +4,7 @@
  * A drag is a DELTA on top of the position CSS gave the card — `--wx` / `--wy`
  * — so a window nobody moved sits where the layout put it, and a default that
  * changes still reaches one that has been dragged. Stacking is by recency: the
- * last card you touched is on top and is what Escape answers. The registry
- * comes off the table of screens in `src/web.ts`, so a screen is still four
- * places rather than five.
+ * last card you touched is on top and is what Escape answers.
  */
 
 /** The band, `Z_BASE + position in the stack`. Above the HUD, under the scrim
@@ -59,10 +57,8 @@ function drain(records = watcher.takeRecords()): void {
 }
 
 /** Stacked centred cards align, so a window can OPEN square over another one's
- *  head — which is the only handle the buried window has. An open that covers
- *  a visible head steps down-right until it does not: the cascade. Only a
- *  colliding open steps, so a window alone is exactly where the layout put it,
- *  and a card somebody dragged is theirs (`win--moved`) and is left alone. */
+ *  head — the only handle the buried one has. A colliding open steps down-right
+ *  until it does not; a card somebody dragged is theirs and is left alone. */
 const CASCADE = 36;
 function unbury(id: string): void {
   const win = wins.get(id);
@@ -83,6 +79,11 @@ function unbury(id: string): void {
       return cx > box.left && cx < box.right && cy > box.top && cy < box.bottom;
     });
     if (!covered) return;
+    // A step it cannot AFFORD is a step that pushes its own foot off the
+    // screen: the stations card stands the full height it is allowed, so three
+    // of these cut the workers off the bottom. A window nobody moved may only
+    // ever be stepped INSIDE the viewport.
+    if (box.bottom + CASCADE > globalThis.innerHeight || box.right + CASCADE > globalThis.innerWidth) return;
     const off = windowOffset(win.card);
     settle(win.card, off.x + CASCADE, off.y + CASCADE);
   }

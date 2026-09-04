@@ -593,6 +593,67 @@ is taken and the two overhauls are left where they were.
 - [ ] **THE CAST HALL'S WARRIOR AND ROGUE** — still the overhaul the user
       ruled out (~68 generations a body).
 
+**THE FOURTH REVIEW (2026-09-03d, commit `ceae303`): 5 / 5 / 4.** Twenty
+pictures approved. *"A 9 shell around a 4 fight, and a shopper buys the
+fight."* Every CODE item all three named is taken here; what is left in all
+three lists is the ART the user ruled out.
+
+- [x] **THE BLIGHT POOL** — all three, first. *"A lime-and-sand dithered disc
+      five tiles wide, brighter than the floor, with a stack of green 8s over
+      it; cap the summed alpha, hard edge, no smoothing."* DONE: every live
+      field is gathered into ONE union of cells (`pixelDisc`, each cell drawn
+      once) and filled at the freshest pool's alpha, tinted 55% to the void —
+      so nine pools over a ten-second cast cannot stack into a lid, and the
+      soft-brush still is gone (`bl3-02.png`).
+- [x] **ONE NUMBER A BODY.** *"A column of eight outlined 8s up its centre."*
+      DONE: `bank()` in `src/sim/run.ts` adds to a live number of the same sort
+      on the same spot rather than pushing a second, for hits, ticks, the crit
+      echo and thorns alike.
+- [x] **THE NUMBERS AND LABELS ARE TOO BIG.** *"148 block is taller than the
+      bodies fighting under it."* DONE: a floater is 0.4 of a tile (0.5 crit,
+      0.28 a tick) clamped to 19 px, and a drop's name 0.26 clamped to 13 —
+      halved, so a body wins its own frame. `LOOT_SPAN` came down with them:
+      a shield on the floor was 0.86 of a tile beside a body of 1.
+- [x] **THE CHILL SQUARE.** *"A 40 px flat sky-blue block on the boss's
+      shoulder — it scales with `size`."* DONE: `MARK_R` is a mark's radius in
+      TILES, so a boss at scale 5 and a beetle wear the same glyph; only where
+      it sits is still the body's.
+- [x] **THE WINDOW FOOTPRINT AND THE CLIPPED ROWS** — all three. *"Cascades
+      over the crafting window and runs off the bottom of an 800 px view; a
+      helmet slot, a ledger row and a heading each sliced by the frame with
+      nothing saying more exists."* DONE: the cascade refuses a step the card
+      cannot afford, so a full-height window is never pushed off its own foot;
+      and the shell wears its own brass scrollbar, always drawn, with
+      `scrollbar-gutter: stable` on every window body. The rail was ALREADY
+      clear — probed, `.corner` 64 against a window's 36 with every button
+      hit-testing to itself.
+- [x] **TWO TABS LIT AT ONCE.** *"WEAPONS amber and HELMETS red — hover style
+      equals active style."* DONE: the tab that is up wears a filled plate,
+      which a hover tint cannot imitate.
+- [x] **THE CAST HALL IS BLURRED.** *"All four bodies bilinear-scaled, and the
+      Warrior and Rogue unreadable because of it."* HALF DONE: the chosen
+      figure carried `scale(1.06)` on top of a canvas `fit()` had already sized
+      to a WHOLE multiple — a fractional resample of the one body the player
+      picked. It is a lift now and the ground says which is chosen. The two
+      bodies themselves are the overhaul.
+- [x] **NOTHING CASTS A SHADOW.** *"Every rock, body and prop is a sticker on
+      paper — the cheapest change that stops all three floors reading that
+      way."* DONE for BODIES: `SHADOW` in `src/render/pixi.ts` lays a contact
+      shadow at each body's own spot, under the loot beam and under the bodies
+      (`sh1-01.png`). Props are next and are a bigger sweep.
+- [ ] **THE FLOOR DECAL'S LATTICE.** *"The arena's crescent repeats on a fixed
+      ~55 px diagonal with a constant period; offset its position AND which
+      mark by a per-cell hash."* CODE, not yet taken — `grainAt` is off on every
+      world now, so what repeats is the SET's own tile decal.
+- [ ] **THE RAIL GLYPHS, again.** The UI reviewer says nine near-identical pale
+      blobs; the purist says they now read. A conflict, left for the next run
+      to settle rather than argued down here.
+- [ ] **THE ROT AND THE CAVERN, AND THE TWO BODIES** — all three critics, and
+      all of it the art the user ruled out: the Rot's floor and its rock as a
+      palisade, the Cavern's lavender against the camp's palette, the shared
+      grey props, the Cavern's way-in, the beetle's legs and death frame, the
+      stalk's width, and the cast hall's two bodies.
+
 ## Phase 3 — A quest log instead of a pointing finger
 
 **Not next, and deliberately.** The tutorial was deleted outright so the opening

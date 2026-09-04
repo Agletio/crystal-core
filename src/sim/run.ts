@@ -545,6 +545,8 @@ export interface RunState {
 }
 
 const FLOATER_LIFE = 1.1;
+/** How long a number stays open to being ADDED to, under half its life. */
+const FLOATER_MERGE = 0.4;
 
 export class RunSim {
   readonly state: RunState;
@@ -3106,14 +3108,7 @@ export class RunSim {
       this.emit('crit_surge', [{ x: attacker.x, y: attacker.y }], 'physical', 0.4);
     }
 
-    s.floaters.push({
-      x: defender.x,
-      y: defender.y,
-      text: String(Math.round(dmg)),
-      age: 0,
-      crit,
-      on: defender.kind,
-    });
+    this.bank(defender, dmg, crit);
 
     if (defender.kind === 'hero') {
       for (const [type, dealt] of Object.entries(byType)) {
@@ -3135,10 +3130,7 @@ export class RunSim {
     if (crit && echo > 0 && this.grip === 'pair' && defender.life > 0) {
       const back = dmg * (echo / 100);
       defender.life -= back;
-      s.floaters.push({
-        x: defender.x, y: defender.y, text: String(Math.round(back)), age: 0,
-        crit: false, on: defender.kind,
-      });
+      this.bank(defender, back, false);
     }
 
     if (defender.life <= 0) this.kill(defender);
@@ -3547,19 +3539,10 @@ export class RunSim {
     // BEFORE the victim can die: a killing tick is exactly when it should jump.
     for (const s of contagious) this.spreadAilment(e, s!);
 
-    // ONE floater per ailment, never one per stack: twelve Burns are one
-    // number climbing rather than twelve on top of each other.
+    // ONE floater per ailment, never one per stack.
     for (const [id, dealt] of Object.entries(ticked)) {
       if (dealt < 1) continue;
-      this.state.floaters.push({
-        x: e.x,
-        y: e.y,
-        text: String(Math.round(dealt)),
-        age: 0,
-        crit: false,
-        on: e.kind,
-        tick: id,
-      });
+      this.bank(e, dealt, false, id);
     }
 
     if (total <= 0) return;
@@ -3617,15 +3600,34 @@ export class RunSim {
 
   /** WHAT A BLOCK IS WORTH BEYOND STOPPING THE HIT. Nothing here writes
    *  `blockChance`: the shield's own number is the whole of whether it runs. */
+  /** ONE NUMBER A BODY: a live number of the same sort on the same spot takes
+   *  the new damage and starts its rise again, where one apiece printed a
+   *  column of figures up the body a pool was ticking down. */
+  private bank(on: Entity, amount: number, crit: boolean, tick?: string): void {
+    const live = this.state.floaters.find(
+      (f) => f.kind === undefined && f.on === on.kind && f.tick === tick && f.age < FLOATER_MERGE
+        && Math.abs(f.x - on.x) < 0.6 && Math.abs(f.y - on.y) < 0.6
+    );
+    if (live) {
+      live.text = String(Math.round(Number(live.text) + amount));
+      live.crit = live.crit || crit;
+      live.age = 0;
+      live.x = on.x;
+      live.y = on.y;
+      return;
+    }
+    this.state.floaters.push({
+      x: on.x, y: on.y, text: String(Math.round(amount)), age: 0, crit, on: on.kind, tick,
+    });
+  }
+
   private afterBlock(hero: Entity, by: Entity): void {
     const thorns = (this.grants.blockThorns as number) ?? 0;
     if (thorns > 0 && !by.dead && by.kind !== 'hero') {
       const back = Object.values(hero.stats.damageByType).reduce((n, v) => n + v, 0) * thorns;
       if (back > 0) {
         by.life -= this.afterResistance(by, back, 'physical');
-        this.state.floaters.push({
-          x: by.x, y: by.y, text: String(Math.round(back)), age: 0, crit: false, on: by.kind,
-        });
+        this.bank(by, back, false);
         if (by.life <= 0) this.kill(by);
       }
     }

@@ -304,3 +304,88 @@ the two overhauls the user ruled out.
 5. `desktop-stations.png` / `desktop-anvil.png` — the window sits over the
    rail and hides nine of eleven buttons, and runs off the bottom of an
    800 px view.
+
+---
+
+## 2026-09-03d — commit `ceae303`
+
+Twenty pictures approved, and every CODE item off the third review landed
+before the shoot: the light-drift mosaic is gone on all four worlds, the slam
+telegraph is a hard pixel ring, the rail glyphs read at 24 px, a body with no
+death frames keels over, and the hero takes 1.4x a monster's rim light.
+
+**The director's three worst faults:** the stations, anvil and jewellery
+windows cascade over the crafting window and run off the bottom of an 800 px
+view; Creeping Blight at ship zoom is a lime dithered disc five tiles wide
+with a stack of green 8s over it; the Chill mark on the boss is a 40 px flat
+sky-blue square, because the mark scaled with the body's `size`.
+
+| critic | bodies | floors | ui | effects | consistency | **overall** | compared to |
+|---|---|---|---|---|---|---|---|
+| the pixel-art purist | 5 | 6 | 7 | 4 | 5 | **5** | Halls of Torment, Death Must Die, Loop Hero |
+| the UI reviewer | 5 | 5 | 6 | 4 | 5 | **5** | Halls of Torment, Death Must Die |
+| the Steam shopper | 4 | 4 | 6 | 3 | 4 | **4** | Death Must Die, Halls of Torment |
+
+**Where they agree:** the shell is finished and the fight is not — *"a 9 shell
+around a 4 fight, and a shopper buys the fight"*. All three name the same four
+code faults first: the Blight pool, the window footprint and clipped rows, the
+floaters and labels that do not scale with the camera, and the flat sky-blue
+Chill square. All three then name the same ART faults, which are the two
+overhauls the user ruled out: the Rot's and Cavern's palettes and rock, and
+the Warrior and Rogue in the cast hall.
+
+**One fact they could not check:** the rail is no longer coverable. Probed with
+the stations open over the bench, `.corner` computes to 64 against the window's
+36 and all eleven rail buttons hit-test to themselves; what the picture shows is
+the window's own width beside them, not a window over them. The cascade off the
+bottom was real and is fixed.
+
+**The pixel-art purist, fix first:**
+
+1. `desktop-descent.png` / `crop-blight-pool-shipzoom-x2.png` — cap the Blight's
+   alpha where pools overlap so it stays the dark olive of the first cast, give
+   it a hard edge instead of the soft-brush falloff, and stack the 8s into one
+   summed floater.
+2. `crop-hero-pack-rot-z4-x3.png` / `seam-z4.png` — floaters in the pixel font
+   at a size that scales with zoom, a cap of one body-height at zoom 4, bone
+   with a 1 px dark edge and no drop shadow.
+3. `swing/swing-14.png` / `crop-swing-hit-dust-x3.png` — delete the 85 px grey
+   square under a monster, replace the blurred hit halo with a 1 px outline for
+   one frame, and the Bark Buckler bag icon with a pixel spark.
+4. `crop-boss-chill-block-x3.png` / `crop-boss-telegraph-x3.png` — ailment marks
+   a fixed ~6 px glyph at ANY body size; the telegraph on the sprite's own
+   pixel grid rather than at 10 CSS px a step.
+5. `rot-z0.png` / `cavern-z0.png` — re-ask the Rot's rock as rock rather than
+   notched posts, pull the Cavern's floor toward the camp's palette, tint the
+   shared grey props per world, and give the Cavern a stepped way-in.
+
+**The UI reviewer, fix first:**
+
+1. One Blight pool per target, capped alpha, palette-quantised hard edge with no
+   smoothing, and one merged floater instead of eight 8s.
+2. One window footprint that stops above the dock and clear of the rail, and a
+   real scroll region with a visible thumb — a helmet slot, a ledger row, a
+   settings row and a section heading are each sliced by the frame with nothing
+   saying more exists.
+3. Scale floaters and name labels with the camera; remove the grey square under
+   a hovered monster; frame the name label; stop using an inventory icon as a
+   VFX.
+4. `crop-arena-lattice-x2.png` — the floor decal repeats on a fixed ~55 px
+   diagonal lattice; offset its position and its choice by a per-cell hash.
+5. Give the rail's glyphs distinct silhouettes and a second hue, and re-emit the
+   four cast-hall bodies nearest-neighbour at native scale.
+
+**The Steam shopper, fix first:**
+
+1. Cap overlapping Blight pools to the single-pool alpha and stagger the
+   floaters.
+2. Darken the Rot's cream floor two or three values, delete its watermark, cap
+   the maroon staves, and put a cast foot-shadow under every rock, body and prop
+   on all three worlds.
+3. Render the cast-hall bodies nearest-neighbour at integer scale, and replace
+   the grey hover square with a 1 px outline plus a framed name plate.
+4. Give stations, anvil and jewellery one footprint above the dock and under the
+   rail, and scroll the Reckoning and Crystals panels so no card is clipped
+   mid-row.
+5. Redraw the Cavern beetle with legs and a death frame, widen the stalk
+   monster, and replace the 40 px Chill square with one fixed-size frost mark.
