@@ -948,7 +948,7 @@
 
   .levelrow { display: flex; align-items: baseline; gap: 8px; margin-bottom: 8px; }
   .levelrow__label { font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--text-dim); }
-  .levelrow__value { font-family: var(--display); font-size: 18px; color: var(--citrine); }
+  .levelrow__value { font-family: var(--display); font-size: 18px; color: var(--citrine); white-space: nowrap; }
 
   /* Points in, what they bought, and the one button that spends. The `how`
      line drops to its own row so a long stat sentence never squeezes the
@@ -2672,11 +2672,21 @@
       </div>
     </div>
     <div class="modal__body">
-      <div class="sheetcols">
+      <div class="climbtabs" id="sheet-tabs"></div>
+      <!-- THE PROFESSIONS PAGE: nine skills with a level each, and the derived
+           steps of whichever you click. -->
+      <div id="sheet-professions" hidden>
+        <div class="crystals" id="sheet-proflist"></div>
+        <div class="panel" id="sheet-profsteps"></div>
+      </div>
+      <div class="sheetcols" id="sheet-main">
         <div class="sheetcols__gear">
           <p class="panel__title">Equipment</p>
           <div class="slotgrid" id="sheet-slots"></div>
           <p class="empty" id="sheet-pick" hidden></p>
+          <!-- Beside the gear and never in the bag; the rod is always on. -->
+          <p class="panel__title" style="margin-top:14px">Tools</p>
+          <div id="sheet-tools"></div>
         </div>
         <div>
           <div class="levelrow">

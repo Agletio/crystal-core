@@ -184,7 +184,7 @@ const STATES = [
   'title', 'slots', 'pick', 'welcome', 'camp', 'camp-hover', 'camp-lit', 'fissure',
   'dock', 'dock-currency', 'dock-materials',
   'crystals', 'sheet', 'shop', 'stash', 'settings', 'history',
-  'toast', 'itemmenu', 'confirm',
+  'toast', 'itemmenu', 'confirm', 'professions',
   'handover', 'descent', 'results',
   'scene', 'speech', 'lampwright',
   'skills', 'skill-list', 'skill-web', 'move-web', 'trade', 'trials', 'proving',
@@ -507,6 +507,13 @@ for (const vp of VIEWPORTS) {
   });
   await page.waitForTimeout(300);
   await shoot('sheet');
+  // AND ITS SECOND PAGE: nine professions with a level each, and the derived
+  // steps of whichever is picked — the only screen that says what a level buys.
+  await page.evaluate(() => document.getElementById('sheet-tab-professions')?.click());
+  await page.evaluate(() => document.getElementById('sheet-prof-mining')?.click());
+  await page.waitForTimeout(300);
+  await shoot('professions');
+  await page.evaluate(() => document.getElementById('sheet-tab-gear')?.click());
   await page.evaluate(() => document.getElementById('sheet-close')?.click());
   await page.waitForTimeout(200);
 

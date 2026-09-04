@@ -18,6 +18,12 @@ import {
   LEVELLING,
   WEAPON_SLOT,
   DUAL,
+  MATERIAL_FAMILY_BY_ID,
+  PROFESSION,
+  PROFESSIONS,
+  PROFESSION_BY_ID,
+  TOOL_SLOTS,
+  toolsForSlot,
 } from '../data';
 import {
   attributeTotals, characterStats, damageDetail, offWeapon, skillBase, treeGrants, weaponRates,
@@ -35,15 +41,20 @@ import {
   openSlots,
   spendAttribute,
   weaponRefusal,
+  toolIn,
+  toolRung,
+  toolsOn,
   xpToNext,
 } from '../sim/character';
+import { professionAt, xpToNext as profXpToNext } from '../game/work';
+import { saysProfession, unlocksFor } from '../professions';
 import { fitsSlot, unequipItem } from '../game/state';
 import { TRADE_BY_ID, respecCost } from '../trades';
 import { ask } from './confirm';
 import { wear } from './wear';
 import type { GameState } from '../game/state';
 import type { Character } from '../sim/character';
-import { gearIcon } from './icons';
+import { drawn, gearIcon } from './icons';
 import { note } from './history';
 import { warnAtCamp } from './atcamp';
 import { inDescent } from './run';
@@ -578,10 +589,141 @@ function renderSkills(): void {
   }
 }
 
+/** The sheet is TWO PAGES now: what you are wearing, and what you can do. */
+const SHEET_TABS = [
+  { id: 'gear', name: 'Character' },
+  { id: 'professions', name: 'Professions' },
+];
+let sheetTab = SHEET_TABS[0].id;
+let profShown = 'blacksmithing';
+export const sheetTabId = (id: string): string => `sheet-tab-${id}`;
+export const toolSlotId = (slot: string): string => `sheet-tool-${slot}`;
+export const professionTileId = (id: string): string => `sheet-prof-${id}`;
+
+function renderTabs(): void {
+  const host = $('sheet-tabs');
+  host.replaceChildren();
+  for (const tab of SHEET_TABS) {
+    const btn = el('button', 'mini climbtab', tab.name) as HTMLButtonElement;
+    btn.id = sheetTabId(tab.id);
+    btn.classList.toggle('climbtab--on', tab.id === sheetTab);
+    btn.onclick = () => {
+      sheetTab = tab.id;
+      render();
+    };
+    host.append(btn);
+  }
+  const main = $('sheet-main') as HTMLElement;
+  const profs = $('sheet-professions') as HTMLElement;
+  // A TAB OPENS AT ITS OWN TOP. The panel scrolls, so the other page's position
+  // is carried over and the first three tiles arrive already off screen.
+  if (main.hidden !== (sheetTab !== 'gear')) main.parentElement?.scrollTo({ top: 0 });
+  main.hidden = sheetTab !== 'gear';
+  profs.hidden = sheetTab !== 'professions';
+}
+
+/** A RUNESCAPE SKILLS PAGE: a tile a profession — its icon, its name, its level
+ *  — and the STEPS of whichever is picked underneath. Every step is derived
+ *  from the table that enforces it, so the page cannot promise what is untrue. */
+function renderProfessions(): void {
+  const list = $('sheet-proflist');
+  list.replaceChildren();
+  for (const def of PROFESSIONS) {
+    const at = professionAt(game, def.id);
+    const tile = el('div', `crystal${def.id === profShown ? ' crystal--t3' : ''}`);
+    tile.id = professionTileId(def.id);
+    const head = el('div', 'crystal__head');
+    const icon = drawn(def.icon, 26);
+    if (icon) head.append(icon);
+    // A TILE IS AN ICON, A NAME AND A LEVEL, like the page it is modelled on.
+    // What the profession is FOR belongs under it, where there is room to say it
+    // — three lines a tile pushed the steps off the bottom of the panel.
+    const title = el('div', 'crystal__title');
+    title.append(el('div', 'crystal__name', def.name));
+    head.append(title);
+    head.append(el('span', 'levelrow__value', `${at.level} / ${PROFESSION.maxLevel}`));
+    tile.append(head);
+    const need = profXpToNext(at.level);
+    const bar = el('div', 'grow');
+    const fill = el('div', 'grow__fill');
+    fill.style.width = `${at.level >= PROFESSION.maxLevel ? 100 : Math.round((at.xp / need) * 100)}%`;
+    bar.append(fill);
+    tile.append(bar);
+    tile.onclick = () => {
+      profShown = def.id;
+      render();
+      // YOU CLICKED IT TO READ IT: the nine tiles fill the panel, so the steps
+      // are under the fold and a click that changed nothing visible is a click
+      // that did nothing as far as anybody can tell.
+      $('sheet-profsteps').scrollIntoView({ block: 'nearest' });
+    };
+    list.append(tile);
+  }
+
+  const steps = $('sheet-profsteps');
+  steps.replaceChildren();
+  const def = PROFESSION_BY_ID[profShown];
+  const at = professionAt(game, profShown);
+  steps.append(el('p', 'panel__title', def?.name ?? profShown));
+  steps.append(el('p', 'skillhead__sub',
+    `${def?.kind === 'gather' ? 'Gathered' : 'Worked'} · ${def?.makes ?? ''}. ${saysProfession(profShown)}`));
+  for (const step of unlocksFor(profShown)) {
+    // LIT WHEN YOU HAVE IT, dim when you do not — the same two states the
+    // anvil's ledger uses, so one glance answers the same question everywhere.
+    const row = el('div', `forgeneed ${at.level >= step.at ? 'forgeneed--ok' : 'forgeneed--short'}`);
+    row.append(el('span', 'forgeneed__what', step.what));
+    row.append(el('span', 'forgeneed__n', `level ${step.at}`));
+    steps.append(row);
+  }
+}
+
+/** THE TOOL SLOTS, beside the gear. One is the CHOICE of what may come off the
+ *  floor and the other is always the rod, so the rod's names itself and the
+ *  other offers its three. Never an `Item`, so this is a select and not a slot
+ *  you drop into — *"you click the slot and it shows a drop down."* */
+function renderTools(): void {
+  const host = $('sheet-tools');
+  host.replaceChildren();
+  for (const slot of TOOL_SLOTS) {
+    const own = toolsForSlot(slot.id);
+    const on = toolIn(game.character, slot.id);
+    const row = el('div', 'stat');
+    row.append(el('span', 'stat__k', slot.name));
+    const rung = on ? on.rungs[toolRung(game.character, on.id)] : undefined;
+    if (own.length < 2) {
+      row.append(el('span', 'stat__v', rung?.name ?? '—'));
+    } else {
+      const pick = document.createElement('select');
+      pick.className = 'mini';
+      pick.id = toolSlotId(slot.id);
+      for (const tool of own) {
+        const opt = document.createElement('option');
+        opt.value = tool.id;
+        opt.textContent = tool.rungs[toolRung(game.character, tool.id)].name;
+        opt.selected = tool.id === on?.id;
+        pick.append(opt);
+      }
+      pick.onchange = () => {
+        game.character.toolSlots = { ...(game.character.toolSlots ?? {}), [slot.id]: pick.value };
+        render();
+      };
+      row.append(pick);
+    }
+    attachTooltip(row, () => slot.blurb);
+    host.append(row);
+  }
+  const takes = toolsOn(game.character)
+    .map((t) => MATERIAL_FAMILY_BY_ID[t.family]?.raw ?? t.family);
+  host.append(el('p', 'empty', `This lets you take ${takes.join(' and ')} — and nothing else.`));
+}
+
 function render(): void {
   hideTooltip();
+  renderTabs();
   renderSkills();
   renderSlots();
+  renderTools();
+  renderProfessions();
   renderPickHint();
   renderAttributes();
   renderStats();
