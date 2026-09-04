@@ -2338,32 +2338,33 @@
   {
    "grid": 48,
    "inks": 24,
+   "luma": 32,
    "sprite": "mahthar",
-   "character": "1f92fbab-3518-45fd-894c-b5ff29396cf6",
+   "character": "981eea9c-c9a5-48df-a34a-1019989a8b2f",
    "dirs": [
     "south-east"
    ],
    "states": {
     "idle": {
-     "group": "0940542e-6e7a-413e-b475-9f115bb399c0",
+     "group": "e6aa3481-2467-45c7-b4c3-a9e589520de4",
      "frames": 2
     },
     "walk": {
-     "group": "96a28b23-c795-4727-bf3b-9039a20da345",
+     "group": "fe2544b6-23f4-4885-be89-3bfeedf5076b",
      "frames": 6
     },
     "attack": {
-     "group": "a31fc691-3bc1-4519-8553-1828d309b875",
+     "group": "db551379-c05c-4e39-848f-579e1f430dfe",
      "frames": 4,
      "from": 0.4
     },
     "cast": {
-     "group": "3bd467ca-d4a9-4681-a485-e0888e904ff8",
+     "group": "83fb86b4-4492-44ce-b23d-95cc270f2674",
      "frames": 4,
      "from": 0.4
     },
     "death": {
-     "group": "25060d5a-3ad1-4967-904b-c42fd7516b46",
+     "group": "e8a28b32-50fc-4b48-82a0-324714a4c8d8",
      "frames": 4,
      "from": 0.3
     }

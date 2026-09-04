@@ -2194,7 +2194,7 @@
   },
   {
    "sprite": "mahthar",
-   "character": "1f92fbab-3518-45fd-894c-b5ff29396cf6",
+   "character": "981eea9c-c9a5-48df-a34a-1019989a8b2f",
    "name": "Mahthar",
    "look": "HIS TWO HANDS ARE OPEN AND EMPTY, hanging loose at his sides, nothing held in either one, nothing strapped to his back and nothing hanging from his belt. A lean rangy TRIBAL HUNTSMAN built to be read as a SHAPE from far away: THREE flat blocks of tone and nothing finer. A heavy shaggy near-black PELT hangs over one shoulder and down his back in one solid mass, so his outline is wide and ragged on that side and bare on the other. Under it his chest, one whole arm and both legs are BARE warm mid-brown skin, one even tone with no pattern on it. One bright accent and no more: a broad flat collar of pale bone at the throat, catching the light. A thick dark belt and a short dark kilt, bare shins, bare feet. Long dark hair tied back tight against the skull. NOT tattooed, NOT patterned, NOT striped, NOT painted, NOT speckled, NOT busy, NOT detailed, NOT many small shapes. His hands are EMPTY and stay empty. NOT holding anything, NOT carrying anything, NOT a sword, NOT an axe, NOT a club, NOT a mace, NOT a spear, NOT a haft, NOT a shield, NOT a bow, NOT a scabbard, NOT a sheath, NOT a belt weapon, NOT a weapon on his back, NOT a warrior, NOT a barbarian, NOT a fighter. He is a LIVING BREATHING MAN with FLESH on him, warm skin over most of him. Tall and long-limbed with a SMALL head. NOT a skull, NOT a skeleton, NOT undead, NOT armoured, NOT a breastplate, NOT chainmail, NOT a helmet, NOT a robe, NOT a mage, NOT a shirt, NOT a headdress, NOT feathers, NOT a mask, NOT face paint, NOT a bodybuilder, NOT oiled, NOT anime, NOT manga, NOT chibi, NOT cute, NOT a big head, NOT a doll, NOT a cartoon. FULL BODY head to feet, seen at a THREE-QUARTER angle, turned enough that you can tell which way he faces. No ground, no floor, no shadow cast on the ground, no base, no platform, no other objects.",
    "states": {
@@ -2219,37 +2219,7 @@
      "say": "buckling at the knees, folding forward over the stomach and going down onto the side, lying flat and still"
     }
    },
-   "approved": "cache/designs/warrior_b-0.png",
-   "_lost": "The broad build was asked as `warrior` and the lean one with a hide over one shoulder as `warrior_b`; three designs each. B1 was picked. The broad row is dropped rather than kept, since a `look` nothing points at is a body somebody will re-roll by accident."
-  },
-  {
-   "sprite": "mahthar",
-   "character": null,
-   "name": "Mahthar",
-   "look": "HIS TWO HANDS ARE OPEN AND EMPTY, hanging loose at his sides, nothing held in either one, nothing strapped to his back and nothing hanging from his belt. A lean rangy TRIBAL HUNTSMAN built to be read as a SHAPE from far away: THREE flat blocks of tone and nothing finer. A heavy shaggy near-black PELT hangs over one shoulder and down his back in one solid mass, so his outline is wide and ragged on that side and bare on the other. Under it his chest, one whole arm and both legs are BARE warm mid-brown skin, one even tone with no pattern on it. One bright accent and no more: a broad flat collar of pale bone at the throat, catching the light. A thick dark belt and a short dark kilt, bare shins, bare feet. Long dark hair tied back tight against the skull. NOT tattooed, NOT patterned, NOT striped, NOT painted, NOT speckled, NOT busy, NOT detailed, NOT many small shapes. His hands are EMPTY and stay empty. NOT holding anything, NOT carrying anything, NOT a sword, NOT an axe, NOT a club, NOT a mace, NOT a spear, NOT a haft, NOT a shield, NOT a bow, NOT a scabbard, NOT a sheath, NOT a belt weapon, NOT a weapon on his back, NOT a warrior, NOT a barbarian, NOT a fighter. He is a LIVING BREATHING MAN with FLESH on him, warm skin over most of him. Tall and long-limbed with a SMALL head. NOT a skull, NOT a skeleton, NOT undead, NOT armoured, NOT a breastplate, NOT chainmail, NOT a helmet, NOT a robe, NOT a mage, NOT a shirt, NOT a headdress, NOT feathers, NOT a mask, NOT face paint, NOT a bodybuilder, NOT oiled, NOT anime, NOT manga, NOT chibi, NOT cute, NOT a big head, NOT a doll, NOT a cartoon. FULL BODY head to feet, seen at a THREE-QUARTER angle, turned enough that you can tell which way he faces. No ground, no floor, no shadow cast on the ground, no base, no platform, no other objects.",
-   "states": {
-    "idle": {
-     "frames": 4,
-     "say": "standing still, weight shifting from one foot to the other, chest rising and falling, arms loose at the sides"
-    },
-    "walk": {
-     "frames": 8,
-     "say": "walking forward at a heavy unhurried pace, shoulders rolling, arms swinging from the shoulder"
-    },
-    "attack": {
-     "frames": 4,
-     "say": "staying in strict side profile, driving off the back foot and swinging one arm down and across the body in a full committed arc, ending at full forward extension"
-    },
-    "cast": {
-     "frames": 4,
-     "say": "strict side profile, planting both feet wide and hauling both fists in to the chest, then throwing the head back and roaring with the arms flung out"
-    },
-    "death": {
-     "frames": 4,
-     "say": "buckling at the knees, folding forward over the stomach and going down onto the side, lying flat and still"
-    }
-   },
-   "approved": "cache/designs/warrior_b-0.png",
+   "approved": "cache/designs/mahthar-0.png",
    "_lost": "The broad build was asked as `warrior` and the lean one with a hide over one shoulder as `warrior_b`; three designs each. B1 was picked. The broad row is dropped rather than kept, since a `look` nothing points at is a body somebody will re-roll by accident."
   },
   {
