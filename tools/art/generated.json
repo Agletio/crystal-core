@@ -2351,7 +2351,8 @@
     },
     "walk": {
      "group": "fe2544b6-23f4-4885-be89-3bfeedf5076b",
-     "frames": 6
+     "frames": 6,
+     "to": 0.55
     },
     "attack": {
      "group": "db551379-c05c-4e39-848f-579e1f430dfe",
@@ -3276,7 +3277,7 @@
     "walk": {
      "group": "285f015b-fd63-4e90-9b08-4dc53d6290dd",
      "frames": 6,
-     "to": 0.8
+     "to": 0.66
     },
     "attack": {
      "group": "a533718b-e698-4e5a-ada5-2599d6bcf9ab",
