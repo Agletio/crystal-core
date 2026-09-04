@@ -3728,6 +3728,13 @@ export const MEAL_BY_FISH: Record<string, MealDef> = Object.fromEntries(
  *  BUDGET, never a per-kill rate — kills run 26 at the bare Fissure against 847
  *  at the deep end. `perRun` is WHOLE: on a fraction a run pays `left ×
  *  H(bodies)`, 7.4 over 850. */
+/** THE UNIVERSAL MATERIAL: the one family with no tool, no node and no deal.
+ *  *"Don't spam too many"* — every recipe asks for some, so the demo PRINTS it. */
+export const GEM_DROP = {
+  perRun: 0.7,
+  each: [1, 2] as [number, number],
+};
+
 export const BODY_DROP = {
   /** DROPS a clear pays, NOT raw — each hands over `each`. Scarce like the
    *  floor's nodes: *"make all the materials less common."* */

@@ -38,7 +38,7 @@ import {
 import type { CombatStats, Grip } from './stats';
 import { SKILL_BEHAVIOURS } from './skills';
 import { bleedOf, critBuff, landingOf, overchargeOf, shieldShare, starvedMultiplier } from './grants';
-import { equippedSkill, mainSkillId, monsterXp } from './character';
+import { equippedSkill, gatherableFamilies, mainSkillId, monsterXp, toolMore } from './character';
 import type { Character } from './character';
 import { dominantFamily, familyPlan, runSet } from './crystal';
 import type { RunSet } from './crystal';
@@ -85,6 +85,7 @@ import {
   MATERIAL_BY_ID,
   MATERIAL_FAMILIES,
   GATHERED,
+  GEM_DROP,
   DROPPED,
   BODY_DROP,
   MATERIAL_FAMILY_BY_ID,
@@ -618,6 +619,9 @@ export class RunSim {
   private chaining: number[] | null = null;
   /** What is in the hero's hands, read once: nothing swaps gear mid-descent. */
   private readonly grip: Grip;
+  /** WHAT HE IS CARRYING TO GATHER WITH, read once: nothing swaps mid-run. */
+  private readonly tools: string[];
+  private readonly toolMore: (family: string) => number;
   /** Fixed at spawn: what a passive's own damage is scaled by, per type. */
   private readonly passiveScale: Record<string, number>;
   /** One aura's worth of flat damage on this map, in real damage. */
@@ -648,6 +652,7 @@ export class RunSim {
   private sweptFrom = 0;
   private gearLeft = 0;
   private materialLeft = 0;
+  private gemLeft = 0;
   private nextDropped = 0; // which dropped family is next, so the two alternate
   private currencyLeft = 0;
   private budgeted = false;
@@ -668,6 +673,8 @@ export class RunSim {
     this.options = options;
     this.grants = treeGrants(character);
     this.grip = gripOf(character);
+    this.tools = gatherableFamilies(character);
+    this.toolMore = (family) => toolMore(character, family);
     this.level = character.level;
     this.mover = SKILL_BY_ID[equippedSkill(character, 'movement') ?? ''] ?? null;
     // The tree can change what the skill IS — its damage type, its tags — and
@@ -1114,9 +1121,11 @@ export class RunSim {
     const wanted = Math.min(packCount, this.whole(GATHER.perRun * this.set.yield));
     if (wanted <= 0) return;
 
-    // DEALT ROUND, never rolled: four draws could come up all metal, and
-    // *"relatively equal drop rates"* is only sayable as a spread.
-    const deck = this.rng.shuffle(GATHERED.filter((f) => f.id !== 'fish').map((f) => f.id));
+    // DEALT ROUND rather than rolled, and only among what your TOOLS can work:
+    // a node nobody may open pays nothing and stands there, which is prevention.
+    const onFloor = GATHERED.filter((f) => f.id !== 'fish');
+    const worked = onFloor.filter((f) => this.tools.includes(f.id));
+    const deck = this.rng.shuffle((worked.length > 0 ? worked : onFloor).map((f) => f.id));
     const packs = this.rng.shuffle(Array.from({ length: packCount }, (_, i) => i));
 
     // EVERY LAKE CARRIES A FISHING SPOT, off the count first, and a dry map
@@ -1165,7 +1174,11 @@ export class RunSim {
         pack,
         family: rare ? 'unique' : family.id,
         material: def.id,
-        n: rare || this.rng.next() < GATHER.single ? 1 : this.rng.int(GATHER.yield[0], GATHER.yield[1]),
+        // A BETTER TOOL TAKES MORE OUT OF ONE NODE, and a unique is always one.
+        n: rare
+          ? 1
+          : (this.rng.next() < GATHER.single ? 1 : this.rng.int(GATHER.yield[0], GATHER.yield[1]))
+            + this.toolMore(family.id),
         ...(pool ? { on: pool.on } : {}),
         art: pair,
         at: map.props.length,
@@ -3769,6 +3782,7 @@ export class RunSim {
     this.rollCurrency();
     this.rollGearDrop();
     this.rollMaterialDrop();
+    this.rollGemDrop();
     this.rollRelicDrop();
     this.rollKeyDrop();
     this.burstCurse(victim);
@@ -3789,16 +3803,27 @@ export class RunSim {
 
   }
 
-  /** WHAT A BODY LEAVES: hide, and gems out of anything. Off the same
-   *  depleting budget gear is, and DEALT round the dropped families. */
+  /** SKINS ONLY, and *"it won't drop unless you have the skinning knife
+   *  equipped."* Without it the budget is never drawn, so another tool is free. */
   private rollMaterialDrop(): void {
+    if (!this.tools.includes('hide')) return;
     this.budgets();
     if (!this.bodyRng.chance(this.materialLeft / this.bodiesLeft())) return;
     this.materialLeft--;
-    const family = DROPPED[this.nextDropped++ % DROPPED.length];
-    const def = MATERIALS.find((m) => m.world === this.set.theme && m.family === family.id);
+    const def = MATERIALS.find((m) => m.world === this.set.theme && m.family === 'hide');
     if (!def) return;
-    this.bankMaterial(def.id, this.bodyRng.int(BODY_DROP.each[0], BODY_DROP.each[1]));
+    this.bankMaterial(def.id, this.bodyRng.int(BODY_DROP.each[0], BODY_DROP.each[1]) + this.toolMore('hide'));
+  }
+
+  /** GEM IS UNIVERSAL — *"all things require it… they can just drop randomly
+   *  from everything."* No tool, no node, no deal: one budget off ANY source,
+   *  so every recipe may ask for it without locking a specialist out. */
+  private rollGemDrop(): void {
+    this.budgets();
+    if (!this.bodyRng.chance(this.gemLeft / this.bodiesLeft())) return;
+    this.gemLeft--;
+    const def = MATERIALS.find((m) => m.world === this.set.theme && m.family === 'gem');
+    if (def) this.bankMaterial(def.id, this.bodyRng.int(GEM_DROP.each[0], GEM_DROP.each[1]));
   }
 
   /** Item level comes off the power band and the base's tier off that, so a
@@ -3832,6 +3857,7 @@ export class RunSim {
     );
     // Off `yield` for the reason gear is: the budget rides run LENGTH.
     this.materialLeft = this.whole(BODY_DROP.perRun * this.set.yield);
+    this.gemLeft = this.whole(GEM_DROP.perRun * this.set.yield);
   }
 
   private whole(budget: number): number {

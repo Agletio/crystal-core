@@ -6,8 +6,8 @@
 import { bagsFull, bankLoot, grantFirstClear } from './state';
 import type { GameState } from './state';
 import { advanceSocketed, spendSocketed } from './crystals';
-import { collectWork, professionAt, spendMeal } from './work';
-import type { Finished } from './work';
+import { collectWork, payGathering, professionAt, spendMeal } from './work';
+import type { Finished, GatherGain } from './work';
 import type { ModBurn } from './crystals';
 import type { CrystalGain } from './crystals';
 import { grant } from '../economy';
@@ -38,6 +38,8 @@ export interface RunReport {
   burnt: ModBurn[];
   /** Jobs that came off a station while you were down there. */
   worked: Finished[];
+  /** What the gathering professions took off this descent, and any level. */
+  gathered: GatherGain[];
   /** The meal that ran out on this descent, if one did. Ends an Enter-chain? No
    *  — a meal is a buff you replace, never a thing you cannot descend without. */
   eaten: RolledMod | null;
@@ -68,6 +70,7 @@ export function buildReport(game: GameState, run: RunState, left = false): RunRe
   let levelled: CrystalGain[] = [];
   let burnt: ModBurn[] = [];
   let worked: Finished[] = [];
+  let gathered: GatherGain[] = [];
   let eaten: RolledMod | null = null;
   let kept: Item[] = [];
 
@@ -82,6 +85,7 @@ export function buildReport(game: GameState, run: RunState, left = false): RunRe
     // capacity is a thing checked between runs rather than during one, and a
     // descent that overfills the bag by three is a bag reading 35/32.
     kept = bankLoot(game, run.loot.items).kept;
+    gathered = payGathering(game, run.loot.items);
   }
 
   if (cleared) {
@@ -160,6 +164,15 @@ export function buildReport(game: GameState, run: RunState, left = false): RunRe
     });
   }
 
+  // AND WHAT THE TOOLS LEARNED. Only a level is worth a row: the raw itself is
+  // already in the haul above, so printing it twice says nothing new.
+  for (const gain of gathered.filter((g) => g.levels > 0)) {
+    rows.push({
+      label: PROFESSION_BY_ID[gain.profession]?.name ?? gain.profession,
+      value: `level ${professionAt(game, gain.profession).level}`,
+    });
+  }
+
   if (eaten) rows.push({ label: eaten.name, value: 'eaten up', bad: true });
 
   // Damage taken, split by type — worst first and under its own name, because
@@ -192,6 +205,7 @@ export function buildReport(game: GameState, run: RunState, left = false): RunRe
     levelled,
     burnt,
     worked,
+    gathered,
     eaten,
     lostLoot: !keeps && hadLoot,
     bagsFull: bagsFull(game),

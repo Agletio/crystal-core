@@ -8,6 +8,7 @@
  * stations, the anvil, a load — through one `clock()` a harness sets forward.
  */
 import {
+  GATHER,
   MATERIAL_BY_ID,
   MATERIAL_FAMILY_BY_ID,
   MEAL,
@@ -18,6 +19,7 @@ import {
   WORK,
   WORKERS,
   WORKER_BY_ID,
+  gathererOf,
   workerMark,
 } from '../data';
 import type { MaterialDef, ProfessionDef, WorkerDef } from '../data';
@@ -113,6 +115,32 @@ export function payXp(game: GameState, id: string, xp: number): number {
   if (level >= PROFESSION.maxLevel) banked = 0;
   game.character.professions = { ...(game.character.professions ?? {}), [id]: { level, xp: banked } };
   return gained;
+}
+
+/** A gathering profession's cut of one descent. */
+export interface GatherGain {
+  profession: string;
+  raw: number;
+  levels: number;
+}
+
+/**
+ * WHAT A DESCENT TAUGHT THE GATHERER, off the RAW it actually banked — *"the
+ * levels should be separate and increased by actually using the tools."*
+ * Derived from the haul rather than counted in the sim, so nothing has to be
+ * tallied twice; gem pays nothing at all, having no gatherer to pay.
+ */
+export function payGathering(game: GameState, items: Item[]): GatherGain[] {
+  const raw = new Map<string, number>();
+  for (const item of items) {
+    if (item.kind !== 'material' || item.meta.done) continue;
+    const who = gathererOf(MATERIAL_BY_ID[item.base]?.family ?? '');
+    if (!who) continue;
+    raw.set(who.id, (raw.get(who.id) ?? 0) + (((item.meta.n as number) ?? 0)));
+  }
+  return [...raw.entries()]
+    .filter(([, n]) => n > 0)
+    .map(([profession, n]) => ({ profession, raw: n, levels: payXp(game, profession, n * GATHER.xpPerRaw) }));
 }
 
 /** Raw of one material in the bag. */
