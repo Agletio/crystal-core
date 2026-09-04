@@ -641,13 +641,23 @@ three lists is the ART the user ruled out.
       way."* DONE for BODIES: `SHADOW` in `src/render/pixi.ts` lays a contact
       shadow at each body's own spot, under the loot beam and under the bodies
       (`sh1-01.png`). Props are next and are a bigger sweep.
+- [x] **THE RIM LIGHT IS DELETED.** *"The only thing I think is worse now is
+      this border you've created around the characters and enemies. It's eating
+      into their art instead of adding a border… probably just delete it."*
+      DONE, and he is right about the mechanism: `rimLit` recoloured a body's
+      own outermost pixels, which ARE the silhouette. `RIM`, `LAMP`, `rimLit`
+      and the `lit` parameter are gone from `sprites.ts` and `pixi.ts`
+      (`norim.png`). It answered the second review's "EVERY BODY A LAMPLIT
+      EDGE"; the user outranks the critics, and the renderer skill says so now.
 - [ ] **THE FLOOR DECAL'S LATTICE.** *"The arena's crescent repeats on a fixed
       ~55 px diagonal with a constant period; offset its position AND which
-      mark by a per-cell hash."* CODE, not yet taken, and it is a QUESTION
-      rather than a job: `grainAt` is exactly that hash and it is switched off
-      with the light drift under the one `plain` flag, on the floor the user
-      judged. Separating the two puts grain back on an approved look. **Ask
-      before doing it.**
+      mark by a per-cell hash."* `grainAt` is exactly that hash, switched off
+      with the light drift under the one `plain` flag. **TRIED, on his word,
+      and REVERTED**: with the drift off and the grain back on, each mark
+      carries its own EDGE, so a floor of them is a grid of faint boxes — the
+      colour lines in the floor in another form, which is the complaint that
+      bought `plain` in the first place. Breaking the repeat needs marks with
+      no edge, which is a GENERATION rather than a flag.
 - [x] **THE RAIL GLYPHS, again** — the fifth pass settled the conflict against
       them: three of ten had a nameable silhouette and seven were the same bone
       blob at the same value. DONE, and the fault was the WORDS: every emblem

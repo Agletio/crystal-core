@@ -762,6 +762,10 @@ was killing. **It is sized off the TILE and capped well under a body** — a
 number taller than what it happened to was the biggest thing in a fight.
 **A BODY CASTS A CONTACT SHADOW** (`SHADOW` in `render/pixi.ts`), at its own
 spot, which is its feet: with none, every body was a sticker laid on paper.
+**AND NOTHING IS DRAWN ON ITS EDGE.** A lamplit rim was tried on every body and
+DELETED — *"it's eating into their art instead of adding a border"* — because it
+recoloured the body's own outermost pixels, which is the silhouette. A rank's
+`glow` lies OUTSIDE the art and is the only light a body wears.
 **An IDLE is a breath,
 never a gesture**: `idleTravel` measures how far a body's inked box shifts
 between idle frames and anything past `IDLE_CALM` holds its first frame, so the

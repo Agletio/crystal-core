@@ -102,7 +102,6 @@ import {
   makeSheet,
   makeVfx,
   rankedKey,
-  LAMP,
 } from './sprites';
 import { PROP_ART } from './generated-props';
 import { ZONES } from './generated-tiles';
@@ -177,12 +176,12 @@ export async function createPixiRenderer(
 
   /** Uploaded on first use, beside the canvases: an eager loop here would pay
    *  the boot cost the lazy sheet exists to avoid. */
-  function texturesFor(sprite: string, rank: MonsterRank, lit = 0): Texture[] | null {
-    const key = rankedKey(sprite, rank, lit);
+  function texturesFor(sprite: string, rank: MonsterRank): Texture[] | null {
+    const key = rankedKey(sprite, rank);
     const already = textures.get(key);
     if (already !== undefined) return already;
 
-    const frames = sheet!.frames(sprite, rank, lit);
+    const frames = sheet!.frames(sprite, rank);
     const made =
       frames?.map((canvas) => {
         const texture = Texture.from(canvas);
@@ -328,7 +327,7 @@ export async function createPixiRenderer(
    *  body carries the lamp: dark bodies on pale floors were black cut-outs. */
   function framesFor(e: Entity): Texture[] {
     return (
-      texturesFor(e.sprite, e.rank, e.kind === 'hero' ? LAMP.hero : LAMP.body) ??
+      texturesFor(e.sprite, e.rank) ??
       texturesFor(e.sprite, 'common') ??
       texturesFor('grub', 'common')!
     );
@@ -610,7 +609,10 @@ export async function createPixiRenderer(
           sprite.scale.set(size);
           if (!solid) sprite.tint = shade(x, y);
           (solid ? wallLayer : groundLayer).addChild(sprite);
-          // THE GRAIN over the floor, one of the zone's marks or none.
+          // THE GRAIN over the floor, one of the zone's marks or none. A PLAIN
+          // floor is without it: tried back on with the drift still off, and
+          // each mark carries its own edge, so a floor of them is a grid of
+          // faint boxes — the colour lines in the floor, in another form.
           const marks = solid || map.plain ? undefined : grains.get(map.theme);
           const mark = marks ? grainAt(marks.length, x, y) : -1;
           if (marks && mark >= 0 && wangKey(grid, x, y) === 0) {
