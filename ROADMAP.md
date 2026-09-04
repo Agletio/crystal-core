@@ -649,6 +649,15 @@ three lists is the ART the user ruled out.
       and the `lit` parameter are gone from `sprites.ts` and `pixi.ts`
       (`norim.png`). It answered the second review's "EVERY BODY A LAMPLIT
       EDGE"; the user outranks the critics, and the renderer skill says so now.
+- [x] **THE ROCK'S INTERIOR IS A FLAT VOID** — the sixth pass, and a fault in
+      OUR code rather than the set's art. The critics prescribed *"regrade the
+      Fissure sand and rock to the camp's warm ramp"*, which is four new
+      tilesets; the CAUSE was that `rockMarks` drew each mark `mix(rock,
+      '#000000', 0.3)` — a step DARKER than the rock — and the Fissure's own
+      `rock` is `#000000`. The marks have been black on black since the day
+      they were added, and near-black on the Rot. Lifted toward white instead
+      (`ROCK_MARKS.lift`), and the interior carries grain for the first time
+      (`rock2.png`). **A shipped set was never the problem.**
 - [ ] **THE FLOOR DECAL'S LATTICE.** *"The arena's crescent repeats on a fixed
       ~55 px diagonal with a constant period; offset its position AND which
       mark by a per-cell hash."* `grainAt` is exactly that hash, switched off

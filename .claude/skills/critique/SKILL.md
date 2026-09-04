@@ -51,6 +51,39 @@ code; what comes out of it is a report and roadmap work.
    Say so in the report and stop running it after every phase; run it after
    large art changes only.
 
+## A CRITIC REPORTS THE SYMPTOM. THE DIAGNOSIS AND THE FIX ARE YOURS.
+
+*The user's call: "the critics aren't the devs — they point out the problem,
+they might not know the right reasoning or solution for said problem."* They
+see pictures and never the source, so a `fix_first` line is worth taking as
+**the sentence before the semicolon** — what looks wrong — and never as the
+instruction after it. Read the symptom, find the CAUSE in the code, and pick
+the repair yourself.
+
+**Four times it has mattered, and once it did damage:**
+
+- *"Give the hero and every monster a lamplit edge"* — built exactly as asked,
+  and DELETED by the user: `rimLit` recoloured a body's own outermost pixels,
+  so what it added on one side it took off the drawing. The symptom was real —
+  bodies did not separate from the floor — and the repairs that worked were a
+  contact shadow under each body and the floor darkening into the rock.
+- *"Render the cast hall nearest-neighbour, they are bilinear-blurred"* —
+  probed, and `image-rendering` already computed to `pixelated` with every
+  canvas at a whole multiple. The cause was the SOURCE: ink boxes 14 and 15 art
+  pixels across, where a scattered pattern and a plain slab both turn to noise.
+- *"The window covers the rail"* — probed, `.corner` was already above it and
+  every button hit-tested to itself. What the picture showed was the window's
+  own width beside the rail. The real fault in the same shot was a cascade
+  pushing a full-height card off the bottom.
+- *"No window shows a scroll thumb"* — the panels scrolled and the track was
+  reserved; Playwright runs headless Chromium with `--hide-scrollbars`, so no
+  shot this repo judges can ever show one. The affordance a PICTURE can show is
+  a fade at the foot.
+
+So: **verify a claim against the code or a probe before spending anything on
+it**, and when the cause turns out to be something else, write that down in the
+report rather than quietly doing what was asked.
+
 ## What it is not
 
 - The director does not generate art and the critics never see the source.
