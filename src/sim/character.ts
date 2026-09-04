@@ -57,7 +57,7 @@ export interface Character {
    *  the Reckoning at nothing. What they PAID for is derived, never stored. */
   grinds: Record<string, number>;
   professions?: Record<string, { level: number; xp: number }>; // absent is level 1
-  tools?: Record<string, number>; // tool id → RUNG owned; 0 is the basic one everybody starts with
+  tools?: Record<string, number>; // tool id → RUNG owned; ABSENT is not owned, and a new character owns none
   toolSlots?: Record<string, string>; // tool slot id → tool id; what is on you decides what a run gathers
   /** WHAT YOU ATE: `uses` is descents left, spent one per CLEAR. One at a time. */
   meal?: RolledMod;
@@ -69,14 +69,20 @@ export interface Character {
   trialChoices?: Record<string, string>;
 }
 
-/** Everybody owns the basic tool, so an absent row and a 0 are one answer. */
+/** OWNING IS THE ROW EXISTING: `0` is the basic rung of a tool you HAVE and
+ *  absent is one nobody has handed you. A new character owns none. */
+export const owns = (c: Character, id: string): boolean => c.tools?.[id] !== undefined;
+
 export const toolRung = (c: Character, id: string): number =>
   Math.max(0, Math.min((TOOL_BY_ID[id]?.rungs.length ?? 1) - 1, c.tools?.[id] ?? 0));
 
-/** What is in one tool slot: what was chosen, or the slot's first tool. */
+export const toolsOwned = (c: Character, slot: string): ToolDef[] =>
+  toolsForSlot(slot).filter((t) => owns(c, t.id));
+
+/** What is in one slot: what was chosen, and NEVER a fallback. */
 export function toolIn(c: Character, slot: string): ToolDef | undefined {
-  const own = toolsForSlot(slot);
-  return own.find((t) => t.id === c.toolSlots?.[slot]) ?? own[0];
+  const held = toolsOwned(c, slot);
+  return held.find((t) => t.id === c.toolSlots?.[slot]);
 }
 
 /** EVERY TOOL ON YOU, one a slot — the rod and whichever of the other three. */

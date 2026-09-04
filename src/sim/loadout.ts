@@ -19,6 +19,7 @@ import {
   SKILL_BY_ID,
   SKILL_SLOTS,
   WEAPON_SLOT,
+  TOOLS,
 } from '../data';
 import { characterStats, damageDetail } from './stats';
 import { defaultGearBase, rollCrystal, rollGear } from '../economy';
@@ -86,6 +87,11 @@ export function ladderCharacter(
     character.attributes[attr.id] =
       Math.floor(points / ATTRIBUTES.length) + (i < points % ATTRIBUTES.length ? 1 : 0);
   });
+
+  // EVERY TOOL, at its basic rung: a measured character is a CEILING, and a
+  // played one has been to the smith.
+  character.tools = Object.fromEntries(TOOLS.map((t) => [t.id, 0]));
+  character.toolSlots = { gather: 'pick', rod: 'rod' };
 
   const progress = skillProgress(character, skillId);
   const tree = treeFor(skillId);

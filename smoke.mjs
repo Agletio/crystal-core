@@ -2850,9 +2850,9 @@ $('dev-kit').click();
   );
   $('sheet-tab-gear').click();
   assert(
-    $('sheet-tool-gather') !== null && all('#sheet-tools .stat').length === 2,
-    'and the gear page carries the two tool slots, which are never in the bag',
-    String(all('#sheet-tools .stat').length)
+    $('sheet-tool-gather') !== null && all('#sheet-tools .slotcell').length === 2,
+    'and the gear page carries the two tool slots, drawn as the gear slots are',
+    String(all('#sheet-tools .slotcell').length)
   );
   $('sheet-close').click();
   $('camp-smelter').click();

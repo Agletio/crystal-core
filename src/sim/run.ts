@@ -1123,9 +1123,9 @@ export class RunSim {
 
     // DEALT ROUND rather than rolled, and only among what your TOOLS can work:
     // a node nobody may open pays nothing and stands there, which is prevention.
-    const onFloor = GATHERED.filter((f) => f.id !== 'fish');
-    const worked = onFloor.filter((f) => this.tools.includes(f.id));
-    const deck = this.rng.shuffle((worked.length > 0 ? worked : onFloor).map((f) => f.id));
+    // Holding nothing grows nothing — the floor pays gem alone until the smith.
+    const worked = GATHERED.filter((f) => f.id !== 'fish' && this.tools.includes(f.id));
+    const deck = this.rng.shuffle(worked.map((f) => f.id));
     const packs = this.rng.shuffle(Array.from({ length: packCount }, (_, i) => i));
 
     // EVERY LAKE CARRIES A FISHING SPOT, off the count first, and a dry map
@@ -1139,19 +1139,21 @@ export class RunSim {
       return packs.reduce((best, pack) =>
         dist(roomCenter(packRoom[pack]), mid) < dist(roomCenter(packRoom[best]), mid) ? pack : best, packs[0]);
     };
-    // FISH RIDES THE WATER, outside the count: one spot a lake, none on a dry map.
-    for (const room of wetRooms) {
-      laid.push({ family: 'fish', pack: guardOf(room), room, pool: this.poolSpot(map, room) });
+    // FISH RIDES THE WATER, outside the count: one a lake, none dry, none rodless.
+    if (this.tools.includes('fish')) {
+      for (const room of wetRooms) {
+        laid.push({ family: 'fish', pack: guardOf(room), room, pool: this.poolSpot(map, room) });
+      }
     }
     // The count is DEALT round the dry families, wet rooms last.
     const dry = packs.filter((pack) => !wetRooms.includes(packRoom[pack]));
     const rest = [...dry, ...packs.filter((pack) => wetRooms.includes(packRoom[pack]))];
-    for (let i = 0; i < wanted && rest.length > 0; i++) {
+    for (let i = 0; deck.length > 0 && i < wanted && rest.length > 0; i++) {
       const pack = rest.shift()!;
       laid.push({ family: deck[i % deck.length], pack, room: packRoom[pack], pool: null });
     }
     // THE WORLD'S UNIQUE IS A NODE OF ITS OWN, rare, in its own picture or the ore's.
-    if (unique && rest.length > 0 && this.rng.chance(GATHER.uniqueChance)) {
+    if (unique && deck.length > 0 && rest.length > 0 && this.rng.chance(GATHER.uniqueChance)) {
       const pack = rest.shift()!;
       laid.push({ family: 'unique', pack, room: packRoom[pack], pool: null });
     }

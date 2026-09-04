@@ -1817,6 +1817,7 @@
   .slotcell__label { font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 3px; }
   .slotcell__btn { width: 100%; text-align: left; padding: 7px 9px; display: flex; align-items: center; gap: 8px; min-height: 46px; }
   .slotcell__btn--worn { border-color: var(--edge-lit); }
+  .toolpick { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
   /* Something on the map you can click. The map itself is a thing you WATCH,
      so this is the camp's alone and never a descent's. */
   .stage--over { cursor: pointer; }
@@ -2686,7 +2687,7 @@
           <p class="empty" id="sheet-pick" hidden></p>
           <!-- Beside the gear and never in the bag; the rod is always on. -->
           <p class="panel__title" style="margin-top:14px">Tools</p>
-          <div id="sheet-tools"></div>
+          <div class="slotgrid" id="sheet-tools"></div>
         </div>
         <div>
           <div class="levelrow">
