@@ -216,7 +216,10 @@ profession level, every stack a part eats with its icon, the world's own
 material) said as *held / wanted* and lit or dim, then the button — and the
 list is FILTERED beside the kind tabs: one tier or every tier, and *Can make
 now*. *"Clean up the actual boxes so it's clear what items are needed and
-what level is required."* Everything else is still on the rail, and a screen with neither a
+what level is required."* **TOOLS ARE A KIND ON IT**, not a screen of their own
+— a smith is who reforges a pick — and the tier filters are HIDDEN on that tab,
+since a tier is a fact about a base and a tool has none.
+Everything else is still on the rail, and a screen with neither a
 button nor a hotspot is one somebody will lose.
 
 **A COUNTER BELONGS TO A PERSON, and the shop is the Lampwright's.** *"The shop
@@ -524,10 +527,12 @@ room, `freeNode` opens it when that pack is down, and `stepNode` is the walk —
 the Hoard's own three states, so gathering satisfies universal automation with
 nothing to click and no policy to ship. **When the room is clear** is both of
 the user's constraints at once: *"no just tanking mobs"* and *"minimize back
-tracking"*, since you already fought there. **DEALT, NEVER ROLLED**: the six
-families are shuffled and dealt round the nodes, so a descent is one of each
-rather than six draws that could come up all metal — *"relatively equal drop
-rates between materials"* is only sayable as a spread. **A COUNT, NOT A RATE**:
+tracking"*, since you already fought there. **DEALT, NEVER ROLLED**: the
+families are shuffled and dealt round the nodes rather than drawn, so a spread
+is sayable at all — but **ONLY THE FAMILIES YOUR TOOLS CAN WORK ARE DEALT**,
+because a node nobody may open pays nothing and stands there, which is the
+never-prevented rule broken and a third of a run's materials gone. The node
+COUNT never moves; only which pile it lands in. **A COUNT, NOT A RATE**:
 `GATHER.perRun` × `RunSet.yield`, read off the SET without running it, because
 the pack count IS the difficulty. **AND IT IS SCARCE** — *"not every floor
 should have ore veins but when it does have it just have it give 1 most of the
@@ -565,6 +570,44 @@ WORLD** where a lock is per world: a lock is furniture somebody carried down and
 an outcrop is the rock itself. **GEAR IS THE LUCKY EXCEPTION NOW** —
 `DropBand.gearPerRun` is 0.25 to 0.30, one piece every four clears, *"so when
 you do finally get a piece it'll feel good."*
+
+**A TOOL DECIDES WHAT YOU GATHER, AND IT IS ONE AT A TIME.** *"I think we add
+an equipment slot for gathering… you can only collect one at a time, if you
+don't have the correct one equipped you don't gather it."* `TOOLS` and
+`TOOL_SLOTS` in `src/data.ts`: the ROD has its own slot and is always on, since
+water is outside the node count and costs the other families nothing; the other
+slot takes the pick, the sickle or the skinning knife, and that is the whole
+specialization. **A TOOL IS NOT AN ITEM** — it never enters the bag, rolls a
+modifier or sells — so `Character.tools` is the rung owned and
+`Character.toolSlots` what is on you, both absent on a new save and both read as
+the basic tool everybody starts with. It is a SELECT on the character sheet, not
+a slot you drop into: *"don't make them take inventory slots."*
+**SKINS ARE THE KNIFE'S ALONE** — *"it won't drop unless you have the skinning
+knife equipped"* — off bodies, with no node and no walk, and without the knife
+that budget is never drawn against. **A BETTER TOOL TAKES MORE OUT OF ONE
+NODE** (`ToolRungDef.more`) and is reforged at the ANVIL for gold and the
+material it `eats`, gated on the gathering level. **Nothing is paid for in its
+own output**: the three blades are the smith's and the rod's line is the
+weaver's, so every tool pulls on a profession other than the one it feeds.
+
+**GEM IS THE UNIVERSAL MATERIAL, AND IT HAS NO TOOL.** *"All things require it
+and everyone can use them. They can just drop randomly from everything… just
+don't spam too many of them."* `GEM_DROP` is its own budget off any source, and
+`CRAFT.gems` is what every recipe asks for by tier. **ANY WORLD'S WILL DO** —
+`fillFrom` takes a plain COUNT where a part demands `versions` DIFFERENT worlds,
+which is the whole of what universal means — and it is PROCESSED like every
+other input, so Jewelling has a job in a build wearing no jewellery. Measured,
+1.45 a bare clear against metal's 1.50: level with what it accompanies.
+
+**NINE PROFESSIONS, AND FOUR OF THEM ARE GATHERED.** `ProfessionDef.kind` is
+the whole of what tells them apart, so one `professionAt`, one `payXp` and one
+`xpToNext` serve both. Mining, Harvesting, Skinning and Fishing are levelled by
+USE — *"increased by actually using the tools"* — and `payGathering` derives that
+from the RAW a descent banked rather than tallying it in the sim. **THE
+PROFESSIONS PAGE is the sheet's second tab**, nine tiles of icon, name and level
+with the STEPS of whichever you click; every step is DERIVED in
+`src/professions.ts` from the table that enforces it, so a page promising a
+level that buys nothing is not a state that exists.
 
 **PROCESSING RUNS ON THE CLOCK.** *"Change the materials to process on a
 timer. I think it's fine you still want to go and run stuff to clear it while
@@ -906,6 +949,7 @@ src/sim/grants.ts  every switch anything may hand the sim, and who reads it
 src/sim/grid.ts    generate and carve a map; sceneMap beside it
 src/game/          save, state, report, crystals, scenes, graft
 src/game/work.ts   PROCESSING: what a station is working on, and what a clear moves
+src/professions.ts what a LEVEL buys, derived from the table that enforces it
 src/game/forge.ts  MAKING A BASE: the recipe off the base, the window off the level
 src/render/        renderer seam: canvas2d fallback, pixi default
 src/render/generated-*.ts   art as data — never edited by hand

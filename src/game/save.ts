@@ -40,6 +40,8 @@ import {
   MATERIAL_BY_ID,
   MEAL_BY_FISH,
   PROFESSION_BY_ID,
+  TOOL_BY_ID,
+  toolsForSlot,
   WORK,
 } from '../data';
 import { nodeById, replayTreeNodes, treeFor, treePointsFor } from '../skills-tree';
@@ -411,6 +413,15 @@ export function heal(game: GameState): Healed {
   }
   for (const id of Object.keys(game.character.professions ?? {})) { // a cut profession takes its level
     if (!PROFESSION_BY_ID[id]) delete game.character.professions![id];
+  }
+  // A TOOL THAT IS GONE takes the rung owned of it, and a slot pointing at one
+  // falls back to the slot's first — never to nothing, or a save written before
+  // tools existed would gather nothing at all and say nothing about why.
+  for (const id of Object.keys(game.character.tools ?? {})) {
+    if (!TOOL_BY_ID[id]) delete game.character.tools![id];
+  }
+  for (const [slot, id] of Object.entries(game.character.toolSlots ?? {})) {
+    if (!toolsForSlot(slot).some((t) => t.id === id)) delete game.character.toolSlots![slot];
   }
   // Same rule as every other container: a base that is gone takes its entry.
   game.sold = (Array.isArray(game.sold) ? game.sold : []).filter((e) => {

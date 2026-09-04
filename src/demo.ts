@@ -109,6 +109,9 @@ import {
   WORK,
   PROFESSION,
   PROFESSIONS,
+  TOOLS,
+  TOOL_BY_ID,
+  TOOL_SLOTS,
   PROVING,
   RUN_SLOTS,
   armourBudget,
@@ -136,7 +139,8 @@ import {
   arenaAt, campaignDone, campaignLine, campaignPrize, canEnter, climbed, furthest, takeRung,
   zoneOpen,
 } from './ladder';
-import { canDualWield } from './sim/character';
+import { canDualWield, gatherableFamilies, toolIn, toolMore, toolRung } from './sim/character';
+import { unlocksFor } from './professions';
 import { seamSocketed } from './sim/crystal';
 import {
   balance,
@@ -204,6 +208,8 @@ import {
   qualityRoll,
   recipeFor,
   whyNotCraft,
+  upgradeTool,
+  whyNotUpgrade,
 } from './game/forge';
 import { ZONES } from './render/generated-tiles';
 import type { Entity, RunState } from './sim/run';
@@ -3704,11 +3710,74 @@ rule('GATHERING — is a node free, guarded, walked to and equally spread?');
     );
     check(named === taken, `and every one floats up as "+n Name" — ${named} of ${taken}`, `${named} of ${taken}`);
   }
+  // LEVEL AMONG WHAT THE TOOLS CAN WORK, which is the whole set the deck now
+  // holds: a family nobody carries the tool for is not thinned, it is ABSENT.
+  const carried = gatherableFamilies(digger);
   check(
-    least > 0 && most <= least * 1.6,
-    `and the ${GATHERED.length} gathered families come out level, being DEALT and not rolled`,
-    `${least} at the least, ${most} at the most`
+    least > 0 && most <= least * 1.6 && [...spread.keys()].every((f) => carried.includes(f)),
+    `and the ${counts.length} families his tools can work come out level, being DEALT and not rolled`,
+    `${least} at the least, ${most} at the most, over ${[...spread.keys()].join('+')}`
   );
+
+  // A TOOL DECIDES WHAT THE FLOOR HOLDS. The same seed with a sickle instead of
+  // a pick grows fibre where it grew ore, and the COUNT never moves: what a run
+  // pays is the same, and only which pile it lands in changes.
+  {
+    const withPick = { ...digger, toolSlots: { gather: 'pick' } };
+    const withSickle = { ...digger, toolSlots: { gather: 'sickle' } };
+    const dry = (c: typeof digger): Map<string, number> => {
+      const out = new Map<string, number>();
+      for (let i = 0; i < 12; i++) {
+        for (const n of new RunSim(bareSet, c, new Rng(1900 + i)).state.nodes) {
+          if (n.family === 'unique' || n.family === 'fish') continue;
+          out.set(n.family, (out.get(n.family) ?? 0) + 1);
+        }
+      }
+      return out;
+    };
+    const a = dry(withPick);
+    const b = dry(withSickle);
+    const sum = (m: Map<string, number>) => [...m.values()].reduce((x, y) => x + y, 0);
+    check(
+      (a.get('metal') ?? 0) > 0 && (a.get('cloth') ?? 0) === 0
+        && (b.get('cloth') ?? 0) > 0 && (b.get('metal') ?? 0) === 0
+        && sum(a) === sum(b),
+      `a pick grows ${sum(a)} ore nodes and no fibre; a sickle grows ${sum(b)} fibre and no ore — same count, other pile`,
+      `pick ${[...a].map(([f, n]) => `${f} ${n}`).join(' ')} · sickle ${[...b].map(([f, n]) => `${f} ${n}`).join(' ')}`
+    );
+  }
+
+  // SKINS ARE THE KNIFE'S, and gems fall out of anything: the one family with
+  // no tool is the one every recipe wants, so a specialist is never locked out.
+  {
+    const banked = (c: typeof digger, family: string): number => {
+      let n = 0;
+      for (let i = 0; i < 12; i++) {
+        const sim = new RunSim(bareSet, c, new Rng(2100 + i));
+        runToCompletion(sim);
+        for (const it of sim.state.loot.items) {
+          if (it.kind === 'material' && MATERIAL_BY_ID[it.base]?.family === family) {
+            n += (it.meta.n as number) ?? 0;
+          }
+        }
+      }
+      return n;
+    };
+    const noKnife = { ...digger, toolSlots: { gather: 'pick' } };
+    const knifed = { ...digger, toolSlots: { gather: 'knife' } };
+    check(
+      banked(noKnife, 'hide') === 0 && banked(knifed, 'hide') > 0,
+      'no skins at all without the knife, and skins with it — off bodies, with no node and no walk',
+      `${banked(noKnife, 'hide')} without, ${banked(knifed, 'hide')} with`
+    );
+    const gemsA = banked(noKnife, 'gem');
+    const gemsB = banked(knifed, 'gem');
+    check(
+      gemsA > 0 && gemsB > 0,
+      `and gems fall out whatever you carry — ${(gemsA / 12).toFixed(2)} a clear on a pick, ${(gemsB / 12).toFixed(2)} on a knife`,
+      `${gemsA} then ${gemsB}`
+    );
+  }
 
   // GEAR GOT RARE IN THE SAME STEP, or the bag holds both economies at once.
   // Cleared runs only: a death banks nothing, so a run that ends in one is not
@@ -3923,6 +3992,76 @@ rule('THE WORKS — does a job run on the clock, and on nothing else?');
     `and the FIRST level is ${Math.ceil(workXpToNext(1) / WORK.xp)} raw, inside one job, so the curve is felt before it is long`,
     `${workXpToNext(1)} xp at ${WORK.xp} a unit`
   );
+
+  // EVERY UNLOCK ROW IS DERIVED from the table that enforces it, so a page
+  // promising a level that buys nothing is not a state that exists.
+  {
+    const bad: string[] = [];
+    for (const def of PROFESSIONS) {
+      const rows = unlocksFor(def.id);
+      if (rows.length === 0) bad.push(`${def.id} says nothing`);
+      if (rows.some((r) => r.at < 1 || r.at > PROFESSION.maxLevel)) bad.push(`${def.id} off the ladder`);
+      if (rows.some((r) => !/\d/.test(r.what))) bad.push(`${def.id} has a line with no figure in it`);
+      const sorted = rows.every((r, i) => i === 0 || rows[i - 1].at <= r.at);
+      if (!sorted) bad.push(`${def.id} out of order`);
+      // What it CLAIMS has to be what the table does: the first row of a
+      // maker's is `CRAFT.needs[0]`, of a gatherer's its tool's first rung.
+      const first = def.kind === 'process'
+        ? CRAFT.needs[0]
+        : TOOLS.find((t) => t.skill === def.id)?.rungs[0].at;
+      if (rows[0]?.at !== first) bad.push(`${def.id} opens at ${rows[0]?.at}, table says ${first}`);
+    }
+    check(
+      bad.length === 0,
+      `all ${PROFESSIONS.length} professions say what a level buys, in order and in figures, off the table that enforces it`,
+      bad.join('; ')
+    );
+  }
+
+  // A TOOL IS REFORGED FOR GOLD AND MATERIAL, gated on the level GATHERING
+  // pays. Every refusal in numbers, in the order a player would meet them.
+  {
+    const shed = createGame('fresh');
+    const pick = TOOL_BY_ID.pick;
+    const said: string[] = [];
+    said.push(whyNotUpgrade(shed, pick) ?? 'went ahead');
+    shed.character.professions = { mining: { level: 25, xp: 0 } };
+    said.push(whyNotUpgrade(shed, pick) ?? 'went ahead');
+    shed.wallet.gold = 5000;
+    said.push(whyNotUpgrade(shed, pick) ?? 'went ahead');
+    for (const m of MATERIALS.filter((m) => m.family === 'metal')) addItem(shed, makeMaterial(m, 20, true));
+    const got = upgradeTool(shed, pick);
+    check(
+      said.every((w) => /\d/.test(w)) && said.length === 3
+        && got !== null && toolRung(shed.character, 'pick') === 1
+        && shed.wallet.gold === 5000 - pick.rungs[1].gold,
+      `a reforge is refused in numbers three ways and then lands: "${said[0]}" then "${said[2]}"`,
+      `${said.join(' | ')} -> ${got?.name ?? 'nothing'}`
+    );
+    // AND IT TAKES MORE OUT OF EVERY NODE, which is the whole of what it buys.
+    check(
+      toolMore(shed.character, 'metal') === pick.rungs[1].more && toolMore(createGame('fresh').character, 'metal') === 0,
+      `and the reforged pick takes +${pick.rungs[1].more} out of every node where the chipped one takes +0`,
+      `${toolMore(shed.character, 'metal')} against 0`
+    );
+  }
+
+  // A SAVE POINTING AT A TOOL THAT IS GONE falls back to the slot's first
+  // rather than to nothing: gathering nothing and saying nothing is the worst
+  // of the three outcomes.
+  {
+    const rotted = createGame('fresh');
+    rotted.character.tools = { pick: 1, ghost: 3 };
+    rotted.character.toolSlots = { gather: 'ghost', rod: 'rod' };
+    heal(rotted);
+    check(
+      rotted.character.tools?.ghost === undefined && rotted.character.tools?.pick === 1
+        && toolIn(rotted.character, 'gather')?.id === 'pick'
+        && gatherableFamilies(rotted.character).length === TOOL_SLOTS.length,
+      'a save naming a tool that no longer exists keeps the rungs it can and falls back to a real tool',
+      `${JSON.stringify(rotted.character.tools)} ${JSON.stringify(rotted.character.toolSlots)}`
+    );
+  }
 
   // A JOB POINTS AT A TABLE, and a save that outlives the table takes the job
   // with it rather than paying out something that no longer exists.

@@ -2831,6 +2831,30 @@ $('dev-kit').click();
 
   // ANOTHER STATION IS THE SAME ROOM. What differs is the tab.
   $('work-close').click();
+
+  // THE PROFESSIONS PAGE, and the tool slots beside the gear. Nine skills with
+  // a level each, and clicking one says what its levels buy.
+  $('open-character').click();
+  $('sheet-tab-professions').click();
+  assert(
+    all('#sheet-proflist .crystal').length === 9,
+    'the sheet has a second page listing all nine professions',
+    String(all('#sheet-proflist .crystal').length)
+  );
+  $('sheet-prof-mining').click();
+  const steps = $('sheet-profsteps').textContent ?? '';
+  assert(
+    /Mining/.test(steps) && /level 20/.test(steps) && /every node/.test(steps),
+    'and clicking one says what its levels buy, in figures',
+    steps.slice(0, 90)
+  );
+  $('sheet-tab-gear').click();
+  assert(
+    $('sheet-tool-gather') !== null && all('#sheet-tools .stat').length === 2,
+    'and the gear page carries the two tool slots, which are never in the bag',
+    String(all('#sheet-tools .stat').length)
+  );
+  $('sheet-close').click();
   $('camp-smelter').click();
   assert(
     $('work').hidden === false && $('work-tab-metal').className.includes('climbtab--on'),
