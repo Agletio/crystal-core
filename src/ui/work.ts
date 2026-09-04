@@ -1,5 +1,5 @@
 /**
- * THE STATIONS: six of them, one a profession, and what each is working on.
+ * THE WORKS: six stations, one a profession, and what each is working on.
  *
  * A tab apiece rather than six screens, because processing is ONE mechanism
  * however it is dressed — a smelter and a loom differ in the word, the picture
@@ -12,6 +12,7 @@ import {
   collectWork,
   idleWorker,
   jobOf,
+  jobSize,
   jobsIn,
   leftOn,
   loadWork,
@@ -65,10 +66,12 @@ function tabs(): void {
   }
 }
 
-/** One raw stack, and what a batch of it would become. */
+/** One raw stack, and what a job of it would become — the SIZE is what you
+ *  hold, so the card names this stack's number rather than a fixed batch. */
 function rawCard(family: MaterialFamilyDef, item: any): HTMLElement {
   const def = MATERIAL_BY_ID[item.base];
   const n = (item.meta.n as number) ?? 0;
+  const size = jobSize(game, def.id);
   const card = el('div', 'crystal');
 
   const head = el('div', 'crystal__head');
@@ -82,20 +85,22 @@ function rawCard(family: MaterialFamilyDef, item: any): HTMLElement {
   card.append(head);
 
   card.append(
-    el('div', 'crystal__grow', `${WORK.batch} → ${WORK.batch} ${family.one}s, ${WORK.minutes} minutes`)
+    el('div', 'crystal__grow',
+      `${size} → ${size} ${family.one}${size === 1 ? '' : 's'}, ${WORK.minutes} minutes` +
+        (n > size ? ` — ${n - size} stay in the bag` : ''))
   );
 
   // THE BUTTON NAMES THE WORKER it goes to, so who is being assigned is read
   // before the click rather than found afterwards.
   const why = whyNotWork(game, def);
   const idle = idleWorker(game);
-  const button = el('button', 'mini', why ?? `${idle?.name} works ${WORK.batch}`) as HTMLButtonElement;
+  const button = el('button', 'mini', why ?? `${idle?.name} works ${size}`) as HTMLButtonElement;
   button.id = workLoadId(def.id);
   button.disabled = why !== null;
   button.onclick = () => {
     const job = loadWork(game, def);
     if (!job) return;
-    note(`${idle?.name} loads ${WORK.batch} ${def.name} onto ${family.station}`);
+    note(`${idle?.name} loads ${job.n} ${def.name} onto ${family.station}`);
     render();
     onChanged?.();
   };
@@ -123,7 +128,8 @@ export function render(): void {
     : '';
   $('work-note').textContent =
     `${profession?.name} works ${family.name.toLowerCase()} at ${family.station}: ` +
-    `${family.raw} into ${family.processed}, ${WORK.minutes} minutes a batch.${eating}`;
+    `${family.raw} into ${family.processed}, ${WORK.minutes} minutes a job, ` +
+    `${WORK.most} at a time.${eating}`;
   ($('work-bar') as HTMLElement).style.width = `${Math.round((at.xp / need) * 100)}%`;
   $('work-xp').textContent = `Level ${at.level} — ${Math.floor(at.xp)} / ${need} to the next`;
 
@@ -150,7 +156,7 @@ export function render(): void {
     const which = job ? PROFESSIONS.find((p) => p.id === job.profession) : undefined;
     card.append(
       el('div', 'quest__detail',
-        job ? `${which?.name ?? job.profession} — ${saysLeft(leftOn(job))} left` : 'Load a batch at a station.')
+        job ? `${which?.name ?? job.profession} — ${saysLeft(leftOn(job))} left` : 'Load raw at a station.')
     );
     jobs.append(card);
   }

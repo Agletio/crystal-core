@@ -188,7 +188,7 @@ const STATES = [
   'handover', 'descent', 'results',
   'scene', 'speech', 'lampwright',
   'skills', 'skill-list', 'skill-web', 'move-web', 'trade', 'trials', 'proving',
-  'bench', 'tooltip', 'glossary', 'graft', 'stations', 'anvil', 'jewellery',
+  'bench', 'tooltip', 'glossary', 'graft', 'works', 'anvil', 'jewellery',
   'builder',
 ];
 
@@ -701,7 +701,7 @@ for (const vp of VIEWPORTS) {
   // fresh game, where the panel is nothing but its empty line.
   await page.evaluate(() => document.getElementById('camp-smelter')?.click());
   await page.waitForTimeout(300);
-  await shoot('stations');
+  await shoot('works');
   await page.evaluate(() => document.getElementById('work-close')?.click());
   await page.waitForTimeout(200);
 

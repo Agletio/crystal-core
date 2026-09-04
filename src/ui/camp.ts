@@ -142,7 +142,7 @@ function mountFolk(): void {
         id: `worker-${w.id}`,
         x: at.x - grid / 2, y: at.y - grid, w: grid, h: grid,
         opens: 'work', family: job ? MATERIAL_BY_ID[job.material]?.family ?? undefined : undefined,
-        says: `${w.name}. ${job ? saysJob(job) : 'Idle. Load a batch at a station.'}`,
+        says: `${w.name}. ${job ? saysJob(job) : 'Idle. Load raw at a station.'}`,
       },
       'camp-workers'
     );

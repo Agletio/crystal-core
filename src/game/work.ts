@@ -28,7 +28,7 @@ import type { Item, RolledMod } from '../types';
 import type { Rng } from '../rng';
 import { liftFor, qualityRoll } from './forge';
 
-/** One batch loaded at a station, and WHO is on it. `doneAt` is the epoch
+/** One job loaded at a station, and WHO is on it. `doneAt` is the epoch
  *  millisecond it is finished at; loaded again on a later day it is done. */
 export interface WorkJob {
   id: string;
@@ -114,20 +114,28 @@ export function payXp(game: GameState, id: string, xp: number): number {
   return gained;
 }
 
-/** Why this batch cannot be loaded, or null. Said rather than greyed: a button
+/** Raw of one material in the bag. */
+const rawCount = (game: GameState, id: string): number =>
+  ((game.materials ?? []).find((i) => i.base === id && !i.meta.done)?.meta.n as number) ?? 0;
+
+/** Why this job cannot be loaded, or null. Said rather than greyed: a button
  *  that does nothing and will not say why is the same as one that is missing. */
 export function whyNotWork(game: GameState, def: MaterialDef): string | null {
   if (!def.family) return 'Nothing works this. It is used as it came up.';
   const found = workersFound(game);
   if (found.length === 0) return 'Nobody to work it. Workers are found down the Fissure.';
   if (!idleWorker(game)) return `Every worker is busy — ${found.length} of ${found.length}.`;
-  const held = (game.materials ?? []).find((i) => i.base === def.id && !i.meta.done);
-  const n = (held?.meta.n as number) ?? 0;
-  if (n < WORK.batch) return `${WORK.batch} needed, ${n} held.`;
+  const n = rawCount(game, def.id);
+  if (n < WORK.least) return `${WORK.least} needed, ${n} held.`;
   return null;
 }
 
-/** Load one batch onto the first idle worker. The raw leaves the bag NOW — a
+/** How big a job of this would be: WHAT YOU HOLD, capped. Read by the screen
+ *  before the click, so the button says the number it is about to take. */
+export const jobSize = (game: GameState, id: string): number =>
+  Math.min(rawCount(game, id), WORK.most);
+
+/** Load one job onto the first idle worker. The raw leaves the bag NOW — a
  *  job you can cancel for a refund is a slot that costs nothing to fill. */
 export function loadWork(game: GameState, def: MaterialDef): WorkJob | null {
   if (whyNotWork(game, def)) return null;
@@ -137,13 +145,14 @@ export function loadWork(game: GameState, def: MaterialDef): WorkJob | null {
   const held = (game.materials ?? []).find((i) => i.base === def.id && !i.meta.done);
   if (!held) return null;
 
-  held.meta.n = ((held.meta.n as number) ?? 0) - WORK.batch;
+  const n = jobSize(game, def.id);
+  held.meta.n = ((held.meta.n as number) ?? 0) - n;
   game.materials = (game.materials ?? []).filter((i) => ((i.meta.n as number) ?? 0) > 0);
   const job: WorkJob = {
     id: `job_${nextJob++}`,
     profession: profession.id,
     material: def.id,
-    n: WORK.batch,
+    n,
     doneAt: clock() + minutesMs(WORK.minutes),
     worker: worker.id,
   };

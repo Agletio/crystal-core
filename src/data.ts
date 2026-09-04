@@ -2374,14 +2374,14 @@ export const PROFESSION = { maxLevel: 99, xpTo1: 20, curve: 1.05 };
  * ready."* Wall-clock minutes, so it finishes whether you are down a hole, in
  * the camp or gone: the one thing in the game a player can wait out, and it
  * pays materials rather than power. ONE FOR ONE: what a job COSTS is the
- * minutes and the slot, never a conversion rate.
+ * minutes and the slot, never a conversion rate — so the SIZE of a job is what
+ * you happen to hold, and `most` is the only reason a worker is worth finding.
  */
 export const WORK = {
-  batch: 4, // raw a job eats, and processed it hands back
-  minutes: 5, // wall-clock minutes a batch takes
-  // FLAT, never by world: a Seam job paying more would be a TIER in the one
-  // place the no-tiers rule is easiest to break.
-  xp: 6,
+  least: 1, // a bare clear gathers 1.0 ore: a floor of 4 was four descents before a station took anything
+  most: 20, // raw one job eats, and processed it hands back
+  minutes: 5, // wall-clock minutes a job takes
+  xp: 6, // FLAT, never by world, or the no-tiers rule breaks in its easiest place
 };
 
 /** WORKERS: the station slots are PEOPLE, found at ONE depth of one world's

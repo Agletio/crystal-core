@@ -2824,7 +2824,7 @@ $('dev-kit').click();
     $('work-raw').textContent?.slice(0, 60)
   );
   assert(
-    /Load a batch/i.test($('work-jobs').textContent ?? '') && /0\/\d+ workers busy/.test($('work-slots').textContent ?? ''),
+    /Load raw/i.test($('work-jobs').textContent ?? '') && /0\/\d+ workers busy/.test($('work-slots').textContent ?? ''),
     'and nothing is on any station yet: every worker the kit rescued is idle',
     `${$('work-jobs').textContent?.slice(0, 40)} · ${$('work-slots').textContent}`
   );

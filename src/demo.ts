@@ -3738,7 +3738,7 @@ rule('GATHERING — is a node free, guarded, walked to and equally spread?');
 }
 
 // ===========================================================================
-rule('THE STATIONS — does a job run on the clock, and on nothing else?');
+rule('THE WORKS — does a job run on the clock, and on nothing else?');
 
 // *"Process on a timer."* What has to hold is that NOTHING here moves but the
 // minutes, that a job neither loses nor mints, and that the whole loop runs
@@ -3775,14 +3775,29 @@ rule('THE STATIONS — does a job run on the clock, and on nothing else?');
     WORKERS.map((w) => `${w.id} ${w.world} ${w.rung}`).join(', ')
   );
 
-  // NOTHING IS WORKED THAT WAS NOT DUG UP. A batch you cannot afford is refused
-  // and SAYS SO — a button that greys out and will not say why is one nobody
-  // learns from.
+  // NOTHING IS WORKED THAT WAS NOT DUG UP, and that is the ONLY refusal left:
+  // holding raw at all is the whole of what a job asks for.
   const refused = whyNotWork(fresh, ore);
   check(
     refused !== null && /\d/.test(refused) && loadWork(fresh, ore) === null,
-    'and a batch it cannot pay for is refused, in numbers',
+    'and a job with nothing in the bag is refused, in numbers',
     refused ?? 'it went ahead anyway'
+  );
+
+  // A JOB IS WHAT YOU HOLD, one to `most`. *"It feels bad to need 4 ores for a
+  // bar"* — so a single lump is a job, and a heap is one job and a remainder.
+  const one = createGame('fresh');
+  takeWorker(one, WORKERS[0].id);
+  addItem(one, makeMaterial(ore, 1));
+  const single = loadWork(one, ore);
+  addItem(one, makeMaterial(ore, WORK.most + 5));
+  takeWorker(one, WORKERS[1].id);
+  const heap = loadWork(one, ore);
+  const over = (one.materials ?? []).find((i) => i.base === ore.id && !i.meta.done);
+  check(
+    single?.n === WORK.least && heap?.n === WORK.most && ((over?.meta.n as number) ?? 0) === 5,
+    `and ${WORK.least} raw is a job while ${WORK.most + 5} is one of ${WORK.most} with 5 left in the bag`,
+    `${single?.n ?? 'none'} then ${heap?.n ?? 'none'}, ${(over?.meta.n as number) ?? 0} held`
   );
 
   // A ZONE-UNIQUE BELONGS TO NO FAMILY, so no station works it: it is what the
@@ -3800,7 +3815,7 @@ rule('THE STATIONS — does a job run on the clock, and on nothing else?');
   const shop = createGame('fresh');
   for (const w of WORKERS) takeWorker(shop, w.id);
   for (const def of MATERIALS.filter((m) => m.family !== null)) {
-    addItem(shop, makeMaterial(def, WORK.batch * 4));
+    addItem(shop, makeMaterial(def, WORK.most * 2));
   }
   const loaded = MATERIALS.filter((m) => m.family !== null)
     .map((def) => loadWork(shop, def))
@@ -3817,8 +3832,8 @@ rule('THE STATIONS — does a job run on the clock, and on nothing else?');
   const first = MATERIALS.find((m) => m.family !== null)!;
   const heldNow = (shop.materials ?? []).find((i) => i.base === first.id && !i.meta.done);
   check(
-    ((heldNow?.meta.n as number) ?? 0) === WORK.batch * 4 - WORK.batch,
-    'and the raw leaves the bag the moment it is loaded',
+    ((heldNow?.meta.n as number) ?? 0) === WORK.most,
+    'and the raw leaves the bag the moment it is loaded, capped at what one job takes',
     String((heldNow?.meta.n as number) ?? 0)
   );
 
@@ -3865,7 +3880,7 @@ rule('THE STATIONS — does a job run on the clock, and on nothing else?');
     `and ${WORK.minutes} minutes takes every one of them off, collected on the report`,
     `${done.length} finished, ${jobsIn(shop).length} still on`
   );
-  const minted = done.filter((d) => ((d.item.meta.n as number) ?? 0) !== WORK.batch);
+  const minted = done.filter((d) => ((d.item.meta.n as number) ?? 0) !== d.job.n);
   check(
     minted.length === 0,
     'and a job hands back exactly what it took: nothing lost, nothing minted',
@@ -3890,20 +3905,23 @@ rule('THE STATIONS — does a job run on the clock, and on nothing else?');
 
   // WHAT 99 COSTS, measured rather than chosen: *"you can freely level them all
   // but it just costs your time."* Printed, because it is a balance number.
-  let jobs = 0;
   let banked = 0;
   for (let level = 1; level < PROFESSION.maxLevel; level++) banked += workXpToNext(level);
-  jobs = Math.ceil(banked / (WORK.xp * WORK.batch));
+  // IN RAW, not in jobs: xp is paid per UNIT, so what 99 costs in material is
+  // the same however big a job is, and only the WAIT rides `most`.
+  const raw = Math.ceil(banked / WORK.xp);
+  const jobs = Math.ceil(raw / WORK.most);
   line(
-    `  level ${PROFESSION.maxLevel} is ${banked.toLocaleString()} xp — ${jobs.toLocaleString()} batches, ` +
-      `${Math.ceil((jobs * WORK.minutes) / WORKERS.length / 60).toLocaleString()} hours with every worker busy`
+    `  level ${PROFESSION.maxLevel} is ${banked.toLocaleString()} xp — ${raw.toLocaleString()} raw worked, ` +
+      `${jobs.toLocaleString()} jobs at the ${WORK.most} one holds, ` +
+      `${Math.ceil((jobs * WORK.minutes) / WORKERS.length / 60).toLocaleString()} hours at best with every worker busy`
   );
   // A LEVEL HAS TO BE FELT IN THE FIRST HOUR, or the whole mechanism is a wall
-  // pretending to be a curve.
+  // pretending to be a curve. In raw, so no job size can flatter it.
   check(
-    workXpToNext(1) <= WORK.xp * WORK.batch,
-    'and the FIRST level costs one batch, so the curve is felt before it is long',
-    `${workXpToNext(1)} xp against ${WORK.xp * WORK.batch} a batch`
+    Math.ceil(workXpToNext(1) / WORK.xp) <= WORK.most,
+    `and the FIRST level is ${Math.ceil(workXpToNext(1) / WORK.xp)} raw, inside one job, so the curve is felt before it is long`,
+    `${workXpToNext(1)} xp at ${WORK.xp} a unit`
   );
 
   // A JOB POINTS AT A TABLE, and a save that outlives the table takes the job

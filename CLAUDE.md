@@ -200,9 +200,12 @@ PICTURE'S ALONE**: the STASH is the shelf, the CRYSTALS are the four sockets
 is the Fissure card's own sockets' job, and a filled socket that unsocketed
 instead would leave no door at all), and THE RECKONING is the FIRE, the one lit
 thing in the art nothing else claimed. **THE STATIONS ARE FIVE MORE DOORS INTO
-ONE ROOM** — the smelter, the loom, the tanning frame, the kitchen and the
-jeweller's, each opening the stations screen on its own tab, because a
+ONE ROOM, AND THE ROOM IS THE WORKS** — the smelter, the loom, the tanning
+frame, the kitchen and the jeweller's, each opening it on its own tab, because a
 smelter and a loom differ in the word and the picture and never the mechanism.
+A station keeps its own name in the picture; the SCREEN is named for the word
+the code already uses (`#work`, `WorkJob`, `src/game/work.ts`), so the player's
+word and the source's are one.
 The sawbench in the picture is scenery: **THERE IS NO WOOD** — *"it doesn't
 make sense to be gathering wood in the fissure anyways"* — so a bow is
 Leatherworking's, a staff Weaving's and a wand Jewelling's.
@@ -566,11 +569,11 @@ you do finally get a piece it'll feel good."*
 **PROCESSING RUNS ON THE CLOCK.** *"Change the materials to process on a
 timer. I think it's fine you still want to go and run stuff to clear it while
 it's processing anyway but it's annoying having to go in and out to see if
-they are ready."* `WORK.minutes` a batch and `WorkJob.doneAt` an epoch
+they are ready."* `WORK.minutes` a job and `WorkJob.doneAt` an epoch
 millisecond, read through ONE `clock()` in `src/game/work.ts` that the demo
 sets forward; `collectWork` takes what the clock finished off the stations
 wherever the bag is next read — the report (cleared, died or walked), the
-stations screen, the anvil, a load — and the stations screen counts down once
+Works, the anvil, a load — and the Works counts down once
 a second while it is open. **The cost is said out loud**: a job finishes while
 the browser is shut and while it is left open, so processing is the one thing
 in the game a player can wait out, and it pays materials, never power. The
@@ -586,15 +589,23 @@ depth 1 of the Fissure, the one you find immediately), placed by `workerDown`
 ahead of the people's schedule and RESCUED by the same walk past
 (`worker:<id>` in `given`), wearing the `wanderer` body because a bust nobody
 has generated is a face nobody can talk to. `WorkJob.worker` names who is on
-it, the load button names the idle worker it goes to, the stations screen is
+it, the load button names the idle worker it goes to, the Works is
 one card a worker, and in the camp an idle one stands by the tent and a busy
 one at the foot of the station of the job (`CAMP_STATION_FOOT`), opening the
-stations on that tab. The dev kit rescues all four. The raw
+Works on that tab. The dev kit rescues all four. The raw
 leaves the bag on LOAD, since a job you could cancel for a refund is a slot that
 costs nothing to fill. **A JOB IS ONE FOR ONE**, so nothing is lost and nothing
-minted. **XP IS FLAT AND NEVER BY WORLD**, or the no-tiers rule breaks in the
-easiest place: measured, level 2 is one batch and 99 is 1,972 of them, 42
-hours with all four workers busy. A zone-unique is worked by nothing at all.
+minted — which is why **A JOB'S SIZE IS WHAT YOU HOLD**, `WORK.least` of 1 up
+to `WORK.most`, and never a floor you have to reach: *"it feels bad to need 4
+ores for a bar."* Measured, a bare clear gathers 2.1 raw dealt round the two dry
+families, so the old floor of 4 was four descents before a station would take
+anything at all. The rate never moved — it was one for one
+before and after — so nothing a recipe asks for changes with it, and `most` is
+the only reason a worker is worth finding. **XP IS FLAT AND NEVER BY WORLD**, or
+the no-tiers rule breaks in the easiest place, and it is paid PER UNIT — so what
+a level costs is said in RAW, which no job size can flatter: measured, level 2 is
+4 raw and 99 is 7,886, nine hours at best with all four workers on full jobs. A
+zone-unique is worked by nothing at all.
 
 **JEWELLERY IS TEN IMPLICITS, and it is JEWELLING's whole output.**
 `JEWEL_IMPLICITS` — Elemental and Occult Resistance, % Life, % Mana and one per

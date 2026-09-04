@@ -161,6 +161,8 @@
      * `none` inside a background-image LIST invalidates the whole property.
      */
     --grit: linear-gradient(rgba(255,226,170,.028), rgba(0,0,0,.16));
+    /** A MASK, not a colour: only its alpha is read, so it takes no token. */
+    --fade-foot: linear-gradient(to bottom, #000 calc(100% - 26px), transparent 100%);
     /** A chiselled edge: lit from the top left, in whole pixels. */
     --bevel: inset 2px 2px 0 rgba(255,224,168,.07), inset -2px -2px 0 rgba(0,0,0,.6);
     /**
@@ -1780,12 +1782,11 @@
      the box allows. */
   .modal__head--who { justify-content: flex-start; align-items: flex-end; gap: 14px; padding-bottom: 0; }
   .modal__title { font-family: var(--display); font-size: 17px; letter-spacing: .1em; text-transform: uppercase; margin: 0; color: var(--citrine); text-shadow: 2px 2px 0 rgba(0,0,0,.9); }
-  /* THE FOOT FADES, and that says more is under it: a row cut square reads as a
-     broken layout, and the thumb says so to a PLAYER only — a headless shot is
-     taken with scrollbars hidden. */
+  /* THE FOOT FADES, and that says more is under it: the thumb says so to a
+     PLAYER only, since a headless shot is taken with scrollbars hidden. */
   .modal__body {
     padding: 16px 18px; overflow-y: auto; scrollbar-gutter: stable;
-    mask-image: linear-gradient(to bottom, #000 calc(100% - 26px), transparent 100%);
+    mask-image: var(--fade-foot);
   }
   /* The shell's own brass, always drawn, never the platform's. */
   *::-webkit-scrollbar { width: 11px; height: 11px; }
@@ -2533,7 +2534,7 @@
 <div class="modal" id="work" hidden>
   <div class="modal__card modal__card--wide">
     <div class="modal__head">
-      <h2 class="modal__title">The stations</h2>
+      <h2 class="modal__title">The Works</h2>
       <div class="seedbar">
         <code id="work-slots">0/0 workers busy</code>
         <button class="mini" id="work-close">Close</button>

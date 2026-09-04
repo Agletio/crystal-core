@@ -868,6 +868,19 @@ is kept.
 **Do not guess at these.** None ever blocked a phase and none is work waiting to
 be picked up — they are decisions the user has not made. Ask before acting.
 
+**SPECIALIZING IN A MATERIAL — asked and waiting.** *"Some people are going to
+only want ore right or only leather. So I think we need a way to specialize in
+the materials you find. Not sure how to go about that."* Three decks feed the
+bag and every one of them is DEALT rather than rolled: nodes deal metal and
+cloth, kills deal hide and gem, and fish rides the water outside both counts.
+So a specialization is a **stacked deck** — `Character.focus`, one family, a
+preference like `climbing`, taking `GATHER.focusShare` of the places in
+whichever deck holds it and leaving every other deck alone. The total a run
+pays does not move; the SHAPE does. Proposed at 0.8: ore ×1.6 and fibre ×0.4
+for a smith. Fish cannot be focused, having no deck, and the kitchen tab has to
+say so. **Not built** — the share, whether it costs anything to change, and
+whether it lives on the Works are all his.
+
 **LEFT OVER FROM PHASE 6, which is otherwise whole.**
 
 - **What is the base world called?** *"we really need a different name for the
