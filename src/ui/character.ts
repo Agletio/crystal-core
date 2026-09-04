@@ -617,7 +617,9 @@ function renderTabs(): void {
   const profs = $('sheet-professions') as HTMLElement;
   // A TAB OPENS AT ITS OWN TOP. The panel scrolls, so the other page's position
   // is carried over and the first three tiles arrive already off screen.
-  if (main.hidden !== (sheetTab !== 'gear')) main.parentElement?.scrollTo({ top: 0 });
+  // GUARDED: a headless DOM has no layout, so neither scroll method exists
+  // there, and an unguarded call takes the whole render down with it.
+  if (main.hidden !== (sheetTab !== 'gear')) main.parentElement?.scrollTo?.({ top: 0 });
   main.hidden = sheetTab !== 'gear';
   profs.hidden = sheetTab !== 'professions';
 }
@@ -655,7 +657,7 @@ function renderProfessions(): void {
       // YOU CLICKED IT TO READ IT: the nine tiles fill the panel, so the steps
       // are under the fold and a click that changed nothing visible is a click
       // that did nothing as far as anybody can tell.
-      $('sheet-profsteps').scrollIntoView({ block: 'nearest' });
+      $('sheet-profsteps').scrollIntoView?.({ block: 'nearest' });
     };
     list.append(tile);
   }

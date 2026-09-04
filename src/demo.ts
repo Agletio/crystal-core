@@ -107,6 +107,8 @@ import {
   MEAL_BY_FISH,
   MATERIAL_FAMILY_BY_ID,
   WORK,
+  PROCESSING,
+  GATHERING,
   PROFESSION,
   PROFESSIONS,
   TOOLS,
@@ -3379,15 +3381,20 @@ rule('MATERIALS AND PROFESSIONS — is the table a thing a recipe could read?');
   const owned = MATERIALS.filter((m) => m.family !== null && !MATERIAL_FAMILY_BY_ID[m.family]);
   check(owned.length === 0, 'and every family named is one that exists', owned.map((m) => m.id).join(', '));
 
-  // ONE PROFESSION PER FAMILY, both ways round: a family nobody works is a
-  // material nobody can spend, and two professions on one family is a choice
-  // with no difference in it.
-  const worked = PROFESSIONS.map((p) => p.family);
+  // ONE PROCESSOR PER FAMILY, both ways round: a family nobody works is a
+  // material nobody can spend, and two benches on one family is a choice with
+  // no difference in it. GATHERERS are one per family too, except GEM — the
+  // universal material has no tool at all, which is what makes it universal.
+  const worked = PROCESSING.map((p) => p.family);
+  const dug = GATHERING.map((p) => p.family);
   check(
     new Set(worked).size === worked.length
-      && MATERIAL_FAMILIES.every((f) => worked.includes(f.id)),
-    `and each of the ${PROFESSIONS.length} professions works exactly one family, with none left unworked`,
-    worked.join(', ')
+      && MATERIAL_FAMILIES.every((f) => worked.includes(f.id))
+      && new Set(dug).size === dug.length
+      && !dug.includes('gem')
+      && MATERIAL_FAMILIES.every((f) => f.id === 'gem' || dug.includes(f.id)),
+    `${PROCESSING.length} professions work one family each and ${GATHERING.length} gather one each — gem alone has no tool`,
+    `worked ${worked.join('+')} · gathered ${dug.join('+')}`
   );
 
   // IDS AND NAMES ARE BOTH UNIQUE. An id collision is a save pointing at the
@@ -4016,7 +4023,10 @@ rule('THE WORKS — does a job run on the clock, and on nothing else?');
       const rows = unlocksFor(def.id);
       if (rows.length === 0) bad.push(`${def.id} says nothing`);
       if (rows.some((r) => r.at < 1 || r.at > PROFESSION.maxLevel)) bad.push(`${def.id} off the ladder`);
-      if (rows.some((r) => !/\d/.test(r.what))) bad.push(`${def.id} has a line with no figure in it`);
+      // A line MAY be wordless — "what everybody starts with" states no
+      // quantity — but one that claims an AMOUNT has to print it.
+      const vague = rows.filter((r) => /\b(more|better|extra|bigger|improved)\b/i.test(r.what) && !/\d/.test(r.what));
+      if (vague.length > 0) bad.push(`${def.id} says an amount in words: "${vague[0].what}"`);
       const sorted = rows.every((r, i) => i === 0 || rows[i - 1].at <= r.at);
       if (!sorted) bad.push(`${def.id} out of order`);
       // What it CLAIMS has to be what the table does: the first row of a
