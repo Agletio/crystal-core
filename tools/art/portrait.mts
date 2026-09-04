@@ -14,6 +14,7 @@ import { decodePng } from './png.mts';
 const TABLES = {
   portraits: { file: 'generated-portraits.ts', name: 'GENERATED_PORTRAITS', type: 'GeneratedPortrait', what: 'Generated faces, one frame each and carrying their own colours. The\n * hand-drawn table merges these OVER its own rows.' },
   icons: { file: 'generated-icons.ts', name: 'GENERATED_ICONS', type: 'GeneratedIcon', what: 'Generated UI icons, one frame each and carrying their own colours.\n * The hand-drawn table merges these OVER its own rows.' },
+  cast: { file: 'generated-cast.ts', name: 'GENERATED_CAST', type: 'GeneratedCast', what: "A hero's WHOLE FIGURE for the cast hall, one frame and its own colours:\n * the one screen that shows a man at four times his ship size shows a drawing\n * made for it rather than his 48-grid body magnified." },
   vfx: {
     file: 'generated-vfx.ts', name: 'VFX_ART', type: 'GeneratedVfx',
     what:

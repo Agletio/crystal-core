@@ -2338,34 +2338,32 @@
   {
    "grid": 48,
    "inks": 24,
-   "luma": 32,
    "sprite": "mahthar",
-   "character": "981eea9c-c9a5-48df-a34a-1019989a8b2f",
+   "character": "1f92fbab-3518-45fd-894c-b5ff29396cf6",
    "dirs": [
     "south-east"
    ],
    "states": {
     "idle": {
-     "group": "e6aa3481-2467-45c7-b4c3-a9e589520de4",
+     "group": "0940542e-6e7a-413e-b475-9f115bb399c0",
      "frames": 2
     },
     "walk": {
-     "group": "fe2544b6-23f4-4885-be89-3bfeedf5076b",
-     "frames": 6,
-     "to": 0.55
+     "group": "96a28b23-c795-4727-bf3b-9039a20da345",
+     "frames": 6
     },
     "attack": {
-     "group": "db551379-c05c-4e39-848f-579e1f430dfe",
+     "group": "a31fc691-3bc1-4519-8553-1828d309b875",
      "frames": 4,
      "from": 0.4
     },
     "cast": {
-     "group": "83fb86b4-4492-44ce-b23d-95cc270f2674",
+     "group": "3bd467ca-d4a9-4681-a485-e0888e904ff8",
      "frames": 4,
      "from": 0.4
     },
     "death": {
-     "group": "e8a28b32-50fc-4b48-82a0-324714a4c8d8",
+     "group": "25060d5a-3ad1-4967-904b-c42fd7516b46",
      "frames": 4,
      "from": 0.3
     }
@@ -3264,31 +3262,31 @@
    "inks": 24,
    "luma": 45,
    "sprite": "obreth",
-   "character": "04ea3a34-9d9a-4c8e-a573-5952aa8de093",
+   "character": "d6449585-4c2b-4bcf-a086-395f722b2e88",
    "dirs": [
     "south-east"
    ],
    "states": {
     "idle": {
-     "group": "7a1e53f1-cfeb-42d2-aacb-c0b9b341be29",
+     "group": "37a24cc7-ef05-47bd-b612-12dbdbd7dbfe",
      "frames": 3,
      "to": 0.6
     },
     "walk": {
-     "group": "285f015b-fd63-4e90-9b08-4dc53d6290dd",
+     "group": "c77674c0-3cfc-4756-88d2-20c3b1b20289",
      "frames": 6,
-     "to": 0.66
+     "to": 0.8
     },
     "attack": {
-     "group": "a533718b-e698-4e5a-ada5-2599d6bcf9ab",
+     "group": "da5a9b68-b1a3-47fa-8e5f-8e20443e41ab",
      "frames": 4
     },
     "cast": {
-     "group": "5e90a99c-5218-42c7-a4bc-47790dfabdf5",
+     "group": "161766b9-b6ee-4f67-b746-134a33da1b6e",
      "frames": 4
     },
     "death": {
-     "group": "89cd8c28-f246-4dd5-b207-711cedfd5f48",
+     "group": "3b29c03c-3597-48ab-af80-a58b692215ac",
      "frames": 4
     }
    },

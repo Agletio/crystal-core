@@ -1,21 +1,19 @@
 /**
  * Character select: the first screen of a new game.
  *
- * A trade is not a thing you acquire any more — it is WHO YOU ARE, chosen
- * before anything else, and the body standing here is the body you play. So
- * the screen is the cast standing in the rock rather than a list of cards:
- * you walk up to one, it tells you who it is, and taking it is the game
- * starting.
+ * A trade is WHO YOU ARE, chosen before anything else, so the screen is the
+ * cast standing in the rock rather than a list of cards: you walk up to one, it
+ * tells you who it is, and taking it is the game starting.
  *
- * Every figure plays its own idle off `GENERATED`, drawn to a canvas rather
- * than through the icon machinery — an icon is one frame, and a room of
- * statues reads as a menu.
+ * Every figure is ONE PICTURE, `GENERATED_CAST`, drawn at 128 where a body is
+ * 48: this is the only screen that shows a man at four times his ship size, so
+ * it shows a drawing made for it rather than his floor sprite magnified. The
+ * idle breath went with it — *"the idle thing honestly looks bad"*.
  */
 import { ATTRIBUTES, SKILL_BY_ID, TRADE } from '../data';
 import { TRADES, TRADE_BY_ID } from '../trades';
-import { GENERATED } from '../render/generated-art';
+import { GENERATED_CAST } from '../render/generated-cast';
 import { HERO_SPRITE } from '../sim/appearance';
-import { IDLE_CYCLE } from '../render/sprites';
 import { equipSkill, takeUpTrade } from '../sim/character';
 import { attachTooltip, hideTooltip } from './tooltip';
 import { skillCard } from './skills';
@@ -33,13 +31,11 @@ function el(tag: string, cls?: string, text?: string): HTMLElement {
 
 let game: GameState;
 let onChosen: (() => void) | null = null;
-let ticking: ReturnType<typeof setInterval> | undefined;
-
-/** Which body a trade stands as. Neither trade needs one to be pickable, so a
- *  trade with no look of its own stands as the base man rather than as a gap. */
+/** Which picture a trade stands as. A trade with no cast art of its own stands
+ *  as the base man rather than as a gap. */
 const bodyOf = (trade: BuiltTrade): string => {
   const own = trade.spec.sprite;
-  return own && GENERATED[own] ? own : HERO_SPRITE;
+  return own && GENERATED_CAST[own] ? own : HERO_SPRITE;
 };
 
 // ---------------------------------------------------------------------------
@@ -65,34 +61,30 @@ const boxes = new Map<string, Bounds>();
 function inkOf(sprite: string): Bounds {
   const held = boxes.get(sprite);
   if (held) return held;
-  const art = GENERATED[sprite];
+  const art = GENERATED_CAST[sprite];
   let x0 = Infinity, y0 = Infinity, x1 = -1, y1 = -1;
-  for (const at of idleRun(sprite)) {
-    const rows = art?.frames[Math.min(at, (art?.frames.length ?? 1) - 1)] ?? [];
-    rows.forEach((row, y) => {
-      for (let x = 0; x < row.length; x++) {
-        if (!art?.key[row[x]]) continue;
-        if (x < x0) x0 = x;
-        if (x > x1) x1 = x;
-        if (y < y0) y0 = y;
-        if (y > y1) y1 = y;
-      }
-    });
-  }
-  const grid = art?.grid ?? 48;
+  (art?.rows ?? []).forEach((row, y) => {
+    for (let x = 0; x < row.length; x++) {
+      if (!art?.key[row[x]]) continue;
+      if (x < x0) x0 = x;
+      if (x > x1) x1 = x;
+      if (y < y0) y0 = y;
+      if (y > y1) y1 = y;
+    }
+  });
+  const grid = art?.grid ?? 128;
   const box: Bounds =
     x1 < 0 ? { x: 0, y: 0, w: grid, h: grid } : { x: x0, y: y0, w: x1 - x0 + 1, h: y1 - y0 + 1 };
   boxes.set(sprite, box);
   return box;
 }
 
-/** One frame of a generated body onto a canvas the size of its ink. The canvas
- *  is those PIXELS and CSS blows it up, so the browser's nearest-neighbour is
- *  what magnifies it and no pixel is resampled twice. */
-function paint(canvas: HTMLCanvasElement, sprite: string, frame: number): void {
-  const art = GENERATED[sprite];
+/** Onto a canvas the size of its own ink, which CSS then blows up — so the
+ *  browser's nearest-neighbour magnifies it and nothing resamples twice. */
+function paint(canvas: HTMLCanvasElement, sprite: string): void {
+  const art = GENERATED_CAST[sprite];
   if (!art) return;
-  const rows = art.frames[Math.min(frame, art.frames.length - 1)];
+  const rows = art.rows;
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
   const box = inkOf(sprite);
@@ -107,14 +99,10 @@ function paint(canvas: HTMLCanvasElement, sprite: string, frame: number): void {
   });
 }
 
-/** The idle run, or the first frame for a body that has no idle of its own. */
-const idleRun = (sprite: string): number[] => GENERATED[sprite]?.states.idle ?? [0];
-
-const ROOM = { share: 0.3, least: 150, most: 200 }; // how tall a figure may stand, CSS px: 3x to 4x of a 48 grid, never a sprite sheet at 6x
-/** A body is magnified by a WHOLE number, never less than this: a fractional
- *  scale draws one row of pixels a step wider than the next and the figure
- *  reads as a mosaic. */
-const LEAST_SCALE = 3;
+const ROOM = { share: 0.34, least: 170, most: 260 }; // how tall a figure may stand, CSS px
+/** Magnified by a WHOLE number, never less: a fractional scale draws one row a
+ *  step wider than the next. ONE now the art is 128 rather than a 48 body. */
+const LEAST_SCALE = 1;
 
 function fit(): void {
   const room = Math.min(ROOM.most, Math.max(ROOM.least, window.innerHeight * ROOM.share));
@@ -144,13 +132,10 @@ function figure(trade: BuiltTrade): HTMLElement {
   return stand;
 }
 
-/** Every figure breathes off ONE clock, so the room is not a dozen timers. */
+/** Once, when the room is built: a picture does not need a clock. */
 function tick(): void {
-  const at = performance.now() / 1000;
   for (const canvas of document.querySelectorAll<HTMLCanvasElement>('.pickfig__body')) {
-    const sprite = canvas.dataset.sprite ?? '';
-    const run = idleRun(sprite);
-    paint(canvas, sprite, run[Math.floor(at * IDLE_CYCLE) % run.length]);
+    paint(canvas, canvas.dataset.sprite ?? '');
   }
 }
 
@@ -251,8 +236,6 @@ function render(): void {
 export function closePick(): void {
   hideTooltip();
   $('pick').hidden = true;
-  globalThis.clearInterval(ticking);
-  ticking = undefined;
 }
 
 /** Shows on a character that has not been made yet. A save from before the
@@ -262,8 +245,6 @@ export function maybeShowPick(): boolean {
   if (game.character.trade) return false;
   render();
   $('pick').hidden = false;
-  globalThis.clearInterval(ticking);
-  ticking = globalThis.setInterval(tick, 1000 / 8);
   return true;
 }
 

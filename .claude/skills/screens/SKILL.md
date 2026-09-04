@@ -108,6 +108,12 @@ side of that: the kit is the game with everything, and every schedule reads what
 you have, so handing it every relic or every boss id has broken scheduled-room
 tests twice.
 
+**THE CAST HALL DRAWS `GENERATED_CAST`, one still a trade at 128.** It is the
+only screen that shows a hero at four times ship size, so it shows a drawing
+made for it rather than a 48-grid body magnified — and `LEAST_SCALE` is 1 there
+now, because at 3 a 128 picture stood taller than the window. Ask one with
+`tools/art/cast.mts`, which forces the BODY'S OWN inks; nothing animates.
+
 ## Theme
 
 **The FRAME has its own tokens and the MAP is PINNED.** `--ink`, `--panel`,

@@ -794,6 +794,19 @@ agrees with it. A two-hander is never in the off hand; `handClash` empties the
 other hand instead. **A pair is ORDERLESS in art and ORDERED in stats** —
 `variants()` sorts it, so which hand you filled never asks for a second picture.
 
+**THE CAST HALL IS FOUR PICTURES, not four bodies.** *"Is there anything wrong
+with just having static high quality images for the character select screen? As
+long as they are fairly similar to the existing character models?"* — there is
+not: the camp, the title and every portrait already ship as generated stills in
+a `generated-*.ts`, and "no binary assets" means no image FILES. `GENERATED_CAST`
+is one 128 still a trade, drawn where the body is 48, because this is the only
+screen that shows a man at four times his ship size. **IT IS ASKED WITH THE
+BODY'S OWN WORDS AND THE BODY'S OWN INKS** — `tools/art/cast.mts` forces the
+palette with a swatch of `GENERATED[sprite].key`, where `design` forces the
+roster's shared one and returned a blue-robed man in brown — so a picture cannot
+drift from the model it stands for. **The idle breath is GONE with it**: *"the
+idle thing honestly looks bad."*
+
 **A character is a trade, a main skill, two more slots and a bag.** Making one
 is a trade and a NAME, and then you are STANDING IN THE CAMP holding the weapon
 that skill wants — *"It should just be you pick character/name/skill and land in

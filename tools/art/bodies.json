@@ -2194,9 +2194,9 @@
   },
   {
    "sprite": "mahthar",
-   "character": "981eea9c-c9a5-48df-a34a-1019989a8b2f",
+   "character": "1f92fbab-3518-45fd-894c-b5ff29396cf6",
    "name": "Mahthar",
-   "look": "HIS TWO HANDS ARE OPEN AND EMPTY, hanging loose at his sides, nothing held in either one, nothing strapped to his back and nothing hanging from his belt. A lean rangy TRIBAL HUNTSMAN built to be read as a SHAPE from far away: THREE flat blocks of tone and nothing finer. A heavy shaggy near-black PELT hangs over one shoulder and down his back in one solid mass, so his outline is wide and ragged on that side and bare on the other. Under it his chest, one whole arm and both legs are BARE warm mid-brown skin, one even tone with no pattern on it. One bright accent and no more: a broad flat collar of pale bone at the throat, catching the light. A thick dark belt and a short dark kilt, bare shins, bare feet. Long dark hair tied back tight against the skull. NOT tattooed, NOT patterned, NOT striped, NOT painted, NOT speckled, NOT busy, NOT detailed, NOT many small shapes. His hands are EMPTY and stay empty. NOT holding anything, NOT carrying anything, NOT a sword, NOT an axe, NOT a club, NOT a mace, NOT a spear, NOT a haft, NOT a shield, NOT a bow, NOT a scabbard, NOT a sheath, NOT a belt weapon, NOT a weapon on his back, NOT a warrior, NOT a barbarian, NOT a fighter. He is a LIVING BREATHING MAN with FLESH on him, warm skin over most of him. Tall and long-limbed with a SMALL head. NOT a skull, NOT a skeleton, NOT undead, NOT armoured, NOT a breastplate, NOT chainmail, NOT a helmet, NOT a robe, NOT a mage, NOT a shirt, NOT a headdress, NOT feathers, NOT a mask, NOT face paint, NOT a bodybuilder, NOT oiled, NOT anime, NOT manga, NOT chibi, NOT cute, NOT a big head, NOT a doll, NOT a cartoon. FULL BODY head to feet, seen at a THREE-QUARTER angle, turned enough that you can tell which way he faces. No ground, no floor, no shadow cast on the ground, no base, no platform, no other objects.",
+   "look": "a bare-chested TRIBAL WARRIOR, lean and rangy rather than bulky, every rib showing: no shirt, no plate. A shaggy hide slung over ONE shoulder and belted at the waist, leaving the other shoulder and the whole chest bare and covered in dense black TATTOO work — solid blocks and sharp banded chevrons running up the neck and jaw, over the shoulder and down one whole arm to the knuckles. A wide leather belt hung with carved bone, a wrapped hide kilt, bare shins, bare feet. Half the head shaved to stubble and the rest long and tied, a hard weathered face. His skin is warm deep brown; his hide is dull rust, ochre and dark tan; the ink is near-black. BOTH HANDS EMPTY — no sword, no axe, no shield, no spear, no club, no weapon at all. He is a LIVING BREATHING MAN with FLESH on him, warm skin over most of him. Tall and long-limbed with a SMALL head. NOT a skull, NOT a skeleton, NOT undead, NOT armoured, NOT a breastplate, NOT chainmail, NOT a helmet, NOT a robe, NOT a mage, NOT a shirt, NOT a headdress, NOT feathers, NOT a mask, NOT face paint, NOT a bodybuilder, NOT oiled, NOT anime, NOT manga, NOT chibi, NOT cute, NOT a big head, NOT a doll, NOT a cartoon. FULL BODY head to feet, seen at a THREE-QUARTER angle, turned enough that you can tell which way he faces. No ground, no floor, no shadow cast on the ground, no base, no platform, no other objects.",
    "states": {
     "idle": {
      "frames": 4,
@@ -2219,7 +2219,7 @@
      "say": "buckling at the knees, folding forward over the stomach and going down onto the side, lying flat and still"
     }
    },
-   "approved": "cache/designs/mahthar-0.png",
+   "approved": "cache/designs/warrior_b-0.png",
    "_lost": "The broad build was asked as `warrior` and the lean one with a hide over one shoulder as `warrior_b`; three designs each. B1 was picked. The broad row is dropped rather than kept, since a `look` nothing points at is a body somebody will re-roll by accident."
   },
   {
@@ -3007,7 +3007,7 @@
    "sprite": "obreth",
    "name": "Obreth",
    "size": 96,
-   "look": "HIS TWO HANDS ARE OPEN AND EMPTY, hanging loose and away from his sides, nothing held in either one and nothing hanging at his belt. A gaunt hooded FIGURE built to be read as a SHAPE from far away: THREE flat blocks of tone and nothing finer. A tall sharp PEAKED HOOD comes to a point well above his head and his face under it is solid shadow. His coat is near-black and narrow through the shoulders, then SPLIT up the front and cut away at the hem into two long ragged tails that hang past his knees, so his outline is a narrow point on top and two hanging blades below with a clear gap between them. Under the coat a plain mid-slate tunic, one even tone. One bright accent and no more: a pale linen wrap wound round one forearm from wrist to elbow. Dark leggings, dark boots. NOT patterned, NOT striped, NOT buckled, NOT strapped, NOT pouched, NOT busy, NOT detailed, NOT many small shapes, NOT a wide coat, NOT a square silhouette. His hands are EMPTY and stay empty. NOT holding anything, NOT carrying anything, NOT a knife, NOT a dagger, NOT a sword, NOT a blade, NOT a scabbard, NOT a sheath, NOT a belt weapon, NOT a bow, NOT a staff, NOT an assassin, NOT a rogue, NOT a thief. Realistic ADULT proportions: a SMALL head on a tall long-limbed body. NOT anime, NOT manga, NOT chibi, NOT cute, NOT a big head, NOT a doll, NOT a cartoon, NOT a hero pose, NOT a long flowing cape, NOT a designed costume, NOT clean smooth shading, NOT glowing, NOT rim light, NOT shiny, NOT armour plate, NOT a helmet, NOT a mage, NOT a wizard, NOT a floor-length robe. FULL BODY head to feet, seen at a THREE-QUARTER angle, turned enough that you can tell which way he faces. No ground, no floor, no shadow cast on the ground, no base, no platform, no other objects.",
+   "look": "a gaunt hollow-cheeked MAN in a long dark coat of coarse slate cloth, the collar turned up and a plain hood over it so the eyes are lost in shadow, the coat worn through at the cuffs and hanging open, a strapped chest rig of EMPTY sheaths over a black waistcoat, a single chip of dull violet glass on a cord at the throat. Grey and near-black, dusty and unpolished. Realistic ADULT proportions: a SMALL head on a tall long-limbed body. BOTH HANDS EMPTY — no knife, no dagger, no sword, no weapon at all. NOT anime, NOT manga, NOT chibi, NOT cute, NOT a big head, NOT a doll, NOT a cartoon, NOT a hero pose, NOT a long flowing cape, NOT a designed costume, NOT clean smooth shading, NOT glowing, NOT rim light, NOT shiny, NOT armour plate, NOT a helmet, NOT a mage, NOT a wizard, NOT a floor-length robe. FULL BODY head to feet, seen at a THREE-QUARTER angle, turned enough that you can tell which way he faces. No ground, no floor, no shadow cast on the ground, no base, no platform, no other objects.",
    "states": {
     "idle": {
      "frames": 4,
@@ -3030,9 +3030,9 @@
      "say": "folding at the waist and dropping to one knee, then going down onto the side and lying flat and still"
     }
    },
-   "approved": "cache/designs/obreth-3.png",
+   "approved": "cache/designs/rogue_b-1.png",
    "_lost": "The grubby short-cloak version was asked as `rogue_a` and this long slate coat as `rogue_b`; three designs each, and the USER picked b2. The other row is dropped rather than kept — a `look` nothing points at is a body somebody re-rolls by accident.",
-   "character": "04ea3a34-9d9a-4c8e-a573-5952aa8de093"
+   "character": "d6449585-4c2b-4bcf-a086-395f722b2e88"
   },
   {
    "sprite": "obreth_sword",
