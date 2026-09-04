@@ -20,10 +20,11 @@ import {
   PROFESSION_BY_ID,
   WEAPON_PROFESSIONS,
 } from '../data';
-import type { MaterialDef } from '../data';
+import type { MaterialDef, ToolDef, ToolRungDef } from '../data';
 import { canBePerfect, makeGear, makeMaterial, stackKey } from '../economy';
 import { addItem } from './state';
 import { payXp, professionAt } from './work';
+import { toolRung } from '../sim/character';
 import type { GameState } from './state';
 import type { GearBase, Item } from '../types';
 import type { Rng } from '../rng';
@@ -117,18 +118,27 @@ export function uniqueFor(game: GameState): MaterialDef | null {
   );
 }
 
-/** THE CUT STONES a craft would take, off whatever you hold most of and spread
- *  over as many worlds as it takes: a COUNT, where a part is a set of versions.
- *  `already` is what the parts claimed, which matters for the one profession
- *  whose family IS gem — a ring must not eat the stones it also needs. */
-export function gemsFor(game: GameState, want: number, already: Spent[] = []): Spent[] {
+/**
+ * FILL A COUNT off a family's PROCESSED stacks, biggest first, spilling into a
+ * second world only when the first runs short. This is what a UNIVERSAL input
+ * is, against a part's demand for `versions` DIFFERENT worlds; the cut stones
+ * every recipe wants and a tool upgrade's material are both one. `already` is
+ * what the same transaction claimed elsewhere, which matters for the one
+ * profession whose family IS gem — a ring must not eat the stones it needs.
+ */
+export function fillFrom(
+  game: GameState,
+  family: string,
+  want: number,
+  already: Spent[] = []
+): Spent[] {
   if (want <= 0) return [];
   const held = heldBy(game);
   const claimed = new Map<string, number>();
   for (const row of already) claimed.set(row.material, (claimed.get(row.material) ?? 0) + row.n);
   const out: Spent[] = [];
   let left = want;
-  const stacks = MATERIALS.filter((m) => m.family === 'gem')
+  const stacks = MATERIALS.filter((m) => m.family === family)
     .map((m) => ({ def: m, n: countOf(held.get(`${m.id}:done`)) - (claimed.get(m.id) ?? 0) }))
     .filter((row) => row.n > 0)
     .sort((a, b) => b.n - a.n || a.def.id.localeCompare(b.def.id));
@@ -140,6 +150,10 @@ export function gemsFor(game: GameState, want: number, already: Spent[] = []): S
   }
   return left > 0 ? [] : out;
 }
+
+/** The cut stones a craft would take. Any world's: that is what universal is. */
+export const gemsFor = (game: GameState, want: number, already: Spent[] = []): Spent[] =>
+  fillFrom(game, 'gem', want, already);
 
 /** EVERY TAKE ONE CRAFT WOULD MAKE, or null. The check and the craft read this
  *  one answer, so what is refused and what is eaten cannot come apart. */
@@ -159,6 +173,47 @@ export function craftPlan(game: GameState, recipe: CraftRecipe): Spent[] | null 
     spent.push({ material: rare.id, n: recipe.unique });
   }
   return spent;
+}
+
+// --- upgrading a tool, which is the anvil's other verb --------------------
+
+/** The rung a tool would go UP to, or null when it is already at its best. */
+export function nextRung(game: GameState, tool: ToolDef): ToolRungDef | null {
+  return tool.rungs[toolRung(game.character, tool.id) + 1] ?? null;
+}
+
+/** The material half of a tool upgrade: the same fill a cut stone is. */
+export const upgradeCost = (game: GameState, tool: ToolDef, rung: ToolRungDef): Spent[] =>
+  fillFrom(game, tool.eats, rung.eats);
+
+/** Why a tool cannot be upgraded, or null — in NUMBERS, like every refusal. */
+export function whyNotUpgrade(game: GameState, tool: ToolDef): string | null {
+  const rung = nextRung(game, tool);
+  if (!rung) return 'Nothing better to make of it.';
+  const at = professionAt(game, tool.skill).level;
+  const who = PROFESSION_BY_ID[tool.skill]?.name ?? tool.skill;
+  if (at < rung.at) return `${who} ${rung.at} needed, you are ${at}.`;
+  const gold = game.wallet.gold ?? 0;
+  if (gold < rung.gold) return `${rung.gold} gold needed, you have ${Math.floor(gold)}.`;
+  if (rung.eats > 0 && upgradeCost(game, tool, rung).length === 0) {
+    const family = MATERIAL_FAMILY_BY_ID[tool.eats];
+    return `${rung.eats} ${family?.one.toLowerCase() ?? 'unit'}s needed. Work some at ${family?.station ?? 'a station'}.`;
+  }
+  return null;
+}
+
+/** MAKE IT BETTER. The gold and the material go now; the rung is what you get,
+ *  and it is the only thing an upgrade ever changes. */
+export function upgradeTool(game: GameState, tool: ToolDef): ToolRungDef | null {
+  if (whyNotUpgrade(game, tool)) return null;
+  const rung = nextRung(game, tool)!;
+  for (const row of upgradeCost(game, tool, rung)) take(game, `${row.material}:done`, row.n);
+  game.wallet.gold = (game.wallet.gold ?? 0) - rung.gold;
+  game.character.tools = {
+    ...(game.character.tools ?? {}),
+    [tool.id]: toolRung(game.character, tool.id) + 1,
+  };
+  return rung;
 }
 
 /** Why this cannot be made, or null. Said in NUMBERS — the level you are and

@@ -188,7 +188,7 @@ const STATES = [
   'handover', 'descent', 'results',
   'scene', 'speech', 'lampwright',
   'skills', 'skill-list', 'skill-web', 'move-web', 'trade', 'trials', 'proving',
-  'bench', 'tooltip', 'glossary', 'graft', 'works', 'anvil', 'jewellery',
+  'bench', 'tooltip', 'glossary', 'graft', 'works', 'anvil', 'jewellery', 'tools',
   'builder',
 ];
 
@@ -716,6 +716,14 @@ for (const vp of VIEWPORTS) {
   await page.evaluate(() => document.getElementById('forge-tab-ring')?.click());
   await page.waitForTimeout(250);
   await shoot('jewellery');
+  // AND ITS TOOLS: the four gathering tools and what a reforge takes, which is
+  // the only screen that says what a tool is FOR.
+  await page.evaluate(() => document.getElementById('forge-tab-tool')?.click());
+  // The jewellery card's tooltip is still up, and it is a HOVER: nothing in the
+  // page dismisses it without a real mouseleave, so take it down by hand.
+  await page.evaluate(() => { const t = document.getElementById('tooltip'); if (t) t.hidden = true; });
+  await page.waitForTimeout(250);
+  await shoot('tools');
   await page.evaluate(() => document.getElementById('forge-close')?.click());
   await page.waitForTimeout(200);
 
