@@ -2466,9 +2466,10 @@ export const CRAFT = {
   needs: [1, 20, 45],
   versions: [1, 2, 4],
   each: [2, 3, 4],
-  /** From this tier up, a recipe also wants one of a world's UNIQUE — the
-   *  thing tied to no profession, which is what it is FOR. */
-  uniqueFrom: 3,
+  uniqueFrom: 3, // from this tier a recipe also wants a world's UNIQUE, which is what it is FOR
+  /** CUT STONES EVERY RECIPE WANTS, by tier. ANY world's, where a part wants
+   *  `versions` different ones, and PROCESSED like every other input. */
+  gems: [1, 2, 3],
   /** XP a craft pays, by tier: a higher recipe beats spamming the cheapest. */
   xp: [12, 40, 130],
   /** A DISMANTLE's share of what the recipe took. NEVER 1 or more, or craft →

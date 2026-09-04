@@ -200,6 +200,18 @@ function baseCard(base: GearBase, recipe: CraftRecipe): HTMLElement {
       needs.append(needRow(icon, `worlds with ${part.wants} ${one}s`, ready.length, part.versions));
     }
   }
+  // THE UNIVERSAL ROW: every recipe carries it, so it is a fact about the anvil
+  // rather than a thing to notice on some cards and not others. Counted across
+  // every world's, because any world's will do.
+  if (recipe.gems > 0) {
+    const cut = MATERIALS.filter((m) => m.family === 'gem');
+    const held = cut.reduce((n, m) => n
+      + (((game.materials ?? []).find((i) => i.base === m.id && i.meta.done)?.meta.n as number) ?? 0), 0);
+    const shown = cut.find((m) => (game.materials ?? [])
+      .some((i) => i.base === m.id && i.meta.done)) ?? cut[0];
+    needs.append(needRow(shown ? itemIcon(makeMaterial(shown, 1, true), 22) : null,
+      'cut stones', held, recipe.gems));
+  }
   if (recipe.unique > 0) {
     const rare = uniqueFor(game);
     const held = rare ? ((game.materials ?? []).find((i) => i.base === rare.id)?.meta.n as number) ?? 0 : 0;

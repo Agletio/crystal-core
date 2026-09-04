@@ -48,6 +48,7 @@ export interface CraftRecipe {
   parts: CraftPart[];
   /** A world's UNIQUE, from `CRAFT.uniqueFrom` up. Raw, and any world's. */
   unique: number;
+  gems: number; // CUT STONES every recipe wants; any world's, so it is universal
   xp: number;
 }
 
@@ -80,6 +81,7 @@ export function recipeFor(baseId: string): CraftRecipe | null {
       versions: CRAFT.versions[tier - 1],
     })),
     unique: tier >= CRAFT.uniqueFrom ? 1 : 0,
+    gems: CRAFT.gems[tier - 1],
     xp: CRAFT.xp[tier - 1],
   };
 }
@@ -115,6 +117,50 @@ export function uniqueFor(game: GameState): MaterialDef | null {
   );
 }
 
+/** THE CUT STONES a craft would take, off whatever you hold most of and spread
+ *  over as many worlds as it takes: a COUNT, where a part is a set of versions.
+ *  `already` is what the parts claimed, which matters for the one profession
+ *  whose family IS gem — a ring must not eat the stones it also needs. */
+export function gemsFor(game: GameState, want: number, already: Spent[] = []): Spent[] {
+  if (want <= 0) return [];
+  const held = heldBy(game);
+  const claimed = new Map<string, number>();
+  for (const row of already) claimed.set(row.material, (claimed.get(row.material) ?? 0) + row.n);
+  const out: Spent[] = [];
+  let left = want;
+  const stacks = MATERIALS.filter((m) => m.family === 'gem')
+    .map((m) => ({ def: m, n: countOf(held.get(`${m.id}:done`)) - (claimed.get(m.id) ?? 0) }))
+    .filter((row) => row.n > 0)
+    .sort((a, b) => b.n - a.n || a.def.id.localeCompare(b.def.id));
+  for (const row of stacks) {
+    if (left <= 0) break;
+    const take = Math.min(left, row.n);
+    out.push({ material: row.def.id, n: take });
+    left -= take;
+  }
+  return left > 0 ? [] : out;
+}
+
+/** EVERY TAKE ONE CRAFT WOULD MAKE, or null. The check and the craft read this
+ *  one answer, so what is refused and what is eaten cannot come apart. */
+export function craftPlan(game: GameState, recipe: CraftRecipe): Spent[] | null {
+  const spent: Spent[] = [];
+  for (const part of recipe.parts) {
+    const have = versionsFor(game, part);
+    if (have.length < part.versions) return null;
+    for (const def of have) spent.push({ material: def.id, n: part.wants });
+  }
+  const stones = gemsFor(game, recipe.gems, spent);
+  if (recipe.gems > 0 && stones.length === 0) return null;
+  spent.push(...stones);
+  if (recipe.unique > 0) {
+    const rare = uniqueFor(game);
+    if (!rare) return null;
+    spent.push({ material: rare.id, n: recipe.unique });
+  }
+  return spent;
+}
+
 /** Why this cannot be made, or null. Said in NUMBERS — the level you are and
  *  the level it wants, the versions you hold and the versions it asks for. */
 export function whyNotCraft(game: GameState, recipe: CraftRecipe): string | null {
@@ -130,6 +176,9 @@ export function whyNotCraft(game: GameState, recipe: CraftRecipe): string | null
         ? `${part.wants} ${one}s needed. Work some at ${family?.station ?? 'the station'}.`
         : `${part.versions} worlds of ${one}s needed, you have ${have.length}.`;
     }
+  }
+  if (craftPlan(game, recipe) === null && recipe.gems > 0) {
+    return `${recipe.gems} cut stones needed. Every recipe wants them; cut some at the jeweller's.`;
   }
   if (recipe.unique > 0 && !uniqueFor(game)) return 'A world\'s own material is missing.';
   return null;
@@ -194,18 +243,12 @@ export function craftBase(game: GameState, recipe: CraftRecipe, rng: Rng): Craft
   const base = GEAR_BASE_BY_ID[recipe.base];
   if (!base) return null;
 
-  const spent: Spent[] = [];
-  for (const part of recipe.parts) {
-    for (const def of versionsFor(game, part)) {
-      take(game, `${def.id}:done`, part.wants);
-      spent.push({ material: def.id, n: part.wants });
-    }
-  }
-  if (recipe.unique > 0) {
-    const rare = uniqueFor(game)!;
-    take(game, rare.id, recipe.unique);
-    spent.push({ material: rare.id, n: recipe.unique });
-  }
+  // ONE PLAN, and the check above read the same one, so nothing is taken that
+  // was not counted. A world's UNIQUE is the one raw input; the rest is worked.
+  const spent = craftPlan(game, recipe);
+  if (!spent) return null;
+  const rare = recipe.unique > 0 ? uniqueFor(game)?.id : undefined;
+  for (const row of spent) take(game, row.material === rare ? row.material : `${row.material}:done`, row.n);
 
   const level = craftLevel(game, recipe);
   const quality = qualityRoll(level, rng);
