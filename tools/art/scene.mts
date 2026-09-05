@@ -19,9 +19,8 @@ const words = JSON.parse(readFileSync(here('scenes.json'), 'utf8')) as {
   scenes: Record<string, { width: number; height: number; say: string; like?: string; ref?: string | string[] }>;
 };
 
-/** ANOTHER PANEL'S OWN PICTURE, as a `data:` URI out of what already shipped.
- *  Two panels of one scene have to be the same room: words alone gave the same
- *  chamber a different wall texture and a tunnel running the other way. */
+/** ANOTHER PANEL'S OWN PICTURE, as a `data:` URI out of what already shipped:
+ *  words alone gave one chamber two wall textures and two tunnel directions. */
 function shipped(id: string): string | undefined {
   if (!existsSync(OUT)) return undefined;
   const row = new RegExp(`^  ${id}: \\{ w: \\d+, h: \\d+, png: '([^']+)' \\},$`, 'm')
@@ -41,10 +40,16 @@ if (command === 'ask') {
     // A BODY'S OWN DESIGN, so a panel draws the person the game will stand in
     // the camp rather than the generator's idea of the words. `ref` is a path
     // under `tools/art/`, which is where an approved design already lives.
+    // A REF IS A FILE OR AN EARLIER PANEL: an entry with no `.png` names a
+    // shipped scene, which is what a panel whose person is a stage BEHIND the
+    // finished design wants — the design there converts him early.
     const refs = scene.ref ? [scene.ref].flat() : [];
-    const who = refs.map(
-      (at) => `data:image/png;base64,${readFileSync(here(at)).toString('base64')}`
-    );
+    const who = refs.map((at) => {
+      if (at.endsWith('.png')) return `data:image/png;base64,${readFileSync(here(at)).toString('base64')}`;
+      const png = shipped(at);
+      if (!png) throw new Error(`${at} has not been emitted`);
+      return png;
+    });
     const out = await callTool('create_image_pro', {
       description: scene.say,
       width: scene.width,
