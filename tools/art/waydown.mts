@@ -81,11 +81,14 @@ for (const name of want) {
   const job = /([0-9a-f-]{36})/.exec(out)?.[1];
   console.log(`${name}: ${job ?? out.slice(0, 140)}`);
   if (!job) continue;
+  // THE DOWNLOAD URL CARRIES NO EXTENSION — it is `…/images/<id>/download` —
+  // so a filter for `.png` never matches it and every take is recorded as
+  // "never arrived" while the generation is already paid for.
   let png: Buffer | null = null;
   for (let go = 0; go < 30 && !png; go++) {
     if (go > 0) await wait(10_000);
     const text = await callTool('get_image', { job_id: job });
-    const url = urlsIn(text).find((u) => /\.png/.test(u));
+    const url = urlsIn(text).find((u) => /\/download$/.test(u)) ?? urlsIn(text)[0];
     if (url) png = await download(url).catch(() => null);
   }
   if (png) { writeFileSync(`${dir}/${name}.png`, png); console.log(`  wrote ${name}.png`); }

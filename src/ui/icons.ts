@@ -336,7 +336,7 @@ const ARROW = [
  * draw one picture while the bag drew another.
  */
 export function gearIcon(art: string, size = 26): SVGSVGElement {
-  return drawn(`gear_${art}`, size) ?? sprite(['.'], { '.': INK }, size, art);
+  return drawn(gearArtKey(art), size) ?? sprite(['.'], { '.': INK }, size, art);
 }
 
 /**
@@ -347,7 +347,7 @@ export function gearIcon(art: string, size = 26): SVGSVGElement {
  * icon in the game already makes.
  */
 export function tintedGearIcon(art: string, size: number, hue: string): SVGSVGElement {
-  const drawing = GENERATED_ICONS[`gear_${art}`];
+  const drawing = GENERATED_ICONS[gearArtKey(art)];
   if (!drawing) return gearIcon(art, size);
   const to = resolve(hue);
   const key: Record<string, string> = {};
@@ -392,7 +392,13 @@ function washed(from: string, to: [number, number, number]): string {
 }
 
 /** Whether a base's art has been drawn. Pure, so the demo can hold the line. */
-export const hasGearArt = (art: string): boolean => !!GENERATED_ICONS[`gear_${art}`];
+/** WHERE A BASE'S PICTURE LIVES. Gear is drawn under `gear_<art>`; a TOOL's
+ *  icon was generated for its `HELD` row and is under its own bare key, so the
+ *  bare one is the fallback rather than a second table to keep in step. */
+export const gearArtKey = (art: string): string =>
+  GENERATED_ICONS[`gear_${art}`] ? `gear_${art}` : art;
+
+export const hasGearArt = (art: string): boolean => !!GENERATED_ICONS[gearArtKey(art)];
 
 const CLASS_COLOURS: Record<string, string> = {
   basic: 'var(--dust)',

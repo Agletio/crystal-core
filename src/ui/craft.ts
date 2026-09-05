@@ -350,7 +350,9 @@ function renderWorn(): void {
   host.replaceChildren();
   const grid = el('div', 'worn__grid');
 
-  for (const slot of EQUIP_SLOTS) {
+  // A TOOL HOLDS NO MODIFIER SLOT, so its square here would never take a
+  // currency: the bench shows what can be crafted on and nothing else.
+  for (const slot of EQUIP_SLOTS.filter((s) => s.group !== 'tool')) {
     const item = game.character.equipment[slot.id];
     const btn = el('button', 'wornslot') as HTMLButtonElement;
     btn.dataset.equip = slot.id;

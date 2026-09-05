@@ -303,7 +303,7 @@ assert(
   'and not one node of it is walkable before the campaign has been paid for',
   String(all('#trials-web .web__node--open').length)
 );
-assert(/^0\//.test(text('trials-sub')), 'because it holds no Tallies at all', text('trials-sub'));
+assert(/^0\//.test(text('trials-sub')), 'because it holds no points at all', text('trials-sub'));
 $('trials-close').click();
 
 $('open-dev').click();
@@ -3041,7 +3041,7 @@ $('dev-kit').click();
     String($('trials-webwrap').hidden)
   );
   assert(
-    /Tallies spent/.test(text('trials-sub')) && /nodes/.test(text('trials-sub')),
+    /points spent/.test(text('trials-sub')) && /nodes/.test(text('trials-sub')),
     'and says what is spent, what is left to earn, and how big it is',
     text('trials-sub')
   );
@@ -3060,7 +3060,7 @@ $('dev-kit').click();
   openTrial()[0].dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
   assert(
     all('#trials-web .web__node--on').length === 1,
-    'a Tally spends on the node you clicked',
+    'a point spends on the node you clicked',
     String(all('#trials-web .web__node--on').length)
   );
   all('#trials-web .web__node--on')[0].dispatchEvent(
