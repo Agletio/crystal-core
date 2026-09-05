@@ -745,14 +745,11 @@ and the 27 tale panels are close to an 8, and the descent they are wrapped
 round is a 3. **A critic reports the symptom; the diagnosis and the fix are
 ours** — verify each against the code before spending anything.
 
-- [ ] **THE HEALTH BAR IS AN UNFRAMED CRIMSON SLAB AT THE BODY'S OWN Y.** All
-      four named it first. *"One lies across the hero's shins, one on a
-      skeleton's skull, one over bare floor with nothing under it"*; *"six
-      bodies means six bars at six heights with soft anti-aliased caps and no
-      dark backing"*; *"they read as a debug overlay somebody forgot to
-      style."* At full life it is the most saturated ink on the floor, and it
-      is in every fight screenshot the game can take.
-      (`crop-pack-bars-x4.png`, `fx-arc-02.png`, `boss/boss-05.png`)
+- [x] **THE HEALTH BAR IS AN UNFRAMED CRIMSON SLAB.** DONE: `lifeBar` and
+      `BAR` in `render/renderer.ts` are one shape both renderers draw —
+      snapped to whole SCREEN pixels so the ends are hard, its WIDTH the
+      body's own span (a beetle and a Gaunt wore the same 0.7 tiles), and a
+      dark plate always at full strength with the fill inset inside it.
 - [ ] **THE ROCK FACE IS A ROW OF IDENTICAL MERLONS, AND PAST IT IS A VOID.**
       *"One rounded column per cell, so every straight wall is a row of
       battlements and every chamber is a fort seen from above"*; *"past the
@@ -779,53 +776,65 @@ ours** — verify each against the code before spending anything.
       monitor"*, and `tale_bone_4`'s shaft as *"a flat lime-green rectangle,
       one alpha top to bottom, hard vertical edges, no taper… it reads as a UI
       element left on."* (`faces.png`, `tale-orrery-1.png`, `tale-ossuary-4.png`)
-- [ ] **TWO UNFRAMED BLACK OVERLAYS IN A CARVED-STONE GAME.** *"The item menu
-      is a 900px unframed black rectangle covering three whole rows of the bag
-      it was opened from, no item icon, no rarity colour"*, and the parley box
-      *"is drawn over the smith's bust, slicing his arm off mid-bicep"*, its
-      buttons *"big soft-gradient left-aligned rounded rects in a game where
-      every other button is flat with a 1px gold outline and centred caps."*
-      (`desktop-itemmenu.png`, `kit-parley-smith.png`)
-- [ ] **FIVE WINDOWS OPEN SLICED THROUGH A WORD, WITH NOTHING SAYING SCROLL.**
-      *"`desktop-professions.png` cuts 'Blacksmithing 1/99' horizontally at the
-      top edge while still titled CHARACTER; `desktop-bench.png` halves
-      'Prismatic Crystal'; `kit-anvil.png` halves the Cudgel row;
-      `kit-reckoning.png` halves a ledger card; `kit-smith-shop.png` halves the
-      BUY button — and in none of them is there a top fade or a scrollbar to
-      say a cut is a scroll."* The `critique` skill's own note applies: headless
-      Chromium hides scrollbars, so **the affordance a picture can show is a
-      fade at the foot**, not a thumb.
-- [ ] **AT 1280x800 THE NUMBERS A PLAYER CHECKS ARE THE LEAST LEGIBLE TYPE ON
-      THE SCREEN.** *"The '328 / 376' printed inside the life bar, the flask
-      percentages and the damage numerals are all around 8px of unoutlined
-      serif"*; *"everything above judged at 2x reads fine; at ship size the
-      HUD's numbers are decoration."* (`rot-z4.png`, `fx-fireball-02.png`)
+- [x] **TWO UNFRAMED BLACK OVERLAYS.** DONE: the item menu and the speech
+      bubble wear the WINDOW's frame at half its size, the one the tooltip
+      already had. The menu's head is `itemHead` — the card's own icon and
+      tier ink, one implementation — it is capped in width so a long dismantle
+      line wraps rather than covering three rows of the bag, and the parley's
+      rows are centred caps like every other button.
+- [x] **FIVE WINDOWS OPEN SLICED THROUGH A WORD.** DONE: `markScroll` in
+      `src/ui/windows.ts` sets `is-above` / `is-below` off where a body is
+      actually scrolled, so the fade is at whichever END is cut and a window
+      with nothing under it is no longer dimmed at the foot. The observer
+      watches `childList` ONLY — on the subtree it allocated a record per node
+      and took the headless suite to an 8 GB heap.
+- [x] **THE NUMBERS A PLAYER CHECKS.** DONE for the HUD: the vessel's
+      interior is 10px, so what buys a figure legibility is dark on all FOUR
+      sides rather than another point of size — outlined and `tabular-nums`
+      there, on the flask threshold and on the XP bar. The floating damage
+      numerals already carry `floaterInk`'s edge and are sized off the TILE by
+      decision, so they are left alone.
 - [ ] **THE PLAIN SWORD AND DAGGER ICONS ARE 3px SLIVERS IN A 40px SLOT.**
       *"They read as empty, beside a bow and a mace that fill theirs"*, and the
       same shapes make *"'Ash Wand' and 'Grey Staff' tally marks on the anvil
       and 'Bent Rod' one on the sheet."* A silhouette budget per slot, not per
       weapon. (`crop-dock-weapons-x3.png`, `kit-anvil.png`, `kit-sheet-tools.png`)
-- [ ] **THE SHOP IS TEN IDENTICAL TEXT PLATES WITH NO PICTURE ON THE SCREEN.**
-      *"Ten identical '120 gold' text plates with not one drawn thing on it."*
-      A gamble sells a KIND, so the kind is what wants a picture — the
-      counter's whole screen currently has no art in it at all. (`kit-shop.png`)
-- [ ] **VECTOR SHAPES KEEP LANDING ON PIXEL ART.** *"A smooth tapered
-      exclamation with a round anti-aliased dot over a picture whose smallest
-      feature is a 2px block"*, the targeting reticle, and *"the white and cyan
-      node halos… a CSS filter standing in for drawn art, and the cyan is the
-      only cool ink in a wholly warm picture."*
-      (`crop-camp-mark-x5.png`, `desktop-skill-web.png`, `desktop-trials.png`)
-- [ ] **THE PROVING GROUND'S SOCKET ARCHES ARE TWICE THE PIXEL SIZE OF THE ART
-      BEHIND THEM**, cool grey in a wholly warm game, with their feet cropped
-      off — *"reads as broken, not stylised."* (`kit-proving.png`)
-- [ ] **THE TWELVE RUNG DISCS ARE 9px NUMERALS IN NEAR-BLACK ON DARK BROWN.**
-      *"Only rung 1, gold-ringed, can be read at all"* — on the picture the
-      director rates the best screen in the game. (`desktop-fissure.png`)
-- [ ] **SEAM_PRO HAS NEVER BEEN PHOTOGRAPHED.** A harness fault with an art
-      cost: socketing for the Seam produced a descent headed The Fissure
-      drawing the Rot's tileset, so the best set on the sheet has never
-      appeared in a judged picture. Find out whether the WORLD is wrong or only
-      the heading.
+- [x] **THE SHOP HAD NO PICTURE ON IT.** DONE: a gamble sells a KIND, so each
+      row carries that kind's own face — the plainest base it has, DERIVED off
+      `GEAR_BASES`. Two rows went with it: `KIND_VARIETY` is 0 for the rod and
+      the tool because the floor may not drop one, and the counter was reading
+      its keys and offering both, which made it a second source beside the
+      SMITH. Smoke holds all three.
+- [x] **VECTOR SHAPES ON PIXEL ART.** DONE: the camp's mark is TWO BLOCKS
+      with a hard dark rim rather than a serif exclamation, and the web's node
+      halos are hard rings — the `drop-shadow` glow was the one soft thing
+      beside a 96px pixel icon. The cyan STAYS: it is the only ink that does
+      not vanish into warm rock, which is what it was chosen for, and the two
+      states are apart by hue, value and weight.
+- [ ] **THE PROVING GROUND'S SOCKET ARCHES.** PARTLY DONE, the layout half:
+      the four translucent plates behind the recesses are gone (the recess IS
+      the socket), their labels take a four-way outline since they lie on the
+      picture, the readout under them wears the window's own frame, and the
+      art is drawn 1:1 with its 73-pixel grid rather than resampled at 76.
+      Doubling it matches the map's own blocks more nearly and reads as four
+      boulders on a landscape, so 1:1 is the better of the two and matching
+      exactly is not possible at a fixed CSS size. LEFT: the cool grey and the
+      cropped feet, which are a RE-GENERATION and are shown first.
+- [x] **THE TWELVE RUNG DISCS.** DONE: bone numerals at 12px on a near-opaque
+      `--ink` plate, on a 24px disc big enough to hold them, and a SHUT depth
+      keeps its numeral and loses the lit rim instead of fading to nothing.
+- [ ] **SEAM_PRO HAS NEVER BEEN PHOTOGRAPHED.** THE WORLD WAS WRONG, and it
+      is FIXED: `RunSim` was handed `options.rung`, which is null for a PLACE
+      rather than a depth, so `runSet` saw no `RunWhere` — no `provingMod`, the
+      influence ignored, the theme falling through to whatever the crystals
+      composed to. Measured: 2 Demonic + 2 Prismatic at level 4 ran as The Rot;
+      it is `seam` at danger 1520 now, and the heading names the world the run
+      GOT rather than the influence. The dev kit holds TWO crystals of each
+      family per level, or `PROVING.seamOf` could not be met at all.
+      LEFT, and it is a BALANCE question rather than a harness one: nothing
+      survives 1520 danger long enough to be photographed — a level-80 kit
+      character dies inside a second and a half. `LEVELS=` and `WAIT=` are on
+      `descent-peek` for whoever takes it.
 - [ ] **A BURST, NOT A HOLD, FOR AN EFFECT.** The purist declined to score
       animation at all: *"one pose is not a frame count."* `CAST=1` freezes the
       sim, so two effect stills in the set are the same instant. Give the peek

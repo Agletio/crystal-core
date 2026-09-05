@@ -18,6 +18,9 @@ Thumbs.db
 
 # Screenshot output from `npm run shots` — regenerated, never reviewed.
 shots/
+# `descent-peek`'s own default name, regenerated every run. A picture worth
+# keeping is committed under a name that says what it shows.
+/descent*.png
 # And from `npm run peek`, which writes here by default.
 descent.png
 

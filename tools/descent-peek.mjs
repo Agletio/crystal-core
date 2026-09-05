@@ -350,9 +350,27 @@ if (process.env.CAST) {
   }
   await page.waitForTimeout(60);
 }
+/** A BURST, NOT A HOLD: on a held sim every frame is the same instant, so a
+ *  set of stills said nothing about motion — *"one pose is not a frame count."*
+ *  `holdAt` is a SIM time, so pushing it on and clearing the hold runs the sim
+ *  exactly that far and stops it again. BURST=<sim seconds> a frame. */
+const step = Number(process.env.BURST ?? 0.06);
+async function onwards() {
+  if (!process.env.CAST) return page.waitForTimeout(APART);
+  await page.evaluate((by) => {
+    const at = document.body.dataset;
+    at.holdAt = String(Number(at.holdAt ?? 0) + Number(by));
+    delete at.hold;
+  }, step);
+  for (let i = 0; i < 200; i++) {
+    if (await page.evaluate(() => document.body.dataset.hold)) break;
+    await page.waitForTimeout(20);
+  }
+  await page.waitForTimeout(60);
+}
 for (let i = 0; i + 1 < Number(shots); i++) {
   await writeFile(out.replace(/\.png$/, `-${String(i).padStart(2, '0')}.png`), await frame());
-  await page.waitForTimeout(APART);
+  await onwards();
 }
 await writeFile(out, await frame());
 
