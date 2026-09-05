@@ -22,7 +22,7 @@ import { ENTRANCE, EXIT, SHELF_SET, WALL, high, patchesAt, wangKey } from '../si
 import { tileNoise } from '../noise';
 import { gearCanvas } from '../ui/webicons';
 import { ATTACK_POSE, DEATH_FADE } from '../sim/run';
-import type { Entity, RunState } from '../sim/run';
+import type { Entity, RunState, Vfx } from '../sim/run';
 import type { GameMap, MapProp } from '../sim/grid';
 import type { FirePixel, Palette, Renderer } from './renderer';
 import type { Cel } from './sprites';
@@ -1099,18 +1099,37 @@ export async function createPixiRenderer(
     if (sunk > 0) h.y += sunk * 0.8;
   }
 
-  /** Where the BOW is, not the shooter's tile. The sim's origin stays
-   *  `use.user`: it is the ray pierce walks, so moving it would change what
-   *  the shot HITS. `drawHeld`'s arithmetic, applied to the arrow. */
-  function bowMuzzle(hero: Entity, elapsed: number, from: { x: number; y: number }): { x: number; y: number } {
-    const spec = HELD.bow;
+  /** WHERE THE WEAPON IS, not the body's tile. The sim's origin stays the
+   *  caster's own spot — for a bow it is the ray pierce walks, so moving it
+   *  would change what the shot HITS — and this is presentation on top of it.
+   *  `drawHeld`'s own arithmetic, so the hand is the one authored per FRAME in
+   *  `HERO_HANDS` and MIRRORS with the facing: a fixed offset would sit on the
+   *  wrong side the moment he turned round.
+   *
+   *  `along` is how far down the weapon's own length the thing leaves from:
+   *  an arrow leaves the hand, a spell leaves the point. */
+  function muzzle(
+    e: Entity, art: string, from: { x: number; y: number }, elapsed: number, along = 0
+  ): { x: number; y: number } {
+    const spec = HELD[art];
     if (!spec) return from;
-    const hand = handAt(hero.sprite, 'bow', cel(hero, elapsed));
-    const east = Math.cos(hero.facing) >= 0;
+    const hand = handAt(e.sprite, art, cel(e, elapsed));
+    const east = Math.cos(e.facing) >= 0;
     return {
-      x: from.x + (hand.x + (spec.reach ?? 0) - 0.5) * hero.scale * (east ? 1 : -1),
-      y: from.y + (hand.y - anchorY(hero)) * hero.scale,
+      x: from.x + (hand.x + (spec.reach ?? 0) + spec.size * along - 0.5) * e.scale * (east ? 1 : -1),
+      y: from.y + (hand.y - anchorY(e)) * e.scale,
     };
+  }
+
+  /** The sim says WHO cast it; this says where on that body. Null with nothing
+   *  held, and then its own spot was right after all. */
+  function castPoint(fx: Vfx, state: RunState): { x: number; y: number } | null {
+    const from = fx.points[0];
+    if (fx.cast === undefined || !from) return null;
+    const e = [state.hero, ...state.monsters].find((b) => b.id === fx.cast);
+    const art = e ? e.tool ?? e.held : undefined;
+    if (!e || !art || !HELD[art]) return null;
+    return muzzle(e, art, { x: e.x, y: e.y }, state.elapsed, 0.5);
   }
 
   /** WHAT LANDED, lying where it fell: a pool on the floor and a column of
@@ -1312,7 +1331,7 @@ export async function createPixiRenderer(
       const t = Math.min(1, fx.age / fx.ttl);
       const colour = toHexNumber(vfxColour(palette, fx.kind, fx.damageType));
       const alpha = Math.max(0, 1 - t);
-      const from = fx.points[0];
+      const from = castPoint(fx, state) ?? fx.points[0];
       if (!from) continue;
       const to = fx.points[1] ?? from;
 
@@ -1421,7 +1440,7 @@ export async function createPixiRenderer(
       // rather than turned over when it flies west — an arrow rotated past
       // vertical is an arrow lit from underneath.
       if (fx.kind === 'arrow') {
-        const flight = arrowFlight(bowMuzzle(state.hero, state.elapsed, from), to, t);
+        const flight = arrowFlight(muzzle(state.hero, 'bow', from, state.elapsed), to, t);
         const texture = flight.alpha > 0 ? vfxTexture('arrow') : null;
         if (texture) {
           const s = effectSprite(texture, ARROW_SPAN);

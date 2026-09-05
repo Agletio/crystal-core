@@ -417,6 +417,7 @@ export interface Vfx {
   damageType: string;
   age: number;
   ttl: number;
+  cast?: number; // WHO THREW IT; where on that body it leaves from is the renderer's
 }
 
 export interface RunOptions {
@@ -1514,8 +1515,11 @@ export class RunSim {
     if (dx * dx + dy * dy > 1e-6) e.facing = Math.atan2(dy, dx);
   }
 
-  private emit(kind: string, points: Vec2[], damageType: string, ttl: number, delay = 0): void {
-    this.state.vfx.push({ kind, points, damageType, age: -delay, ttl }); // under 0 it is not drawn yet
+  private emit(
+    kind: string, points: Vec2[], damageType: string, ttl: number, delay = 0, cast?: number
+  ): void {
+    const fx = { kind, points, damageType, age: -delay, ttl }; // age under 0 is not drawn yet
+    this.state.vfx.push(cast === undefined ? fx : { ...fx, cast });
   }
 
   /** Where in the boss's cycle we are, and how long this phase has run — the
@@ -2796,7 +2800,7 @@ export class RunSim {
       leave: (target) => this.applyTyped(user, target, user.stats.damageByType),
       areaRadius: (base) => this.areaRadius(user, base),
       vfx: (kind, points, ttl = 0.3, delay = 0) =>
-        this.emit(kind, points, skill.damageTypes[0] ?? 'physical', ttl, delay),
+        this.emit(kind, points, skill.damageTypes[0] ?? 'physical', ttl, delay, user.id),
       blink: (target) => this.stepBehind(user, target),
     });
 

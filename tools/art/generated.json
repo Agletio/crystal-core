@@ -4463,10 +4463,10 @@
   {
    "id": "mouth_stair",
    "object": "115b3791-54a1-4f55-99bc-7a4bcab6434d",
-   "tiles": 1.6,
+   "tiles": 1.4,
    "tone": 0,
    "dull": 0.1,
-   "dim": 0.62
+   "dim": 0.5
   },
   {
    "id": "mouth_maw",
