@@ -1451,9 +1451,19 @@
     height: calc(100vh - var(--dock-h, 0px) - 40px);
     height: calc(100dvh - var(--dock-h, 0px) - 40px);
   }
+  /* FLUSH TO THE FRAME: the head lies OVER the picture and takes no clicks, so
+     the only thing bounding the map is the carved window edge. */
+  #run-menu .modal__card { position: relative; }
+  #run-menu .modal__head {
+    position: absolute; left: 0; right: 0; top: 0; z-index: 3;
+    margin: 0; padding: 8px 12px; align-items: center;
+    background: none; border: 0; border-radius: 0; cursor: default;
+    pointer-events: none;
+  }
+  #run-menu .modal__head > * { pointer-events: auto; }
   #run-menu .modal__body {
     overflow: hidden; display: flex; flex-direction: column; min-height: 0; gap: 8px;
-    flex: 1 1 auto;
+    flex: 1 1 auto; padding: 0; mask-image: none; scrollbar-gutter: auto;
   }
   #run-menu .fissurecard { flex: 1 1 auto; min-height: 0; display: flex; }
   /* THE MAP IS THE SCREEN, EDGE TO EDGE: nothing but the window frame bounds it. */
@@ -1515,9 +1525,11 @@
   /* THE SEAM: one zone at a time, down that zone's own cross-section. Every
      station is in percent of the BOX and the picture is stretched to the same
      box, so the two stay in register at any shape the window takes. */
-  .climbtabs {
-    position: absolute; left: 50%; top: 12px; transform: translateX(-50%); z-index: 2;
-    display: flex; justify-content: center; gap: 6px; margin: 0; flex-wrap: wrap;
+  .climbtabs { display: flex; justify-content: center; gap: 6px; margin-bottom: 8px; flex-wrap: wrap; }
+  /* On the map they lie ON it, under the head floating in the same corner. */
+  .climbcard .climbtabs {
+    position: absolute; left: 50%; top: 38px; transform: translateX(-50%); z-index: 2;
+    margin: 0;
   }
   .climbtab__done { color: var(--text-dim); font-size: 10px; }
   /* THE ONE THAT IS UP IS FILLED: a tab under the pointer and the tab you are
