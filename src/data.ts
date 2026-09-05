@@ -2184,6 +2184,28 @@ export const TALES: Record<string, TalePanel[]> = {
       said: 'So I copied three of them out, off a face nobody was meant to reach, and I have been waiting a long time for somebody to carry them.',
     },
   ],
+  ossuary: [
+    {
+      art: 'tale_bone_1',
+      said: 'Everything that stops down here comes to me sooner or later, and I lay it out. I have laid out a very great deal.',
+    },
+    {
+      art: 'tale_bone_2',
+      said: 'Almost all of it came apart wrong. The wall takes what came apart wrong, and keeps it, and there is nothing left in it worth asking.',
+    },
+    {
+      art: 'tale_bone_3',
+      said: 'And then once — once — one came apart RIGHT. Something in it was still deciding when it stopped.',
+    },
+    {
+      art: 'tale_bone_4',
+      said: 'A thing still deciding can be asked. Working out what to ask it took me rather longer than finding it did.',
+    },
+    {
+      art: 'tale_bone_5',
+      said: 'It answered by becoming part of something else. I have been sorting ever since, looking for the second one.',
+    },
+  ],
 };
 
 /** The opening, in numbers: the one stretch where what happens next is
