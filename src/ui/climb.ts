@@ -96,25 +96,11 @@ export function pickRung(character: Character, at: Rung): boolean {
   return true;
 }
 
-/** Cleared everywhere, against every rung there is. */
-export function climbTotals(character: Character): { done: number; all: number } {
-  let done = 0;
-  let all = 0;
-  LADDER.zones.forEach((zone, z) => {
-    done += Math.min(zone.rungs, climbed(character, z));
-    all += zone.rungs;
-  });
-  return { done, all };
-}
-
 /** WHERE A DESCENT WENT, named: what it IS rather than what is picked. */
 export const rungName = (at: RunWhere): string =>
   isProving(at)
     ? `${PROVING.name}, ${THEME_BY_ID[at.influence]?.name ?? at.influence}`
     : `${zoneAt(at.zone)?.name ?? '?'}, depth ${at.rung}`;
-
-/** What the readout says: where you are about to walk. */
-export const rungLabel = (character: Character): string => rungName(whereNow(character));
 
 /** The report's line about the climb: what a clear opened, or where a death
  *  leaves you. The report is the one screen every descent ends on. */

@@ -1438,11 +1438,9 @@
   .mini--enter:hover:not(:disabled) { filter: brightness(1.12) drop-shadow(0 0 5px var(--citrine)); color: var(--bone); }
   .mini--enter:active:not(:disabled) { box-shadow: none; }
   .runbar--go { margin-top: 20px; justify-content: center; }
-  /* THE MAP IS THE SCREEN. Two columns: the climb takes whatever is left after
-     a fixed rail of everything you press, so nothing on it ever has to scroll.
-     NOTHING HERE SCROLLS, so the map is sized off the room LEFT rather than off
-     the viewport: every box between it and the seam gives up its minimum
-     height, and the seam is the one that stretches. */
+  /* THE MAP IS THE SCREEN, and NOTHING HERE SCROLLS: it is sized off the room
+     LEFT rather than off the viewport, so every box between the card and the
+     seam gives up its minimum height and the seam is the one that stretches. */
   /* A DEFINITE HEIGHT, or the whole chain collapses: the seam is the only box
      with a flex basis and everything above it has `min-height: 0`, so with the
      card sized by its content there is nothing to distribute and the window
@@ -1527,7 +1525,6 @@
      again — a third frame put Enter below the fold. */
   .climbcard { text-align: left; margin: 0; padding: 0; position: relative; }
   .climbcard .panel__title { font-size: 12px; margin-bottom: 1px; text-align: center; }
-  .climb__where { font-size: 11px; color: var(--citrine); margin-bottom: 3px; text-align: center; }
   /* The finish line, said before you get there: nothing pays until it falls. */
   .climb__prize { font-size: 10px; color: var(--text-dim); margin: 0 0 6px; text-align: center; }
   /* THE SEAM: one zone at a time, down that zone's own cross-section. Every

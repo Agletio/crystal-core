@@ -3105,8 +3105,12 @@ $('dev-kit').click();
     $('climb-influence-fissure').classList.contains('climbtab--on'),
     'one of which is picked, and lit the way every other selected tab is'
   );
-  const where = () => (document.querySelector('.climb__where')?.textContent ?? '').trim();
-  assert(/Proving Ground/.test(where()), 'and the readout says where you are going', where());
+  // THE TAB IS THE PICK, and it is the whole of what says where you are going:
+  // the map is the screen now, and nothing is written over it.
+  assert(
+    $('climb-tab-3').classList.contains('climbtab--on'),
+    'and looking at it IS choosing it, which is the only readout there is'
+  );
   $('climb-influence-demonic').click();
   assert(
     $('climb-influence-demonic').classList.contains('climbtab--on')

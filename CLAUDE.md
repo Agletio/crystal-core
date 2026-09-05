@@ -366,11 +366,16 @@ rung is its BOSS**, in an arena of its own (`LADDER.zones[z].arena`, read throug
 Answering, The Refraction, The Flowering. **THE CLIMB IS DRAWN ONE ZONE AT A
 TIME, on a TAB**, as a seam descending that act's own generated cross-section
 (`LadderZone.art`) with a station on every rung, lit as far as you have
-cleared. **The Fissure window is ONE COLUMN and nothing on it scrolls** — the
-map is the screen, so the seam is sized off the room LEFT rather than off the
-viewport, and `shots` fails the screen if it needs scrolling. Every station is
-placed in PERCENT of the picture, so a rung cannot drift off the chamber it
-sits in.
+cleared. **THE MAP IS THE SCREEN, EDGE TO EDGE, AND NOTHING IS WRITTEN OVER
+IT** — *"the maps need to be flush all the way to the border… the fissure text
+and the close button can just float on top"*. The window's body carries no
+padding and no fade, its head lies OVER the picture and takes no clicks, the
+tabs and the way in rest ON it, and the seam is sized off the room LEFT rather
+than off the viewport; `shots` fails the screen if it needs scrolling. The
+title, the depths-cleared line and the campaign's own line are GONE with it —
+the window already says THE FISSURE, and they said it three more times. Every
+station is placed in PERCENT of the picture, so a rung cannot drift off the
+chamber it sits in.
 
 **THE PROVING GROUND IS THE FOURTH TAB, and the sockets are ITS.** *"Once you
 finish the first three runs of each zone you end in a 4th tab that only has one
@@ -437,11 +442,11 @@ one crystal and the first 10 points — is a third thing `giftWaiting` holds,
 taken in his own scene in the camp, which is what makes him the person the
 campaign ends at. `Character.paidCampaign` is set by the HANDOVER and read by
 `trialPointsFor`, so the points and the crystal arrive together and a re-grind
-pays nothing. **The finish line is SAID before you get there** — `campaignLine`
-on the climb names the depth that ends it and quotes `campaignPrize`, because a
-reward nobody can see is a reward nobody is climbing toward. The web is on
-screen from the first descent, with nothing on it walkable: a plan you cannot
-see is a plan nobody makes.
+pays nothing. `campaignLine` still names the depth that ends it and quotes
+`campaignPrize`, but NOTHING SHOWS IT any more — it came off the climb with
+every other line, at the user's word, and it is waiting on a screen that has
+room. The web is on screen from the first descent, with nothing on it walkable:
+a plan you cannot see is a plan nobody makes.
 
 **The Lampwright owes the weapon, the FIRST crystal, the campaign's reward and
 every step of the CRYSTAL LADDER**, and nothing else. **THE LADDER IS THE WHOLE
@@ -829,7 +834,23 @@ SKIPPED**, because with nothing left to fight an unmet person is WALKED TO
 out to the exit himself (`stepLeaving`). Afterwards they are in the camp,
 and clicking them runs `SceneDef.beats` and then whatever they are FOR: the
 Lampwright's crystal, the Lambengolmor's key, the ossuary's and the orrery's
-benches. **THE STORY IS TOLD IN THE CAMP, AS A TALE**: the trip up after
+benches.
+
+**BUT TWO OF THEM NEVER COME UP, AND EACH KEEPS HIS OWN ROOM.** *"It doesn't
+really make sense to have him come back to your camp — instead once you find him
+it should be a separate disconnected area you can enter and its his room… use
+the same process that we did for the camp."* `SceneDef.room` is a drawn picture
+like the camp's, measured in its own pixels, and it is a TAB on the Fissure
+screen past the Proving Ground, appearing only once you have found him — a zone
+off the line, with no depth and no way in, so the Enter button goes while you
+stand in it. His body is the hotspot and clicking him is the same parley the
+camp runs; the Osteomancer's and the Astral-Geometer's benches are reached
+there. **HIS TALE PLAYS WHEN YOU WALK IN, AND NOTHING WAITS ON IT** —
+`nextMeeting` steps over a room-owner and `owedTale` never asks for one in
+town, because a bonus zone nobody happened to open would hold the whole queue
+behind him and soft-lock everybody after.
+
+**THE STORY IS TOLD IN THE CAMP, AS A TALE**: the trip up after
 meeting somebody opens `TALES` — full-screen art with the words along the
 bottom, one panel a click, the camp nowhere on the glass — and watching it is
 what marks him HEARD and stands the next person up. *"Nothing important, cool
