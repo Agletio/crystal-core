@@ -61,6 +61,13 @@ export const STYLES: Record<string, string> = {
   rope: `A ROPE LADDER hanging down into a hole in a pale stone cave floor, ${ABOVE}: two pale frayed ropes with short dark wooden planks between them, the top three planks lit and the rest swallowed, and a loose coil of the same rope on the stone beside the lip. ${DARK} ${NOT} NOT a net.`,
   slab: `A STACK OF BROKEN STONE SLABS piled into a hole in a pale stone cave floor to make a rough way down, ${ABOVE}: four or five thick uneven grey blocks, each set lower and darker than the one above. ${DARK} ${NOT}`,
   iron: `AN IRON LADDER bolted to the side of a hole in a pale stone cave floor, ${ABOVE}: two dark rusted rails and five flat rungs, the top rungs lit and the lower ones lost in the dark, bolt plates on the stone at the lip. ${DARK} ${NOT}`,
+  // HIS PICK, varied: the iron ladder is the shape that read. Each of these
+  // changes ONE thing about it — the bolt plates that pushed past the prop's
+  // own two tiles, where the ladder sits, what the lip is made of.
+  iron_bare: `AN IRON LADDER dropping into a hole in a pale stone cave floor, ${ABOVE}: two dark rusted rails and five flat rungs running down the MIDDLE of the opening, the top two rungs lit and the rest swallowed by black. The stone at the lip is plain broken rock with NOTHING bolted to it and no plates, no brackets, no rivets at the corners. ${DARK} ${NOT}`,
+  iron_side: `AN IRON LADDER hard against ONE SIDE of a hole in a pale stone cave floor, ${ABOVE}: two dark rusted rails and five flat rungs pushed tight to one edge so most of the opening is empty black, the top rungs lit. A plain broken rock lip, nothing at the corners. ${DARK} ${NOT}`,
+  iron_worn: `A BATTERED IRON LADDER in a hole in a pale stone cave floor, ${ABOVE}: two bent rusted rails and four flat rungs, one rung missing, the metal pitted orange-brown with rust, the top rungs lit and the rest lost. Chipped stone at the lip, nothing at the corners. ${DARK} ${NOT}`,
+  iron_chain: `AN IRON LADDER in a hole in a pale stone cave floor with a heavy CHAIN hanging beside it, ${ABOVE}: two dark rusted rails and five flat rungs, and a thick dark chain of round links dropping into the black alongside them, the top of both lit. A plain broken rock lip, nothing at the corners. ${DARK} ${NOT}`,
 };
 
 const wait = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
