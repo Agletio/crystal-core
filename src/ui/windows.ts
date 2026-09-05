@@ -167,10 +167,51 @@ function register(id: string, elId: string): void {
   if (head) dragBy(head, card);
 }
 
+/** WHERE A BODY IS SCROLLED TO, so a cut can be shown AS a cut. A fade at the
+ *  foot alone said nothing about a window that opens scrolled DOWN, and five
+ *  of them halve a word at the TOP edge with nothing to say why. */
+const SLACK = 6; // pixels, or a body one pixel off the end reads as scrolled
+
+export function markScroll(node: HTMLElement): void {
+  const more = node.scrollHeight - node.clientHeight;
+  node.classList.toggle('is-above', more > SLACK && node.scrollTop > SLACK);
+  node.classList.toggle('is-below', more > SLACK && node.scrollTop < more - SLACK);
+}
+
+/** Every scrollable body at once: a SCROLL does not bubble, so the listener is
+ *  in the capture phase, and a body whose CONTENT changed under a still
+ *  scrollbar is re-marked off its own mutations, folded into one frame. */
+function watchScroll(): void {
+  const bodies = [...document.querySelectorAll<HTMLElement>('.modal__body')];
+  let due = 0;
+  const soon = (): void => {
+    if (due) return;
+    due = requestAnimationFrame(() => {
+      due = 0;
+      for (const body of bodies) markScroll(body);
+    });
+  };
+  document.addEventListener(
+    'scroll',
+    (event) => {
+      const at = event.target;
+      if (at instanceof HTMLElement && at.classList.contains('modal__body')) markScroll(at);
+    },
+    true
+  );
+  globalThis.addEventListener('resize', soon);
+  const changed = new MutationObserver(soon);
+  for (const body of bodies) {
+    changed.observe(body, { childList: true, subtree: true, characterData: true });
+    markScroll(body);
+  }
+}
+
 /** Screen id → the element that IS the window. */
 export function initWindows(where: Record<string, string>): void {
   for (const [id, elId] of Object.entries(where)) register(id, elId);
   restack();
+  watchScroll();
   // A window against an edge is off the screen after a shrink, and its head is
   // the only part of it that can be dragged back.
   globalThis.addEventListener('resize', () => {

@@ -163,6 +163,8 @@
     --grit: linear-gradient(rgba(255,226,170,.028), rgba(0,0,0,.16));
     /** A MASK, not a colour: only its alpha is read, so it takes no token. */
     --fade-foot: linear-gradient(to bottom, #000 calc(100% - 26px), transparent 100%);
+    --fade-head: linear-gradient(to bottom, transparent 0, #000 26px);
+    --fade-ends: linear-gradient(to bottom, transparent 0, #000 26px, #000 calc(100% - 26px), transparent 100%);
     /** A chiselled edge: lit from the top left, in whole pixels. */
     --bevel: inset 2px 2px 0 rgba(255,224,168,.07), inset -2px -2px 0 rgba(0,0,0,.6);
     /**
@@ -807,7 +809,10 @@
     border: 1px solid var(--edge); cursor: pointer; line-height: 1;
   }
   .flask__step:hover { border-color: var(--citrine); color: var(--citrine); }
-  .flask__at { min-width: 26px; text-align: center; font-size: 9px; color: var(--text-dim); }
+  .flask__at {
+    min-width: 28px; text-align: center; font-size: 10px; color: var(--bone);
+    font-variant-numeric: tabular-nums; text-shadow: 0 1px 0 var(--ink), 0 -1px 0 var(--ink);
+  }
 
   /* Corners, and each is a CHOICE rather than wherever the flow left it. The
      HUD takes the top left; the numbers stay in the column, which is the right
@@ -838,7 +843,12 @@
   .hud__name { font-family: var(--display); letter-spacing: .1em; text-transform: uppercase; color: var(--bone); }
   .hud__level { color: var(--text-dim); }
   .hud__level b { color: var(--citrine); }
-  .hp--slim .hp__text { font-size: 11px; line-height: 1; color: var(--bone); text-shadow: 0 1px 0 var(--ink), 0 0 2px var(--ink); }
+  /* OUTLINED, not shadowed: the vessel's interior is 10px, so what buys a
+     figure legibility is dark on all four sides, not another point of size. */
+  .hp--slim .hp__text {
+    font-size: 11px; line-height: 1; color: var(--bone); font-variant-numeric: tabular-nums;
+    text-shadow: 0 1px 0 var(--ink), 0 -1px 0 var(--ink), 1px 0 0 var(--ink), -1px 0 0 var(--ink);
+  }
 
   /* Flush with the floor, and UNDER everything: read at a glance, never clicked,
      so a window over it costs nothing. `margin: 0` is load-bearing — a fixed box
@@ -910,7 +920,7 @@
   .hp--mana.hp--dry .hp__text { color: var(--rust); }
   .hp--xp { height: 14px; margin-bottom: 14px; }
   .hp__fill--xp { background: var(--xp); }
-  .hp--xp .hp__text { font-size: 10px; color: var(--text-dim); }
+  .hp--xp .hp__text { font-size: 10px; color: var(--text-dim); font-variant-numeric: tabular-nums; }
   /* Life and mana are VESSELS: the fill inside a carved channel with brass
      caps. AFTER every base `.hp` rule, because the `border` shorthand in one
      of those resets `border-image` and equal specificity is won by order.
@@ -1709,15 +1719,21 @@
   }
   .camp__hot:active:not(:disabled) { transform: none; box-shadow: none; }
   .camp__hot:focus-visible { outline: 2px solid var(--citrine); outline-offset: 0; }
-  /* SOMEBODY WANTS YOU: over the head, and the only thing on the picture that
-     moves without the wind. It takes no pointer of its own, so the click still
-     lands on the person underneath it. */
+  /* SOMEBODY WANTS YOU: over the head, the only thing on the picture that moves
+     without the wind, and it takes no pointer so the click still lands on him.
+     TWO BLOCKS and never a glyph — a serif exclamation is smooth and tapered
+     over a picture whose smallest feature is a 2px block. */
   .camp__mark {
-    position: absolute; left: 50%; top: -14px; transform: translateX(-50%);
-    font-family: var(--display); font-size: 20px; line-height: 1;
-    color: var(--citrine); text-shadow: 0 0 6px rgba(0,0,0,.9), 0 2px 0 rgba(0,0,0,.8);
+    position: absolute; left: 50%; top: -20px; transform: translateX(-50%);
+    width: 6px; height: 20px; font-size: 0; color: transparent;
     pointer-events: none; animation: campmark 1.6s ease-in-out infinite;
   }
+  .camp__mark::before, .camp__mark::after {
+    content: ''; position: absolute; left: 0; width: 6px;
+    background-color: var(--citrine); box-shadow: 0 0 0 2px var(--ink);
+  }
+  .camp__mark::before { top: 0; height: 12px; }
+  .camp__mark::after { top: 16px; height: 4px; }
   @keyframes campmark {
     0%, 100% { transform: translateX(-50%) translateY(0); }
     50% { transform: translateX(-50%) translateY(-4px); }
@@ -1833,12 +1849,12 @@
      the box allows. */
   .modal__head--who { justify-content: flex-start; align-items: flex-end; gap: 14px; padding-bottom: 0; }
   .modal__title { font-family: var(--display); font-size: 17px; letter-spacing: .1em; text-transform: uppercase; margin: 0; color: var(--citrine); text-shadow: 2px 2px 0 rgba(0,0,0,.9); }
-  /* THE FOOT FADES, and that says more is under it: the thumb says so to a
-     PLAYER only, since a headless shot is taken with scrollbars hidden. */
-  .modal__body {
-    padding: 16px 18px; overflow-y: auto; scrollbar-gutter: stable;
-    mask-image: var(--fade-foot);
-  }
+  /* The thumb says it to a PLAYER only: a headless shot hides scrollbars. */
+  /* A CUT IS SHOWN AS A CUT, at whichever end it is. */
+  .modal__body { padding: 16px 18px; overflow-y: auto; scrollbar-gutter: stable; }
+  .modal__body.is-below { mask-image: var(--fade-foot); }
+  .modal__body.is-above { mask-image: var(--fade-head); }
+  .modal__body.is-above.is-below { mask-image: var(--fade-ends); }
   /* The shell's own brass, always drawn, never the platform's. */
   *::-webkit-scrollbar { width: 11px; height: 11px; }
   *::-webkit-scrollbar-track { background-color: var(--ink); border-left: 1px solid var(--edge); }
@@ -2100,24 +2116,18 @@
      sampling drops and doubles the art's own dark outline rows, which read as
      black lines across a node at some zooms and not others. */
   .web__chain { stroke: var(--chain-lit); fill: none; image-rendering: auto; }
-  .web__chain--on { stroke: var(--citrine); filter: brightness(1.6) drop-shadow(0 0 1px var(--citrine)); }
+  .web__chain--on { stroke: var(--citrine); filter: brightness(1.6); }
   .web__node__img { image-rendering: auto; }
   .web__node:hover .web__node__img { filter: brightness(1.25); }
   /* State is a RING ON THE BORDER, not a glow around the picture: a filtered
      halo takes the art's own silhouette, so it read as part of the drawing and
-     vanished into rock that is warm already. Allocated is white and thick over
-     a wide white core; available is cold cyan, thinner and unfilled — apart by
-     hue, value and weight at once, and neither is a brown. */
+     vanished into rock that is warm already. Neither is a brown. */
   .web__node__halo { fill: none; stroke: none; pointer-events: none; }
   .web__node--on .web__node__img { filter: brightness(1.45); }
-  .web__node--open .web__node__halo {
-    stroke: var(--quartz); opacity: .85;
-    filter: drop-shadow(0 0 3px var(--quartz));
-  }
-  .web__node--on .web__node__halo {
-    stroke: var(--node-on);
-    filter: drop-shadow(0 0 2px var(--node-on)) drop-shadow(0 0 7px var(--node-on));
-  }
+  /* HARD-EDGED, never a blur: beside a 96px pixel icon a `drop-shadow` glow is
+     the one soft thing on the web. Apart by hue, value and WEIGHT. */
+  .web__node--open .web__node__halo { stroke: var(--quartz); opacity: .9; }
+  .web__node--on .web__node__halo { stroke: var(--node-on); stroke-width: 5; }
   .web__node:hover .web__node__halo { stroke: var(--node-on); opacity: 1; }
   .web__centre { cursor: help; }
 
