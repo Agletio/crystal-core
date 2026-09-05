@@ -2140,6 +2140,28 @@ export const TALES: Record<string, TalePanel[]> = {
       said: 'What I had found was that something down there was alive, and that it had been waiting a great deal longer than I had been walking.',
     },
   ],
+  smithy: [
+    {
+      art: 'tale_smith_1',
+      said: 'I came down for the ore. There is more of it in this rock than anybody above has ever wanted to believe.',
+    },
+    {
+      art: 'tale_smith_2',
+      said: 'I made them for the men who would come down here and buy them. Not one of those men ever came down.',
+    },
+    {
+      art: 'tale_smith_3',
+      said: 'What came down instead was the rest of the working, and it had been here a good deal longer than the ore had.',
+    },
+    {
+      art: 'tale_smith_4',
+      said: 'So I found out what my own work is worth. It is worth a great deal.',
+    },
+    {
+      art: 'tale_smith_5',
+      said: 'And I have been down here ever since, making the next one.',
+    },
+  ],
 };
 
 /** The opening, in numbers: the one stretch where what happens next is
