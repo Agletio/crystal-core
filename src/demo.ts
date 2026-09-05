@@ -137,6 +137,7 @@ import {
   TRADE_BASE,
   stunChanceFor,
   WEAPON_SLOT,
+  workerMark,
 } from './data';
 import { variants } from './sim/appearance';
 import type { GearBase } from './types';
@@ -4203,7 +4204,9 @@ rule('THE WORKS — does a job run on the clock, and on nothing else?');
     const owner = MEETINGS.find((m) => m.scene?.room)!;
     for (const m of MEETINGS) {
       if (m.id === owner.id) break;
-      takeMet(past, m.id);
+      // A WORKER IS RESCUED, not met: his own mark, or the queue never moves.
+      if (m.worker) past.given = [...(past.given ?? []), workerMark(m.worker.id)];
+      else takeMet(past, m.id);
       takeHeard(past, m.id);
     }
     takeMet(past, owner.id);
