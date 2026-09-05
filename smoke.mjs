@@ -3111,18 +3111,29 @@ $('dev-kit').click();
     $('climb-tab-3').classList.contains('climbtab--on'),
     'and looking at it IS choosing it, which is the only readout there is'
   );
+  // THE PICTURE IS THE READOUT: the influence decides the world you walk into,
+  // so it has to decide the cross-section under the sockets.
+  const ground = () => document.querySelector('.climbseam--ground')?.style.backgroundImage ?? '';
+  const before = ground();
   $('climb-influence-demonic').click();
   assert(
     $('climb-influence-demonic').classList.contains('climbtab--on')
       && !$('climb-influence-fissure').classList.contains('climbtab--on'),
     'clicking another moves the pick, and only one is ever on'
   );
-  assert(/The Rot/.test(where()), 'and the readout follows it', where());
-  // BACK TO A DEPTH. Clicking a station is picking that depth, so the Proving
-  // Ground stops being where you are going the moment one is clicked.
+  assert(
+    before.length > 0 && ground().length > 0 && ground() !== before,
+    'and the picture follows it, since the influence IS the world you walk into'
+  );
+  // BACK TO A DEPTH. The tab is the pick, so looking at a zone again is what
+  // stops the Proving Ground being where you are going.
   $('climb-tab-0').click();
   $('climb-pip-0-1').click();
-  assert(!/Proving Ground/.test(where()), 'and a depth takes it back', where());
+  assert(
+    $('climb-tab-0').classList.contains('climbtab--on')
+      && !$('climb-tab-3').classList.contains('climbtab--on'),
+    'and a depth takes it back'
+  );
   $('run-menu-close').click();
 }
 
