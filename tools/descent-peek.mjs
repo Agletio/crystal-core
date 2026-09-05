@@ -234,28 +234,54 @@ if (hold) {
   await page.waitForTimeout(200);
 }
 
-// THE WORLD IS THE PROVING GROUND'S INFLUENCE, not the sockets': a depth runs
-// in its zone's own world whatever is socketed, so another world is reached
-// through the Proving Ground tab and its influence button; the Seam is the one
-// the sockets open. KEYED BY ID: an influence button wears `climbtab` exactly
-// as the tabs do, so a selector on the class silently picks nothing.
-const INFLUENCE = { rot: 'demonic', cavern: 'prismatic', seam: null };
-if (zone in INFLUENCE) {
+// A DEPTH RUNS IN ITS ZONE'S OWN WORLD, and the kit has cleared the whole
+// climb — so another world is a zone TAB and its first depth, at that ladder's
+// own difficulty. THE PROVING GROUND IS NOT THE ROUTE: it is a floor above the
+// whole climb, and at 1000+ danger nothing survives long enough to be
+// photographed. The Seam is the exception, being the one world only the
+// sockets open. KEYED BY ID: an influence button wears `climbtab` exactly as
+// the tabs do, so a selector on the class silently picks nothing.
+const ZONE_TAB = { cavern: 1, rot: 2 };
+// A ZONE IS SHUT UNTIL THE ONE BELOW IT IS WHOLE, and the kit does not clear
+// the climb on its own — the last `dev-climb-` opens every zone at once.
+if (zone === 'seam' || zone in ZONE_TAB) {
+  await page.evaluate(() => document.getElementById('open-dev')?.click());
+  await page.waitForTimeout(200);
+  await page.evaluate(() => {
+    const climbs = [...document.querySelectorAll('[id^="dev-climb-"]')];
+    climbs[climbs.length - 1]?.click();
+  });
+  await page.waitForTimeout(400);
+}
+if (zone === 'seam') {
   await page.evaluate(() => document.getElementById('camp-crack')?.click());
   await page.waitForTimeout(300);
-  const found = await page.evaluate((want) => {
+  const found = await page.evaluate(() => {
     // BY ITS OWN ID: the last `climb-tab-` is a bonus ROOM now.
     const tab = [...document.querySelectorAll('[id^=climb-tab-]')]
       .filter((t) => /^climb-tab-\d+$/.test(t.id))
       .at(-1);
     if (!tab || tab.disabled) return 'no Proving Ground tab';
     tab.click();
-    if (!want) return true;
-    const button = document.getElementById(`climb-influence-${want}`);
-    if (!button) return `no #climb-influence-${want} on the Proving Ground tab`;
-    button.click();
     return true;
-  }, INFLUENCE[zone]);
+  });
+  if (found !== true) {
+    console.error(`descent-peek: ${found}`);
+    process.exit(1);
+  }
+  await page.waitForTimeout(300);
+} else if (zone in ZONE_TAB) {
+  await page.evaluate(() => document.getElementById('camp-crack')?.click());
+  await page.waitForTimeout(300);
+  const found = await page.evaluate((z) => {
+    const tab = document.getElementById(`climb-tab-${z}`);
+    if (!tab || tab.disabled) return `climb-tab-${z} is shut`;
+    tab.click();
+    const pip = document.getElementById(`climb-pip-${z}-1`);
+    if (!pip || pip.disabled) return `climb-pip-${z}-1 is shut`;
+    pip.click();
+    return true;
+  }, ZONE_TAB[zone]);
   if (found !== true) {
     console.error(`descent-peek: ${found}`);
     process.exit(1);

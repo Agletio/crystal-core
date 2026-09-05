@@ -2437,19 +2437,24 @@ export const LADDER = {
   // a crystal would otherwise decide: the WORLD you walk into and the best base
   // TIER its depths drop. `arena` is its LAST depth, a fight rather than a
   // descent; `id` is the save key, still spelt the way the worlds were.
+  // A ZONE IS NAMED FOR THE PLACE, never for the boss at the top of it: the
+  // three bosses keep The Answering, The Refraction and The Flowering.
   zones: [
     {
       id: 'fissure', name: 'The Answering', art: 'climb_act1',
+      path: [[36, 12], [44, 22], [48, 39], [52, 49], [60, 61], [65, 69], [76, 78], [84, 86], [94, 92]],
       blurb: 'Shallow workings, shored and square. Somebody came back out of these.',
       rungs: 12, arena: 'answering_hall', world: 'fissure', tier: 1,
     },
     {
-      id: 'prismatic', name: 'The Refraction', art: 'climb_act2',
+      id: 'prismatic', name: 'The Prism', art: 'climb_act2',
+      path: [[22, 17], [29, 27], [37, 39], [46, 48], [57, 60], [66, 70], [76, 79], [86, 87], [94, 92]],
       blurb: 'Below daylight, where the rock has started closing what was cut.',
       rungs: 14, arena: 'refraction_hall', world: 'prismatic', tier: 2,
     },
     {
-      id: 'demonic', name: 'The Flowering', art: 'climb_act3',
+      id: 'demonic', name: 'The Rot', art: 'climb_act3',
+      path: [[10, 9], [17, 18], [26, 29], [35, 39], [44, 49], [52, 60], [62, 69], [73, 78], [83, 86], [92, 92]],
       blurb: 'Older than anybody who dug toward it. Nothing down here was worked.',
       rungs: 16, arena: 'flowering_hall', world: 'demonic', tier: 3,
     },

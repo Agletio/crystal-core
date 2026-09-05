@@ -835,10 +835,67 @@ ours** — verify each against the code before spending anything.
       survives 1520 danger long enough to be photographed — a level-80 kit
       character dies inside a second and a half. `LEVELS=` and `WAIT=` are on
       `descent-peek` for whoever takes it.
-- [ ] **A BURST, NOT A HOLD, FOR AN EFFECT.** The purist declined to score
-      animation at all: *"one pose is not a frame count."* `CAST=1` freezes the
-      sim, so two effect stills in the set are the same instant. Give the peek
-      a burst so a critic can see motion.
+- [x] **A BURST, NOT A HOLD.** DONE: `holdAt` is a SIM time, so the peek pushes
+      it on and clears the hold between frames — `BURST=<sim seconds>`, 0.06 by
+      default. Four frames, four instants, measured.
+- [ ] **A ZONE PEEK CANNOT SURVIVE ITS OWN FLOOR.** Ours, and new: fixing the
+      Proving Ground's `where` means every non-Fissure peek runs at that
+      ladder's real danger, and a level-1 kit character dies before the camera
+      settles. `descent-peek <zone>` takes the zone TAB and its first depth now
+      rather than the Proving Ground, and `LEVELS=` and `WAIT=` are the knobs —
+      but at depth 1 of The Prism a level-45 character still dies inside a
+      second. Either the kit needs a build that can stand there, or the peek
+      needs to shoot its first running frame.
+
+## Phase 13 — BRANCHES OFF THE MAIN LINE, his own design
+
+*"These side areas are just for grinding… offshoot levels of the main line that
+branch in these separate rooms. Each has a special bonus — increased resources
+gathered, gold dropped, increased monsters, more character xp. Then for the
+Proving Ground, the same main line going down and the branches that come off
+have these same bonuses AND they are different zones."* He drew it on
+`desktop-fissure.png`: a yellow network running down the picture's own
+passages, depths 1–12 on the line and branches lettered off the depth they hang
+from — 3A, 3B, 3C, 3D, 5A, 5B, 6A, 6B, 7A, 7B, 8A, 8B.
+
+**AWAITING HIS ANSWER on the shape**; the feedback given was:
+
+- **A branch is one more synthetic mod.** `rungMod`, `trialMod` and
+  `provingMod` already merge into the crystal seam and `crystalRewards` weighs
+  them, so a bonus is a table row rather than a second reward path.
+- **A BRANCH IS NEVER A STEP.** `advanceRung` forgets the pick so `furthest`
+  answers; a branch clear must not touch `climbed`, or the main line moves
+  while you are off it. A clear re-enters the same branch and Deeper is off
+  there — the rule the walk-out is already under.
+- **"More likely to drop certain items" is the FILTER in a hat**, and the
+  filter was deleted on purpose. The bonuses that fit levers already in the
+  game are gold, currency and rarity (the `FAMILY_YIELD` shape), gathered
+  materials (`GATHER.perRun`), pack density (already a crystal roll), and XP —
+  `monsterXp` is one multiplier from being the most interesting of them,
+  because it is the one thing difficulty cannot already buy.
+- **Not off all 42 depths.** The window is one column and nothing on it
+  scrolls. A few per zone, or the Proving Ground alone — which is the strongest
+  version, since picking The Rot's bonus against The Prism's is a real decision
+  where the campaign fixes the world per zone.
+
+- [x] **THE LINE FOLLOWS THE MAP.** DONE: `LadderZoneDef.path` is that zone's
+      own course through its cross-section, read off the art by hand, and the
+      depths are spread along it at even ARC LENGTH. The straight diagonal with
+      a sine wobble crossed solid rock. It is also what a branch will hang off.
+- [x] **THE ZONE NAMES.** The Prism and The Rot; a zone is named for the PLACE
+      now and the three bosses keep The Answering, The Refraction and The
+      Flowering. **ZONE 1 IS UNNAMED** — waiting on his word, and on whether
+      the WORLDS should be renamed off the collision (zone 3 and the demonic
+      world are both The Rot, and the Proving Ground prints world names).
+- [ ] **THE ROT'S CROSS-SECTION IS A TRAIN TRACK.** *"It should look like just
+      a tunnel going down, there's no train tracks… the lower ones have no
+      visible path connecting them."* The ask is REWRITTEN in `scenes.json` —
+      round-mouthed tunnels, every chamber joined by one you can see, and NOT a
+      railway / track / rails / sleepers / ladder / staircase / bridge, nothing
+      long and straight crossing the picture. **BLOCKED: the generator's
+      allowance is spent** — 8,989 of 8,710 used, refilling **2026-09-13**. One
+      command when it does: `npx tsx tools/art/scene.mts ask climb_act3 21 22
+      23 24`.
 
 ## Phase 3 — A quest log instead of a pointing finger
 

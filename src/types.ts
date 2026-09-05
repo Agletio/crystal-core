@@ -100,13 +100,11 @@ export interface Item {
   meta: Record<string, any>; // one-off state: bonus slots, corruption, …
 }
 
-/** A gate, resolved by the CONDITIONS registry. */
 export interface Condition {
   kind: string;
   [param: string]: any;
 }
 
-/** A mutation, resolved by the EFFECTS registry. */
 export interface Effect {
   kind: string;
   [param: string]: any;
@@ -257,6 +255,7 @@ export interface LadderZoneDef {
   rungs: number;
   arena?: string; // its LAST depth: a fight in a room of its own
   art?: string; // the generated cross-section the climb is drawn on
+  path?: [number, number][]; // its COURSE through that picture, in percent of it
   world: MapTheme; // the rock you walk into for every depth of it
   tier: number; // the best base TIER its depths may drop
 }

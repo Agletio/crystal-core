@@ -146,15 +146,35 @@ interface Station {
   y: number; // percent down it
 }
 
-/** One zone's depths, laid down the picture the way the picture itself goes:
- *  top left to bottom right, with a wobble so it reads as a seam rather than a
- *  ruler. BOTH axes are percentages of the art, so a station cannot drift off
- *  the chamber it sits in whatever the card is doing. */
-function stations(rungs: number): Station[] {
+/** THE DESCENT FOLLOWS THE PICTURE. `LadderZoneDef.path` is that zone's own
+ *  course through its cross-section, read off the art by hand; the depths are
+ *  spread along it at even ARC LENGTH, so every one lands in a chamber and the
+ *  line between them runs down passages that are drawn. A zone with no path
+ *  falls back to the diagonal, which crosses whatever the picture put there. */
+const PLAIN: [number, number][] = [[7, 14], [93, 84]];
+
+function stations(rungs: number, path?: [number, number][]): Station[] {
+  const way = path && path.length >= 2 ? path : PLAIN;
+  const legs = way.slice(1).map((to, i) => Math.hypot(to[0] - way[i][0], to[1] - way[i][1]));
+  const whole = legs.reduce((n, d) => n + d, 0);
+  const at = (t: number): { x: number; y: number } => {
+    let left = t * whole;
+    for (let i = 0; i < legs.length; i++) {
+      if (left <= legs[i] || i === legs.length - 1) {
+        const k = legs[i] === 0 ? 0 : Math.min(1, left / legs[i]);
+        return {
+          x: way[i][0] + (way[i + 1][0] - way[i][0]) * k,
+          y: way[i][1] + (way[i + 1][1] - way[i][1]) * k,
+        };
+      }
+      left -= legs[i];
+    }
+    return { x: way[way.length - 1][0], y: way[way.length - 1][1] };
+  };
   const out: Station[] = [];
   for (let i = 0; i < rungs; i++) {
-    const t = rungs === 1 ? 0 : i / (rungs - 1);
-    out.push({ rung: i + 1, x: 7 + t * 86, y: 14 + t * 70 + Math.sin(i * 1.35) * 5 });
+    const spot = at(rungs === 1 ? 0 : i / (rungs - 1));
+    out.push({ rung: i + 1, x: spot.x, y: spot.y });
   }
   return out;
 }
@@ -407,7 +427,7 @@ export function renderClimb(host: HTMLElement, character: Character, onPick: () 
   }
 
   const zone = LADDER.zones[z];
-  const all = stations(zone.rungs);
+  const all = stations(zone.rungs, zone.path);
   const cleared = Math.min(zone.rungs, climbed(character, z));
   const trail = el('div', 'climbseam');
   // The zone's own generated cross-section, or the bare panel until one is
