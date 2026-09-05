@@ -806,21 +806,35 @@ export class RunSim {
   /** Who is standing in this descent to be found, before the hero reaches them. */
   private found: string | null = null;
 
-  /** The MIDDLE of the room furthest from the way in: somewhere a clear has to
-   *  visit, the way out is not, and no draw decides it. */
+  /** Met, and on his way out. */
+  private leaving = false;
+
+  /** SOMEWHERE IN THE MIDDLE OF THE RUN, and never at either hole. A clear has
+   *  to visit every room, so the furthest from the WAY IN is somewhere he is
+   *  certain to be found — but on many maps that is also where the way OUT is,
+   *  and *"make sure they are never just sitting near the exit"*. So it is the
+   *  room whose NEARER hole is furthest away: the middle of the descent by the
+   *  only measure the map offers. No draw decides it. */
   private farthestRoom(): Vec2 {
-    const { rooms, entrance } = this.state.map;
+    const { rooms, entrance, exit, grid } = this.state.map;
     let best = rooms[0] ?? { x: entrance.x, y: entrance.y, w: 1, h: 1 };
     let far = -1;
     for (const room of rooms) {
       const at = { x: room.x + room.w / 2, y: room.y + room.h / 2 };
-      const away = Math.hypot(at.x - entrance.x, at.y - entrance.y);
+      const away = Math.min(
+        Math.hypot(at.x - entrance.x, at.y - entrance.y),
+        Math.hypot(at.x - exit.x, at.y - exit.y)
+      );
       if (away > far) {
         far = away;
         best = room;
       }
     }
-    return { x: Math.floor(best.x + best.w / 2), y: Math.floor(best.y + best.h / 2) };
+    // A ROOM'S RECTANGLE IS NOT ALL FLOOR — the carve leaves no square corner —
+    // so its middle can be solid rock, and a man standing in rock is a man
+    // nothing can path to. `placeIn` retries off its own stream, so where he
+    // stands cannot move what is fighting in the room.
+    return this.placeIn(grid, best, 0.3);
   }
 
   /** MET BY WALKING PAST: no click and no stop, which is what satisfies the
@@ -832,6 +846,45 @@ export class RunSim {
     if (!who || dist(s.hero, who) > MEET_RANGE) return;
     s.found = this.found;
     this.face(who, s.hero.x, s.hero.y);
+    this.leaving = true; // his line is said; from here he is walking out
+  }
+
+  /** NOBODY IS EVER WALKED PAST. *"Make sure they never get skipped."* Being
+   *  in a room a clear must visit is NOT a guarantee — measured, the hero
+   *  killed from range and moved on in 13 of 40 descents — so with nothing
+   *  left to fight an unmet person is a place he WALKS TO, exactly as a chest
+   *  or an ore node is. It is the shipped default policy `runToCompletion`
+   *  runs, so a headless run meets him too. A route that does not exist is the
+   *  same answer as being there already: the rule the exit is under. */
+  private stepGreet(dt: number): boolean {
+    const s = this.state;
+    if (!this.found || s.found || this.leaving) return false;
+    const who = s.folk[0];
+    if (!who) return false;
+    if (dist(s.hero, who) <= MEET_RANGE) return false; // close enough; stepMeeting has it
+    if (!this.advance(s.hero, who, dt)) {
+      this.found = null; // nowhere to walk from here, and a descent must end
+      return false;
+    }
+    return true;
+  }
+
+  /** AND THEN HE GOES. *"The character just walks away and goes towards the
+   *  exit."* He never moves before he is MET, or a body walking off is a body
+   *  the hero can miss — which is the whole of "never skipped". Off the map he
+   *  is dropped, so nothing follows the hero round for the rest of the run. */
+  private stepLeaving(dt: number): void {
+    const s = this.state;
+    if (!this.leaving || s.meeting) return;
+    const who = s.folk[0];
+    if (!who) { this.leaving = false; return; }
+    const away = { ...who, x: s.map.exit.x, y: s.map.exit.y };
+    if (dist(who, s.map.exit) <= 1.2) {
+      s.folk = s.folk.slice(1);
+      this.leaving = false;
+      return;
+    }
+    this.advance(who, away, dt, SCENE_WALK);
   }
 
   /** A person in a room: no stats worth anything, no bounty, and out of
@@ -1296,6 +1349,7 @@ export class RunSim {
     if (this.sunderIn > 0) this.sunderIn -= dt;
     this.stepFrost(dt);
     this.stepMeeting();
+    this.stepLeaving(dt);
 
     // Whatever is still climbing out, on its own clock rather than on the
     // room emptying: reinforcements arrive whether or not you are winning.
@@ -1792,6 +1846,7 @@ export class RunSim {
     // one at a time, before he starts for the way out.
     if (this.stepHoard(dt)) return;
     if (this.stepNode(dt)) return;
+    if (this.stepGreet(dt)) return;
 
     // A boss room is cleared by putting the boss DOWN, never by walking out:
     // it has no way out, and the adds are what fills the gap while it lives.
