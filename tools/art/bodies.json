@@ -4166,11 +4166,12 @@
   },
   {
    "id": "mouth_stair",
-   "tiles": 2,
+   "tiles": 1.6,
    "size": 128,
    "say": "A BATTERED IRON LADDER in a hole in a pale stone cave floor, seen from DIRECTLY ABOVE looking straight down, worn, chipped, dusty, ancient: two bent rusted rails and four flat rungs, one rung missing, the metal pitted orange-brown with rust, the top rungs lit and the rest lost. Chipped stone at the lip, nothing at the corners. The opening it stands in is a ragged square of NEAR-BLACK. NOT a spiral, NOT a wheel, NOT spokes, NOT a turbine, NOT a gear, NOT a well, NOT round, NOT a funnel, NOT bright, NOT colourful, NOT purple, NOT lavender, NOT blue, NOT green.",
    "tone": 0.0,
-   "dull": 0.1
+   "dull": 0.1,
+   "dim": 0.62
   },
   {
    "id": "mouth_maw",

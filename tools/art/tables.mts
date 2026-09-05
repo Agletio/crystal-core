@@ -63,6 +63,18 @@ interface BodySpec {
 /** Every pixel pulled toward its own brightness. "Blood" comes back MAGENTA
  *  however the ask is worded, and `tone` cannot fix it: a mean and a spread
  *  per channel move how BRIGHT a thing is, never how saturated. */
+/** Every channel scaled, which leaves 0 at 0: the one way to take a bright
+ *  thing down without lifting the dark it stands in. `tone` pulls toward the
+ *  ground's mean and so LIGHTENS a hole, which is darker than the floor. */
+function dimmed(image: Decoded, by: number): Decoded {
+  const rgba = new Uint8Array(image.rgba);
+  for (let i = 0; i < rgba.length; i += 4) {
+    if (rgba[i + 3] < 128) continue;
+    for (let c = 0; c < 3; c++) rgba[i + c] = Math.round(rgba[i + c] * by);
+  }
+  return { width: image.width, height: image.height, rgba };
+}
+
 function dulled(image: Decoded, by: number): Decoded {
   const rgba = new Uint8Array(image.rgba);
   for (let i = 0; i < rgba.length; i += 4) {
@@ -112,6 +124,7 @@ interface PropSpec {
   tiles: number;
   tone?: number;
   dull?: number;
+  dim?: number; // a plain MULTIPLY, so black stays black — see `dimmed`
   /** Another prop this one is a FRAME OF — a lock and its open lid. The pair
    *  crops to ONE box, or the taller frame squares to a bigger grid and the
    *  box jumps sideways the moment it opens. */
@@ -574,7 +587,8 @@ async function furniture(specs: PropSpec[], ground: Tone | null): Promise<Record
       continue;
     }
     const got = turned(debackground(decodePng(png)), spec.turn ?? 0);
-    const raw = spec.dull ? dulled(got, spec.dull) : got;
+    const dark = spec.dim === undefined ? got : dimmed(got, spec.dim);
+    const raw = spec.dull ? dulled(dark, spec.dull) : dark;
     const pull = spec.tone ?? PROP_TONE;
     const image =
       ground && pull > 0 ? retoned(raw, tone(raw, [whole(raw)]), ground, pull) : raw;

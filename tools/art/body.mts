@@ -59,13 +59,13 @@ const asks = JSON.parse(readFileSync(here('bodies.json'), 'utf8')) as {
   inks: string[];
   palettes: Record<string, string[]>;
   bodies: BodyAsk[];
-  props: { id: string; tiles: number; say: string; view?: string; size?: number; tone?: number; dull?: number }[];
+  props: { id: string; tiles: number; say: string; view?: string; size?: number; tone?: number; dull?: number; dim?: number }[];
 };
 type Made = { sprite: string; states: Record<string, { group: string }> };
 const shipped = JSON.parse(readFileSync(here('generated.json'), 'utf8')) as {
   hero: Made;
   bodies: Made[];
-  props: { id: string; object?: string; tiles?: number; tone?: number; dull?: number }[];
+  props: { id: string; object?: string; tiles?: number; tone?: number; dull?: number; dim?: number }[];
 };
 /** The hero is a body like any other here: it is drawn out of the same table,
  *  and only the room it stands in knows the difference. */
@@ -426,7 +426,7 @@ if (command === 'design') {
     console.log(`${ask.id}: ${said(out, /^id|status/i)}`);
     if (id) {
       const row = shipped.props.find((p) => p.id === ask.id);
-      const made = { id: ask.id, object: id, tiles: ask.tiles, ...(ask.tone === undefined ? {} : { tone: ask.tone }), ...(ask.dull === undefined ? {} : { dull: ask.dull }) };
+      const made = { id: ask.id, object: id, tiles: ask.tiles, ...(ask.tone === undefined ? {} : { tone: ask.tone }), ...(ask.dull === undefined ? {} : { dull: ask.dull }), ...(ask.dim === undefined ? {} : { dim: ask.dim }) };
       if (row) Object.assign(row, made);
       else shipped.props.push(made);
       writeFileSync(here('generated.json'), `${JSON.stringify(shipped, null, 1)}\n`);
