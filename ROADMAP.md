@@ -735,6 +735,102 @@ three lists is the ART the user ruled out.
       grey props, the Cavern's way-in, the beetle's legs and death frame, the
       stalk's width, and the cast hall's two bodies.
 
+## Phase 12 — THE 2026-09-05 REVIEW'S WORK: three critics at 4, 5 and 5
+
+**Every line below is a critic's `fix_first` or the director's own, in their
+words, from `ART_REVIEW.md` 2026-09-05.** Ordered by how many of the four named
+it. All three said the same thing about the shape of the problem: *"the shell
+is finished and the world under it is not"* — the camp, the title, the tooltip
+and the 27 tale panels are close to an 8, and the descent they are wrapped
+round is a 3. **A critic reports the symptom; the diagnosis and the fix are
+ours** — verify each against the code before spending anything.
+
+- [ ] **THE HEALTH BAR IS AN UNFRAMED CRIMSON SLAB AT THE BODY'S OWN Y.** All
+      four named it first. *"One lies across the hero's shins, one on a
+      skeleton's skull, one over bare floor with nothing under it"*; *"six
+      bodies means six bars at six heights with soft anti-aliased caps and no
+      dark backing"*; *"they read as a debug overlay somebody forgot to
+      style."* At full life it is the most saturated ink on the floor, and it
+      is in every fight screenshot the game can take.
+      (`crop-pack-bars-x4.png`, `fx-arc-02.png`, `boss/boss-05.png`)
+- [ ] **THE ROCK FACE IS A ROW OF IDENTICAL MERLONS, AND PAST IT IS A VOID.**
+      *"One rounded column per cell, so every straight wall is a row of
+      battlements and every chamber is a fort seen from above"*; *"past the
+      two-row lip there is flat black, so the map is an island in a void rather
+      than rock the room was cut into."* NOTE the 2026-09-03 fix landed the
+      apron and the painted void; this is the FACE's own repetition, which is a
+      different fault at the same place. (`fissure-z4.png`, `rot-z4.png`)
+- [ ] **THE ANSWERING HALL IS ONE DECAL ON A FIXED LATTICE.** *"One flat brown
+      tile with the same hook decal at the same offset in every cell, ruled in
+      rows and columns, with no wall, no boundary and no lighting change
+      anywhere in 1280x800 — and every boss frame is shot on it."* The arena
+      took the world's own `designFor` in Phase 11 and still reads as wallpaper.
+      (`desktop-scene.png`, `crop-arena-lattice-x2.png`)
+- [ ] **THE ROT'S FLOOR IS RULED PAPER, AND BRIGHTER THAN ANYTHING ON IT.**
+      *"A 45 degree hatch at identical pitch and identical phase on every cell
+      over near-white cream, so a forty-tile chamber is ruled notepaper and the
+      floor is brighter than any hero or monster standing on it."* (`rot-z4.png`)
+- [ ] **THE GEOMETER IS A DIFFERENT ARTIST IN THE SAME COLUMN.** All three.
+      *"Pastel lavender hair, an airbrushed cheek and glossy pink lips beside
+      four weathered, low-value, hard-cluster-shaded heads"*, and *"his tale
+      panels carry it into the story."* Two smaller faults ride with it: the
+      shopper reads `tale_orrery_1`'s measuring cord as *"a straight 2 px white
+      line crossing the frame through his head — I read it as a scratch on my
+      monitor"*, and `tale_bone_4`'s shaft as *"a flat lime-green rectangle,
+      one alpha top to bottom, hard vertical edges, no taper… it reads as a UI
+      element left on."* (`faces.png`, `tale-orrery-1.png`, `tale-ossuary-4.png`)
+- [ ] **TWO UNFRAMED BLACK OVERLAYS IN A CARVED-STONE GAME.** *"The item menu
+      is a 900px unframed black rectangle covering three whole rows of the bag
+      it was opened from, no item icon, no rarity colour"*, and the parley box
+      *"is drawn over the smith's bust, slicing his arm off mid-bicep"*, its
+      buttons *"big soft-gradient left-aligned rounded rects in a game where
+      every other button is flat with a 1px gold outline and centred caps."*
+      (`desktop-itemmenu.png`, `kit-parley-smith.png`)
+- [ ] **FIVE WINDOWS OPEN SLICED THROUGH A WORD, WITH NOTHING SAYING SCROLL.**
+      *"`desktop-professions.png` cuts 'Blacksmithing 1/99' horizontally at the
+      top edge while still titled CHARACTER; `desktop-bench.png` halves
+      'Prismatic Crystal'; `kit-anvil.png` halves the Cudgel row;
+      `kit-reckoning.png` halves a ledger card; `kit-smith-shop.png` halves the
+      BUY button — and in none of them is there a top fade or a scrollbar to
+      say a cut is a scroll."* The `critique` skill's own note applies: headless
+      Chromium hides scrollbars, so **the affordance a picture can show is a
+      fade at the foot**, not a thumb.
+- [ ] **AT 1280x800 THE NUMBERS A PLAYER CHECKS ARE THE LEAST LEGIBLE TYPE ON
+      THE SCREEN.** *"The '328 / 376' printed inside the life bar, the flask
+      percentages and the damage numerals are all around 8px of unoutlined
+      serif"*; *"everything above judged at 2x reads fine; at ship size the
+      HUD's numbers are decoration."* (`rot-z4.png`, `fx-fireball-02.png`)
+- [ ] **THE PLAIN SWORD AND DAGGER ICONS ARE 3px SLIVERS IN A 40px SLOT.**
+      *"They read as empty, beside a bow and a mace that fill theirs"*, and the
+      same shapes make *"'Ash Wand' and 'Grey Staff' tally marks on the anvil
+      and 'Bent Rod' one on the sheet."* A silhouette budget per slot, not per
+      weapon. (`crop-dock-weapons-x3.png`, `kit-anvil.png`, `kit-sheet-tools.png`)
+- [ ] **THE SHOP IS TEN IDENTICAL TEXT PLATES WITH NO PICTURE ON THE SCREEN.**
+      *"Ten identical '120 gold' text plates with not one drawn thing on it."*
+      A gamble sells a KIND, so the kind is what wants a picture — the
+      counter's whole screen currently has no art in it at all. (`kit-shop.png`)
+- [ ] **VECTOR SHAPES KEEP LANDING ON PIXEL ART.** *"A smooth tapered
+      exclamation with a round anti-aliased dot over a picture whose smallest
+      feature is a 2px block"*, the targeting reticle, and *"the white and cyan
+      node halos… a CSS filter standing in for drawn art, and the cyan is the
+      only cool ink in a wholly warm picture."*
+      (`crop-camp-mark-x5.png`, `desktop-skill-web.png`, `desktop-trials.png`)
+- [ ] **THE PROVING GROUND'S SOCKET ARCHES ARE TWICE THE PIXEL SIZE OF THE ART
+      BEHIND THEM**, cool grey in a wholly warm game, with their feet cropped
+      off — *"reads as broken, not stylised."* (`kit-proving.png`)
+- [ ] **THE TWELVE RUNG DISCS ARE 9px NUMERALS IN NEAR-BLACK ON DARK BROWN.**
+      *"Only rung 1, gold-ringed, can be read at all"* — on the picture the
+      director rates the best screen in the game. (`desktop-fissure.png`)
+- [ ] **SEAM_PRO HAS NEVER BEEN PHOTOGRAPHED.** A harness fault with an art
+      cost: socketing for the Seam produced a descent headed The Fissure
+      drawing the Rot's tileset, so the best set on the sheet has never
+      appeared in a judged picture. Find out whether the WORLD is wrong or only
+      the heading.
+- [ ] **A BURST, NOT A HOLD, FOR AN EFFECT.** The purist declined to score
+      animation at all: *"one pose is not a frame count."* `CAST=1` freezes the
+      sim, so two effect stills in the set are the same instant. Give the peek
+      a burst so a critic can see motion.
+
 ## Phase 3 — A quest log instead of a pointing finger
 
 **Not next, and deliberately.** The tutorial was deleted outright so the opening

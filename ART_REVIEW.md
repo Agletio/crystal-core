@@ -468,3 +468,61 @@ panel still clips with no fade.
    orange square**, beside an Arc Lightning that is stepped and on-grid. NOT
    taken: the VFX stills are generated art, and re-asking them is a design the
    user approves rather than a session's call.
+
+
+## 2026-09-05 — after the tales: 27 panels, the smith, tools as items
+
+Commit `acfc0f4`. 164 pictures shot, **20 approved**; the director's set and its
+notes are in `art-review/2026-09-05/APPROVED.md`. Six things the brief asked
+for are deliberately NOT in the set — a floor in every world, a fight with an
+effect running, a boss, a speech bubble, a gather, the counter — each shot,
+read, and cited as fault evidence instead.
+
+**The director's three worst faults:**
+
+1. **A body's health bar is an unframed crimson slab that does not sit over the
+   body.** Flat saturated red, about 1.5x the body's width, no border and no
+   empty half, drawn at the body's own y — one lies across the hero's shins,
+   one on a skeleton's skull, one over bare floor with nothing under it. It is
+   the most visible thing in every fight screenshot the game can take.
+2. **The rock's face lines up into battlements, and past it the rock is a
+   void.** One rounded column per cell, so any straight wall reads as a row of
+   identical merlons; at map zoom the level is a khaki island inside a
+   crenellated ring on one near-black plane out to the viewport.
+3. **The Answering Hall is a plain with one decal repeating on a fixed
+   lattice** — the same hook mark at the same offset in every cell, in ruled
+   rows and columns, no rock in frame and no boundary. Every boss frame is shot
+   on it.
+
+| critic | bodies | floors | ui | effects | consistency | **overall** | compared to |
+|---|---|---|---|---|---|---|---|
+| the pixel-art purist | 5 | 3 | 6 | 3 | 4 | **4** | Children of Morta, Dead Cells |
+| the UI reviewer | 6 | 4 | 5 | 4 | 5 | **5** | Moonlighter, Children of Morta |
+| the Steam shopper | 5 | 4 | 7 | 3 | 5 | **5** | Children of Morta, Dead Cells |
+
+**They agree, and they agree with the director.** All three named the health
+bar first. Two of three named the battlement wall, the arena lattice, the Rot's
+floor and the weapon icons that are 3px slivers in a 40px slot. All three
+named the GEOMETER's portrait as a different art direction — pastel lavender
+hair and a glossy lip beside four weathered heads — and the shopper carried it
+into the tales, where his panels are the only ones that read as another game.
+
+**And all three named the same strength.** The tales, the camp, the title and
+the tooltip are close to an 8 on their own: *"That is trailer material. I would
+put these on the page unaltered."* The shopper's six for a store page are the
+title, the camp, three tale panels and the bench — **and none of them is a
+fight**, which is the whole verdict: *"A shopper who clicks in on the strength
+of the title screen and then sees the first fight closes the tab."*
+
+**One thing a critic could not see.** The purist declined to score animation —
+*"one pose is not a frame count"* — because `CAST=1` freezes the sim for a
+still, so two effect frames in the set are the same instant. That is the
+harness, not the art; a moving set needs a burst shot rather than a hold.
+
+**Two harness faults the director found**, both now fixed or filed:
+`descent-peek` could no longer pick a world (it queried `.influence`; the
+buttons wear `climbtab` and carry `climb-influence-<world>` ids, so every
+"other world" shot was silently The Answering) — FIXED, keyed by id.
+And socketing for the Seam produced a descent headed The Fissure drawing the
+Rot's tileset, so `seam_pro` — the best set on the sheet — has never appeared
+in a photographable descent. FILED, in Phase 12 below.

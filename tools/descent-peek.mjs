@@ -224,17 +224,20 @@ if (hold) {
 // in its zone's own world whatever is socketed, and the kit's climb is shut
 // past The Answering, so another world is reached through the Proving Ground
 // tab and its influence button; the Seam is the one the sockets open.
-const INFLUENCE = { rot: 'The Rot', cavern: 'The Cavern', seam: null };
+// KEYED BY ID, NEVER BY CLASS OR WORDING: an influence button wears `climbtab`
+// exactly as the tabs do, so a selector on either silently picks nothing and
+// the peek shoots the wrong world without saying so.
+const INFLUENCE = { rot: 'demonic', cavern: 'prismatic', seam: null };
 if (zone in INFLUENCE) {
   await page.evaluate(() => document.getElementById('camp-crack')?.click());
   await page.waitForTimeout(300);
   const found = await page.evaluate((want) => {
-    const tab = [...document.querySelectorAll('.climbtab')].find((t) => t.textContent?.startsWith('The Proving Ground'));
+    const tab = [...document.querySelectorAll('[id^=climb-tab-]')].at(-1);
     if (!tab || tab.disabled) return 'no Proving Ground tab';
     tab.click();
     if (!want) return true;
-    const button = [...document.querySelectorAll('.influence')].find((b) => b.textContent?.trim() === want);
-    if (!button) return `no influence reads as "${want}"`;
+    const button = document.getElementById(`climb-influence-${want}`);
+    if (!button) return `no #climb-influence-${want} on the Proving Ground tab`;
     button.click();
     return true;
   }, INFLUENCE[zone]);
