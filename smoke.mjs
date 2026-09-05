@@ -3109,8 +3109,8 @@ $('dev-kit').click();
   assert(/Proving Ground/.test(where()), 'and the readout says where you are going', where());
   $('climb-influence-demonic').click();
   assert(
-    $('climb-influence-demonic').classList.contains('influence--on')
-      && !$('climb-influence-fissure').classList.contains('influence--on'),
+    $('climb-influence-demonic').classList.contains('climbtab--on')
+      && !$('climb-influence-fissure').classList.contains('climbtab--on'),
     'clicking another moves the pick, and only one is ever on'
   );
   assert(/The Rot/.test(where()), 'and the readout follows it', where());
