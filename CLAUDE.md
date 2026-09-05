@@ -836,8 +836,14 @@ what marks him HEARD and stands the next person up. *"Nothing important, cool
 if you're watching, no big deal if you're afk grinding"* is the descent's line;
 the real content is here, where a player is looking. `src/ui/tale.ts` is not a
 window and is outside `SCREENS`: it covers the band and the only thing any
-press can do is go on. Somebody with no row has no tale and is simply in the
-camp when you come up. **A MARK over the head says somebody is holding something** — `wants()`
+press can do is go on. **A PANEL THAT CONTINUES ANOTHER NAMES IT** —
+`SceneDef`-style `like` in `scenes.json`, whose shipped PNG goes to the
+generator as the style image AND as a labelled reference — because "the same
+chamber" means nothing to a generator with no memory and drew the tunnel the
+other way. **AND WHAT IT MUST NOT INHERIT HAS TO BE SAID**: a reference pulls a
+room over whole, so three of the Geometer's five came back as one picture with
+the man moved until the next room excluded the cords by name. Somebody with no
+row has no tale and is simply in the camp when you come up; nobody is, today. **A MARK over the head says somebody is holding something** — `wants()`
 in `src/ui/talk.ts`, the same question `offer` answers, asked before the
 conversation instead of after — so a picture is never swept for the one person
 whose mind has changed. The crafting people are never RESCUED: they live down there, and

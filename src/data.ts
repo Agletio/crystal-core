@@ -2228,6 +2228,33 @@ export const TALES: Record<string, TalePanel[]> = {
       said: 'A body is an opinion. Dust is a measurement, and a measurement will fit inside a ring.',
     },
   ],
+  // ONE FRAME EACH. *"Less important characters like the workers can be a
+  // single frame."* A worker is somebody you got out, not somebody with a
+  // history, and one picture is the whole of what there is to say.
+  'worker:hob': [
+    {
+      art: 'tale_hob',
+      said: 'Four days on that ledge with the lamp out. I would have gone up with anybody at all.',
+    },
+  ],
+  'worker:nell': [
+    {
+      art: 'tale_nell',
+      said: 'I can smelt, weave, tan, cook and cut. Down there not one of the five was worth anything.',
+    },
+  ],
+  'worker:wat': [
+    {
+      art: 'tale_wat',
+      said: 'I came down for the glass. The glass is very beautiful and it does not let go of you.',
+    },
+  ],
+  'worker:ida': [
+    {
+      art: 'tale_ida',
+      said: 'Nothing down there troubles a body that keeps moving. So I kept moving, for a long while.',
+    },
+  ],
 };
 
 /** The opening, in numbers: the one stretch where what happens next is

@@ -47,10 +47,10 @@ at 4 of the third, the Geometer at 8 of the second. A man is met by walking
 past him in the middle of a descent — never near the way out, walked to if the
 hero killed from range, and gone to the exit himself once he has said his line
 — and the trip up after that opens his TALE, full screen with captions. The
-Lampwright's three panels are generated and shipping. **WHAT IS LEFT IS THE
-OTHER FIVE'S ART**: the mechanism takes any number of panels for anybody, and
-`TALES` is empty for everybody but him — waiting on the user's word about whose
-to draw and how long.
+**EVERY ONE OF THEM IS DRAWN**: 27 panels across 9 tales — five apiece for the
+smith, the Glasswright, the Osteomancer and the Geometer, three for the
+Lampwright and one frame each for the four workers, at his word. Nobody the
+queue owes is without one, and the demo holds it that way.
 
 **THE NAMES LANDED WITH PHASE 6**: the points are **POINTS**, the web is
 **THE RECKONING**, the list of grinds is **THE LEDGER**. **The fourth was NOT
