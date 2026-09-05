@@ -16,7 +16,7 @@
  */
 import { CRYSTAL_LEVELS, LADDER, PROVING, THEME_BY_ID } from '../data';
 import {
-  campaignLine, canEnter, climbed, furthest, isProving, provingOpen, zoneAt, zoneOpen,
+  canEnter, climbed, furthest, isProving, provingOpen, zoneAt, zoneOpen,
 } from '../ladder';
 import type { Rung, RunWhere } from '../ladder';
 import { SCENE_ART } from '../render/generated-scene';
@@ -292,7 +292,6 @@ function renderProving(host: HTMLElement, character: Character, onPick: () => vo
  */
 export function renderClimb(host: HTMLElement, character: Character, onPick: () => void): void {
   host.replaceChildren();
-  const totals = climbTotals(character);
   const shut = shown === PROVING_TAB && !provingOpen(character);
   if (shown === null || shut || (shown !== PROVING_TAB && !zoneOpen(character, shown))) {
     shown = ground && provingOpen(character) ? PROVING_TAB : furthest(character).zone;
@@ -304,10 +303,9 @@ export function renderClimb(host: HTMLElement, character: Character, onPick: () 
   ground = z === PROVING_TAB;
   const at = whereNow(character);
 
-  host.append(el('p', 'panel__title', ground ? PROVING.name : 'The climb'));
-  host.append(el('p', 'climb__where',
-    `${rungLabel(character)} · ${totals.done} of ${totals.all} depths cleared`));
-  host.append(el('p', 'climb__prize', campaignLine(character)));
+  // THE MAP IS THE SCREEN AND NOTHING IS WRITTEN OVER IT. The window already
+  // says THE FISSURE; a title, a depth count and the campaign's own line under
+  // it said the same thing three more times and took the picture's room.
   tabs(host, character, z, () => renderClimb(host, character, onPick));
 
   if (ground) {
