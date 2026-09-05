@@ -2169,19 +2169,19 @@ export const TALES: Record<string, TalePanel[]> = {
     },
     {
       art: 'tale_glass_2',
-      said: 'The others went back up. I stayed, because these are not decoration and they are not ore. Somebody cut them, in an order, meaning something.',
+      said: 'The others went back up. I stayed. Two hundred and eleven marks on the one wall, and all of it is a single sentence.',
     },
     {
       art: 'tale_glass_3',
-      said: 'The longer I read, the more of it I could hear. I did not object when it began to grow into me.',
+      said: 'Reading it was not enough. So I set the first of them into myself, to find out whether it would read back.',
     },
     {
       art: 'tale_glass_4',
-      said: 'Two hundred and eleven marks, on one wall, and it is one sentence. It has not finished saying itself yet.',
+      said: 'It read back. After that I stopped deciding how many there should be, and the rock decided instead.',
     },
     {
       art: 'tale_glass_5',
-      said: 'So I copied three of them out, off a face nobody was meant to reach, and I have been waiting a long time for somebody to carry them.',
+      said: 'Three marks, copied off a face nobody was meant to reach. I have been waiting a long while for somebody to carry them.',
     },
   ],
   ossuary: [
@@ -2234,25 +2234,25 @@ export const TALES: Record<string, TalePanel[]> = {
   'worker:hob': [
     {
       art: 'tale_hob',
-      said: 'Four days on that ledge with the lamp out. I would have gone up with anybody at all.',
+      said: 'Four days on that ledge with the lamp out and nothing coming. Then you. I am not going to forget which of us walked down there.',
     },
   ],
   'worker:nell': [
     {
       art: 'tale_nell',
-      said: 'I can smelt, weave, tan, cook and cut. Down there not one of the five was worth anything.',
+      said: 'I can smelt, weave, tan, cook and cut, and down there not one of the five was worth anything. Up here they are yours.',
     },
   ],
   'worker:wat': [
     {
       art: 'tale_wat',
-      said: 'I came down for the glass. The glass is very beautiful and it does not let go of you.',
+      said: 'I came down for the glass and the glass kept me, and I had stopped counting. You got me out. Put me to work and we are square.',
     },
   ],
   'worker:ida': [
     {
       art: 'tale_ida',
-      said: 'Nothing down there troubles a body that keeps moving. So I kept moving, for a long while.',
+      said: 'Nothing down there troubles a body that keeps moving, so I moved for a long while. I would rather stand still now, at your fire, and owe you for it.',
     },
   ],
 };
