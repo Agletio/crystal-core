@@ -12,18 +12,29 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { GENERATED } from '../../src/render/generated-art';
 import { callTool, download, urlsIn } from './mcp.mts';
+import { readFileSync } from 'node:fs';
 import { encodePng } from './png.mts';
 
 const here = (p: string): string => join(dirname(fileURLToPath(import.meta.url)), p);
 const wait = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
 
+const words = JSON.parse(readFileSync(here('faces.json'), 'utf8')) as {
+  how: string;
+  inks: string[];
+};
+const FACE_INKS = words.inks;
+
 const [sprite, howMany = '2'] = process.argv.slice(2);
 const art = GENERATED[sprite];
 if (!art) throw new Error(`no shipped body ${sprite} — import it first`);
 
-/** The body's own inks, as an image. */
+/** THE FACE PALETTE AND THE BODY'S, TOGETHER. The body's alone is what made
+ *  the smith a grey slab: his are soot and umber, and a face asked with no
+ *  skin in the swatch comes back with no skin in it. `faces.json` holds the
+ *  roster's shared face inks, which is why the four asked through it have
+ *  colour; his own are still in there, so the portrait cannot drift off him. */
 function swatch(): string {
-  const inks = [...new Set(Object.values(art.key))];
+  const inks = [...new Set([...FACE_INKS, ...Object.values(art.key)])];
   const cell = 8;
   const across = Math.ceil(Math.sqrt(inks.length));
   const size = across * cell;
@@ -43,12 +54,12 @@ function swatch(): string {
 }
 
 const SAY: Record<string, string> = {
-  smith: 'The HEAD AND SHOULDERS ONLY of a broad heavy bald man with a heavy jaw and a short blunt '
-    + 'beard, seen from the FRONT at eye level, filling the frame: soot on the cheekbones, the neck '
-    + 'and shoulders thick, the top of a scorched dark leather apron strap across one shoulder. '
-    + 'Soot-black and dull umber, iron grey. Lit from one side. NOT a full body, NOT the legs, '
-    + 'NOT anime, NOT manga, NOT chibi, NOT cute, NOT a helmet, NOT armour, NOT a hood. '
-    + 'No ground, no shadow, no anvil, no hammer, no other objects.',
+  smith: 'a broad heavy BALD man with a heavy jaw, a short blunt dark beard and RUDDY WEATHERED '
+    + 'SKIN, forge-burnt across the cheekbones and soot-marked at the temple, dark eyes open and '
+    + 'looking straight out, the neck and shoulders thick, the top of a scorched dark leather '
+    + 'apron strap over one bare shoulder. His skin is warm and lived-in; the leather is soot '
+    + 'black and dull umber. NOT grey skin, NOT a corpse, NOT a skull, NOT undead, NOT a helmet, '
+    + 'NOT armour, NOT a hood, NOT hair on the head, NOT holding anything.',
 };
 
 const say = SAY[sprite];
@@ -60,7 +71,7 @@ const colours = swatch();
 const jobs: string[] = [];
 for (let n = 0; n < Number(howMany); n++) {
   const out = await callTool('create_image_pixflux', {
-    description: say, width: 128, height: 128, no_background: true,
+    description: `${say}${words.how}`, width: 128, height: 128, no_background: true,
     view: 'side', direction: 'south',
     outline: 'single color black outline', shading: 'detailed shading',
     detail: 'highly detailed', text_guidance_scale: 12, color_image_url: colours,

@@ -438,10 +438,15 @@ first. When the phase is whole, `/critique` runs again; done is all three at 8.
       nodes fit, and a web you cannot see the shape of is one nobody plans
       through); `shots` finds no overflow at 1280×800 on the anvil or the
       jewellery, so that fault wants the director's own viewport named.
-- [ ] **TWO PORTRAIT FIDELITIES.** The Geometer and the Osteomancer are
-      hand-drawn 48-grids beside the Glasswright and the Lampwright at four
-      times the detail. Two busts through the portrait pipeline
-      (`create_portrait_character`), designs shown first. (`faces.png`)
+- [x] **TWO PORTRAIT FIDELITIES.** STALE WHEN WRITTEN AND NOW WHOLLY DONE: all
+      five faces are generated at grid 96 and `PORTRAITS` merges generated OVER
+      the hand-drawn rows, so the Geometer and the Osteomancer had already been
+      redrawn. The REAL fidelity fault was the SMITH's, drawn later and off a
+      different path — `bust.mts` forces the palette with the BODY's own inks,
+      his are soot and umber with no skin among them, and a face asked with no
+      skin in the swatch came back a grey slab with no eyes. It takes
+      `faces.json`'s shared face inks AND the body's now, and its `how` on the
+      end of every ask, so one set of words and one palette draw all five.
 - [ ] **THE FLOOR'S SMALL FAULTS.** The lake's shore is a tan kerb LIGHTER
       than the sand with a scalloped lump every tile, so the water sits in a
       raised tray — the shore should be a dip; the ripple is a 2px seven-sided
