@@ -3275,7 +3275,7 @@ assert(
   $('open-dev').click();
   $('dev-meet-smithy').click();
   $('dev-close').click();
-  const him = $('who-smithy');
+  const him = $('camp-who-smithy');
   assert(him !== null, 'the smith is in the camp once you have met him',
     all('#camp-folk .camp__hot').map((b) => b.id).join(', '));
   him.click();
