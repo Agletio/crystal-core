@@ -56,7 +56,7 @@ function place(x: number, y: number): void {
 export function openMenu(
   x: number,
   y: number,
-  title: string,
+  title: string | HTMLElement,
   actions: ItemAction[],
   closed?: () => void
 ): void {
@@ -64,9 +64,12 @@ export function openMenu(
   node.replaceChildren();
   onClose = closed ?? null;
 
+  // A HEAD IS THE THING ITSELF where there is one: the card's own icon and
+  // tier ink. A recipe has no item, and gets its name in words.
   const head = document.createElement('div');
   head.className = 'itemmenu__head';
-  head.textContent = title;
+  if (typeof title === 'string') head.textContent = title;
+  else head.append(title);
   node.append(head);
 
   for (const action of actions) {

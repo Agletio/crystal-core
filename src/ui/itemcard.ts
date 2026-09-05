@@ -88,6 +88,26 @@ function group(label: string): HTMLElement {
   return box;
 }
 
+/** THE ART BESIDE THE NAME, in the tier's own ink — one implementation, so a
+ *  card and the menu opened off the same item cannot name it two ways. It
+ *  carries the card's own tier class, since that is what colours the name. */
+export function itemHead(item: Item, size = 36): HTMLElement {
+  const locked = item.meta.corrupted === true;
+  const unique = UNIQUE_BY_ID[String(item.meta.unique)];
+  const head = el(
+    'div',
+    `tip__head tip__card--t${baseTier(item)}` +
+      (locked ? ' tip__card--locked' : '') +
+      (unique ? ' tip__card--unique' : '')
+  );
+  head.append(itemIcon(item, size));
+  const name = el('div', 'tip__name', item.name);
+  if (unique) name.classList.add('tip__name--unique');
+  if (isPerfect(item)) name.classList.add('tip__name--perfect');
+  head.append(name);
+  return head;
+}
+
 /**
  * `notes` are the lines about what a CLICK does, or why it cannot — the one
  * thing that differs per screen, and the reason this takes them rather than
@@ -102,15 +122,7 @@ export function itemCard(item: Item, notes: string[] = []): HTMLElement {
       (locked ? ' tip__card--locked' : '') +
       (unique ? ' tip__card--unique' : '')
   );
-
-  // The art beside the name: the same icon the slot shows, big enough to read.
-  const head = el('div', 'tip__head');
-  head.append(itemIcon(item, 36));
-  const name = el('div', 'tip__name', item.name);
-  if (unique) name.classList.add('tip__name--unique');
-  if (isPerfect(item)) name.classList.add('tip__name--perfect');
-  head.append(name);
-  card.append(head);
+  card.append(itemHead(item));
 
   // A relic is not on any ladder: no tier, no item level and no capacity. What
   // it IS is the whole card, and the person who wants it is the rest.

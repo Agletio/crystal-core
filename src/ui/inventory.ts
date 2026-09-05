@@ -9,7 +9,7 @@
 import { currencyIcon, itemIcon } from './icons';
 import { baseTier } from '../mods';
 import { itemMatches, locksItem } from '../crafting';
-import { itemCard } from './itemcard';
+import { itemCard, itemHead } from './itemcard';
 import { attachTooltip, hideTooltip } from './tooltip';
 import { closeMenu, openMenu } from './menu';
 import type { ItemAction } from './menu';
@@ -341,7 +341,7 @@ function showMenu(item: Item, x: number, y: number): void {
   const actions = actionsFor(item);
   if (actions.length === 0) return;
   hideTooltip();
-  openMenu(x, y, item.name, actions);
+  openMenu(x, y, itemHead(item, 28), actions);
 }
 
 /**

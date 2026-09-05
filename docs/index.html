@@ -1114,20 +1114,23 @@
 
   /* --- the item menu ----------------------------------------------------- */
   /* Above the modals: it is opened from the dock, which sits under them. */
+  /* THE WINDOW'S FRAME at half size, the tooltip's own: an unframed black
+     rectangle is the one thing on the glass that is not carved stone. */
   .itemmenu {
-    position: fixed; z-index: 95; min-width: 168px;
-    background-color: var(--panel); background-image: var(--grit);
-    border: 2px solid var(--edge); border-radius: var(--r);
-    box-shadow: var(--bevel), var(--gilt), var(--lift);
-    padding: 4px; display: flex; flex-direction: column; gap: 2px;
+    position: fixed; z-index: 95; min-width: 176px; max-width: 320px;
+    background-color: var(--panel); background-image: var(--grit); background-clip: padding-box;
+    border: 15px solid transparent; border-image: var(--fix-win) 30 / 15px round;
+    image-rendering: pixelated; box-shadow: var(--lift);
+    padding: 0; display: flex; flex-direction: column; gap: 2px;
   }
   .itemmenu__head {
     font-size: 10px; letter-spacing: .12em; text-transform: uppercase;
-    color: var(--text-dim); padding: 5px 8px 6px; border-bottom: 1px solid var(--edge);
+    color: var(--text-dim); padding: 2px 4px 6px; border-bottom: 1px solid var(--edge);
     margin-bottom: 2px;
   }
+  .itemmenu__head .tip__head { margin: 0; } /* art, then the name in its tier's ink */
   .itemmenu__item {
-    text-align: left; padding: 7px 9px; font-size: 12px;
+    text-align: left; padding: 6px 8px; font-size: 12px; line-height: 1.35;
     border: 0; background: transparent; box-shadow: none; color: var(--text);
     display: flex; flex-direction: column; gap: 1px;
   }
@@ -1565,8 +1568,7 @@
     border: 1px solid var(--edge-lit); border-radius: 50%; cursor: pointer;
     box-shadow: var(--lift);
   }
-  /* A pip is PLACED by its transform: the button treatment's nudge on press
-     would throw it out from under the cursor and eat the click. */
+  /* PLACED by its transform: the press nudge would throw it out from under the cursor. */
   .pip:active:not(:disabled) { transform: translate(-50%, -50%); box-shadow: var(--sunk); }
   /* A zone's LAST rung is its BOSS: bigger, and ringed twice so it is not read
      as another challenge floor, which is also ember. */
@@ -1767,23 +1769,23 @@
      every scrim. TWO classes on the card, because `.modal__card` is one and
      sets a width later in this same sheet. */
   .speech, .modal--speech { z-index: 66; }
+  /* THE WINDOW'S FRAME at half size, the tooltip's and the item menu's. */
   .speech {
     position: fixed; left: 0; top: 0;
     transform: translate(calc(-50% + var(--sx, 0px)), calc(-100% + var(--sy, 0px)));
     width: max-content; max-width: min(300px, calc(100vw - 32px));
     display: flex; align-items: flex-end; gap: 8px;
     background-color: var(--panel); background-image: var(--grit); background-clip: padding-box;
-    border: 1px solid var(--edge); border-radius: var(--r);
+    border: 15px solid transparent; border-image: var(--fix-win) 30 / 15px round;
     image-rendering: pixelated;
-    box-shadow: 0 5px 0 rgba(0,0,0,.55);
-    padding: 4px 7px 4px 4px;
+    box-shadow: var(--lift);
+    padding: 2px 4px 2px 0;
   }
-  /* Out of the box on two sides. A portrait cropped to the padding reads as an
-     icon; one that breaks the frame reads as somebody leaning in — and the
-     frame is a slim rail now, so the lean is over the brass END CAP rather
-     than up through a band that is barely there. */
+  /* Out of the box on two sides: a portrait cropped to the padding reads as an
+     icon, one that breaks the frame as somebody leaning in. */
   .speech__who {
-    flex: none; line-height: 0; margin: -12px 0 -6px -26px; align-self: flex-start;
+    flex: none; line-height: 0; margin: -22px 0 -14px -34px; align-self: flex-start;
+    position: relative; z-index: 1; /* a border-image paints over a static child */
   }
   /* NO PORTRAIT, NO LEAN. An empty slot keeps its negative margin, and a
      zero-width box pulled 26px left drags the words out through the side of
@@ -1803,7 +1805,8 @@
   /* A LIST, not prose: the card is as wide as its longest verb. */
   .speech--menu { width: max-content; max-width: min(260px, calc(100vw - 32px)); }
   .parley__list { display: flex; flex-direction: column; gap: 4px; min-width: 132px; }
-  .parley__list .mini { text-align: left; padding: 5px 10px; font-size: 12px; }
+  /* CENTRED CAPS: the one place a `.mini` did not look like a `.mini`. */
+  .parley__list .mini { padding: 5px 12px; font-size: 12px; }
   /* The panel is the LAST beat, so it hangs where the bubble hangs rather than
      in the middle of a room it is meant to be standing in. */
   .modal.modal--speech { display: block; padding: 0; }
@@ -2118,8 +2121,8 @@
   .web__node:hover .web__node__halo { stroke: var(--node-on); opacity: 1; }
   .web__centre { cursor: help; }
 
-  /* Tooltip. Custom because the native title is delayed and drawn in the OS's
-     box; TOP LAYER, since what explains a thing may not sit under what rings it. */
+  /* Custom because the native title is delayed and in the OS's box; TOP LAYER,
+     since what explains a thing may not sit under it. */
   .tip {
     position: fixed; z-index: 100; pointer-events: none;
     max-width: 340px; padding: 4px 6px;
@@ -2129,8 +2132,7 @@
     color: var(--text); font-size: 11px; line-height: 1.5;
     box-shadow: var(--lift);
   }
-  /* A sentence per line, for a currency or a skill. An item card lays itself
-     out and must not have its own newlines honoured on top of that. */
+  /* A sentence per line, for a currency or a skill; an item card lays itself out. */
   .tip--text { white-space: pre-wrap; max-width: 320px; }
 
   /* An item. The border says the base's tier from across the screen, the same
