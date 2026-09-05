@@ -25,7 +25,7 @@ import type { Hotspot } from '../scenes/camp';
 import { SCENE_ART } from '../render/generated-scene';
 import { GENERATED } from '../render/generated-art';
 import { heroSpriteFor } from '../sim/appearance';
-import { MATERIAL_BY_ID, RUN_SLOTS, WORKER_SPRITE } from '../data';
+import { MATERIAL_BY_ID, RUN_SLOTS } from '../data';
 import { folkMet } from '../game/scenes';
 import { jobOf, saysJob, workersFound } from '../game/work';
 import { CAMP_STATION_FOOT, CAMP_WORKER_SPOTS } from '../scenes/camp';
@@ -134,7 +134,7 @@ function mountFolk(): void {
   // layer of their own, so the people stay the people.
   $('camp-workers').replaceChildren();
   workersFound(game).forEach((w, i) => {
-    const grid = (GENERATED[WORKER_SPRITE]?.grid ?? 32) * CAMP_HERO_SCALE;
+    const grid = (GENERATED[w.sprite]?.grid ?? 32) * CAMP_HERO_SCALE;
     const at = workerSpot(w.id, i);
     const job = jobOf(game, w.id);
     const btn = mount(
@@ -319,7 +319,7 @@ function draw(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, at: numb
   // so the picture says who is busy before the screen does.
   workersFound(game).forEach((w, i) => {
     const spot = workerSpot(w.id, i);
-    body(ctx, WORKER_SPRITE, spot.x, spot.y, at, 2 + i * 0.9, lit === 100 + i);
+    body(ctx, w.sprite, spot.x, spot.y, at, 2 + i * 0.9, lit === 100 + i);
   });
   body(ctx, heroSpriteFor(game.character), CAMP_STAND.x, CAMP_STAND.y, at, 0, false);
 }

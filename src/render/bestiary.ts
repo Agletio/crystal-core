@@ -90,69 +90,6 @@ export const BEASTIARY: Record<string, BeastArt> = {
     ],
   },
 
-  /**
-   * The Osteomancer: starved. A skull too big for the body under it, a bone
-   * half-mask shoved up on the brow, and both hands out — nothing else down
-   * here wants anything from you. The silhouette carries it: the head is ten
-   * pixels across and the chest is six, and the gap between his arms and his
-   * ribs is most of what says he is not strong enough to take what he asks for.
-   */
-  osteomancer: {
-    tone: {
-      mass: (p) => mix(p.flesh, p.gore, 0.4),
-      lit: (p) => mix(p.fleshLit, p.sinew, 0.3),
-      shade: (p) => mix(p.gore, p.char, 0.45),
-      eye: (p) => p.venom,
-    },
-    grid: 24,
-    frames: [
-      rows({
-        3: '.........######.........',
-        4: '........#Mmmmmms#.......',
-        5: '.......#Mbbbbbbs#.......',
-        6: '.......#MMmmmmms#.......',
-        7: '.......#Mmeemees#.......',
-        8: '.......#Mmmsmmss#.......',
-        9: '........#Mm###s#........',
-        10: '.........#Mmms#.........',
-        11: '.....#Mm#.#ms#..........',
-        12: '....#MMmmmmms#..........',
-        13: '....#MMmsm##########....',
-        14: '....#MMmmsmmmmmmmmmm#...',
-        15: '....#Mmmss#######mmms#..',
-        16: '....#MMmms#####.#####...',
-        17: '....#Mmmssmmmmm#........',
-        18: '....#Mmmss#####.........',
-        19: '....#Mmmsmmms#..........',
-        20: '....#Mm#..#ms#..........',
-        21: '...#mmm#..#mmm#.........',
-        22: '...#####..#####.........',
-      }),
-      rows({
-        3: '.........######.........',
-        4: '........#Mmmmmms#.......',
-        5: '.......#Mbbbbbbs#.......',
-        6: '.......#MMmmmmms#.......',
-        7: '.......#Mmeemees#.......',
-        8: '.......#Mmmsmmss#.......',
-        9: '........#Mm###s#........',
-        10: '.........#Mmms#.........',
-        11: '.....#Mm#.#ms#..........',
-        12: '....#MMmmmmms#..........',
-        13: '....#MMmsm######........',
-        14: '....#MMmmsmmmmmm#.......',
-        15: '....#Mmmss#####mmmm#....',
-        16: '....#MMmms######mmms#...',
-        17: '....#Mmmssmmmmm#.####...',
-        18: '....#Mmmss#####.........',
-        19: '....#Mmmsmmms#..........',
-        20: '...#mmm#..#ms#..........',
-        21: '...#####..#mmm#.........',
-        22: '..........#####.........',
-      }),
-    ],
-  },
-
   /** Low, wide and segmented. Almost no vertical presence: the thing you walk over. */
   grub: {
     tone: {

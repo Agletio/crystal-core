@@ -47,7 +47,7 @@ import { crystalProgress } from '../game/crystals';
 import { bossBeaten, hasMet, owedTale, takeBoss, takeMet, whoIsDown } from '../game/scenes';
 import { hasWorker, takeWorker, workerDown } from '../game/work';
 import { dismissSpeech } from './speech';
-import { WORKERS, WORKER_SPRITE, workerMark } from '../data';
+import { WORKERS, workerMark } from '../data';
 import { descentFacts, takeGrinds } from '../game/trials';
 import { SCENES, SCENE_BY_ID } from '../scenes';
 import type { Hotspot } from '../scenes/camp';
@@ -503,7 +503,7 @@ function renderKeySocket(grid: HTMLElement): void {
  *  WORKER at his own depth comes first; the people are on their schedule. */
 const meetsIn = (theme: MapTheme, rung: number) => {
   const worker = workerDown(game, theme, rung);
-  if (worker) return { id: workerMark(worker.id), sprite: WORKER_SPRITE };
+  if (worker) return { id: workerMark(worker.id), sprite: worker.sprite };
   const def = whoIsDown(game, theme, rung);
   return def ? { id: def.id, sprite: def.who } : undefined;
 };

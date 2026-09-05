@@ -2674,26 +2674,28 @@ export const WORK = {
 export interface WorkerDef {
   id: string;
   name: string;
+  sprite: string; // his own generated body, in GENERATED
   world: MapTheme;
   rung: number;
   greets: string;
 }
 
 export const WORKERS: WorkerDef[] = [
-  { id: 'hob', name: 'Hob', world: 'fissure', rung: 5,
+  { id: 'hob', name: 'Hob', sprite: 'hob', world: 'fissure', rung: 5,
     greets: 'Get me up out of this and I will work whatever you put in front of me.' },
-  { id: 'nell', name: 'Nell', world: 'fissure', rung: 7,
+  { id: 'nell', name: 'Nell', sprite: 'nell', world: 'fissure', rung: 7,
     greets: 'Three days down here. I can smelt, weave, tan, cook or cut. Take me up.' },
-  { id: 'wat', name: 'Wat', world: 'prismatic', rung: 7,
+  { id: 'wat', name: 'Wat', sprite: 'wat', world: 'prismatic', rung: 7,
     greets: 'I came down for the glass and the glass kept me. Show me the way out and I am yours.' },
-  { id: 'ida', name: 'Ida', world: 'demonic', rung: 8,
+  { id: 'ida', name: 'Ida', sprite: 'ida', world: 'demonic', rung: 8,
     greets: 'Nothing here eats a body that keeps moving. I have been moving. Let me stop, at your camp.' },
 ];
 
 export const WORKER_BY_ID: Record<string, WorkerDef> = Object.fromEntries(WORKERS.map((w) => [w.id, w]));
 export const workerMark = (id: string): string => `worker:${id}`; // the `given` entry a rescue leaves
-/** The body a worker wears: the trade-less hero look, already generated. */
-export const WORKER_SPRITE = 'wanderer';
+/** EVERY WORKER HAS HIS OWN BODY. *"The old wanderer model is really bad…
+ *  make new ones for each worker."* `WorkerDef.sprite` is that body, so a
+ *  rescued face is a person rather than four copies of one man. */
 
 /**
  * CRAFTING. **MATERIALS DECIDE WHAT AN ITEM IS; CURRENCY DECIDES WHAT IS ON
