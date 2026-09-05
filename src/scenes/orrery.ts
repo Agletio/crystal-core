@@ -10,6 +10,7 @@ export const ORRERY: SceneDef = {
   who: ASTRAL_GEOMETER.sprite,
   name: ASTRAL_GEOMETER.name,
   theme: 'prismatic', // his world, and the only one dust comes out of
+  rung: 8, // deep in his own zone: the second of the two who live in it
   said: ASTRAL_GEOMETER.seen,
   greets:
     'Stand still. No — exactly there, you are holding the angle. Right. It reads the same here as it does in nine other rooms. Bring me dust and find me above.',

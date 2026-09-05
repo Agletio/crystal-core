@@ -44,7 +44,7 @@ import { spend } from '../economy';
 import { bagsFull, crystalsIn, socketed, unsocket } from '../game/state';
 import type { GameState } from '../game/state';
 import { crystalProgress } from '../game/crystals';
-import { bossBeaten, hasMet, takeBoss, takeMet, whoIsDown } from '../game/scenes';
+import { bossBeaten, hasMet, owedTale, takeBoss, takeMet, whoIsDown } from '../game/scenes';
 import { hasWorker, takeWorker, workerDown } from '../game/work';
 import { dismissSpeech } from './speech';
 import { WORKERS, WORKER_SPRITE, workerMark } from '../data';
@@ -52,7 +52,8 @@ import { descentFacts, takeGrinds } from '../game/trials';
 import { SCENES, SCENE_BY_ID } from '../scenes';
 import type { Hotspot } from '../scenes/camp';
 import { initCamp, openCamp, closeCamp, isCampOpen, renderCamp, setCampEmber } from './camp';
-import { openTalk } from './talk';
+import { greetAfterTale, openTalk } from './talk';
+import { playTale } from './tale';
 import {
   advanceRung, climbLine, initClimb, renderClimb, rungName, rungNow, socketsInClimb, whereNow,
 } from './climb';
@@ -291,7 +292,22 @@ export function goHome(): boolean {
   refreshRunPanels();
   openCamp();
   setLeaveLabel();
+  tellTale();
   return true;
+}
+
+/** THE STORY IS TOLD IN THE CAMP, where somebody is looking at the screen —
+ *  meeting a man in a descent is one line said in passing. Nobody with a tale
+ *  owed is left standing about: the queue does not move until it is watched,
+ *  so the next person down there arrives with it. */
+function tellTale(): void {
+  const owed = owedTale(game);
+  if (!owed) return;
+  const told = playTale(game, owed.id, () => {
+    renderCamp();
+    if (owed.scene) greetAfterTale(owed.scene);
+  });
+  if (!told) renderCamp(); // no art for this one, so it is heard the moment you are up
 }
 
 // WHO IS ABOUT is the CAMP's — *"that's what the camp is for."* A list of the

@@ -34,6 +34,7 @@ import { initShop, openShop, closeShop, isShopOpen, refreshShop } from './ui/sho
 import { initSmith, openSmith, closeSmith, isSmithOpen } from './ui/smith';
 import { initStash, openStash, closeStash, isStashOpen } from './ui/stash';
 import { initMet, isMetOpen } from './ui/met';
+import { initTale, isTaleUp, stepTale } from './ui/tale';
 import { initGraft, isGraftOpen } from './ui/graft';
 import { initSpeech, isSpeaking } from './ui/speech';
 import { closeParley, initTalk, isParleying } from './ui/talk';
@@ -195,8 +196,11 @@ document.getElementById('open-dev')!.addEventListener('click', openDev);
 // Escape closes whatever is on top. Cheap, and the first thing anyone tries.
 globalThis.addEventListener('keydown', (event) => {
   if (event.key !== 'Escape') return;
+  // A TALE is above everything and the only thing any press can do is go on:
+  // it is watched once, and there is no state to be stuck in.
+  if (isTaleUp()) stepTale();
   // The question is on top of everything, and Escape can only answer it "no".
-  if (isConfirmOpen()) cancelConfirm();
+  else if (isConfirmOpen()) cancelConfirm();
   // The crystal is already granted by the time a panel is on screen, so Escape
   // takes it rather than refusing it — and from a line before the panel it
   // skips the rest of them and takes it anyway.
@@ -246,6 +250,7 @@ initDev(game, {
 });
 initBuilder();
 initConfirm();
+initTale();
 // A loaded backup replaces everything, so every screen has to look again.
 initSaveData(
   game,

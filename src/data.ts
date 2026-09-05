@@ -2111,10 +2111,36 @@ export const LAMPWRIGHT = {
   },
 };
 
-/** WHERE SOMEBODY IS FOUND: their own world, at every `every` depth from the
- *  `first` and SCHEDULED, so a zone's people are met inside that zone's stretch
- *  of the campaign. The shortest zone's 12 is three meetings against two. */
-export const MEET = { first: 2, every: 4 };
+
+/** WHAT YOU SEE WHEN YOU GET BACK UP. Meeting somebody in a descent is a line
+ *  said in passing — *"no big deal if you're afk grinding"* — and the story is
+ *  told in the camp, where a player is looking at the screen: full-screen art
+ *  with a caption under it, one panel a click.
+ *
+ *  Keyed by the MEETING id. Somebody with no row is simply in the camp when
+ *  you come up — *"less important characters like the workers can be a single
+ *  frame"*, and none is drawn yet. */
+export interface TalePanel {
+  art: string; // a key in `SCENE_ART`: one 688x384 picture, drawn whole
+  said: string;
+}
+
+export const TALES: Record<string, TalePanel[]> = {
+  workshop: [
+    {
+      art: 'tale_lamp_1',
+      said: 'I went in a long time ago, to see how far it went. I had a lamp and I had a season of food.',
+    },
+    {
+      art: 'tale_lamp_2',
+      said: 'The season went. The rock changed twice and kept going. And then, at last, I thought I had found the end of it.',
+    },
+    {
+      art: 'tale_lamp_3',
+      said: 'What I had found was that something down there was alive, and that it had been waiting a great deal longer than I had been walking.',
+    },
+  ],
+};
 
 /** The opening, in numbers: the one stretch where what happens next is
  *  scheduled rather than earned. */

@@ -112,7 +112,6 @@ import {
   PROFESSION,
   PROFESSIONS,
   TOOLS,
-  MEET,
   SMITH,
   TOOL_BY_ID,
   TOOL_OF_BASE,
@@ -176,7 +175,7 @@ import { LIVE_PROPS, RIPPLE, lootSpan, rippleRings } from './render/renderer';
 import { RunSim, TICK, runToCompletion, walkToMeeting } from './sim/run';
 import { tierForSet } from './sim/crystal';
 import { findPath } from './sim/pathfind';
-import { folkMet, gaveKey, hasMet, keyOwed, meetingDepth, takeBoss, takeMet, whoIsDown } from './game/scenes';
+import { MEETINGS, folkMet, gaveKey, hasMet, keyOwed, owedTale, takeBoss, takeHeard, takeMet, whoIsDown } from './game/scenes';
 import {
   TOOL_PRICE, buyTool, holdsTool, owesFirstTool, takeFirstTool, toolsOnOffer, whyNotBuyTool,
 } from './game/smith';
@@ -206,7 +205,7 @@ import {
 } from './game/work';
 import type { WorkJob } from './game/work';
 import { idleWorker, takeWorker, workerDown, workersFound } from './game/work';
-import { WORKERS } from './data';
+import { TALES, WORKERS } from './data';
 import {
   craftBase,
   dismantle,
@@ -3867,19 +3866,24 @@ rule('THE WORKS — does a job run on the clock, and on nothing else?');
   );
 
   // THE SLOTS ARE THE WORKERS. With nobody rescued nothing is worked and the
-  // button says so; the first one stands at depth 1 of the Fissure, and is
-  // there until walked past, and never twice.
+  // button says so; the first one stands at his own depth of the Fissure, and
+  // is there until walked past, and never twice. HE IS IN THE ONE QUEUE, so
+  // nobody ahead of him standing there is the queue working, not a fault.
   const ore = MATERIAL_BY_ID.pale_iron;
   const nobody = whyNotWork(fresh, ore);
-  const hob = workerDown(fresh, 'fissure', 1);
+  const ahead = MEETINGS.slice(0, MEETINGS.findIndex((m) => m.worker?.id === WORKERS[0].id));
+  const early = workerDown(fresh, 'fissure', WORKERS[0].rung);
+  for (const m of ahead) { takeMet(fresh, m.id); takeHeard(fresh, m.id); }
+  const hob = workerDown(fresh, 'fissure', WORKERS[0].rung);
   check(
-    nobody !== null && /nobody/i.test(nobody) && hob !== undefined && hob.id === WORKERS[0].id,
-    `with nobody rescued a batch is refused, and ${hob?.name ?? 'nobody'} stands at depth 1 of the Fissure`,
+    nobody !== null && /nobody/i.test(nobody) && early === undefined
+      && hob !== undefined && hob.id === WORKERS[0].id,
+    `with nobody rescued a batch is refused, and ${hob?.name ?? 'nobody'} stands at depth ${WORKERS[0].rung} once the ${ahead.length} before him are heard`,
     nobody ?? 'it went ahead'
   );
   takeWorker(fresh, WORKERS[0].id);
   check(
-    workerDown(fresh, 'fissure', 1) === undefined && workersFound(fresh).length === 1 && idleWorker(fresh)?.id === WORKERS[0].id,
+    workerDown(fresh, 'fissure', WORKERS[0].rung) === undefined && workersFound(fresh).length === 1 && idleWorker(fresh)?.id === WORKERS[0].id,
     'and once rescued he is a slot in the camp and stands down there no more',
     `${workersFound(fresh).length} found`
   );
@@ -4138,12 +4142,45 @@ rule('THE WORKS — does a job run on the clock, and on nothing else?');
   // A pin has to beat the rota, or the person who owes you a tool at 4 is
   // handed out at 6 with somebody else in his place.
   {
-    const pinned = whoIsDown(createGame('fresh'), 'fissure', SMITH.rung);
-    const rota = whoIsDown(createGame('fresh'), 'fissure', MEET.first);
+    // NOBODY IS SKIPPED, AND ONLY A TOWN SCENE MOVES THE QUEUE. On a fresh
+    // character every depth owes the FIRST person, however deep you dive; the
+    // smith waits on the Lampwright being HEARD, not merely met.
+    const fresh2 = createGame('fresh');
+    const first = MEETINGS[0];
+    const deep = whoIsDown(fresh2, 'fissure', 9)?.id;
+    takeMet(fresh2, first.id);
+    const stalled = whoIsDown(fresh2, 'fissure', 9)?.id ?? 'nobody';
+    takeHeard(fresh2, first.id);
+    const next = whoIsDown(fresh2, 'fissure', 9)?.id ?? 'nobody';
     check(
-      pinned?.id === SMITH.scene && rota?.id !== SMITH.scene && !meetingDepth(SMITH.rung),
-      `the smith stands at depth ${SMITH.rung}, which is not a meeting depth, and the rota never stands in for him`,
-      `${SMITH.rung}: ${pinned?.id ?? 'nobody'}, ${MEET.first}: ${rota?.id ?? 'nobody'}`
+      deep === first.id && stalled === 'nobody' && next === SMITH.scene,
+      `diving to 9 finds ${first.id} and nobody else; met but not heard finds nobody; heard finds the smith`,
+      `${deep} -> ${stalled} -> ${next}`
+    );
+  }
+
+  // THE TALE IS WHAT MOVES THE QUEUE, so a tale keyed to nobody is a tale
+  // nothing can ever show, and a panel naming a picture nobody generated is a
+  // black screen with a caption on it.
+  {
+    const strays = Object.keys(TALES).filter((id) => !MEETINGS.some((m) => m.id === id));
+    check(strays.length === 0, `every one of the ${Object.keys(TALES).length} tales belongs to somebody the queue owes`, strays.join(', '));
+    const blank = Object.entries(TALES).flatMap(([id, panels]) =>
+      panels.filter((p) => !SCENE_ART[p.art]).map((p) => `${id}/${p.art}`)
+    );
+    const panels = Object.values(TALES).reduce((n, p) => n + p.length, 0);
+    check(blank.length === 0, `and all ${panels} panels name a picture that ships`, blank.join(', '));
+
+    // OWED ONCE, AND THE ONE OWED IS THE ONE JUST MET.
+    const told = createGame('fresh');
+    const quiet = owedTale(told);
+    takeMet(told, MEETINGS[0].id);
+    const waiting = owedTale(told)?.id;
+    takeHeard(told, MEETINGS[0].id);
+    check(
+      quiet === undefined && waiting === MEETINGS[0].id && owedTale(told) === undefined,
+      'and one is owed from the moment somebody is met until it is watched, and never again',
+      `${quiet?.id ?? 'nobody'} -> ${waiting ?? 'nobody'} -> ${owedTale(told)?.id ?? 'nobody'}`
     );
   }
 
@@ -11906,12 +11943,26 @@ rule('THE COLLECTION — do crystals arrive, and do they grow?');
       {
         const walk = createGame('fresh');
         const seen: Record<string, { zone: number; rung: number }> = {};
+        // THE QUEUE IS ONE, so the walk takes the WORKERS out of the way as it
+        // goes: a worker nobody rescued is a worker the people behind him wait
+        // on for ever. A depth is walked twice because hearing the man you just
+        // met is what stands the next one up, and a player does that by coming
+        // back to camp — here it is the same depth again.
         LADDER.zones.forEach((zone, z) => {
           for (let rung = 1; rung <= zone.rungs; rung++) {
-            const who = whoIsDown(walk, zone.world, rung);
-            if (!who || seen[who.id]) continue;
-            seen[who.id] = { zone: z, rung };
-            takeMet(walk, who.id);
+            for (let pass = 0; pass < 2; pass++) {
+              const hand = workerDown(walk, zone.world, rung);
+              if (hand) {
+                takeWorker(walk, hand.id);
+                takeHeard(walk, `worker:${hand.id}`);
+                continue;
+              }
+              const who = whoIsDown(walk, zone.world, rung);
+              if (!who || seen[who.id]) break;
+              seen[who.id] = { zone: z, rung };
+              takeMet(walk, who.id);
+              takeHeard(walk, who.id);
+            }
           }
         });
         const folk = SCENES.filter((s) => !s.encounter);

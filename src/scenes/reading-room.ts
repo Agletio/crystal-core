@@ -15,6 +15,7 @@ export const READING_ROOM: SceneDef = {
   who: 'glasswright',
   name: 'The Glasswright',
   theme: 'prismatic',
+  rung: 3, // early in the zone: his whole objection is to what you are already doing
   said: 'A room somebody swept. The walls are covered in marks and none of them are yours.',
   greets:
     'Do not touch the wall. You are standing in the middle of a sentence and you cannot read it. Come and find me above and I will tell you whose it is.',

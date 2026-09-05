@@ -1,6 +1,6 @@
 /** WHO YOU HAVE MET, and where. Found in a descent, in the camp from then on,
  *  so a queue of rooms is one `given` mark apiece. */
-import { INTRO, MEET, WORKERS, workerMark } from '../data';
+import { INTRO, LADDER, WORKERS, workerMark } from '../data';
 import type { WorkerDef } from '../data';
 import { SCENES } from '../scenes';
 import type { SceneDef } from '../scenes';
@@ -41,11 +41,8 @@ export const folkMet = (game: GameState): SceneDef[] =>
 export const folkOf = (theme: MapTheme): SceneDef[] =>
   SCENES.filter((s) => !s.encounter && s.theme === theme);
 
-export const meetingDepth = (rung: number): boolean =>
-  rung >= MEET.first && (rung - MEET.first) % MEET.every === 0;
-
-/** HEARD IN TOWN: the scene watched, which is a different thing from having
- *  walked past him. The queue moves on this and never on the meeting. */
+/** HEARD IN TOWN, which is not the same as walked past: the queue moves on
+ *  this and never on the meeting. */
 export const heardMark = (id: string): string => `heard:${id}`;
 
 export const hasHeard = (game: GameState, id: string): boolean =>
@@ -56,9 +53,8 @@ export function takeHeard(game: GameState, id: string): void {
 }
 
 /** EVERYBODY FOUND DOWN THERE, IN ONE ORDER. People and workers are two
- *  tables and one QUEUE — the Lampwright at 2, the smith at 4, Hob at 5 — so
- *  the order is DERIVED off the depth each already names rather than written a
- *  second time where it can disagree. Ties keep the tables' own order. */
+ *  tables and one QUEUE, DERIVED off the depth each already names rather than
+ *  written a second time where it can disagree. */
 export interface Meeting {
   id: string;
   rung: number;
@@ -67,11 +63,18 @@ export interface Meeting {
   worker?: WorkerDef;
 }
 
+/** ZONE FIRST, THEN DEPTH: a man at depth 3 of the second zone comes after
+ *  everybody in the first, however shallow he stands. */
+const zoneOf = (theme: MapTheme): number => {
+  const at = LADDER.zones.findIndex((z) => z.world === theme);
+  return at < 0 ? LADDER.zones.length : at;
+};
+
 export const MEETINGS: Meeting[] = [
   ...SCENES.filter((s) => !s.encounter && s.rung !== undefined)
     .map((s) => ({ id: s.id, rung: s.rung!, theme: s.theme, scene: s })),
   ...WORKERS.map((w) => ({ id: `worker:${w.id}`, rung: w.rung, theme: w.world, worker: w })),
-].sort((a, b) => a.rung - b.rung);
+].sort((a, b) => zoneOf(a.theme) - zoneOf(b.theme) || a.rung - b.rung);
 
 const wasMet = (game: GameState, m: Meeting): boolean =>
   m.worker ? (game.given ?? []).includes(workerMark(m.worker.id)) : hasMet(game, m.id);
@@ -84,6 +87,16 @@ export function nextMeeting(game: GameState): Meeting | undefined {
   for (const m of MEETINGS) {
     if (!wasMet(game, m)) return m;
     if (!hasHeard(game, m.id)) return undefined; // met, not yet heard: the queue stops here
+  }
+  return undefined;
+}
+
+/** MET BUT NOT YET HEARD: whose story is owed the next time you come up. At
+ *  most one is ever waiting, because the queue does not move until it is. */
+export function owedTale(game: GameState): Meeting | undefined {
+  for (const m of MEETINGS) {
+    if (!wasMet(game, m)) return undefined;
+    if (!hasHeard(game, m.id)) return m;
   }
   return undefined;
 }

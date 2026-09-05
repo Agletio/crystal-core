@@ -44,7 +44,7 @@ import { baseTier } from '../mods';
 import { canDualWield, equippedSkill, mainSkillId, makeCharacter } from '../sim/character';
 import { starterLoadout } from '../sim/loadout';
 import { SCENES } from '../scenes';
-import { metMark } from './scenes';
+import { heardMark, metMark } from './scenes';
 import type { Character } from '../sim/character';
 import type { Item, ItemKind, Wallet } from '../types';
 import type { WorkJob } from './work';
@@ -242,14 +242,16 @@ export function resetGame(game: GameState, mode: StartMode): void {
   game.cameBack = mode === 'dev';
   game.firstClearDone = mode === 'dev';
   game.clears = mode === 'dev' ? 1 : 0; // the same descent `firstClearDone` is
-  // The dev kit is armed, holds every crystal, and has MET everybody: nothing
-  // waits at the mouth and every room is one click off the Fissure.
+  // The dev kit is armed, holds every crystal, and has MET everybody AND HEARD
+  // them: nothing waits at the mouth, every room is one click off the Fissure,
+  // and no tale is owed — one still owed would take the whole screen the next
+  // time the kit came home.
   game.given =
     mode === 'dev'
       ? [
           'weapon', 'crystal',
-          ...SCENES.filter((s) => !s.encounter).map((s) => metMark(s.id)),
-          ...WORKERS.map((w) => workerMark(w.id)), // and RESCUED everybody
+          ...SCENES.filter((s) => !s.encounter).flatMap((s) => [metMark(s.id), heardMark(s.id)]),
+          ...WORKERS.flatMap((w) => [workerMark(w.id), heardMark(`worker:${w.id}`)]),
         ]
       : [];
   // The dev kit is handed every crystal in the game, so its quests are already
@@ -259,10 +261,6 @@ export function resetGame(game: GameState, mode: StartMode): void {
   // never the climb itself, which the kit has walked none of. Between them
   // that is every point there is, and sockets for the crystals to go in.
   game.character.grinds = mode === 'dev' ? devGrinds() : {};
-  // EVERY TOOL, since the kit is the game with everything — a new character
-  // owns none and is handed one by the smith.
-  if (mode === 'dev') {
-  }
   if (mode === 'dev') game.character.paidCampaign = true;
   game.called = null;
   game.sold = [];

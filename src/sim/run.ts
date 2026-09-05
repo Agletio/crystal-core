@@ -134,8 +134,7 @@ const WANDER_REACH = 1.15;
 const WANDER_PACE = 0.32;
 const WANDER_REST: [number, number] = [0.7, 2.8];
 
-/** How far a body with something to THROW stands off, and notices you from:
- *  the skill's own reach, in the four places that used to say it by hand. */
+/** How far a body with something to THROW stands off, and notices you from. */
 const thrownReach = (skill?: SkillDef): Partial<CombatStats> =>
   skill ? { attackRange: skill.range, aggroRange: skill.range + 2 } : {};
 
@@ -803,18 +802,12 @@ export class RunSim {
     }
   }
 
-  /** Who is standing in this descent to be found, before the hero reaches them. */
-  private found: string | null = null;
+  private found: string | null = null; // who is down here to be found, until he is
+  private leaving = false; // met, and on his way out
 
-  /** Met, and on his way out. */
-  private leaving = false;
-
-  /** SOMEWHERE IN THE MIDDLE OF THE RUN, and never at either hole. A clear has
-   *  to visit every room, so the furthest from the WAY IN is somewhere he is
-   *  certain to be found — but on many maps that is also where the way OUT is,
-   *  and *"make sure they are never just sitting near the exit"*. So it is the
-   *  room whose NEARER hole is furthest away: the middle of the descent by the
-   *  only measure the map offers. No draw decides it. */
+  /** SOMEWHERE IN THE MIDDLE OF THE RUN: the room whose NEARER hole is
+   *  furthest away, so a clear is certain to reach it and it is never the way
+   *  out's own room. No draw decides it. */
   private farthestRoom(): Vec2 {
     const { rooms, entrance, exit, grid } = this.state.map;
     let best = rooms[0] ?? { x: entrance.x, y: entrance.y, w: 1, h: 1 };
@@ -830,10 +823,9 @@ export class RunSim {
         best = room;
       }
     }
-    // A ROOM'S RECTANGLE IS NOT ALL FLOOR — the carve leaves no square corner —
-    // so its middle can be solid rock, and a man standing in rock is a man
-    // nothing can path to. `placeIn` retries off its own stream, so where he
-    // stands cannot move what is fighting in the room.
+    // A ROOM'S RECTANGLE IS NOT ALL FLOOR, so its middle can be solid rock and
+    // nothing can path to a man standing in it. `placeIn` retries off its own
+    // stream, so where he stands cannot move what is fighting in the room.
     return this.placeIn(grid, best, 0.3);
   }
 
@@ -849,13 +841,11 @@ export class RunSim {
     this.leaving = true; // his line is said; from here he is walking out
   }
 
-  /** NOBODY IS EVER WALKED PAST. *"Make sure they never get skipped."* Being
-   *  in a room a clear must visit is NOT a guarantee — measured, the hero
-   *  killed from range and moved on in 13 of 40 descents — so with nothing
-   *  left to fight an unmet person is a place he WALKS TO, exactly as a chest
-   *  or an ore node is. It is the shipped default policy `runToCompletion`
-   *  runs, so a headless run meets him too. A route that does not exist is the
-   *  same answer as being there already: the rule the exit is under. */
+  /** NOBODY IS EVER WALKED PAST. Being in a room a clear must visit is NOT a
+   *  guarantee — measured, the hero killed from range and moved on in 13 of 40
+   *  descents — so an unmet person is WALKED TO with nothing left to fight,
+   *  exactly as a chest is, and `runToCompletion` runs it. A route that does
+   *  not exist is the same answer as being there already. */
   private stepGreet(dt: number): boolean {
     const s = this.state;
     if (!this.found || s.found || this.leaving) return false;
@@ -869,10 +859,9 @@ export class RunSim {
     return true;
   }
 
-  /** AND THEN HE GOES. *"The character just walks away and goes towards the
-   *  exit."* He never moves before he is MET, or a body walking off is a body
-   *  the hero can miss — which is the whole of "never skipped". Off the map he
-   *  is dropped, so nothing follows the hero round for the rest of the run. */
+  /** AND THEN HE GOES. He never moves before he is MET, or a body walking off
+   *  is a body the hero can miss. At the way out he is dropped, so nothing
+   *  follows the hero round for the rest of the run. */
   private stepLeaving(dt: number): void {
     const s = this.state;
     if (!this.leaving || s.meeting) return;
@@ -3580,8 +3569,7 @@ export class RunSim {
       ailment.tickIn += AILMENT_TICK;
       if (slice <= 0) continue;
 
-      // Crit no longer reaches an ailment: it is not in one's tags and it no
-      // longer rides the stack. Contagion is planted by the tick itself.
+      // Crit never reaches an ailment: it is not in one's tags.
       const scale = slice;
       if (ailment.spread) contagious.push(ailment.spread);
 

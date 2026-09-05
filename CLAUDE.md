@@ -811,17 +811,33 @@ armed a stop one descent ahead, which is the same stop said early.
 ditch all the rooms. I want to encounter them randomly in the maps and they
 just say like one thing… then they can be in the camp and you can just talk to
 them."* `SceneDef.theme` is where somebody LIVES and they are only ever found
-there — a man who turns up in every world lives in none. One unmet person from
-THAT zone stands in the room furthest from the way in, **SCHEDULED and never
-rolled**: `whoIsDown` puts the next one nobody has met at every `MEET.every`
-depth from the `MEET.first`, so finishing a zone is meeting everybody who lives
-in it and a crafting bench is never behind a coin that did not come up. Placed
-with NO draw, so whether somebody is down there cannot move a single roll — and
-walking past them is the whole meeting: `SceneDef.greets` goes into the log, nothing stops,
-and they stand there for the rest of the run. Afterwards they are in the camp,
+there — a man who turns up in every world lives in none. **THE PEOPLE AND THE
+WORKERS ARE TWO TABLES AND ONE QUEUE.** `MEETINGS` in `src/game/scenes.ts` is
+every one of them ordered by ZONE and then by the depth each already names
+(`SceneDef.rung`, `WorkerDef.rung`), so the order is derived rather than
+written a second time where it can disagree — the Lampwright at 2, the smith at
+4, Hob at 5. **THE QUEUE MOVES ON A TALE HEARD IN TOWN, never on the meeting**:
+`nextMeeting` stops dead at anybody met whose story has not been watched, so
+diving from 2 to 9 without coming up finds nobody but the first — *"they only
+see black smith until they see him in town and return."* Placed with NO draw,
+so whether somebody is down there cannot move a single roll, and in the room
+whose NEARER hole is furthest away, which is the middle of the descent and
+never beside the exit. Walking past them is the whole meeting:
+`SceneDef.greets` goes into the log and nothing stops — and **NOBODY IS EVER
+SKIPPED**, because with nothing left to fight an unmet person is WALKED TO
+(`stepGreet`), the same shipped policy that opens a chest, and then he walks
+out to the exit himself (`stepLeaving`). Afterwards they are in the camp,
 and clicking them runs `SceneDef.beats` and then whatever they are FOR: the
 Lampwright's crystal, the Lambengolmor's key, the ossuary's and the orrery's
-benches. **A MARK over the head says somebody is holding something** — `wants()`
+benches. **THE STORY IS TOLD IN THE CAMP, AS A TALE**: the trip up after
+meeting somebody opens `TALES` — full-screen art with the words along the
+bottom, one panel a click, the camp nowhere on the glass — and watching it is
+what marks him HEARD and stands the next person up. *"Nothing important, cool
+if you're watching, no big deal if you're afk grinding"* is the descent's line;
+the real content is here, where a player is looking. `src/ui/tale.ts` is not a
+window and is outside `SCREENS`: it covers the band and the only thing any
+press can do is go on. Somebody with no row has no tale and is simply in the
+camp when you come up. **A MARK over the head says somebody is holding something** — `wants()`
 in `src/ui/talk.ts`, the same question `offer` answers, asked before the
 conversation instead of after — so a picture is never swept for the one person
 whose mind has changed. The crafting people are never RESCUED: they live down there, and

@@ -133,8 +133,10 @@ export function wants(def: SceneDef): boolean {
   return relicFor(game, def.id) !== null;
 }
 
-/** What the LINES lead to. At most one is ever true, so nothing chooses. */
-function offer(def: SceneDef): void {
+/** What the LINES lead to. At most one is ever true, so nothing chooses.
+ *  Answers whether it took the screen, which is what tells a greeting whether
+ *  to put the menu up behind it. */
+function offer(def: SceneDef): boolean {
   // A KEY, once and in person. What it opens is the fifth socket's business.
   if (keyOwed(game, def)) {
     const key = BOSS_KEY_BY_ID[def.gives!];
@@ -144,14 +146,14 @@ function offer(def: SceneDef): void {
       note(`${def.name} hands you ${key.name}. It goes in the Fissure's fifth socket.`);
       renderInventory();
     }
-    return;
+    return true;
   }
 
   // THE FREE TOOL, at the end of the lines that promise it.
   if (def.id === SMITH.scene && owesFirstTool(game)) {
     openSmith('first');
     syncTalk();
-    return;
+    return true;
   }
 
   // WHATEVER IS OWED. One person owes anything, and this is the whole schedule.
@@ -159,5 +161,21 @@ function offer(def: SceneDef): void {
   if (waiting) {
     openMet(waiting);
     syncTalk();
+    return true;
   }
+  return false;
+}
+
+/** STRAIGHT OUT OF HIS TALE: his own lines and then the MENU, so the counter
+ *  is something you are shown rather than something you find. Anchored on his
+ *  body in the camp, the same as clicking him. */
+export function greetAfterTale(def: SceneDef): void {
+  const body = document.getElementById(`camp-who-${def.id}`);
+  const at = body?.getBoundingClientRect();
+  if (!at) return;
+  over = { x: at.left + at.width / 2, y: at.top };
+  startSpeech(def.who, def.name, wordsFor(def), () => {
+    if (!offer(def)) openTalk(def, at);
+  });
+  syncTalk();
 }

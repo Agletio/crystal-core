@@ -39,6 +39,19 @@ judgement. Phase 3 is PARKED and is not the
 lowest-numbered thing to take. Everything after them is a parked phase, the
 traps, and questions only the user can answer.
 
+**THE MEETINGS ARE ONE QUEUE, AND A TALE IS WHAT MOVES IT** — his own design,
+taken ahead of the numbered order. Everybody found down there is in `MEETINGS`,
+ordered by zone and then by the depth each names: the Lampwright at 2, the
+smith at 4, Hob at 5, the Glasswright at 3 of the second act, the Osteomancer
+at 4 of the third, the Geometer at 8 of the second. A man is met by walking
+past him in the middle of a descent — never near the way out, walked to if the
+hero killed from range, and gone to the exit himself once he has said his line
+— and the trip up after that opens his TALE, full screen with captions. The
+Lampwright's three panels are generated and shipping. **WHAT IS LEFT IS THE
+OTHER FIVE'S ART**: the mechanism takes any number of panels for anybody, and
+`TALES` is empty for everybody but him — waiting on the user's word about whose
+to draw and how long.
+
 **THE NAMES LANDED WITH PHASE 6**: the points are **POINTS**, the web is
 **THE RECKONING**, the list of grinds is **THE LEDGER**. **The fourth was NOT
 taken** — the base world is still The Fissure. The influence picker names it

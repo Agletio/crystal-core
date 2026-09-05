@@ -1695,6 +1695,29 @@
     50% { transform: translateX(-50%) translateY(-4px); }
   }
 
+  /* A TALE covers the whole glass — *"you don't see the camp at all"* — above
+     the window band and the rail alike, and a click anywhere on it goes on. */
+  .tale {
+    position: fixed; inset: 0; z-index: 99;
+    display: grid; place-items: center; cursor: pointer;
+    background-color: var(--ink); background-image: var(--grit);
+  }
+  /* AS BIG AS THE GLASS ALLOWS, one scale on both axes so a pixel stays
+     square. An integer scale is not on offer: 2x is wider than the window it
+     is judged at, so it is fitted, like the camp. */
+  .tale__art { width: 100%; height: 100%; object-fit: contain; image-rendering: pixelated; }
+  /* CAPTIONS: over the picture, so the art is never cropped for the words. */
+  /* TWO CLASSES, because it wears `.modal__card` for the frame and that rule
+     is further down the sheet: an equal specificity tie is won by order, and
+     the card's own `column` would otherwise drop the count onto its own line. */
+  .tale .tale__cap {
+    position: absolute; left: 50%; bottom: 30px; transform: translateX(-50%);
+    width: min(920px, 92vw); max-height: none;
+    flex-direction: row; align-items: baseline; gap: 18px; padding: 10px 18px;
+  }
+  .tale__said { margin: 0; flex: 1; font-size: 17px; line-height: 1.5; color: var(--text); }
+  .tale__step { font-size: 12px; letter-spacing: .12em; color: var(--text-dim); }
+
   .modal { position: fixed; left: 0; right: 0; top: 0; bottom: var(--dock-h, 0px); z-index: 20; display: grid; place-items: center; padding: 20px; pointer-events: none; }
   /* A QUESTION stops you, and a beat does too: scrim on, click swallowed. Over
      the whole window band, since raising one on focus would otherwise let a
@@ -2188,6 +2211,15 @@
     <div class="camp__hotspots" id="camp-folk"></div>
     <!-- The WORKERS, apart from the people: a worker opens the stations. -->
     <div class="camp__hotspots" id="camp-workers"></div>
+  </div>
+</div>
+
+<!-- A TALE: what somebody you met down there tells you once you are back up. -->
+<div class="tale" id="tale" hidden>
+  <img class="tale__art" id="tale-art" alt="">
+  <div class="modal__card tale__cap">
+    <p class="tale__said" id="tale-said"></p>
+    <span class="tale__step" id="tale-count"></span>
   </div>
 </div>
 

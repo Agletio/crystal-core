@@ -7,19 +7,20 @@
  * drives, so a room entered from here is the room, not a preview of one.
  */
 import { Rng } from '../rng';
-import { SCENES } from '../scenes';
-import { BOSS_BY_ID, CAMPAIGN_REWARD, GRINDS, INTRO, LADDER, THEME_BY_ID } from '../data';
+import { SCENE_BY_ID, SCENES } from '../scenes';
+import { BOSS_BY_ID, CAMPAIGN_REWARD, GRINDS, INTRO, LADDER, TALES, THEME_BY_ID } from '../data';
 import { ladderCharacter } from '../sim/loadout';
 import { mainSkillId, skillProgress } from '../sim/character';
 import { heal } from '../game/save';
 import { ZONES } from '../render/generated-tiles';
 import { TEST_LEVEL, raiseShare, testLevel } from '../sim/grid';
-import { takeMet } from '../game/scenes';
+import { takeHeard, takeMet } from '../game/scenes';
 import { campaignDone } from '../ladder';
 import { pathToNotable } from '../skills-tree';
 import type { GameState } from '../game/state';
 import { ask } from './confirm';
 import { note } from './history';
+import { playTale } from './tale';
 
 const $ = (id: string) => document.getElementById(id)!;
 
@@ -106,13 +107,35 @@ function render(): void {
       if (scene.plan) {
         if (!hooks.enterRoom(scene.id)) return;
       } else {
+        // MET AND HEARD: a dev button that left his tale owed would hold the
+        // queue behind him, and nobody after him would stand in a descent.
         takeMet(game, scene.id);
+        takeHeard(game, scene.id);
         hooks.refresh();
         note(`Dev: ${scene.name} is in the camp.`);
       }
       close();
     };
     rooms.append(button);
+  }
+
+  // A TALE is normally watched once, the trip up after meeting somebody, so
+  // this is the only way to look at one twice.
+  const tales = group(
+    'Tales',
+    'What somebody tells you in the camp the first time you come back up after meeting them.'
+  );
+  for (const [id, panels] of Object.entries(TALES)) {
+    const who = SCENE_BY_ID[id];
+    const button = el('button', 'mini devbtn') as HTMLButtonElement;
+    button.id = `dev-tale-${id}`;
+    button.append(el('span', 'devbtn__name', who?.name ?? id));
+    button.append(el('span', 'devbtn__what', `${panels.length} panels`));
+    button.onclick = () => {
+      close();
+      playTale(game, id, () => hooks.refresh());
+    };
+    tales.append(button);
   }
 
   // The HANDOVER panel is a schedule away and the schedule is real play: he

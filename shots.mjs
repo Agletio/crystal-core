@@ -186,7 +186,7 @@ const STATES = [
   'crystals', 'sheet', 'shop', 'stash', 'settings', 'history',
   'toast', 'itemmenu', 'confirm', 'professions',
   'handover', 'descent', 'results',
-  'scene', 'speech', 'lampwright',
+  'scene', 'speech', 'lampwright', 'tale',
   'skills', 'skill-list', 'skill-web', 'move-web', 'trade', 'trials', 'proving',
   'bench', 'tooltip', 'glossary', 'graft', 'works', 'anvil', 'jewellery', 'tools',
   'builder',
@@ -351,6 +351,31 @@ for (const vp of VIEWPORTS) {
   }
   await page.waitForTimeout(400);
   await shoot('handover');
+  /** Clicks a tale through to its end, and answers whether the glass is clear.
+   *  A tale takes the whole screen, so anything left up hides every shot after
+   *  it — and a click anywhere on it is the only control it has. */
+  const clearTale = async () => {
+    for (let i = 0; i < 8; i++) {
+      if (await page.evaluate(() => document.getElementById('tale')?.hidden !== false)) return true;
+      await page.evaluate(() => document.getElementById('tale')?.click());
+      await page.waitForTimeout(200);
+    }
+    return false;
+  };
+
+  // HIS TALE, which is normally the trip up after meeting him: full-screen art
+  // with the words along the bottom and none of the camp showing through.
+  await page.evaluate(() => document.getElementById('open-dev')?.click());
+  await page.waitForTimeout(200);
+  await page.evaluate(() => document.getElementById('dev-tale-workshop')?.click());
+  await page.waitForTimeout(500);
+  if (await page.evaluate(() => document.getElementById('tale')?.hidden !== false)) {
+    problems.push(`${vp.name}: the Lampwright's tale never came up`);
+  }
+  await shoot('tale');
+  // Clicked through to the end, or the camp is under a picture for ever.
+  if (!(await clearTale())) problems.push(`${vp.name}: the tale never closed`);
+
   // ON A PERSON. A hotspot draws nothing at all; what lights is the BODY's own
   // silhouette on the canvas under it, so this is the shot that judges it.
   await page.hover('#camp-who-workshop').catch(() => {});
@@ -420,6 +445,9 @@ for (const vp of VIEWPORTS) {
   await shoot('results');
   await page.evaluate(() => document.getElementById('run-again')?.click());
   await page.waitForTimeout(400);
+  // COMING HOME IS WHEN A TALE PLAYS, so anything met down there is watched
+  // through here before the camp is looked at.
+  await clearTale();
   // AND BACK TO THE CAMP, which every ending comes home to.
   if (await page.evaluate(() => document.getElementById('camp')?.hidden !== false)) {
     problems.push(`${vp.name}: the report did not come home to the camp`);
