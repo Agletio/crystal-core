@@ -2184,33 +2184,35 @@ export const TALES: Record<string, TalePanel[]> = {
       said: 'Three marks, copied off a face nobody was meant to reach. I have been waiting a long while for somebody to carry them.',
     },
   ],
-  // HE WAS A MAN AND HE IS TELLING YOU SO. The arc is the body changing, and
-  // the voice changes with it: the first two lines are the young man's and the
-  // last two are the thing's, and the fifth is both at once.
+  // NOT SAID BUT SEEN. *"By some magic you can see his memories."* So the
+  // first line is the only one that explains itself and the rest are the
+  // memory in his own broken mouth: he has been down here too long to have
+  // sentences left, and the last panel is not a memory at all — it is him,
+  // now, working out that you are too big to eat and worth trading with.
   ossuary: [
     {
       art: 'tale_bone_1',
-      said: 'I came down for the work. I was nineteen. I want you to know there was a me before this, because nothing down here believes it.',
+      said: 'He touches your arm and his head comes into yours. It is soft at first. A boy came down here for the work. Nineteen. Boy had a lamp. Boy had food for a season.',
     },
     {
       art: 'tale_bone_2',
-      said: 'The food went, and then the lamp went. And then — you will not want this part — I found out what else there is to eat.',
+      said: 'Food gone. Lamp gone. Then boy finds the other thing there is down here. Boy does not say it out loud. Boy just does it.',
     },
     {
       art: 'tale_bone_3',
-      said: 'There is a stretch after that I do not have in any order. I know what I did in it, because I have not stopped.',
+      said: 'Hands went first. Hands went first and hands never asked him. Head stayed boy a long while after. Head sat and watched hands.',
     },
     {
       art: 'tale_bone_4',
-      said: 'Something in me AGREED with it. That is the part I cannot make sound right. It did not hurt, and I did not mind.',
+      said: 'Then head goes too. No hurt in it. No fight in it. Something down in boy said YES, and boy stopped being boy.',
     },
     {
       art: 'tale_bone_5',
-      said: 'And this is mine now, all of it, laid out in rows, and I know every piece by the sound it makes. I am very GOOD at this.',
+      said: 'Now it is all mine. All of it, in rows, and I know every one by the sound it makes. I am good. I am the BEST there is at this.',
     },
     {
       art: 'tale_bone_6',
-      said: 'Then you came past with a light on, and I remembered the word for what you are. Do not go. Bring me one. Bring me a WORSE one.',
+      said: 'You are too big. Too big, too bright, I do not try, no. But you go down and things stop down there — bring the stopped ones to ME. I give good things back. I have SO many good things.',
     },
   ],
   orrery: [
@@ -3493,23 +3495,25 @@ export const OSTEOMANCER = {
   sprite: 'osteomancer',
   scene: 'ossuary',
   seen: 'Somebody has been sorting down here. The sorting is not finished.',
-  /** Said over his own head while you cross to him, before the bench is up. */
+  /** HIS MOUTH HAS BEEN DOWN HERE TOO LONG. He had sentences once and the
+   *  tale shows you where they went; every line of his is the same broken
+   *  register, or the man in the camp is not the man in the memory. */
   beats: [
     {
-      said: 'You have one. You have one on you, I can hear it not rotting. Give it here, give it here — no, hold it up, let me look at it first.',
+      said: 'You have one. You have one on you, I hear it not rotting. Give here. Give here — no. Hold it up. Let me look first.',
       act: 'face' as const,
     },
     {
-      said: 'They come apart wrong down here. Everything does. This one came apart RIGHT — something was still deciding when it stopped, and a thing still deciding can be asked.',
+      said: 'They come apart WRONG down here. All of them. Not this one. This one came apart right, and a thing that came apart right was still deciding when it stopped, and a thing still deciding can be ASKED.',
       act: 'pace' as const,
     },
     {
-      said: 'I will put it in something of yours. Not on top of — into. Whatever the smith meant that piece to be, it stops being, and it is this instead. You choose which. I do not care which.',
+      said: 'I put it in something of yours. Not on top. IN. Whatever the smith meant that piece to be, it stops being that, and it is this now. You pick which one. I do not care which one.',
       act: 'work' as const,
     },
   ],
   /** Once the graft is written. */
-  done: 'There. Do not thank me, bring me another one. Bring me a worse one, I want to see a worse one.',
+  done: 'There. Do not thank. Bring another. Bring me a WORSE one, I want to see a worse one.',
 };
 
 /**
