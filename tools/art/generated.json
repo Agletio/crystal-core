@@ -4099,6 +4099,21 @@
    },
    "luma": 45,
    "stride": 1.15
+  },
+  {
+   "grid": 48,
+   "inks": 24,
+   "luma": 32,
+   "sprite": "smith",
+   "character": "c6648899-ed40-4177-bf6a-ce9cd2a2f0d3",
+   "dirs": [
+    "south-east"
+   ],
+   "states": {
+    "idle": {
+     "group": "4ffd402d-1a2a-4f36-9ca6-b2297dd84b44"
+    }
+   }
   }
  ],
  "props": [
@@ -4438,7 +4453,7 @@
   },
   {
    "id": "mouth_stair",
-   "object": "231d9b2d-3223-47fa-a979-6771f39862b5",
+   "object": "115b3791-54a1-4f55-99bc-7a4bcab6434d",
    "tiles": 2,
    "tone": 0.5,
    "dull": 0.55

@@ -10,6 +10,7 @@ import { WORKSHOP } from './scenes/workshop';
 import { READING_ROOM } from './scenes/reading-room';
 import { OSSUARY } from './scenes/ossuary';
 import { ORRERY } from './scenes/orrery';
+import { SMITHY } from './scenes/smithy';
 import { ANSWERING_HALL } from './scenes/answering';
 import { REFRACTION_HALL } from './scenes/refraction';
 import { FLOWERING_HALL } from './scenes/flowering';
@@ -46,7 +47,8 @@ export interface SceneDef {
   gives?: string; // a `BossKeyDef` id handed over here, once and in person
   /** WHAT THEY KEEP: a counter, opened once they owe you nothing. A bench a
    *  RELIC buys is this shape already (`relicFor`). */
-  keeps?: 'shop';
+  keeps?: 'shop' | 'tools';
+  rung?: number; // HIS OWN DEPTH, ahead of the schedule; absent is the rota's
 }
 
 // A person smaller than the things you kill reads as set dressing.
@@ -59,7 +61,7 @@ export const scaleFor = (sprite: string): number =>
   FOLK_SCALE[sprite] ?? FOLK_SCALE_DEFAULT;
 
 export const SCENES: SceneDef[] = [
-  WORKSHOP, READING_ROOM, ANSWERING_HALL, REFRACTION_HALL, FLOWERING_HALL, OSSUARY, ORRERY,
+  WORKSHOP, READING_ROOM, ANSWERING_HALL, REFRACTION_HALL, FLOWERING_HALL, OSSUARY, ORRERY, SMITHY,
 ];
 
 /** Every room is in `SCENES`: one the schedule cannot reach is one nobody

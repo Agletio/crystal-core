@@ -3749,7 +3749,9 @@
      "frames": 4,
      "say": "Squared over his own feet, the great shoulders lifting and settling with each slow breath, apron hanging heavy and still"
     }
-   }
+   },
+   "approved": "cache/designs/smith-0.png",
+   "character": "c6648899-ed40-4177-bf6a-ce9cd2a2f0d3"
   }
  ],
  "_inks": "A body is FORCED onto a palette by image, and the roster's own is dark bone and rust. A family living somewhere else needs its own: `inks` names one of these, and a body without the field takes the roster's. Eight dark swatches to four accents in each, because the forcing image is equal-area and the proportion is what lands.",
@@ -4158,7 +4160,7 @@
    "id": "mouth_stair",
    "tiles": 2,
    "size": 128,
-   "say": "A SQUARE SHAFT cut straight down into a pale stone cave floor, seen from DIRECTLY ABOVE looking straight down: the opening is a ragged-edged square of NEAR-BLACK, the dark of it is the subject and fills most of the frame, and at one edge of the opening the TOP OF A WOODEN LADDER leans out \u2014 two dark timber rails and the top two rungs, and nothing else inside the dark. A narrow rim of broken uneven pale grey rock round the opening, a thin band of shadow just inside the rim. Pale warm grey stone #8E8279 on the rim, #5A5249 in its shadow, #14120F in the shaft. Worn, chipped, dusty, ancient. NOT a spiral, NOT stairs, NOT steps, NOT treads, NOT spokes, NOT a wheel, NOT a turbine, NOT a gear, NOT a well, NOT round, NOT a circle, NOT a funnel, NOT a barrel, NOT bright, NOT colourful.",
+   "say": "A BATTERED IRON LADDER in a hole in a pale stone cave floor, seen from DIRECTLY ABOVE looking straight down, worn, chipped, dusty, ancient: two bent rusted rails and four flat rungs, one rung missing, the metal pitted orange-brown with rust, the top rungs lit and the rest lost. Chipped stone at the lip, nothing at the corners. The opening it stands in is a ragged square of NEAR-BLACK. NOT a spiral, NOT a wheel, NOT spokes, NOT a turbine, NOT a gear, NOT a well, NOT round, NOT a funnel, NOT bright, NOT colourful, NOT purple, NOT lavender, NOT blue, NOT green.",
    "tone": 0.5,
    "dull": 0.55
   },

@@ -3364,6 +3364,37 @@ export const OSTEOMANCER = {
 };
 
 /**
+ * THE SMITH, where every TOOL comes from: the first free, the rest across his
+ * counter, every reforge his. `SMITH.rung` is his own depth, ahead of the
+ * schedule — *"after you clear depth 4 you find a blacksmith."*
+ */
+export const SMITH = {
+  name: 'the Smith',
+  sprite: 'smith',
+  scene: 'smithy',
+  rung: 4, // HIS depth of the Fissure, not a meeting depth
+  seen: 'Somebody has been working down here, and recently. The stone is still warm.',
+  /** The FREE one, taken in person. `given` holds this once he has paid it. */
+  gave: 'smith:first',
+  beats: [
+    {
+      said: 'You came down that ladder with nothing on your belt. Nothing. No wonder the walls are still full.',
+      act: 'face' as const,
+    },
+    {
+      said: 'There is ore in here, and hide on the things that come at you, and fibre where the damp is. All of it stays where it is unless you are carrying the thing that takes it.',
+      act: 'work' as const,
+    },
+    {
+      said: 'Pick one and it is yours. The others I will sell you, and when you have worn one down far enough to have learned something, bring it back and I will make it better.',
+      act: 'face' as const,
+    },
+  ],
+  /** Once the free one is taken. */
+  idles: 'Wear it out. Then we will talk about what comes after it.',
+};
+
+/**
  * The Astral-Geometer, who is in the Cavern and is the one down here who is not
  * in a hurry. He measures the rock and thinks it is measuring back. Flavour
  * like everyone else's: no screen, no currency, no number.

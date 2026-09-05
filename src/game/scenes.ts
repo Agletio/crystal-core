@@ -40,7 +40,6 @@ export const folkMet = (game: GameState): SceneDef[] =>
 export const folkOf = (theme: MapTheme): SceneDef[] =>
   SCENES.filter((s) => !s.encounter && s.theme === theme);
 
-/** THE DEPTHS SOMEBODY STANDS AT. */
 export const meetingDepth = (rung: number): boolean =>
   rung >= MEET.first && (rung - MEET.first) % MEET.every === 0;
 
@@ -48,7 +47,10 @@ export const meetingDepth = (rung: number): boolean =>
  *  world lives in none — and SCHEDULED: finishing a zone is meeting everybody
  *  who lives in it, where a coin could leave a bench behind a roll. */
 export function whoIsDown(game: GameState, theme: MapTheme, rung: number): SceneDef | undefined {
+  // A PINNED DEPTH WINS, and the rota never hands that person out in its place.
+  const pinned = folkOf(theme).find((s) => s.rung === rung && !hasMet(game, s.id));
+  if (pinned) return pinned;
   if (!meetingDepth(rung)) return undefined;
-  return folkOf(theme).find((s) => !hasMet(game, s.id));
+  return folkOf(theme).find((s) => s.rung === undefined && !hasMet(game, s.id));
 }
 
