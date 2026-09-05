@@ -3748,6 +3748,14 @@
     "idle": {
      "frames": 4,
      "say": "Squared over his own feet, the great shoulders lifting and settling with each slow breath, apron hanging heavy and still"
+    },
+    "walk": {
+     "frames": 8,
+     "say": "Rolling forward on heavy legs in strict side profile, one boot swinging past the other and planting, the knee lifting, the opposite arm swinging back, the apron shifting with each step. He faces the same way in every frame."
+    },
+    "attack": {
+     "frames": 4,
+     "say": "Driving one fist down and across in front of the body in strict side profile, stepping onto the front foot, the shoulder turning into it, ending at full forward extension. He faces the same way in every frame and does not straighten up."
     }
    },
    "approved": "cache/designs/smith-0.png",

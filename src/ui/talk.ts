@@ -6,7 +6,7 @@
  * four times. The lines themselves come up in the bubble a map used, pinned
  * over the body the camp drew rather than over a tile.
  */
-import { BOSS_KEY_BY_ID, LAMPWRIGHT } from '../data';
+import { BOSS_KEY_BY_ID, LAMPWRIGHT, SMITH } from '../data';
 import type { SceneBeat, SceneDef } from '../scenes';
 import { giftWaiting } from '../game/crystals';
 import { gaveKey, keyOwed } from '../game/scenes';
@@ -15,6 +15,7 @@ import type { GameState } from '../game/state';
 import { openGraft } from './graft';
 import { openShop } from './shop';
 import { openSmith } from './smith';
+import { owesFirstTool } from '../game/smith';
 import { lampwrightWords, openMet } from './met';
 import { note } from './history';
 import { renderInventory } from './inventory';
@@ -127,6 +128,7 @@ export const isTalking = (): boolean => !$('speech').hidden;
  *  is NOT a want — every visit being a demand reads as a shop. */
 export function wants(def: SceneDef): boolean {
   if (def.id === LAMPWRIGHT.scene) return giftWaiting(game) !== null;
+  if (def.id === SMITH.scene) return owesFirstTool(game);
   if (def.gives) return keyOwed(game, def);
   return relicFor(game, def.id) !== null;
 }
@@ -142,6 +144,13 @@ function offer(def: SceneDef): void {
       note(`${def.name} hands you ${key.name}. It goes in the Fissure's fifth socket.`);
       renderInventory();
     }
+    return;
+  }
+
+  // THE FREE TOOL, at the end of the lines that promise it.
+  if (def.id === SMITH.scene && owesFirstTool(game)) {
+    openSmith('first');
+    syncTalk();
     return;
   }
 

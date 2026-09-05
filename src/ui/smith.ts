@@ -3,11 +3,11 @@
  * reforging are the same rows with a different verb on the end, so they share
  * a window rather than making two the player has to tell apart.
  */
-import { MATERIALS, MATERIAL_FAMILY_BY_ID, PROFESSION_BY_ID, TOOLS } from '../data';
+import { MATERIALS, MATERIAL_FAMILY_BY_ID, PROFESSION_BY_ID, SMITH, TOOLS } from '../data';
 import type { ToolDef } from '../data';
 import { makeMaterial } from '../economy';
 import { nextRung, upgradeTool, whyNotUpgrade } from '../game/forge';
-import { TOOL_PRICE, buyTool, holdsTool, whyNotBuyTool } from '../game/smith';
+import { TOOL_PRICE, buyTool, holdsTool, takeFirstTool, whyNotBuyTool } from '../game/smith';
 import { professionAt } from '../game/work';
 import { toolRung } from '../sim/character';
 import type { GameState } from '../game/state';
@@ -24,7 +24,8 @@ function el(tag: string, cls?: string, text?: string): HTMLElement {
 }
 
 let game: GameState;
-let doing: 'shop' | 'upgrade' = 'shop';
+type Doing = 'first' | 'shop' | 'upgrade';
+let doing: Doing = 'shop';
 let onChanged: (() => void) | undefined;
 
 export function initSmith(state: GameState, changed?: () => void): void {
@@ -58,6 +59,21 @@ function card(tool: ToolDef): HTMLElement {
   title.append(el('div', 'socket__family', `${who} · takes ${family?.raw ?? tool.family}`));
   head.append(title);
   wrap.append(head);
+
+  // THE FREE ONE. His last line is "pick one and it is yours", so the choice is
+  // the same four rows with nothing owed on them.
+  if (doing === 'first') {
+    const button = el('button', 'mini', `Take the ${tool.rungs[0].name.toLowerCase()}`) as HTMLButtonElement;
+    button.id = `smith-first-${tool.id}`;
+    button.onclick = () => {
+      if (!takeFirstTool(game, tool)) return;
+      note(`${SMITH.name} hands you ${tool.rungs[0].name}`);
+      closeSmith();
+      onChanged?.();
+    };
+    wrap.append(button);
+    return wrap;
+  }
 
   if (doing === 'shop') {
     const needs = el('div', 'forgeneeds');
@@ -110,18 +126,22 @@ function card(tool: ToolDef): HTMLElement {
 
 function render(): void {
   $('smith-purse').textContent = `${Math.floor(game.wallet.gold ?? 0)} gold`;
-  $('smith-what').textContent = doing === 'shop' ? 'What he will sell you' : 'What he will make better';
-  $('smith-hint').textContent = doing === 'shop'
-    ? `Every tool is ${TOOL_PRICE} gold. What separates them is which family they open.`
-    : 'He works the tool you are carrying, and a level is what opens the next one.';
+  $('smith-what').textContent = doing === 'first' ? 'Yours, for nothing'
+    : doing === 'shop' ? 'What he will sell you' : 'What he will make better';
+  $('smith-hint').textContent = doing === 'first'
+    ? 'One of them. The other three he will sell you.'
+    : doing === 'shop'
+      ? `Every tool is ${TOOL_PRICE} gold. What separates them is which family they open.`
+      : 'He works the tool you are carrying, and a level is what opens the next one.';
   const host = $('smith-list');
   host.replaceChildren();
   for (const tool of TOOLS) host.append(card(tool));
 }
 
-export function openSmith(what: 'shop' | 'upgrade'): void {
+export function openSmith(what: Doing): void {
   doing = what;
-  $('smith-title').textContent = what === 'shop' ? 'The Smith' : 'Reforging';
+  $('smith-title').textContent =
+    what === 'first' ? 'Pick one' : what === 'shop' ? 'The Smith' : 'Reforging';
   render();
   $('smith').hidden = false;
 }
