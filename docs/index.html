@@ -1508,9 +1508,8 @@
   /* The Seam has taken the pick off you, so no influence reads as chosen. */
   .influence--over { opacity: .5; }
   /* THE SOCKETS, over the map the way the camp's crack lays them out —
-     POSITIONED, never in flow, exactly as a station on the climb is. In flow
-     the panel became the seam's content height and squashed the picture it is
-     supposed to be standing on. */
+     POSITIONED, never in flow: in flow the panel became the seam's content
+     height and squashed the picture it stands on. */
   .groundsockets {
     position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
     display: grid; grid-template-columns: 1fr 1fr; gap: 8px; text-align: left;
@@ -1520,29 +1519,31 @@
     border: 1px solid var(--edge);
   }
   .groundset { grid-column: 1 / -1; text-align: center; }
-  /* ON THE PROVING GROUND the sockets are the crack's own clawed recesses on
-     the picture at full brightness; only the readout takes a dark plate. */
+  /* ON THE PROVING GROUND the sockets are the crack's own clawed recesses; only
+     the readout takes a plate, and it is the window's own. */
+  /* NO PLATE AT ALL: the recess IS the socket, and its words take an outline
+     instead, since they lie straight on the picture. */
   .groundsockets { background: none; border: 0; padding: 0; gap: 10px; }
   .groundsockets .socket {
-    background-color: color-mix(in srgb, var(--ink) 58%, transparent); background-image: none;
-    border-color: color-mix(in srgb, var(--edge) 70%, transparent); text-align: center;
+    background: none; border: 0; box-shadow: none; text-align: center; padding: 0;
+    color: var(--bone); text-shadow: 0 1px 0 var(--ink), 0 -1px 0 var(--ink), 1px 0 0 var(--ink), -1px 0 0 var(--ink);
   }
-  .groundsockets .socket:not(.socket--full) { opacity: .85; }
-  .socket__art { display: block; width: 76px; height: auto; margin: 0 auto 2px; image-rendering: pixelated; }
-  .groundsockets .socket { padding: 4px 8px 6px; }
+  .groundsockets .socket:hover { filter: brightness(1.1) drop-shadow(0 0 5px var(--citrine)); }
+  .groundsockets .socket:not(.socket--full) { opacity: .9; }
+  /* 1:1 WITH THE ART'S OWN 73-pixel grid, or the ring resamples and its edge
+     softens. Doubling it matches the map's own blocks more nearly and reads as
+     four boulders on a landscape, which is the worse of the two faults. */
+  .socket__art { display: block; width: 73px; height: auto; margin: 0 auto 2px; image-rendering: pixelated; }
   .groundsockets .groundset {
-    background: color-mix(in srgb, var(--ink) 78%, transparent); border: 1px solid var(--edge);
-    padding: 8px 10px; border-radius: var(--r);
+    background-color: var(--panel); background-image: var(--grit); background-clip: padding-box;
+    border: 15px solid transparent; border-image: var(--fix-win) 30 / 15px round;
+    image-rendering: pixelated; padding: 2px 6px 6px;
   }
-  /* The climb, ruled off inside the Fissure's own card rather than framed
-     again — a third frame put Enter below the fold. */
   .climbcard { text-align: left; margin: 0; padding: 0; position: relative; }
   .climbcard .panel__title { font-size: 12px; margin-bottom: 1px; text-align: center; }
-  /* The finish line, said before you get there: nothing pays until it falls. */
   .climb__prize { font-size: 10px; color: var(--text-dim); margin: 0 0 6px; text-align: center; }
-  /* THE SEAM: one zone at a time, down that zone's own cross-section. Every
-     station is in percent of the BOX and the picture is stretched to the same
-     box, so the two stay in register at any shape the window takes. */
+  /* Every station is in PERCENT of the box the picture is stretched to, so the
+     two stay in register at any shape the window takes. */
   .climbtabs { display: flex; justify-content: center; gap: 6px; margin-bottom: 8px; flex-wrap: wrap; }
   /* On the map they lie ON it, under the head floating in the same corner. */
   .climbcard .climbtabs {
