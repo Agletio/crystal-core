@@ -2206,6 +2206,28 @@ export const TALES: Record<string, TalePanel[]> = {
       said: 'It answered by becoming part of something else. I have been sorting ever since, looking for the second one.',
     },
   ],
+  orrery: [
+    {
+      art: 'tale_orrery_1',
+      said: 'I began with one shard, and the angle it made where it broke. Then the next one. Then the next.',
+    },
+    {
+      art: 'tale_orrery_2',
+      said: 'Nine rooms. A hundred and forty shards, measured against each other. Not once a different angle.',
+    },
+    {
+      art: 'tale_orrery_3',
+      said: 'So I hung the thing that would be wrong if I were. It has been turning ever since and it has not been wrong.',
+    },
+    {
+      art: 'tale_orrery_4',
+      said: 'The other one takes bodies. I take the dust, which is what is left when the rock has finished deciding.',
+    },
+    {
+      art: 'tale_orrery_5',
+      said: 'A body is an opinion. Dust is a measurement, and a measurement will fit inside a ring.',
+    },
+  ],
 };
 
 /** The opening, in numbers: the one stretch where what happens next is
