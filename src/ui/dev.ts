@@ -102,7 +102,8 @@ function render(): void {
     // A room is a FIGHT now, and everything else is somebody to have met.
     button.id = scene.plan ? `dev-room-${scene.id}` : `dev-meet-${scene.id}`;
     button.append(el('span', 'devbtn__name', scene.name));
-    button.append(el('span', 'devbtn__what', boss ? `fight — ${boss.name}` : 'stand in the camp'));
+    button.append(el('span', 'devbtn__what',
+      boss ? `fight — ${boss.name}` : scene.room ? 'a tab on the Fissure' : 'stand in the camp'));
     button.onclick = () => {
       if (scene.plan) {
         if (!hooks.enterRoom(scene.id)) return;
@@ -110,9 +111,11 @@ function render(): void {
         // MET AND HEARD: a dev button that left his tale owed would hold the
         // queue behind him, and nobody after him would stand in a descent.
         takeMet(game, scene.id);
-        takeHeard(game, scene.id);
+        // A ROOM-OWNER tells his tale in his own room, so leaving it unheard
+        // holds nothing up and is the only way to see it there.
+        if (!scene.room) takeHeard(game, scene.id);
         hooks.refresh();
-        note(`Dev: ${scene.name} is in the camp.`);
+        note(`Dev: ${scene.name} is ${scene.room ? 'a tab on the Fissure' : 'in the camp'}.`);
       }
       close();
     };

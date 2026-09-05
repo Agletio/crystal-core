@@ -1483,6 +1483,14 @@
   }
   /* ONE COLUMN, always: the map takes the whole width. */
   .fissurecard { grid-template-columns: minmax(0, 1fr); }
+  /* A ROOM OFF THE CLIMB: the canvas and the hotspot are stretched over the
+     same box the art is, so the body and the button cannot come apart. */
+  .climbroom__live {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    image-rendering: pixelated; pointer-events: none;
+  }
+  .climbtab--room { border-style: dashed; }
+  .climbtab--room.climbtab--on { border-style: solid; }
   /* THE INFLUENCE: three worlds, one picked, and it decides both the picture
      and which pack joins whatever you socketed. */
   .influences { display: flex; justify-content: center; gap: 6px; margin-bottom: 8px; }
@@ -2626,7 +2634,7 @@
         <div class="fissurecard__map">
           <div class="climbcard" id="run-climb"></div>
           <!-- The way IN rests ON the map, like the tabs above it. -->
-          <div class="fissurecard__over">
+          <div class="fissurecard__over" id="run-go">
             <p class="runblocked" id="run-blocked"></p>
             <div class="fissurecard__go">
               <button class="mini mini--go mini--enter" id="run-launch">Enter</button>

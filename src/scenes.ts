@@ -32,6 +32,16 @@ export interface ScenePlan {
   props: MapProp[]; // put exactly here, by hand
 }
 
+/** A ROOM OF HIS OWN, reached from the Fissure screen rather than the camp: a
+ *  drawn picture like the camp's, measured in its own pixels. */
+export interface SceneRoom {
+  art: string; // a `SCENE_ART` id
+  stands: Vec2; // his feet, in the picture's own pixels
+  you: Vec2; // and yours, a few paces off
+  name: string; // what the tab calls the place
+  blurb: string; // what the tab's tooltip says about it
+}
+
 export interface SceneDef {
   id: string;
   who: string; // a sprite id in BOTH `BEASTIARY` and `PORTRAITS`
@@ -49,6 +59,7 @@ export interface SceneDef {
    *  RELIC buys is this shape already (`relicFor`). */
   keeps?: 'shop' | 'tools';
   rung?: number; // HIS OWN DEPTH, ahead of the schedule; absent is the rota's
+  room?: SceneRoom; // HE NEVER COMES UP: his own tab, and not in the camp
 }
 
 // A person smaller than the things you kill reads as set dressing.

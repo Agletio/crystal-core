@@ -186,7 +186,7 @@ const STATES = [
   'crystals', 'sheet', 'shop', 'stash', 'settings', 'history',
   'toast', 'itemmenu', 'confirm', 'professions',
   'handover', 'descent', 'results',
-  'scene', 'speech', 'lampwright', 'tale',
+  'scene', 'speech', 'lampwright', 'tale', 'bonus',
   'skills', 'skill-list', 'skill-web', 'move-web', 'trade', 'trials', 'proving',
   'bench', 'tooltip', 'glossary', 'graft', 'works', 'anvil', 'jewellery', 'tools',
   'builder',
@@ -429,6 +429,29 @@ for (const vp of VIEWPORTS) {
     return past > 2 ? `the Fissure needs ${Math.round(past)}px of scrolling` : null;
   });
   if (spill) problems.push(`${vp.name}: ${spill}`);
+
+  // A BONUS ZONE: a room off the Fissure, its own tab, and the tale that plays
+  // the first time you walk in. The dev menu is the only way to have found him
+  // without the descents.
+  await page.evaluate(() => document.getElementById('run-menu-close')?.click());
+  await page.waitForTimeout(150);
+  await page.evaluate(() => document.getElementById('open-dev')?.click());
+  await page.waitForTimeout(200);
+  await page.evaluate(() => document.getElementById('dev-meet-ossuary')?.click());
+  await page.waitForTimeout(300);
+  await page.evaluate(() => document.getElementById('camp-crack')?.click());
+  await page.waitForTimeout(250);
+  await page.evaluate(() => document.getElementById('climb-tab-room-ossuary')?.click());
+  await page.waitForTimeout(300);
+  await clearTale();
+  await page.waitForTimeout(300);
+  if (await page.evaluate(() => document.getElementById('climb-room-who-ossuary') === null)) {
+    problems.push(`${vp.name}: the Ossuary tab never drew the man in it`);
+  }
+  await shoot('bonus');
+  await page.evaluate(() => document.getElementById('climb-tab-0')?.click());
+  await page.waitForTimeout(200);
+
   await page.evaluate(() => document.getElementById('run-launch')?.click());
   await page.waitForFunction(() => document.body.dataset.runPhase === 'running', null, {
     timeout: 30000,
@@ -831,10 +854,15 @@ for (const vp of VIEWPORTS) {
   await page.evaluate(() => document.getElementById('sheet-close')?.click());
   await page.waitForTimeout(150);
 
-  // The GRAFT bench, reached the one way there is: by clicking the man
-  // standing in the camp and picking it off the list he puts up. The kit has
-  // met him and carries what he wants, which is what offers the bench at all.
-  await page.evaluate(() => document.getElementById('camp-who-ossuary')?.click());
+  // The GRAFT bench, reached the one way there is: he lives in his own room
+  // off the Fissure, so the way to him is that tab and then his body on the
+  // picture. The kit carries what he wants, which offers the bench at all.
+  await page.evaluate(() => document.getElementById('camp-crack')?.click());
+  await page.waitForTimeout(250);
+  await page.evaluate(() => document.getElementById('climb-tab-room-ossuary')?.click());
+  await page.waitForTimeout(300);
+  await clearTale();
+  await page.evaluate(() => document.getElementById('climb-room-who-ossuary')?.click());
   await page.waitForTimeout(300);
   await page.evaluate(() => document.getElementById('parley-bench')?.click());
   try {
@@ -885,6 +913,10 @@ for (const vp of VIEWPORTS) {
   } catch {
     problems.push(`${vp.name}: talking to the Osteomancer never reached his bench`);
   }
+  await page.evaluate(() => document.getElementById('graft-leave')?.click());
+  await page.waitForTimeout(150);
+  await page.evaluate(() => document.getElementById('run-menu-close')?.click());
+  await page.waitForTimeout(200);
 
   // THE LEVEL BUILDER, laid out with a real plan in it. Dev-only, but it draws
   // the game's own tilesets through the renderer's own picker, so a floor that

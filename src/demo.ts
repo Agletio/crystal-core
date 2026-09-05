@@ -175,7 +175,7 @@ import { LIVE_PROPS, RIPPLE, lootSpan, rippleRings } from './render/renderer';
 import { RunSim, TICK, runToCompletion, walkToMeeting } from './sim/run';
 import { tierForSet } from './sim/crystal';
 import { findPath } from './sim/pathfind';
-import { MEETINGS, folkMet, gaveKey, hasMet, keyOwed, owedTale, takeBoss, takeHeard, takeMet, whoIsDown } from './game/scenes';
+import { MEETINGS, folkMet, folkRooms, gaveKey, hasHeard, hasMet, keyOwed, nextMeeting, owedTale, takeBoss, takeHeard, takeMet, whoIsDown } from './game/scenes';
 import {
   TOOL_PRICE, buyTool, holdsTool, owesFirstTool, takeFirstTool, toolsOnOffer, whyNotBuyTool,
 } from './game/smith';
@@ -4181,6 +4181,37 @@ rule('THE WORKS — does a job run on the clock, and on nothing else?');
       quiet === undefined && waiting === MEETINGS[0].id && owedTale(told) === undefined,
       'and one is owed from the moment somebody is met until it is watched, and never again',
       `${quiet?.id ?? 'nobody'} -> ${waiting ?? 'nobody'} -> ${owedTale(told)?.id ?? 'nobody'}`
+    );
+  }
+
+  // A ROOM OFF THE FISSURE, and NOTHING WAITS ON IT. A man who lives down
+  // there tells his tale in his own room, so a bonus zone nobody happened to
+  // open may never hold the queue behind him.
+  {
+    const owners = SCENES.filter((sc) => sc.room);
+    const blank = owners.filter((sc) => !SCENE_ART[sc.room!.art]).map((sc) => sc.id);
+    check(
+      owners.length > 0 && blank.length === 0,
+      `all ${owners.length} rooms off the Fissure name a picture that ships`,
+      blank.join(', ') || owners.map((sc) => `${sc.id}=${sc.room!.art}`).join(', ')
+    );
+    const untold = owners.filter((sc) => !TALES[sc.id]?.length).map((sc) => sc.id);
+    check(untold.length === 0, 'and each of them has a tale to tell when you walk in', untold.join(', '));
+
+    // MET, NEVER WATCHED: the queue steps straight over him.
+    const past = createGame('fresh');
+    const owner = MEETINGS.find((m) => m.scene?.room)!;
+    for (const m of MEETINGS) {
+      if (m.id === owner.id) break;
+      takeMet(past, m.id);
+      takeHeard(past, m.id);
+    }
+    takeMet(past, owner.id);
+    const after = MEETINGS[MEETINGS.findIndex((m) => m.id === owner.id) + 1];
+    check(
+      !hasHeard(past, owner.id) && nextMeeting(past)?.id === after?.id && owedTale(past) === undefined,
+      `${owner.id} is met and unheard, and the queue is already on ${after?.id ?? 'nobody'}`,
+      `${nextMeeting(past)?.id ?? 'nobody'}, owed ${owedTale(past)?.id ?? 'nobody'}`
     );
   }
 
@@ -13431,9 +13462,13 @@ rule('GRAFTS — do a corpse and a handful of dust buy what no drop can roll?');
       relicFor(fresh, 'ossuary')?.base ?? 'nothing'
     );
     check(
-      folkMet(fresh).some((f) => f.id === 'ossuary')
-        && folkMet(fresh).every((f) => !f.encounter),
-      'he is somebody you can go and see instead, and a BOSS never is',
+      folkRooms(fresh).some((f) => f.id === 'ossuary') && !folkMet(fresh).some((f) => f.id === 'ossuary'),
+      'he keeps his own room off the Fissure and never stands in the camp',
+      `camp ${folkMet(fresh).map((f) => f.id).join(', ')} | rooms ${folkRooms(fresh).map((f) => f.id).join(', ')}`
+    );
+    check(
+      folkMet(fresh).every((f) => !f.encounter) && folkRooms(fresh).every((f) => !f.encounter),
+      'and a BOSS is in neither list: his room is a descent',
       folkMet(fresh).map((f) => f.id).join(', ')
     );
 

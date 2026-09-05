@@ -15,6 +15,14 @@
  * thing you may enter rather than at somebody else's rung.
  */
 import { CRYSTAL_LEVELS, LADDER, PROVING, THEME_BY_ID } from '../data';
+import { folkRooms, hasHeard } from '../game/scenes';
+import type { SceneDef } from '../scenes';
+import { FOLK_SCALE_DEFAULT, scaleFor } from '../scenes';
+import { GENERATED } from '../render/generated-art';
+import { heroSpriteFor } from '../sim/appearance';
+import { drawBody } from './bodydraw';
+import { openTalk, closeParley, syncTalk } from './talk';
+import { isTaleUp, playTale } from './tale';
 import {
   canEnter, climbed, furthest, isProving, provingOpen, zoneAt, zoneOpen,
 } from '../ladder';
@@ -50,6 +58,16 @@ let ground = false;
  *  `PROVING_TAB` is the fourth, past every zone. */
 let shown: number | null = null;
 export const PROVING_TAB = LADDER.zones.length;
+/** THE BONUS ZONES START HERE: one tab a room, in `folkRooms` order, and they
+ *  only exist once you have found the man who lives in one. */
+export const ROOM_TAB = PROVING_TAB + 1;
+
+/** THE ROOM ON SCREEN, if the tab up is a bonus zone. Nothing descends from
+ *  one, so the way in is hidden while it is. */
+export function roomNow(): SceneDef | null {
+  if (!game || shown === null || shown < ROOM_TAB) return null;
+  return folkRooms(game)[shown - ROOM_TAB] ?? null;
+}
 
 /** WHERE THE NEXT DESCENT GOES: a depth on the climb, or the Proving Ground. */
 export function whereNow(character: Character): RunWhere {
@@ -221,6 +239,7 @@ function tabs(host: HTMLElement, character: Character, at: number, redraw: () =>
         : `${zone.name}. Shut until ${shutBy(z)} is cleared whole.`);
     tab.onclick = () => {
       shown = z;
+      closeParley();
       redraw();
     };
     row.append(tab);
@@ -238,10 +257,74 @@ function tabs(host: HTMLElement, character: Character, at: number, redraw: () =>
       : `${PROVING.name}. Shut until the climb is finished and paid for.`);
   tab.onclick = () => {
     shown = PROVING_TAB;
+    closeParley();
     redraw();
   };
   row.append(tab);
+
+  // THE BONUS ZONES, past the climb and off the line: a room apiece, and one
+  // only exists once you have found the man who lives in it.
+  folkRooms(game!).forEach((def, i) => {
+    const bonus = el('button', 'mini climbtab climbtab--room', def.room!.name) as HTMLButtonElement;
+    bonus.id = `climb-tab-room-${def.id}`;
+    bonus.classList.toggle('climbtab--on', at === ROOM_TAB + i);
+    attachTooltip(bonus, () => `${def.room!.name}. ${def.room!.blurb}`);
+    bonus.onclick = () => {
+      shown = ROOM_TAB + i;
+      closeParley();
+      redraw();
+    };
+    row.append(bonus);
+  });
   host.append(row);
+}
+
+/**
+ * A ROOM OFF THE FISSURE SCREEN — his own drawn picture, him standing in it
+ * and you a few paces off, and clicking him is the same parley the camp runs.
+ * *"Then in there you can talk to him and give him corpses and leave whenever
+ * you want."* Leaving is any other tab, or the window's own Close.
+ */
+function renderRoom(host: HTMLElement, def: SceneDef, character: Character): void {
+  const spec = def.room!;
+  const art = SCENE_ART[spec.art];
+  const floor = el('div', 'climbseam climbroom');
+  if (art) floor.style.backgroundImage = `url(${art.png})`;
+
+  const canvas = document.createElement('canvas');
+  canvas.className = 'climbroom__live';
+  canvas.width = art?.w ?? 688;
+  canvas.height = art?.h ?? 384;
+  floor.append(canvas);
+
+  // HIS BODY IS THE HOTSPOT, the way it is in the camp: the button is his own
+  // grid where his body was drawn, in PERCENT so it cannot drift off him.
+  const grid = (GENERATED[def.who]?.grid ?? 32) * scaleFor(def.who);
+  const hot = el('button', 'camp__hot') as HTMLButtonElement;
+  hot.id = `climb-room-who-${def.id}`;
+  hot.setAttribute('aria-label', def.name);
+  hot.style.left = `${((spec.stands.x - grid / 2) / canvas.width) * 100}%`;
+  hot.style.top = `${((spec.stands.y - grid) / canvas.height) * 100}%`;
+  hot.style.width = `${(grid / canvas.width) * 100}%`;
+  hot.style.height = `${(grid / canvas.height) * 100}%`;
+  attachTooltip(hot, () => `${def.name}. ${def.said}`);
+  hot.onclick = () => openTalk(def, hot.getBoundingClientRect());
+  floor.append(hot);
+  host.append(floor);
+
+  const ctx = canvas.getContext?.('2d') ?? null;
+  if (!ctx) return; // jsdom has none: the picture and the hotspot still stand
+  const hero = heroSpriteFor(character);
+  const started = performance.now();
+  const frame = (now: number): void => {
+    if (!canvas.isConnected) return;
+    const at = (now - started) / 1000;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawBody(ctx, def.who, spec.stands.x, spec.stands.y, at, 0, hot.matches(':hover'), scaleFor(def.who));
+    drawBody(ctx, hero, spec.you.x, spec.you.y, at, 1.3, false, FOLK_SCALE_DEFAULT);
+    requestAnimationFrame(frame);
+  };
+  requestAnimationFrame(frame);
 }
 
 /** THE PROVING GROUND: the world you PICKED, drawn as that world's own
@@ -292,11 +375,13 @@ function renderProving(host: HTMLElement, character: Character, onPick: () => vo
  */
 export function renderClimb(host: HTMLElement, character: Character, onPick: () => void): void {
   host.replaceChildren();
-  const shut = shown === PROVING_TAB && !provingOpen(character);
-  if (shown === null || shut || (shown !== PROVING_TAB && !zoneOpen(character, shown))) {
-    shown = ground && provingOpen(character) ? PROVING_TAB : furthest(character).zone;
-  }
-  const z = shown;
+  const rooms = game ? folkRooms(game) : [];
+  const gone = shown === null
+    || (shown === PROVING_TAB && !provingOpen(character))
+    || (shown > PROVING_TAB && !rooms[shown - ROOM_TAB])
+    || (shown < PROVING_TAB && !zoneOpen(character, shown));
+  if (gone) shown = ground && provingOpen(character) ? PROVING_TAB : furthest(character).zone;
+  const z = shown!;
   // THE TAB IS THE PICK. Looking at the Proving Ground IS choosing it, the way
   // clicking a station is choosing a depth — so this is set before anything
   // asks where the next descent goes.
@@ -306,7 +391,20 @@ export function renderClimb(host: HTMLElement, character: Character, onPick: () 
   // THE MAP IS THE SCREEN AND NOTHING IS WRITTEN OVER IT. The window already
   // says THE FISSURE; a title, a depth count and the campaign's own line under
   // it said the same thing three more times and took the picture's room.
-  tabs(host, character, z, () => renderClimb(host, character, onPick));
+  // A TAB IS A RE-RENDER OF THE WHOLE SCREEN, not of the map alone: the way
+  // in is hidden in a room and shown everywhere else, and that is the caller's.
+  tabs(host, character, z, () => {
+    renderClimb(host, character, onPick);
+    onPick();
+  });
+
+  // A BONUS ZONE: his room, and his TALE the first time you walk into it.
+  const room = z >= ROOM_TAB ? rooms[z - ROOM_TAB] : null;
+  if (room) {
+    renderRoom(host, room, character);
+    if (game && !hasHeard(game, room.id) && !isTaleUp()) playTale(game, room.id, () => {});
+    return;
+  }
 
   if (ground) {
     return renderProving(host, character, () => {

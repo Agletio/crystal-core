@@ -15,8 +15,7 @@ export function takeBoss(game: GameState, id: string): void {
 export const bossBeaten = (game: GameState, id: string): boolean =>
   (game.bosses ?? []).includes(id);
 
-/** A key already handed over, as a `given` entry. */
-export const gaveKey = (id: string): string => `key:${id}`;
+export const gaveKey = (id: string): string => `key:${id}`; // one handed over
 
 export const metMark = (sceneId: string): string => `met:${sceneId}`;
 
@@ -33,9 +32,14 @@ export function keyOwed(game: GameState, def: SceneDef): boolean {
   return Object.keys(game.sockets ?? {}).length >= INTRO.bossSockets;
 }
 
-/** Everyone you can go and see. A BOSS is not one: his room is a descent. */
+/** EVERYONE STANDING IN THE CAMP. A BOSS is not one: his room is a descent,
+ *  and nor is anybody with a `room` of his own off the Fissure screen. */
 export const folkMet = (game: GameState): SceneDef[] =>
-  SCENES.filter((s) => !s.encounter && hasMet(game, s.id));
+  SCENES.filter((s) => !s.encounter && !s.room && hasMet(game, s.id));
+
+/** A ROOM APIECE off the Fissure screen, once you have found them. */
+export const folkRooms = (game: GameState): SceneDef[] =>
+  SCENES.filter((s) => !s.encounter && s.room && hasMet(game, s.id));
 
 /** Who LIVES in a world, in the order a campaign meets them. */
 export const folkOf = (theme: MapTheme): SceneDef[] =>
@@ -64,7 +68,7 @@ export interface Meeting {
 }
 
 /** ZONE FIRST, THEN DEPTH: a man at depth 3 of the second zone comes after
- *  everybody in the first, however shallow he stands. */
+ *  everybody in the first. */
 const zoneOf = (theme: MapTheme): number => {
   const at = LADDER.zones.findIndex((z) => z.world === theme);
   return at < 0 ? LADDER.zones.length : at;
@@ -79,24 +83,28 @@ export const MEETINGS: Meeting[] = [
 const wasMet = (game: GameState, m: Meeting): boolean =>
   m.worker ? (game.given ?? []).includes(workerMark(m.worker.id)) : hasMet(game, m.id);
 
+/** WHOSE TALE IS TOLD IN THE CAMP. A man with a room tells his THERE, the
+ *  first time you walk in, so the queue may not wait on it — a bonus zone
+ *  nobody happened to open would stop everybody behind him. */
+const inTown = (m: Meeting): boolean => !m.scene?.room;
+
 /** THE NEXT ONE OWED, and NOBODY IS SKIPPED. The queue advances only on a
- *  scene HEARD IN TOWN, so diving from 2 to 6 without going up finds nobody:
- *  the smith waits on the Lampwright's own scene, and Hob waits on the
- *  smith's. Depth only says how DEEP the next one stands, never who. */
+ *  scene HEARD IN TOWN, so diving from 2 to 6 without going up finds nobody.
+ *  Depth only says how DEEP the next one stands, never who. */
 export function nextMeeting(game: GameState): Meeting | undefined {
   for (const m of MEETINGS) {
     if (!wasMet(game, m)) return m;
+    if (!inTown(m)) continue; // his tale is in his own room; nothing waits on it
     if (!hasHeard(game, m.id)) return undefined; // met, not yet heard: the queue stops here
   }
   return undefined;
 }
 
-/** MET BUT NOT YET HEARD: whose story is owed the next time you come up. At
- *  most one is ever waiting, because the queue does not move until it is. */
+/** MET BUT NOT YET HEARD: whose story is owed the next time you come up. */
 export function owedTale(game: GameState): Meeting | undefined {
   for (const m of MEETINGS) {
     if (!wasMet(game, m)) return undefined;
-    if (!hasHeard(game, m.id)) return m;
+    if (inTown(m) && !hasHeard(game, m.id)) return m;
   }
   return undefined;
 }

@@ -55,7 +55,7 @@ import { initCamp, openCamp, closeCamp, isCampOpen, renderCamp, setCampEmber } f
 import { greetAfterTale, openTalk } from './talk';
 import { playTale } from './tale';
 import {
-  advanceRung, climbLine, initClimb, renderClimb, rungName, rungNow, socketsInClimb, whereNow,
+  advanceRung, climbLine, initClimb, renderClimb, roomNow, rungName, rungNow, socketsInClimb, whereNow,
 } from './climb';
 import { arenaAt, isProving, takeRung, zoneAt } from '../ladder';
 import type { RunWhere } from '../ladder';
@@ -442,6 +442,9 @@ function renderSelected(grid: HTMLElement): void {
 function renderMenu(): void {
   syncClimb();
   renderClimb($('run-climb'), game.character, () => renderMenu());
+
+  // A BONUS ZONE IS NOT A DESCENT: the way in goes while you stand in his room.
+  $('run-go').hidden = roomNow() !== null;
 
   // The two things that can shut the Fissure, and neither is a dead end: gear
   // sells from anywhere, and a weapon is one click on the sheet.
