@@ -254,9 +254,12 @@ function renderProving(host: HTMLElement, character: Character, onPick: () => vo
   const row = el('div', 'influences');
   for (const id of PROVING.influences) {
     const def = THEME_BY_ID[id];
-    const button = el('button', 'mini influence', def?.name ?? id) as HTMLButtonElement;
+    // THE SAME SELECTED TREATMENT AS EVERY OTHER TAB. Its own `influence--on`
+    // lit the border and the ink but not the plate, so a hovered button and the
+    // chosen one were two different lit states side by side.
+    const button = el('button', 'mini climbtab', def?.name ?? id) as HTMLButtonElement;
     button.id = `climb-influence-${id}`;
-    button.classList.toggle('influence--on', !seam && influenceNow() === id);
+    button.classList.toggle('climbtab--on', !seam && influenceNow() === id);
     button.classList.toggle('influence--over', seam);
     attachTooltip(button, () => `${def?.name ?? id}. ${def?.blurb ?? ''}`);
     button.onclick = () => {

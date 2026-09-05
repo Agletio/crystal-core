@@ -702,9 +702,12 @@ three lists is the ART the user ruled out.
       pixels, and at fourteen across there is no silhouette to read at any
       filter. The excluded overhaul, and no CSS reaches it. **Do not chase this
       as a rendering fault again.**
-- [ ] **THE PROVING GROUND'S INFLUENCE ROW** still reads as two lit buttons
-      (selected gold against hovered orange), where the stations and the anvil
-      now read as one. Its buttons are not `.climbtab`.
+- [x] **THE PROVING GROUND'S INFLUENCE ROW.** DONE: the buttons ARE `.climbtab`
+      now, so the chosen influence wears the same gold border and lit plate as
+      the tab row above it, and the orange is the hover every tab shares. Its
+      own `influence--on` lit the border and the ink but not the plate, which is
+      what made a hovered button and the chosen one two different lit states
+      side by side (`desktop-proving.png`).
 - [ ] **AN AILMENT MARK IS A SQUARE, not a glyph.** Fixed in SIZE; the purist
       wants a frost shape for Chill and a flame for Burn. A generated icon each,
       or authored geometry beside `pixelRing`.

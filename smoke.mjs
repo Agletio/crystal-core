@@ -3097,9 +3097,9 @@ $('dev-kit').click();
     String(all('.groundsockets .socket').length)
   );
   assert(
-    all('.influences .influence').length === 3,
-    'and offers three influences, never the Seam',
-    String(all('.influences .influence').length)
+    all('.influences .climbtab').length === 3,
+    'and offers three influences, never the Seam, on the same tab every other row uses',
+    String(all('.influences .climbtab').length)
   );
   assert(
     $('climb-influence-fissure').classList.contains('influence--on'),

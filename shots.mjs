@@ -670,7 +670,7 @@ for (const vp of VIEWPORTS) {
   await page.waitForTimeout(350);
   const ground = await page.evaluate(() => ({
     sockets: document.querySelectorAll('.groundsockets .socket').length,
-    influences: document.querySelectorAll('.influences .influence').length,
+    influences: document.querySelectorAll('.influences .climbtab').length,
   }));
   if (ground.sockets < 4 || ground.influences !== 3) {
     problems.push(
