@@ -3264,6 +3264,61 @@ assert(
   assert($('speech').hidden === true, 'and the last line ends the conversation');
   if ($('met').hidden === false) $('met-take').click();
   if ($('graft').hidden === false) $('graft-leave').click();
+  if ($('smith').hidden === false) $('smith-close').click();
+}
+
+// --- THE SMITH: one free tool, three verbs, and none of it at the anvil -----
+// He is where every tool comes from, so the whole chain is one person: the
+// mark says he is holding something, Talk leads to the pick, and the counter
+// and the reforge are the same list with another verb on the end.
+{
+  $('open-dev').click();
+  $('dev-meet-smithy').click();
+  $('dev-close').click();
+  const who = all('.camp-folk').filter((b) => /smith/i.test(b.getAttribute('aria-label') ?? ''));
+  assert(who.length === 1, 'the smith is in the camp once you have met him', String(who.length));
+  who[0].click();
+  assert(
+    $('parley-talk') && $('parley-shop') && $('parley-upgrade') && $('parley-leave'),
+    'and he offers Talk, Shop and Upgrade — the three a tool ever needs',
+    text('parley-list')
+  );
+
+  // THE FREE ONE, at the end of the lines that promise it.
+  $('parley-talk').click();
+  for (let i = 0; i < 12 && $('speech').hidden === false; i++) $('speech-next').click();
+  assert($('smith').hidden === false, 'his last line opens the pick, because it promises one');
+  const offered = all('#smith-list button.mini');
+  assert(offered.length === 4, 'with all four tools on it', String(offered.length));
+  offered[0].click();
+  assert($('smith').hidden === true, 'taking one puts the window away');
+
+  $('open-inventory').click();
+  const carried = all('#inv-gear .slot')
+    .filter((b) => /pick/i.test(b.getAttribute('aria-label') ?? ''));
+  assert(carried.length === 1, 'and the tool is an ITEM, in the bag like anything else', String(carried.length));
+  $('inv-close').click();
+
+  // AND HE STOPS OWING IT. The mark is the same question `offer` answers.
+  who[0].click();
+  $('parley-shop').click();
+  assert($('smith').hidden === false, 'Shop opens his counter');
+  assert(
+    all('#smith-list button.mini').some((b) => /gold/i.test(b.textContent ?? '')),
+    'which asks for gold',
+    text('smith-list').slice(0, 80)
+  );
+  $('smith-close').click();
+  who[0].click();
+  $('parley-upgrade').click();
+  assert($('smith').hidden === false, 'and Upgrade opens the reforge');
+  assert(
+    all('#smith-list button.mini').some((b) => b.disabled),
+    'which refuses in numbers rather than doing nothing',
+    text('smith-list').slice(0, 80)
+  );
+  $('smith-close').click();
+  if (!$('parley').hidden) $('parley-leave').click();
 }
 
 // --- the Osteomancer's bench ----------------------------------------------
