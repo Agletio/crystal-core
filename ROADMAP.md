@@ -36,7 +36,7 @@ judgement. Phase 3 is PARKED and is not the
 lowest-numbered thing to take. Everything after them is a parked phase, the
 traps, and questions only the user can answer.
 
-**THE NAMES LANDED WITH PHASE 6**: the points are **TALLIES**, the web is
+**THE NAMES LANDED WITH PHASE 6**: the points are **POINTS**, the web is
 **THE RECKONING**, the list of grinds is **THE LEDGER**. **The fourth was NOT
 taken** — the base world is still The Fissure. The influence picker names it
 `THEME_BY_ID.fissure.name`, which reads correctly beside The Cavern and The Rot,

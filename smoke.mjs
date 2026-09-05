@@ -2850,8 +2850,9 @@ $('dev-kit').click();
   );
   $('sheet-tab-gear').click();
   assert(
-    $('sheet-tool-gather') !== null && all('#sheet-tools .slotcell').length === 2,
-    'and the gear page carries the two tool slots, drawn as the gear slots are',
+    $('slot-gather') !== null && $('slot-rod') !== null
+      && all('#sheet-tools .slotcell').length === 2,
+    'and the gear page carries the two tool slots, which ARE gear slots — same id, same box',
     String(all('#sheet-tools .slotcell').length)
   );
   $('sheet-close').click();

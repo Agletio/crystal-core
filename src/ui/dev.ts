@@ -154,14 +154,14 @@ function render(): void {
   // can only be looked at on a save that has already put the hours in.
   const trials = group(
     'The Ledger',
-    'Tallies for the Reckoning. None of them pays until the Lampwright has handed the campaign\'s reward over, so the climb buttons below are the door to this.'
+    'points for the Reckoning. None of them pays until the Lampwright has handed the campaign\'s reward over, so the climb buttons below are the door to this.'
   );
   const ground = GRINDS.reduce((n, g) => n + g.pays, 0);
   const paid = el('button', 'mini devbtn') as HTMLButtonElement;
   paid.id = 'dev-trials';
   paid.append(el('span', 'devbtn__name', 'Grind out the whole Ledger'));
   paid.append(el('span', 'devbtn__what',
-    `${ground} Tallies, on top of the campaign's ${CAMPAIGN_REWARD.points}`));
+    `${ground} points, on top of the campaign's ${CAMPAIGN_REWARD.points}`));
   paid.onclick = () => {
     const counts: Record<string, number> = { ...game.character.grinds };
     for (const grind of GRINDS) {
@@ -169,7 +169,7 @@ function render(): void {
     }
     game.character.grinds = counts;
     hooks.refresh();
-    note(`Dev: ${ground} Tallies.`);
+    note(`Dev: ${ground} points.`);
     close();
   };
   trials.append(paid);

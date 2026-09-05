@@ -174,7 +174,10 @@ export type GearKind =
   | 'gloves'
   | 'boots'
   | 'amulet'
-  | 'ring';
+  | 'ring'
+  // Two kinds: the ROD has its own slot and never competes with the other three.
+  | 'tool'
+  | 'rod';
 
 export interface GearBase {
   id: string;
@@ -201,6 +204,7 @@ export interface EquipSlotDef {
   id: string;
   name: string;
   accepts: GearKind[];
+  group?: 'tool'; // which block of the sheet; absent is the gear grid
 }
 
 /** A socket in the Fissure. `accepts` is an item KIND, so a slot taking

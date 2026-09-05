@@ -41,7 +41,6 @@ import {
   spendAttribute,
   weaponRefusal,
   toolIn,
-  toolsOwned,
   toolRung,
   toolsOn,
   xpToNext,
@@ -96,7 +95,9 @@ const tooltip = (item: Item): HTMLElement => itemCard(item, ['click to take it o
 
 function renderSlots(): void {
   const host = $('sheet-slots');
+  const tools = $('sheet-tools');
   host.replaceChildren();
+  tools.replaceChildren();
 
   // The hand your skills are swung with, when the two disagree. Marked HERE
   // because the weapon is the half you change: the Fissure says the sentence,
@@ -150,8 +151,13 @@ function renderSlots(): void {
       };
     }
     cell.append(btn);
-    host.append(cell);
+    (slot.group === 'tool' ? tools : host).append(cell);
   }
+
+  const takes = toolsOn(game.character).map((t) => MATERIAL_FAMILY_BY_ID[t.family]?.raw ?? t.family);
+  $('sheet-toolnote').textContent = takes.length === 0
+    ? 'Nothing on you takes anything off the floor. The smith has one for you.'
+    : `This lets you take ${takes.join(' and ')} — and nothing else.`;
 }
 
 /**
@@ -600,7 +606,6 @@ const SHEET_TABS = [
 let sheetTab = SHEET_TABS[0].id;
 let profShown = 'blacksmithing';
 export const sheetTabId = (id: string): string => `sheet-tab-${id}`;
-export const toolSlotId = (slot: string): string => `sheet-tool-${slot}`;
 export const professionTileId = (id: string): string => `sheet-prof-${id}`;
 
 function renderTabs(): void {
@@ -682,76 +687,11 @@ function renderProfessions(): void {
   }
 }
 
-/** THE TOOL SLOTS, beside the gear and DRAWN LIKE IT — *"an actual slot like
- *  the equipment where you put gear in… look the same with the boxes."* A tool
- *  is still never an `Item`, so what a slot offers is what you OWN rather than
- *  what is in the bag; the markup is the gear cell's own, or two kinds of slot
- *  on one screen read as two games. */
-function renderTools(): void {
-  const host = $('sheet-tools');
-  host.replaceChildren();
-  for (const slot of TOOL_SLOTS) {
-    const held = toolsOwned(game.character, slot.id);
-    const on = toolIn(game.character, slot.id);
-    const cell = el('div', 'slotcell');
-    cell.append(el('div', 'slotcell__label', slot.name));
-
-    const btn = el('button', 'slotcell__btn') as HTMLButtonElement;
-    btn.id = toolSlotId(slot.id);
-    if (on) {
-      const rung = on.rungs[toolRung(game.character, on.id)];
-      btn.append(gearIcon(on.icon, 30));
-      const body = el('span', 'slotcell__body');
-      body.append(el('span', 'slotcell__name', rung.name));
-      body.append(el('span', 'slotcell__meta', MATERIAL_FAMILY_BY_ID[on.family]?.raw ?? on.family));
-      btn.append(body);
-      btn.classList.add('slotcell__btn--worn');
-      btn.onclick = () => {
-        game.character.toolSlots = { ...(game.character.toolSlots ?? {}), [slot.id]: '' };
-        render();
-      };
-    } else {
-      btn.append(el('span', 'slotcell__empty', held.length === 0 ? 'none owned' : 'empty'));
-      btn.onclick = () => {
-        pickingTool = pickingTool === slot.id ? null : slot.id;
-        render();
-      };
-      btn.classList.toggle('slotcell__btn--picking', pickingTool === slot.id);
-    }
-    attachTooltip(btn, () => slot.blurb);
-    cell.append(btn);
-
-    // What you own for this slot, offered where the bag would be for gear.
-    if (pickingTool === slot.id && held.length > 0) {
-      const row = el('div', 'toolpick');
-      for (const tool of held) {
-        const pick = el('button', 'mini') as HTMLButtonElement;
-        pick.id = `${toolSlotId(slot.id)}-${tool.id}`;
-        pick.textContent = tool.rungs[toolRung(game.character, tool.id)].name;
-        pick.onclick = () => {
-          game.character.toolSlots = { ...(game.character.toolSlots ?? {}), [slot.id]: tool.id };
-          pickingTool = null;
-          render();
-        };
-        row.append(pick);
-      }
-      cell.append(row);
-    }
-    host.append(cell);
-  }
-  const takes = toolsOn(game.character)
-    .map((t) => MATERIAL_FAMILY_BY_ID[t.family]?.raw ?? t.family);
-  host.append(el('p', 'empty', takes.length === 0
-    ? 'Nothing on you takes anything off the floor. The smith at depth 4 hands one over.'
-    : `This lets you take ${takes.join(' and ')} — and nothing else.`));
-}
-
 function render(): void {
   hideTooltip();
   renderTabs();
   renderSkills();
   renderSlots();
-  renderTools();
   renderProfessions();
   renderPickHint();
   renderAttributes();

@@ -2,7 +2,7 @@
  * The trials web: the fourth thing walked through `webgraph.ts`, and the only
  * one whose points are not bought by a level.
  */
-import { CAMPAIGN_REWARD, GRINDS, TALLIES } from './data';
+import { CAMPAIGN_REWARD, GRINDS, POINTS } from './data';
 import { buildTrials } from './trials/layout';
 import { TRIAL_WEB } from './trials/web';
 import { canAllocateIn, canDeallocateIn, neighboursIn, replayWeb } from './webgraph';
@@ -21,7 +21,7 @@ export const trialNodeById = (nodeId: string): SkillNodeDef | undefined =>
 export const trialRegionOf = (nodeId: string): string | undefined => TRIALS_WEB.regionOf[nodeId];
 
 /** NOTHING UNTIL THE LAMPWRIGHT HANDS THE CAMPAIGN'S REWARD OVER. Gated on the
- *  HANDOVER and not on the climb, so the Tallies arrive in his hands beside the
+ *  HANDOVER and not on the climb, so the points arrive in his hands beside the
  *  crystal; every one after them is ground out of the Ledger. */
 export const trialPointsFor = (character: Character): number => {
   if (!character.paidCampaign) return 0;
@@ -38,7 +38,7 @@ export const TRIAL_POINTS_MAX = CAMPAIGN_REWARD.points + GRINDS.reduce((n, g) =>
 
 /** What the web is SIZED for. `TRIAL_POINTS_MAX` has to come to this, or the
  *  Reckoning is built for a budget nothing can pay — the demo holds it. */
-export const TALLY_CAP = TALLIES.max;
+export const POINT_CAP = POINTS.max;
 
 export const neighboursOfTrial = (nodeId: string): Set<string> =>
   neighboursIn(trialNodes(), nodeId);

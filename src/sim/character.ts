@@ -11,9 +11,8 @@ import {
   SKILL_BY_ID,
   SKILL_SLOTS,
   SKILL_SLOT_BY_ID,
-  TOOL_BY_ID,
+  TOOL_OF_BASE,
   TOOL_SLOTS,
-  toolsForSlot,
 } from '../data';
 import type { ToolDef } from '../data';
 import { treePointsFor } from '../skills-tree';
@@ -57,8 +56,6 @@ export interface Character {
    *  the Reckoning at nothing. What they PAID for is derived, never stored. */
   grinds: Record<string, number>;
   professions?: Record<string, { level: number; xp: number }>; // absent is level 1
-  tools?: Record<string, number>; // tool id → RUNG owned; ABSENT is not owned, and a new character owns none
-  toolSlots?: Record<string, string>; // tool slot id → tool id; what is on you decides what a run gathers
   /** WHAT YOU ATE: `uses` is descents left, spent one per CLEAR. One at a time. */
   meal?: RolledMod;
   /** Rungs CLEARED per zone, keyed by theme. See `src/ladder.ts`. */
@@ -69,25 +66,27 @@ export interface Character {
   trialChoices?: Record<string, string>;
 }
 
-/** OWNING IS THE ROW EXISTING: `0` is the basic rung of a tool you HAVE and
- *  absent is one nobody has handed you. A new character owns none. */
-export const owns = (c: Character, id: string): boolean => c.tools?.[id] !== undefined;
-
-export const toolRung = (c: Character, id: string): number =>
-  Math.max(0, Math.min((TOOL_BY_ID[id]?.rungs.length ?? 1) - 1, c.tools?.[id] ?? 0));
-
-export const toolsOwned = (c: Character, slot: string): ToolDef[] =>
-  toolsForSlot(slot).filter((t) => owns(c, t.id));
-
-/** What is in one slot: what was chosen, and NEVER a fallback. */
+/** A TOOL IS AN ITEM AND IT IS WORN: read out of `equipment` exactly as a sword
+ *  is, so the bag is where one you are not using lives. */
 export function toolIn(c: Character, slot: string): ToolDef | undefined {
-  const held = toolsOwned(c, slot);
-  return held.find((t) => t.id === c.toolSlots?.[slot]);
+  const worn = c.equipment[slot];
+  return worn ? TOOL_OF_BASE[worn.base]?.tool : undefined;
 }
 
-/** EVERY TOOL ON YOU, one a slot — the rod and whichever of the other three. */
+/** Which rung, off the base worn: a better tool is another base. */
+export function toolRungIn(c: Character, slot: string): number {
+  const worn = c.equipment[slot];
+  return worn ? (TOOL_OF_BASE[worn.base]?.rung ?? 0) : 0;
+}
+
 export const toolsOn = (c: Character): ToolDef[] =>
   TOOL_SLOTS.map((s) => toolIn(c, s.id)).filter((t): t is ToolDef => t !== undefined);
+
+/** The rung of whichever slot holds this tool, or 0. */
+export const toolRung = (c: Character, id: string): number => {
+  const slot = TOOL_SLOTS.find((s) => toolIn(c, s.id)?.id === id);
+  return slot ? toolRungIn(c, slot.id) : 0;
+};
 
 /** WHAT THIS CHARACTER CAN GATHER — read by the node deal, so a family nobody
  *  carries the tool for is never put on the floor at all. */
@@ -95,8 +94,9 @@ export const gatherableFamilies = (c: Character): string[] => toolsOn(c).map((t)
 
 /** Extra RAW every node of a family hands over, for the tool that opens it. */
 export function toolMore(c: Character, family: string): number {
-  const tool = toolsOn(c).find((t) => t.family === family);
-  return tool ? (tool.rungs[toolRung(c, tool.id)]?.more ?? 0) : 0;
+  const slot = TOOL_SLOTS.find((s) => toolIn(c, s.id)?.family === family);
+  if (!slot) return 0;
+  return toolIn(c, slot.id)!.rungs[toolRungIn(c, slot.id)]?.more ?? 0;
 }
 
 /** Every family a skill will be swung with, resolving a group to its members. */

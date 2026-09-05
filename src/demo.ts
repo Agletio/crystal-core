@@ -113,6 +113,8 @@ import {
   PROFESSIONS,
   TOOLS,
   TOOL_BY_ID,
+  TOOL_OF_BASE,
+  toolBaseId,
   TOOL_SLOTS,
   PROVING,
   RUN_SLOTS,
@@ -175,7 +177,7 @@ import { findPath } from './sim/pathfind';
 import { folkMet, gaveKey, hasMet, keyOwed, takeBoss, takeMet, whoIsDown } from './game/scenes';
 import { GRIND_COUNTERS, descentFacts, healTrials, takeGrinds } from './game/trials';
 import {
-  TALLY_CAP, TRIAL_POINTS_MAX, canAllocateTrial, canDeallocateTrial, trialNodes, trialPointsFor,
+  POINT_CAP, TRIAL_POINTS_MAX, canAllocateTrial, canDeallocateTrial, trialNodes, trialPointsFor,
 } from './trials';
 import * as trialsModule from './trials';
 import { forgedFor, graft, graftRefusal, graftableKinds, relicFor, spendRelic } from './game/graft';
@@ -4049,8 +4051,7 @@ rule('THE WORKS — does a job run on the clock, and on nothing else?');
     const shed = createGame('fresh');
     const pick = TOOL_BY_ID.pick;
     // He has BEEN to the smith: a reforge is a second tool, not the first.
-    shed.character.tools = { pick: 0 };
-    shed.character.toolSlots = { gather: 'pick' };
+    shed.character.equipment.gather = makeGear(toolBaseId(pick, 0), 1);
     const said: string[] = [];
     said.push(whyNotUpgrade(shed, pick) ?? 'went ahead');
     shed.character.professions = { mining: { level: 25, xp: 0 } };
@@ -4068,14 +4069,29 @@ rule('THE WORKS — does a job run on the clock, and on nothing else?');
     );
     // AND IT TAKES MORE OUT OF EVERY NODE, which is the whole of what it buys.
     const chipped = createGame('fresh');
-    chipped.character.tools = { pick: 0 };
-    chipped.character.toolSlots = { gather: 'pick' };
+    chipped.character.equipment.gather = makeGear(toolBaseId(pick, 0), 1);
     check(
       toolMore(shed.character, 'metal') === pick.rungs[1].more
         && toolMore(chipped.character, 'metal') === 0,
       `and the reforged pick takes +${pick.rungs[1].more} out of every node where the chipped one takes +0`,
       `${toolMore(shed.character, 'metal')} against ${toolMore(chipped.character, 'metal')}`
     );
+    // AND NO FLOOR EVER PAYS ONE. A tool is an item now, so it is in the same
+    // pool every drop is picked from and only its authored weight keeps it out.
+    {
+      const seen = new Set<string>();
+      const draw = new Rng(4242);
+      for (let i = 0; i < 4000; i++) {
+        const got = pickGearBase(60, draw);
+        if (got) seen.add(got.id);
+      }
+      const tools = [...seen].filter((id) => TOOL_OF_BASE[id]);
+      check(
+        tools.length === 0,
+        'no tool is ever a drop, over 4,000 draws: the smith is the only way to one',
+        tools.join(', ')
+      );
+    }
     // AND A HERO HOLDING NOTHING GATHERS NOTHING, which is where one starts.
     check(
       gatherableFamilies(createGame('fresh').character).length === 0,
@@ -4084,24 +4100,21 @@ rule('THE WORKS — does a job run on the clock, and on nothing else?');
     );
   }
 
-  // A SAVE POINTING AT A TOOL THAT IS GONE falls back to one you OWN, and to
-  // nothing only when you own none: a slot naming a tool nobody gave you is a
-  // lie, where an empty slot is the state everybody starts in.
+  // A TOOL IS GEAR NOW, so a save carrying one is healed by the rule every
+  // worn piece is under: a base that no longer exists takes the piece with it,
+  // and no second repair is written for tools alone.
   {
-    const rotted = createGame('fresh');
-    rotted.character.tools = { pick: 1, ghost: 3 };
-    rotted.character.toolSlots = { gather: 'ghost', rod: 'rod' };
-    heal(rotted);
-    const bare = createGame('fresh');
-    bare.character.toolSlots = { gather: 'pick' }; // never given one
-    heal(bare);
+    const worn = createGame('fresh');
+    worn.character.equipment.gather = makeGear(toolBaseId(TOOL_BY_ID.pick, 1), 1);
+    worn.character.equipment.rod = { ...makeGear(toolBaseId(TOOL_BY_ID.rod, 0), 1), base: 'ghost_rod' };
+    heal(worn);
     check(
-      rotted.character.tools?.ghost === undefined && rotted.character.tools?.pick === 1
-        && toolIn(rotted.character, 'gather')?.id === 'pick'
-        && toolIn(rotted.character, 'rod') === undefined
-        && toolIn(bare.character, 'gather') === undefined,
-      'a save naming a tool that is gone falls back to one you own, and a slot naming one you were never given empties',
-      `${JSON.stringify(rotted.character.toolSlots)} ${JSON.stringify(bare.character.toolSlots)}`
+      toolIn(worn.character, 'gather')?.id === 'pick'
+        && toolMore(worn.character, 'metal') === TOOL_BY_ID.pick.rungs[1].more
+        && worn.character.equipment.rod === undefined
+        && toolIn(createGame('fresh').character, 'gather') === undefined,
+      'a worn tool is healed like any other piece: a base that is gone takes it, and a new character wears none',
+      `${toolIn(worn.character, 'gather')?.id} / ${worn.character.equipment.rod?.base ?? 'empty'}`
     );
   }
 
@@ -4706,16 +4719,16 @@ rule('THE RECKONING — is a harder descent actually harder, and paid for?');
   const bare = [makeCrystal(2), makeCrystal(2)];
 
   // THE LEDGER. Every line has to name a counter something actually adds to,
-  // or it is a grind nobody can ever finish and the Tallies never arrive.
+  // or it is a grind nobody can ever finish and the points never arrive.
   const strays = GRINDS.filter((g) => !GRIND_COUNTERS[g.counter]).map((g) => `${g.id}: ${g.counter}`);
   check(strays.length === 0, `all ${GRINDS.length} lines of the Ledger count something that exists`, strays.join(', '));
-  // AND THE BUDGET IS EXACT. The web is built for `TALLIES.max`; the campaign
+  // AND THE BUDGET IS EXACT. The web is built for `POINTS.max`; the campaign
   // and the Ledger between them have to come to it, or the Reckoning is sized
   // for points nothing pays or holds points nothing can spend.
   check(
-    TRIAL_POINTS_MAX === TALLY_CAP,
-    `the campaign's ${CAMPAIGN_REWARD.points} and the Ledger's ${TRIAL_POINTS_MAX - CAMPAIGN_REWARD.points} come to exactly the ${TALLY_CAP} the web is built for`,
-    `${TRIAL_POINTS_MAX} against ${TALLY_CAP}`
+    TRIAL_POINTS_MAX === POINT_CAP,
+    `the campaign's ${CAMPAIGN_REWARD.points} and the Ledger's ${TRIAL_POINTS_MAX - CAMPAIGN_REWARD.points} come to exactly the ${POINT_CAP} the web is built for`,
+    `${TRIAL_POINTS_MAX} against ${POINT_CAP}`
   );
   // Nothing is bigger than the campaign's own handout, which is the ONE thing
   // paid without grinding: a single line worth more would beat the finish line.
@@ -4725,7 +4738,7 @@ rule('THE RECKONING — is a harder descent actually harder, and paid for?');
   // PER CHARACTER, and always OPEN. Everything the web is made of hangs off the
   // character — the Ledger's counts, the nodes walked and the choices on them —
   // so a second one starts at nothing with the web in front of it. Shared, one
-  // character's grind would spend another's Tallies.
+  // character's grind would spend another's points.
   {
     const one = makeCharacter({}, 'strike');
     one.grinds = Object.fromEntries(GRINDS.map((g) => [g.counter, g.need]));
@@ -4802,7 +4815,7 @@ rule('THE RECKONING — is a harder descent actually harder, and paid for?');
     if (open.length === 0) break;
     walk.push(spendRng.pick(open)!.id);
   }
-  check(walk.length === TRIAL_POINTS_MAX, `all ${TRIAL_POINTS_MAX} Tallies can be spent`, String(walk.length));
+  check(walk.length === TRIAL_POINTS_MAX, `all ${TRIAL_POINTS_MAX} points can be spent`, String(walk.length));
   let held = [...walk];
   while (held.length > 0) {
     const loose = held.find((id) => canDeallocateTrial(id, held));
@@ -4966,7 +4979,7 @@ rule('THE RECKONING — is a harder descent actually harder, and paid for?');
   );
 
   // A COUNTER NOBODY READS refunds whatever it paid rather than stranding the
-  // walk. On a PAID campaign, since nothing pays a Tally before that.
+  // walk. On a PAID campaign, since nothing pays a point before that.
   const save = createGame('dev');
   save.character.paidCampaign = true;
   save.character.trialAllocated = [...walk];
@@ -12874,7 +12887,7 @@ rule('THE ROCK\'S OWN RULES — does a crystal DO something, or just add up?');
       `a Hoard ${coin(hoard)} and ${hoard.end.loot.items.length}`);
 
     // EVERY LINE OF THE LEDGER IS COUNTED OFF A REAL DESCENT. A counter nothing
-    // ever adds to is a grind nobody can finish and Tallies nobody can spend,
+    // ever adds to is a grind nobody can finish and points nobody can spend,
     // and no table check can see that — so each one is PLAYED here, through the
     // same `descentFacts` the run loop counts with.
     const ticked: string[] = [];
@@ -12936,7 +12949,7 @@ rule('THE ROCK\'S OWN RULES — does a crystal DO something, or just add up?');
       check(
         twice.length === 0 && trialPointsFor(nearly.character) === was + first.pays,
         'and the clear after it pays nothing more for the same line',
-        `${twice.length} won, ${trialPointsFor(nearly.character)} Tallies`
+        `${twice.length} won, ${trialPointsFor(nearly.character)} points`
       );
     }
     check(

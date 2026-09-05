@@ -73,7 +73,7 @@ function renderLadder(): void {
     const head = el('div', 'trialrow__head');
     head.append(el('span', 'trialrow__name', grind.name));
     head.append(el('span', 'trialrow__state',
-      `${at} / ${grind.need} — ${grind.pays} ${grind.pays === 1 ? 'Tally' : 'Tallies'}`));
+      `${at} / ${grind.need} — ${grind.pays} ${grind.pays === 1 ? 'point' : 'points'}`));
     row.append(head);
     row.append(el('div', 'trialrow__detail', grind.detail));
     const bar = el('div', 'trialrow__bar');
@@ -223,7 +223,7 @@ function drawNode(
         ? 'not connected to anything you own'
         : spare > 0
           ? 'available'
-          : 'no Tallies left';
+          : 'no points left';
     return nodeCard(node.name, state, [node.description]);
   });
 
@@ -317,9 +317,9 @@ function render(): void {
   // the climb first; the web is per-character and starts at nothing to spend,
   // which reads as a thing to work toward rather than a door.
   $('trials-sub').textContent =
-    `${spent}/${earned} Tallies spent · ${TRIAL_POINTS_MAX} to earn · ${trialNodes().length} nodes`;
+    `${spent}/${earned} points spent · ${TRIAL_POINTS_MAX} to earn · ${trialNodes().length} nodes`;
   $('trials-note').textContent =
-    `${CAMPAIGN_REWARD.points} Tallies for finishing the climb; every one after that ` +
+    `${CAMPAIGN_REWARD.points} points for finishing the climb; every one after that ` +
     'is ground out of the Ledger. Most nodes make a descent worse, and worse is what pays.';
 
   $('trials-webwrap').hidden = false;

@@ -430,11 +430,9 @@ export const BANNED: Record<string, string> = {
   'knocks out': 'Stun',
   stagger: 'Stun',
   staggers: 'Stun',
-  // What the Reckoning and its Tallies were called while points came from
-  // authored trials. The PHRASE, never the bare word: a trial is still an
-  // ordinary English word and the Trials of a boss fight may yet want it.
-  'trial point': 'Tally',
-  'trial points': 'Tally',
+  // What the Reckoning was called while points came from authored trials. The
+  // PHRASE, never the bare word: a trial is still an ordinary English word and
+  // the Trials of a boss fight may yet want it.
   'trials web': 'the Reckoning',
   'the trials tree': 'the Reckoning',
 };

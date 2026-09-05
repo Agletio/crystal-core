@@ -40,15 +40,12 @@ import {
   MATERIAL_BY_ID,
   MEAL_BY_FISH,
   PROFESSION_BY_ID,
-  TOOL_BY_ID,
   WORK,
 } from '../data';
 import { nodeById, replayTreeNodes, treeFor, treePointsFor } from '../skills-tree';
 import { TRADE_BY_ID, replayTradeNodes, tradePointsFor } from '../trades';
 import { isPerfect, makeGear, reserveItemIds, stackKey } from '../economy';
-import {
-  owns,
-  toolsOwned, canDualWield } from '../sim/character';
+import { canDualWield } from '../sim/character';
 import { attributePointsFor, weaponFits } from '../sim/character';
 import type { Character } from '../sim/character';
 import type { Item } from '../types';
@@ -414,18 +411,6 @@ export function heal(game: GameState): Healed {
   }
   for (const id of Object.keys(game.character.professions ?? {})) { // a cut profession takes its level
     if (!PROFESSION_BY_ID[id]) delete game.character.professions![id];
-  }
-  // A TOOL THAT IS GONE takes the rung owned of it, and a slot pointing at one
-  // falls back to another tool you OWN for that slot — to nothing only when you
-  // own none, since a slot naming a tool you were never given is a lie.
-  for (const id of Object.keys(game.character.tools ?? {})) {
-    if (!TOOL_BY_ID[id]) delete game.character.tools![id];
-  }
-  for (const [slot, id] of Object.entries(game.character.toolSlots ?? {})) {
-    if (owns(game.character, id) && TOOL_BY_ID[id]?.slot === slot) continue;
-    const spare = toolsOwned(game.character, slot)[0];
-    if (spare) game.character.toolSlots![slot] = spare.id;
-    else delete game.character.toolSlots![slot];
   }
   // Same rule as every other container: a base that is gone takes its entry.
   game.sold = (Array.isArray(game.sold) ? game.sold : []).filter((e) => {

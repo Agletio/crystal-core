@@ -391,7 +391,7 @@ healed against `PROVING.influences`, which are three and never the Seam.
 **Its difficulty is a FLOOR above the whole climb**: `provingMod` scales the same
 `LADDER.*AtTop` a depth does, by `PROVING.overTop` plus `perSocket` a filled
 socket — measured, 1028 danger empty against the deep end's 822, and 1520 on
-four blanks. **Tallies scale it through the Reckoning's own lines**, which
+four blanks. **points scale it through the Reckoning's own lines**, which
 already merge into the seam; counting them again here would pay for one web
 twice. It opens on `paidCampaign`, so the tab and the first crystal arrive
 together.
@@ -435,10 +435,10 @@ A fifth socket takes a **boss key**.
 IT.** *"You shouldn't see any trial stuff or even receive any crystals until
 you've cleared the entire campaign."* `campaignDone` is every zone climbed to
 its own boss, and finishing it pays NOTHING on the report: `CAMPAIGN_REWARD` —
-one crystal and the first 10 Tallies — is a third thing `giftWaiting` holds,
+one crystal and the first 10 points — is a third thing `giftWaiting` holds,
 taken in his own scene in the camp, which is what makes him the person the
 campaign ends at. `Character.paidCampaign` is set by the HANDOVER and read by
-`trialPointsFor`, so the Tallies and the crystal arrive together and a re-grind
+`trialPointsFor`, so the points and the crystal arrive together and a re-grind
 pays nothing. **The finish line is SAID before you get there** — `campaignLine`
 on the climb names the depth that ends it and quotes `campaignPrize`, because a
 reward nobody can see is a reward nobody is climbing toward. The web is on
@@ -586,19 +586,27 @@ you do finally get a piece it'll feel good."*
 **A TOOL DECIDES WHAT YOU GATHER, AND IT IS ONE AT A TIME.** *"I think we add
 an equipment slot for gathering… you can only collect one at a time, if you
 don't have the correct one equipped you don't gather it."* `TOOLS` and
-`TOOL_SLOTS` in `src/data.ts`: the ROD has its own slot and is always on, since
-water is outside the node count and costs the other families nothing; the other
-slot takes the pick, the sickle or the skinning knife, and that is the whole
-specialization. **A TOOL IS NOT AN ITEM** — it never enters the bag, rolls a
-modifier or sells — so `Character.tools` is the rung owned and
-`Character.toolSlots` what is on you, both absent on a new save and both read as
-the basic tool everybody starts with. It is a SELECT on the character sheet, not
-a slot you drop into: *"don't make them take inventory slots."*
+`TOOL_SLOTS` in `src/data.ts`: the ROD has its own slot, since water is outside
+the node count and costs the other families nothing; the other slot takes the
+pick, the sickle or the skinning knife, and that is the whole specialization.
+**A TOOL IS AN ITEM AND IT IS WORN LIKE GEAR** — *"have the tools enter the
+inventory. I want to add variations of the tools you can get later so need to
+work as items now."* Every rung is a `GearBase` DERIVED from the `TOOLS` table
+(`TOOL_BASES`, `TOOL_OF_BASE`), `gather` and `rod` are two more `EQUIP_SLOTS`,
+and `EquipSlotDef.group` is the only thing that draws them under their own
+heading — so the bag, the sheet, a swap and the smith's counter all read a tool
+through the code gear already goes through, and a variation later is a table
+row. **NOTHING IS OWNED BESIDE WHAT IS WORN**: there is no second map, a tool
+you are not using sits in the bag, and a new character has none.
+**A TOOL IS NEVER A DROP**: `KIND_VARIETY` is `0` for both kinds, and writing
+that down is load-bearing — the weight is `slots × (KIND_VARIETY[kind] ?? 1)`
+off `EQUIP_SLOTS`, so a new slot with no entry would drop like a shield.
 **SKINS ARE THE KNIFE'S ALONE** — *"it won't drop unless you have the skinning
 knife equipped"* — off bodies, with no node and no walk, and without the knife
 that budget is never drawn against. **A BETTER TOOL TAKES MORE OUT OF ONE
-NODE** (`ToolRungDef.more`) and is reforged at the ANVIL for gold and the
-material it `eats`, gated on the gathering level. **Nothing is paid for in its
+NODE** (`ToolRungDef.more`) and is reforged for gold and the material it `eats`,
+gated on the gathering level — a swap of the piece in the slot, since a rung is
+another base. **Nothing is paid for in its
 own output**: the three blades are the smith's and the rod's line is the
 weaver's, so every tool pulls on a profession other than the one it feeds.
 
@@ -747,9 +755,9 @@ ways with its MAJOR at the middle, hung off the ring point FURTHEST from the
 road — half the ring is what the major costs. Its identifiers stay `trial_` and
 `Character.trialAllocated`, because a save points at them.
 
-**60 TALLIES, and every one of them is GROUND OUT.** *"Instead they will all be
+**60 POINTS, and every one of them is GROUND OUT.** *"Instead they will all be
 revolving around doing grinds… open 100 hordes, swell 1000 enemies, kill 2500
-wardens stuff like that."* `TALLIES.max` is what the web is sized for, and the
+wardens stuff like that."* `POINTS.max` is what the web is sized for, and the
 campaign's 10 plus **THE LEDGER** come to exactly it — 18 lines in `GRINDS`,
 four families of ladders: descents cleared, Hoards and Veins opened, Welled
 bodies and Wardens and Bearers put down, and descents run under each influence.
@@ -784,7 +792,7 @@ found**: *"make it where all the loot on the floor just gets
 picked up when you return to camp… you can min max by doing a hard level for a
 bit and then returning before you die."* Only DYING banks nothing. What a walk
 does not buy is PROGRESS — no rung, no crystal out of the wall, no levelling of
-what is socketed, no Tally — so going deeper than you can finish is a
+what is socketed, no point — so going deeper than you can finish is a
 decision rather than a punishment. "Leave after this run" is gone with it: it
 armed a stop one descent ahead, which is the same stop said early.
 
@@ -953,7 +961,7 @@ src/trades.ts      the character's own web; src/trades/* the three trades
 src/ui/webcam.ts   how ANY web is panned and zoomed, and why it is built once
 src/moves/         the movement webs
 src/ladder.ts      the CLIMB: which rung is open, and what a clear records
-src/trials.ts      the RECKONING and what a Tally buys; src/trials/* its arms
+src/trials.ts      the RECKONING and what a point buys; src/trials/* its arms
 src/game/trials.ts the LEDGER: what a clear counts, and what that has paid for
 src/scenes.ts      the PEOPLE and the one arena; src/scenes/camp.ts the picture
 src/vignettes.ts   what the rock does: cover, growth, solidity

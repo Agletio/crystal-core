@@ -194,7 +194,7 @@ export function takeHandover(game: GameState, waiting: Waiting): Handover {
     items.push(crystal);
   }
   if (waiting.campaign) {
-    // The flag IS the Tallies: `trialPointsFor` reads it, so the Reckoning
+    // The flag IS the points: `trialPointsFor` reads it, so the Reckoning
     // fills the moment he lets go of them and never before.
     game.character.paidCampaign = true;
     for (let i = 0; i < CAMPAIGN_REWARD.crystals; i++) {
@@ -202,7 +202,7 @@ export function takeHandover(game: GameState, waiting: Waiting): Handover {
       giveGift(game, crystal);
       items.push(crystal);
     }
-    says.push(`${CAMPAIGN_REWARD.points} Tallies`);
+    says.push(`${CAMPAIGN_REWARD.points} points`);
   }
   if (waiting.ladder) {
     const step = CRYSTAL_STEP_BY_ID[waiting.ladder];

@@ -312,6 +312,8 @@ export const EQUIP_SLOTS: EquipSlotDef[] = [
   { id: 'amulet', name: 'Amulet', accepts: ['amulet'] },
   { id: 'ring1', name: 'Ring I', accepts: ['ring'] },
   { id: 'ring2', name: 'Ring II', accepts: ['ring'] },
+  { id: 'gather', name: 'Tool', accepts: ['tool'], group: 'tool' },
+  { id: 'rod', name: 'Rod', accepts: ['rod'], group: 'tool' },
 ];
 
 /** DUAL WIELDING: every hit is BOTH hands and the rate ALTERNATES between them.
@@ -821,6 +823,101 @@ const jewellery = (): GearBase[] => {
   return out;
 };
 
+/**
+ * A TOOL DECIDES WHAT YOU GATHER. *"You can only collect one at a time — if you
+ * don't have the correct one equipped you don't gather it."* A tool is NOT an
+ * `Item`: it never enters the bag, rolls a modifier or sells. **The deal only
+ * deals what your tools can work** — a cloth node put in front of a hero
+ * carrying a pick would pay nothing and stand there unusable, which is the
+ * never-prevented rule broken. Same node count either way.
+ */
+export interface ToolRungDef {
+  name: string;
+  at: number; // the GATHERING level that opens it
+  gold: number;
+  eats: number; // processed material of the tool's `eats` family
+  more: number; // extra RAW every node of its family hands over
+}
+
+export interface ToolDef {
+  id: string;
+  name: string;
+  slot: string;
+  skill: string; // the gathering profession it levels
+  family: string;
+  icon: string;
+  // Blades are the smith's and a line is spun, so nothing is paid for in its
+  // own output: every tool pulls on a profession other than the one it feeds.
+  eats: string;
+  rungs: ToolRungDef[];
+}
+
+/** THE ROD IS ITS OWN SLOT AND ALWAYS ON — *"a separate equip that is always
+ *  on"* — because water is outside the node count, so it costs the other
+ *  families nothing. The other slot is the CHOICE. */
+export interface ToolSlotDef {
+  id: string;
+  name: string;
+  blurb: string;
+}
+
+export const TOOL_SLOTS: ToolSlotDef[] = [
+  { id: 'gather', name: 'Tool', blurb: 'What you can take off the floor. One at a time.' },
+  { id: 'rod', name: 'Rod', blurb: 'Water is outside the count, so this costs the others nothing.' },
+];
+
+export const TOOLS: ToolDef[] = [
+  { id: 'pick', name: 'Pick', slot: 'gather', skill: 'mining', family: 'metal',
+    icon: 'tool_pick', eats: 'metal', rungs: [
+      { name: 'Chipped Pick', at: 1, gold: 0, eats: 0, more: 0 },
+      { name: 'Lamped Pick', at: 20, gold: 900, eats: 12, more: 1 },
+      { name: 'Seamed Pick', at: 50, gold: 6500, eats: 30, more: 2 },
+    ] },
+  { id: 'sickle', name: 'Sickle', slot: 'gather', skill: 'harvesting', family: 'cloth',
+    icon: 'tool_sickle', eats: 'metal', rungs: [
+      { name: 'Chipped Sickle', at: 1, gold: 0, eats: 0, more: 0 },
+      { name: 'Lamped Sickle', at: 20, gold: 900, eats: 12, more: 1 },
+      { name: 'Seamed Sickle', at: 50, gold: 6500, eats: 30, more: 2 },
+    ] },
+  { id: 'knife', name: 'Skinning Knife', slot: 'gather', skill: 'skinning', family: 'hide',
+    icon: 'tool_knife', eats: 'metal', rungs: [
+      { name: 'Chipped Knife', at: 1, gold: 0, eats: 0, more: 0 },
+      { name: 'Lamped Knife', at: 20, gold: 900, eats: 12, more: 1 },
+      { name: 'Seamed Knife', at: 50, gold: 6500, eats: 30, more: 2 },
+    ] },
+  { id: 'rod', name: 'Rod', slot: 'rod', skill: 'fishing', family: 'fish',
+    icon: 'tool_rod', eats: 'cloth', rungs: [
+      { name: 'Bent Rod', at: 1, gold: 0, eats: 0, more: 0 },
+      { name: 'Lamped Rod', at: 20, gold: 900, eats: 12, more: 1 },
+      { name: 'Seamed Rod', at: 50, gold: 6500, eats: 30, more: 2 },
+    ] },
+];
+
+export const TOOL_BY_ID: Record<string, ToolDef> = Object.fromEntries(TOOLS.map((t) => [t.id, t]));
+export const toolsForSlot = (slot: string): ToolDef[] => TOOLS.filter((t) => t.slot === slot);
+
+/** EVERY RUNG IS A BASE, derived so the two cannot drift. A tool holds no
+ *  modifier slots and never rolls — what it is worth is `more`, off the rung —
+ *  but it is an `Item` in every other way, so the bag, the sheet, a drag and
+ *  the smith's counter all read it through the code gear already goes through. */
+export const toolBaseId = (tool: ToolDef, rung: number): string => `${tool.id}_r${rung}`;
+
+export const TOOL_BASES: GearBase[] = TOOLS.flatMap((tool) =>
+  tool.rungs.map((rung, at) => ({
+    id: toolBaseId(tool, at),
+    name: rung.name,
+    kind: (tool.slot === 'rod' ? 'rod' : 'tool') as GearKind,
+    art: tool.icon,
+    slots: {},
+    tier: 1,
+  }))
+);
+
+/** The tool a base belongs to, and which rung of it — the one way back. */
+export const TOOL_OF_BASE: Record<string, { tool: ToolDef; rung: number }> = Object.fromEntries(
+  TOOLS.flatMap((tool) => tool.rungs.map((_, at) => [toolBaseId(tool, at), { tool, rung: at }]))
+);
+
 export const JEWEL_BASES: GearBase[] = jewellery();
 
 export const GEAR_BASES: GearBase[] = [
@@ -828,6 +925,7 @@ export const GEAR_BASES: GearBase[] = [
   ...SHIELD_BASES,
   ...ARMOUR_BASES,
   ...JEWEL_BASES,
+  ...TOOL_BASES,
 ];
 
 export const GEAR_BASE_BY_ID: Record<string, GearBase> = Object.fromEntries(
@@ -851,6 +949,8 @@ export const KIND_VARIETY: Record<string, number> = {
   boots: 3,
   ring: 1,
   amulet: 1,
+  tool: 0, // NEVER A DROP: the smith hands a tool over, so the floor may not
+  rod: 0, //  pay one — and the `?? 1` default would weight it like a shield
 };
 
 // --- mod pool --------------------------------------------------------------
@@ -2035,7 +2135,7 @@ export const INTRO = {
 };
 
 /** WHAT CLEARING THE CAMPAIGN PAYS: *"1 crystal and 10 trial points"* — one
- *  crystal and the first 10 TALLIES. */
+ *  crystal and the first 10 POINTS. */
 export const CAMPAIGN_REWARD = { crystals: 1, points: 10 };
 
 export const CRYSTAL_ILVL = 70;
@@ -2503,7 +2603,7 @@ export const WEAPON_PROFESSIONS: Record<string, string[]> = {
 /** THE PROVING GROUND: one area past the climb, at a set floor. *"A set
  *  difficulty even harder than the final 'story mode' level which you can scale
  *  with more crystals and more trial points."* `rungMod` is 1 at depth 42, so
- *  `overTop` is a MULTIPLE of it; Tallies scale it through the Reckoning. */
+ *  `overTop` is a MULTIPLE of it; points scale it through the Reckoning. */
 export const PROVING = {
   name: 'The Proving Ground',
   blurb: 'Past the last of the climb, and it does not end. What you socket is where you go.',
@@ -3194,8 +3294,8 @@ export const BOSS_KEY_BY_ID: Record<string, BossKeyDef> = Object.fromEntries(
 
 /** WHAT THE RECKONING IS SIZED FOR: the campaign's handout and the whole
  *  Ledger, held to summing to exactly this. A LINE of it is a thing done over
- *  and over, paying Tallies at the count — *"100 runs gets you 5 points."* */
-export const TALLIES = { max: 60 };
+ *  and over, paying points at the count — *"100 runs gets you 5 points."* */
+export const POINTS = { max: 60 };
 
 export interface GrindDef {
   id: string;
@@ -3203,7 +3303,7 @@ export interface GrindDef {
   detail: string; // the objective, in words a player can act on
   counter: string; // an entry in `GRIND_COUNTERS`: what one descent adds
   need: number;
-  pays: number; // Tallies, once
+  pays: number; // points, once
 }
 
 /** THE LEDGER: what a descent is, locks, meets, and where — each a LADDER. */
@@ -3585,78 +3685,6 @@ export const GATHER = {
   xpPerRaw: 5, // xp a gathering profession banks per RAW, so its ladder is climbed by gathering alone
 };
 
-/**
- * A TOOL DECIDES WHAT YOU GATHER. *"You can only collect one at a time — if you
- * don't have the correct one equipped you don't gather it."* A tool is NOT an
- * `Item`: it never enters the bag, rolls a modifier or sells. **The deal only
- * deals what your tools can work** — a cloth node put in front of a hero
- * carrying a pick would pay nothing and stand there unusable, which is the
- * never-prevented rule broken. Same node count either way.
- */
-export interface ToolRungDef {
-  name: string;
-  at: number; // the GATHERING level that opens it
-  gold: number;
-  eats: number; // processed material of the tool's `eats` family
-  more: number; // extra RAW every node of its family hands over
-}
-
-export interface ToolDef {
-  id: string;
-  name: string;
-  slot: string;
-  skill: string; // the gathering profession it levels
-  family: string;
-  icon: string;
-  // Blades are the smith's and a line is spun, so nothing is paid for in its
-  // own output: every tool pulls on a profession other than the one it feeds.
-  eats: string;
-  rungs: ToolRungDef[];
-}
-
-/** THE ROD IS ITS OWN SLOT AND ALWAYS ON — *"a separate equip that is always
- *  on"* — because water is outside the node count, so it costs the other
- *  families nothing. The other slot is the CHOICE. */
-export interface ToolSlotDef {
-  id: string;
-  name: string;
-  blurb: string;
-}
-
-export const TOOL_SLOTS: ToolSlotDef[] = [
-  { id: 'gather', name: 'Tool', blurb: 'What you can take off the floor. One at a time.' },
-  { id: 'rod', name: 'Rod', blurb: 'Water is outside the count, so this costs the others nothing.' },
-];
-
-export const TOOLS: ToolDef[] = [
-  { id: 'pick', name: 'Pick', slot: 'gather', skill: 'mining', family: 'metal',
-    icon: 'tool_pick', eats: 'metal', rungs: [
-      { name: 'Chipped Pick', at: 1, gold: 0, eats: 0, more: 0 },
-      { name: 'Lamped Pick', at: 20, gold: 900, eats: 12, more: 1 },
-      { name: 'Seamed Pick', at: 50, gold: 6500, eats: 30, more: 2 },
-    ] },
-  { id: 'sickle', name: 'Sickle', slot: 'gather', skill: 'harvesting', family: 'cloth',
-    icon: 'tool_sickle', eats: 'metal', rungs: [
-      { name: 'Chipped Sickle', at: 1, gold: 0, eats: 0, more: 0 },
-      { name: 'Lamped Sickle', at: 20, gold: 900, eats: 12, more: 1 },
-      { name: 'Seamed Sickle', at: 50, gold: 6500, eats: 30, more: 2 },
-    ] },
-  { id: 'knife', name: 'Skinning Knife', slot: 'gather', skill: 'skinning', family: 'hide',
-    icon: 'tool_knife', eats: 'metal', rungs: [
-      { name: 'Chipped Knife', at: 1, gold: 0, eats: 0, more: 0 },
-      { name: 'Lamped Knife', at: 20, gold: 900, eats: 12, more: 1 },
-      { name: 'Seamed Knife', at: 50, gold: 6500, eats: 30, more: 2 },
-    ] },
-  { id: 'rod', name: 'Rod', slot: 'rod', skill: 'fishing', family: 'fish',
-    icon: 'tool_rod', eats: 'cloth', rungs: [
-      { name: 'Bent Rod', at: 1, gold: 0, eats: 0, more: 0 },
-      { name: 'Lamped Rod', at: 20, gold: 900, eats: 12, more: 1 },
-      { name: 'Seamed Rod', at: 50, gold: 6500, eats: 30, more: 2 },
-    ] },
-];
-
-export const TOOL_BY_ID: Record<string, ToolDef> = Object.fromEntries(TOOLS.map((t) => [t.id, t]));
-export const toolsForSlot = (slot: string): ToolDef[] => TOOLS.filter((t) => t.slot === slot);
 
 /** What each world pays in, on top of what every world pays, read off the SHARE
  *  of the run it holds. Three different currencies deliberately: they cannot be

@@ -257,13 +257,11 @@ export function resetGame(game: GameState, mode: StartMode): void {
   game.bosses = mode === 'dev' ? BOSSES.map((b) => b.id) : []; // handed the door too
   // THE WHOLE LEDGER ground out, and the campaign's reward already TAKEN —
   // never the climb itself, which the kit has walked none of. Between them
-  // that is every Tally there is, and sockets for the crystals to go in.
+  // that is every point there is, and sockets for the crystals to go in.
   game.character.grinds = mode === 'dev' ? devGrinds() : {};
   // EVERY TOOL, since the kit is the game with everything — a new character
   // owns none and is handed one by the smith.
   if (mode === 'dev') {
-    game.character.tools = Object.fromEntries(TOOLS.map((t) => [t.id, 0]));
-    game.character.toolSlots = { gather: 'pick', rod: 'rod' };
   }
   if (mode === 'dev') game.character.paidCampaign = true;
   game.called = null;

@@ -19,10 +19,11 @@ import {
   SKILL_BY_ID,
   SKILL_SLOTS,
   WEAPON_SLOT,
-  TOOLS,
+  TOOL_BY_ID,
+  toolBaseId,
 } from '../data';
 import { characterStats, damageDetail } from './stats';
-import { defaultGearBase, rollCrystal, rollGear } from '../economy';
+import { defaultGearBase, makeGear, rollCrystal, rollGear } from '../economy';
 import { runSet } from './crystal';
 import { RunSim, TICK } from './run';
 import { attributePointsFor, canDualWield, equipSkill, makeCharacter, slotIsOpen } from './character';
@@ -65,8 +66,8 @@ export function loadoutMods(equipment: Record<string, Item>): number {
  *  played one has been to the smith, so a hero holding nothing would measure
  *  the first four depths rather than the band. Both builders call it. */
 export function armTools(character: Character): void {
-  character.tools = Object.fromEntries(TOOLS.map((t) => [t.id, 0]));
-  character.toolSlots = { gather: 'pick', rod: 'rod' };
+  character.equipment.gather = makeGear(toolBaseId(TOOL_BY_ID.pick, 0), 1);
+  character.equipment.rod = makeGear(toolBaseId(TOOL_BY_ID.rod, 0), 1);
 }
 
 export function ladderCharacter(

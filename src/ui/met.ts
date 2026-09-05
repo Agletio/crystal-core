@@ -83,7 +83,7 @@ export function openMet(waiting: Waiting): void {
     gift.append(row(currencyIcon(def, 28), `${def.name} \u00d7${n}`, () => def.description));
   }
   // What has no icon because it is not a thing you can hold: the Reckoning's
-  // own Tallies, which land on the character the moment he lets go of them.
+  // own points, which land on the character the moment he lets go of them.
   for (const said of hand.says) gift.append(el('div', 'met__said', said));
 
   $('met').hidden = false;

@@ -65,7 +65,7 @@ export const grindsDone = (character: Character): GrindDef[] =>
   GRINDS.filter((g) => grindDone(character, g));
 
 /** IN PLACE, at the end of a clear; returns what the count just finished, since
- *  a Tally earned in silence is a Tally nobody spends. */
+ *  a point earned in silence is a point nobody spends. */
 export function takeGrinds(game: GameState, facts: QuestFacts): GrindDef[] {
   const character = game.character;
   const before = new Set(grindsDone(character).map((g) => g.id));

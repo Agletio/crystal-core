@@ -9,6 +9,8 @@
  * is craftable the moment it exists, with nothing to write down.
  */
 import {
+  TOOL_SLOTS,
+  toolBaseId,
   ARCHETYPE_PROFESSION,
   ARMOUR_FAMILIES,
   CRAFT,
@@ -24,7 +26,7 @@ import type { MaterialDef, ToolDef, ToolRungDef } from '../data';
 import { canBePerfect, makeGear, makeMaterial, stackKey } from '../economy';
 import { addItem } from './state';
 import { payXp, professionAt } from './work';
-import { toolRung } from '../sim/character';
+import { toolIn, toolRung } from '../sim/character';
 import type { GameState } from './state';
 import type { GearBase, Item } from '../types';
 import type { Rng } from '../rng';
@@ -209,10 +211,13 @@ export function upgradeTool(game: GameState, tool: ToolDef): ToolRungDef | null 
   const rung = nextRung(game, tool)!;
   for (const row of upgradeCost(game, tool, rung)) take(game, `${row.material}:done`, row.n);
   game.wallet.gold = (game.wallet.gold ?? 0) - rung.gold;
-  game.character.tools = {
-    ...(game.character.tools ?? {}),
-    [tool.id]: toolRung(game.character, tool.id) + 1,
-  };
+  // The piece you WEAR becomes the better one: a rung is another base, so the
+  // reforge is a swap in the slot rather than a number kept beside it.
+  const slot = TOOL_SLOTS.find((s) => toolIn(game.character, s.id)?.id === tool.id);
+  if (slot) {
+    game.character.equipment[slot.id] =
+      makeGear(toolBaseId(tool, toolRung(game.character, tool.id) + 1), 1);
+  }
   return rung;
 }
 
