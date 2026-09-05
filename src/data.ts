@@ -4321,8 +4321,14 @@ export const START_PRESETS: Record<'fresh' | 'dev', StartPreset> = {
     currency: {},
     // Off both tables, so a new rung or a new world arrives in the kit without
     // a second edit — every level in every family, which is the whole grid.
+    // TWO OF EACH: `PROVING.seamOf` is 2 of each aura world at the top level,
+    // so with one apiece the kit could not open the SEAM at all, and the only
+    // world with a set nobody had photographed stayed unreachable.
     crystals: CRYSTAL_LEVELS.flatMap((t) =>
-      MONSTER_FAMILIES.map((f) => ({ level: t.level, family: f.id }))
+      MONSTER_FAMILIES.flatMap((f) => [
+        { level: t.level, family: f.id },
+        { level: t.level, family: f.id },
+      ])
     ),
     gear: [],
     // One of each, so the kit can look at a named piece without farming for it.

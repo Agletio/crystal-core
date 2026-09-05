@@ -42,6 +42,7 @@ import { equippedSkill, gatherableFamilies, mainSkillId, monsterXp, toolMore } f
 import type { Character } from './character';
 import { dominantFamily, familyPlan, runSet } from './crystal';
 import type { RunSet } from './crystal';
+import type { RunWhere } from '../ladder';
 import {
   AURA,
   AURA_BY_ID,
@@ -440,8 +441,9 @@ export interface RunOptions {
   /** SOMEBODY TO FIND: a `SceneDef` id and the sprite. Placed in the room
    *  FURTHEST from the way in, never rolled — a draw moves every roll after it. */
   meets?: { id: string; sprite: string };
-  /** WHICH RUNG, where difficulty comes from. The sim is TOLD. */
-  rung?: { zone: number; rung: number };
+  /** WHERE THIS GOES, and where difficulty comes from. Handed a Proving Ground
+   *  as `undefined` the sim ran in whatever the crystals composed to. */
+  where?: RunWhere;
   /** Props the GAME decides on top of the scene's own: full or empty sockets. */
   dressing?: { id: string; x: number; y: number }[];
 }
@@ -681,7 +683,7 @@ export class RunSim {
     // the sim has to fight with the same skill the stat sheet described, or a
     // converted Fireball scales off cold and is resisted as fire.
     this.skill = effectiveSkill(SKILL_BY_ID[mainSkillId(character)] ?? SKILLS[0], this.grants);
-    this.set = runSet(crystals, trialMod(character), options.rung);
+    this.set = runSet(crystals, trialMod(character), options.where);
     this.wellChance = percentStat(this.set.mods, 'wellChance');
     this.splitChance = percentStat(this.set.mods, 'splitChance');
     this.giltChance = percentStat(this.set.mods, 'giltChance');

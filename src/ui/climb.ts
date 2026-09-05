@@ -96,11 +96,18 @@ export function pickRung(character: Character, at: Rung): boolean {
   return true;
 }
 
-/** WHERE A DESCENT WENT, named: what it IS rather than what is picked. */
-export const rungName = (at: RunWhere): string =>
+/** WHERE A DESCENT WENT, named: what it IS rather than what is picked. `theme`
+ *  is the world the RUN got, which is not always the influence — THE SEAM
+ *  overrides it, and naming the preference there was a heading that lied. */
+export const rungName = (at: RunWhere, theme?: MapTheme): string =>
   isProving(at)
-    ? `${PROVING.name}, ${THEME_BY_ID[at.influence]?.name ?? at.influence}`
+    ? `${PROVING.name}, ${provingWorld(at, theme)}`
     : `${zoneAt(at.zone)?.name ?? '?'}, depth ${at.rung}`;
+
+export const provingWorld = (at: { influence: MapTheme }, theme?: MapTheme): string => {
+  const world = theme ?? at.influence;
+  return THEME_BY_ID[world]?.name ?? world;
+};
 
 /** The report's line about the climb: what a clear opened, or where a death
  *  leaves you. The report is the one screen every descent ends on. */

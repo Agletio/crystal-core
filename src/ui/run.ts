@@ -55,7 +55,8 @@ import { initCamp, openCamp, closeCamp, isCampOpen, renderCamp, setCampEmber } f
 import { greetAfterTale, openTalk } from './talk';
 import { playTale } from './tale';
 import {
-  advanceRung, climbLine, initClimb, renderClimb, roomNow, rungName, rungNow, socketsInClimb, whereNow,
+  advanceRung, climbLine, initClimb, provingWorld, renderClimb, roomNow, rungName, rungNow,
+  socketsInClimb, whereNow,
 } from './climb';
 import { arenaAt, isProving, takeRung, zoneAt } from '../ladder';
 import type { RunWhere } from '../ladder';
@@ -446,8 +447,7 @@ function renderMenu(): void {
   // A BONUS ZONE IS NOT A DESCENT: the way in goes while you stand in his room.
   $('run-go').hidden = roomNow() !== null;
 
-  // The two things that can shut the Fissure, and neither is a dead end: gear
-  // sells from anywhere, and a weapon is one click on the sheet.
+  // The two things that shut the Fissure, and neither is a dead end.
   const why = bagsFull(game)
     ? 'Your bags are full. Sell or stash some of it before you go back down.'
     : weaponRefusal(game.character);
@@ -541,19 +541,19 @@ function launch(): void {
   }
 
   seed = Math.floor(Math.random() * 1e9);
-  // WHO IS DOWN THERE, scheduled off the DEPTH. The Proving Ground is past the
-  // whole campaign, which is where everybody who lives down here was met.
+  // WHO IS DOWN THERE, scheduled off the DEPTH: the Proving Ground is past
+  // everybody.
   sim = new RunSim(set, game.character, new Rng(seed), {
     potionThresholds: game.potions,
     beaten: game.bosses ?? [],
-    rung: depth ?? undefined,
+    where: ran,
     meets: depth
       ? meetsIn(runSet(set, trialMod(game.character), ran).theme, depth.rung)
       : undefined,
   });
 
   note(
-    `${rungName(ran)} · ${set.length} socketed · power ${sim.set.power.toFixed(1)} · ` +
+    `${rungName(ran, sim.set.theme)} · ${set.length} socketed · power ${sim.set.power.toFixed(1)} · ` +
       `seed ${seed} · ${sim.state.totalMonsters} monsters`
   );
   accumulator = 0;
@@ -1178,6 +1178,8 @@ function frame(now: number): void {
     absorbEvents();
     document.body.dataset.heroTool = sim.state.hero.tool ?? ''; // what a harness reads to catch a gather
     document.body.dataset.effects = String(sim.state.vfx.length); // and to catch a cast
+    // THE WORLD THE RUN GOT, for a harness: nothing else shows it.
+    document.body.dataset.runTheme = sim.set.theme;
     // Asked to hold on the first effect, the page holds ITSELF: a harness
     // polling from outside is frames behind, and a bolt lives for fewer.
     const asks = document.body.dataset;
@@ -1570,7 +1572,8 @@ function syncRung(): void {
   if (host.hidden || !at) return;
   if (isProving(at)) {
     $('run-rung-zone').textContent = PROVING.name;
-    $('run-rung-n').textContent = THEME_BY_ID[at.influence]?.name ?? at.influence;
+    // THE WORLD THE RUN GOT, never the influence: the Seam overrides the pick.
+    $('run-rung-n').textContent = provingWorld(at, sim?.set.theme);
   } else {
     $('run-rung-zone').textContent = zoneAt(at.zone)?.name ?? '';
     $('run-rung-n').textContent = `Depth ${at.rung}`;

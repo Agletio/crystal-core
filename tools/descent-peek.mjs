@@ -182,6 +182,20 @@ for (const want of SOCKETS[zone] ?? []) {
   await page.waitForTimeout(200);
 }
 
+// LEVELS=<n> hands the character that many, through the sheet's own dev button:
+// a world above the whole climb kills a level-1 hero before the camera settles.
+if (process.env.LEVELS) {
+  await page.evaluate(() => document.getElementById('open-character')?.click());
+  await page.waitForTimeout(250);
+  await page.evaluate((n) => {
+    const button = document.getElementById('sheet-devlevel');
+    for (let i = 0; i < Number(n); i++) button?.click();
+  }, process.env.LEVELS);
+  await page.waitForTimeout(300);
+  await page.evaluate(() => document.getElementById('sheet-close')?.click());
+  await page.waitForTimeout(200);
+}
+
 // What the main hand is holding is drawn ON the body, so judging it means
 // putting one there: the kit carries one of every family, in the dock.
 if (hold) {
@@ -221,18 +235,19 @@ if (hold) {
 }
 
 // THE WORLD IS THE PROVING GROUND'S INFLUENCE, not the sockets': a depth runs
-// in its zone's own world whatever is socketed, and the kit's climb is shut
-// past The Answering, so another world is reached through the Proving Ground
-// tab and its influence button; the Seam is the one the sockets open.
-// KEYED BY ID, NEVER BY CLASS OR WORDING: an influence button wears `climbtab`
-// exactly as the tabs do, so a selector on either silently picks nothing and
-// the peek shoots the wrong world without saying so.
+// in its zone's own world whatever is socketed, so another world is reached
+// through the Proving Ground tab and its influence button; the Seam is the one
+// the sockets open. KEYED BY ID: an influence button wears `climbtab` exactly
+// as the tabs do, so a selector on the class silently picks nothing.
 const INFLUENCE = { rot: 'demonic', cavern: 'prismatic', seam: null };
 if (zone in INFLUENCE) {
   await page.evaluate(() => document.getElementById('camp-crack')?.click());
   await page.waitForTimeout(300);
   const found = await page.evaluate((want) => {
-    const tab = [...document.querySelectorAll('[id^=climb-tab-]')].at(-1);
+    // BY ITS OWN ID: the last `climb-tab-` is a bonus ROOM now.
+    const tab = [...document.querySelectorAll('[id^=climb-tab-]')]
+      .filter((t) => /^climb-tab-\d+$/.test(t.id))
+      .at(-1);
     if (!tab || tab.disabled) return 'no Proving Ground tab';
     tab.click();
     if (!want) return true;
@@ -257,7 +272,9 @@ if (process.env.GATHER) {
     await page.waitForTimeout(100);
   }
 } else if (!process.env.CAST) {
-  await page.waitForTimeout(8000);
+  // WAIT=<ms> shoots EARLIER: a world above the whole climb kills a bare
+  // character inside eight seconds, so the Seam is shot at a second or two.
+  await page.waitForTimeout(Number(process.env.WAIT ?? 8000));
 }
 // The kit leaves a screen open and the point is the floor. Escape shuts
 // whatever is on top, and space puts the camera back on the hero.
@@ -317,8 +334,7 @@ async function frame() {
 }
 
 // The last one keeps the name asked for, so a single shot is one file. They are
-// SPACED: taken back to back they are all the same instant, which is no use at
-// all for the thing `shots` exists for — watching an effect run.
+// SPACED: back to back they are all one instant, and no use for watching.
 const APART = 220;
 // CAST=1: the page HOLDS its own sim on the first effect, and the frames are
 // that instant — an effect is over in a fifth of a second and a screenshot

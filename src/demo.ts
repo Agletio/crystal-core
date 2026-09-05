@@ -11759,7 +11759,7 @@ rule('THE CLIMB — does a rung open, stay open, and get harder?');
   LADDER.zones.forEach((zone, z) => {
     for (const rung of [1, zone.rungs]) {
       const sim = new RunSim([], ladderCharacter(3, new Rng(11)), new Rng(700 + z * 31 + rung), {
-        rung: { zone: z, rung },
+        where: { zone: z, rung },
       });
       const mean = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / Math.max(1, xs.length);
       const life = mean(sim.state.monsters.map((m) => m.stats.maxLife));
@@ -11775,10 +11775,10 @@ rule('THE CLIMB — does a rung open, stay open, and get harder?');
   });
 
   const bottom = new RunSim([], ladderCharacter(3, new Rng(11)), new Rng(4242), {
-    rung: { zone: 0, rung: 1 },
+    where: { zone: 0, rung: 1 },
   });
   const top = new RunSim([], ladderCharacter(3, new Rng(11)), new Rng(4242), {
-    rung: { zone: LADDER.zones.length - 1, rung: LADDER.zones[LADDER.zones.length - 1].rungs },
+    where: { zone: LADDER.zones.length - 1, rung: LADDER.zones[LADDER.zones.length - 1].rungs },
   });
   const lifeOf = (sim: RunSim): number =>
     sim.state.monsters.reduce((a, m) => a + m.stats.maxLife, 0) / Math.max(1, sim.state.monsters.length);
@@ -12728,7 +12728,7 @@ rule('THE COLLECTION — do crystals arrive, and do they grow?');
       const crystals = Array.from({ length: 4 }, () => makeCrystal(level));
       for (let seed = 0; seed < 60; seed++) {
         const sim = new RunSim(crystals, ladderCharacter(6, new Rng(seed)), new Rng(900 + seed), {
-          rung: { zone: 0, rung: 11 },
+          where: { zone: 0, rung: 11 },
         });
         runToCompletion(sim, 900);
         for (const item of sim.state.loot.items) {
