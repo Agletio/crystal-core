@@ -2162,6 +2162,28 @@ export const TALES: Record<string, TalePanel[]> = {
       said: 'And I have been down here ever since, making the next one.',
     },
   ],
+  reading_room: [
+    {
+      art: 'tale_glass_1',
+      said: 'There were nine of us who could read it. We came down together to copy the wall out, and we agreed on almost nothing else.',
+    },
+    {
+      art: 'tale_glass_2',
+      said: 'The others went back up. I stayed, because these are not decoration and they are not ore. Somebody cut them, in an order, meaning something.',
+    },
+    {
+      art: 'tale_glass_3',
+      said: 'The longer I read, the more of it I could hear. I did not object when it began to grow into me.',
+    },
+    {
+      art: 'tale_glass_4',
+      said: 'Two hundred and eleven marks, on one wall, and it is one sentence. It has not finished saying itself yet.',
+    },
+    {
+      art: 'tale_glass_5',
+      said: 'So I copied three of them out, off a face nobody was meant to reach, and I have been waiting a long time for somebody to carry them.',
+    },
+  ],
 };
 
 /** The opening, in numbers: the one stretch where what happens next is
