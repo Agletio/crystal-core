@@ -226,6 +226,62 @@ export function floaterInk(
   return { fill: palette.bone, ...lit }; // pale on a dark edge: the rock's own ink on khaki was invisible at ship size
 }
 
+/** A LIFE BAR IS A VESSEL, NOT A STRIPE, and its shape is one answer both
+ *  renderers read. Its WIDTH is the BODY's own span, so a bar belongs to the
+ *  thing under it — a beetle and a Gaunt wearing the same 0.7 tiles read as an
+ *  overlay laid on the map rather than as something either of them wears. */
+export const BAR = {
+  ofBody: 0.72, // share of the body's span
+  least: 0.45, // tiles, so a small body still carries a readable one
+  most: 2.2, // and the biggest body is not wearing a banner
+  high: 0.1, // tiles
+  leastHigh: 3, // screen pixels, or the lit edge inside it has nowhere to go
+  gap: 0.1, // tiles clear of the head
+  plate: 0.92, // the dark round it, ALWAYS at full strength
+  empty: 0.86, // the channel the fill runs down
+  channel: 0.16, // how far that channel is tinted toward the fill's own ink
+  full: 0.72, // a bar nothing has touched, so a room of them does not shout
+  lit: 1 / 3, // share of the height the highlight takes
+  litFull: 0.16,
+  litHurt: 0.28,
+};
+
+export interface LifeBar {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  edge: number; // the plate's own rim, one screen pixel
+  fill: number; // how far along the bar life reaches
+  lit: number; // the highlight's height
+}
+
+/** SNAPPED TO WHOLE SCREEN PIXELS at the tile size given: a rect on a fraction
+ *  gets soft ends, and at ship size that is the whole of what read as a debug
+ *  overlay somebody forgot to style. `top` is where the body's drawing starts
+ *  and `span` how many tiles it covers, both in world units. */
+export function lifeBar(
+  cx: number,
+  top: number,
+  span: number,
+  frac: number,
+  tile: number
+): LifeBar {
+  const px = 1 / Math.max(1, tile);
+  const snap = (v: number): number => Math.round(v / px) * px;
+  const w = snap(Math.min(BAR.most, Math.max(BAR.least, span * BAR.ofBody)));
+  const h = snap(Math.max(BAR.leastHigh * px, BAR.high));
+  return {
+    x: snap(cx - w / 2),
+    y: snap(top - BAR.gap - h),
+    w,
+    h,
+    edge: px,
+    fill: snap(w * Math.max(0, Math.min(1, frac))),
+    lit: Math.max(px, snap(h * BAR.lit)),
+  };
+}
+
 /** HOW BIG A DROP LIES ON THE FLOOR, as its LONGEST side in tiles — the long
  *  side rather than the width, so a sword drawn tall and a shield drawn wide
  *  both land at the size they should look. JEWELLERY IS ONLY SLIGHTLY SMALLER

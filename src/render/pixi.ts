@@ -30,6 +30,7 @@ import { HANDS_DRAWN, HELD, handAt } from './held';
 import type { HandSlot } from './held';
 import {
   ARROW_SPAN,
+  BAR,
   arrowFlight,
   auraLook,
   ailmentMarks,
@@ -57,6 +58,7 @@ import {
   floorColour,
   floorPalette,
   isWallFace,
+  lifeBar,
   mix,
   poisonDrops,
   poisonFieldRadius,
@@ -1257,48 +1259,48 @@ export async function createPixiRenderer(
     };
 
     // Life bars on everything alive, not just the wounded — the point is
-    // seeing at a glance who is and isn't taking damage. Untouched bars are
-    // dimmed so a full room doesn't shout. `notch` marks the scale every 100
-    // life, heavier each 1000 — the hero's alone, or a pack is all stripes.
-    const bar = (e: Entity, width: number, colour: string, notch = false) => {
+    // seeing at a glance who is and isn't taking damage. `notch` marks the
+    // scale every 100 life, heavier each 1000 — the hero's alone, or a pack is
+    // all stripes. THE PLATE IS ALWAYS AT FULL STRENGTH and the fill sits
+    // INSIDE it: an unframed slab over the floor reads as a debug overlay.
+    const bar = (e: Entity, colour: string, notch = false) => {
       if (e.dead) return;
       const frac = Math.max(0, Math.min(1, e.life / e.stats.maxLife));
       const hurt = frac < 1;
-      const h = Math.max(2 / tile, 0.11);
-      const bx = cx(e.x) - width / 2;
       // Above the BODY's own head: a sprite spans `scale` tiles about the
       // anchor both this and the sprite read, and `bodyTop` is how far into
       // that the drawing starts.
-      const by = cy(e.y) - e.scale * (anchorY(e) - bodyTop(e.sprite)) - h - 0.06;
+      const top = cy(e.y) - e.scale * (anchorY(e) - bodyTop(e.sprite));
+      const b = lifeBar(cx(e.x), top, e.scale, frac, tile);
 
-      vfxLayer.rect(bx, by, width, h).fill({
-        color: toHexNumber(palette.void),
-        alpha: hurt ? 1 : 0.5,
+      vfxLayer.rect(b.x - b.edge, b.y - b.edge, b.w + b.edge * 2, b.h + b.edge * 2)
+        .fill({ color: toHexNumber(palette.void), alpha: BAR.plate });
+      vfxLayer.rect(b.x, b.y, b.w, b.h).fill({
+        color: toHexNumber(mix(palette.void, colour, BAR.channel)),
+        alpha: BAR.empty,
       });
-      vfxLayer.rect(bx, by, width * frac, h).fill({
-        color: toHexNumber(colour),
-        alpha: hurt ? 1 : 0.45,
-      });
-      // Lit along the top and shaded at the foot, so it reads as a vessel.
-      vfxLayer.rect(bx, by, width * frac, h * 0.35).fill({
-        color: 0xffffff,
-        alpha: hurt ? 0.3 : 0.14,
-      });
-      vfxLayer.rect(bx, by + h * 0.75, width * frac, h * 0.25).fill({
-        color: 0x000000,
-        alpha: hurt ? 0.25 : 0.12,
-      });
+      if (b.fill > 0) {
+        vfxLayer.rect(b.x, b.y, b.fill, b.h).fill({
+          color: toHexNumber(colour),
+          alpha: hurt ? 1 : BAR.full,
+        });
+        // Lit along the top, so it reads as a vessel rather than a swatch.
+        vfxLayer.rect(b.x, b.y, b.fill, b.lit).fill({
+          color: 0xffffff,
+          alpha: hurt ? BAR.litHurt : BAR.litFull,
+        });
+      }
       if (!notch) return;
       for (let at = 100; at < e.stats.maxLife; at += 100) {
         const big = at % 1000 === 0;
         vfxLayer
-          .rect(bx + width * (at / e.stats.maxLife) - hair / 2, big ? by : by + h * 0.35,
-            big ? hair * 2 : hair, big ? h : h * 0.65)
+          .rect(b.x + b.w * (at / e.stats.maxLife) - hair / 2, big ? b.y : b.y + b.lit,
+            big ? hair * 2 : hair, big ? b.h : b.h - b.lit)
           .fill({ color: toHexNumber(palette.void), alpha: 0.75 });
       }
     };
-    for (const m of state.monsters) if (m !== state.boss) bar(m, 0.7, palette.ember);
-    bar(state.hero, 1.1, palette.verdite, true);
+    for (const m of state.monsters) if (m !== state.boss) bar(m, palette.ember);
+    bar(state.hero, palette.verdite, true);
 
     // EVERY POOL AT ONCE, each cell drawn once. A cast drops one a second for
     // ten seconds over nearly one spot, so nine translucent discs summed into a

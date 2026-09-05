@@ -15,6 +15,7 @@ import { DEATH_FADE } from '../sim/run';
 import type { RunState, Entity, Floater } from '../sim/run';
 import type { FirePixel, Palette, Renderer } from './renderer';
 import {
+  BAR,
   arrowShaft,
   auraLook,
   bossTelegraph,
@@ -36,6 +37,8 @@ import {
   floorColour,
   floorPalette,
   isWallFace,
+  lifeBar,
+  mix,
   poisonDrops,
   poisonFieldRadius,
   spriteColour,
@@ -246,28 +249,35 @@ export function createCanvasRenderer(host: HTMLElement, palette: Palette): Rende
     ctx.globalAlpha = 1;
   }
 
-  /** Shown on everything alive; dimmed while untouched. `notch` marks every
-   *  100 life, heavier each 1000 — the hero's alone. */
-  function drawLifeBar(v: View, e: Entity, width: number, colour: string, notch = false): void {
+  /** Shown on everything alive; the plate is always at full strength and the
+   *  fill sits INSIDE it. `notch` marks every 100 life, heavier each 1000 —
+   *  the hero's alone. The SHAPE is `lifeBar`'s, so both renderers read one
+   *  answer; only where the top of a body is differs, since nothing here
+   *  draws a sprite to measure. */
+  function drawLifeBar(v: View, e: Entity, colour: string, notch = false): void {
     const frac = Math.max(0, Math.min(1, e.life / e.stats.maxLife));
     const hurt = frac < 1;
+    const b = lifeBar(cx(v, e.x) / v.tile, cy(v, e.y) / v.tile - 0.62, e.scale, frac, v.tile);
+    const x = b.x * v.tile;
+    const y = b.y * v.tile;
+    const w = b.w * v.tile;
+    const h = b.h * v.tile;
+    const edge = b.edge * v.tile;
 
-    const w = v.tile * width;
-    const h = Math.max(2, v.tile * 0.12);
-    const x = cx(v, e.x) - w / 2;
-    const y = cy(v, e.y) - v.tile * 0.72;
-
-    ctx.globalAlpha = hurt ? 1 : 0.5;
+    ctx.globalAlpha = BAR.plate;
     ctx.fillStyle = palette.void;
+    ctx.fillRect(x - edge, y - edge, w + edge * 2, h + edge * 2);
+    ctx.globalAlpha = BAR.empty;
+    ctx.fillStyle = mix(palette.void, colour, BAR.channel);
     ctx.fillRect(x, y, w, h);
-    ctx.globalAlpha = hurt ? 1 : 0.45;
-    ctx.fillStyle = colour;
-    ctx.fillRect(x, y, w * frac, h);
-    // Lit along the top and shaded at the foot, so it reads as a vessel.
-    ctx.fillStyle = 'rgba(255,255,255,.3)';
-    ctx.fillRect(x, y, w * frac, h * 0.35);
-    ctx.fillStyle = 'rgba(0,0,0,.25)';
-    ctx.fillRect(x, y + h * 0.75, w * frac, h * 0.25);
+    if (b.fill > 0) {
+      ctx.globalAlpha = hurt ? 1 : BAR.full;
+      ctx.fillStyle = colour;
+      ctx.fillRect(x, y, b.fill * v.tile, h);
+      ctx.globalAlpha = hurt ? BAR.litHurt : BAR.litFull;
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(x, y, b.fill * v.tile, b.lit * v.tile);
+    }
     if (notch) {
       ctx.fillStyle = palette.void;
       ctx.globalAlpha = 0.75;
@@ -275,9 +285,9 @@ export function createCanvasRenderer(host: HTMLElement, palette: Palette): Rende
         const big = at % 1000 === 0;
         ctx.fillRect(
           x + w * (at / e.stats.maxLife),
-          big ? y : y + h * 0.35,
+          big ? y : y + b.lit * v.tile,
           big ? 2 : 1,
-          big ? h : h * 0.65
+          big ? h : h - b.lit * v.tile
         );
       }
     }
@@ -320,7 +330,7 @@ export function createCanvasRenderer(host: HTMLElement, palette: Palette): Rende
     ctx.globalAlpha = 1;
 
     if (!fading) {
-      drawLifeBar(v, m, 0.7, palette.ember);
+      drawLifeBar(v, m, palette.ember);
       // Pip marks a monster that shoots.
       if (m.skillId) {
         ctx.beginPath();
@@ -463,7 +473,7 @@ export function createCanvasRenderer(host: HTMLElement, palette: Palette): Rende
     ctx.fillStyle = palette.void;
     ctx.fill();
 
-    drawLifeBar(v, hero, 1.1, palette.verdite, true);
+    drawLifeBar(v, hero, palette.verdite, true);
   }
 
   /** WHAT LANDED. The same answer the other renderer draws, in this one's own
