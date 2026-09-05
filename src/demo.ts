@@ -1177,11 +1177,15 @@ rule('THE BAG — what comes up out of the Fissure, and can the loop wedge?');
       'every drop: ' +
         Object.keys(KIND_VARIETY).map((k) => `${pct(k).toFixed(1)}% ${k}`).join(', ')
     );
-    const barren = Object.keys(KIND_VARIETY).filter((k) => !share[k]);
+    // A kind weighted ZERO is one the floor may NEVER pay — the tools — so the
+    // rule has two halves and the same list decides both.
+    const paid = Object.keys(KIND_VARIETY).filter((k) => KIND_VARIETY[k] > 0);
+    const barren = paid.filter((k) => !share[k]);
+    const leaked = Object.keys(KIND_VARIETY).filter((k) => KIND_VARIETY[k] === 0 && share[k]);
     check(
-      barren.length === 0 && pct('ring') < 15,
-      'every kind is reachable by a drop, and no one of them owns the bag',
-      `${barren.join(', ') || 'all reachable'}, rings ${pct('ring').toFixed(1)}%`
+      barren.length === 0 && leaked.length === 0 && pct('ring') < 15,
+      'every kind worth a weight is reachable, no kind weighted zero ever drops, and no one of them owns the bag',
+      `${barren.join(', ') || 'all reachable'}; leaked ${leaked.join(', ') || 'none'}; rings ${pct('ring').toFixed(1)}%`
     );
   }
 
@@ -3667,9 +3671,13 @@ rule('GATHERING — is a node free, guarded, walked to and equally spread?');
     // BOTH TOOLS, because the deck only deals what one of them can work: with
     // the pick alone there is not a plant on the floor to measure.
     for (let i = 0; i < 24; i++) {
-      const who = i < 12
-        ? { ...digger, toolSlots: { gather: 'pick' } }
-        : { ...digger, toolSlots: { gather: 'sickle' } };
+      const who = {
+        ...digger,
+        equipment: {
+          ...digger.equipment,
+          gather: makeGear(toolBaseId(TOOL_BY_ID[i < 12 ? 'pick' : 'sickle'], 0), 1),
+        },
+      };
       const sim = new RunSim(bareSet, who, new Rng(1300 + (i % 12)));
       const { grid } = sim.state.map;
       for (const node of sim.state.nodes) {
@@ -3747,8 +3755,12 @@ rule('GATHERING — is a node free, guarded, walked to and equally spread?');
   // a pick grows fibre where it grew ore, and the COUNT never moves: what a run
   // pays is the same, and only which pile it lands in changes.
   {
-    const withPick = { ...digger, toolSlots: { gather: 'pick' } };
-    const withSickle = { ...digger, toolSlots: { gather: 'sickle' } };
+    const holding = (id: string): typeof digger => ({
+      ...digger,
+      equipment: { ...digger.equipment, gather: makeGear(toolBaseId(TOOL_BY_ID[id], 0), 1) },
+    });
+    const withPick = holding('pick');
+    const withSickle = holding('sickle');
     const dry = (c: typeof digger): Map<string, number> => {
       const out = new Map<string, number>();
       for (let i = 0; i < 12; i++) {
@@ -3787,8 +3799,12 @@ rule('GATHERING — is a node free, guarded, walked to and equally spread?');
       }
       return n;
     };
-    const noKnife = { ...digger, toolSlots: { gather: 'pick' } };
-    const knifed = { ...digger, toolSlots: { gather: 'knife' } };
+    const wearing = (id: string): typeof digger => ({
+      ...digger,
+      equipment: { ...digger.equipment, gather: makeGear(toolBaseId(TOOL_BY_ID[id], 0), 1) },
+    });
+    const noKnife = wearing('pick');
+    const knifed = wearing('knife');
     check(
       banked(noKnife, 'hide') === 0 && banked(knifed, 'hide') > 0,
       'no skins at all without the knife, and skins with it — off bodies, with no node and no walk',
@@ -4193,7 +4209,11 @@ rule('THE ANVIL — does a level slide the window, and can a dismantle print?');
 
   // EVERY BASE THAT IS NOT NAMED IS MAKEABLE. A base with no recipe is one
   // nobody can ever get on purpose, now that the floor pays a quarter a clear.
-  const plain = GEAR_BASES.filter((b) => !UNIQUES.some((u) => u.base === b.id));
+  // A TOOL IS THE EXCEPTION AND IT IS THE SMITH'S: it is not made at the anvil
+  // out of materials, it is handed over, bought or reforged in person.
+  const plain = GEAR_BASES.filter(
+    (b) => !UNIQUES.some((u) => u.base === b.id) && TOOL_OF_BASE[b.id] === undefined
+  );
   const unmade = plain.filter((b) => recipeFor(b.id) === null);
   check(
     unmade.length === 0,
