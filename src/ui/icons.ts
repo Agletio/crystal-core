@@ -6,7 +6,9 @@
 import { monsterArt } from '../render/sprites';
 import { portraitOf } from '../render/portraits';
 import { readPalette } from '../render/renderer';
+import { GENERATED_ICONS } from '../render/generated-icons';
 import type { CurrencyDef, Item } from '../types';
+import { GEAR_BASE_BY_ID, JEWEL_IMPLICIT_BY_ID, MATERIAL_BY_ID } from '../data';
 
 const NS = 'http://www.w3.org/2000/svg';
 
@@ -151,6 +153,9 @@ const BLINK = [
   '............',
 ];
 
+
+/** The two silhouettes the SKILL shelf still falls back to for an id nobody
+ *  has drawn. Gear draws none of these any more. */
 const BLADE = [
   '.....oo.....',
   '....osdo....',
@@ -164,6 +169,18 @@ const BLADE = [
   '....ohho....',
   '...ohhhho...',
   '....oooo....',
+];
+
+const BOOT = [
+  '...oo.......',
+  '..obbo......',
+  '..obbo......',
+  '..obbo......',
+  '..obbbooo...',
+  '..obbbbbbo..',
+  '..obbbbbbo..',
+  '.oddddddddo.',
+  '.oooooooooo.',
 ];
 
 const ORB = [
@@ -190,19 +207,9 @@ const SHARD = [
   '.....oo.....',
 ];
 
-const BOOT = [
-  '...oo.......',
-  '..obbo......',
-  '..obbo......',
-  '..obbo......',
-  '..obbbooo...',
-  '..obbbbbbo..',
-  '..obbbbbbo..',
-  '.oddddddddo.',
-  '.oooooooooo.',
-];
 
 const STEEL = { o: INK, s: '#B9C2CC', d: '#7A8492', g: 'var(--citrine)', h: '#6B4526' };
+const STORM = { o: INK, y: 'var(--citrine)', w: '#FFF7CC', d: '#7A8492', h: '#6B4526' };
 const ROT = { o: INK, v: '#4E8C33', g: 'var(--venom)', w: '#EAFFC0' };
 const ARCANE = { o: INK, b: '#5C3A96', c: 'var(--amethyst)', w: '#EBD9FF', y: 'var(--citrine)' };
 const CRYSTAL = { o: INK, c: '#3E7F99', q: 'var(--quartz)', w: '#EAF9FF' };
@@ -270,8 +277,10 @@ const GEMS: string[][] = [
   ],
 ];
 
-export function crystalIcon(level: number, size = 26): SVGSVGElement {
+export function crystalIcon(level: number, size = 26, family = 'normal'): SVGSVGElement {
   const t = Math.max(1, Math.min(GEMS.length, level));
+  const art = drawn(`crys_${family}_t${Math.min(4, t)}`, size);
+  if (art) return art;
   const colour = CRYSTAL_COLOURS[t - 1] ?? 'var(--amethyst)';
   return sprite(GEMS[t - 1], { o: INK, c: colour, w: 'var(--chalk)', l: '#00000066' }, size, `crystal-t${t}`);
 }
@@ -280,465 +289,116 @@ export function crystalIcon(level: number, size = 26): SVGSVGElement {
  * One silhouette per slot, as pixels. Deliberately generic — the job is telling
  * a helm from a boot at a glance, not looking good.
  */
-const GEAR = {
-  o: INK,
-  s: '#B9C2CC',
-  d: '#7A8492',
-  w: '#EAF2FF',
-  g: 'var(--citrine)',
-  h: '#6B4526',
-  p: 'var(--amethyst)',
-  r: 'var(--ember)',
-};
 
-const WAND = [
-  '....oooo....',
-  '...opppo....',
-  '..oppwppo...',
-  '...opppo....',
-  '....oso.....',
-  '....oso.....',
-  '.....oso....',
-  '.....oso....',
-  '.....oho....',
-  '.....oho....',
-  '.....ooo....',
-];
 
-const DAGGER = [
+
+
+const FORKED = [
   '.......oo...',
-  '......osdo..',
-  '.....osdo...',
-  '....osdo....',
-  '...osdo.....',
-  '..ogo.......',
-  '.ogggo......',
-  '..ohho......',
-  '..ohho......',
-  '..oooo......',
+  '......oywo..',
+  '.....oyywo..',
+  '....oyywo...',
+  '...oyywo....',
+  '..oyyyyyo...',
+  '...oyywwo...',
+  '....oyywo...',
+  '.....oywo...',
+  '......oyo...',
+  '.......oo...',
 ];
 
-const MACE = [
-  '...oooo.....',
-  '..orrrro....',
-  '.orrwrrro...',
-  '..orrrro....',
-  '...oooo.....',
-  '....oho.....',
-  '.....oho....',
-  '.....oho....',
-  '.....oho....',
-  '.....ooo....',
+const ARROW = [
+  '........ooo.',
+  '.......oywo.',
+  '......oyywo.',
+  '.....oyyoo..',
+  '....oyyo....',
+  '...oyyo.....',
+  '..oyyo......',
+  '.ohyo.......',
+  'odho........',
+  'oddo........',
+  'ooo.........',
 ];
 
-const HELMET = [
-  '...oooooo...',
-  '..osssssso..',
-  '.osssssssso.',
-  '.ossoooosso.',
-  '.ossoooosso.',
-  '.osssssssso.',
-  '..oss..sso..',
-  '..ooo..ooo..',
-];
 
-const GLOVE = [
-  '...oo.oo....',
-  '..ossossoo..',
-  '..osssssso..',
-  '..osssssso..',
-  '..osswssso..',
-  '...oossoo...',
-  '....oooo....',
-];
 
-const AMULET = [
-  '..o......o..',
-  '..do....od..',
-  '...do..od...',
-  '....oooo....',
-  '...ogggo....',
-  '..oggwggo...',
-  '...ogggo....',
-  '....ooo.....',
-];
 
-const RING = [
-  '.....gg.....',
-  '....oggo....',
-  '...oooooo...',
-  '..ossddsso..',
-  '..oss..sso..',
-  '..oss..sso..',
-  '..ossddsso..',
-  '...oooooo...',
-];
 
-const BODY = [
-  '..oo....oo..',
-  '.oossoossoo.',
-  '.osssssssso.',
-  '.ossswdssso.',
-  '.osssssssso.',
-  '..osssssso..',
-  '...oossoo...',
-  '....oooo....',
-];
+
+
 
 /**
- * Armour art: a silhouette set per archetype pairing, a palette per family.
- *
- * Both axes are needed. Shape alone would leave the two families of a pairing
- * identical, and colour alone would leave a helm and a boot the same picture.
- * Every sprite uses the same five keys, so any palette fits any silhouette.
+ * THE GEAR ICON, and there is NO fallback: every one of the 59 `GearBase.art`
+ * keys is a generated row and the demo holds that. The hand-drawn silhouettes
+ * that used to stand behind this are gone — *"delete all of that old self made
+ * crap and use the new icons"* — and with them the drift that let the floor
+ * draw one picture while the bag drew another.
  */
-const ARMOUR_SHAPES: Record<string, Record<string, string[]>> = {
-  // Melee. Riveted and closed, with a crest and a central seam.
-  plate: {
-    helmet: [
-      '....oooo....',
-      '...occcco...',
-      '..oaaaaaao..',
-      '.oaawaaawao.',
-      '.oaaaaaaaao.',
-      '.obbbbbbbbo.',
-      '.oaaaaaaaao.',
-      '..oaaaaaao..',
-      '..oo....oo..',
-    ],
-    body: [
-      '.oo......oo.',
-      'oaaoooooaaao',
-      'oaaaaaaaaaao',
-      '.oaaawwaaao.',
-      '.oaaaccaaao.',
-      '.oaaaccaaao.',
-      '.oaaaccaaao.',
-      '..oaaaaaao..',
-      '...oooooo...',
-    ],
-    gloves: [
-      '..oo..oo....',
-      '.oaaooaaoo..',
-      '.oaaaaaaao..',
-      '.obbbbbbbo..',
-      '.oaawwaaao..',
-      '.oaaaaaaao..',
-      '..ooooooo...',
-    ],
-    boots: [
-      '..oooo......',
-      '.oaaaao.....',
-      '.oaaaao.....',
-      '.obbbbo.....',
-      '.oaaaao.....',
-      '.oaaaaoooo..',
-      '.oaaaaaaaoo.',
-      '.oaawwwwaao.',
-      '..oooooooo..',
-    ],
-  },
-  // Spell. Soft and pointed, with a stole down the front.
-  weave: {
-    helmet: [
-      '.....oo.....',
-      '....oaao....',
-      '...oaaaao...',
-      '..oaaaaaao..',
-      '.oaabbbbaao.',
-      '.oaabbbbaao.',
-      '.oaaaaaaaao.',
-      '..occcccco..',
-      '...oooooo...',
-    ],
-    body: [
-      '...oo..oo...',
-      '..oaaooaao..',
-      '..oaaaaaao..',
-      '.oaaaccaaao.',
-      '.oaaaccaaao.',
-      'oaaaaccaaaao',
-      'oaaaaccaaaao',
-      'oaaaaaaaaaao',
-      '.oooooooooo.',
-    ],
-    gloves: [
-      '...oo.oo....',
-      '..oaaoaaoo..',
-      '..oaaaaaao..',
-      '..occcccco..',
-      '..oaaaaaao..',
-      '..occcccco..',
-      '...oaaaao...',
-      '....oooo....',
-    ],
-    boots: [
-      '..oooo......',
-      '.oaaaao.....',
-      '.oaaaao.....',
-      '.occcco.....',
-      '.oaaaao.....',
-      '.oaaaaoo....',
-      '.oaaaaaaoo..',
-      '.oaaaaaaaao.',
-      '..oooooooo..',
-    ],
-  },
-  // Rogue. Strapped, eye slits, a low sole made for running.
-  hide: {
-    helmet: [
-      '....oooo....',
-      '...oaaaao...',
-      '..oaaaaaao..',
-      '.oaaaaaaaao.',
-      '.oabboobbao.',
-      '.oaaaaaaaao.',
-      '.occcccccco.',
-      '..oaaaaaao..',
-      '...oo..oo...',
-    ],
-    body: [
-      '..oo....oo..',
-      '.oaaooooaao.',
-      '.oaaaaaaaao.',
-      '.oaaaaaaaao.',
-      '.occcccccco.',
-      '.oaaaaaaaao.',
-      '..oaaaaaao..',
-      '..oaaaaaao..',
-      '...oo..oo...',
-    ],
-    gloves: [
-      '..o.o.o.....',
-      '.oaoaoaoo...',
-      '.oaaaaaaao..',
-      '.oaaaaaaao..',
-      '.occccccco..',
-      '.oaaaaaaao..',
-      '..oaaaaao...',
-      '...ooooo....',
-    ],
-    boots: [
-      '..oooo......',
-      '.oaaaao.....',
-      '.oaaaao.....',
-      '.occcco.....',
-      '.oaaaao.....',
-      '.oaaaaoo....',
-      '.oaaaaaaoo..',
-      '.obbbbbbbbo.',
-      '..oooooooo..',
-    ],
-  },
-  // Melee and spell. Plate wearing a crown and a sigil.
-  sanctum: {
-    helmet: [
-      '...c.cc.c...',
-      '..occcccco..',
-      '.oaaaaaaaao.',
-      '.oaaaaaaaao.',
-      '.oaaccccaao.',
-      '.obbbbbbbbo.',
-      '.oaaaaaaaao.',
-      '..oaaaaaao..',
-      '..oo....oo..',
-    ],
-    body: [
-      '.oo......oo.',
-      'oaaoooooaaao',
-      'oaaaaccaaaao',
-      '.oaacccaaao.',
-      '.oaaaccaaao.',
-      '.oaaaccaaao.',
-      '..oaaccaao..',
-      '..oaaaaaao..',
-      '...oooooo...',
-    ],
-    gloves: [
-      '..oo..oo....',
-      '.oaaooaaoo..',
-      '.oaaaaaaao..',
-      '.oacccccao..',
-      '.oaaaaaaao..',
-      '.oaawwaaao..',
-      '..ooooooo...',
-    ],
-    boots: [
-      '..oooo......',
-      '.oaaaao.....',
-      '.oaaaao.....',
-      '.oaccao.....',
-      '.oaaaao.....',
-      '.oaaaaoooo..',
-      '.oaaaaaccoo.',
-      '.oaaaaaaaao.',
-      '..oooooooo..',
-    ],
-  },
-  // Spell and rogue. Hanging cloth, a masked face, a cloak drawn across.
-  veil: {
-    helmet: [
-      '....oooo....',
-      '...oaaaao...',
-      '..oaaaaaao..',
-      '.oaaaaaaaao.',
-      '.oabbbbbbao.',
-      '.oaccccccao.',
-      '.oaaaaaaaao.',
-      '..oa.aa.ao..',
-      '..oo.oo.oo..',
-    ],
-    body: [
-      '...oo..oo...',
-      '..oaaooaao..',
-      '.oaaaaaaaao.',
-      '.occaaaaaao.',
-      '.oaccaaaaao.',
-      '.oaaccaaaao.',
-      'oaaaccaaaaao',
-      'oaaaaaaaaaao',
-      '.oooooooooo.',
-    ],
-    gloves: [
-      '...oo.oo....',
-      '..oaaoaaoo..',
-      '..oaaaaaao..',
-      '..oaaaaaao..',
-      '..occcccco..',
-      '..oaaaaaao..',
-      '..oaaaaaao..',
-      '...oo..oo...',
-    ],
-    boots: [
-      '..oooo......',
-      '.oaaaao.....',
-      '.oaaaao.....',
-      '.oaaaao.....',
-      '.occcco.....',
-      '.oaaaaoo....',
-      '.oaaaaaaoo..',
-      '.oaaaaaaaao.',
-      '..oo.oo.oo..',
-    ],
-  },
-  // Melee and rogue. Open-faced and buckled, straps crossed at the chest.
-  harness: {
-    helmet: [
-      '...oooooo...',
-      '..oaaaaaao..',
-      '.oaaaaaaaao.',
-      '.occcccccco.',
-      '.oaabbbbaao.',
-      '.oaabaabaao.',
-      '..oaaaaaao..',
-      '...oooooo...',
-    ],
-    body: [
-      '..oo....oo..',
-      '.oaaooooaao.',
-      '.oaccaaccao.',
-      '.oaaccccaao.',
-      '.oaaaccaaao.',
-      '.oaaaccaaao.',
-      '..oaaccaao..',
-      '..oaaaaaao..',
-      '...oooooo...',
-    ],
-    gloves: [
-      '..oo..oo....',
-      '.oaaooaaoo..',
-      '.oaaaaaaao..',
-      '.occccccco..',
-      '.oaaaaaaao..',
-      '.occccccco..',
-      '..oaaaaao...',
-      '...ooooo....',
-    ],
-    boots: [
-      '..oooo......',
-      '.oaaaao.....',
-      '.occcco.....',
-      '.oaaaao.....',
-      '.occcco.....',
-      '.oaaaaoo....',
-      '.oaaaaaaoo..',
-      '.oaawwwwaoo.',
-      '..oooooooo..',
-    ],
-  },
-};
-
-/**
- * Which silhouette a family wears, and what it is dyed. Colour carries the
- * theme: the mundane world is steel and rust, the occult is amethyst and
- * venom, and a hybrid wears both.
- */
-const ARMOUR_ART: Record<string, { shape: string; palette: Record<string, string> }> = {
-  // Steel, and only steel — nothing on it that is not there to stop a hit.
-  bulwark: { shape: 'plate', palette: { o: INK, a: '#B9C2CC', b: '#4E5866', c: '#7A8492', w: '#EAF2FF' } },
-  // The same plate, heated: an ember crest and a bloodied edge.
-  vanguard: { shape: 'plate', palette: { o: INK, a: '#A8A093', b: '#57503F', c: 'var(--ember)', w: 'var(--flame-core)' } },
-
-  arcanist: { shape: 'weave', palette: { o: INK, a: 'var(--amethyst)', b: '#33194F', c: '#D9C4F5', w: '#EBD9FF' } },
-  oracle: { shape: 'weave', palette: { o: INK, a: 'var(--bone)', b: '#6E6552', c: 'var(--citrine)', w: '#FFF3D0' } },
-
-  shadow: { shape: 'hide', palette: { o: INK, a: '#2F2C3B', b: '#17151F', c: 'var(--venom)', w: '#8A85A0' } },
-  skirmisher: { shape: 'hide', palette: { o: INK, a: '#8A6236', b: '#4A3320', c: 'var(--ember)', w: '#C79A63' } },
-
-  templar: { shape: 'sanctum', palette: { o: INK, a: '#AEB6C4', b: '#414A5C', c: 'var(--amethyst)', w: '#EBD9FF' } },
-  runeguard: { shape: 'sanctum', palette: { o: INK, a: '#9AA2AE', b: '#3D434E', c: 'var(--citrine)', w: '#FFF3D0' } },
-
-  nightweave: { shape: 'veil', palette: { o: INK, a: 'var(--gloom)', b: '#1C1128', c: 'var(--venom)', w: '#B79BE0' } },
-  whisper: { shape: 'veil', palette: { o: INK, a: '#5E6B72', b: '#2B3237', c: 'var(--quartz)', w: '#D6EEF7' } },
-
-  raider: { shape: 'harness', palette: { o: INK, a: '#6E5334', b: '#3A2B1B', c: '#9AA2AE', w: '#C79A63' } },
-  duelist: { shape: 'harness', palette: { o: INK, a: '#59606B', b: '#2A2E36', c: 'var(--venom)', w: '#C2CAD6' } },
-};
-
-/** Whether a family has art for a slot. Pure, so the demo can hold the line. */
-export const hasArmourArt = (family: string, slot: string): boolean =>
-  ARMOUR_SHAPES[ARMOUR_ART[family]?.shape]?.[slot] !== undefined;
-
-function armourIcon(family: string, slot: string, size: number): SVGSVGElement | null {
-  const art = ARMOUR_ART[family];
-  const rows = art && ARMOUR_SHAPES[art.shape]?.[slot];
-  if (!art || !rows) return null;
-  return sprite(rows, art.palette, size, `${family}-${slot}`);
-}
-
 export function gearIcon(art: string, size = 26): SVGSVGElement {
-  // Armour keys are `family_slot`; every other base names one silhouette.
-  const cut = art.lastIndexOf('_');
-  if (cut > 0) {
-    const worn = armourIcon(art.slice(0, cut), art.slice(cut + 1), size);
-    if (worn) return worn;
-  }
-  // Weapon bases carry their FAMILY as their art key, not the word "weapon",
-  // so every family needs its own case or it falls through to body armour.
-  switch (art) {
-    case 'wand':
-      return sprite(WAND, GEAR, size, 'wand');
-    case 'sword':
-    case 'weapon':
-      return sprite(BLADE, GEAR, size, 'weapon');
-    case 'dagger':
-      return sprite(DAGGER, GEAR, size, 'dagger');
-    case 'mace':
-      return sprite(MACE, GEAR, size, 'mace');
-    case 'helmet':
-      return sprite(HELMET, GEAR, size, 'helmet');
-    case 'gloves':
-      return sprite(GLOVE, GEAR, size, 'gloves');
-    case 'boots':
-      return sprite(BOOT, LEATHER, size, 'boots');
-    case 'amulet':
-      return sprite(AMULET, GEAR, size, 'amulet');
-    case 'ring':
-      return sprite(RING, GEAR, size, 'ring');
-    default:
-      return sprite(BODY, GEAR, size, 'body');
-  }
+  return drawn(gearArtKey(art), size) ?? sprite(['.'], { '.': INK }, size, art);
 }
+
+/**
+ * ONE RING DRAWING, TWENTY IMPLICITS. *"No new icons: `gear_ring` and
+ * `gear_amulet` are recoloured per implicit."* Every ink is pulled toward the
+ * implicit's own hue, keeping its own brightness — so the SHAPE still says
+ * which slot and the COLOUR says what is on it, which is the split every other
+ * icon in the game already makes.
+ */
+export function tintedGearIcon(art: string, size: number, hue: string): SVGSVGElement {
+  const drawing = GENERATED_ICONS[gearArtKey(art)];
+  if (!drawing) return gearIcon(art, size);
+  const to = resolve(hue);
+  const key: Record<string, string> = {};
+  for (const [ch, colour] of Object.entries(drawing.key)) {
+    key[ch] = washed(colour, to);
+  }
+  return sprite(drawing.rows, key, size, `gear_${art}_${hue}`);
+}
+
+/** A CSS variable read off the live document, since a generated key is hex and
+ *  cannot hold one. Falls back to the token's own name doing nothing. */
+function resolve(colour: string): [number, number, number] {
+  const m = /^var\((--[\w-]+)\)$/.exec(colour);
+  const hex = m
+    ? getComputedStyle(document.documentElement).getPropertyValue(m[1]).trim() || '#888888'
+    : colour;
+  const at = hex.replace('#', '');
+  return [
+    parseInt(at.slice(0, 2), 16),
+    parseInt(at.slice(2, 4), 16),
+    parseInt(at.slice(4, 6), 16),
+  ];
+}
+
+/** How far a tint pulls an ink toward the hue. Under a half and a red ring is
+ *  a grey ring; over it, twenty icons are twenty flat blobs. */
+const TINT = 0.55;
+
+/** One ink, washed toward a hue at its OWN brightness — a highlight stays a
+ *  highlight and an outline stays near black. */
+function washed(from: string, to: [number, number, number]): string {
+  const at = from.replace('#', '');
+  if (at.length < 6) return from;
+  const rgb = [
+    parseInt(at.slice(0, 2), 16),
+    parseInt(at.slice(2, 4), 16),
+    parseInt(at.slice(4, 6), 16),
+  ];
+  const luma = (0.299 * rgb[0] + 0.587 * rgb[1] + 0.114 * rgb[2]) / 255;
+  const out = to.map((c, i) => Math.round(rgb[i] + (c * luma - rgb[i]) * TINT));
+  return `#${out.map((c) => Math.max(0, Math.min(255, c)).toString(16).padStart(2, '0')).join('')}`;
+}
+
+/** Whether a base's art has been drawn. Pure, so the demo can hold the line. */
+/** WHERE A BASE'S PICTURE LIVES. Gear is drawn under `gear_<art>`; a TOOL's
+ *  icon was generated for its `HELD` row and is under its own bare key, so the
+ *  bare one is the fallback rather than a second table to keep in step. */
+export const gearArtKey = (art: string): string =>
+  GENERATED_ICONS[`gear_${art}`] ? `gear_${art}` : art;
+
+export const hasGearArt = (art: string): boolean => !!GENERATED_ICONS[gearArtKey(art)];
 
 const CLASS_COLOURS: Record<string, string> = {
   basic: 'var(--dust)',
@@ -948,6 +608,8 @@ const SIGILS: Record<string, string[]> = {
 };
 
 export function currencyIcon(currency: CurrencyDef, size = 22): SVGSVGElement {
+  const own = drawn(`cur_${currency.id}`, size); // generated wins, as everywhere
+  if (own) return own;
   const colour = CLASS_COLOURS[currency.class] ?? 'var(--dust)';
   // An unknown currency still gets a shape rather than nothing, so adding one
   // to the table is a visual to-do rather than an invisible bug.
@@ -956,13 +618,30 @@ export function currencyIcon(currency: CurrencyDef, size = 22): SVGSVGElement {
 }
 
 /** Skill icons, for the middle of a tree. */
+/** A generated icon carries its OWN colours, where a hand-drawn one looks every
+ *  character up in the palette — so `sprite` is handed the key directly. */
+export function drawn(id: string, size: number): SVGSVGElement | null {
+  const art = GENERATED_ICONS[id];
+  return art ? sprite(art.rows, art.key, size, id) : null;
+}
+
 export function skillIcon(skillId: string, size = 44): SVGSVGElement {
+  // Generated WINS, and generated is the ONLY way a new one arrives: the grids
+  // below predate the pipeline and are the fallback for an id nobody has drawn.
+  // A new skill is a row in `tools/art/icons.json`, never a grid typed here.
+  const own = drawn(`sk_${skillId}`, size);
+  if (own) return own;
   switch (skillId) {
     case 'fireball':
     case 'bolt':
       return sprite(FIREBALL, FIRE_PALETTE, size, 'fireball');
     case 'blight':
       return sprite(BLIGHT, ROT, size, 'blight');
+    case 'arc_lightning':
+    case 'arc':
+      return sprite(FORKED, STORM, size, 'arc_lightning');
+    case 'lightning_arrow':
+      return sprite(ARROW, STORM, size, 'lightning_arrow');
     case 'surge':
       return sprite(SURGE, STEEL, size, 'surge');
     case 'blink':
@@ -972,8 +651,10 @@ export function skillIcon(skillId: string, size = 44): SVGSVGElement {
   }
 }
 
-/** The glyph on a shelf of skills. */
+/** The glyph on a shelf of skills. Generated wins, same as a skill's own. */
 export function categoryIcon(id: string, size = 22): SVGSVGElement {
+  const own = drawn(`cat_${id}`, size);
+  if (own) return own;
   switch (id) {
     case 'spell':
       return sprite(ORB, ARCANE, size, 'spell');
@@ -1006,6 +687,11 @@ export function beastIcon(id: string, size = 34): SVGSVGElement | null {
  * back to the map sprite, so a speaker with no portrait drawn yet is a small
  * picture rather than an empty box.
  */
+/** How big a face is drawn, in the two places one appears. A bubble is 300px
+ *  of 13px prose and a head reads against it at 52; a FRAMED panel puts the
+ *  same head beside a display-face title and it read as an afterthought. */
+export const FACE = { bubble: 52, panel: 78 };
+
 export function portraitIcon(id: string, size = 96): SVGSVGElement | null {
   const art = portraitOf(id);
   if (!art) return beastIcon(id, size);
@@ -1069,16 +755,16 @@ export const relicIcon = (id: string, size = 26): SVGSVGElement =>
 
 export function itemIcon(item: Item, size = 26): SVGSVGElement {
   if (item.kind === 'crystal') {
-    return crystalIcon((item.meta.level as number) ?? 1, size);
+    return crystalIcon((item.meta.level as number) ?? 1, size, (item.meta.family as string) ?? 'normal');
   }
   if (item.kind === 'relic') return relicIcon(item.base, size);
-  return gearIcon((item.meta.art as string) ?? 'body', size);
+  if (item.kind === 'material') {
+    const own = drawn(MATERIAL_BY_ID[item.base]?.icon ?? '', size);
+    if (own) return own;
+  }
+  const art = (item.meta.art as string) ?? 'body';
+  // JEWELLERY IS ONE DRAWING PER SLOT, washed with its implicit's own hue.
+  const hue = JEWEL_IMPLICIT_BY_ID[GEAR_BASE_BY_ID[item.base]?.family ?? '']?.hue;
+  if (hue && (art === 'ring' || art === 'amulet')) return tintedGearIcon(art, size, hue);
+  return gearIcon(art, size);
 }
-
-/** Quality → the CSS colour a slot border and a name should take. */
-export const QUALITY_COLOUR: Record<string, string> = {
-  rough: 'var(--dust)',
-  seamed: 'var(--quartz)',
-  faceted: 'var(--citrine)',
-  brilliant: 'var(--ember)',
-};

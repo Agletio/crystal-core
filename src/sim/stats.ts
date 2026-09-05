@@ -1,11 +1,16 @@
 /** Items into combat numbers. A subtle bug here poisons everything downstream. */
-import { aggregate, computeStat, percentStat } from '../mods';
+import { aggregate, computeStat, dangerScore, percentStat } from '../mods';
 import {
   AILMENT,
+  AILMENTS,
+  AILMENT_BY_ID,
   AILMENT_NAMES,
+  AILMENT_OF_TYPE,
   ATTRIBUTES,
   DAMAGE_TYPES,
   ADDED_DAMAGE_TYPES,
+  DANGER,
+  dangerStep,
   DEFENCE,
   DROP_GROUPS,
   HERO_BASE,
@@ -20,14 +25,25 @@ import {
   SKILL_SLOTS,
   MAIN_SLOT,
   MOD_BY_ID,
+  GEAR_BASE_BY_ID,
+  WEAPON_SPECIALITY,
+  WEAPON_SLOT,
+  OFF_SLOT,
+  DUAL,
   UNIQUE_BY_ID,
+  LADDER,
+  LADDER_RUNGS,
+  PROVING,
+  rungsBelow,
 } from '../data';
 import { attributeSteps, equippedItems, equippedSkill, mainSkillId } from './character';
 import type { Character } from './character';
 import { nodeById } from '../skills-tree';
-import { tradeGrants } from '../trades';
+import { TRADE_BY_ID, tradeGrants } from '../trades';
+import { trialNodeById } from '../trials';
 import { critBuff, mergeGrants } from './grants';
-import type { Item, MonsterAbilityDef, MonsterDef, RolledMod, SkillDef } from '../types';
+import { isTwoHanded } from '../economy';
+import type { Item, MonsterAbilityDef, MonsterDef, RolledMod, SkillDef, StatRoll } from '../types';
 
 export interface CombatStats {
   maxLife: number;
@@ -37,6 +53,9 @@ export interface CombatStats {
    * a cold ring on a fire spell resist as fire. What the sim delivers. */
   damageByType: Record<string, number>;
   attacksPerSecond: number;
+  /** Each hand's SHARE of `attacksPerSecond`, in hand order; the sim swings
+   *  alternately. Empty unless a pair is held. */
+  handRates: number[];
   critChance: number;
   moveSpeed: number;
   armour: number;
@@ -55,6 +74,9 @@ export interface CombatStats {
   resistances: Record<string, number>;
   /** Percent reduction against HITS only, already capped. */
   armourReduction: number;
+  dodgeChance: number; // a HIT stopped outright, like a Block; armour traded for it
+  /** Percent chance a HIT is turned aside outright, already capped. */
+  blockChance: number;
   /** Extra percent damage on a crit, on top of the base doubling. */
   critMultiplier: number;
   /** AREA, not radius. Behaviours must go through `areaRadius`, never this. */
@@ -62,25 +84,57 @@ export interface CombatStats {
   /** Gear-side reward stats. Added to whatever the crystal already grants. */
   rarity: number;
   currencyFind: number;
+  ailmentDps: Record<string, number>; // per id, at ONE stack, under its OWN tags
+  ailmentChance: Record<string, number>; // per id, percent per hit; over 100 stacks
 }
 
-/**
- * Curved on POINTS rather than on the size of the hit, so it prints as one
- * honest number. A linear conversion has no good divisor.
- */
+/** Curved on POINTS rather than on the size of the hit, so it prints as one
+ *  honest number. */
 export function armourReduction(armour: number): number {
   if (armour <= 0) return 0;
   const raw = (100 * armour) / (armour + DEFENCE.armourHalfPoint);
   return Math.min(DEFENCE.armourCap, raw);
 }
 
-/** Own plus group, capped together. Typeless is absent: nothing resists it. */
+/** Own plus group, capped. Typeless is absent: nothing resists it. */
 export function resistancesFrom(mods: RolledMod[]): Record<string, number> {
   const out: Record<string, number> = {};
   for (const type of DAMAGE_TYPES) {
     const own = computeStat(0, mods, `${type.id}Res`);
     const group = type.group ? computeStat(0, mods, `${type.group}Res`) : 0;
     out[type.id] = Math.min(DEFENCE.resistanceCap, own + group);
+  }
+  return out;
+}
+
+/** An ailment's damage a second at one stack, under ITS tags: Spell, Attack
+ *  and Critical never scale a Burn. */
+export function ailmentDamage(mods: RolledMod[], skill?: SkillDef): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const def of AILMENTS) {
+    if (!def.dps) continue;
+    // Applied BY a skill rather than by a type, so its tags reach it too.
+    const tags = [...(def.tags ?? []), ...(def.bySource ? skill?.tags ?? [] : [])];
+    out[def.id] = computeStat(def.dps, mods, 'damage', tags);
+  }
+  return out;
+}
+
+/** Tagged by damage TYPE, so a line aimed at Fire raises the Burn alone, and
+ *  `own` — what the skill lands as after Conversion — is what an UNTAGGED
+ *  chance node raises. Rend is Bleed because Strike is physical; spread over
+ *  every type in a hit it cursed whatever a dark line on a ring added. */
+export function ailmentChances(
+  mods: RolledMod[],
+  own: string | null = null,
+  bought = 0
+): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const def of AILMENTS) {
+    out[def.id] =
+      def.chance +
+      percentStat(mods, 'ailmentChance', [def.type, def.id]) +
+      (def.type === own ? bought : 0);
   }
   return out;
 }
@@ -113,7 +167,7 @@ export interface DamageBreakdown {
   byType: Record<string, number>;
 }
 
-/** The skill's own damage at a level. Nothing worn is in here. */
+/** The skill's own damage at a level; nothing worn. */
 export function skillBase(skill: SkillDef, level: number): number {
   const steps = Math.max(0, level - 1);
   return skill.baseDamage * (1 + (steps * LEVELLING.damagePerLevel) / 100);
@@ -151,13 +205,25 @@ export function damageBreakdown(
   const steps = [...after];
   const factor = steps.reduce((n, s) => n * s.value, 1);
 
+  // A CONVERSION moves a share of one type into another at the FLAT stage, so
+  // the moved half scales as the new type and the rest does not.
+  const moved: Record<string, number> = {};
+  if (skill.convert) {
+    const { from, share } = skill.convert;
+    const to = converted ?? skill.convert.to;
+    const had = aggregate(mods, 'damage', [...skill.tags, from]).flat * share;
+    moved[from] = (moved[from] ?? 0) - had;
+    moved[to] = (moved[to] ?? 0) + had;
+  }
+
   const parts: DamagePart[] = [];
   const byType: Record<string, number> = {};
   // Multiplied once at the end: per part is a different order, so a different bit.
   let raw = 0;
   for (const type of passes) {
     const typeBase = type === TYPELESS || active.includes(type) ? base : 0;
-    const b = aggregate(mods, 'damage', [...skill.tags, type]);
+    const raw_ = aggregate(mods, 'damage', [...skill.tags, type]);
+    const b = { ...raw_, flat: raw_.flat + (moved[type] ?? 0) };
     // Effectiveness weighs the ADDED half only, so a skill that takes half your
     // flat damage still gets full value from your increases.
     let pass = (typeBase + b.flat * added) * (1 + b.inc / 100);
@@ -185,6 +251,15 @@ export function damageBreakdown(
     baseType: active[0] ?? skill.damageTypes[0] ?? 'physical',
     byType,
   };
+}
+
+/** What a PASSIVE's own damage scales by: increases and mores to Damage that
+ *  are untagged or name this TYPE. Never the skill's tags, never flat. */
+export function passiveScale(mods: RolledMod[], type: string): number {
+  const b = aggregate(mods, 'damage', [type]);
+  let m = 1 + b.inc / 100;
+  for (const more of b.more) m *= 1 + more / 100;
+  return m;
 }
 
 /** How long an ailment this skill applies lasts. Read by the sim and the sheet. */
@@ -219,7 +294,9 @@ export function damageDetail(character: Character): DamageDetail {
   // A factor applied where the workings cannot show it is a sheet whose parts
   // do not add up to its own total.
   const ailment: DamageStep[] =
-    overTime && scale !== 1 ? [{ label: AILMENT_NAMES[skill.damageTypes[0]] ?? 'ailment', value: scale }] : [];
+    overTime && scale !== 1
+      ? [{ label: AILMENT_NAMES[skill.damageTypes[0]] ?? 'Ailment', value: scale }]
+      : [];
 
   const breakdown = damageBreakdown(statMods(character), character.level, skill, grants, ailment);
   const perApplication = breakdown.total;
@@ -252,24 +329,59 @@ export function heroStats(
   level: number,
   skill: SkillDef,
   grants: Record<string, unknown> = {},
-  baseArmour = 0
+  baseArmour = 0,
+  /** What the WEAPON swings at before anything worn scales it; a bare hand is
+   *  the hero's own, which is what a harness holding nothing measures. */
+  rate = HERO_BASE.attacksPerSecond,
+  /** Each hand's own base rate; `rate` above is already their even mean. */
+  hands: number[] = [],
+  /** What is in your hands. `one` for a harness holding nothing, which is what
+   *  every measurement is compared across. */
+  grip: Grip = 'one',
+  /** Whether a PAIR is two of one family. Only the rogue's web reads it. */
+  matched = false
 ): CombatStats {
-  const breakdown = damageBreakdown(mods, level, skill, grants);
-  const maxLife = computeStat(lifeFor(level), mods, 'life');
+  // BOTH HANDS, as a STEP in the workings: the sheet must add up.
+  const bothHands = grip === 'both' ? ((grants.twoHandMore as number) ?? 1) : 1;
+  // AND A PAIR, which is the other arrangement and the other trade's. Both are
+  // STEPS in the workings, so the sheet still adds up to its own total.
+  const steps: DamageStep[] = [];
+  if (bothHands !== 1) steps.push({ label: 'Both Hands', value: bothHands });
+  if (grip === 'pair') {
+    const pair = (grants.pairMore as number) ?? 1;
+    if (pair !== 1) steps.push({ label: 'Two Weapons', value: pair });
+    const suited = (grants[matched ? 'matchedPair' : 'oddPair'] as number) ?? 0;
+    if (suited > 0) {
+      steps.push({ label: matched ? 'A Matched Pair' : 'An Odd Pair', value: 1 + suited / 100 });
+    }
+  }
+  const breakdown = damageBreakdown(mods, level, skill, grants, steps);
+  // Bare to the rock. `characterStats` is what stops counting the rating.
+  const bare = typeof grants.bareChest === 'number' ? grants.bareChest : 0;
+  const maxLife = computeStat(lifeFor(level), mods, 'life') * (1 + bare);
   // Worn ratings are the BASE armour computes from, not a flat mod, so
   // "Reinforced" scales the plate you wear rather than a number beside it.
   const armour = computeStat(HERO_BASE.armour + baseArmour, mods, 'armour');
 
-  // The Aethermancer's one road to mana that nothing else offers: it lands on
-  // the BASE, so Intelligence and a ring of the Well scale it like any other.
+  // The Aethermancer's one road to mana: it lands on the BASE, so Intelligence
+  // and a ring of the Well scale it like any other. A passive ZEROES it and
+  // pays in life instead, which makes every mana line on your gear dead weight
+  // — the same shape of choice armour makes below, blunting or dodging.
   const vein = typeof grants.poolFromLife === 'number' ? grants.poolFromLife : 0;
-  const maxMana = computeStat(HERO_BASE.mana + maxLife * vein, mods, 'mana');
+  const maxMana = grants.bloodCost ? 0 : computeStat(HERO_BASE.mana + maxLife * vein, mods, 'mana');
+  const shed = typeof grants.armourToDodge === 'number' ? grants.armourToDodge : 0;
+  const blunted = armourReduction(armour);
 
   return {
     maxLife,
     lifeRegen: computeStat((maxLife * HERO_BASE.lifeRegenPercent) / 100, mods, 'lifeRegen'),
     maxMana,
-    manaRegen: computeStat((maxMana * HERO_BASE.manaRegenPercent) / 100, mods, 'manaRegen'),
+    // PERCENTAGE POINTS on the base, never flat: a bigger pool refills faster.
+    manaRegen: computeStat(
+      (maxMana * (HERO_BASE.manaRegenPercent + ((grants.poolRegen as number) ?? 0))) / 100,
+      mods,
+      'manaRegen'
+    ),
     // The tree's multipliers land LAST, on top of whatever gear did.
     manaCost: Math.max(
       0,
@@ -283,32 +395,59 @@ export function heroStats(
     // Percentages with no base to scale — see percentStat.
     rarity: percentStat(mods, 'rarity'),
     currencyFind: percentStat(mods, 'currencyFind'),
+    ailmentDps: ailmentDamage(mods, skill),
+    ailmentChance: ailmentChances(mods, breakdown.baseType, (grants.ailmentChance as number) ?? 0),
     damage: breakdown.total,
     damageByType: breakdown.byType,
-    // A spell has no business getting faster because you found a sharper sword.
+    // A spell has no business getting faster for a sharper sword, so it keeps
+    // the hero's own rate; an ATTACK swings at the WEAPON's.
     attacksPerSecond:
       computeStat(
-        HERO_BASE.attacksPerSecond,
+        skill.tags.includes('spell') ? HERO_BASE.attacksPerSecond : rate,
         mods,
         skill.tags.includes('spell') ? 'castSpeed' : 'attackSpeed'
-      ) * skill.rateMultiplier,
-    // Tagged, so an ATTACK critical chance does nothing for a spell.
-    critChance: computeStat(HERO_BASE.critChance, mods, 'critChance', skill.tags),
+      ) *
+      skill.rateMultiplier *
+      (grip === 'both' ? 1 + ((grants.twoHandRate as number) ?? 0) / 100 : 1) *
+      (grip === 'pair' ? 1 + ((grants.pairRate as number) ?? 0) / 100 : 1),
+    // Every increase is multiplicative, so the mean scaled by a hand's share of
+    // it is the number that hand's own base would have given.
+    handRates:
+      hands.length > 1 && !skill.tags.includes('spell')
+        ? hands.map((r) => r / Math.max(0.01, rate))
+        : [],
+    // The SKILL's own base, scaled by what gear rolls: `computeStat` is
+    // (base + flat) × (1 + increased), so a skill that starts high is a skill
+    // near the cap. Tagged, so an ATTACK critical chance does nothing for a spell.
+    critChance:
+      computeStat(skill.critChance ?? HERO_BASE.critChance, mods, 'critChance', skill.tags) +
+      (grip === 'pair' ? ((grants.pairCrit as number) ?? 0) : 0),
     // Tagged by the skill, so "…of Spells" would filter like any other line.
     areaOfEffect: percentStat(mods, 'areaOfEffect', skill.tags),
     moveSpeed: computeStat(HERO_BASE.moveSpeed, mods, 'moveSpeed'),
     armour,
-    armourReduction: armourReduction(armour),
+    armourReduction: shed > 0 ? 0 : blunted,
+    dodgeChance: shed > 0 ? Math.min(DEFENCE.dodgeCap, blunted * shed) : 0,
+    blockChance: Math.min(DEFENCE.blockCap, percentStat(mods, 'blockChance')), // a shield, and nothing else
     resistances: resistancesFrom(mods),
     attackRange: computeStat(skill.range, mods, 'attackRange'),
     aggroRange: HERO_BASE.aggroRange,
   };
 }
 
-/**
- * The allocated nodes as one synthetic mod, so they go through the same
- * aggregation as gear rather than a second parallel system that drifts.
- */
+/** The allocated nodes as one synthetic mod, aggregated like gear rather than
+ *  through a second system that drifts. */
+/** One tag under a conversion: a damage type becomes the converted type, and
+ *  the AILMENT of a type becomes that type's ailment — which is what keeps
+ *  "+18% chance to Burn" worth its point on a Fireball turned cold. */
+export function retag(tag: string, skill: SkillDef, converted: string | null): string {
+  if (!converted) return tag;
+  if (skill.damageTypes.includes(tag)) return converted;
+  const was = AILMENT_BY_ID[tag];
+  if (was && skill.damageTypes.includes(was.type)) return AILMENT_OF_TYPE[converted]?.id ?? tag;
+  return tag;
+}
+
 export function treeMod(character: Character): RolledMod | null {
   const skillId = mainSkillId(character);
   const progress = character.skills[skillId];
@@ -325,10 +464,10 @@ export function treeMod(character: Character): RolledMod | null {
       form: s.form,
       value: s.value,
       // Conversion retags the tree's own lines, so the fire wedge you walked
-      // through to reach it becomes a cold wedge rather than dead weight.
-      tags: (s.tags ?? []).map((t) =>
-        converted && skill.damageTypes.includes(t) ? converted : t
-      ),
+      // through to reach it becomes a cold wedge rather than dead weight —
+      // AILMENT tags included, or a tree of Burn chance survives a conversion
+      // to cold as a tree of chance to apply something you no longer deal.
+      tags: (s.tags ?? []).map((t) => retag(t, skill, converted)),
     }));
 
   if (stats.length === 0) return null;
@@ -344,11 +483,89 @@ export function treeMod(character: Character): RolledMod | null {
   };
 }
 
+/** The trials web as one synthetic mod, bound for `RunSet.mods`: every line on
+ *  it is monster-facing, so it is weighed by `crystalRewards`. */
+export function trialMod(character: Character): RolledMod | null {
+  const stats = (character.trialAllocated ?? []).flatMap((id) => {
+    const node = trialNodeById(id);
+    const taken = node?.choices?.find((c) => c.id === character.trialChoices?.[id]);
+    return [...(node?.stats ?? []), ...(taken?.stats ?? [])];
+  });
+  if (stats.length === 0) return null;
+  return {
+    entryId: 'trials',
+    defId: 'trials',
+    group: 'trials',
+    slot: 'trials',
+    name: 'The Reckoning',
+    tier: 1,
+    tags: [],
+    stats: stats.map((s) => ({ ...s, tags: s.tags ?? [] })),
+  };
+}
+
+/** A DEPTH as ONE synthetic mod, a STRAIGHT scaling of `*AtTop` so every step
+ *  costs the same. It rides the crystal seam, so deeper pays more. */
+export function rungMod(zone: number, rung: number): RolledMod | null {
+  if (rung <= 0) return null;
+  const up = LADDER_RUNGS > 1 ? rungsBelow(zone, rung) / (LADDER_RUNGS - 1) : 0;
+  const stats: RolledMod['stats'] = (
+    [
+      ['monsterLife', LADDER.lifeAtTop],
+      ['monsterDamage', LADDER.damageAtTop],
+      ['packSize', LADDER.packAtTop],
+    ] as const
+  )
+    .map(([stat, top]) => ({ stat, form: 'inc' as const, value: Math.round(top * up), tags: [] }))
+    .filter((line) => line.value > 0);
+  if (stats.length === 0) return null;
+  return {
+    entryId: 'rung',
+    defId: 'rung',
+    group: 'rung',
+    slot: 'rung',
+    name: 'The climb',
+    tier: 1,
+    tags: [],
+    stats,
+  };
+}
+
+/** THE PROVING GROUND as one synthetic mod, on the same three stats a DEPTH
+ *  scales and by the same arithmetic — so its floor is readable as "so many
+ *  times the deep end" rather than as a table of its own. */
+export function provingMod(sockets: number): RolledMod | null {
+  const up = PROVING.overTop + Math.max(0, sockets) * PROVING.perSocket;
+  const stats: RolledMod['stats'] = (
+    [
+      ['monsterLife', LADDER.lifeAtTop],
+      ['monsterDamage', LADDER.damageAtTop],
+      ['packSize', LADDER.packAtTop],
+    ] as const
+  )
+    .map(([stat, top]) => ({ stat, form: 'inc' as const, value: Math.round(top * up), tags: [] }))
+    .filter((line) => line.value > 0);
+  if (stats.length === 0) return null;
+  return {
+    entryId: 'proving',
+    defId: 'proving',
+    group: 'rung', // the same seam a depth rides: one place, one difficulty
+    slot: 'rung',
+    name: PROVING.name,
+    tier: 1,
+    tags: [],
+    stats,
+  };
+}
+
 /** Everything spent on attributes as ONE synthetic mod, the way the tree
  *  arrives. Whole steps only: a part-step is banked and pays nothing. */
-export function attributeMod(character: Character): RolledMod | null {
+/** What a bag of attribute POINTS buys, as one synthetic mod. Points arrive by
+ *  two roads — spent on a level, or rolled on a ring — and this is the only
+ *  place either turns into stats. An attribute never grants an attribute. */
+export function attributePointsMod(points: Record<string, number>): RolledMod | null {
   const stats = ATTRIBUTES.flatMap((attr) => {
-    const steps = attributeSteps(character, attr.id);
+    const steps = points[attr.id] ?? 0;
     return steps > 0 ? attr.per.map((s) => ({ ...s, value: s.value * steps })) : [];
   });
 
@@ -365,18 +582,46 @@ export function attributeMod(character: Character): RolledMod | null {
   };
 }
 
-/** Every switch the sim is holding: the skill's tree, the TRADE, then what is
- *  WORN — gear merges last, so a unique bought with a downside wins a tie. */
-export function treeGrants(character: Character): Record<string, unknown> {
-  const out: Record<string, unknown> = {};
-  const progress = character.skills[mainSkillId(character)];
+/** Worn mods alone, for gear measured with no character. */
+export function wornAttributeMod(mods: RolledMod[]): RolledMod | null {
+  return attributePointsMod(
+    Object.fromEntries(ATTRIBUTES.map((a) => [a.id, aggregate(mods, a.id).flat]))
+  );
+}
 
+/** EVERY SOURCE OF EVERY ATTRIBUTE — the trade's spread, the points spent on
+ *  levels, what is worn. The sheet prints these and the sim buys off them. */
+export function attributeTotals(character: Character): Record<string, number> {
+  const worn = equippedItems(character).flatMap((i) => [...i.mods, ...i.implicits]);
+  const trade = character.trade ? TRADE_BY_ID[character.trade]?.spec.attributes : undefined;
+  return Object.fromEntries(
+    ATTRIBUTES.map((a) => [
+      a.id,
+      (trade?.[a.id] ?? 0) + attributeSteps(character, a.id) + aggregate(worn, a.id).flat,
+    ])
+  );
+}
+
+export function attributeMod(character: Character): RolledMod | null {
+  return attributePointsMod(attributeTotals(character));
+}
+
+/** What ONE skill's own web has been walked to, whichever slot it is in. */
+function walked(character: Character, skillId: string): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  const progress = character.skills?.[skillId];
   for (const id of progress?.allocated ?? []) {
-    const node = nodeById(mainSkillId(character), id);
-    // A choice node gives the option you picked, and nothing until you pick.
+    const node = nodeById(skillId, id);
     const chosen = node?.choices?.find((c) => c.id === progress?.choices?.[id]);
     mergeGrants(out, { ...(node?.grants ?? {}), ...(chosen?.grants ?? {}) });
   }
+  return out;
+}
+
+/** Every switch the sim is holding: the skill's tree, the TRADE, then what is
+ *  WORN — gear merges last, so a unique bought with a downside wins a tie. */
+export function treeGrants(character: Character): Record<string, unknown> {
+  const out: Record<string, unknown> = { ...walked(character, mainSkillId(character)) };
   // A third SOURCE, not a third concept: a trade node is declared in the same
   // table and merged by the same rules as a tree node and a unique.
   mergeGrants(out, tradeGrants(character.trade, character.tradeAllocated ?? []));
@@ -390,12 +635,15 @@ export function treeGrants(character: Character): Record<string, unknown> {
       if (mod) mergeGrants(out, mod);
     }
   }
-  // The other two slots. A passive never casts and has no delivery of its own:
-  // its `grants` ARE the skill, and they land on the one that swings.
+  // The other two slots, BOTH halves each: the skill's own static `grants` —
+  // a passive never casts, so those ARE the skill — and its own web. Without
+  // the second, every node of a mover's web does nothing at all, silently.
   for (const slot of SKILL_SLOTS) {
     if (slot.id === MAIN_SLOT) continue;
-    const held = SKILL_BY_ID[equippedSkill(character, slot.id) ?? ''];
+    const id = equippedSkill(character, slot.id);
+    const held = SKILL_BY_ID[id ?? ''];
     if (held?.grants) mergeGrants(out, held.grants);
+    if (id) mergeGrants(out, walked(character, id));
   }
   return out;
 }
@@ -432,21 +680,186 @@ export function effectiveSkill(
  * Every stat line acting on a character. Implicits count exactly like rolled
  * mods — the only difference is that crafting can't reach them.
  */
-export function statMods(character: Character): RolledMod[] {
-  const extra = [treeMod(character), attributeMod(character)];
+/** BOTH HANDS, as one flat line an ATTACK reads. LOCAL: a bow of 100 with 100%
+ *  increased Physical ON IT is a bow of 200; the same line on a ring scales YOU.
+ *  A PAIR puts `DUAL.main` of one and `DUAL.off` of the other into every hit. */
+export function weaponMod(
+  character: Character,
+  grants: Record<string, unknown> = {}
+): RolledMod | null {
+  const held = character.equipment?.[WEAPON_SLOT];
+  const pair = offWeapon(character);
+  if (!held && !pair) return null;
+  // The one trade that holds two can buy the off hand a bigger share of the
+  // hit. `DUAL.off` is what everybody else's would be, if they could.
+  const off = DUAL.off + Math.max(0, (grants.offHandShare as number) ?? 0);
+  const swing = held && pair
+    ? weaponSwing(held) * DUAL.main + weaponSwing(pair) * off
+    : weaponSwing(held ?? pair!);
+  if (swing <= 0) return null;
+
+  return {
+    entryId: 'weapon',
+    defId: 'weapon',
+    group: 'weapon',
+    slot: 'weapon',
+    name: 'Weapon',
+    tier: 1,
+    tags: [],
+    // Tagged ATTACK too, or the sword in your hand would arm a spell.
+    stats: [{ stat: 'damage', form: 'flat', value: swing, tags: ['physical', 'attack'] }],
+  };
+}
+
+/** What ONE weapon swings for: its base scaled by the increases rolled ON it,
+ *  untagged or naming Physical. A typed maul's flat fire and a dagger's crit
+ *  are global and not in here. The card and the sim both ask this. */
+export function weaponSwing(held: Item): number {
+  // The ITEM's own, so a PERFECT one swings for more than its table row says.
+  const base = held.damage ?? GEAR_BASE_BY_ID[held.base]?.damage ?? 0;
+  if (base <= 0) return 0;
+  const own = aggregate([...held.mods, ...held.implicits], 'damage', ['physical']);
+  let swing = base * (1 + own.inc / 100);
+  for (const m of own.more) swing *= 1 + m / 100;
+  return swing;
+}
+
+/** WHAT IS IN YOUR HANDS, as one word. The warrior's trade turns on it and
+ *  nothing else asks, so it is derived rather than stored. */
+export type Grip = 'shield' | 'both' | 'pair' | 'one';
+
+export function gripOf(character: Character): Grip {
+  const main = character.equipment?.[WEAPON_SLOT];
+  const off = character.equipment?.[OFF_SLOT];
+  if (main && isTwoHanded(main)) return 'both';
+  if (off && offWeapon(character)) return 'pair';
+  if (off) return 'shield';
+  return 'one';
+}
+
+/** The off hand's WEAPON, or null: it also takes a shield, which is not one. */
+export function offWeapon(character: Character): Item | null {
+  const held = character.equipment?.[OFF_SLOT];
+  return held && GEAR_BASE_BY_ID[held.base]?.kind === 'weapon' ? held : null;
+}
+
+/** THE RATES a character swings at, in hand order — one entry with a hand free. */
+export function weaponRates(character: Character): number[] {
+  const main = character.equipment?.[WEAPON_SLOT];
+  const off = offWeapon(character);
+  if (main && off) return [weaponRate(main), weaponRate(off)];
+  return [weaponRate(main ?? off)];
+}
+
+/** Two swings take `1/a + 1/b` seconds, so this is the rate, never the mean. */
+export const evenRate = (rates: number[]): number =>
+  rates.length / rates.reduce((n, r) => n + 1 / Math.max(0.01, r), 0);
+
+/** How often ONE weapon swings: its own base scaled by the increases rolled ON
+ *  it. The mirror of `weaponSwing`, and why a dagger is fast and a maul is not. */
+export function weaponRate(held: Item | null | undefined): number {
+  const base = held ? GEAR_BASE_BY_ID[held.base]?.attackSpeed : undefined;
+  if (!held || !base) return HERO_BASE.attacksPerSecond; // a bare hand is the hero's own
+  const own = aggregate([...held.mods, ...held.implicits], 'attackSpeed', []);
+  let rate = base * (1 + own.inc / 100);
+  for (const m of own.more) rate *= 1 + m / 100;
+  return rate;
+}
+
+/** True for a line the WEAPON keeps to itself, so nothing counts it twice: an
+ *  untagged increase to its damage or its rate scales the base it is rolled on
+ *  and nothing else. */
+const isLocal = (line: StatRoll): boolean =>
+  (line.stat === 'damage'
+    && line.form !== 'flat'
+    && line.tags.every((t: string) => t === 'physical'))
+  || (line.stat === 'attackSpeed' && line.form !== 'flat' && line.tags.length === 0);
+
+export function statMods(
+  character: Character,
+  grants: Record<string, unknown> = {}
+): RolledMod[] {
+  // WHAT YOU ATE is a mod like any other, so a meal reaches the sheet, the sim
+  // and every card through the one seam every other line already uses.
+  const extra = [
+    treeMod(character), attributeMod(character), weaponMod(character, grants),
+    character.meal ?? null,
+  ];
   return [
-    ...equippedItems(character).flatMap((i) => [...i.mods, ...i.implicits]),
+    ...equippedItems(character).flatMap((i) =>
+      [...i.mods, ...i.implicits].map((m) =>
+        // Already in `weaponMod`. Left here they would scale the whole build
+        // too, which is the bug local exists to stop.
+        (i === character.equipment?.[WEAPON_SLOT] || i === offWeapon(character))
+        && m.stats.some(isLocal)
+          ? { ...m, stats: m.stats.filter((line) => !isLocal(line)) }
+          : m
+      )
+    ),
     ...extra.filter((m): m is RolledMod => m !== null),
   ];
 }
 
 /** Stats for a character, resolving its selected skill, gear and tree. */
+/** THE SPECIALIST, as one synthetic mod like `treeMod`. Per WEAPON HELD, so a
+ *  matched pair is its family's line twice. */
+/** TWO OF ONE FAMILY. A dagger beside a dagger, not a dagger beside a shiv —
+ *  the FAMILY is what the Specialist reads, so it is what this reads too. */
+export function matchedPair(character: Character): boolean {
+  const main = character.equipment?.[WEAPON_SLOT];
+  const off = offWeapon(character);
+  if (!main || !off) return false;
+  const family = (i: Item) => GEAR_BASE_BY_ID[i.base]?.family ?? '';
+  return family(main) !== '' && family(main) === family(off);
+}
+
+export function specialistMod(
+  character: Character,
+  grants: Record<string, unknown>
+): RolledMod | null {
+  const scale = typeof grants.weaponSpecialist === 'number' ? grants.weaponSpecialist : 0;
+  if (scale <= 0) return null;
+  const held = [character.equipment?.[WEAPON_SLOT], offWeapon(character)]
+    .filter((i): i is Item => !!i)
+    .map((i) => GEAR_BASE_BY_ID[i.base]?.family ?? '')
+    .map((family) => WEAPON_SPECIALITY[family])
+    .filter(Boolean);
+  if (held.length === 0) return null;
+
+  const stats: RolledMod['stats'] = [];
+  for (const speciality of held) {
+    stats.push({
+      stat: speciality.stat,
+      form: speciality.stat === 'critChance' ? 'flat' : 'inc',
+      value: speciality.per * scale,
+      tags: [],
+    });
+  }
+  return {
+    entryId: 'specialist', defId: 'specialist', group: 'trade', slot: 'trade',
+    name: 'Weapon Specialist', tier: 1, tags: [], stats,
+  };
+}
+
 export function characterStats(character: Character): CombatStats {
   const base = SKILL_BY_ID[mainSkillId(character)] ?? SKILLS[0];
   const grants = treeGrants(character);
   const skill = effectiveSkill(base, grants);
-  const baseArmour = equippedItems(character).reduce((n, i) => n + (i.armour ?? 0), 0);
-  return heroStats(statMods(character), character.level, skill, grants, baseArmour);
+  // The CHEST and nothing else: helm, gloves and boots are still worn, so it
+  // is one slot given up rather than plate.
+  const chest = grants.bareChest ? character.equipment?.body : undefined;
+  const baseArmour = equippedItems(character)
+    .filter((i) => i !== chest)
+    .reduce((n, i) => n + (i.armour ?? 0), 0);
+  const rates = weaponRates(character);
+  // The Specialist reads what is in your HANDS, so it cannot be part of
+  // `statMods` — that is walked webs and worn lines, and neither knows.
+  const speciality = specialistMod(character, grants);
+  return heroStats(
+    [...statMods(character, grants), ...(speciality ? [speciality] : [])],
+    character.level, skill, grants, baseArmour,
+    evenRate(rates), rates, gripOf(character), matchedPair(character)
+  );
 }
 
 /**
@@ -459,8 +872,9 @@ export function monsterStats(
   def: MonsterDef,
   ability?: MonsterAbilityDef
 ): CombatStats {
-  const life = MONSTER_BASE.life * def.life;
-  const damage = MONSTER_BASE.damage * def.damage;
+  const step = dangerStep(dangerScore(mods).danger);
+  const life = MONSTER_BASE.life * def.life * (1 + step * DANGER.lifeAtTop);
+  const damage = MONSTER_BASE.damage * def.damage * (1 + step * DANGER.hitAtTop);
 
   // What this monster deals is its ABILITY's, never the map's — an element
   // belongs to the thing swinging it.
@@ -496,10 +910,14 @@ export function monsterStats(
     damage: dealt,
     damageByType: byType,
     attacksPerSecond: MONSTER_BASE.attacksPerSecond * def.attacksPerSecond,
+    handRates: [], // nothing dual wields but the hero
+
     critChance: percentStat(mods, 'monsterCrit'),
     moveSpeed: computeStat(MONSTER_BASE.moveSpeed, mods, 'monsterMoveSpeed') * def.moveSpeed,
     armour,
     armourReduction: blunted,
+    dodgeChance: 0,
+    blockChance: 0,
     resistances,
     attackRange: MONSTER_BASE.attackRange * def.attackRange,
     aggroRange: MONSTER_BASE.aggroRange,
@@ -512,6 +930,8 @@ export function monsterStats(
     areaOfEffect: 0,
     rarity: 0,
     currencyFind: 0,
+    ailmentDps: {},
+    ailmentChance: {},
     /** What monsters on this map hurt you with. Shows in the results overlay. */
     damageType: type,
   };

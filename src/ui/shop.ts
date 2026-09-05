@@ -1,24 +1,30 @@
 /**
- * The shop: only ever a price list, the way crafting is only ever the item. What
- * you buy lands in the dock, which is where you spend it from.
+ * The counter: a price list, the way crafting is only ever the item. What you
+ * buy lands in the dock, which is where you spend it from. NOTHING NAMED IS
+ * SOLD — you buy a KIND and it is rolled at the click.
  */
-import { ALL_MODS, CURRENCY_BY_ID, RECIPES, SHOP } from '../data';
+import { ALL_MODS, CURRENCY_BY_ID, KIND_VARIETY, MATERIALS, RECIPES, THEME_BY_ID } from '../data';
+import type { MaterialDef } from '../data';
 import { Rng } from '../rng';
-import { ModPool, tierName } from '../mods';
+import { ModPool } from '../mods';
 import { itemCard } from './itemcard';
 import {
   balance,
   canSell,
-  pickGearBase,
-  priceOfItem,
-  rollGear,
+  gambleFor,
+  gamblePrice,
+  makeMaterial,
+  materialPrice,
+  recipeInputs,
   runRecipe,
   sellPrice,
+  shopIlvl,
+  soldHere,
   spend,
 } from '../economy';
 import { addItem, buyBack, carryRoom, sellItem, stashRoom } from '../game/state';
 import type { Placement } from '../game/state';
-import type { GameState, SoldEntry } from '../game/state';
+import type { GameState } from '../game/state';
 import { note } from './history';
 import { crystalIcon, currencyIcon, itemIcon } from './icons';
 import { openMenu } from './menu';
@@ -31,8 +37,10 @@ const POOL = new ModPool(ALL_MODS);
 
 const $ = (id: string) => document.getElementById(id)!;
 
-/** Id of one recipe's buy button, for the same reason as every other. */
+/** Ids a harness names a button by, rather than by its wording. */
 export const recipeButtonId = (recipeId: string): string => `buy-${recipeId}`;
+export const gambleButtonId = (kind: string): string => `gamble-${kind}`;
+export const rawButtonId = (materialId: string): string => `buy-raw-${materialId}`;
 
 function el(tag: string, cls?: string, text?: string): HTMLElement {
   const node = document.createElement(tag);
@@ -48,6 +56,9 @@ let game: GameState;
  * a sale nobody asked for.
  */
 let selling = false;
+/** How many gambles this session, which is what seeds the next. UI state: a
+ *  reload cannot re-roll one, because the roll is spent the moment it lands. */
+let nextGamble = 1;
 
 /**
  * Checked BEFORE the sale: runRecipe spends first, so without this you could pay
@@ -66,7 +77,7 @@ function hasRoomFor(recipe: Recipe): boolean {
  */
 function affordableCount(recipe: Recipe): number {
   let most = Infinity;
-  for (const [id, n] of Object.entries(recipe.inputs)) {
+  for (const [id, n] of Object.entries(recipeInputs(recipe, game.character.level))) {
     most = Math.min(most, Math.floor(balance(game.wallet, id) / n));
   }
   return Number.isFinite(most) ? Math.max(0, most) : 0;
@@ -110,7 +121,7 @@ function buy(recipeId: string, count = 1): void {
   let last: Item | null = null;
 
   for (let i = 0; i < count; i++) {
-    const result = runRecipe(game.wallet, recipeId);
+    const result = runRecipe(game.wallet, recipeId, game.character.level);
     if (!result.ok) {
       stopped = result.error ?? 'cannot afford that';
       break;
@@ -144,7 +155,7 @@ function buy(recipeId: string, count = 1): void {
 
 /** A price in words, not in wallet keys. Gold is a mass noun and takes no `s`. */
 function priceOf(recipe: Recipe): string {
-  return Object.entries(recipe.inputs)
+  return Object.entries(recipeInputs(recipe, game.character.level))
     .map(([id, n]) => {
       if (id === 'gold') return `${n} gold`;
       const name = CURRENCY_BY_ID[id]?.name ?? id;
@@ -216,7 +227,8 @@ export function render(): void {
     host.append(btn);
   }
 
-  renderStock();
+  gambleHost();
+  rawHost();
   renderSell();
   renderSold();
   $('shop-purse').textContent = `${balance(game.wallet, 'gold')} gold`;
@@ -326,60 +338,66 @@ function renderSold(): void {
   }
 }
 
+/** What a kind is CALLED on the button. A pair is a pair, and a vowel takes
+ *  its own article — the kind ids are the game's words and stay them. */
+const saysKind = (kind: string): string =>
+  kind === 'gloves' || kind === 'boots'
+    ? `A pair of ${kind}`
+    : `${/^[aeiou]/.test(kind) ? 'An' : 'A'} ${kind}`;
+
 /**
- * Restocks the shelf, if the level it was stocked for has moved.
- *
- * Level-up is the only trigger. A shelf that re-rolled on every open would not
- * be a shelf — you would reopen the window until the piece you wanted showed
- * up, which is a deterministic shop with extra clicks.
+ * THE GAMBLE. One button per KIND, and what you buy is unseen until it is
+ * bought — *"you buy a ring, not a named ring"*. Rolled at the click and never
+ * stored, so there is no shelf to reopen the window at: the price is the whole
+ * of what you are deciding.
  */
-export function restockIfLevelled(): void {
-  const level = game.character.level;
-  if (level === game.shopLevel) return;
+function gambleHost(): void {
+  const host = $('shop-gamble');
+  host.replaceChildren();
+  const ilvl = shopIlvl(game.character.level);
+  const cost = gamblePrice(ilvl);
+  $('shop-gamble-hint').textContent =
+    `${cost} gold apiece, at item level ${ilvl}. Whatever it is, it is worth ` +
+    'less than it cost — that is what makes it a gamble.';
 
-  // Seeded off the level so the same character always sees the same shelf for
-  // a given level: reloading is not a re-roll.
-  const rng = new Rng(level * 7919 + 13);
-  const count = Math.max(
-    SHOP.minSlots,
-    Math.min(SHOP.maxSlots, Math.floor(level / SHOP.slotsPerLevel) + SHOP.minSlots)
-  );
-  const ilvl = Math.max(1, Math.round(level * SHOP.ilvlPerLevel));
-
-  const stock: Item[] = [];
-  for (let i = 0; i < count; i++) {
-    const base = pickGearBase(ilvl, rng);
-    if (!base) continue;
-    // Shop pieces arrive FULL for their base. You are paying to skip the
-    // rolling, not to gamble a second time at the counter — and what a base
-    // holds is the base's own business, so the shelf never sells a tier the
-    // item level would not have dropped.
-    stock.push(rollGear(base.id, ilvl, 6, POOL, rng));
+  for (const kind of Object.keys(KIND_VARIETY)) {
+    const btn = el('button', 'buy') as HTMLButtonElement;
+    btn.id = gambleButtonId(kind);
+    const body = el('span', 'buy__body');
+    body.append(el('span', 'buy__name', saysKind(kind)));
+    body.append(el('span', 'buy__cost', `${cost} gold`));
+    btn.append(body);
+    attachTooltip(
+      btn,
+      () => `One ${kind} at item level ${ilvl}, rolled when you buy it. Never a Perfect base.`
+    );
+    if (balance(game.wallet, 'gold') < cost) {
+      btn.disabled = true;
+      btn.classList.add('buy--off');
+    }
+    btn.onclick = () => gamble(kind);
+    host.append(btn);
   }
-
-  game.shopStock = stock;
-  game.shopLevel = level;
-  if (level > 1) note(`The shop has restocked for level ${level}`);
 }
 
-const tooltip = (item: Item): HTMLElement =>
-  itemCard(item, [`${priceOfItem(item)} gold — click to buy`]);
-
-function buyItem(item: Item): void {
-  const cost = priceOfItem(item);
+function gamble(kind: string): void {
+  const ilvl = shopIlvl(game.character.level);
+  const cost = gamblePrice(ilvl);
   if (balance(game.wallet, 'gold') < cost) {
-    note(`${item.name} — costs ${cost} gold`, 'fail');
+    note(`${saysKind(kind)} — costs ${cost} gold`, 'fail');
     return;
   }
   if (carryRoom(game, 'gear') <= 0 && stashRoom(game) <= 0) {
-    note(`${item.name} — nowhere to put it. Your bag and stash are both full.`, 'fail');
+    note(`${saysKind(kind)} — nowhere to put it. Your bag and stash are both full.`, 'fail');
     return;
   }
-
+  // Seeded off what has been bought, so the roll cannot be reloaded into.
+  const item = gambleFor(kind, ilvl, POOL, new Rng(nextGamble++ * 2654435761 + ilvl));
+  if (!item) {
+    note(`Nothing under the counter in that shape yet.`, 'fail');
+    return;
+  }
   spend(game.wallet, { gold: cost });
-  // Off the shelf. One of each: a level-up is a restock, not a catalogue you
-  // can grind for the same piece twice.
-  game.shopStock = game.shopStock.filter((i) => i.id !== item.id);
   const where = addItem(game, item);
   note(
     where === 'stashed'
@@ -391,43 +409,53 @@ function buyItem(item: Item): void {
   renderInventory();
 }
 
-function renderStock(): void {
-  const host = $('shop-stock');
+/** RAW, at a rate a descent beats every time. It finishes a recipe you are two
+ *  short of; it is never how you feed one. */
+function rawHost(): void {
+  const host = $('shop-raw');
   host.replaceChildren();
+  const level = game.character.level;
+  const stock = MATERIALS.filter((def) => soldHere(def, level));
+  $('shop-raw-hint').textContent =
+    'A descent gathers about 21 of these for nothing. This is for the two you are short of.';
 
-  if (game.shopStock.length === 0) {
-    host.append(el('p', 'empty', 'Sold out. Restocks when you level.'));
-    return;
-  }
-
-  for (const item of game.shopStock) {
-    const cost = priceOfItem(item);
+  for (const def of stock) {
+    const cost = materialPrice(def);
     const btn = el('button', 'buy') as HTMLButtonElement;
-    btn.append(itemIcon(item, 26));
+    btn.id = rawButtonId(def.id);
     const body = el('span', 'buy__body');
-    body.append(el('span', 'buy__name', item.name));
+    body.append(el('span', 'buy__name', def.name));
     body.append(
-      el(
-        'span',
-        'buy__cost',
-        `${cost} gold · ${tierName(item)} · ilvl ${item.ilvl}`
-      )
+      el('span', 'buy__cost', `${cost} gold · ${THEME_BY_ID[def.world]?.name ?? def.world}`)
     );
     btn.append(body);
-    attachTooltip(btn, () => tooltip(item));
-
+    attachTooltip(btn, () => `${def.name}\n${def.description}`);
     if (balance(game.wallet, 'gold') < cost) {
       btn.disabled = true;
       btn.classList.add('buy--off');
     }
-    btn.onclick = () => buyItem(item);
+    btn.onclick = () => buyRaw(def);
     host.append(btn);
   }
+  if (stock.length === 0) {
+    host.append(el('p', 'empty', 'Nothing worth selling you yet.'));
+  }
+}
+
+function buyRaw(def: MaterialDef): void {
+  const cost = materialPrice(def);
+  if (!spend(game.wallet, { gold: cost })) {
+    note(`${def.name} — costs ${cost} gold`, 'fail');
+    return;
+  }
+  addItem(game, makeMaterial(def, 1));
+  note(`Bought 1 ${def.name}`, 'add');
+  render();
+  renderInventory();
 }
 
 export function openShop(): void {
   $('shop').hidden = false;
-  restockIfLevelled();
   render();
 }
 
@@ -450,6 +478,5 @@ export function initShop(state: GameState): void {
   game = state;
   ($('shop-close') as HTMLButtonElement).onclick = closeShop;
   ($('shop-sell') as HTMLButtonElement).onclick = () => setSelling(!selling);
-  restockIfLevelled();
   render();
 }

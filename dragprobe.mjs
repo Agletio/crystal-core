@@ -8,6 +8,12 @@
  * for any change that moves the dock, a window's position or a z-index; on a
  * failure it prints what `elementFromPoint` actually hits at the drop, which is
  * the question every guess about stacking is really asking.
+ *
+ * THE PAGE IS NEVER IDLE ANY MORE — the camp is a live map behind every screen —
+ * so a synthetic `mouse.move` is coalesced away under the frame loop about half
+ * the time, the slop is never crossed, and the release reads as a CLICK. `nudge`
+ * waits for `body.dragging` to say the drag really began; a real mouse sends
+ * enough moves that it never has to.
  */
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
@@ -39,20 +45,72 @@ page.on('pageerror', (e) => problems.push(`page error: ${e.message}`));
 await page.goto(`${base}/index.html`, { waitUntil: 'load' });
 await page.waitForTimeout(700);
 
+/** A character is MADE before it is played: the trade, then the name and the
+ *  skill. The dev kit IS a new game, so the gate is walked twice — and the
+ *  hall takes every pointer, so anything after it times out rather than
+ *  failing on what it was actually looking for. */
+async function makeCharacter() {
+  await page.evaluate(() => document.getElementById('pick-aethermancer')?.click());
+  await page.waitForTimeout(250);
+  await page.evaluate(() => document.getElementById('pick-take')?.click());
+  await page.waitForTimeout(250);
+  await page.evaluate(() => {
+    const name = document.getElementById('welcome-name');
+    if (name) name.value = 'Probe';
+    document.getElementById('welcome-go')?.click();
+  });
+  await page.waitForTimeout(500);
+}
+
 // Straight to a stocked game: the dev kit start is the one with gear in it.
 await page.evaluate(() => document.getElementById('title')?.click());
 await page.evaluate(() => document.getElementById('save-play')?.click());
-await page.waitForTimeout(200);
-await page.evaluate(() => {
-  document.getElementById('welcome-name').value = 'Probe';
-  document.querySelectorAll('#welcome-skills .welcomecard')[0]?.click();
-});
-await page.waitForTimeout(500);
+await page.waitForTimeout(250);
+await makeCharacter();
+await page.evaluate(() => document.getElementById('open-dev')?.click());
+await page.waitForTimeout(150);
 await page.evaluate(() => document.getElementById('dev-kit')?.click());
 await page.evaluate(() => document.getElementById('confirm-yes')?.click());
 await page.waitForTimeout(600);
+await makeCharacter();
 await page.evaluate(() => document.getElementById('open-inventory')?.click());
 await page.waitForTimeout(300);
+
+/** Press and drag far enough to be a drag, and check that it became one.
+ *
+ *  The whole PRESS is retried rather than nudged again, because a press that has
+ *  stood still for `HOLD_MS` is not a drag any more — the long press has already
+ *  answered it and torn the drag down. So the burst goes out with no `evaluate`
+ *  inside it, and a miss releases and starts over. */
+async function nudge(a) {
+  const x = a.x + a.width / 2;
+  const y = a.y + a.height / 2;
+  for (let attempt = 0; attempt < 4; attempt++) {
+    await page.mouse.move(x, y);
+    await page.mouse.down();
+    for (let k = 1; k <= 4; k++) await page.mouse.move(x + 9 * k, y + 2, { steps: 2 });
+    if (await page.evaluate(() => document.body.classList.contains('dragging'))) return true;
+    await page.mouse.up();
+    await page.evaluate(() => document.getElementById('itemmenu')?.setAttribute('hidden', ''));
+    await page.waitForTimeout(120);
+  }
+  return false;
+}
+
+/** Move onto the target and WAIT until the drop would LAND there before
+ *  releasing — the same coalescing eats the last move as eats the first, and a
+ *  release over the slot it started on swaps a thing with itself. */
+async function dropOn(b) {
+  const mid = b.x + b.width / 2;
+  for (let i = 0; i < 10; i++) {
+    await page.mouse.move(mid, b.y + b.height / 2 + (i % 2), { steps: 4 });
+    const left = await page.evaluate(
+      () => document.querySelector('.slot--over, .drop--over')?.getBoundingClientRect().left ?? null
+    );
+    if (left !== null && Math.abs(left - b.x) < 2) break;
+  }
+  await page.mouse.up();
+}
 
 const slots = () => page.locator('#inv-gear .slot:not(.slot--empty)');
 const labels = () =>
@@ -68,11 +126,8 @@ else {
   const b = await slots().nth(3).boundingBox();
   if (!a || !b) problems.push('a slot has no box — it is hidden or clipped');
   else {
-    await page.mouse.move(a.x + a.width / 2, a.y + a.height / 2);
-    await page.mouse.down();
-    await page.mouse.move(a.x + 22, a.y + 2, { steps: 4 });
-    await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2, { steps: 8 });
-    await page.mouse.up();
+    if (!(await nudge(a))) problems.push('the press never became a drag');
+    await dropOn(b);
     await page.waitForTimeout(200);
 
     const after = await labels();
@@ -106,21 +161,23 @@ await page.waitForTimeout(300);
   const a = await slots().nth(0).boundingBox();
   const b = await slots().nth(3).boundingBox();
   if (a && b) {
-    await page.mouse.move(a.x + a.width / 2, a.y + a.height / 2);
-    await page.mouse.down();
-    await page.mouse.move(a.x + 22, a.y + 2, { steps: 4 });
-    await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2, { steps: 8 });
-    await page.mouse.up();
+    if (!(await nudge(a))) problems.push('the press never became a drag');
+    await dropOn(b);
     await page.waitForTimeout(200);
     const after = await labels();
     if (!(after[0] === before[3] && after[3] === before[0])) {
       problems.push(`bench open: 0 and 3 did not swap`);
     }
-    // And the click the drag must not have eaten.
+    // And the click the drag must not have eaten. Clicked more than once for
+    // the same reason the press is: a synthetic down/up straddling a frame is
+    // no click at all, and the question here is whether the DRAG ate it.
     const want = (await labels())[2];
-    await slots().nth(2).click();
-    const shown = (await page.locator('#item-name').textContent())?.trim();
     const wanted = want.replace(/^Open on bench: /, '');
+    let shown = '';
+    for (let i = 0; i < 3 && shown !== wanted; i++) {
+      await slots().nth(2).click();
+      shown = (await page.locator('#item-name').textContent())?.trim() ?? '';
+    }
     if (shown !== wanted) problems.push(`bench open: click showed "${shown}", not "${wanted}"`);
   }
 }
@@ -158,7 +215,7 @@ await page.waitForTimeout(300);
 
 // On top is what you touched last, and the rail is over the lot of it.
 {
-  await page.evaluate(() => document.getElementById('open-stash')?.click());
+  await page.evaluate(() => document.getElementById('camp-shelf')?.click());
   await page.waitForTimeout(200);
   const z = (id) =>
     page.evaluate((n) => Number(getComputedStyle(document.getElementById(n)).zIndex), id);

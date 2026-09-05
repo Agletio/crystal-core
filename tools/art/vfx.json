@@ -1,0 +1,67 @@
+{
+ "_": "What to SAY to the generator for an EFFECT still, one row per id. `tools/art/icon.mts vfx.json` reads it and `portrait.mts <id> <png> <grid> vfx` puts the result in `src/render/generated-vfx.ts`, which only Pixi draws \u2014 canvas2d has no sprites and keeps its blocks.",
+ "_how": "An effect is drawn in the WORLD at about a tile across and is laid over a lit stone floor, so: no ground, no shadow, no actor holding it, and the thing itself is the only light in the frame.",
+ "_inks": "Storm greys and near-black, with the game's own lightning gold (--citrine #D9A441) and a white core. A bolt is the one saturated ink.",
+ "size": 64,
+ "grid": 48,
+ "how": " A single EFFECT: ONE thing centred and filling the frame, seen straight from the side, BOLD readable silhouette with a hard dark outline, chunky shapes and few colours, lit only by itself. Transparent background. NOT a scene, NOT a landscape, NOT a character, NOT a hand holding it, NOT a ground shadow, NOT text, NOT a border, NOT a frame, NOT multiple objects.",
+ "inks": [
+  "#07080A",
+  "#101318",
+  "#1B2027",
+  "#2A313A",
+  "#3D4650",
+  "#566270",
+  "#77828E",
+  "#9AA3A8",
+  "#C6CCD2",
+  "#E8EEF2",
+  "#2A1C0C",
+  "#4A3418",
+  "#6E4E22",
+  "#8A6A34",
+  "#8A6C25",
+  "#D9A441",
+  "#F5C24A",
+  "#FFE9A8",
+  "#FFFFFF",
+  "#0B1A0E",
+  "#16301A",
+  "#22471F",
+  "#325E24",
+  "#47792B",
+  "#5F9433",
+  "#7CB03D",
+  "#9CCB4E",
+  "#C3E27A"
+ ],
+ "icons": [
+  {
+   "id": "arrow",
+   "say": "a single arrow flying level and pointing RIGHT, drawn horizontally across the middle of the frame: a dark wooden shaft, a sharp pale steel broadhead at the right end, three short grey feathers at the left end, and nothing else at all. NOT lightning, NOT sparks, NOT electricity, NOT a glow, NOT gold, NOT yellow, NOT fire, NOT a trail, NOT a bow, NOT a bowstring, NOT a hand, NOT a quiver, NOT a target, NOT an arrow pointing any other way.",
+   "grid": 48
+  },
+  {
+   "id": "storm",
+   "say": "ONE small dark RAIN CLOUD alone in empty space, seen from the side, wider than it is tall, dark blue-grey and heavy, lumpy billowed top, flat ragged underside, a faint warm gold glow buried inside it. Nothing at all beneath it: empty transparent space below the cloud and all round it. NOT an explosion, NOT a mushroom cloud, NOT a tornado, NOT a funnel, NOT a column, NOT a beam, NOT a stem, NOT a bolt, NOT rain falling, NOT a ground, NOT a shadow, NOT a horizon, NOT smoke, NOT a face.",
+   "size": 96,
+   "keep": 0.58
+  },
+  {
+   "id": "poison_pool",
+   "say": "a thin uneven SPILL of dark green liquid spread out flat across a surface, seen from above, lopsided and asymmetric with no round shape at all, running outward in long thin streaks and trickles of different lengths that trail off and fade to nothing at their ends. INSIDE the spill it is heavily MOTTLED and BLOTCHY and never one flat colour: dark bile-green and near-black rotten olive in ragged patches where it has settled deepest, thin washed-out sickly yellow-green where it has run shallow, darker veins and streaks running through it, and a scatter of small dark speckles and pitting across the whole of it. MATTE and DULL throughout with no shine, no highlight, no raised middle, no rim and no outline around it. NOT one flat colour, NOT solid, NOT a silhouette, NOT a sticker, NOT a crater, NOT a pit, NOT a hole, NOT stone, NOT rock, NOT dirt, NOT brown, NOT grey, NOT domed, NOT raised, NOT glossy, NOT shiny, NOT a blob, NOT a ball, NOT slime, NOT jelly, NOT bubbles, NOT round, NOT a circle, NOT symmetrical, NOT bright lime, NOT a floor, NOT a shadow, NOT text.",
+   "size": 96,
+   "keep": 1
+  },
+  {
+   "id": "poison_drop",
+   "say": "ONE single falling GLOB of thick sickly green poison, seen from the side, taller than it is wide: a fat rounded blob at the BOTTOM drawn out into a thin tapering tail above it, like a heavy droplet mid-fall, dark bile-green with a paler acid-green highlight down one side. It is alone in empty transparent space. NOT a bottle, NOT a flask, NOT a vial, NOT a bubble, NOT a leaf, NOT a flame, NOT a splash, NOT a puddle, NOT a ground, NOT a shadow, NOT rain, NOT several drops.",
+   "grid": 48
+  },
+  {
+   "id": "burst",
+   "say": "a loose SCATTER of separate chunky angular fragments thrown violently outward and away from an empty middle, seen from DIRECTLY ABOVE looking straight down, spread far apart with big empty gaps between them and NOT touching one another, uneven and messy and irregular with some fragments much larger than others, the middle completely EMPTY with nothing drawn there, each fragment a hard-edged pale hot white and gold splinter with a near-black edge, the farthest ones smallest. NOT a ring, NOT a hoop, NOT a wreath, NOT a wheel, NOT a gear, NOT a chain, NOT a necklace, NOT beads, NOT evenly spaced, NOT a closed loop, NOT joined up, NOT a circle outline, NOT a ball, NOT a sphere, NOT smoke, NOT a character, NOT text."
+  }
+ ],
+ "_sweep": "A centred radial EFFECT is the one ask this generator would not take. Five variants of the melee sweep came back a beaded wreath, a saw blade, a clock face, a directional cut and a closed sunburst: 'arranged around an empty middle, seen from directly above' is a decorative RING to it, whatever it is told not to draw. The sweep stays procedural, and `sweepRing` breaks its ring on purpose because a closed hoop reads as a shield. Do not spend another generation on it without a genuinely different framing."
+}

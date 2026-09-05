@@ -1,846 +1,1176 @@
 # Crystal Core — Roadmap
 
-**The list of work, and nothing else.** Everything that is always true lives in
-`RULES.md`; the game as it stands is `CLAUDE.md`. If a thing here is not a task
-or something you need in order to do one, it is in the wrong file.
+**The work that is left, and nothing else.** What is always true is `CLAUDE.md`
+and the skills it indexes. If a thing here is not a task or something you need
+in order to do one, it is in the wrong file. **A finished phase is DELETED from
+this file** — `git log` is where a session that has to undo one looks.
 
-**Three phases. Phases 1 and 2 are buildable now; Phase 3 WAITS.** The arc
-dictated in one go is finished — the game has rooms you arrive in and people
-standing in them, and all four people are built. Phase 1 is an art pipeline with
-a generator behind it, which the user redirected onto and which therefore goes
-first. Phase 2 is the batch after the arc: the skills screen, and a second way
-to move. Phase 3 is teaching, and it does not start until the stripped opening
-has been played — see its own note.
+## Where this stands
 
-Do the lowest-numbered phase that is not blocked on an open question, all of it,
-then delete it and renumber. Numbers in a phase are intent, not tuning — a
-measurement beats them. A landed phase is DELETED from here, so before starting
-one, `git fetch` and check you are on the tip of the branch: a phase you can
-still see in a stale clone may already be built. Do not promote a backlog item
-into a phase without being asked; the thing most likely to be asked for after
-these is the **balance pass**, written up below.
+**THE SETTLED ORDER IS SPENT.** *"just finish phase 6, make the character walk
+to the chest, you can pick the names for phase 6 too. And then go to phase 7."*
+All three are done:
 
-**Nothing is blocked on an open question.** Every decision the arc needed has
-been taken and written down. Before starting anything, read **Before you touch
-the ladder**, below — it holds the parts that belong to no single phase, and
-every one of them is something a phase would otherwise get wrong on its own.
+1. ~~PHASE 6~~ — **WHOLE and deleted.** `git log` from `2ff5dfa` to `4b6caac`.
+2. ~~THE CHEST WALK~~ — **DONE.** `Hoard.free` is the guards being down and
+   `stepHoard` is the walk that opens it, asked with nothing left to fight.
+3. ~~PHASE 7~~ — **WHOLE and deleted.** `git log` from `4b6caac` to `33d7a85`:
+   28 materials and six professions, gathering on the floor, processing that
+   advances on descents, crafting with a window a level narrows, jewellery,
+   the hybrid power rule, cooking, and a counter that gambles instead of
+   selling. The filter is gone with the heap it existed to sort.
 
-**What the last twelve phases turned out to know that their writing did not.**
-Kept here because the next thing built on top of them will want it.
+**PHASE 12 IS DONE AND DELETED** — his own design, taken ahead of the numbered
+order: a tool you equip decides what the floor holds, gem is the universal
+material every recipe wants, four gathering professions are levelled by using
+their tool, and the sheet's second page is a Professions page whose every
+unlock row is derived from the table that enforces it. **ROUND TWO IS DONE
+TOO**: a tool is an ITEM in a gear slot rather than a row beside one, you start
+with none, and the SMITH at depth 4 is where every one of them comes from —
+Talk, Shop, Upgrade, and the anvil back to one tab a slot.
 
-- **A table keyed only by SLOT made both men offer everything.** The phase said
-  "`FORGED_MODS` for `ring` and `amulet` only", which is true of the lines and
-  false of the panel: with `kinds` as the only key, the man who takes bodies
-  offered a ring the graft he had just said he had no opinion about.
-  `ForgedDef.who` names the room. A table keyed by the thing rather than by the
-  person is the shape to watch the next time two characters share one.
-- **A check written for one entry breaks on the second.** "A specimen only
-  exists in the Rot" was written as `RELICS.some(...)` and started failing the
-  moment a relic existed that was meant to be somewhere else. Sweeping a table
-  is only right when it asks each row about ITSELF.
+**PHASE 10 IS DONE AND DELETED** — `git log` from `45c9106` to the anvil
+commit: wood gone, gathering seen, the creative director and the critics, the
+clock, the workers, the anvil read. Its end-of-phase review is the
+2026-09-03 run in `ART_REVIEW.md`, taken on the same art. **PHASE 11 IS THE
+LOWEST THING TO TAKE** — the art review's work, three critics at 5/10, every
+line a critic's own. Phase 8 and 9 hold only what waits on the user's
+judgement. Phase 3 is PARKED and is not the
+lowest-numbered thing to take. Everything after them is a parked phase, the
+traps, and questions only the user can answer.
 
-- **`fromHaul` pushed straight into `game.inventory`.** Every kind that is not
-  gear was routed correctly by `addItem` and then routed WRONG the moment it
-  came out of the haul, which is the one door a drop actually walks through. It
-  calls `addItem` now. Anything that adds a container has to check both.
-- **The dev preset carrying a relic scheduled his room over two boss checks.**
-  Holding one IS the schedule, so the kit holding every relic means the ossuary
-  is always owed — and two checks asserting "nobody is waiting" started
-  failing. They clear `relics` the way they already cleared `bosses`. The dev
-  kit has now broken a scheduled-room test twice, for the same reason both
-  times: it is the game with everything, and every schedule reads what you have.
-- **`tools/model-sheet.mts` keeps its own partial palette.** It lists the
-  custom properties by hand and had none of the two far worlds' inks, so the
-  first creature drawn out of the Rot handed `mix` an undefined and killed the
-  tool. It has the whole list now; a new palette entry still needs adding there.
-- **A bubble is anchored ABOVE its point, and nothing clamped it.** The first
-  panel taller than four lines was drawn off the top of the screen. `anchor` in
-  `src/ui/speech.ts` clamps to the window now.
-- **A base with no implicit cannot show what a graft costs.** Half the armour
-  families spend their whole budget on the rating, so `bulwark_*` has no line to
-  write over — a check meant to prove the trade proved nothing on one. The
-  reference family is `skirmisher`, which spends on three.
+**THE MEETINGS ARE ONE QUEUE, AND A TALE IS WHAT MOVES IT** — his own design,
+taken ahead of the numbered order. Everybody found down there is in `MEETINGS`,
+ordered by zone and then by the depth each names: the Lampwright at 2, the
+smith at 4, Hob at 5, the Glasswright at 3 of the second act, the Osteomancer
+at 4 of the third, the Geometer at 8 of the second. A man is met by walking
+past him in the middle of a descent — never near the way out, walked to if the
+hero killed from range, and gone to the exit himself once he has said his line
+— and the trip up after that opens his TALE, full screen with captions. The
+**EVERY ONE OF THEM IS DRAWN**: 27 panels across 9 tales — five apiece for the
+smith, the Glasswright, the Osteomancer and the Geometer, three for the
+Lampwright and one frame each for the four workers, at his word. Nobody the
+queue owes is without one, and the demo holds it that way.
 
-- **The demo's `GUIDED OPENING` section was not all about the steps.** Three of
-  its checks were about the GAME and had to survive the deletion: the mark on
-  the weapon the Lampwright hands over (and that a craft keeps it, and that
-  `heal` puts it on a save that predates it), that the bench resolves to a
-  piece you are WEARING and to a crystal you have SOCKETED, and that a first
-  clear pays for the one currency the shop sells. They are `THE OPENING` now.
-  A section named after a feature is worth reading line by line before it goes.
-- **The ids the opening needed are still rendered, and now nothing proves they
-  exist.** `dockSlotId`, `slotButtonId`, `recipeButtonId` and the three
-  `skill*Id`s moved to the modules that mint them; the check that every one
-  resolved was the walkthrough's, and it went with the steps. Whatever teaches
-  next inherits that debt along with the harness debt already written down.
-- **`pickingSlot` and `skillsDepth` were `GuideCtx` and nothing else.** Two
-  exported accessors with no other reader, which is what an interface built for
-  one consumer looks like once the consumer goes.
+**THE NAMES LANDED WITH PHASE 6**: the points are **POINTS**, the web is
+**THE RECKONING**, the list of grinds is **THE LEDGER**. **The fourth was NOT
+taken** — the base world is still The Fissure. The influence picker names it
+`THEME_BY_ID.fissure.name`, which reads correctly beside The Cavern and The Rot,
+and renaming a world nobody was confused by is a change with no complaint behind
+it. **The Diggings** is the name if he ever asks; it is one string.
+**Identifiers do not move** — `trials.ts`, the `trial_` node prefix and
+`Character.trials` are what a save points at, exactly as `rung` stayed `rung`
+when a player started calling it a depth.
 
-- **A `<canvas>` is a REPLACED element, and `inset: 0` does not size one.**
-  With `width: auto` it lays out at its own backing store — the viewport times
-  the device ratio — so a full-screen canvas painted correctly showed its
-  top-left quarter and the title's two worlds read as one with a stain in the
-  corner. `width: 100%; height: 100%` is the fix, and the same trap waits for
-  any `<img>` or `<video>` positioned that way.
-- **Two palettes over one grid is the whole of a map that changes world.**
-  `tileDecals`, `livingDecals` and `floorColour` all take the `FloorPalette` as
-  a PARAMETER, so drawing half a picture as one theme and half as another cost
-  no change to either renderer and nothing in `src/sim`. The mixing lives in
-  `src/ui/titleart.ts` and stops there: a `GameMap` still carries one theme.
-- **A screen of stone is two frames, once.** 77×49 tiles at a device ratio of 2
-  paints in 30–38ms in headless Chromium with no GPU — measured over three
-  boots. Cheap enough that the phase's fallback to a still image was never
-  needed, and cheap enough that the answer to a resize is to paint it again.
+**THE LEVEL BUILDER EXISTS**, in the dev menu — *"honestly just givve me the
+level builder, have everything we've made as objects I can add and the floor
+variants ill make at least one for you to reference."* `src/ui/builder.ts`: a
+paint grid drawn with the REAL tilesets through the renderer's own
+`zoneTileAt`/`patchTileAt` and the REAL `makeProp` art, a palette of rock, floor,
+every level-1 terrain and level-2 variant the world holds and all 99 props, and
+a PLAN out of it — one character a tile (`#` rock, `.` the zone's own floor, a
+DIGIT the patch index into `patchesFor(theme)`) plus a list of objects, which
+pastes back in. **It is what a floor is judged on now**: a sheet says whether
+two terrains read apart, only a laid floor says what the carve does with them.
 
-- **`heal()` drops a wallet entry that is not a `CurrencyDef`**, which is
-  exactly what a boss key is. The rule that keeps a key off the bench is the
-  rule that deleted it on every load until `heal` learnt the second table. Any
-  future thing counted in the wallet has the same shape.
-- **The dev preset holding every DOOR closed the room it was meant to open.**
-  `game.bosses` is what stops a boss being scheduled twice, so handing the kit
-  every id meant the Lambengolmor was never scheduled at all. The kit gets the
-  keys and the doors both, and the test that walks the schedule clears them.
+**PHASE 3 — the quest log — is PARKED by the user's word** until a start with
+nothing explaining it has been played. Do not take it because it is in the file.
 
-- **A room that goes live may not end through `finish()`.** Routed there, a
-  cleared boss room took the chain-another-descent branch and dropped into a
-  hole with nothing at the bottom: a frozen screen with no way off it. A room
-  ends in its own terminus, and `sceneWaiting` is asked at the end of a DESCENT
-  only, or a room hands you straight into the next room.
-- **A bubble anchored to a body you can walk cannot be clicked.** Playwright
-  refuses a target that will not hold still, and a player has the same problem
-  with a slower version of it. The anchor is frozen per BEAT and follows the
-  camera instead, which is the case the phase actually named.
-- **A boss whose adds never arrive is a mechanism that does not exist.** At the
-  life the phase's numbers implied, the thing died in two seconds and the
-  reinforcement clock never fired once. Balance is not tuned, but a number that
-  makes a mechanism unobservable is not balance — it is the mechanism missing.
-- **A scene skips `spawn()`, and `spawn()` was where a kill's PRICE was set.**
-  A boss room paid nothing at all until `priceKills` came out of it. Anything
-  else that only a descent runs is worth checking for the same shape.
+**THE BALANCE PASS IS OUT OF THIS FILE.** *"Remove the balance pass from the
+list, I'll just tell you when to do it."* It is not work, not a phase and not
+something to pick up — **wait to be told.** Everything it had accumulated (the
+parked checks, the skills and off-hand look, the three things earlier phases
+handed it) is in `git log` at `977403c`, which is where to read it back from on
+the day he calls for it.
 
-- **A rule for a FIXED element loses every specificity tie to the class it
-  shares markup with.** `.modal__card` is one class and sets a width, so a card
-  that wants its own needs two. The bubble was dropped back into the flow at the
-  foot of the page by exactly this once already.
-- **A scene needed the panel restyled, not replaced.** `#met` keeps its markup
-  and its `met-take` id, and became the LAST beat by anchoring the same way the
-  bubble does. Nothing about the handover moved.
+**Phases 0, 1, 2, 4, 5, 6 and 7 are DONE and deleted** — the climb, four
+trades, the loop, loot that is rare, the campaign / Proving Ground / Seam split,
+and gear that is crafted. `git log` is where a session that has to undo one
+looks.
 
-- **A scene needs no rng, and the phase asked for one.** The trap said to feed
-  `sceneMap` the run's seed or the props would move; with an absolute plan and a
-  cut hashed off the tile it lands on, a room is the same room every time by
-  CONSTRUCTION, which is stronger than seeding it. A parameter nothing reads is
-  a parameter that lies about what varies.
-- **The first map smaller than the screen found a camera bug three years of
-  descents could not.** `viewW()` was `renderer.width / resolution`, which at a
-  device ratio of 2 is half the real view — invisible for a descent, because a
-  descent overflows the view and clamps against its edges, and glaring for a
-  room, which centred itself in a quarter of the screen. `renderer.screen` is
-  the accessor that cannot be wrong.
-- **The climb out plays for the rest of the handover, so the branch at the
-  bottom of the hole runs every frame of it.** `launch()` and `land()` both
-  clear their own trigger; a room does too, and then has to say it is already
-  in one or the next frame launches a descent on top of it.
-- **A room's report is the DESCENT's.** `renderResults` reads a `RunState` for
-  the loot, and the scene is a different sim with nothing in it. The state is
-  held beside the report rather than taken from `sim` at the end.
-
-- **Widening a Spread is worth nothing on its own.** The first version of
-  Scattershot only granted `spreadRange: 1.6`, and the demo's "every notable
-  changes the cast" check failed it flat: with 1–4 extra Projectiles there are
-  almost always that many enemies inside the bare 3.5 tiles, so a wider radius
-  never changes which enemies are picked. It needed `spreadFar` — turn the pick
-  around — before the wider radius bought anything at all. Any future "reaches
-  further" node on a picker with a target CAP has the same hole in it.
-- **A keyword has to be shown where the word is, not behind a second hover.**
-  `.tip` is `pointer-events: none`, so a glossary that needed hovering the word
-  inside a tooltip was never possible. Marking the word and printing the
-  definitions at the foot of the same card is not a compromise: it is the only
-  version that works on a phone.
-- **The vocabulary pass cost the extra-Projectile falloff.** Making Split Cast
-  full damage retired `extraTargetDamage`, which retired Focused Volley, which
-  is why the Salvo branch has a new third notable. A keyword that promises a
-  thing is thrown has to promise it lands, and a notable existing only to undo
-  a falloff was the tell that the falloff was one number too many.
-
-- **Adding an element to every monster did not change what a modifier is
-  worth.** "of Cinders" always multiplied a hit by (1 + share/100) and still
-  does; only the SPLIT moved. Dropping its `DANGER_STATS` weight from 0.9 to 0.6
-  on the assumption that added damage is softer than a conversion flattened the
-  reward ladder until band 6 paid no more than band 5, which the existing check
-  caught within one run. Weigh a stat by the arithmetic it does, not by the
-  story about it.
-- **A pack's element is rolled per PACK, not per monster** — the phase asked for
-  per monster and the code already said why not, in `RANGED_PACK_CHANCE`'s own
-  comment. Mixed packs read as noise.
-- **The node-pair audit was 742 pairs and could not be written.** It is 28 once
-  it is done over grant CLASSES (`GrantDef.changes`), which is the altitude the
-  codebase already works at — a node is a bag of switches. And the answer it
-  produced is that NOTHING needs blocking: every pair composes, Rupture's burst
-  under Blight's cloud tree included, which is a trade its own card already
-  names. The refusal mechanism shipped anyway, unused and tested.
-- **Five notables, not "about five".** Twenty nodes alternating minor and
-  notable over ten points makes five the CEILING and not the average: a spoke's
-  prefix of odd length wastes its last point on travel, so a careless walk
-  reaches three. That is the decision the shape hands the player, and the demo
-  measures both ends of it over 200 random walks.
-- **`buildTree` did not bend.** A trade got a sibling — `src/trades/layout.ts`
-  — and what the two share is `src/webgraph.ts`, which is where reach, refund
-  and replay now live for any list of nodes. `src/ui/webart.ts` is the same
-  answer for the studs.
-- **A trade barely moves a kill rate, and that is correct.** Both trades'
-  offensive halves are CONDITIONAL — a flask running, a pool with room to
-  overcharge — so a flat average across a descent understates a window. The
-  demo prints kills a second at the deep end for every trade against every
-  skill and asserts nothing about it; whether a pairing is a favourite or a
-  requirement needs a wider roster than three skills to tell.
-
-**Where the phases came from.** Two batches of asks, dictated by the user in
-one go each, plus a few out of design conversations, plus the vocabulary pass
-asked for directly after them. All of them are built. The bracketed numbers in
-the git log — [user 8], [user 10] — are the user's own numbering within a
-batch, kept so a commit can be matched back to the ask.
-
-**The vocabulary is a place new work lands.** `KEYWORDS` covers the three trees
-and the two trades as they stand. A new skill, a new trade or a new modifier
-either uses a word that is already in the table or adds one — and the demo's
-`ONE WORD PER MECHANISM` sweep is what makes that not optional. A bow skill
-saying "+5 Arc" is the case the whole thing was built for.
+**One ask has NOTHING to bind and was not invented.** *"Keybindings for flasks,
+and boss controls"* — the flasks are `potion_life` and `potion_mana` in
+`BINDINGS` and rebind on the keys tab, but **a boss is not driven by the player
+any more.** The turn was deleted and the fight rebuilt around what a build
+carries, so `BossDef.phases` is a cycle the boss runs and there is no verb left
+for a key to hold. Ask before adding one; it would be a mechanism, not a
+binding.
 
 ---
 
-## The balance pass
+## Phase 8 — TERRAIN, RECALIBRATED: levels, water, detail, and where things grow
 
-**Not a phase, and not started. Documented so that asking for it is one
-sentence rather than a re-derivation.**
+*"We are failing to achieve what I want here so lets just start from the
+beginning in terms of structure… multiple levels but not overlapping so some
+stairs rocky time stuff you can climb up or down, water lava etc. better
+enviroment detail so its not so repetative, How to add ores, herbs, fishing
+spots in a generated way that fits seemlessly."* → *"Raised only no levels
+stacked on top of eacher."* The research (Brogue's `Architect.c`, Amit Patel's
+map generator, Wolverson's builders, Stardew's mine tables, Valheim's placement
+rules, the generator's live tool list) came to: keep the room skeleton, replace
+the carve, add ONE height layer, replace the dressing.
+**`tools/terrain-proto.mts` is the standalone reference** for the whole
+pipeline and `tools/plan-peek.mjs` draws a builder plan off the bundle.
 
-**Why it is now possible.** `RULES.md` has said since the start that nothing is
-tuned until every system is in, because each one hands out more power than the
-last and anything tuned before it is thrown away. That list was attributes, then
-trades, then jobs — and trades WERE the jobs. Every one of them has landed, so
-the reason to lean too easy has expired. Nothing has been tuned to compensate;
-the game is deliberately soft everywhere.
+**LANDED — the mechanism, and the Fissure's look.** `SHELF` / `RIM` / `STAIR`
+in `src/sim/grid.ts`, rooms raised whole off the room graph, the rim nobody
+walks, stairs at the mouths joined by union-find, lakes as a deep core in a
+walkable wreath (`OPEN_SEED` is gone), blob chambers with one erosion pass and
+a loop or two, `fitShelf` mending steps by filling notches, rock counting as
+high. The Fissure's shelf set is `fissure_shelf` — the account's own earlier
+"raised" attempt, never a failure, imported for nothing and retoned like the
+floor. The stair is ONE picture, `create_map_object` inpainted into a rendered
+crop of a real south face for a cent, turned at import for the east and west
+rims; the flat-ground stair was asked three ways and came back bare floor every
+time, so the north rim wears the same treads. The builder paints shelf and
+stair (`^`, `S`; `=` is derived), `shots` lays one, the demo forces every
+chamber up over 24 seeds and 6 descents and proves reachability, determinism
+and termination. **`RAISE` STILL SHIPS AT ZERO** — the user has not judged the
+shelf on a floor yet.
 
-**What it would read.** Eight `gauge()` lines in `npm run demo` — measured,
-printed, never asserted, and each carrying the figure that was wanted beside the
-figure it got. They are the before. Taken after the vocabulary pass, with 420
-checks passing:
+- [ ] **THE USER JUDGES THE SHELF.** `SHELVES=1 npm run peek -- out.png 4` or
+      the dev kit's toggle. What to look at: the south face reads as a cliff;
+      the north, east and west edges are a THIN DARK LINE only, which is the set
+      as generated — if that is too little, the answer is a runtime shadow band
+      on the floor cells beside a rim (a tint, no art), not a re-ask. Then set
+      `RAISE.fissure` (the prototype ran at 0.3–0.55) and ship it.
+- [x] **THE OTHER THREE SHELF SETS** are asked, imported and wired
+      (`rot_shelf`, `cavern_shelf`, `seam_shelf` in `SHELF_SET`); the Rot's
+      first job died of server memory and was re-asked for nothing. The
+      Cavern's top matches its ground; the Rot's and the Seam's came back a
+      flatter, smoother texture than their floors — a different stone up top,
+      which may be right or may want a re-ask off the same tile. Shown to the
+      user as laid plans; `RAISE` waits on his word for all four.
+- [ ] **STAIRS PER WORLD.** The one stair picture is the Fissure's pale stone
+      and would sit wrong on the Rot's meat and the Seam's membrane. One
+      `create_map_object` inpaint per world into a crop of its own face, a cent
+      each, once the shelves are approved.
+- [x] **WHERE A FAMILY GROWS** — `openSpots` and `dampSpots` in `grid.ts`,
+      asked by `nodeSpot` before any tile: ore ON OPEN FLOOR clear of the rock
+      (*"have it not placed inside walls"* — a node at a wall's foot drew
+      under the face), a plant on damp floor where the room has any, a fishing
+      spot on the water beside its bank. Still a node a pack, dealt round,
+      guarded by its pack.
+- [x] **THE ORE PICTURE.** *"The ore design looks horrible in this zone… give
+      me some samples."* Three batches of sixteen through `node.mts` — A
+      (`bd5b743b…`), B (`0f69b2c5…`, low outcrops on open ground), C
+      (`9057e3bb…`, variations on A's 11, the heap of slate flakes with copper
+      threads, with that candidate as a style image: `LIKE=<png>`) — laid on
+      the Fissure floor at 3x and numbered. **His picks, from C**: 1, 2 and 3
+      are the ore everywhere (`node_ore`, `node_ore2`, `node_ore3`, a room
+      drawing any of the three — `MaterialFamilyDef.also` is a LIST now); 13
+      is the Fissure's own (`node_deadlight`) and 4 the Cavern's
+      (`node_dust`). **A WORLD'S UNIQUE IS A NODE OF ITS OWN** now rather
+      than riding on top of one: `family: 'unique'`, at `GATHER.uniqueChance`
+      a run (measured 6 in 100), on open floor, wearing `MaterialDef.node` or
+      the ore's where a world has none yet. Each picked frame's mined-out
+      state was asked (`node.mts spent`, `deadlight` and `measured_dust`
+      wordings added) and the ten objects imported.
+- [x] **THE ROT'S OWN ORE** — *"we need a new one for rot like some kind of
+      fleshy looking ore"*: batch `6d45cc09…` (`node.mts ask rot`, C's 1 as
+      the style image), **his pick 2**, its spent state asked with a
+      `quick_marrow` wording, `node_marrow` imported, on
+      `MATERIALS.quick_marrow`. **The Seam's** (`fault_glass`) has no picture
+      and wears the ore's until asked.
+- [x] **NOTHING STANDS IN THE WATER, AND THE RIPPLE MOVES.** *"Make sure the
+      ground clutter rocks don't spawn on water"* — cover is laid before the
+      lake and any of it on a wet cell is dropped after (measured 0 of 7,903
+      on 40 maps). *"The ripples look like 2 ripples one with a shark in it…
+      if there is a way to make it an actual moving ripple even if it's
+      contained to that size that would be ideal"* — the fishing spot is
+      drawn by the renderer now, `rippleRings` in `render/renderer.ts`: two
+      rings a cycle spreading from the cell's middle to 0.42 of a tile and
+      fading, phased off the node's id, gone once fished; `node_ripple` and
+      its spent frame stay in `PROP_ART` for the builder and are never
+      painted on a map (`LIVE_PROPS`).
+- [x] **THE WATER IS FLAT.** *"The repeating bubbles on the water look bad.
+      Maybe just have nothing or something that blends better."* Nothing:
+      `CALM` in `zoneset.mts` takes the all-water tile's commonest colour
+      (rgb 48,69,80) and folds the six other colours it holds — three pale
+      blobs and their shade, 946 pixels sheet-wide — into it at emit, the
+      shore rim and the dark waterline untouched. No generation spent; only
+      `test_pool` changed in `generated-tiles.ts`.
+- [x] **ORE IN THE FACE WAS DROPPED FOR ORE ON THE FLOOR.** Inpainting a vein
+      into a crop of the face came back as the crop repainted three times —
+      the inpainter only draws where the context is already a shape — and the
+      user's answer was the open-floor heap above. Both review batches
+      (`bd5b743b…`, `19ecfdea…`) are superseded by his picks and the drawn
+      ripple; nothing is waiting on a number.
+- [x] **THE LIGHT AND THE MASK.** `groundLight` in `render/renderer.ts` is
+      the one per-cell shade — a slow drift and a slope down to 0.78 at the
+      rock's foot off how open the five-by-five is — worn by every tile of a
+      cell in Pixi and laid as a wash in the builder; `coverFloor` lands under
+      `COVER_MASK`, so stone comes in clumps. No art spent.
+- [x] **THE GRAIN.** `tools/art/grain.mts` → `src/render/generated-grain.ts`:
+      sixteen MARKS a zone off `create_tiles_pro` in style mode with the
+      shipped floor tile as the style image, ten cents a zone, sorted light to
+      heavy; `grainAt` in `render/renderer.ts` hashes a cell to none (70%) or
+      to one skewed toward the light end, laid over the floor at 0.4 in Pixi
+      and the builder. A whole tile that comes back is dropped at emit — the
+      Cavern's came back whole TWICE, sparse wording and all, so the Cavern
+      has no grain and its glinting floor carries itself; do not ask a third
+      time. The level-2 variant PATCHES are gone from `FLOORS` (their sets
+      stay emitted).
+- [ ] **THE GRAIN STILL READS AS CELLS.** Marks fill their own square, so a
+      marked cell is a square of marks beside a plain one. If the user sees
+      the checker, the answer is marks asked SMALLER than a tile and placed
+      off-grid like cover, or fewer heavier ones — not more alpha.
+- [x] **THE HALO IS GONE BY MEASUREMENT.** `SITS_ON` in `zoneset.mts`: a
+      patch set is toned to the floor it sits on at emit, by the gain between
+      its own outside tile and the zone's floor tile (the Fissure's pool drew
+      its floor 14% dark). No generation spent.
+- [x] **THE TEST LEVEL.** *"Just stop messing with existing tiles. Make a
+      whole new tileset and make a new map that's only accessible in the dev
+      menu. We will use that to test until we get a good level design."*
+      `TEST_LEVEL` in `src/sim/grid.ts`, behind `testLevel()`: the dev menu's
+      `Test level` toggle (`TEST=1` on `descent-peek`) puts the next descent
+      on its own family — `test_round` (`965b0da6-10b2-45e1-9804-fd54bcbb023a`:
+      standard, round, transition 1, the floor asked at the tone it ships at,
+      no retone; its floor tile `69624969-25f7-4dfd-9197-84bf190205ca`) and
+      `test_pool` (`072d1766-3216-4a4f-8812-7126effd6481`) chained
+      off that floor tile IN THE SAME MODE (measured: the pool's floor tile
+      has the rock set's floor mean exactly, 44% of pixels identical) — with
+      chambers of 8–14 by 6–10 and WHOLE lakes: every cell blocks, a cell of
+      plain floor all round (`shoreClear`: no face, no shelf), `encloses`
+      refusing a cell that would cut the dry ground in two, grown ROUND off
+      its seed and `fatten`ed to cells inside a full three-by-three
+      (`LAKE_FAT`: A LAKE IS DRAWN AT ITS CORNERS, so a run of cells draws a
+      tile narrower than it is — *"water should be a minimum of two tile
+      width so the ripples fit"*), 20–77 cells on 38 of 40 maps with chambers
+      of 10–16 by 7–12. Every lake carries a fishing spot on a cell drawn
+      WHOLLY as water (every neighbour wet), the bank one or two tiles off
+      along a cardinal, off the gather count first and capped at fish's equal
+      share (uncapped, the Fissure's seven small lakes took fish to 26 of 72
+      nodes). Measured over 12 shipped descents: fish 17, metal 20, cloth 19,
+      wood 16. `groundLight`'s blocky drift is OFF on the test level — *"what's
+      up with the different shading of tiles? It looks weird"* — the foot
+      slope stays. Nothing shipped reads the toggle while it is off; the
+      worlds' lakes keep their wreath and their drift.
+- [x] **THE FISSURE TOOK THE DESIGN.** *"Fix that and then you can push to
+      the main fissure levels."* `DESIGN` in `src/sim/grid.ts` names which
+      worlds run a `LevelDesign` — the Fissure runs `TEST_LEVEL` itself, so
+      the family, the chambers, the whole lakes and the fishing spots are the
+      Fissure's now, and `GameMap.plain` turns the light drift and the grain
+      off on a designed floor: *"there's still kinda the harsh color lines in
+      the floors"* — a per-cell tint is a hard line at every cell, whatever
+      noise drives it. **THE MAP GROWS WITH ITS CHAMBERS** (`LevelDesign.scale`
+      1.7): at the worlds' size the bigger chambers seated 3.9 rooms to 7 and
+      the same packs in half the rooms took Rimespike's first descent to 7 of
+      10; scaled, 7.0 rooms and every skill clears it 10 of 10. The other
+      three worlds are untouched until judged.
+      Left over from the swap: the Fissure's cover props (rubble, stones) and
+      `fissure_shelf` were toned to `lit_round`'s floor; `lit_round` and its
+      grain are emitted but nothing draws them.
+- [x] **MATERIALS ARE SCARCE.** *"Not every floor should have ore veins but
+      when it does have it just have it give 1 most of the time, same concept
+      with all the floor spawn stuff."* `GATHER.perRun` 1.5 nodes a bare
+      clear, `GATHER.single` 0.75 of them handing over one and the rest 2–3;
+      fish rides the water OUTSIDE the count, one spot a lake, lakes on 60% of
+      maps; `BODY_DROP` 1 drop a clear of 1–2. Measured over 40 Fissure
+      descents: metal 23, wood 18, cloth 18, fish 37 (26 wet maps), 3.4 units
+      a descent, 72% of nodes handing over one. Recipes were costed against
+      the old rates — the balance pass reads `CRAFT`'s costs against these.
+- [ ] **WORK THE DESIGN ON.** Next on the test level, in order: the face
+      (warm brown, not the Fissure's near-black), then shelves and stairs on
+      the same family (`test_shelf` chained off the same floor tile, one
+      ask). A world takes a design through `DESIGN`, never through an edited
+      set.
 
-```
-the Seam is -0.1% over the hardest single world     — wanted: same class within 15%
-a trade moves the deep-end kill rate 3.90–7.50/s    — no pairing should be the only one
-1% to 33% of swings go unpaid                       — wanted: 5%–50%
-a starved cast lands for 50% of your damage
-a naked character walks out on 53% life             — wanted: under 70%
-one blank crystal after the first clear: 18/24      — wanted: above 60%
-every band is clearable in gear the band below drops
-the deep end: 1253 danger, 4/12 through             — wall under 4/12, ceiling at 0
-```
+## Phase 9 — WHERE MATERIALS COME FROM: gathered, or off a body
 
-Every one of them is where it was at `e811da6` except the trade's top kill rate,
-7.86 → 7.50, which is the Splintered Eye losing `extraTargetDamage` — its two
-Projectiles were already at full damage through that grant and now are through
-the rule. Nothing about the tree changes these: `ladderCharacter` spends no
-tree points.
+**The rule the user settled**, after three passes: *"mining and fishing should
+be the only ones you just find sitting out"* → *"instead of dropping cloth from
+enemies we have hemp/cotton type materals you make into cloth? that can be the
+herbs."* What it comes to is not "nodes vs enemies" but **things that grow or
+sit in the rock are GATHERED; things that come off a body DROP.**
 
-The deep end at 4/12 is the one sitting exactly on its own wall line, and the
-unpaid-swing spread reaching 33% is the widest of these. Neither is a bug.
-
-**What must not break.** Everything in `RULES.md` under "Balance is NOT TUNED"
-inverts when this starts, and that section has to be rewritten in the same
-breath — it is the file's own statement that the pass has not happened. The one
-difficulty check that is a `check()` rather than a `gauge()` — a brand new
-character clearing the bare Fissure — stays a failure throughout. And the
-per-skill numbers are three skills wide, which the trades phase already found is
-too few to tell a favourite from a requirement.
-
-**What it is NOT.** Not a licence to change systems. A balance pass moves
-numbers in tables; if it wants a mechanism changed, that is a phase and it gets
-written as one.
-
----
-
-## Phases
-
-**Writing one.** The test is whether a session with no memory of this
-conversation could execute it. That takes six things, and the second and the
-fifth are the ones usually missing:
-
-1. **What is true today**, named in code — the constant, the function, the file.
-   "The shop sells too much" is not executable; "`RECIPES` in `src/data.ts` has
-   eleven entries and should have one" is.
-2. **Why it is wrong**, in one sentence a stranger would agree with. Without
-   this the next session optimises the wrong thing correctly.
-3. **Checkboxes that are decisions**, not tasks. "Border by base tier: white
-   t1, blue t2, yellow t3" can be done wrong and caught; "improve the tooltip"
-   cannot.
-4. **Traps** — what a fresh session will get wrong because the codebase already
-   has an answer somewhere it will not think to look. Every one of these was
-   paid for once already.
-5. **Done when**, in one observable sentence. A phase with no stated end is a
-   phase that gets half-done and reported as finished.
-6. **What must not break**, and which harness proves it, IN THE ORDER to run
-   them. `RULES.md` has the table of which change reaches which harness.
-
-Anything you are unsure about goes in Open questions, never into a phase as an
-assumption. A phase that guesses is a phase that has to be undone. A decision
-taken on the user's behalf is written down as a decision, with what it beat,
-so overruling it is one sentence rather than an excavation.
-
-### Before you touch the ladder
-
-**Read this whole section first. It is the part that belongs to no single
-phase, and skipping it is how the same thing gets built twice.**
-
-Every one of them is the SAME object with different content in it: a
-**scene** — an authored room you arrive in at the end of a cleared descent,
-with somebody standing in it who talks to you. It is BUILT, and `RULES.md` holds
-the rules it is bound by. Nothing below may introduce a second way of doing any
-of it.
-
-**Where the pieces go.** All four exist. Nothing below adds a fifth.
-
-| | | |
+| family | where | why |
 |---|---|---|
-| `src/scenes.ts` | the types and the registry | as `src/skills-tree.ts` is for trees |
-| `src/scenes/*.ts` | one file per room, content only | as `src/trees/*` and `src/trades/*` are |
-| `src/game/scenes.ts` | the SCHEDULE: what happens at the end of this clear | as `src/game/crystals.ts` is for gifts |
-| `src/ui/speech.ts` | the bubble: a line over the body saying it | one module, one screen |
+| metal | gathered | ore in the rock |
+| cloth | gathered | plant fibre — hemp, flax. THE HERB-SHAPED THING |
+| fish | gathered | a pool, which Phase 8 puts water under |
+| hide | **dropped** | skinned off what you killed |
+| gem | **dropped** | *"gems still from everything"* |
 
-**ONE scene per cleared descent, and the order is fixed.** Four things can be
-owed at the same moment — a crystal, a boss, a corpse to hand over, dust to
-trade. `sceneWaiting(game, facts)` in `src/game/scenes.ts` is the
-one function that answers what happens next, it returns **at most one** scene,
-and everything else keeps waiting for the clear after. The order is:
+**THE SPREAD IS LANDED.** `BODY_DROP.perRun` is 3 whole drops of 2–5 each,
+drawn down body by body through the same `budgets()` the gear and currency
+budgets use, on `bodyRng` — its OWN stream, seed 104729, because a draw per kill
+out of the run's rng cost band 5 its tier 3 bases. `placeNodes` deals round
+`GATHERED` and `rollMaterialDrop` round `DROPPED`, so both halves are a spread
+rather than a roll. Measured, 3.2–8.2 a family against gathering's 20. The
+fishing spot is landed too: `poolSpot` stands `node_ripple` ON the water with a
+walkable neighbour, and a room with no pool grows no fish node at all. **Fish is
+dealt the WET rooms first** — the packs are split by whether their room has a
+bank, and `banks()` SCANS a room rather than sampling it, so a two-tile pool is
+found. Measured over 12 descents: metal 17, cloth 20, wood 15, fish 17.
 
-1. the Lampwright, whenever `giftWaiting` says something is owed
-2. the Lambengolmor, when a boss is scheduled or a key was spent
-3. whoever wants a relic you are carrying. Rung 3 asks the SCENES table which
-   room somebody is holding a relic for rather than naming anyone, so the
-   Osteomancer and the Astral-Geometer come through one clause
+- [x] **THE CLOTH FAMILY IS FIBRE NOW.** Wickflax, Glasshemp, Rotcotton and
+      Seamflax — the ids `wickcloth`, `glassweave`, `rotsilk`, `weldcloth`
+      stay, since a save points at them — with descriptions that grow and
+      icons that are a bundle of stalks or a boll on a stem, re-asked through
+      `icons.json` → `icon.mts` → `portrait.mts`.
+- [x] **THE ORE ART IS RE-ASKED.** *"I dont like how the ores and the fish
+      look."* Landed in Phase 8: three base ores for every world, a unique
+      node a world, and the fish is a drawn ripple.
+- [ ] **`node_carcass` AND `geode_amber` NO LONGER RETIRE.** They were dead
+      data when hide and gem left the floor; the level builder offers every
+      `PROP_ART` id as a placeable object, so they are a palette entry now.
+      `geode_amber` is also a `style` image in `node.mts` and `chest.mts`, and a
+      style image is what keeps the next generation matching the roster.
+- [x] **The demo proves the rates.** Both roads into crafting pay at both ends
+      of the ladder (a `check`), and what they pay is a `gauge`: measured on a
+      ceiling character, 18.8 gathered against 10.0 dropped a descent at the
+      bare Fissure and 18.8 against 9.2 deep — dropped pays half, at every
+      band, which is the balance pass's number and not this phase's.
 
-Highest first, every time, with no interleaving and no roll. `RULES.md` says a
-gift is scheduled and never rolled; the same reason covers all four, because a
-player who cannot tell what the next clear brings cannot plan the only decision
-the game asks for.
+---
 
-`giftWaiting` keeps its name and its job. `sceneWaiting` ASKS it. Nothing about
-the Lampwright's own schedule moves in any phase below.
+## Phase 11 — THE ART REVIEW'S WORK: what three critics at 5/10 said to fix
 
-**A room belongs to the SCENE, never to the descent you came out of.** The
-Lampwright's workshop is the same workshop every time: `SceneDef.theme` is the
-def's, so the rock is some world's rock but the place is a place. Which world a
-character is met THROUGH is decided by the trigger — the Osteomancer's corpse
-only drops in the Demonic world — and never by the room.
+**Every line below is a critic's `fix_first` or the director's fault, in their
+words, from `ART_REVIEW.md` 2026-09-03.** Ordered by how many of the four
+named it first. Anything that spends a generation shows the user a design
+first. When the phase is whole, `/critique` runs again; done is all three at 8.
 
-**`src/sim` never decides that a scene happens.** BUILT: the decision is
-`finish()` in `src/ui/run.ts`, off `sceneWaiting`, and the sim is TOLD through
-`RunOptions.scene`. This is why the whole ladder leaves every headless harness
-alone — `runToCompletion`, the ladder grids, the quest timings and the mana
-measurements all drive `RunSim` directly and never ask for a scene.
+- [x] **THE ROCK PAST THE FACE IS A FLAT GREY MASK ON BLACK VOID** — every
+      critic's first line. DONE: `wallFade` is gone from the draw, the rock's
+      top tile is a `TilingSprite` APRON 96 tiles past the grid under the
+      floor, and the void is painted `ZoneSet.rock` — the mean of the
+      all-rock tile, written at emit — so at zoom 9 the map is sand and faces
+      on one grey with no line anywhere (`apron2_z9.png`). Beyond the two-row face the rock is one `#1c1c1c`
+      plane with faint tile seams, ending in an axis-aligned stair-step
+      against pure black one to three tiles out; a third of the view at zoom
+      0, the whole map a sand shape with a grey border at zoom 9. Draw the
+      rock's top surface and the void at ONE value out to the viewport, or
+      push `EDGE` tiles past the grid with no boundary inside the view.
+      (`fault-rock-top-mask.png`, `fissure-z9.png`)
+- [x] **THE WANDERER'S FIRST LINE IS PINNED OVER 26 OF 41 SCREENS.** It was
+      the Answering Hall's own line, still up after `shots.mjs` pressed Go
+      back out of the arena. DONE: `dismissSpeech` in `src/ui/speech.ts`,
+      called by `setPhase` whenever the phase leaves `scene` — a bubble never
+      outlives its room, and it grants like Escape does.
+- [x] **THE XP BAR IS SATURATED COBALT WITH WHITE TICKS, FULL AT 0/0.** DONE:
+      `--xp` is the frame's brass (`--edge-lit`'s value), and a need of 0
+      draws an empty bar on the HUD and on the sheet. The ticks stay: they
+      are the frame's own edge inks. (`fault-xpbar-camp.png`)
+- [x] **THE EFFECTS ARE OFF THE FLOOR'S PIXEL GRID, OR ABSENT.** DONE:
+      a monster's aura is `AURA_STEPS` stacked circles thinning to its reach,
+      no rim (`drawAuras`); the Blight pool is TINTED to the poison colour
+      like every other type, which is what pulls the lime to venom. The pool
+      re-asked at 192 for density came back a rimmed cartoon splat, exactly
+      the renderer skill's *"a wide floor stain comes back as an object"*, so
+      the 96 still stays and its density is a known limit. **The three
+      "absent" effects were TIMING, not drawing**: a projectile's picture
+      lived 0.3s whatever the distance, so a Fireball landed at 0.17s and no
+      screenshot ever held one. `FLIGHT` in `src/sim/skills.ts` times a
+      BALL's flight off the distance (9 tiles/s) and what it leaves waits
+      for it (`Vfx.age` starts below zero and neither renderer draws it
+      until 0); a bolt of lightning stays instant. The arc holds full alpha
+      for `ARC_HOLD` of its life and wears the type's colour either side of
+      its white core; a Rimespike blade is cold-coloured at the root and
+      three blocks wide there. Seen at ship size (`hold_arc.png`,
+      `hold_fire_a.png`, `hold_rime.png`) through the new harness knob:
+      `CAST=1 descent-peek` makes the page hold its own sim on the first
+      effect (`data-hold-on`, `data-hold`), `AFTER=<s>` that many sim
+      seconds later, for a flight. Creeping
+      Blight is a `#b5e04a` lime ring at 3x the floor's pixel size with a
+      black core, the loudest thing on any screen; Fireball is a 12px orange
+      dot with no trail and no burst; Arc Lightning draws no arc across five
+      frames; Rimespike shows a number and no spike; every Rot and Cavern pack
+      stands in a five-tile translucent yellow disc with a lime rim (the aura's
+      reach as a filled circle). Re-ask the stills at the floor's own pixel
+      density toned to venom, draw an aura as glow on the BODIES or a soft
+      fall-off, and check every skill's geometry at ship size.
+      (`fault-ground-ring.png`, `fault-rot-disc.png`, `fireball-02.png`,
+      `arc-00.png`)
+- [ ] **THE ARENA AND THE SHELF ARE OTHER SETS.** ARENA DONE: `sceneMap`
+      read `ZONE[theme]`, the set the Fissure had moved off, so The Answering
+      stood on `lit_round`; it takes the world's `designFor` now, zone and
+      `plain` both, and stands on the same sand as the descent
+      (`desktop-scene.png`). The room stays 39×31 wide by design — the Fall
+      needs somewhere to go — so no face is in view at the default zoom.
+      SHELF LEFT, and it is Phase 8's: a `test_shelf` chained off the test
+      floor tile is one ask, made once the user has judged the shelf at all. The raised shelf
+      is a paler speckled slab with a course of black bricks and ladder-tile
+      stairs — it must be the sand tile lit a step up. (`fault-arena-floor.png`,
+      `fault-shelf-floor.png`)
+- [x] **THE HERO IS A SMUDGE AT SHIP SIZE, THE CORPSE STANDS, THE CAST HALL
+      IS MUSH.** DONE, all three: `rimLit` in `src/render/sprites.ts` pulls
+      the hero's own top-edge pixels `RIM.top` toward lamplight and the two
+      sides `RIM.side`, symmetric because a facing is a flip, baked into his
+      frames alone (`SpriteSheet.frames(sprite, rank, lit)`) — a pale gold
+      edge on the helm, the shield and the sword arm at ship size
+      (`hero_rim2.png`); a body with death frames no longer takes the
+      fall's rotation on top of them; the cast hall's figures are sized by
+      `fit()` in `src/ui/pick.ts` to a WHOLE multiple of their ink box, the
+      blur is off them and the ground carries the shadow, so every pixel is
+      one square (`desktop-pick.png`). The mottle still on the Warrior and
+      the Rogue is their own art at 5x, not the resample.
+- [ ] **SHELL PARITY — one game below the carved windows.** The dock is a
+      flat panel with a hairline under carved stone; the speech bubble, the
+      item card and the tooltip are the same flat box; the bench's modifier
+      slots are flat vector hexagons in `#c8473a`/`#6cc3e6`/`#d9a13a`; the
+      rail is 1-bit 16px glyphs with 7px keybind letters; window headers
+      carry a monospace ("1 owned · 0/4 socketed", "0/3 loaded", "10 of 33
+      you can make", the seed); the pack label and the pickup floater are a
+      bitmap sans where every other word is the serif; empty skill slots
+      print a serif P and M; the hint line lies unplated on the sand; the HUD
+      numerals are ~9px on green; a `#8a4dff` left rule on station and anvil
+      cards is the only violet that is not an amethyst; the anvil and
+      jewellery windows run off an 800px view; unlit seam numerals are
+      invisible; the trade web opens at a 14px node. Fixtures for the dock,
+      the bubble and the sockets; generated rail glyphs; the shell face for
+      every word; the descent's bar everywhere. (`fault-bench-hexagons.png`,
+      `camp-crop-rail.png`, `fault-skillslots-PM.png`, `fault-hint-text.png`,
+      `fault-hud-bars.png`)
+      PARTLY DONE, the CSS half: a count on a window's head is set in the
+      body face; the pack label and the floater take `--body` off the
+      document; an empty skill slot is an empty ring; the camera hint is
+      plated like the two buttons beside it; the slim HUD numerals are 11px
+      bone with a shadow; the station and anvil cards borrow `.crystal` and
+      only `#crystals` wears its amethyst rule now; a shut pip is `--text-dim`;
+      a set facet carries grit, a dark rim and a lit top edge. LEFT, and each
+      is a decision rather than work: the head-band fixture was RETIRED at
+      the user's word ("a brown box drawn round everything it touched"), so
+      putting a frame on the dock, the bubble and the tooltip reverses that
+      and is asked below; the rail glyphs and the socket fixture are
+      generations, shown first; the trade web opens FRAMED by decision (45
+      nodes fit, and a web you cannot see the shape of is one nobody plans
+      through); `shots` finds no overflow at 1280×800 on the anvil or the
+      jewellery, so that fault wants the director's own viewport named.
+- [x] **TWO PORTRAIT FIDELITIES.** STALE WHEN WRITTEN AND NOW WHOLLY DONE: all
+      five faces are generated at grid 96 and `PORTRAITS` merges generated OVER
+      the hand-drawn rows, so the Geometer and the Osteomancer had already been
+      redrawn. The REAL fidelity fault was the SMITH's, drawn later and off a
+      different path — `bust.mts` forces the palette with the BODY's own inks,
+      his are soot and umber with no skin among them, and a face asked with no
+      skin in the swatch came back a grey slab with no eyes. It takes
+      `faces.json`'s shared face inks AND the body's now, and its `how` on the
+      end of every ask, so one set of words and one palette draw all five.
+- [ ] **THE FLOOR'S SMALL FAULTS.** The lake's shore is a tan kerb LIGHTER
+      than the sand with a scalloped lump every tile, so the water sits in a
+      raised tray — the shore should be a dip; the ripple is a 2px seven-sided
+      polygon — more sides or an anti-aliased circle; the way in and out are
+      a sixteen-spoke wheel that reads as a turbine — a hole reads by its
+      dark; one-tile rock pillars are capsule columns with a flat grey top
+      that read as barrels — the carve should not make a one-tile island; the
+      fire pit is cold while the smelter glows — the one lit thing is not lit;
+      a hovered person gets an opaque one-pixel yellow outline — light, never
+      an outline; a black wavy prop one tile wide lies on open floor as a
+      stray stroke. (`crop-lake-edge-x4.png`, `fault-ripple-octagon.png`,
+      `fault-way-in-wheel.png`, `camp-crop-fire.png`,
+      `fault-hotspot-outline.png`)
+      PARTLY DONE: the ripple is drawn in a Graphics scaled down by 64, so
+      Pixi picks its segments off a radius of 20 rather than 0.3 and the ring
+      is round; an island is never under 1.5 tiles across, so the carve makes
+      no one-cell pillar; a hovered person's edge is two rings of light
+      falling off (`RIM_FALL`) rather than one opaque stroke; the fire wears a
+      hot core glow (`fire_core` in `CAMP_GLOW`) over the wide one. LEFT, and
+      both are generations shown first: the way in and out is the
+      `mouth_stair` PROP (the generator drew a ladder shaft from above as a
+      wheel), and the shore is the water set's own rim tiles. The stray
+      stroke was not found on any shot this pass; the director names its
+      screen next time.
+- [x] **THE CAMP IS STRETCHED UNEVENLY.** 688×384 to 1280×800 is 1.86x by
+      2.08x, so every camp pixel is a rectangle 12% taller than it is wide;
+      the fire-ring stones come out lozenge-shaped. DONE at the user's word:
+      `fit()` in `src/ui/camp.ts` takes ONE scale on both axes, the largest
+      that fits the picture whole, and the stage's own ground shows either
+      side (`desktop-camp.png`).
 
-**What does NOT change, and must not be quietly "fixed" into changing.**
+**THE SECOND REVIEW (2026-09-03b, commit `5dc6865`): 5 / 5 / 6.** Eighteen
+pictures approved, every first-pass fault FIXED or BETTER, and the critics'
+`fix_first` lists are these, in their words, ordered by how many named
+each first. CODE means a session can take it; GENERATION means a design is
+shown to the user first; DECISION means it argues with a rule already in
+`CLAUDE.md` and is asked under Open questions.
 
-- **`SAVE_VERSION`.** Everything the ladder adds to `GameState` is a new key, and
-  a missing key takes its default. The version is bumped only when a save must
-  be REFUSED, which wipes every player's game. Nothing in this ladder qualifies.
-- **The report and the haul.** Every scene arrives AFTER `buildReport` has
-  banked the clear, and every ending still lands on the same report and opens
-  the same haul. A scene is a reason the loop stopped, never a new ending.
-- **Loot is banked before anybody speaks.** That is what makes a meeting unable
-  to be a hazard, and it is the reason a scene is on the far side of the hole
-  rather than in the room you just cleared.
-- **Automation is universal.** No build's power may depend on the player being
-  present. The only thing in any scene that can be fought is a boss, and it is
-  fought by the shipped policy like everything else.
-- **Every number is said out loud, and every mechanism has one word.** Four new
-  characters is a great deal of new prose. The demo sweeps modifier lines, quest
-  text, currency text and `GrantDef.what` for a `BANNED` phrasing and for a line
-  with no digit in it. What a character SAYS is flavour and is out of that
-  sweep, exactly as the Lampwright's lines are; what a graft or a key or a boss
-  DOES is not.
+- [x] **THE AURA DISC** — all three, first. *"A ten-tile banded olive circle
+      with a hard rim under every Rot, Cavern and Seam pack, laid over sand
+      and rock alike — the largest shape in any fight, and it means
+      nothing."* DONE: an aura is one radial-gradient SPRITE under its
+      carrier, `AURA_GLOW.span` tiles across, tinted the family's ink, and
+      the six-tile reach is no longer drawn at all — a soft pool of light
+      off the body and nothing else (`aura_z6.png`). The reach is still the
+      rule the sim runs; if it needs showing, it is a question of how, not a
+      disc.
+- [x] **EVERY BODY A LAMPLIT EDGE.** *"Give the hero and every monster a
+      lamplit edge and 2–3 luma steps off the sand at ship zoom; every floor
+      monster a mid-tone plane so it is not a black cut-out."* DONE: every
+      body's frames take `rimLit` — `framesFor` asks `lit` for all, and the
+      hand-drawn bestiary carries `rim` beside its rank glow — so a maroon
+      back on sand has a gold top edge (`rim_all.png`). The mid-tone PLANE
+      is the bodies' own art and stays a generation.
+- [ ] **THE CAST HALL'S WARRIOR AND ROGUE.** *"Real three-value clusters and
+      a rim light, or a card ground three steps lighter than their darks;
+      and draw all four at 3x, not 6x, so the second screen is not a
+      magnified sprite sheet."* CODE HALF DONE: `ROOM.most` caps a figure
+      at 4x and each stands on a lit radial ground (`desktop-pick.png`).
+      LEFT: the clusters are the bodies' own art and a GENERATION
+      (`crop-cast-hall-warrior-x3.png`).
+- [x] **RIMESPIKE AND THE FIREBALL TRAIL.** *"Rimespike is a flat cyan
+      slab: a dark root, lit tips and a shadow on the sand. Fireball's trail
+      is four sand-coloured squares: ember fading to smoke."* DONE:
+      `fireShades` carries a fourth SMOKE shade (the type's colour toward
+      the void); a blade is dark at the root, the type's colour up its body
+      and white only at the tip, over one shadow row; the far tail of a
+      ball is smoke at half alpha (`rime_new2.png`, `fire_trail.png`).
+- [ ] **THE ROCK'S INTERIOR AND THE DESCENT'S PALETTE.** *"Put grain in the
+      rock's interior and take its mean a step below the face's shadow row;
+      regrade the Fissure sand and rock to the camp's warm ramp; tone the
+      arena tile's crescent into the sand so the lattice stops showing."*
+      MARKS DONE: `rockMarks` in `src/render/pixi.ts` hashes short dark
+      dashes, `ROCK_MARKS.dark` of the way from the rock's mean to black,
+      over a six-tile period and tiles them with the apron; an all-rock cell
+      inside the grid is no longer given its own tile, so the apron and its
+      marks show wherever the rock is and nowhere a face or a floor is
+      (`marks_z0.png`, `marks_z9.png`). LEFT: a regrade of a shipped set is
+      a GENERATION and *"a shipped set is never edited"* makes it a new set;
+      the arena's crescent lattice is the design floor's own grain
+      (`crop-arena-grain-x3.png`).
+- [x] **THE PROVING GROUND'S SOCKETS.** *"Four text fields over a dimmed
+      picture; draw them as the crack's clawed sockets, laid on the art at
+      full brightness."* DONE: each socket button carries the generated
+      `camp_socket` (lit once filled) through `makeProp`, the sheet over the
+      picture is gone, and only the set's readout keeps a dark plate
+      (`desktop-proving.png`).
+- [x] **ORDINARY DAMAGE DIGITS.** *"Ghost-grey on khaki — `275`, `5460`,
+      `88` are close to invisible; give them the bone-with-shadow the HUD
+      numerals got."* DONE at the user's word ("just do what the critics
+      say"): `floaterInk` sets ordinary damage in bone on a dark edge.
+- [x] **ONE CHROME.** *"Frame the inventory dock and tooltips like the
+      window, replace the CSS hexagons with the plate the skill slots use,
+      and pick one plate for bars, skills and potions."* DONE: the dock
+      wears `--fix-win` at the window's own size and the tooltip at half
+      of it; a bench facet is the `socket` fixture with a round stone of
+      the tier's ink set in it, no hexagon (`desktop-sheet.png`). The
+      potion arches stay: they are their own generated plate.
+- [x] **TWO PORTRAIT FIDELITIES** and **THE WAY-IN WHEEL** — DONE, both
+      generations: `tools/art/faces.json` asked the Geometer and the
+      Osteomancer as busts at the Lampwright's 96 and `portrait.mts` put
+      them in the generated table over the hand-drawn rows
+      (`faces_new.png`); `mouth_stair` was re-asked as a square near-black
+      shaft with a ladder's top at one edge (`wayin_z4.png`).
+- [x] **THE RAIL GLYPHS.** *"The rail is eight 1-bit 16px glyphs."* DONE:
+      `tools/art/rail.json` asked eleven emblems in four inks at 64,
+      imported at 16 as `rail_<screen>` in the icon table, and
+      `screenIcon` draws a generated one first, the hand grid only for a
+      button nobody has asked one for (`desktop-camp.png`). The chevron was
+      re-asked once to lose the disc the generator put round it.
+- [x] **THE HARNESS GAPS**, the director's second-worst: `descent-peek`'s
+      zone lands on The Answering whatever is socketed, `boss-peek` finds no
+      keyhole, Shockwave fails with "nothing launched a descent". DONE: a depth runs in its zone's world whatever is socketed and the
+      kit's climb is shut past The Answering, so `descent-peek <zone>` goes
+      through the Proving Ground tab and its INFLUENCE button (`rot_z4.png`,
+      `cavern_z4.png` — the first pictures of either floor, and both wear
+      the per-cell light drift the Fissure lost); `boss-peek` opens the
+      Proving Ground tab before it looks for the keyhole and arms it.
+      Shockwave never launched because it was swapped onto an AETHERMANCER
+      holding a wand: `TRADE=warrior` picks Mahthar in the hall and his own
+      swing is the first cast (`shock.png`). The peek also prints the phase
+      and the open windows when nothing launches.
 
-**The five harnesses this ladder keeps walking into.**
+**THE THIRD REVIEW (2026-09-03c, commit `cd4ef06`): 5 / 5 / 5, UI at 7 from
+all three.** *"A 9 shell around a 4 fight, and a shopper buys the fight."*
+Twenty pictures approved. The user's ruling stands — *"just do what the
+critics say unless it's going to be a massive overhaul"* — so every CODE item
+is taken and the two overhauls are left where they were.
 
-| harness | what it will catch, and it will |
-|---|---|
-| `demo` | a run that never ends, a container that does not claim its ids, a banned phrasing anywhere |
-| `shots` | it WAITS up to two minutes for the SCENE and then for the Lampwright panel, and fails the run if a first descent never produces one. Anything that moves that panel has to move the shot with it |
-| `smoke` | it is ORDER-DEPENDENT: a dozen assertions pick a dock item by POSITION, so anything that reorders the dock goes at the END of the file |
-| `drag` | 20 seconds, and on a failure it prints what `elementFromPoint` actually hits. Reach for it the moment a new layer stops taking a click |
+- [x] **THE LIGHT-DRIFT MOSAIC** — all three, first. *"The per-cell light
+      drift draws as a mosaic of lighter rectangles with a hard edge at every
+      cell; per pixel, or off as the Fissure's `plain`."* DONE: `plain` is
+      true on every map, so the Rot, the Cavern and the Seam are as flat as
+      the designed Fissure (`rot_plain.png`).
+- [x] **THE SLAM TELEGRAPH.** *"Two anti-aliased red vector discs eight
+      tiles wide; a hard-edged ring in the sand's own shadow with a single
+      step of tint fill."* DONE: `pixelRing` in `render/renderer.ts` lays
+      whole blocks on the floor's grid, each cell once; a Fall is an ember
+      ring at its reach, a dark ring one block outside it, and a core ring
+      growing from the centre as the fuse burns (`boss/boss-07.png`).
+- [x] **THE HERO AT SHIP ZOOM.** *"A 12 px dark smudge no brighter than the
+      cover beside him; rim the hero like every monster."* DONE: `LAMP` in
+      `render/sprites.ts` is how much of `RIM` a body takes and the hero takes
+      1.4× a monster's, keyed into the texture cache, so his top edge is full
+      lamplight and his sides more than half (`dust-06.png`).
+- [x] **BLIGHT, SHOCKWAVE AND THE CHILL MARKER.** *"Creeping Blight is a lime
+      ring with nothing in the pool, Shockwave is three sand-coloured
+      squares, the Chill marker is a smooth cyan disc."* DONE: the pool is
+      tinted 45% to the void at 0.85 alpha, so it is a dark green pool with
+      drops rather than a ring (`blight-03.png`); a PHYSICAL hit gets a DUST
+      ramp in `fireShades` — four greys, no heat — and the burst's translucent
+      disc is a dark `pixelRing` at its reach (`shock.png`); an ailment mark
+      is a whole block on the sprite grid with a dark edge, never a circle.
+      The Leap landing's sweep ring is dark blocks too.
+- [x] **WINDOWS OVER THE RAIL.** *"The stations window hides nine of eleven
+      rail buttons; rail on top."* DONE: the band above the windows moved up
+      by twenty — scrim 62, rail 64, speech 66, the full sheet 75, the title
+      80 — so `Z_BASE` holds 42 screens before a window reaches the rail
+      (`windows.ts`). `shots` and `drag` both hold the rail over a raised
+      window.
+- [x] **THE RAIL GLYPHS.** *"12 px specks with 8 px letters; draw the rail
+      at 24 px."* DONE: `screenIcon(id, 24)` in `rail.ts`, in the same 34px
+      socket (`boss/boss-04.png`).
+- [x] **THE CAVERN CORPSES** — the code half. *"Eight crawlers die into one
+      identical lozenge stacked seven deep, and a body without death frames
+      fades upright as a tan ghost; a fall direction, and fall rather than
+      fade."* DONE: `keel` in `render/pixi.ts` — a body with no death frames
+      keels over WHOLE across the first half of its fade, the way it faced
+      and alternate bodies the other way, and only then goes; its held weapon
+      falls with it. LEFT: a second death frame is a GENERATION.
+- [ ] **THE CAST HALL'S WARRIOR AND ROGUE** — still the overhaul the user
+      ruled out (~68 generations a body).
 
-**Every phase from here puts itself in the dev kit.** `START_PRESETS.dev` and
-`DEV_CURRENCY` in `src/data.ts` are how a screen gets opened without farming for
-it. A relic — and anything else like one — goes into the dev preset in the same
-phase that adds it. A screen nobody can reach is a screen nobody tested. The reading room is the
-worked exception and the reason is written down: the dev kit is handed every
-crystal, so socketing two of them is the whole of what schedules it, and
-socketing two in the PRESET would have changed what a dev game's Fissure is —
-which `smoke` asserts about and every screenshot is taken against.
+**THE FOURTH REVIEW (2026-09-03d, commit `ceae303`): 5 / 5 / 4.** Twenty
+pictures approved. *"A 9 shell around a 4 fight, and a shopper buys the
+fight."* Every CODE item all three named is taken here; what is left in all
+three lists is the ART the user ruled out.
 
-### Phase 1 — An art pipeline, and a generator behind it
+- [x] **THE BLIGHT POOL** — all three, first. *"A lime-and-sand dithered disc
+      five tiles wide, brighter than the floor, with a stack of green 8s over
+      it; cap the summed alpha, hard edge, no smoothing."* DONE: every live
+      field is gathered into ONE union of cells (`pixelDisc`, each cell drawn
+      once) and filled at the freshest pool's alpha, tinted 55% to the void —
+      so nine pools over a ten-second cast cannot stack into a lid, and the
+      soft-brush still is gone (`bl3-02.png`).
+- [x] **ONE NUMBER A BODY.** *"A column of eight outlined 8s up its centre."*
+      DONE: `bank()` in `src/sim/run.ts` adds to a live number of the same sort
+      on the same spot rather than pushing a second, for hits, ticks, the crit
+      echo and thorns alike.
+- [x] **THE NUMBERS AND LABELS ARE TOO BIG.** *"148 block is taller than the
+      bodies fighting under it."* DONE: a floater is 0.4 of a tile (0.5 crit,
+      0.28 a tick) clamped to 19 px, and a drop's name 0.26 clamped to 13 —
+      halved, so a body wins its own frame. `LOOT_SPAN` came down with them:
+      a shield on the floor was 0.86 of a tile beside a body of 1.
+- [x] **THE CHILL SQUARE.** *"A 40 px flat sky-blue block on the boss's
+      shoulder — it scales with `size`."* DONE: `MARK_R` is a mark's radius in
+      TILES, so a boss at scale 5 and a beetle wear the same glyph; only where
+      it sits is still the body's.
+- [x] **THE WINDOW FOOTPRINT AND THE CLIPPED ROWS** — all three. *"Cascades
+      over the crafting window and runs off the bottom of an 800 px view; a
+      helmet slot, a ledger row and a heading each sliced by the frame with
+      nothing saying more exists."* DONE: the cascade refuses a step the card
+      cannot afford, so a full-height window is never pushed off its own foot;
+      and the shell wears its own brass scrollbar, always drawn, with
+      `scrollbar-gutter: stable` on every window body. The rail was ALREADY
+      clear — probed, `.corner` 64 against a window's 36 with every button
+      hit-testing to itself.
+- [x] **TWO TABS LIT AT ONCE.** *"WEAPONS amber and HELMETS red — hover style
+      equals active style."* DONE: the tab that is up wears a filled plate,
+      which a hover tint cannot imitate.
+- [x] **THE CAST HALL IS BLURRED.** *"All four bodies bilinear-scaled, and the
+      Warrior and Rogue unreadable because of it."* HALF DONE: the chosen
+      figure carried `scale(1.06)` on top of a canvas `fit()` had already sized
+      to a WHOLE multiple — a fractional resample of the one body the player
+      picked. It is a lift now and the ground says which is chosen. The two
+      bodies themselves are the overhaul.
+- [x] **NOTHING CASTS A SHADOW.** *"Every rock, body and prop is a sticker on
+      paper — the cheapest change that stops all three floors reading that
+      way."* DONE for BODIES: `SHADOW` in `src/render/pixi.ts` lays a contact
+      shadow at each body's own spot, under the loot beam and under the bodies
+      (`sh1-01.png`). Props are next and are a bigger sweep.
+- [x] **THE RIM LIGHT IS DELETED.** *"The only thing I think is worse now is
+      this border you've created around the characters and enemies. It's eating
+      into their art instead of adding a border… probably just delete it."*
+      DONE, and he is right about the mechanism: `rimLit` recoloured a body's
+      own outermost pixels, which ARE the silhouette. `RIM`, `LAMP`, `rimLit`
+      and the `lit` parameter are gone from `sprites.ts` and `pixi.ts`
+      (`norim.png`). It answered the second review's "EVERY BODY A LAMPLIT
+      EDGE"; the user outranks the critics, and the renderer skill says so now.
+- [x] **THE ROCK'S INTERIOR IS A FLAT VOID** — the sixth pass, and a fault in
+      OUR code rather than the set's art. The critics prescribed *"regrade the
+      Fissure sand and rock to the camp's warm ramp"*, which is four new
+      tilesets; the CAUSE was that `rockMarks` drew each mark `mix(rock,
+      '#000000', 0.3)` — a step DARKER than the rock — and the Fissure's own
+      `rock` is `#000000`. The marks have been black on black since the day
+      they were added, and near-black on the Rot. Lifted toward white instead
+      (`ROCK_MARKS.lift`), and the interior carries grain for the first time
+      (`rock2.png`). **A shipped set was never the problem.**
+- [ ] **THE FLOOR DECAL'S LATTICE.** *"The arena's crescent repeats on a fixed
+      ~55 px diagonal with a constant period; offset its position AND which
+      mark by a per-cell hash."* `grainAt` is exactly that hash, switched off
+      with the light drift under the one `plain` flag. **TRIED, on his word,
+      and REVERTED**: with the drift off and the grain back on, each mark
+      carries its own EDGE, so a floor of them is a grid of faint boxes — the
+      colour lines in the floor in another form, which is the complaint that
+      bought `plain` in the first place. Breaking the repeat needs marks with
+      no edge, which is a GENERATION rather than a flag.
+- [x] **THE RAIL GLYPHS, again** — the fifth pass settled the conflict against
+      them: three of ten had a nameable silhouette and seven were the same bone
+      blob at the same value. DONE, and the fault was the WORDS: every emblem
+      was asked "in pale bone-grey with one small warm gold accent", and one
+      value at 16 px on a dark plate is a blob whatever it depicts. Re-asked
+      with a thick near-black outline round the whole shape, open gaps inside
+      it and gold over a third of it; nine landed first time, and the pouch and
+      the Fill mark were re-asked with the noun that fought removed
+      (`rail.png`).
+- [x] **A CLIPPED ROW'S AFFORDANCE.** The brass thumb shipped and the fifth
+      pass still found none, because **a scrollbar cannot be photographed** —
+      Playwright runs headless Chromium with `--hide-scrollbars`, so no shot
+      this repo judges can ever show one. The thumb stays for a player, and the
+      affordance a picture CAN show is a FADE at the foot of every window body.
+- [x] **THE WALL HAS NO FOOT** — the sixth pass, and a regression of ours.
+      *"The floor's value is identical right up to the wall."* DONE:
+      `groundLight` is a per-cell DRIFT times a wall-foot SLOPE, and `plain`
+      was switching off both. Only the drift makes a mosaic; the foot is a
+      slope over several tiles. Split, so every world keeps its flat floor and
+      darkens into the rock (`foot.png`).
+- [ ] **THE CAST HALL IS NOT BLURRED — IT IS 14 PIXELS WIDE.** Probed:
+      `image-rendering` computes to `pixelated`, no transform, every canvas at a
+      whole multiple. The ink boxes are 19x39, 12x39, 14x38 and 15x39 ART
+      pixels, and at fourteen across there is no silhouette to read at any
+      filter. The excluded overhaul, and no CSS reaches it. **Do not chase this
+      as a rendering fault again.**
+- [x] **THE PROVING GROUND'S INFLUENCE ROW.** DONE: the buttons ARE `.climbtab`
+      now, so the chosen influence wears the same gold border and lit plate as
+      the tab row above it, and the orange is the hover every tab shares. Its
+      own `influence--on` lit the border and the ink but not the plate, which is
+      what made a hovered button and the chosen one two different lit states
+      side by side (`desktop-proving.png`).
+- [ ] **AN AILMENT MARK IS A SQUARE, not a glyph.** Fixed in SIZE; the purist
+      wants a frost shape for Chill and a flame for Burn. A generated icon each,
+      or authored geometry beside `pixelRing`.
+- [ ] **THE ROT AND THE CAVERN, AND THE TWO BODIES** — all three critics, and
+      all of it the art the user ruled out: the Rot's floor and its rock as a
+      palisade, the Cavern's lavender against the camp's palette, the shared
+      grey props, the Cavern's way-in, the beetle's legs and death frame, the
+      stalk's width, and the cast hall's two bodies.
 
-**The user redirected onto this mid-session, so it goes FIRST. Nothing about
-the movement phase below changed — it is written, it is ready, and it is now
-Phase 2. Putting art first is the user's ordering, not a judgement that the
-other one is worth less.**
+## Phase 12 — THE 2026-09-05 REVIEW'S WORK: three critics at 4, 5 and 5
 
-**What the user asked for, in their words.** *"I want the art to be as good as
-we can get it without becoming impossible to build/balance the game later.
-Don't want it to lag, don't want it to be impossible to sim and test the
-balance later on."* They are trialling **PixelLab** on a free tier of **40
-generations**, so a wasted generation is a real cost and the pipeline exists
-before the first call, not after it.
+**Every line below is a critic's `fix_first` or the director's own, in their
+words, from `ART_REVIEW.md` 2026-09-05.** Ordered by how many of the four named
+it. All three said the same thing about the shape of the problem: *"the shell
+is finished and the world under it is not"* — the camp, the title, the tooltip
+and the 27 tale panels are close to an 8, and the descent they are wrapped
+round is a 3. **A critic reports the symptom; the diagnosis and the fix are
+ours** — verify each against the code before spending anything.
 
-**Three things were MEASURED this session. Do not re-derive them.**
+- [ ] **THE HEALTH BAR IS AN UNFRAMED CRIMSON SLAB AT THE BODY'S OWN Y.** All
+      four named it first. *"One lies across the hero's shins, one on a
+      skeleton's skull, one over bare floor with nothing under it"*; *"six
+      bodies means six bars at six heights with soft anti-aliased caps and no
+      dark backing"*; *"they read as a debug overlay somebody forgot to
+      style."* At full life it is the most saturated ink on the floor, and it
+      is in every fight screenshot the game can take.
+      (`crop-pack-bars-x4.png`, `fx-arc-02.png`, `boss/boss-05.png`)
+- [ ] **THE ROCK FACE IS A ROW OF IDENTICAL MERLONS, AND PAST IT IS A VOID.**
+      *"One rounded column per cell, so every straight wall is a row of
+      battlements and every chamber is a fort seen from above"*; *"past the
+      two-row lip there is flat black, so the map is an island in a void rather
+      than rock the room was cut into."* NOTE the 2026-09-03 fix landed the
+      apron and the painted void; this is the FACE's own repetition, which is a
+      different fault at the same place. (`fissure-z4.png`, `rot-z4.png`)
+- [ ] **THE ANSWERING HALL IS ONE DECAL ON A FIXED LATTICE.** *"One flat brown
+      tile with the same hook decal at the same offset in every cell, ruled in
+      rows and columns, with no wall, no boundary and no lighting change
+      anywhere in 1280x800 — and every boss frame is shot on it."* The arena
+      took the world's own `designFor` in Phase 11 and still reads as wallpaper.
+      (`desktop-scene.png`, `crop-arena-lattice-x2.png`)
+- [ ] **THE ROT'S FLOOR IS RULED PAPER, AND BRIGHTER THAN ANYTHING ON IT.**
+      *"A 45 degree hatch at identical pitch and identical phase on every cell
+      over near-white cream, so a forty-tile chamber is ruled notepaper and the
+      floor is brighter than any hero or monster standing on it."* (`rot-z4.png`)
+- [ ] **THE GEOMETER IS A DIFFERENT ARTIST IN THE SAME COLUMN.** All three.
+      *"Pastel lavender hair, an airbrushed cheek and glossy pink lips beside
+      four weathered, low-value, hard-cluster-shaded heads"*, and *"his tale
+      panels carry it into the story."* Two smaller faults ride with it: the
+      shopper reads `tale_orrery_1`'s measuring cord as *"a straight 2 px white
+      line crossing the frame through his head — I read it as a scratch on my
+      monitor"*, and `tale_bone_4`'s shaft as *"a flat lime-green rectangle,
+      one alpha top to bottom, hard vertical edges, no taper… it reads as a UI
+      element left on."* (`faces.png`, `tale-orrery-1.png`, `tale-ossuary-4.png`)
+- [ ] **TWO UNFRAMED BLACK OVERLAYS IN A CARVED-STONE GAME.** *"The item menu
+      is a 900px unframed black rectangle covering three whole rows of the bag
+      it was opened from, no item icon, no rarity colour"*, and the parley box
+      *"is drawn over the smith's bust, slicing his arm off mid-bicep"*, its
+      buttons *"big soft-gradient left-aligned rounded rects in a game where
+      every other button is flat with a 1px gold outline and centred caps."*
+      (`desktop-itemmenu.png`, `kit-parley-smith.png`)
+- [ ] **FIVE WINDOWS OPEN SLICED THROUGH A WORD, WITH NOTHING SAYING SCROLL.**
+      *"`desktop-professions.png` cuts 'Blacksmithing 1/99' horizontally at the
+      top edge while still titled CHARACTER; `desktop-bench.png` halves
+      'Prismatic Crystal'; `kit-anvil.png` halves the Cudgel row;
+      `kit-reckoning.png` halves a ledger card; `kit-smith-shop.png` halves the
+      BUY button — and in none of them is there a top fade or a scrollbar to
+      say a cut is a scroll."* The `critique` skill's own note applies: headless
+      Chromium hides scrollbars, so **the affordance a picture can show is a
+      fade at the foot**, not a thumb.
+- [ ] **AT 1280x800 THE NUMBERS A PLAYER CHECKS ARE THE LEAST LEGIBLE TYPE ON
+      THE SCREEN.** *"The '328 / 376' printed inside the life bar, the flask
+      percentages and the damage numerals are all around 8px of unoutlined
+      serif"*; *"everything above judged at 2x reads fine; at ship size the
+      HUD's numbers are decoration."* (`rot-z4.png`, `fx-fireball-02.png`)
+- [ ] **THE PLAIN SWORD AND DAGGER ICONS ARE 3px SLIVERS IN A 40px SLOT.**
+      *"They read as empty, beside a bow and a mace that fill theirs"*, and the
+      same shapes make *"'Ash Wand' and 'Grey Staff' tally marks on the anvil
+      and 'Bent Rod' one on the sheet."* A silhouette budget per slot, not per
+      weapon. (`crop-dock-weapons-x3.png`, `kit-anvil.png`, `kit-sheet-tools.png`)
+- [ ] **THE SHOP IS TEN IDENTICAL TEXT PLATES WITH NO PICTURE ON THE SCREEN.**
+      *"Ten identical '120 gold' text plates with not one drawn thing on it."*
+      A gamble sells a KIND, so the kind is what wants a picture — the
+      counter's whole screen currently has no art in it at all. (`kit-shop.png`)
+- [ ] **VECTOR SHAPES KEEP LANDING ON PIXEL ART.** *"A smooth tapered
+      exclamation with a round anti-aliased dot over a picture whose smallest
+      feature is a 2px block"*, the targeting reticle, and *"the white and cyan
+      node halos… a CSS filter standing in for drawn art, and the cyan is the
+      only cool ink in a wholly warm picture."*
+      (`crop-camp-mark-x5.png`, `desktop-skill-web.png`, `desktop-trials.png`)
+- [ ] **THE PROVING GROUND'S SOCKET ARCHES ARE TWICE THE PIXEL SIZE OF THE ART
+      BEHIND THEM**, cool grey in a wholly warm game, with their feet cropped
+      off — *"reads as broken, not stylised."* (`kit-proving.png`)
+- [ ] **THE TWELVE RUNG DISCS ARE 9px NUMERALS IN NEAR-BLACK ON DARK BROWN.**
+      *"Only rung 1, gold-ringed, can be read at all"* — on the picture the
+      director rates the best screen in the game. (`desktop-fissure.png`)
+- [ ] **SEAM_PRO HAS NEVER BEEN PHOTOGRAPHED.** A harness fault with an art
+      cost: socketing for the Seam produced a descent headed The Fissure
+      drawing the Rot's tileset, so the best set on the sheet has never
+      appeared in a judged picture. Find out whether the WORLD is wrong or only
+      the heading.
+- [ ] **A BURST, NOT A HOLD, FOR AN EFFECT.** The purist declined to score
+      animation at all: *"one pose is not a frame count."* `CAST=1` freezes the
+      sim, so two effect stills in the set are the same instant. Give the peek
+      a burst so a critic can see motion.
 
-- **Art cannot hurt the sim, at all.** `src/sim/` imports exactly two things
-  from `src/render/`: the `MonsterRank` TYPE, which is erased at compile, and
-  `hasFamilyArt` / `hasWeaponArt`, which only ask whether art exists for a base
-  id. No pixel data and no dimensions cross that line. So the balance harnesses,
-  the demo and every headless run are immune to anything in this phase — the
-  user's worry about not being able to sim or test later is already answered by
-  the architecture.
-- **The lag ceiling is ONE function.** `makeSheet` in `src/render/sprites.ts`
-  eagerly draws every `SPRITE_KINDS` × every rank × every frame at boot — 234
-  cells today, ~2 MB of canvas. A descent only ever uses about 8 creature types,
-  so drawing lazily on first use and memoising drops boot work by roughly 8×
-  and is what moves the ceiling from hundreds of frames to thousands. Do this
-  FIRST: it is small, it is measurable, and every later decision reads it.
-- **The game needs about 300 authored grids, not tens of thousands.** 26
-  creatures × 6 frames (4 walk, attack, hurt) = 156; 27 armour families × 4
-  pieces = 108 — poses are whole-pixel SHIFTS, never new art; 13 weapons; ~10
-  portraits. Ranks are a runtime RECOLOUR and are not authored. Roughly 600 if
-  creatures ever go 4-directional, which today they are not: sprites are drawn
-  facing +x and MIRRORED (`s.scale.x = -1` in `pixi.ts`), so directions would be
-  a renderer change as well as a 4× count.
+## Phase 3 — A quest log instead of a pointing finger
 
-**The decision, and what it beat.** *Mine, and the whole shape of the phase.*
-**A generator is an AUTHORING tool, never a shipping format.** Its output is
-converted into the character grids the game already uses, a human accepts it,
-and the accepted grid is committed as TypeScript. That keeps every standing
-rule — no binary assets, colours out of CSS at runtime, zones recolouring for
-free, the canvas2d fallback untouched, `shots` untouched. What it beat was
-shipping a packed atlas, which is the right answer at tens of thousands of
-sprites and the wrong one at 300: it would trade the runtime palette away to
-solve a problem this game does not have. If the ceiling is ever genuinely hit,
-atlases are still there, chosen against a real number.
+**Not next, and deliberately.** The tutorial was deleted outright so the opening
+can be PLAYED with nothing explaining it. This is what teaching eventually
+becomes, and it does not start until that has happened — *"once all the systems
+are in place and we see how the intro plays out then we add it in small parts as
+needed."* **Do not take this phase because it is next in the list; take it when
+asked.**
 
-- [ ] **`makeSheet` draws lazily.** One function, and the lag ceiling.
-- [ ] **A converter**: PNG → the character grid a `BeastArt` frame is. Decode
-      with Node's own `zlib` — this repo carries no dependency it does not need
-      — block-average down to the target grid, snap every pixel to the nearest
-      of that creature's inks, and emit the `rows({ … })` a bestiary entry
-      holds. Integer downscale ONLY: a non-integer one destroys pixel art, and
-      the tool should refuse rather than blur.
-- [ ] **A manifest is the source of truth, not the images.** One row per
-      sprite — id, prompt, params, seed — with generation a pure function of the
-      row and content-addressed on its hash, so nothing is ever paid for twice
-      and a diff reads "14 sprites requested" instead of a wall of binaries.
-- [ ] **A contact sheet, and an accept flag written back to the manifest.** At
-      volume the bottleneck stops being generation and becomes deciding what is
-      good enough to ship. Review the CONVERTED grid rather than the raw PNG:
-      the conversion is lossy and the grid is what actually ships.
-- [ ] **One adapter module is the only thing that knows PixelLab's API**, so
-      swapping generators costs one file. Written blind — see the trap below.
-- [ ] **Two generations, spent on a test pair**: one organic quadruped and one
-      crystalline creature. Between them they answer the only question that can
-      kill this, which is whether the output survives being reduced to our inks.
+**Why the old one was wrong, in the user's words.** *"The whole click here
+highlighting stuff works but it feels like a cop out and mobile gamey. Everyone
+I've seen play immediately wants to click on things the tutorial doesn't let
+them."* The lockdown did not merely fail to help exploration — it FORBADE it.
 
-**Traps.**
-
-- **The API could not be read from the cloud VM.** `api.pixellab.ai` was
-  hard-blocked at the egress proxy — 403 on the CONNECT tunnel, for `curl` and
-  `WebFetch` alike — so their docs are UNREAD and the adapter is written against
-  an API nobody here has seen. The fix is the environment's **network access**
-  set to `Custom` with `api.pixellab.ai` and `*.pixellab.ai` allowed, **and the
-  "also include default list of common package managers" box ticked** — Custom
-  REPLACES the trusted list, so leaving it unticked kills npm and the build. The
-  key arrives as `PIXELLAB_API_KEY` in the environment's variables. Read their
-  docs before trusting a line of the adapter.
-- **A creature is EIGHT inks, not four.** `#` outline, `m` mass, `M` lit, `s`
-  shade, `e` eye, `x` a per-rank accent, and `b`/`o` for the magic and rare
-  halos — see `monsterArt`. The accent and the halo are applied at RUNTIME off
-  `MonsterRank`, so generated art must contain neither. Ask the generator for
-  one flat creature with no glow and no rim light, or every rank looks the same.
-- **The demo fails art that is lit from underneath.** One light, from above and
-  slightly in front, and a highlight directly under a shadow is a failure. A
-  generator does not know that, so it is an acceptance criterion at review.
-- **A cloud VM is reclaimed on inactivity, so a generated PNG on disk is not
-  durable.** It does not matter: the committed grid is the artifact and the PNG
-  is disposable. Do not build a cache that assumes the disk survives.
-- **Resolution is the real quality lever, and it is deferred on purpose.**
-  Grid 24 with flat inks is a tight box; grid 32 is where generated art starts
-  to beat hand-authored. `RULES.md` has the rule — 32 needs `CELL` raised to 96
-  first, because 48/32 is 1.5 and the rect seams stop landing on pixel
-  boundaries. Do it AFTER the test pair, never before: there is no point paying
-  4× the canvas per cell until the palette question is answered.
-
-**Done when.** A row can be added to the manifest, generated, converted,
-reviewed and committed without anybody hand-carrying a file, and the suite is
-green with the first accepted creature in `BEASTIARY`.
-
-**What must not break.** `wellFormed(frames, grid)` holds every frame square and
-matching its declared grid, and the demo sweeps `BEASTIARY` for it. `npm run
-shots` and `tools/model-sheet.mts` are how art claims get evidence — a
-screenshot, never an impression. And nothing in `src/sim` may learn what a
-pixel is.
-
-### Phase 2 — The skills screen, and a second way to move
-
-**Dictated in one go. Five asks, and the last two are most of the work.**
-
-**What is true today.** `src/ui/skills.ts` is three deep — category, then skill,
-then its web — and it holds `category` and `viewing` as MODULE state, so
-reopening the screen puts you back where you left rather than at the top. Every
-skill with a web gets one from `BUILT_TREES`; a skill with none renders "no web
-yet", which is what both passives and Blink do today. `movement` has exactly one
-entry, `blink`.
-
-- [ ] **The scene guard is for the SLOT, not for Blink.** Already true and worth
-      keeping true: `maybeMove` reads `this.mover`, which is
-      `equippedSkill(character, 'movement')`, so `if (this.options.scene) return`
-      suppresses whatever fills the slot. What is still Blink-shaped is the
-      BEHAVIOUR — the method teleports along the path — and the `'blink'` event
-      both renderers draw. Leap needs its own of each.
-- [ ] **Skills always opens at the top.** `openSkills` clears `category` and
-      `viewing`. Escape still steps back a level, which is `skillsEscape` and
-      stays.
-- [ ] **A top row of the three equipped slots**, on the home page. Each shows
-      the equipped skill or an empty slot, off `SKILL_SLOTS` and
-      `Character.equipped`. Clicking a filled one goes straight to that skill's
-      web; clicking an empty one goes to the list of skills that slot ACCEPTS —
-      `SkillSlotDef.accepts` already says which shelves those are.
-- [ ] **A passive has no web and must not pretend to.** Clicking one equips it,
-      or asks first when the slot is filled. It never opens a tree — "no web
-      yet" is a promise the game is not going to keep for a passive.
-- [ ] **Leap**, the second movement skill: a jump rather than a step through.
-      Same slot, same automation — `runToCompletion` is the shipped policy and
-      no build's power may depend on somebody watching — but it LANDS, and
-      landing is what its tree hangs off.
-- [ ] **A web for Blink and one for Leap**, smaller than a skill tree. Simple
-      things: cooldown off the `cooldown` param, and effects that fire on the
-      MOVE. The examples asked for are mana regeneration after a blink, and a
-      shockwave on landing a leap that slows attack speed nearby.
-- [ ] **`buildTree` will refuse both.** It throws unless a spec has exactly six
-      branches and six trunk notables (`BRANCH_COUNT` in `src/trees/layout.ts`).
-      A smaller web needs its own layout the way the trade tree got
-      `src/trades/layout.ts` — and what the two already share is
-      `src/webgraph.ts` for reach, refund and replay, and `src/ui/webart.ts` for
-      the studs. Do not bend `buildTree`; give the movement webs a sibling.
-- [ ] Every grant a node hands over is declared in `sim/grants.ts` and READ by
-      something, with a `merge` if two nodes can both grant it, and the demo
-      holds that line. A move that grants regeneration and a move that grants a
-      shockwave are two new readers, not two new concepts.
-- [ ] The vocabulary. `KEYWORDS` is the only way these may be said, and the
-      demo's `ONE WORD PER MECHANISM` sweep fails an invented synonym. A
-      shockwave that slows is a **Splash** that does something; check the table
-      before naming anything.
-
-**Traps, all seven MEASURED rather than guessed.** Read every one before
-starting: the first three are why the last two checkboxes are not an afternoon,
-and none of them is visible from the files a fresh session would open.
-
-- **Only the MAIN skill takes a run's XP.** `report.ts:97` is
-  `addSkillXp(game.character, mainSkillId(character), xp)`. A skill web is
-  funded by that SKILL's level, and a mover never gains one — so a movement web
-  would sit at level 1 holding a single point, forever, and every node past the
-  first would be unreachable in a played game. The fix is to bank the run's XP
-  for every EQUIPPED skill, as a loop over `SKILL_SLOTS`, which costs one change
-  and is generic over a fourth slot. The rule it seems to bend is not bent:
-  "committing to one skill advances its tree" is about the MAIN slot, and you
-  only ever hold one mover.
-- **`treeGrants` merges the MAIN skill's tree and nothing else.**
-  `src/sim/stats.ts` — the other two slots contribute their static
-  `SkillDef.grants` only, so a mover's ALLOCATIONS never reach the sim and every
-  node of both new webs would do nothing at all. Extend that same loop to merge
-  each non-main slot's own web, so a web reaches the sim by the one path a tree
-  node, a trade node and a unique already use.
-- **`treePointsFor(level)` is `Math.min(level, MAX_TREE_POINTS)` — 30, globally.**
-  A nine-node web is therefore OWNED by level 9, and `MAX_TREE_POINTS`' own
-  comment is "a tree you can fill in is not a decision". A small web has to
-  declare its own budget, which means `treePointsFor` takes a skillId. Every
-  call site has one in scope: `ui/skills.ts` ×3, `game/save.ts:225`,
-  `sim/loadout.ts:69`, and `sim/character.ts` — where `pointsAvailable(progress)`
-  has to grow one too, and its callers are `game/crystals.ts:54` and `:80`.
-- **`BANNED` maps the bare word `leap` to Arc**, and the demo sweeps every
-  skill's own description — so the skill cannot say its own name. Narrow it to
-  the PHRASE that actually means Arc (`leaps to`, `leaping to`) and Arc keeps
-  its word, since its `means` line already says "leaps from what it hits". This
-  is a DECISION taken on the user's behalf: the ask names the skill Leap, and
-  the alternative is renaming the thing they asked for.
-- **The demo's sweeps name `BUILT_TREES` and `TRADES` one at a time.** A third
-  web family is invisible to all of them until it is added by hand to each: the
-  every-line-says-its-number sweep (~3429), the two vocabulary sweeps (~3491,
-  ~3541), and the per-tree reachability and grant checks (~1707). Adding the
-  family is adding a row to each of those, not adding a file.
-- **A monster's swing rate is set in TWO places** — `run.ts:1211` for a melee
-  body and `run.ts:1541` for anything with a skill — and `Entity.effects` is
-  ticked for the HERO alone. A Slow on landing therefore needs one rate helper
-  that both call, plus a tick for monster effects; put it in either place only
-  and ranged packs, or melee ones, ignore it silently.
-- **`SKILL_BEHAVIOURS` has no `no_cast` entry and does not need one** —
-  `run.ts:1499` falls back. So giving the two movers their own behaviour names
-  costs nothing and is what lets `GrantDef.reads` tell a jump's shockwave from a
-  step: a landing switch on the web of a skill that does not land is exactly the
-  point spent on nothing the demo already fails a tree for.
-
-**Decisions taken, each cheap to overrule while this is still a phase.**
-
-- **What makes Leap a jump rather than a second Blink**: a step needs a clear
-  line and goes THROUGH, a jump does not and goes OVER. Both still land on
-  walkable ground and both stay on the path already found, so a leap can never
-  put you somewhere the walk could not reach — it cuts the corner instead.
-- **A movement web is three arms of three**, minor-minor-notable, with a budget
-  smaller than the web: what is decided is which arms you walk, and the arm is
-  the price, exactly as a trade spoke is. Its own layout beside
-  `src/trades/layout.ts`, sharing `webgraph.ts` and `webart.ts`.
-- **Slow becomes a KEYWORD.** Nothing in the game slows an enemy today, so the
-  shockwave is a new mechanism, and `RULES.md` says a new mechanism either uses
-  a word in the table or adds one. It is not a Splash: that word is defined as a
-  swing dealing a share of its damage in a circle, and the landing deals none.
-
-**What must not break.** `equipSkill` refuses a skill whose category the slot
-does not accept, and the demo checks it — equipping a mover must never be what
-stops you swinging. `heal()` empties a slot naming a skill that is gone, so
-adding one costs nothing but removing one does. `npm run demo` measures that the
-mover fires itself with nobody watching and never lands in rock, that every
-descent it is in still ends, and that nobody moves across an authored room; all
-four now have a second skill to hold to. `MAIN_SKILLS` is what every harness
-builds a character to fight with and Leap is not in it.
-
-### Phase 3 — A quest log instead of a pointing finger
-
-**Not next, and deliberately.** The tutorial has been deleted outright so the
-opening can be PLAYED with nothing explaining it. This phase is what teaching
-eventually becomes, and it does not start until that has happened and the
-systems have settled — the user's words are "once all the systems are in place
-and we see how the intro plays out then we add it in small parts as needed".
-Small parts, driven by what actually confused somebody. Do not take this phase
-because it is next in the list; take it when asked.
-
-**What is true today.** Nothing teaches anything: `TUTORIAL_STEPS`, the card
-and `body.guided` are gone. What that leaves is a game that never prevents a
-click and never explains one either.
-
-**Why it is wrong, in the user's words.** *"The whole click here highlighting
-stuff works but it feels like a cop out and mobile gamey. Everyone I've seen
-play immediately wants to click on things the tutorial doesn't let them."* The
-lockdown does not merely fail to help exploration — it FORBIDS it. What is
-wanted is the opposite shape: nothing blocks you, and there is somewhere to
-look when you get stuck.
-
-**The machinery is already here, and it is most of the job.** `CRYSTAL_QUESTS`
-in `src/data.ts` is a table of `{ id, name, detail, need, gives }`; `need` is
-clauses ANDed together, `kind` names an entry in `QUEST_CONDITIONS`, and
-`detail` is *the objective already written in words*. A new objective is a
-registry entry and a table row. What is missing is only: a screen to read them
-on, a way for a person in a room to hand one over, and a reward that is not
-always a crystal.
+**The machinery this used to lean on IS GONE.** `CRYSTAL_QUESTS` and
+`QUEST_CONDITIONS` were deleted whole when the crystal handout was scratched;
+what survives is `src/game/trials.ts`, the same `{ need, kind }` shape asking
+what a TRIAL wants. So this phase is a table, a screen to read it on, a way for
+a person to hand one over, and a reward that is not always a crystal — and the
+table is new rather than inherited.
 
 - [ ] **A quest log, on the rail like every other screen.** Active quests with
-      their `detail`, and what is done. `detail` is the specific instruction —
-      the thing you open when stuck — so the dialogue can stay atmospheric and
-      the log can say "put a Shard of Making on a socketed crystal".
+      their `detail`, and what is done. `detail` is the specific instruction, so
+      dialogue can stay atmospheric and the log can say "put a Shard of Making
+      on a socketed crystal".
 - [ ] **A quest is GIVEN, in a room.** A `SceneDef` names the quest its person
-      hands over, so meeting somebody is what starts one. The existing crystal
-      quests are ambient and complete in any order; decide whether they become
-      given too or stay as they are, and say why.
+      hands over. The existing crystal quests are ambient and complete in any
+      order; decide whether they become given too, and say why.
 - [ ] **`gives` stops being crystal-shaped.** It is `{ level, family }` today.
-      A quest that teaches the bench pays a currency, or nothing at all — the
-      teaching is the point. Generalise it the way `GrantDef` generalised a
-      switch, so a new reward is a table row.
+      Generalise it the way `GrantDef` generalised a switch, so a new reward is
+      a table row.
 - [ ] **Quest state goes in the save**, and `heal()` drops an id that no longer
-      resolves, exactly as it does for items and tree nodes. A quest offered,
-      taken and finished is three states, where today a quest is a condition
-      that is either met or not.
-- [ ] **Nothing may reintroduce a cage.** The lockdown is already gone; a log
-      that greys out what you have not been told about is the same cop out in
-      a new coat.
-- [ ] **Start from what actually confused a player**, not from a list of
-      systems. The suspected pair is the bench and the socket — nobody
-      discovers "drag a currency onto an item" by clicking about — but that is
-      a guess until somebody has played the stripped opening and got stuck.
+      resolves. Offered / taken / finished is three states where today a quest
+      is a condition that is either met or not.
+- [ ] **Nothing may reintroduce a cage.**
+- [ ] **Start from what actually confused a player.** The suspected pair is the
+      bench and the socket — nobody discovers "drag a currency onto an item" by
+      clicking about — but that is a guess until somebody has played the
+      opening-less start and got stuck.
 
-**Traps.**
+**Traps.** Teaching has no harness and this phase owes one: can a fresh
+character reach the first crystal by doing what the log says? `npm run guide`
+was retired and its walkthrough deleted with the steps. It owes a second with
+it — `dockSlotId`, `slotButtonId`, `recipeButtonId`, `skillCatId`, `skillRowId`
+and `skillNodeId` are still minted by the screens that render them, and the
+check that each resolved went with the steps.
 
-- **Teaching has no harness and this phase owes one**: can a fresh character
-  reach the first crystal by doing what the log says? `npm run guide` was
-  retired and its walkthrough deleted with the steps, so the debt is real and
-  it is this phase's to pay. It owes a second one with it: the ids the opening
-  needed — `dockSlotId`, `slotButtonId`, `recipeButtonId`, `skillCatId`,
-  `skillRowId`, `skillNodeId` — are still minted by the screens that render
-  them, and the check that each one resolved went with the steps.
-
-**Done when.** A new character is never prevented from clicking anything, and
-a player who stops knowing what to do can open one screen that tells them.
+**Done when.** A new character is never prevented from clicking anything, and a
+player who stops knowing what to do can open one screen that tells them.
 
 **What must not break.** The demo's quest checks — every quest's clauses must
-still be satisfiable, which is the check that already exists and is the reason
-this phase is cheaper than it looks.
+still be satisfiable.
+
+---
+
+## Loose ends — real, small, and belonging to no phase
+
+**Empty. Both are done** — the named-piece check is a `gauge()` with a
+deterministic reachability `check` beside it, and the dialogue pass has been
+made: every clause that restated the one before it is cut, and every voice tic
+is kept.
+
+---
+
+## Traps that outlive the phase that found them
+
+**Kept because they bite the NEXT thing, not because of what they came from.**
+
+- **`KIND_VARIETY` IS AUTHORED AND MUST STAY THAT WAY.** It was COUNTED twice —
+  off `GearBase.family`, then off the filter's own groups — and both read right
+  until a kind grew rows the count did not mean: ten ring implicits took rings
+  from weight 2 to 20 and **39% of every drop was a ring.** A drop weight that
+  tracks content volume is a bug waiting for the next table to grow. Adding a
+  kind means adding a row and arguing for the number.
+- **A GAMBLE'S PRICE IS DERIVED, never typed.** `bestSale(ilvl)` is the most any
+  piece of that item level could ever fetch and `gamblePrice` is `GAMBLE.over`
+  times it, so an edit to `SHOP.sellByTier`, `sellFraction` or `pricePerMod`
+  cannot leave the counter minting gold. Anything new on the counter that pays
+  out gear needs the same treatment.
+- **GAMBLE-ONLY UNIQUES ARE NOT DESIGNED, and the SEAM for them is built.**
+  *"Yes there will be some but we don't need to work out those yet."*
+  `DropGate.source` takes `'floor' | 'gamble'`, `opensHere` reads it, and
+  **nothing is authored behind it.** One is a table row when he asks; do not
+  invent one first.
+- **THE COUNTER STANDS ABOVE THE FISSURE, and that is what gates it.** A gamble
+  asks `opensHere(gate, shopPower(ilvl), 'fissure', 'gamble')`, so gold can
+  never buy a deep world's named piece. Anything that gives the counter a
+  different reach is changing what gold is allowed to buy.
+- **A DESCENT'S DRESSING HAS ITS OWN RNG.** Placing gathering nodes must not
+  move the draws that pick a monster or a drop, or a seed stops replaying. The
+  same applies to anything else added to a floor.
+- **THE CHEST WALK COST A WALL CHECK ONE DEATH.** A level-16 Strike character
+  against four blank Prismatic crystals died 6 of 12 seeds before it and 7 of 12
+  after, which tips a parked balance check from ✓ to printed. The cause is real
+  and small: a descent now spends a little longer on the floor walking to what
+  it unlocked. **Not tuned** — it is a balance number, the pass is the user's to
+  call, and the file's own warning is that this measurement is noisy at twelve
+  seeds. Written down so the balance pass knows where the death came from.
+
+- **THIRTY PAIR VARIANTS ARE DRAWN AND UNREACHABLE.** Ten each for the
+  Alchemist, the Aethermancer and Mahthar, made before dual wielding became one
+  trade's privilege. They stay in `GENERATED`, cost ~1.5 MB of the bundle, and
+  come back the day the rule does. **Do not regenerate them and do not cut
+  them.**
+- **The off-hand wording bites three heroes.** Their pairs and shield combos
+  came off the same `*_off` and `shield` clauses in `weapons.json`, so wherever
+  one shows the blob it is the same cause. Re-wording is a roster-wide spend
+  nobody has asked for. Not a task until he does.
+- **A trade is taken up ONCE.** `takeUpTrade` refuses a second outright — the
+  one hard lock in a game that refunds everything else, so a new trade is not
+  something a save can try on. What gold buys back instead is every ATTRIBUTE
+  point (`respecCost`).
+- **`ladderCharacter` takes NO trade, deliberately**, so nothing measured will
+  notice a new one. What a trade is worth is printed beside the deep end and
+  asserted nowhere.
+**Anything that adds an ARM to the trials web, or any run-wide rule:**
+
+- **A "×danger" node buys ITEM LEVEL for free, and that breaks a standing
+  rule.** `runSet` computes `power` from `rewards.danger / POWER.perDanger`, and
+  `bandFor(power).ilvl` is the drop tier. The rule is *"Power buys access;
+  composition and modifiers buy payment."* So a node whose whole content is a
+  multiplier on `crystalRewards` hands out tier-3 bases for nothing. **A trial
+  node adds real monster stats and lets danger and power move honestly, or it
+  pays in `rarity` / `yield` and leaves `power` alone. A bare danger multiplier
+  is refused.** The user asked for one by name — this is why it is not built as
+  asked, and it is the single thing most likely to be got wrong.
+- **Automation is universal and has NO exception.** Anything a player could do
+  mid-descent needs a shipped default policy that `runToCompletion` runs, and
+  that policy is the only implementation. This is why a Hoard is **never
+  clicked** — an event with no interaction in it satisfies the rule
+  by construction, and is the cheapest correct shape.
+- **A run must always END.** `runToCompletion` is bounded at 600s and a headless
+  run that does not finish is a mechanism FAILURE, not a balance number. The
+  Welling spawns monsters from corpses; unbounded, it never terminates.
+- **`s.totalMonsters` counts the whole encounter the moment it starts**, or the
+  readout ticks down and then climbs. Anything that adds bodies mid-descent has
+  to say so to the counter.
+- **The tree must not become pure upside.** The crystal rule is that a modifier
+  with no downside is *"a mod with no decision in it"*. Points are scarce by
+  construction (one per authored trial, and trials are authored), but nodes must
+  still compete — the ring/branch shape does that if the layout is walked, and
+  does not if every node hangs off the centre.
+- **`replayWeb` or the allocation is trusted**, which is the one thing `heal()`
+  exists to prevent. Points earned is `Character.trials.length`, so a trial that
+  is deleted refunds rather than stranding.
+- **Node ids are what a save points at.** Give the web a `prefix` no other web
+  uses.
+- **A new screen is a new shot.** `npm run shots` walks 30 screens against a
+  checklist; a rail icon with no entry in `ICONS` renders nothing and fails
+  nowhere.
+- **Every phase puts itself in the dev kit** — `START_PRESETS.dev`, so the web
+  is reachable without beating anything.
 
 ---
 
 ## Open questions
 
-Do not guess at these. **None of them ever blocked a phase**, and none of them
-is work waiting to be picked up — they are decisions the user has not made.
-Every one is parked deliberately. Ask before acting on any of them.
+**Do not guess at these.** None ever blocked a phase and none is work waiting to
+be picked up — they are decisions the user has not made. Ask before acting.
 
-1. **What the Lampwright wants.** Trades have landed and the placeholder is in:
-   anyone may take one up at level 5, and the Trade screen says so in as many
-   words. The intent was always a storyline with the Lampwright rather than a
-   level threshold — he is the only person in the game and the only voice it
-   has. Nothing about it is written: what he is doing down there, what he asks
-   for, how many beats it runs, whether it hands out anything besides the trade.
-   Replacing the placeholder touches the ACQUISITION only — not the tree, not
-   the points, not the allocation — so this blocks the STORY and not the system.
+**LEFT OVER FROM PHASE 6, which is otherwise whole.**
 
-2. **What is the fifth socket?** Wanted as an endgame slot holding something
-   that is not a crystal. Deliberately unspecified — the user wants to think
-   about it. `RULES.md` says how to keep it cheap to add; nothing else may
-   assume it.
+- **What is the base world called?** *"we really need a different name for the
+  base fissure idk waht to call it."* The clash is that The Fissure is the crack
+  in camp, the whole descent system AND one of three worlds. **Not taken**: the
+  influence picker reads fine as The Fissure beside The Cavern and The Rot, and
+  a rename with no confusion behind it is churn. **The Diggings** if he asks.
+- **Does the Seam have a boss?** It is *"the final zone"* and every other zone's
+  last depth is one. Proposed: yes, but a boss was a whole phase each of the
+  three times, so it is not something to slip into another one.
+- **The Seam has no cross-section of its own.** It borrows The Flowering's on
+  the Proving Ground's tab. One `zoneset.mts` generation would fix it, and it
+  needs the `art` skill and an approval before anything is dressed.
 
-3. **Is the Seam meant to be the hardest room, and is it?** `CLAUDE.md` said it
-   was, off a check reading 6 seeds. Measured over 24, the Seam sits **0.7%
-   BELOW** four Demonic crystals on damage taken per second, and with mana
-   removed entirely it is only 2.0% above — so the ordering was always inside
-   the noise rather than a thing the game does. The cause is structural: the
-   Seam takes exactly two crystals of each world, so only half its packs carry
-   a Demonic aura and half a Prismatic one, where four Demonic crystals put an
-   aura in every pack. Making it genuinely worst means changing what the
-   composition does — both auras on one pack, or a Seam-only carrier — which is
-   a balance decision rather than a measurement. The gap also MOVES several
-   percent either way whenever anything in the sim changes — mana shifted it,
-   potions shifted it back — so the demo PRINTS the margin rather than asserting
-   an ordering, and `CLAUDE.md` says it is an open question rather than a claim.
-   Nothing is blocked on it: it is a balance answer, and balance waits.
+**FROM THE ART REVIEW (Phase 11)** — answered: *"Just do what the critics say
+unless it's going to be a massive overhaul."* So the window's frame is on the
+dock and the tooltip, the rail glyphs and the bench stones are generated, the
+camp stands at one scale, and damage digits are bone. What that ruling leaves
+undone is the overhauls: the Warrior and Rogue as real clusters (two bodies,
+~68 generations each), a regrade of every shipped floor set to the camp's
+warm ramp (four new sets, and a judged design floor among them), and the
+lake shore (the water set the user called perfect).
 
-4. **Nothing but the Fissure hands out an element.** Every monster brings its
-   own now, but which one is a flat roll off `MONSTER_ABILITIES` — a Rot pack
-   is as likely to throw frost as a Cavern one. Biasing the table by monster
-   FAMILY would make a world's fights feel like that world's, and is one field
-   on `MonsterFamilyDef` plus a weight lookup. Not a phase, and not asked for:
-   written down because the table it needs already exists.
+1. **Does kiting come back as a PASSIVE that pays for it?** The user's own
+   shape, after having it removed: *"I think later we can make a passive that
+   makes you kite but take way more damage when you do get hit but lets just do
+   that later."* It was built twice — once as one passive's grant, once as a
+   property of any skill reaching more than 3 tiles — and taken out both times
+   because it made a build strictly better for nothing. The passive shape is the
+   one that has never been tried, and it is the one that costs something. **Not
+   started, and explicitly later.** Two things it would owe: a retreat that
+   PATHS rather than sliding along rock (*"it kites into a corner and kinda bugs
+   out glitching in and out of the wall"*), and a mover that does not blink
+   forward into what it is backing away from.
 
-5. **The Cavern and the Fissure have no currency of their own.** Retiring the
-   quality ladder took `sigil_of_refinement` with it, which was Prismatic's
-   exclusive, and nothing replaced it. Today `sigil_of_upheaval` is gated to
-   Demonic and `sigil_of_finality` to the Seam; the other two worlds are gated
-   to nothing. `RULES.md` says a world should have a reason to be entered, and
-   every world now has uniques of its own — the Fissure two — so this may
-   already be paid. **Provisional, and mine, not the user's:** left as it is
-   rather than inventing a gate. Ask before gating an existing currency to the
-   Cavern; it would make a staple zone-locked.
+2. **What the Lampwright wants, and the story has LOST ITS VEHICLE.** The trade
+   acquisition is still a placeholder — anyone may take one up at level 5 — and
+   the user's answer for the story was *"lamwright and lambengolmor kinda not
+   liking eachother and each pulls you in different directions"*, told through
+   the trial ladder, with everybody else an event-giver rather than a plot.
+   **Phase 6 deletes `TRIALS`**, so the ladder that argument was to be told on
+   will not exist: grinds are counters, and a counter cannot take a side. What
+   is open is therefore two things — what the two of them disagree ABOUT, and
+   what the story is told THROUGH now. Ask before authoring the second room.
 
-6. **Does anyone live in the Seam?** Four characters, three worlds and the
-   Fissure — the Seam, which is supposed to be the worst room in the game and
-   takes exactly two crystals of each, has nobody in it. `RunState.folk` is a
-   list rather than one slot partly for this. Not written and not asked for, and
-   it leans on question 3, which is about whether the Seam is what it claims to
-   be at all.
+3. **Does Strike ship with one Echo, or none?** The user's words were *"it
+   should just be a single target hit that hits pretty hard with ability to hit
+   extra targets"*, and it was built exactly that way: zero Echoes bare, the
+   whole branch bought. The measured cost is the parked wall check — an untreed Strike
+   character is now the ONLY build that dies in Demonic, at 11.5 damage taken a
+   second against Shockwave's 3.3. One base Echo at 70% would restore a melee
+   floor without giving anything back that reads as Area. **Not taken on his
+   behalf: it is his line about what the skill IS.**
 
-7. **The Lampwright's story is now BUILDABLE, which changes question 1.**
-   Question 1 has stood since trades landed: the trade acquisition is a
-   placeholder and is meant to come out of a storyline with him. The thing that
-   story would be told in is now BUILT and has been used three times — a room,
-   a person in it, beats you click through, and a panel at the end that does
-   something. Nothing about the story is written, so it is still question 1 and
-   still the user's; what has changed is that answering it is content under
-   `src/scenes/` rather than a system.
+4. **Is the Seam meant to be the hardest room, and is it?** Measured over 24
+   seeds it sat 0.7% BELOW four Demonic crystals on damage taken per second;
+   after the Normal pool became six generated bodies it is **-21.1%**. The cause
+   is structural: the Seam takes exactly two crystals of each world, so only half
+   its packs carry a Demonic aura and half a Prismatic one, where four Demonic
+   crystals put an aura in every pack. Making it genuinely worst means changing
+   what the composition DOES — both auras on one pack, or a Seam-only carrier —
+   which is a balance decision rather than a measurement. The gap also moves
+   several percent whenever anything in the sim changes, so the demo PRINTS the
+   margin rather than asserting an ordering.
 
-**Decisions taken inside the ladder, and what each one beat.** These are mine
-except where marked, made because the ask invited them and the work stalls
-without them. Any can be overruled cheaply while the phase is still on this
-list; each one is repeated in the phase it belongs to, so overruling one means
-editing two places.
+5. **Does anyone live in the Seam?** Four characters, three worlds and the
+   Fissure — the room that is supposed to be the worst in the game has nobody in
+   it. `RunState.folk` is a list partly for this. Leans on question 1.
 
-- **A graft replaces the IMPLICIT.** *The user's answer, asked and given.* The
-  line the base gave you goes and the forged one stands in its place, which
-  makes a graft a trade rather than a free upgrade. The alternative — replacing
-  a rolled modifier — would have been a currency that happens to be a man.
-- **A scene is a `RunSim` over an authored map**, rather than a second kind of
-  simulation beside it. A boss room is then one filled-in field instead of a
-  second engine, and both renderers draw a scene with no changes at all, because
-  they already draw a `RunState`.
-- **A scene arrives THROUGH the hole** at the end of a cleared descent, and
-  still ends the run. It keeps every rule the meeting already obeys and costs
-  nothing new.
-- **One scene per clear, in a fixed order**, rather than several at once or a
-  roll between them. A gift is scheduled and never rolled, and four schedules
-  that can interleave is four schedules nobody can read off a screen.
-- **A boss room is a descent**: its loot banks, its clear counts, dying in it
-  costs that room and stops the loop. The alternative — a room outside the loop
-  that pays nothing — is a cutscene with hit points.
-- **A boss key is a wallet entry in its own table**, not a `CurrencyDef` and not
-  an item. The ask said "probably just gain the required currency"; a real
-  currency is reachable by the bench's registries, which is a bench that can
-  pour a boss key onto a helmet.
-- **Relics are a third `ItemKind`**, not gear with a tag. `carryRoom`,
-  `addItem`, `sortGear` and every screen already branch on kind, and a corpse
-  that sorts into the dock beside a pair of boots is a corpse you sell by
-  accident.
-- **A graft leaves the armour rating alone**, adds where jewellery has no
-  implicit to replace, and can be done again over itself. Three small ones.
-- **A forged line belongs to the PERSON, not the slot.** `ForgedDef.who`. The
-  Astral-Geometer's phase said "for `ring` and `amulet` only", which described
-  the lines and not the panel — keyed by slot alone, the man who takes bodies
-  offered a ring the graft he had just said he had no opinion about.
+6. **Nothing but the Fissure hands out an element.** Every monster brings its
+   own, but which one is a flat roll off `MONSTER_ABILITIES` — a Rot pack is as
+   likely to throw frost as a Cavern one. Biasing the table by monster FAMILY
+   would make a world's fights feel like that world's: one field on
+   `MonsterFamilyDef` plus a weight lookup. Written down because the table it
+   needs already exists.
+
+7. **The Cavern and the Fissure have no currency of their own.**
+   `sigil_of_upheaval` is gated to Demonic and `sigil_of_finality` to the Seam;
+   the other two are gated to nothing. Every world now has uniques of its own —
+   the Fissure two — so this may already be paid. **Provisional, and mine:** left
+   as it is rather than inventing a gate. Ask before gating an EXISTING currency
+   to the Cavern; it would make a staple zone-locked.
+
+8. **What does a TRADE do in a boss fight?** Deferred at the user's word — *"skip
+   this for now and get the base mechanics feeling good."* The intent is ONE
+   unique interaction per trade, not a second system. Parked proposals: the
+   Alchemist's flask extends whichever face is live when it fires, since potions
+   are already that trade's engine; the Aethermancer refunds mana on a turn, so
+   weaving is how they stay full.
+
+10. **Do the chasms come back?** The whole drop system — `VOID`, ledges, walls
+   hanging into a hole, bridges — was built, judged and deleted at the user's
+   instruction (`83b8488`). How to draw one: the wall tile placed ONE ROW LOWER
+   than it is keyed (the same picture that reads as a wall standing up under
+   rock reads as one going down under ground), flanks turned a quarter, no near
+   wall, and the void taking no part in the light's blend or the floor fades out
+   at its own rim. The code is at `56d599a`. Never asked for twice; here so
+   nobody rediscovers the geometry.
+
+11. **The bundle, and the cheap lever nobody has pulled.** 6.33 MB, 1.15
+   gzipped — a pair variant costs ~50 KB of source, not the ~150 KB once feared,
+   because it is five states at ONE facing rather than a whole body. Nothing has
+   been trimmed and nothing needs to be on these numbers. **The lever, if a
+   number the user cares about ever appears:** a variant's IDLE is two frames and
+   its WALK is six, `BodySpec.frames` is the count KEPT rather than generated,
+   and `convert.mts` is re-runnable — so trimming costs nothing to try.
+
+12. **THE FLOWERING BUYS NO DIFFICULTY.** `dangerStep` saturates at 330 danger
+   and the rung alone reaches it at depth 17 of 42 — so the top 25 rungs have
+   monsters no harder than two zones down, at the same item level, paying more.
+   Measured, a ceiling build walks out of the deep end at 94% life where the
+   demo wants under 70%. `CLAUDE.md` says the saturation is deliberate ("it
+   saturates where the hero's item level does"), so fixing it changes a stated
+   rule: decouple `dangerStep` from run power, extend item level past 70 so both
+   caps move together, or accept that difficulty ends at The Refraction.
+   **Asked; not answered.** Phase 6 makes it worse, not better — a campaign zone
+   now floors the gear tier, so the last zone pays tier 3 for a fight it does
+   not make harder.
+
+---
 
 ## Backlog
 
-Real, deferred by decision. Not a queue — do not promote one into a phase
-without being asked.
+Real, deferred by decision. **Not a queue — do not promote one into a phase
+without being asked.**
 
-- **Whether a trade has exactly one right skill.** `RULES.md` states the line:
-  favouring a skill is fine, requiring one is a skill node that got lost. It is
-  UNANSWERABLE today — `MAIN_SKILLS` holds three, which is too few to tell a
-  favourite from a requirement — so the demo prints what each trade is worth
-  per skill and asserts nothing. Deferred by the user's decision, and what
-  un-defers it is a wider roster, not a measurement.
-- **Jewellery has three rungs but no implicit.** `amulet`/`jade_amulet`/
-  `onyx_amulet` and `ring`/`silver_band`/`gold_band` differ in exactly one
-  way: how many modifiers they hold. That is the clearest statement of what a
-  base tier is, and it is also the least interesting pair of slots in the
-  game. Implicits for them would fix that; they are a balance change, so not
-  in a phase about capacity — and the Astral-Geometer leans on it rather than
-  fixing it: a graft ADDS on jewellery because there is nothing to replace, so
-  the line that changes the delivery charges mana instead. Giving jewellery
-  implicits would change what that graft costs, which is the balance pass's.
-- **Fewer items per clear.** Measured before the tooltip and shop work: gear
-  is rolled per KILL at `gearChance × yield × (1 + rarity/200)`, roughly **two
-  to eleven pieces a clear** across the bands. The plan was to halve that and
-  gate the three armour tiers behind power thresholds, so quantity resets down
-  each time quality steps up, with gold per clear held flat across a
-  threshold — crossing one must never read as a demotion.
-  **The two things it was waiting on have landed.** Base tiers now gate
-  themselves through item level, tooltips are readable, and Sell mode plus
-  buy-back mean a heap of drops is a few clicks rather than a chore. So the
-  question is now answerable rather than deferred: play it, and if it still
-  feels like too much, measure the rate before changing it.
-- **A first descent can drop nothing at all.** Gear rolls at 5% a kill, so
-  about a third of first clears bank an empty haul — which is a new player
-  meeting the loop's payoff screen with nothing in it. A guaranteed first drop
-  is the obvious answer. Written down as the opening's, and it outlived it.
-- **No per-item "keep" rule for the haul.** Every drop goes to the haul and
-  triage is manual. A filter that hides a drop is the kind of thing you only get
-  right once you know what a good drop looks like — and now that uniques drop,
-  the answer has moved.
-- **Blight, Strike and Fireball are not the same game.** The old note here said
-  Blight cleared the top 12/12 against Strike's 3/12. That number is dead;
-  `TRADE RULES` now measures all three at the deep end every run, and it reads
-  **Fireball 7.50, Strike 4.37, Blight 3.90 kills/s** with no trade — so the
-  ordering has entirely inverted since, and Fireball is now the outlier at
-  roughly twice Blight. Do not act on it outside the balance pass: it is three
-  skills, and the demo prints it fresh on every run.
-- **A third way to get rid of a piece.** Selling is now a mode with a buy-back
+- **THE OSSUARY HAS TO BE REDONE AS A DEMONIC ROOM.** *The user's call: "know
+  that the ostemancer room needs to be comepletely redone as it needs to be a
+  demonci themed room. DOnt do it now just know that it needs to be changed
+  eventually."* It is `theme: 'demonic'` already, so it draws the Rot's set —
+  what is wrong is what is IN it: a bed of pale gemstone is the Cavern's
+  furniture, authored before the Prismatic room existed to want it. Its old
+  arrangement now lives in `reading-room.ts`. What he stands in instead is
+  unwritten and the props do not exist. **Asked for, and explicitly not now.**
+- **The Demonic and Prismatic pools are still hand-drawn, six bodies each** —
+  the mismatch the Fissure stopped having, a generated floor with hand-drawn
+  bodies on it. Twelve bodies is roughly 800 generations and a lot of judging;
+  about 0.5 MB of `generated-art.ts`. The cheaper shape, if it is ever wanted, is
+  to cut those pools to six silhouettes each the way Normal was cut and generate
+  only what survives. **Not asked for.**
+- **NO zone has furniture of its own, and that is a decision rather than a gap.**
+  The rock dresses all four and nothing stands on any of those floors, because
+  the arrangements were cut at the user's word. `VIGNETTES` and `dressRooms`
+  survive with no caller, so bringing furniture back is one call and a table —
+  plus roughly fifteen `create_map_object` generations a zone and a `tone` pass,
+  since existing props are toned to pale sand. **Do not promote this without
+  being asked** — a descent with nothing standing on it is what was asked for,
+  and it looked better.
+- **`livingDecals` went quiet in three zones, and two of them were made of it.**
+  A `bare` map stands the zone's own motion down, which cost the Fissure nothing
+  and cost the Rot and the Cavern their stirring surfaces — the whole of what
+  made those two read as alive. A generated tileset is a still picture and
+  always will be. Whether the motion comes back over a set, as animated props,
+  or not at all is unanswered.
+- **Whether a trade has exactly one right skill.** The line is that favouring a
+  skill is fine and requiring one is a skill node that got lost. It is
+  UNANSWERABLE until the roster is wider, so the demo prints what each trade is
+  worth per skill and asserts nothing. **Do not tune to that print and do not
+  add a check that fails on it.**
+- **No gear line reduces a movement skill's cooldown.** The user's own aside —
+  *"a movement skill thats buffed with some CDR (i know we dont have this yet)"*.
+  `moveCooldown` is a declared grant with a product merge and `say` already
+  written; the only source is `Quickening` inside each mover's own web. A gear
+  mod would be one `ModDef` in `GEAR_UTILITY_MODS` carrying `grants:
+  { moveCooldown: n }` — but `ModDef.grants` sits on the FAMILY and not on the
+  tier, so it is one fixed value or one family per value. The boss now reads
+  right without it, so this is a want rather than a gap.
+- **A first descent can drop nothing at all.** The bare Fissure's budget is 1.3
+  pieces a clear and a fractional budget is spread as a chance, so some first
+  clears bank nothing — a new player meeting the payoff screen with an empty one.
+  A guaranteed first drop is the obvious answer.
+- **Blight, Strike and Fireball are not the same game.** `TRADE RULES` measures
+  all three at the deep end every run and reads Fireball 7.50, Strike 4.37,
+  Blight 3.90 kills/s with no trade — an ordering that has entirely inverted
+  since the old note here. Do not act on it outside the balance pass.
+- **A third way to get rid of a piece.** Selling is a mode with a buy-back
   behind it, which is enough that this is no longer urgent — but everything
-  still ends at the same counter, and a game where the only verb is "sell" has
-  one verb.
-- Four-frame walks for the bestiary, if the creatures ever grow legs worth
-  animating.
-- **A drawn recovery frame per creature.** They have one `attack` grid each and
-  hold it for the whole swing. The hero does not — `poseOf` indexes
-  `SWING_POSES` by how far through the swing the entity is — so the fix is that
-  same treatment plus 21 more grids in `src/render/bestiary.ts`.
+  still ends at the same counter, and a game whose only verb is "sell" has one
+  verb.
+- **A drawn recovery frame per creature.** Hand-drawn bodies have one `attack`
+  grid each and hold it for the whole swing; the fix is 21 more grids in
+  `src/render/bestiary.ts`. Four-frame walks the same way, if they ever grow
+  legs worth animating.

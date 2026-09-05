@@ -3,15 +3,18 @@
  * what it earned. The overlay knows nothing about what the rows mean, so a new
  * stat is a line in buildReport() and nothing else.
  */
-import { bankToHaul, grantFirstClear, haulFull } from './state';
+import { bagsFull, bankLoot, grantFirstClear } from './state';
 import type { GameState } from './state';
-import { advanceSocketed } from './crystals';
+import { advanceSocketed, spendSocketed } from './crystals';
+import { collectWork, payGathering, professionAt, spendMeal } from './work';
+import type { Finished, GatherGain } from './work';
+import type { ModBurn } from './crystals';
 import type { CrystalGain } from './crystals';
 import { grant } from '../economy';
-import { DAMAGE_TYPE_BY_ID } from '../data';
-import { addXp, addSkillXp, mainSkillId } from '../sim/character';
+import { DAMAGE_TYPE_BY_ID, MAIN_SLOT, PROFESSION_BY_ID, SKILL_SLOTS } from '../data';
+import { addXp, addSkillXp, equippedSkill } from '../sim/character';
 import type { RunState } from '../sim/run';
-import type { Item } from '../types';
+import type { Item, RolledMod } from '../types';
 
 export interface ReportRow {
   label: string;
@@ -21,7 +24,7 @@ export interface ReportRow {
 }
 
 export interface RunReport {
-  /** `left` is walking out mid-descent: it banks like a death, without one. */
+  /** `left` is walking out mid-descent: it KEEPS the loot and buys no progress. */
   status: 'cleared' | 'died' | 'left';
   cleared: boolean;
   headline: string;
@@ -31,10 +34,19 @@ export interface RunReport {
   items: Item[];
   /** Crystals that gained a tier for being socketed through this. */
   levelled: CrystalGain[];
+  /** Rolls that ran out on this descent. A dry crystal ends an Enter-chain. */
+  burnt: ModBurn[];
+  /** Jobs that came off a station while you were down there. */
+  worked: Finished[];
+  /** What the gathering professions took off this descent, and any level. */
+  gathered: GatherGain[];
+  /** The meal that ran out on this descent, if one did. Ends an Enter-chain? No
+   *  — a meal is a buff you replace, never a thing you cannot descend without. */
+  eaten: RolledMod | null;
   /** True when there was loot and the hero died holding it. */
   lostLoot: boolean;
-  /** Whether the haul is at or over capacity now this run has banked. */
-  haulFull: boolean;
+  /** Whether the bag is at or over its limit now this run has banked. */
+  bagsFull: boolean;
   xp: number;
   levelsGained: number;
 }
@@ -47,31 +59,37 @@ function currencyRows(currency: Record<string, number>): ReportRow[] {
     .map(([id, n]) => ({ label: id, value: `+${round(n)}` }));
 }
 
-/**
- * Loot only transfers on a CLEAR. Dying drops everything the run carried, and
- * so does walking out — but only for THIS descent: every clear before it
- * banked as it happened, and nothing reaches back for those.
- */
+/** Loot comes home unless you DIED holding it, and that is only ever THIS
+ *  descent: every clear before it banked as it happened. */
 export function buildReport(game: GameState, run: RunState, left = false): RunReport {
   const cleared = run.status === 'cleared' && !left;
+  const keeps = cleared || left;
   const hadLoot = Object.values(run.loot.currency).some((n) => round(n) > 0);
 
   const banked: Record<string, number> = {};
   let levelled: CrystalGain[] = [];
+  let burnt: ModBurn[] = [];
+  let worked: Finished[] = [];
+  let gathered: GatherGain[] = [];
+  let eaten: RolledMod | null = null;
+  let kept: Item[] = [];
 
-  if (cleared) {
-    game.clears = (game.clears ?? 0) + 1; // before `giftWaiting` is asked
-
+  if (keeps) {
     for (const [id, amount] of Object.entries(run.loot.currency)) {
       const n = round(amount);
       if (n <= 0) continue;
       banked[id] = n;
       grant(game.wallet, id, n);
     }
-    // Whole, into the haul: the bags are yours to arrange and a run is not
-    // allowed to fill them behind your back. Nothing is refused here, so
-    // capacity is a thing checked between runs rather than during one.
-    bankToHaul(game, run.loot.items);
+    // Everything the floor paid, into the bag. Nothing is refused here, so
+    // capacity is a thing checked between runs rather than during one, and a
+    // descent that overfills the bag by three is a bag reading 35/32.
+    kept = bankLoot(game, run.loot.items).kept;
+    gathered = payGathering(game, run.loot.items);
+  }
+
+  if (cleared) {
+    game.clears = (game.clears ?? 0) + 1; // before `giftWaiting` is asked
 
     // The opening payout. Folded into the same banked/items shape so the
     // overlay shows it as loot rather than it appearing silently in the bag.
@@ -86,15 +104,29 @@ export function buildReport(game: GameState, run: RunState, left = false): RunRe
     // Socketed only. A crystal in a bag is a crystal that was not used, and
     // this is what makes a socket spent on a fresh one cost something.
     levelled = advanceSocketed(game, run.set);
+    burnt = spendSocketed(game);
+    // WHAT YOU ATE burns down on a clear too, off the same rule.
+    eaten = spendMeal(game);
   }
+  // THE STATIONS RUN ON THE CLOCK, so what finished while you were down there
+  // is collected whether you cleared, died or walked.
+  worked = collectWork(game);
 
   // XP is earned either way — you learned something on the way to dying.
   const xp = Math.round(run.xpGained);
   const levelsGained = addXp(game.character, xp);
 
-  // The active skill shares the same XP. That's what makes committing to one
-  // skill the thing that advances its tree.
-  const skillLevels = addSkillXp(game.character, mainSkillId(game.character), xp);
+  // EVERY equipped skill shares the same XP, over the slot table. Paid to the
+  // main one alone, a mover's web sits at level 1 holding one point forever.
+  // "Committing to one skill advances its tree" is about the MAIN slot, and
+  // you only ever hold one mover and one passive.
+  let skillLevels = 0;
+  for (const slot of SKILL_SLOTS) {
+    const held = equippedSkill(game.character, slot.id);
+    if (!held) continue;
+    const gained = addSkillXp(game.character, held, xp);
+    if (slot.id === MAIN_SLOT) skillLevels = gained;
+  }
 
   const rows: ReportRow[] = [
     { label: 'time', value: `${run.elapsed.toFixed(1)}s` },
@@ -109,17 +141,47 @@ export function buildReport(game: GameState, run: RunState, left = false): RunRe
     rows.push({ label: 'skill levels', value: `+${skillLevels}` });
   }
 
-  if (cleared && run.loot.items.length > 0) {
-    rows.push({ label: 'sent to the haul', value: String(run.loot.items.length) });
+  if (keeps && kept.length > 0) {
+    rows.push({ label: 'into your bags', value: String(kept.length) });
   }
   for (const gain of levelled) {
     rows.push({ label: gain.crystal.name, value: `+${gain.levels} level` });
   }
+  // WHAT RAN OUT — the whole point of a use is that you feel it end.
+  for (const burn of burnt) {
+    rows.push({ label: `${burn.crystal.name} · ${burn.name}`, value: 'used up' });
+  }
+
+  // WHAT CAME OFF A STATION while you were down there, said with the level it
+  // bought: a job that finished silently is a job nobody knew was running.
+  for (const done of worked) {
+    const profession = PROFESSION_BY_ID[done.job.profession];
+    rows.push({
+      label: `${profession?.name ?? done.job.profession} · ${done.item.name}`,
+      value: done.levels > 0
+        ? `+${done.job.n}, level ${professionAt(game, done.job.profession).level}`
+        : `+${done.job.n}`,
+    });
+  }
+
+  // AND WHAT THE TOOLS LEARNED. Only a level is worth a row: the raw itself is
+  // already in the haul above, so printing it twice says nothing new.
+  for (const gain of gathered.filter((g) => g.levels > 0)) {
+    rows.push({
+      label: PROFESSION_BY_ID[gain.profession]?.name ?? gain.profession,
+      value: `level ${professionAt(game, gain.profession).level}`,
+    });
+  }
+
+  if (eaten) rows.push({ label: eaten.name, value: 'eaten up', bad: true });
 
   // Damage taken, split by type — worst first and under its own name, because
   // a monster brings its own element now and a descent routinely shows three
   // of these. What you read off it is which resistance to go and find.
   const totalTaken = Object.values(run.damageTaken).reduce((n, v) => n + v, 0);
+  if (run.blocked > 0) {
+    rows.push({ label: 'hits blocked', value: String(run.blocked) });
+  }
   if (totalTaken > 0) {
     rows.push({ label: 'damage taken', value: String(round(totalTaken)) });
     const split = Object.entries(run.damageTaken)
@@ -136,13 +198,17 @@ export function buildReport(game: GameState, run: RunState, left = false): RunRe
   return {
     status: left ? 'left' : cleared ? 'cleared' : 'died',
     cleared,
-    headline: left ? 'You walked out' : cleared ? 'Fissure cleared' : 'You died',
+    headline: left ? 'Back at camp' : cleared ? 'Fissure cleared' : 'You died',
     rows,
     banked,
-    items: cleared ? [...run.loot.items] : [],
+    items: keeps ? [...kept] : [],
     levelled,
-    lostLoot: !cleared && hadLoot,
-    haulFull: haulFull(game),
+    burnt,
+    worked,
+    gathered,
+    eaten,
+    lostLoot: !keeps && hadLoot,
+    bagsFull: bagsFull(game),
     xp: Math.round(run.xpGained),
     levelsGained,
   };

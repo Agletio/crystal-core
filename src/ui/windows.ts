@@ -4,12 +4,12 @@
  * A drag is a DELTA on top of the position CSS gave the card — `--wx` / `--wy`
  * — so a window nobody moved sits where the layout put it, and a default that
  * changes still reaches one that has been dragged. Stacking is by recency: the
- * last card you touched is on top and is what Escape answers. The registry
- * comes off the table of screens in `src/web.ts`, so a screen is still four
- * places rather than five.
+ * last card you touched is on top and is what Escape answers.
  */
 
-/** The band, `Z_BASE + position in the stack`. Above the HUD, under the rail. */
+/** The band, `Z_BASE + position in the stack`. Above the HUD, under the scrim
+ *  at 62 and the rail at 64 — so it holds 42 screens, and the smoke check
+ *  "a scrim covers every window" is what says when it stops. */
 const Z_BASE = 20;
 
 /** How much of a dragged card must stay on screen. Its head is 46px tall. */
@@ -49,7 +49,43 @@ const watcher = new MutationObserver((records) => drain(records));
 function drain(records = watcher.takeRecords()): void {
   for (const record of records) {
     const id = named.get(record.target);
-    if (id && !(record.target as HTMLElement).hidden) raiseWindow(id);
+    if (id && !(record.target as HTMLElement).hidden) {
+      unbury(id);
+      raiseWindow(id);
+    }
+  }
+}
+
+/** Stacked centred cards align, so a window can OPEN square over another one's
+ *  head — the only handle the buried one has. A colliding open steps down-right
+ *  until it does not; a card somebody dragged is theirs and is left alone. */
+const CASCADE = 36;
+function unbury(id: string): void {
+  const win = wins.get(id);
+  if (!win || win.card === win.layer) return; // the dock has a place of its own
+  if (win.card.classList.contains('win--moved')) return;
+  if (win.card.classList.contains('modal__card--bubble')) return; // anchored to a speaker
+  const heads = [...wins.entries()]
+    .filter(([other, w]) => other !== id && !w.layer.hidden && w.card !== w.layer
+      && !w.card.classList.contains('modal__card--bubble'))
+    .map(([, w]) => w.card.querySelector('.modal__head')?.getBoundingClientRect())
+    .filter((box): box is DOMRect => !!box);
+  if (heads.length === 0) return;
+  for (let go = 0; go < 3; go++) {
+    const box = win.card.getBoundingClientRect();
+    const covered = heads.some((h) => {
+      const cx = h.left + h.width / 2;
+      const cy = h.top + h.height / 2;
+      return cx > box.left && cx < box.right && cy > box.top && cy < box.bottom;
+    });
+    if (!covered) return;
+    // A step it cannot AFFORD is a step that pushes its own foot off the
+    // screen: the stations card stands the full height it is allowed, so three
+    // of these cut the workers off the bottom. A window nobody moved may only
+    // ever be stepped INSIDE the viewport.
+    if (box.bottom + CASCADE > globalThis.innerHeight || box.right + CASCADE > globalThis.innerWidth) return;
+    const off = windowOffset(win.card);
+    settle(win.card, off.x + CASCADE, off.y + CASCADE);
   }
 }
 

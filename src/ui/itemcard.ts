@@ -1,17 +1,30 @@
 /**
- * One item, drawn the way every screen draws it. The dock, the haul, the
+ * One item, drawn the way every screen draws it. The dock, the shop, the
  * stash, the shelf, the sheet and the bench each built their own string out of
  * the same four facts, so the game said an item six slightly different ways
  * and none could use colour. The split `statParts` makes is the point: the
  * rolled NUMBER is one colour and the modifier's name another.
  */
-import { baseTier, modCapacity, slotTypes, tierName } from '../mods';
+import { baseTier, fullUses, modCapacity, slotTypes, tierName } from '../mods';
 import { statParts } from '../mod-text';
 import { crystalFamily, rewardRows } from '../sim/crystal';
 import { crystalProgress } from '../game/crystals';
-import { FAMILY_BY_ID, RELIC_BY_ID, UNIQUE_BY_ID } from '../data';
+import {
+  FAMILY_BY_ID,
+  GEAR_BASE_BY_ID,
+  MATERIAL_BY_ID,
+  MATERIAL_FAMILY_BY_ID,
+  MOD_BY_ID,
+  PERFECT,
+  RELIC_BY_ID,
+  THEME_BY_ID,
+  UNIQUE_BY_ID,
+} from '../data';
+import { isPerfect } from '../economy';
 import { GRANT_BY_ID } from '../sim/grants';
+import { weaponSwing } from '../sim/stats';
 import { glossaryOf, keywordLine } from './glossary';
+import { itemIcon } from './icons';
 import type { Item, RolledMod } from '../types';
 
 function el(tag: string, cls?: string, text?: string): HTMLElement {
@@ -38,11 +51,34 @@ export function statLines(mod: RolledMod): HTMLElement[] {
   return mod.stats.map(statLine);
 }
 
-/** One modifier: its stats, then the tier and family that produced them. */
+/** What one modifier SWITCHES, in its own numbers, off the table by `defId` —
+ *  the path `treeGrants` reads. A line whose whole effect is a grant, which is
+ *  every forged one, says nothing at all without this. */
+export function grantLines(mod: RolledMod): HTMLElement[] {
+  const out: HTMLElement[] = [];
+  for (const [id, value] of Object.entries(MOD_BY_ID[mod.defId]?.grants ?? {})) {
+    const said = GRANT_BY_ID[id]?.say?.(value) ?? GRANT_BY_ID[id]?.what;
+    if (said) out.push(keywordLine(said, 'tip__grant'));
+  }
+  return out;
+}
+
+/** One modifier: its stats, its switches, then the tier and family behind them. */
 function modBlock(mod: RolledMod, named: boolean): HTMLElement {
   const block = el('div', 'tip__mod');
   for (const line of mod.stats) block.append(statLine(line));
-  if (named) block.append(el('div', 'tip__modname', `T${mod.tier} ${mod.name}`));
+  block.append(...grantLines(mod));
+  if (named) {
+    const foot = el('div', 'tip__modname', `T${mod.tier} ${mod.name}`);
+    // WHAT IS LEFT OF IT, out of what it started with — the number a player
+    // plans around, and the last descent has to read as the last one.
+    if (mod.uses !== undefined) {
+      const left = el('span', mod.uses <= 1 ? 'tip__uses tip__uses--last' : 'tip__uses',
+        ` · ${mod.uses} of ${fullUses(mod)} descents left`);
+      foot.append(left);
+    }
+    block.append(foot);
+  }
   return block;
 }
 
@@ -67,9 +103,14 @@ export function itemCard(item: Item, notes: string[] = []): HTMLElement {
       (unique ? ' tip__card--unique' : '')
   );
 
+  // The art beside the name: the same icon the slot shows, big enough to read.
+  const head = el('div', 'tip__head');
+  head.append(itemIcon(item, 36));
   const name = el('div', 'tip__name', item.name);
   if (unique) name.classList.add('tip__name--unique');
-  card.append(name);
+  if (isPerfect(item)) name.classList.add('tip__name--perfect');
+  head.append(name);
+  card.append(head);
 
   // A relic is not on any ladder: no tier, no item level and no capacity. What
   // it IS is the whole card, and the person who wants it is the rest.
@@ -77,6 +118,27 @@ export function itemCard(item: Item, notes: string[] = []): HTMLElement {
     const def = RELIC_BY_ID[item.base];
     card.append(el('div', 'tip__sub', 'Relic'));
     if (def) card.append(el('div', 'tip__flavour', def.flavour));
+    for (const note of notes) card.append(el('div', 'tip__note', `— ${note}`));
+    return card;
+  }
+
+  // A material has no ladder either: what it IS is a family and a world, and
+  // how many you hold. It has NO tier — a version, never a better version.
+  if (item.kind === 'material') {
+    const def = MATERIAL_BY_ID[item.base];
+    const family = def?.family ? MATERIAL_FAMILY_BY_ID[def.family] : undefined;
+    const world = def ? THEME_BY_ID[def.world]?.name : undefined;
+    card.append(
+      el(
+        'div',
+        'tip__sub',
+        [family?.name ?? 'Rare material', world, item.meta.done ? 'worked' : 'raw']
+          .filter(Boolean)
+          .join(' · ')
+      )
+    );
+    card.append(el('div', 'tip__note', `${(item.meta.n as number) ?? 1} held`));
+    if (def) card.append(el('div', 'tip__flavour', def.description));
     for (const note of notes) card.append(el('div', 'tip__note', `— ${note}`));
     return card;
   }
@@ -89,6 +151,14 @@ export function itemCard(item: Item, notes: string[] = []): HTMLElement {
   // fact about a ladder it is not on.
   if (!unique) facts.push(`${item.mods.length}/${modCapacity(item)} modifiers`);
   card.append(el('div', 'tip__sub', facts.join(' · ')));
+
+  // PERFECT. Said with its figure, because the whole of what it is is a number:
+  // the base's own lines are 25% higher and nothing else about it differs.
+  if (isPerfect(item)) {
+    card.append(
+      el('div', 'tip__perfect', `Perfect — ${Math.round(PERFECT.lift * 100)}% more from the base`)
+    );
+  }
 
   // Locked is the one state worth saying twice: the border carries it across
   // the screen, and the word carries it for anyone who has not learnt the
@@ -109,12 +179,29 @@ export function itemCard(item: Item, notes: string[] = []): HTMLElement {
 
   // The base, or what stands where it stood: a grafted line under a heading
   // reading "base" is a lie about where it came from.
-  if (item.armour || item.implicits.length > 0) {
+  const hands = GEAR_BASE_BY_ID[item.base]?.hands ?? 1;
+  const swings = item.damage ?? GEAR_BASE_BY_ID[item.base]?.damage ?? 0;
+  if (item.armour || item.implicits.length > 0 || hands > 1 || swings > 0) {
     const base = group(item.meta.grafted !== undefined ? 'grafted' : 'base');
+    // What it costs to hold, said where the rest of the base is said: an off
+    // hand emptied by a weapon nobody told you was two-handed reads as a bug.
+    if (hands > 1) {
+      const row = el('div', 'rolled');
+      row.append(el('span', 'rolled__v', String(hands)));
+      row.append(el('span', 'rolled__k', 'Hands — your off hand stays empty'));
+      base.append(row);
+    }
     if (item.armour) {
       const row = el('div', 'rolled');
       row.append(el('span', 'rolled__v', String(item.armour)));
       row.append(el('span', 'rolled__k', 'Armour'));
+      base.append(row);
+    }
+    // What it SWINGS for, before the implicits, because they act ON it.
+    if (swings > 0) {
+      const row = el('div', 'rolled');
+      row.append(el('span', 'rolled__v', String(Math.round(weaponSwing(item)))));
+      row.append(el('span', 'rolled__k', 'Physical Damage to Attacks'));
       base.append(row);
     }
     for (const imp of item.implicits) base.append(modBlock(imp, false));

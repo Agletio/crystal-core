@@ -6,8 +6,15 @@
  * finer grid only buys detail nobody looks at. Inline SVG rather than a canvas
  * cell — these sit in buttons, and `CELL` does not bind them.
  */
+import { GENERATED_ICONS } from '../render/generated-icons';
+
+/** A rail button's GENERATED glyph, `rail_<screen>` in the icon table; the
+ *  grids below are the fallback for a button nobody has asked one for. */
+const railGlyph = (id: string): string => `rail_${id.replace(/^(open|ui)-/, '')}`;
+
 const ICONS: Record<string, string[]> = {
-  'open-inventory': [
+  // The crack: a slab of rock with the light coming up through a split in it.
+    'open-inventory': [
     '..........',
     '..#....#..',
     '.########.',
@@ -29,54 +36,6 @@ const ICONS: Record<string, string[]> = {
     '..######..',
     '.########.',
     '##########',
-    '..........',
-  ],
-  'open-shop': [
-    '..........',
-    '..######..',
-    '.##++++##.',
-    '.#+####+#.',
-    '.#+#..#+#.',
-    '.#+#..#+#.',
-    '.#+####+#.',
-    '.##++++##.',
-    '..######..',
-    '..........',
-  ],
-  'open-haul': [
-    '..........',
-    '.########.',
-    '.#+....+#.',
-    '.#.####.#.',
-    '.#.#++#.#.',
-    '.#.####.#.',
-    '.#+....+#.',
-    '.########.',
-    '..........',
-    '..........',
-  ],
-  'open-crystals': [
-    '..........',
-    '...####...',
-    '..#++++#..',
-    '.#++##++#.',
-    '.#+####+#.',
-    '..#++++#..',
-    '...#++#...',
-    '....##....',
-    '..........',
-    '..........',
-  ],
-  'open-stash': [
-    '..........',
-    '..######..',
-    '.########.',
-    '.#+####+#.',
-    '.########.',
-    '.#..##..#.',
-    '.#..##..#.',
-    '.########.',
-    '..........',
     '..........',
   ],
   'open-character': [
@@ -139,6 +98,18 @@ const ICONS: Record<string, string[]> = {
     '..........',
     '..........',
   ],
+  'open-settings': [
+    '..........',
+    '....##....',
+    '.#.####.#.',
+    '.########.',
+    '..##++##..',
+    '..##++##..',
+    '.########.',
+    '.#.####.#.',
+    '....##....',
+    '..........',
+  ],
   'ui-hide': [
     '..........',
     '..........',
@@ -163,7 +134,7 @@ const ICONS: Record<string, string[]> = {
     '.###..###.',
     '..........',
   ],
-  'dev-kit': [
+  'open-dev': [
     '..........',
     '..#....#..',
     '..######..',
@@ -179,9 +150,6 @@ const ICONS: Record<string, string[]> = {
 
 export const GRID = 10;
 
-/** Every id that has one, so a rail cannot list a button with no glyph. */
-export const hasIcon = (id: string): boolean => id in ICONS;
-
 const NS = 'http://www.w3.org/2000/svg';
 
 /** Any grid of `#` ink and `+` accent as an SVG. The flasks draw through this
@@ -190,8 +158,12 @@ export function gridIcon(rows: string[], size: number, extra?: string): SVGSVGEl
   const span = rows[0]?.length ?? GRID;
   const svg = document.createElementNS(NS, 'svg');
   svg.setAttribute('viewBox', `0 0 ${span} ${rows.length}`);
+  // `size` is the WIDTH and the height follows the grid, or a mark that is not
+  // square is squashed into one. Every rail icon is 10x10, so this is a no-op
+  // for them and the whole of what lets the title's mark be wider than it is
+  // tall.
   svg.setAttribute('width', String(size));
-  svg.setAttribute('height', String(size));
+  svg.setAttribute('height', String(Math.round((size * rows.length) / span)));
   svg.setAttribute('aria-hidden', 'true');
   svg.classList.add('sicon');
   if (extra) svg.classList.add(extra);
@@ -220,7 +192,35 @@ export function gridIcon(rows: string[], size: number, extra?: string): SVGSVGEl
   return svg;
 }
 
+/** A generated glyph carries its own colours: one path per ink. */
+function inkedIcon(art: { grid: number; rows: string[]; key: Record<string, string> }, size: number): SVGSVGElement {
+  const svg = document.createElementNS(NS, 'svg');
+  svg.setAttribute('viewBox', `0 0 ${art.grid} ${art.grid}`);
+  svg.setAttribute('width', String(size));
+  svg.setAttribute('height', String(size));
+  svg.setAttribute('aria-hidden', 'true');
+  svg.classList.add('sicon', 'sicon--inked');
+  const runs = new Map<string, string[]>();
+  art.rows.forEach((row, y) => {
+    for (let x = 0; x < row.length; x++) {
+      const ink = art.key[row[x]];
+      if (!ink) continue;
+      if (!runs.has(ink)) runs.set(ink, []);
+      runs.get(ink)!.push(`M${x} ${y}h1v1h-1z`);
+    }
+  });
+  for (const [ink, cells] of runs) {
+    const path = document.createElementNS(NS, 'path');
+    path.setAttribute('d', cells.join(''));
+    path.setAttribute('fill', ink);
+    svg.append(path);
+  }
+  return svg;
+}
+
 export function screenIcon(id: string, size = 18): SVGSVGElement | null {
+  const made = GENERATED_ICONS[railGlyph(id)];
+  if (made) return inkedIcon(made, size);
   const rows = ICONS[id];
   return rows ? gridIcon(rows, size) : null;
 }

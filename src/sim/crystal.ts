@@ -8,12 +8,19 @@ import {
   DROP_GROUPS,
   FAMILY_BY_ID,
   FAMILY_YIELD,
+  CRYSTAL_LEVELS,
+  LADDER,
+  PROVING,
   MONSTER_FAMILIES,
   POWER,
   REWARD,
   bandFor,
+  tierForLevel,
 } from '../data';
-import { dropBias } from './stats';
+import { dropBias, provingMod, rungMod } from './stats';
+import { isProving } from '../ladder';
+import type { RunWhere } from '../ladder';
+import { dangerScore } from '../mods';
 import type { DropBand } from '../data';
 import type { Item, MapTheme, MonsterFamily, RolledMod } from '../types';
 
@@ -26,7 +33,12 @@ export interface CrystalRewards {
   rarity: number;
 }
 
-/** No tag filter, and NOT computeStat: these are design metrics, not combat. */
+export function crystalRewards(mods: RolledMod[]): CrystalRewards {
+  const { danger, paying } = dangerScore(mods);
+  return { danger, payingDanger: paying, rarity: paying * REWARD.rarityPerDanger };
+}
+
+// No tag filter, and NOT computeStat: a design metric, not combat.
 function totalOf(mods: RolledMod[], stat: string): number {
   let total = 0;
   for (const mod of mods) {
@@ -37,19 +49,13 @@ function totalOf(mods: RolledMod[], stat: string): number {
   return total;
 }
 
-export function crystalRewards(mods: RolledMod[]): CrystalRewards {
-  let danger = 0;
-  let payingDanger = 0;
-
-  for (const [stat, def] of Object.entries(DANGER_STATS)) {
-    const amount = Math.min(totalOf(mods, stat), def.cap ?? Infinity);
-    if (amount === 0) continue;
-    const scored = amount * def.weight;
-    danger += scored;
-    if (def.rewards) payingDanger += scored;
-  }
-
-  return { danger, payingDanger, rarity: payingDanger * REWARD.rarityPerDanger };
+/** THE BEST BASE A RUN MAY DROP, off the MEAN LEVEL socketed — every socket
+ *  counts, so one good crystal cannot carry three blanks. It caps the base's
+ *  TIER and never its item level: a cycle is WELL-ROLLED t1, not bad t1. */
+export function tierForSet(crystals: Item[]): number {
+  if (crystals.length === 0) return 1;
+  const mean = crystals.reduce((n, c) => n + Number(c.meta.level ?? 1), 0) / crystals.length;
+  return tierForLevel(Math.floor(mean));
 }
 
 /** A crystal from before families, or one naming a family that was retired. */
@@ -79,20 +85,50 @@ export function dominantFamily(share: Composition): MonsterFamily {
 }
 
 /** Half of one family takes the rock; two halves and no Normal is the Seam,
- *  which therefore takes exactly two of each and cannot be stumbled into. */
-export function mapTheme(share: Composition): MapTheme {
+ *  so it takes exactly two of each and cannot be stumbled into. */
+export const crystalXp = (crystal: Item): number => Number(crystal.meta.xp) || 0;
+
+/** The highest level that much experience has paid for. */
+export function levelForXp(xp: number): number {
+  let level = CRYSTAL_LEVELS[0].level;
+  for (const def of CRYSTAL_LEVELS) {
+    if (xp >= def.xp) level = def.level;
+  }
+  return level;
+}
+
+/** The level a crystal is standing at, whatever its stored fields say. */
+export const crystalLevel = (crystal: Item): number =>
+  Number(crystal.meta.level) || levelForXp(crystalXp(crystal));
+
+/** THE SEAM IS SOCKETED FOR, never picked. *"Socketing 2 lvl 4 prismatic and 2
+ *  lvl 4 demonic gives you the seam."* `PROVING.seamOf` of each aura world at
+ *  the TOP level and nothing else: the last world is the whole wall spent. */
+export function seamSocketed(crystals: Item[]): boolean {
+  const top = CRYSTAL_LEVELS[CRYSTAL_LEVELS.length - 1].level;
+  const at = (family: MonsterFamily): number =>
+    crystals.filter((c) => crystalFamily(c) === family && crystalLevel(c) >= top).length;
+  return (
+    crystals.length === PROVING.seamOf * 2 &&
+    at('demonic') === PROVING.seamOf &&
+    at('prismatic') === PROVING.seamOf
+  );
+}
+
+/** WHICH WORLD a set opens onto: a majority share, or the SEAM, which is the
+ *  one exception and the one thing a level buys outright. */
+export function mapTheme(crystals: Item[]): MapTheme {
+  if (seamSocketed(crystals)) return 'seam';
+  const share = composition(crystals);
   const half = 0.5 - 1e-6;
-  if (share.normal <= 1e-6 && share.demonic >= half && share.prismatic >= half) return 'seam';
   if (share.demonic >= half) return 'demonic';
   if (share.prismatic >= half) return 'prismatic';
   return 'fissure';
 }
 
-/**
- * Which family each pack belongs to, exact rather than rolled: a set that came
- * out 30% demonic on the seed would make composition something you hope for.
- * Leftover packs go to the largest remainders, dealt round-robin to interleave.
- */
+/** Which family each pack belongs to, EXACT rather than rolled — 30% demonic on
+ *  the seed would make composition something you hope for. Leftovers go to the
+ *  largest remainders, dealt round-robin to interleave. */
 export function familyPlan(share: Composition, packs: number): MonsterFamily[] {
   const ids = MONSTER_FAMILIES.map((f) => f.id).filter((id) => share[id] > 0);
   const exact = ids.map((id) => share[id] * packs);
@@ -129,6 +165,8 @@ export interface RunSet {
   /** See POWER. 0 is the bare Fissure. */
   power: number;
   band: DropBand;
+  /** Best base TIER this run can drop: what the SOCKETS buy. */
+  maxTier: number;
   composition: Composition; // which monsters, in what share; never how hard
   theme: MapTheme; // which world the rock is; follows the composition
   /** 1 when the two other worlds are split evenly, 0 when neither is here. */
@@ -139,8 +177,22 @@ export interface RunSet {
   pays: { gold: number; currency: number; rarity: number };
 }
 
-export function runSet(crystals: Item[]): RunSet {
-  const mods = crystals.flatMap((c) => c.mods);
+export function runSet(
+  crystals: Item[],
+  standing?: RolledMod | null,
+  at?: RunWhere | null
+): RunSet {
+  // The Reckoning and WHERE THIS GOES, each as one mod. Both optional: a
+  // measured SET carries no walked web and sits at the bottom of the climb.
+  const ground = isProving(at) ? provingMod(crystals.length) : null;
+  const rung = at && !isProving(at) ? rungMod(at.zone, at.rung) : null;
+  const zone = at && !isProving(at) ? LADDER.zones[at.zone] : null;
+  const mods = [
+    ...crystals.flatMap((c) => c.mods),
+    ...(standing ? [standing] : []),
+    ...(rung ? [rung] : []),
+    ...(ground ? [ground] : []),
+  ];
   const rewards = crystalRewards(mods);
   const power = Math.min(
     POWER.max,
@@ -155,16 +207,29 @@ export function runSet(crystals: Item[]): RunSet {
     rewards,
     power,
     band: bandFor(power),
+    // THE CAMPAIGN IS RUN WITH NOTHING SOCKETED, so its ZONE decides both the
+    // world and the best base — off the sockets alone the whole 42-depth climb
+    // would be tier 1 in one world. Past it the sockets answer again.
+    maxTier: isProving(at)
+      ? Math.max(PROVING.tier, tierForSet(crystals))
+      : zone
+        ? Math.max(zone.tier, tierForSet(crystals))
+        : tierForSet(crystals),
     composition: share,
-    theme: mapTheme(share),
+    // THE INFLUENCE WINS in the Proving Ground: *"the zone will stay what your
+    // influence is."* What you mixed still decides the PACKS.
+    // THE SEAM OVERRIDES EVEN THE INFLUENCE, and it is the only thing that does.
+    theme: isProving(at)
+      ? (seamSocketed(crystals) ? 'seam' : at.influence)
+      : zone ? zone.world : mapTheme(crystals),
     mix,
     yield: 1 + mix * REWARD.mixYield,
     pays: familyPays(share),
   };
 }
 
-/** Each world's bonus, in the share it holds. Multipliers on gold and currency
- *  frequency; rarity is percent, which is how everything else states it. */
+/** Each world's bonus in the share it holds: gold and currency are
+ *  multipliers, rarity is percent like everything else. */
 export function familyPays(share: Composition): { gold: number; currency: number; rarity: number } {
   const out = { gold: 1, currency: 1, rarity: 0 };
   for (const family of MONSTER_FAMILIES) {
@@ -192,8 +257,15 @@ export function rewardRows(crystal: Item): Array<{ label: string; value: string 
     rows.push({ label: 'density', value: `${Math.round(density)}%` });
   }
 
-  // A finding modifier carries no danger at all, so without a row of its own
-  // it is the one thing you can craft onto a crystal that says nothing.
+  // WHAT IT PAYS IN, when what it pays in is not danger. `crystalRewards`
+  // knows only danger and the rarity that comes off it, so a roll of Currency
+  // Find or coin used to change the item and NOTHING on the panel — the one
+  // thing you could craft onto a crystal that said nothing at all.
+  const found = totalOf(crystal.mods, 'currencyFind');
+  if (found > 0) rows.push({ label: 'currency', value: `+${Math.round(found)}%` });
+  const gilt = totalOf(crystal.mods, 'giltChance');
+  if (gilt > 0) rows.push({ label: 'gilded', value: `${Math.round(gilt)}%` });
+
   const bias = dropBias(crystal.mods);
   for (const group of DROP_GROUPS) {
     const aimed = (bias[group.id] ?? 1) - 1;
@@ -202,9 +274,14 @@ export function rewardRows(crystal: Item): Array<{ label: string; value: string 
   return rows;
 }
 
-/** Rows for the whole socketed set, which is what a run is actually launched with. */
-export function setRows(crystals: Item[]): Array<{ label: string; value: string }> {
-  const set = runSet(crystals);
+/** Rows for the whole socketed set, `standing` included — a screen without it
+ *  quotes a danger the run will not have. */
+export function setRows(
+  crystals: Item[],
+  standing?: RolledMod | null,
+  at?: RunWhere | null
+): Array<{ label: string; value: string }> {
+  const set = runSet(crystals, standing, at);
   return [
     { label: 'sockets', value: `${set.filled}/4` },
     { label: 'danger', value: Math.round(set.rewards.danger).toString() },
@@ -213,13 +290,14 @@ export function setRows(crystals: Item[]): Array<{ label: string; value: string 
   ];
 }
 
-/**
- * What this set is FOR, in words: what the worlds in it pay, what a mixed set
- * adds, and what its modifiers point the drops at. Empty for a set that is
- * simply a set — there is nothing to say about the bare Fissure.
- */
-export function farmingText(crystals: Item[]): string {
-  const set = runSet(crystals);
+/** What this set is FOR, in words: what its worlds pay, what a mix adds, and
+ *  what its modifiers point the drops at. Empty for the bare Fissure. */
+export function farmingText(
+  crystals: Item[],
+  standing?: RolledMod | null,
+  at?: RunWhere | null
+): string {
+  const set = runSet(crystals, standing, at);
   const said: string[] = [];
   if (set.pays.gold > 1.02) said.push(`+${Math.round((set.pays.gold - 1) * 100)}% gold`);
   if (set.pays.currency > 1.02) {

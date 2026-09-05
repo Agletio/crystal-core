@@ -1,41 +1,60 @@
-/**
- * What a character looks like, from what they are wearing.
- *
- * The renderer is handed art keys and nothing else, the same way it is handed
- * `sprite: 'hero'` — it never learns what a base or a tier is.
- */
-import { GEAR_BASE_BY_ID } from '../data';
-import { hasFamilyArt, hasWeaponArt } from '../render/look';
-import { equippedItems } from './character';
+/** What a character looks like: the renderer is handed art keys and nothing
+ *  else. A hero IS his trade, and what he carries is drawn ON the body — a
+ *  VARIANT of the same man holding it; a picture pinned at the fist is the
+ *  fallback. */
+import { GENERATED } from '../render/generated-art';
+import { HELD } from '../render/held';
+import { GEAR_BASE_BY_ID, OFF_SLOT, WEAPON_SLOT } from '../data';
+import { TRADE_BY_ID } from '../trades';
+import { canDualWield } from './character';
 import type { Character } from './character';
-import type { Look, WornPiece } from '../types';
 
-/** Rung off the base id: `bulwark_helmet_t2` is the second. */
-function tierOf(baseId: string): number {
-  const n = Number(/_t(\d+)$/.exec(baseId)?.[1]);
-  return Number.isFinite(n) ? n : 1;
+export const HERO_SPRITE = 'wanderer';
+
+export const HERO_SCALE = 1.5; // tiles on screen; the gait gauge reads it too
+
+/** `HELD` row -> the `<body>_<suffix>` that DRAWS it; absent, it is pinned. */
+const HOLDING: Record<string, string> = {
+  sword: 'sword', sword2h: 'sword2h', dagger: 'dagger', mace: 'mace',
+  mace2h: 'mace2h', staff: 'staff', wand: 'wand', bow: 'bow', shield: 'shield',
+};
+
+/** What BOTH hands hold, falling back to the hand that WAS drawn. A PAIR IS
+ *  ORDERLESS — which hand you filled is a stats question, so the two sort into
+ *  `HOLDING`'s order, where a shield is last and `sword_shield` reads forwards. */
+export function variants(character: Character): string[] {
+  const main = HOLDING[heldFor(character, WEAPON_SLOT) ?? ''];
+  const off = HOLDING[heldFor(character, OFF_SLOT) ?? ''];
+  if (!main || !off) return [main || off].filter(Boolean);
+  const order = Object.values(HOLDING);
+  const [first, second] = [main, off].sort((a, b) => order.indexOf(a) - order.indexOf(b));
+  return [`${first}_${second}`, main, off];
 }
 
-export function lookOf(character: Character): Look {
-  const look: Look = {};
-
-  for (const item of equippedItems(character)) {
-    const base = GEAR_BASE_BY_ID[item.base];
-    if (!base?.family) continue;
-
-    // The base, not the family: an Ember Maul is not a Cudgel with a tint.
-    if (base.kind === 'weapon') {
-      if (hasWeaponArt(item.base)) look.weapon = { kind: item.base };
-      continue;
-    }
-    // A family with no art yet leaves the slot bare rather than drawing
-    // something that belongs to a different set.
-    if (!hasFamilyArt(base.family)) continue;
-    const worn: WornPiece = { family: base.family, tier: tierOf(item.base) };
-    if (base.kind === 'helmet') look.helmet = worn;
-    else if (base.kind === 'body') look.body = worn;
-    else if (base.kind === 'gloves') look.gloves = worn;
-    else if (base.kind === 'boots') look.boots = worn;
+export function heroSpriteFor(character: Character): string {
+  const worn = character.trade ? TRADE_BY_ID[character.trade]?.spec.sprite : undefined;
+  const body = worn && GENERATED[worn] ? worn : HERO_SPRITE;
+  for (const suffix of variants(character)) {
+    if (GENERATED[`${body}_${suffix}`]) return `${body}_${suffix}`;
   }
-  return look;
+  return body;
+}
+
+/** The `HELD` row a SLOT draws. A SECOND WEAPON IS ONE TRADE'S PRIVILEGE and
+ *  the ART obeys that rather than the equipment, so an equip or a heal being
+ *  wrong cannot put a pair on somebody who has none. */
+export function heldFor(character: Character, slotId = WEAPON_SLOT): string | undefined {
+  const worn = character.equipment[slotId];
+  const art = worn ? GEAR_BASE_BY_ID[worn.base]?.art : undefined;
+  if (!art || !HELD[art]) return undefined;
+  if (slotId === OFF_SLOT && art !== 'shield' && !canDualWield(character)) return undefined;
+  return art;
+}
+
+/** What is left to PIN once the body has drawn what it already holds. */
+export function pinnedFor(character: Character, slotId = WEAPON_SLOT): string | undefined {
+  const art = heldFor(character, slotId);
+  if (!art || !HOLDING[art]) return art;
+  const drawn = heroSpriteFor(character).split('_').slice(1);
+  return drawn.includes(HOLDING[art]) ? undefined : art;
 }

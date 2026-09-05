@@ -30,10 +30,10 @@ import {
 import { note } from './history';
 import { attachTooltip, hideTooltip } from './tooltip';
 import { crystalFamily, rewardRows } from '../sim/crystal';
-import { itemCard, statLines } from './itemcard';
+import { grantLines, itemCard, statLines } from './itemcard';
 import { crystalProgress } from '../game/crystals';
 import { crystalsIn, socketed } from '../game/state';
-import { FAMILY_BY_ID } from '../data';
+import { FAMILY_BY_ID, RUN_SLOTS } from '../data';
 import type { CurrencyDef, Item, RolledMod } from '../types';
 
 const pool = new ModPool(ALL_MODS);
@@ -221,9 +221,15 @@ function renderItem(): void {
     row.append(el('span', 'dot dot--citrine'));
     const b = el('div', 'mod__body');
     const stats = el('div', 'mod__stats');
-    stats.append(...statLines(imp));
+    stats.append(...statLines(imp), ...grantLines(imp));
     b.append(stats);
-    b.append(el('div', 'mod__name', 'base — cannot be changed'));
+    b.append(
+      el(
+        'div',
+        'mod__name',
+        item.meta.grafted !== undefined ? 'grafted — cannot be changed' : 'base — cannot be changed'
+      )
+    );
     row.append(b);
     list.append(row);
   }
@@ -260,7 +266,7 @@ function renderItem(): void {
     // item was the one place printing "+14 coldRes" — the exact leak the mods
     // check exists to catch, in the exact spot it does not look.
     const stats = el('div', 'mod__stats');
-    stats.append(...statLines(mod));
+    stats.append(...statLines(mod), ...grantLines(mod));
     b.append(stats);
     b.append(el('div', 'mod__name', `T${mod.tier} ${mod.name} · ${mod.slot}`));
     row.append(b);
@@ -270,6 +276,11 @@ function renderItem(): void {
 
 /** Id of one crystal's button beside the bench, so the guide can ring it. */
 export const crystalSlotId = (itemId: string): string => `bench-${itemId}`;
+
+/** Said in one place, because it is said twice: on a crystal, and under them. */
+const WHY_SHUT =
+  `The bench cannot reach a crystal until you hold all ${RUN_SLOTS.length}. ` +
+  'Until then a crystal is a tier and nothing else.';
 
 /**
  * Every crystal you own, beside the bench. They are never carried, so the dock
@@ -339,7 +350,9 @@ function renderWorn(): void {
   host.replaceChildren();
   const grid = el('div', 'worn__grid');
 
-  for (const slot of EQUIP_SLOTS) {
+  // A TOOL HOLDS NO MODIFIER SLOT, so its square here would never take a
+  // currency: the bench shows what can be crafted on and nothing else.
+  for (const slot of EQUIP_SLOTS.filter((s) => s.group !== 'tool')) {
     const item = game.character.equipment[slot.id];
     const btn = el('button', 'wornslot') as HTMLButtonElement;
     btn.dataset.equip = slot.id;

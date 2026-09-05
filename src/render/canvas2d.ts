@@ -15,11 +15,19 @@ import { DEATH_FADE } from '../sim/run';
 import type { RunState, Entity, Floater } from '../sim/run';
 import type { FirePixel, Palette, Renderer } from './renderer';
 import {
+  arrowShaft,
   auraLook,
+  bossTelegraph,
+  dazeMarks,
+  groupColour,
+  shredMarks,
   burstRadius,
   clampOffset,
   fireBolt,
+  frostShard,
   lightningArc,
+  coneWedge,
+  iceSpikes,
   sweepRing,
   fireBurst,
   fireShades,
@@ -31,10 +39,14 @@ import {
   poisonDrops,
   poisonFieldRadius,
   spriteColour,
+  stormBolts,
+  stormCloud,
+  stormPuffs,
   livingDecals,
   PROPS,
   tileDecals,
   tileSize,
+  lootBeam,
   vfxColour,
   TILE_AT_1X,
   ZOOM_MIN,
@@ -64,6 +76,7 @@ export function createCanvasRenderer(host: HTMLElement, palette: Palette): Rende
       draw: () => {},
       setZoom: () => {},
       panBy: () => {},
+      lookAt: () => {},
       follow: () => {},
       screenAt: () => ({ x: 0, y: 0 }),
       destroy: () => canvas.remove(),
@@ -233,8 +246,9 @@ export function createCanvasRenderer(host: HTMLElement, palette: Palette): Rende
     ctx.globalAlpha = 1;
   }
 
-  /** Shown on everything alive; dimmed while untouched. */
-  function drawLifeBar(v: View, e: Entity, width: number, colour: string): void {
+  /** Shown on everything alive; dimmed while untouched. `notch` marks every
+   *  100 life, heavier each 1000 — the hero's alone. */
+  function drawLifeBar(v: View, e: Entity, width: number, colour: string, notch = false): void {
     const frac = Math.max(0, Math.min(1, e.life / e.stats.maxLife));
     const hurt = frac < 1;
 
@@ -249,6 +263,24 @@ export function createCanvasRenderer(host: HTMLElement, palette: Palette): Rende
     ctx.globalAlpha = hurt ? 1 : 0.45;
     ctx.fillStyle = colour;
     ctx.fillRect(x, y, w * frac, h);
+    // Lit along the top and shaded at the foot, so it reads as a vessel.
+    ctx.fillStyle = 'rgba(255,255,255,.3)';
+    ctx.fillRect(x, y, w * frac, h * 0.35);
+    ctx.fillStyle = 'rgba(0,0,0,.25)';
+    ctx.fillRect(x, y + h * 0.75, w * frac, h * 0.25);
+    if (notch) {
+      ctx.fillStyle = palette.void;
+      ctx.globalAlpha = 0.75;
+      for (let at = 100; at < e.stats.maxLife; at += 100) {
+        const big = at % 1000 === 0;
+        ctx.fillRect(
+          x + w * (at / e.stats.maxLife),
+          big ? y : y + h * 0.35,
+          big ? 2 : 1,
+          big ? h : h * 0.65
+        );
+      }
+    }
     ctx.globalAlpha = 1;
   }
 
@@ -313,6 +345,7 @@ export function createCanvasRenderer(host: HTMLElement, palette: Palette): Rende
 
   function drawVfx(v: View, state: RunState): void {
     for (const fx of state.vfx) {
+      if (fx.age < 0) continue; // waiting for the ball that lands it
       const t = Math.min(1, fx.age / fx.ttl);
       const colour = vfxColour(palette, fx.kind, fx.damageType);
       const from = fx.points[0];
@@ -377,18 +410,31 @@ export function createCanvasRenderer(host: HTMLElement, palette: Palette): Rende
       } else if (fx.kind === 'sweep') {
         // Second point carries the radius, same contract as the burst.
         blocks(v, sweepRing(from, Math.hypot(to.x - from.x, to.y - from.y), t), fx.damageType, 1);
+      } else if (fx.kind === 'spikes') {
+        // At the TARGET: the second point is where they came up, not a path.
+        blocks(v, iceSpikes(to, t), fx.damageType, 1);
+      } else if (fx.kind === 'wedge' && fx.points[2]) {
+        // THREE points, and the last two are the wedge's own rim corners.
+        blocks(v, coneWedge(from, to, fx.points[2], t), fx.damageType, 1);
       } else if (fx.kind === 'bolt') {
-        const travel = Math.min(1, t * 1.5);
-        const tail = Math.max(0, travel - 0.3);
-        const px = from.x + (to.x - from.x) * travel;
-        const py = from.y + (to.y - from.y) * travel;
-        ctx.beginPath();
-        ctx.moveTo(cx(v, from.x + (to.x - from.x) * tail), cy(v, from.y + (to.y - from.y) * tail));
-        ctx.lineTo(cx(v, px), cy(v, py));
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.arc(cx(v, px), cy(v, py), v.tile * 0.16, 0, Math.PI * 2);
-        ctx.fill();
+        blocks(v, fireBolt(from, to, t), fx.damageType, 1);
+      } else if (fx.kind === 'shard') {
+        blocks(v, frostShard(from, to, t), fx.damageType, 1);
+      } else if (fx.kind === 'arrow') {
+        // No sprites here, so the arrow is drawn out of blocks: a gold dart
+        // with a head and a split tail.
+        blocks(v, arrowShaft(from, to, t), fx.damageType, 1);
+      } else if (fx.kind === 'storm') {
+        const cloud = stormCloud(from, t);
+        ctx.globalAlpha = cloud.alpha * 0.9;
+        ctx.fillStyle = palette.void;
+        for (const puff of stormPuffs(cloud)) {
+          ctx.beginPath();
+          ctx.arc(cx(v, puff.x), cy(v, puff.y), puff.r * v.tile, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.globalAlpha = Math.max(0, 1 - t);
+        blocks(v, stormBolts(from, t), fx.damageType, 1);
       } else if (fx.points.length >= 2) {
         ctx.beginPath();
         ctx.moveTo(cx(v, from.x), cy(v, from.y));
@@ -417,11 +463,98 @@ export function createCanvasRenderer(host: HTMLElement, palette: Palette): Rende
     ctx.fillStyle = palette.void;
     ctx.fill();
 
-    drawLifeBar(v, hero, 1.1, palette.verdite);
+    drawLifeBar(v, hero, 1.1, palette.verdite, true);
+  }
+
+  /** WHAT LANDED. The same answer the other renderer draws, in this one's own
+   *  primitives: a pool, a column and the name. `lootBeam` is shared, so the
+   *  two cannot disagree about what is rare. */
+  function drawLoot(state: RunState, v: View): void {
+    for (const drop of state.ground) {
+      const beam = lootBeam(palette, drop.rank);
+      const x = cx(v, drop.x);
+      const y = cy(v, drop.y);
+      ctx.fillStyle = beam.colour;
+      ctx.globalAlpha = beam.lit * 0.3;
+      ctx.beginPath();
+      ctx.arc(x, y, v.tile * 0.22, 0, Math.PI * 2);
+      ctx.fill();
+      // Stacked fading bands, the same shape Pixi draws — and an `arc` and a
+      // `fillRect` are all this file uses anywhere else. Nothing here is
+      // reachable by a test (Pixi has to THROW first), so it borrows no
+      // primitive the rest of the renderer has not already proven.
+      const bands = 6;
+      for (let i = 0; i < bands; i++) {
+        ctx.globalAlpha = beam.lit * (1 - i / bands) * 0.5;
+        const wide = v.tile * 0.13 * (1 - (i / bands) * 0.6);
+        const step = (beam.tall * v.tile) / bands;
+        ctx.fillRect(x - wide, y - (i + 1) * step, wide * 2, step);
+      }
+      ctx.globalAlpha = 0.55 + beam.lit * 0.45;
+      ctx.fillStyle = beam.colour;
+      ctx.font = `500 ${Math.max(8, v.tile * 0.4)}px ui-monospace, monospace`;
+      ctx.textAlign = 'center';
+      ctx.fillText(drop.item.name, x, y + v.tile * 0.6);
+      ctx.globalAlpha = 1;
+    }
   }
 
   /** Under the bodies: the field they are standing in, not a badge on them. */
   function drawAuras(state: RunState, v: View): void {
+    // The Fall, drawn as a shape because this renderer has no sprites.
+    for (const ring of state.circles) {
+      const gone = 1 - Math.max(0, ring.fuse) / Math.max(0.01, ring.of);
+      ctx.globalAlpha = 0.12 + gone * 0.3;
+      ctx.fillStyle = palette.ember;
+      ctx.beginPath();
+      ctx.arc(cx(v, ring.x), cy(v, ring.y), ring.r * v.tile, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = 0.9;
+      ctx.strokeStyle = palette.ember;
+      ctx.lineWidth = Math.max(1, v.tile * 0.09);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+    // A SHRED AURA, the same circle and the same arcs the other renderer draws.
+    for (const a of state.auras) {
+      ctx.strokeStyle = groupColour(palette, a.group);
+      ctx.globalAlpha = 0.32;
+      ctx.lineWidth = Math.max(1, 0.07 * v.tile);
+      ctx.beginPath();
+      ctx.arc(cx(v, a.x), cy(v, a.y), a.r * v.tile, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+    ctx.lineCap = 'round';
+    for (const e of state.monsters) {
+      if (e.dead || !e.shred) continue;
+      ctx.strokeStyle = groupColour(palette, e.shred === 'occult' ? 'occult' : 'elemental');
+      for (const m of shredMarks(e.scale, state.elapsed)) {
+        ctx.globalAlpha = m.alpha;
+        ctx.lineWidth = Math.max(1, m.width * v.tile);
+        ctx.beginPath();
+        ctx.arc(cx(v, e.x), cy(v, e.y), m.r * v.tile, m.from, m.to);
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    // WHAT IT IS DOING, on the thing doing it: the same three marks the other
+    // renderer draws. `tint` is a sprite's, and this one has none.
+    const boss = state.boss;
+    const told = bossTelegraph(palette, state.phase, state.elapsed);
+    if (boss && !boss.dead && told && told.swirl > 0) {
+      ctx.strokeStyle = told.colour;
+      ctx.lineCap = 'round';
+      for (const m of dazeMarks(boss.scale * 0.5, boss.scale, state.elapsed)) {
+        ctx.globalAlpha = m.alpha * told.swirl;
+        ctx.lineWidth = Math.max(1, m.width * v.tile);
+        ctx.beginPath();
+        ctx.arc(cx(v, boss.x + m.x), cy(v, boss.y + m.y), m.r * v.tile, m.from, m.to);
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+    }
     for (const m of state.monsters) {
       if (m.dead || !m.aura) continue;
       const def = AURA_BY_ID[m.aura];
@@ -458,6 +591,7 @@ export function createCanvasRenderer(host: HTMLElement, palette: Palette): Rende
 
     drawMap(state, v);
     drawAuras(state, v);
+    drawLoot(state, v);
 
     for (const m of state.monsters) {
       if (!m.dead || m.deathAge < DEATH_FADE) drawMonster(v, m);
@@ -480,6 +614,10 @@ export function createCanvasRenderer(host: HTMLElement, palette: Palette): Rende
     looking = { x: world.x - on.x / next2, y: world.y - on.y / next2 };
   }
 
+  function lookAt(spot: { x: number; y: number }): void {
+    looking = { x: spot.x, y: spot.y };
+  }
+
   function panBy(dx: number, dy: number): void {
     if (lastTile <= 0) return;
     looking = { x: at.x - dx / lastTile, y: at.y - dy / lastTile };
@@ -490,5 +628,5 @@ export function createCanvasRenderer(host: HTMLElement, palette: Palette): Rende
   };
 
   resize(cssWidth, cssHeight);
-  return { resize, draw, setZoom, panBy, follow, screenAt, destroy: () => canvas.remove() };
+  return { resize, draw, setZoom, panBy, lookAt, follow, screenAt, destroy: () => canvas.remove() };
 }

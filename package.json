@@ -12,7 +12,9 @@
     "shots": "node shots.mjs",
     "mods": "tsx src/mods-check.ts",
     "drag": "node dragprobe.mjs",
-    "comments": "node tools/comment-budget.mjs"
+    "peek": "node tools/descent-peek.mjs",
+    "comments": "node tools/comment-budget.mjs",
+    "theme": "node tools/theme-check.mjs"
   },
   "devDependencies": {
     "@babel/parser": "^8.0.4",

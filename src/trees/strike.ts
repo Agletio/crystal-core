@@ -1,7 +1,7 @@
 /**
- * Strike's web. A swing, so the splash is centred on YOU rather than on what
- * you hit — everything about coverage here is about standing in the right
- * place, not about aiming.
+ * Strike's web. ONE enemy, hit hard, and every bit of coverage past it is
+ * bought: Echoes work outward through a pack a body at a time, Repeats go back
+ * into the one you aimed at, and Quake makes each of those Burst.
  *
  * Physical is the one damage type nothing resists by element and everything
  * blunts by armour, which is why Transmutation is worth walking to on a skill
@@ -21,33 +21,34 @@ const COMMON: Minor[] = [
 
 const BRANCHES: Branch[] = [
   {
+    // The IDS here are the old Splash branch's and are kept exactly: a save
+    // points at them, and what changed is what the branch DOES, not where its
+    // nodes are. Strike no longer hits a circle at all.
     id: 'sweep',
-    theme: 'Sweep',
+    theme: 'Carry',
     enabler: {
       id: 'st_sweep',
-      name: 'Sweep',
-      description:
-        'Splash deals 45% of the swing instead of 10%. Strike stops being aimed ' +
-        'at one enemy and starts clearing a circle.',
-      grants: { splashMultiplier: 0.45, manaMultiplier: 1.15 },
+      name: 'Answering Blow',
+      description: '+2 Echoes.',
+      grants: { echoes: 2, manaMultiplier: 1.15 },
     },
     twigs: [
       {
         minors: 3,
         notable: {
           id: 'st_widearc',
-          name: 'Wide Arc',
-          description: 'Splash reaches 40% further.',
-          grants: { splashRadius: 1.4, manaMultiplier: 1.08 },
+          name: 'Carrying',
+          description: '+2 Echoes.',
+          grants: { echoes: 2, manaMultiplier: 1.08 },
         },
       },
       {
         minors: 4,
         notable: {
           id: 'st_carve',
-          name: 'Carve',
-          description: 'Splash deals 70% of the swing.',
-          grants: { splashMultiplier: 0.7, manaMultiplier: 1.08 },
+          name: 'Full Weight',
+          description: 'Echoes land for 100% of the swing rather than 70%.',
+          grants: { echoDamage: 1, manaMultiplier: 1.08 },
         },
       },
       {
@@ -55,17 +56,17 @@ const BRANCHES: Branch[] = [
         forkFrom: { twig: 1, at: 2 },
         notable: {
           id: 'st_whirlwind',
-          name: 'Whirlwind',
-          description: 'Splash deals 100% of the swing, and reaches 25% further.',
-          grants: { splashMultiplier: 1, splashRadius: 1.25, manaMultiplier: 1.08 },
+          name: 'Chorus',
+          description: '+3 Echoes.',
+          grants: { echoes: 3, manaMultiplier: 1.08 },
         },
       },
     ],
     minors: [
-      { text: '+5% increased Splash reach', grants: { splashRadius: 1.05 } },
+      COMMON[5],
       COMMON[1],
       COMMON[0],
-      { text: '+4% increased Splash reach', grants: { splashRadius: 1.04 } },
+      COMMON[2],
     ],
   },
   {
@@ -74,10 +75,8 @@ const BRANCHES: Branch[] = [
     enabler: {
       id: 'st_rend',
       name: 'Rend',
-      description:
-        'Strike can no longer Critically strike. A swing that would have ' +
-        'instead leaves a Bleed worth 240% of the hit over 5s.',
-      grants: { critAilment: { multiplier: 2.4, seconds: 5 } },
+      description: '+55% chance to apply Bleed.',
+      grants: { ailmentChance: 55 },
     },
     twigs: [
       {
@@ -104,16 +103,14 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'st_butchery',
           name: 'Butchery',
-          description:
-            'A Bleed ticking Critically opens the same wound on everything ' +
-            'within 2 tiles.',
-          grants: { ailmentSpread: 2, manaMultiplier: 1.15 },
+          description: '+45% chance to apply Bleed.',
+          grants: { ailmentChance: 45, manaMultiplier: 1.15 },
         },
       },
     ],
     minors: [
       { text: '+6% increased Bleed Damage', grants: { ailmentMultiplier: 1.06 } },
-      { text: '+5% increased Bleed Duration', grants: { ailmentDuration: 1.05 } },
+      { text: '+9% chance to apply Bleed', stats: [stat('ailmentChance', 'flat', 9, ['bleed'])] },
       COMMON[0],
       COMMON[3],
     ],
@@ -129,11 +126,11 @@ const BRANCHES: Branch[] = [
     },
     twigs: [
       {
-        minors: 4,
+        minors: 3,
         notable: {
           id: 'st_flurry',
           name: 'Flurry',
-          description: 'And +1 Repeat on top of that, for three swings.',
+          description: '+1 Repeat.',
           grants: { doubleStrike: 1, manaMultiplier: 1.15 },
         },
       },
@@ -142,7 +139,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'st_frenzy',
           name: 'Frenzy',
-          description: 'And +2 more Repeats beyond that, for five swings.',
+          description: '+2 Repeats.',
           grants: { doubleStrike: 2, manaMultiplier: 1.15 },
         },
       },
@@ -150,53 +147,47 @@ const BRANCHES: Branch[] = [
     minors: [COMMON[2], COMMON[1], COMMON[2], COMMON[0]],
   },
   {
-    id: 'shockwave',
-    theme: 'Tremor',
+    id: 'rhythm',
+    theme: 'Rhythm',
     enabler: {
-      id: 'st_shockwave',
-      name: 'Shockwave',
-      description:
-        'Every enemy the swing lands on Bursts, for 50% of the damage within ' +
-        '1.6 tiles. Strike gains the Area tag.',
-      grants: { explode: { radius: 1.6, multiplier: 0.5 }, addTags: ['area'], manaMultiplier: 1.15 },
+      id: 'st_rhythm',
+      name: 'Rhythm',
+      description: '+9% Momentum per use, up to 70%.',
+      grants: { momentum: { per: 9, max: 70 } },
     },
     twigs: [
       {
-        minors: 3,
+        minors: 4,
         notable: {
-          id: 'st_faultline',
-          name: 'Faultline',
-          description: 'The Burst covers 45% more ground.',
-          grants: { explodeRadius: 1.45, manaMultiplier: 1.08 },
+          id: 'st_cadence',
+          name: 'Cadence',
+          description: 'Momentum builds 5% faster per use.',
+          grants: { momentumPer: 5 },
         },
       },
       {
-        minors: 3,
-        forkFrom: { twig: 0, at: 1 },
+        minors: 4,
         notable: {
-          id: 'st_upheaval',
-          name: 'Upheaval',
-          description: 'The Burst carries +50% of the damage, for all of it.',
-          grants: { explodeMultiplierAdd: 0.5, manaMultiplier: 1.08 },
+          id: 'st_relentless',
+          name: 'Relentless',
+          description: 'Momentum reaches 45% higher.',
+          grants: { momentumMax: 45 },
         },
       },
       {
-        minors: 3,
-        forkFrom: { twig: 1, at: 1 },
+        minors: 4,
+        forkFrom: { twig: 1, at: 2 },
         notable: {
-          id: 'st_aftershock',
-          name: 'Aftershock',
-          description: 'An enemy killed by Strike Bursts, for 60% of the damage within 2.2 tiles.',
-          grants: { explodeOnKill: { radius: 2.2, multiplier: 0.6 }, manaMultiplier: 1.15 },
+          id: 'st_followthrough',
+          name: 'Follow-Through',
+          description:
+            'Momentum carries to a new enemy whole instead of being halved, ' +
+            'and reaches 15% higher.',
+          grants: { momentumKeep: true, momentumMax: 15 },
         },
       },
     ],
-    minors: [
-      { text: '+5% increased Area of Effect', stats: [stat('areaOfEffect', 'inc', 5)] },
-      { text: '+4% larger Burst', grants: { explodeRadius: 1.04 } },
-      COMMON[0],
-      { text: '+6% increased Area of Effect', stats: [stat('areaOfEffect', 'inc', 6)] },
-    ],
+    minors: [COMMON[0], { text: '+2% Momentum per use', grants: { momentumPer: 2 } }, COMMON[1], COMMON[2]],
   },
   {
     id: 'bulwark',
@@ -204,9 +195,7 @@ const BRANCHES: Branch[] = [
     enabler: {
       id: 'st_bulwark',
       name: 'Bulwark',
-      description:
-        'Strike is a melee skill, and melee means standing in it: +25% Armour ' +
-        'and +15% maximum Life.',
+      description: '+25% increased Armour and +15% increased maximum Life.',
       stats: [stat('armour', 'inc', 25), stat('life', 'inc', 15)],
     },
     twigs: [
@@ -215,7 +204,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'st_ironhide',
           name: 'Iron Hide',
-          description: 'A further 40% increased Armour.',
+          description: '40% increased Armour.',
           stats: [stat('armour', 'inc', 40)],
         },
       },
@@ -224,7 +213,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'st_secondwind',
           name: 'Second Wind',
-          description: 'A further 20% maximum Life, and life regenerates far faster.',
+          description: '+20% increased maximum Life and +120% increased Life Regeneration.',
           stats: [stat('life', 'inc', 20), stat('lifeRegen', 'inc', 120)],
         },
       },
@@ -234,8 +223,8 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'st_immovable',
           name: 'Immovable',
-          description: 'Strike deals 30% more damage to enemies within 2 tiles of you.',
-          grants: { moreClose: { within: 2, more: 0.3 } },
+          description: 'Strike deals 30% more damage while nothing has hit you for 3s.',
+          grants: { untouchedMore: { after: 3, more: 0.3 } },
         },
       },
     ],
@@ -269,7 +258,7 @@ const BRANCHES: Branch[] = [
         minors: 4,
         notable: {
           id: 'st_ambush',
-          name: 'Ambush',
+          name: 'Unspoiled',
           description: 'Strike deals 35% more damage to enemies above 80% of their life.',
           grants: { moreVsFull: { above: 0.8, more: 0.35 } },
         },
@@ -299,9 +288,7 @@ const TRUNK_NOTABLES: Notable[] = [
   {
     id: 'st_transmutation',
     name: 'Transmutation',
-    description:
-      'Strike stops dealing Physical. Pick what it deals instead — the Physical ' +
-      'modifiers in this tree change with it, the ones on your gear do not.',
+    description: 'Convert Strike to another damage type.',
     choices: [
       {
         id: 'fire',
@@ -357,15 +344,13 @@ export const STRIKE_SPEC: TreeSpec = {
   branches: BRANCHES,
   trunkNotables: TRUNK_NOTABLES,
   needs: {
-    splashMultiplier: 'st_sweep',
-    splashRadius: 'st_sweep',
+    momentumPer: 'st_rhythm',
+    momentumMax: 'st_rhythm',
+    momentumKeep: 'st_rhythm',
+    echoDamage: 'st_sweep',
     ailmentMultiplier: 'st_rend',
     ailmentDuration: 'st_rend',
-    ailmentSpread: 'st_rend',
+    ailmentChance: 'st_rend',
     doubleStrike: 'st_onslaught',
-    areaOfEffect: 'st_shockwave',
-    explodeRadius: 'st_shockwave',
-    explodeMultiplierAdd: 'st_shockwave',
-    explodeOnKill: 'st_shockwave',
   },
 };

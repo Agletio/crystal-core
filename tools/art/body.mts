@@ -1,0 +1,445 @@
+/**
+ * Asking the generator for a body, one step at a time. `bodies.json` is what
+ * to say and `generated.json` is what came back — this walks between them.
+ *
+ *   body.mts design gaunt [n]     n design images, ONE generation each
+ *   body.mts rotate gaunt f.png   the approved design into 8 facings, for 2
+ *   body.mts state  gaunt         every state, on the one FACING
+ *   body.mts sheet  gaunt f.png   every frame, to look at
+ *   body.mts props                every prop, from scratch
+ *   body.mts watch                until nothing is pending
+ *
+ * The ORDER is the whole trick. A design is one generation and a body is
+ * thirty, so a body nobody likes dies at `design`. Three things settle there
+ * and nowhere else: the silhouette, the proportions and the TONE.
+ *
+ * A body is ONE facing — `face` in `bodies.json`, an angled side profile — and
+ * the renderer mirrors it. An animation is judged rather than trusted: look at
+ * it, re-roll what is wrong, WINDOW what is nearly right. The `art` skill holds
+ * the runbook and the pitfalls.
+ */
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { loose } from './convert.mts';
+import { callTool, download, fields, urlsIn } from './mcp.mts';
+import { decodePng, encodePng, type Decoded } from './png.mts';
+
+interface StateAsk {
+  say: string;
+  frames: number;
+}
+interface BodyAsk {
+  sprite: string;
+  character?: string;
+  name: string;
+  look: string;
+  /** `standard` poses ONE rigged template, so every body shares a silhouette
+   *  whatever the words say; `v3` is free of it at 2-9 generations. */
+  mode?: 'standard' | 'pro' | 'v3';
+  /** The one facing THIS body is generated at, when the roster's own does not
+   *  suit it. A quadruped reads side-on where a biped reads at an angle. */
+  face?: string;
+  /** `standard` only, and its default preset is the bobblehead. */
+  proportions?: string;
+  size?: number;
+  inks?: string; // a row of `palettes`: the room this body lives in, not the roster's
+  approved?: string; // the design a human picked, relative to this file
+  states: Record<string, StateAsk>;
+}
+
+/** The account may hold TEN jobs at once, and the ceiling is GLOBAL rather than
+ *  per character — pacing off one body's pending count fires straight into the
+ *  limit the moment a second body is in flight. `list_jobs` is the only
+ *  authoritative answer. A call asks for one job PER DIRECTION and needs them
+ *  all at once, so a five-facing ask needs five free slots. */
+const SLOTS = 10;
+
+const here = (file: string): string => new URL(`./${file}`, import.meta.url).pathname;
+const asks = JSON.parse(readFileSync(here('bodies.json'), 'utf8')) as {
+  face: string;
+  inks: string[];
+  palettes: Record<string, string[]>;
+  bodies: BodyAsk[];
+  props: { id: string; tiles: number; say: string; view?: string; size?: number; tone?: number; dull?: number; dim?: number }[];
+};
+type Made = { sprite: string; states: Record<string, { group: string }> };
+const shipped = JSON.parse(readFileSync(here('generated.json'), 'utf8')) as {
+  hero: Made;
+  bodies: Made[];
+  props: { id: string; object?: string; tiles?: number; tone?: number; dull?: number; dim?: number }[];
+};
+/** The hero is a body like any other here: it is drawn out of the same table,
+ *  and only the room it stands in knows the difference. */
+const made = [...shipped.bodies, shipped.hero];
+
+/** No two of a body's says may share their first thirty characters: the server
+ *  keys an animation's TYPE off that prefix and refuses the second silently. */
+for (const b of asks.bodies) {
+  const seen = new Map<string, string>();
+  for (const [name, ask] of Object.entries(b.states)) {
+    const head = ask.say.slice(0, 30);
+    const clash = seen.get(head);
+    if (clash) throw new Error(`${b.sprite}: "${name}" and "${clash}" open with the same thirty characters`);
+    seen.set(head, name);
+  }
+}
+
+const [command, sprite] = process.argv.slice(2);
+const body = asks.bodies.find((b) => b.sprite === sprite);
+if (!['watch', 'props'].includes(command) && !body) throw new Error(`${sprite ?? '(nothing)'} is not in bodies.json`);
+
+const said = (out: string, keep: RegExp): string =>
+  out.split('\n').filter((l) => keep.test(l)).join(' | ').slice(0, 160);
+
+const wait = (ms: number): Promise<void> => new Promise((go) => setTimeout(go, ms));
+
+/** Jobs in flight ACROSS the account. A refusal reads `need 5 job slots but
+ *  only 1 available (9/10 used)`, and it comes back as TEXT rather than as an
+ *  error — so anything that does not check is recording a lie. */
+async function inFlight(): Promise<number> {
+  const text = await callTool('list_jobs', {});
+  if (/no active jobs/i.test(text)) return 0;
+  const said = /(\d+)\s*\/\s*10/.exec(text);
+  if (said) return Number(said[1]);
+  return text.split('\n').filter((l) => /^\s*\S/.test(l) && /[0-9a-f-]{36}/.test(l)).length;
+}
+
+/** Wait until `want` slots are free, so a call is made when it can succeed
+ *  rather than made and refused. */
+async function room(want: number): Promise<void> {
+  for (let tries = 0; tries < 120; tries++) {
+    if (SLOTS - (await inFlight()) >= want) return;
+    await wait(20_000);
+  }
+}
+
+async function pending(character: string): Promise<string[]> {
+  const text = await callTool('get_character', { character_id: character });
+  const at = text.indexOf('pending jobs');
+  if (at < 0) return [];
+  return text
+    .slice(at)
+    .split('\n')
+    .slice(1)
+    .filter((l) => /^ {2}\S/.test(l))
+    .map((l) => l.trim());
+}
+
+/** The inks a design is FORCED onto, as an image. Words alone will not make a
+ *  body dark — v3 ignores `text_guidance_scale` and returned ivory twice — and
+ *  every zone floor is pale by decision, so a body that is not dark separates
+ *  from none of them. */
+function palette(): string {
+  const S = 8;
+  const named = body?.inks;
+  if (named && !asks.palettes[named]) throw new Error(`${sprite}: no palette called ${named}`);
+  const inks = named ? asks.palettes[named] : asks.inks;
+  const w = inks.length * S;
+  const px = new Uint8Array(w * S * 4);
+  inks.forEach((hex, i) => {
+    const [r, g, b] = [1, 3, 5].map((o) => parseInt(hex.slice(o, o + 2), 16));
+    for (let y = 0; y < S; y++) {
+      for (let x = 0; x < S; x++) {
+        const d = (y * w + i * S + x) * 4;
+        px[d] = r; px[d + 1] = g; px[d + 2] = b; px[d + 3] = 255;
+      }
+    }
+  });
+  return `data:image/png;base64,${encodePng(w, S, px).toString('base64')}`;
+}
+
+/** The character id into BOTH files, plus the row `record` needs: copied by
+ *  hand this pointed a roster at another character's groups. */
+function enrol(sprite: string, character: string): void {
+  const ask = asks.bodies.find((b) => b.sprite === sprite)!;
+  ask.character = character;
+  writeFileSync(here('bodies.json'), `${JSON.stringify(asks, null, 1)}\n`);
+
+  const row = shipped.bodies.find((b) => b.sprite === sprite);
+  // No `frames`: `record` keeps a held count over the server's, and a seeded
+  // zero spreads the state to nothing.
+  const states = Object.fromEntries(
+    Object.keys(ask.states).map((n) => [n, row?.states?.[n] ?? { group: '' }])
+  );
+  // Seeded on a new row, never overwritten: re-rotated is not re-judged.
+  const made = {
+    grid: 48, inks: 24, luma: 32,
+    ...(row ?? {}), sprite, character,
+    dirs: [ask.face ?? asks.face], states,
+  };
+  const at = shipped.bodies.findIndex((b) => b.sprite === sprite);
+  if (at < 0) shipped.bodies.push(made as never);
+  else shipped.bodies[at] = made as never;
+  writeFileSync(here('generated.json'), `${JSON.stringify(shipped, null, 1)}\n`);
+}
+
+/** A square design at another size, area-averaged. This is a REFERENCE and not
+ *  art that ships, so it is not held to the integer rule the conversion is —
+ *  what it has to be is the size the rotation should come back at. */
+function resample({ width, height, rgba }: Decoded, size: number): string {
+  const out = new Uint8Array(size * size * 4);
+  for (let y = 0; y < size; y++)
+    for (let x = 0; x < size; x++) {
+      const x0 = Math.floor((x * width) / size);
+      const x1 = Math.max(x0 + 1, Math.floor(((x + 1) * width) / size));
+      const y0 = Math.floor((y * height) / size);
+      const y1 = Math.max(y0 + 1, Math.floor(((y + 1) * height) / size));
+      const sum = [0, 0, 0, 0];
+      for (let sy = y0; sy < y1; sy++)
+        for (let sx = x0; sx < x1; sx++) {
+          const a = rgba[(sy * width + sx) * 4 + 3];
+          for (let c = 0; c < 3; c++) sum[c] += rgba[(sy * width + sx) * 4 + c] * a;
+          sum[3] += a;
+        }
+      const n = (y1 - y0) * (x1 - x0);
+      const d = (y * size + x) * 4;
+      for (let c = 0; c < 3; c++) out[d + c] = sum[3] ? Math.round(sum[c] / sum[3]) : 0;
+      out[d + 3] = Math.round(sum[3] / n);
+    }
+  return encodePng(size, size, out).toString('base64');
+}
+
+if (command === 'design') {
+  // ONE image, one generation, ~30 seconds. Everything after this costs thirty,
+  // so a body nobody likes is meant to die here.
+  const many = Number(process.argv[4] ?? 3);
+  const dir = here('cache/designs');
+  mkdirSync(dir, { recursive: true });
+  const jobs: string[] = [];
+  for (let n = 0; n < many; n++) {
+    await room(1); // a design asked while a rotation holds the ten comes back refused, as TEXT
+    const out = await callTool('create_image_pixflux', {
+      description: body!.look,
+      width: 128,
+      height: 128,
+      no_background: true,
+      view: 'high top-down',
+      direction: body!.face ?? asks.face,
+      outline: 'single color black outline',
+      shading: 'detailed shading',
+      detail: 'highly detailed',
+      text_guidance_scale: 12,
+      color_image_url: palette(),
+    });
+    const job = fields(out).job_id ?? /([0-9a-f-]{36})/.exec(out)?.[1];
+    if (job) jobs.push(job);
+    else console.log(`${n}: refused — ${said(out, /error|hint/i)}`);
+  }
+  for (const [n, job] of jobs.entries()) {
+    let url = '';
+    for (let go = 0; go < 30 && !url; go++) {
+      if (go > 0) await wait(10_000);
+      const f = fields(await callTool('get_image', { job_id: job }));
+      url = (f.image_url ?? f.download ?? '').split(/\s+/)[0];
+      if (!url.startsWith('http')) url = '';
+    }
+    if (!url) { console.log(`${sprite}-${n}: never arrived`); continue; }
+    const [joined, dropped] = loose(decodePng(await download(url)));
+    const png = encodePng(joined.width, joined.height, joined.rgba);
+    writeFileSync(`${dir}/${sprite}-${n}.png`, png);
+    console.log(`${dir}/${sprite}-${n}.png${dropped ? `  (dropped ${dropped} loose px)` : ''}`);
+  }
+  console.log('LOOK at them on the four zone floors, then `rotate` the one that is approved');
+} else if (command === 'grab') {
+  // The base frames a layer is cut AGAINST. `dress.mts --state` writes the
+  // dressed half of the same pair.
+  const text = await callTool('get_character', { character_id: body!.character! });
+  const dir = here('cache/designs');
+  for (const facing of [body!.face ?? asks.face]) {
+    const url = new RegExp(`^ {2}${facing}: (https\\S+)$`, 'm').exec(text);
+    if (!url) { console.log(`${facing}: no rotation`); continue; }
+    writeFileSync(`${dir}/${sprite}-${facing}.png`, await download(url[1]));
+    console.log(`${dir}/${sprite}-${facing}.png`);
+  }
+} else if (command === 'rotate') {
+  // The approved design, turned into eight facings at the grid a body SHIPS at.
+  // The reference's own size beats `size` — a 128 design came back 128 — and at
+  // 128 an animation costs two generations a direction and a body is 1.78x the
+  // source. So the design is resampled to `size` before it is sent.
+  const size = body!.size ?? 96;
+  // No argument takes the design the row was APPROVED at, which is the whole
+  // reason that field is written down: a pick made in conversation is a pick
+  // nothing can re-run.
+  const from = process.argv[4] ?? (body!.approved && here(body!.approved));
+  if (!from) throw new Error(`${sprite}: no png given and no \`approved\` on its row`);
+  await room(2);
+  const out = await callTool('create_character', {
+    name: body!.name,
+    description: body!.look,
+    body_type: 'humanoid',
+    mode: 'v3',
+    reference_image_base64: resample(decodePng(readFileSync(from)), size),
+    size,
+    view: 'high top-down',
+  });
+  const id = /character[_ ]?id[:= ]+([0-9a-f-]{36})/i.exec(out)?.[1] ?? /([0-9a-f-]{36})/.exec(out)?.[1];
+  if (!id) { console.log(`${sprite}: REFUSED — ${said(out, /error|hint|slots/i)}`); process.exit(1); }
+  console.log(`${sprite}: ${id}`);
+  enrol(sprite!, id);
+} else if (command === 'ask') {
+  const out = await callTool('create_character', {
+    name: body!.name,
+    description: body!.look,
+    body_type: 'humanoid',
+    n_directions: 8,
+    size: body!.size ?? 96,
+    view: 'high top-down',
+    outline: 'single color black outline',
+    shading: 'medium shading',
+    detail: 'medium detail',
+    ...(body!.mode ? { mode: body!.mode } : {}),
+    ...(body!.proportions ? { proportions: body!.proportions } : {}),
+  });
+  console.log(said(out, /id|status/i));
+  console.log('put that id in bodies.json AND generated.json before going on');
+} else if (command === 'state') {
+  const character = body!.character;
+  if (!character) throw new Error(`${sprite} has no character id yet — run \`ask\` first`);
+  // Asked before the rotation images exist it is refused as TEXT, and skipped.
+  for (let go = 0; go < 60; go++) {
+    if (!/still being created/i.test(await callTool('get_character', { character_id: character }))) break;
+    await wait(15_000);
+  }
+  const on = [body!.face ?? asks.face];
+  // Naming states asks for THOSE, which is what a re-roll wants: a judged state
+  // that failed is deleted and asked again, and the rest are not paid for twice.
+  const only = new Set(process.argv.slice(4));
+  for (const [name, ask] of Object.entries(body!.states)) {
+    if (only.size && !only.has(name)) continue;
+    // A FRESH group every time. `generated.json` holds the groups of whatever
+    // was imported LAST, which after a re-design belongs to a different
+    // character — and a group id from another character is a call the server
+    // refuses, silently enough that a whole roster animates into nothing.
+    let into: string | undefined;
+    for (const facing of on) {
+      await room(1);
+      // The server dedupes on the DESCRIPTION and answers `already queued or
+      // complete` for a re-ask, whatever directions are actually stored — so a
+      // retry says the same thing in a way that hashes differently.
+      let out = '';
+      let got = '';
+      for (let go = 0; go < 4 && !got; go++) {
+        if (go > 0) await wait(20_000);
+        out = await callTool('animate_character', {
+          character_id: character,
+          action_description: ask.say + '.'.repeat(go),
+          animation_name: `${sprite}_${name}`,
+          mode: 'v3',
+          frame_count: ask.frames,
+          directions: [facing],
+          ...(into ? { animation_group_id: into } : {}),
+        });
+        got = /group[:= ]+([0-9a-f-]{36})/.exec(out)?.[1] ?? '';
+      }
+      if (!got) {
+        console.log(`${name}/${facing}: GAVE UP — ${said(out, /error|hint|slots/i)}`);
+        continue;
+      }
+      into ??= got;
+      console.log(`${name}/${facing}: ${got}`);
+    }
+    // Written back like a prop's, or a re-roll points the shipped row at the
+    // group it meant to REPLACE. A MISSING ROW IS SEEDED rather than skipped: a
+    // body DRESSED into a variant never went through `rotate`, so it has a
+    // character and no row, and skipping threw away 65 ids already billed for.
+    if (into) {
+      const now = JSON.parse(readFileSync(here('generated.json'), 'utf8')) as typeof shipped; // re-read: a stale snapshot reverts what was edited mid-run
+      let row = now.bodies.find((b: { sprite: string }) => b.sprite === sprite);
+      if (!row) {
+        row = {
+          grid: 48, inks: 24, sprite, character,
+          dirs: [body!.face ?? asks.face],
+          states: Object.fromEntries(Object.keys(body!.states).map((n) => [n, { group: '' }])),
+        } as never;
+        now.bodies.push(row as never);
+      }
+      const state = row!.states?.[name];
+      if (state) {
+        state.group = into;
+        writeFileSync(here('generated.json'), `${JSON.stringify(now, null, 1)}\n`);
+      }
+    }
+  }
+} else if (command === 'sheet') {
+  // One row per animation, one per frame: the only way to pick `from`/`to`.
+  const text = await callTool('get_character', { character_id: body!.character! });
+  const rows: { name: string; urls: string[] }[] = [];
+  let group = '';
+  for (const line of text.split('\n')) {
+    const head = /^ {2}(\S.*?) — \d+ dir/.exec(line);
+    if (head) group = head[1];
+    // ANY facing: a body declares its own, and a hero's is south-east.
+    const dir = /^ +[a-z-]+: (https\S.*)$/.exec(line);
+    if (dir && group && !rows.some((r) => r.name === group)) {
+      rows.push({ name: group, urls: urlsIn(dir[1]) });
+    }
+  }
+  const shots = await Promise.all(
+    rows.map((r) => Promise.all(r.urls.map(async (u) => decodePng(await download(u)))))
+  );
+  const flat = shots.flat();
+  // A state whose frames are still rendering has no urls, and the sizes below
+  // are then a max over nothing — which reaches `encodePng` as a NaN rather
+  // than as a complaint about the thing that is actually wrong.
+  if (flat.length === 0) throw new Error(`${sprite}: no frames yet — still rendering?`);
+  const w = Math.max(...flat.map((i) => i.width));
+  const h = Math.max(...flat.map((i) => i.height));
+  const across = w * Math.max(...shots.map((s) => s.length));
+  const down = h * rows.length;
+  const out = new Uint8Array(across * down * 4);
+  for (let i = 0; i < across * down; i++) out.set([24, 22, 28, 255], i * 4);
+  shots.forEach((frames, r) =>
+    frames.forEach((img, c) => {
+      for (let y = 0; y < img.height; y++) {
+        for (let x = 0; x < img.width; x++) {
+          const from = (y * img.width + x) * 4;
+          if (img.rgba[from + 3] < 128) continue;
+          const to = ((r * h + y) * across + (c * w + x)) * 4;
+          for (let k = 0; k < 4; k++) out[to + k] = img.rgba[from + k];
+        }
+      }
+    })
+  );
+  writeFileSync(process.argv[4] ?? `${sprite}.png`, encodePng(across, down, out));
+  console.log(rows.map((r, i) => `row ${i}: ${r.name} (${r.urls.length}f)`).join('\n'));
+} else if (command === 'props') {
+  // ~15-30s each and about five may be in flight, so they go in twos with a
+  // pause. Nothing here waits for one: the id is what is wanted, and
+  // `tables.mts` reads whatever has finished by the time it runs.
+  // Only what has no id yet, so a run after adding a row costs one generation.
+  // Naming one is how a bad roll is asked for AGAIN.
+  const done = new Set(shipped.props.map((p) => p.id));
+  const want = asks.props.filter((p) => (sprite ? p.id === sprite : !done.has(p.id)));
+  for (const [i, ask] of want.entries()) {
+    const out = await callTool('create_map_object', {
+      description: ask.say,
+      width: ask.size ?? 96,
+      height: ask.size ?? 96,
+      view: ask.view ?? 'high top-down',
+      outline: 'single color outline',
+      shading: ask.shading ?? 'medium shading', // per row: an over-detailed
+      detail: ask.detail ?? 'high detail', //       prop reads as a sticker
+    });
+    // Written back HERE. An object id copied across by hand is the step that
+    // pointed a roster at another character's groups once already, and a prop
+    // with no `object` is silently skipped by `tables.mts` rather than failing.
+    const id = /([0-9a-f-]{36})/.exec(out)?.[1];
+    console.log(`${ask.id}: ${said(out, /^id|status/i)}`);
+    if (id) {
+      const row = shipped.props.find((p) => p.id === ask.id);
+      const made = { id: ask.id, object: id, tiles: ask.tiles, ...(ask.tone === undefined ? {} : { tone: ask.tone }), ...(ask.dull === undefined ? {} : { dull: ask.dull }), ...(ask.dim === undefined ? {} : { dim: ask.dim }) };
+      if (row) Object.assign(row, made);
+      else shipped.props.push(made);
+      writeFileSync(here('generated.json'), `${JSON.stringify(shipped, null, 1)}\n`);
+    }
+    if (i % 2 === 1) await wait(20_000);
+  }
+} else if (command === 'watch') {
+  for (const b of asks.bodies) {
+    if (!b.character) continue;
+    const jobs = await pending(b.character);
+    console.log(jobs.length === 0 ? `${b.sprite}: nothing pending` : `${b.sprite}:`);
+    for (const job of jobs) console.log(`  ${job}`);
+  }
+} else {
+  console.log('ask | state | sheet | fill <sprite>, or props, or watch');
+}

@@ -1,70 +1,97 @@
 /**
- * The Fissure, in three states: prepare, descend, read the result. There is only
- * one place you go; crystals empower it rather than replacing it, so Enter is
- * never disabled and an empty set is a legitimate run.
- *
- * Owns real time and nothing else — the sim advances in fixed TICK steps, so a
- * janky frame changes how fast you watch a run, never its outcome. Sockets are
- * PERMANENT: a run reads them and never spends them.
+ * The Fissure, in three states: prepare, descend, read the result. One place
+ * you go, at the RUNG you pick; crystals empower it rather than replacing it,
+ * so Enter is never disabled and an empty set is a legitimate run. Owns real
+ * time and nothing else — the sim advances in fixed TICK steps, so a janky
+ * frame changes how fast you watch a run, never its outcome.
  */
 import { Rng } from '../rng';
 import { RunSim, TICK } from '../sim/run';
-import type { RunEvent, RunState } from '../sim/run';
-import { characterStats, treeGrants } from '../sim/stats';
+import type { Buff, RunEvent, RunState } from '../sim/run';
+import { characterStats, treeGrants, trialMod } from '../sim/stats';
 import {
   attributePointsLeft,
   equippedSkill,
   mainSkillId,
+  openSlots,
   spareTreePoints,
   tradePointsLeft,
+  trialPointsLeft,
+  weaponRefusal,
   xpToNext,
 } from '../sim/character';
 import { describeMod } from '../crafting';
-import { compositionText, crystalFamily, farmingText, runSet, setRows } from '../sim/crystal';
+import {
+  compositionText, crystalFamily, farmingText, runSet, seamSocketed, setRows,
+} from '../sim/crystal';
+import type { MapTheme } from '../types';
 import {
   BOSS_BY_ID,
   BOSS_KEYS,
   FAMILY_BY_ID,
   LAMPWRIGHT,
   POTIONS,
+  BOSS_FIGHT,
+  BOSS_SHOUTS,
+  PROVING,
   RUN_SLOTS,
+  MAIN_SLOT,
   SKILL_BY_ID,
   SKILL_SLOTS,
   THEME_BY_ID,
-  keyForBoss,
 } from '../data';
 import { spend } from '../economy';
-import { crystalsIn, haulFull, socketed, unsocket } from '../game/state';
+import { bagsFull, crystalsIn, socketed, unsocket } from '../game/state';
 import type { GameState } from '../game/state';
 import { crystalProgress } from '../game/crystals';
-import { bossBeaten, sceneWaiting, takeBoss } from '../game/scenes';
-import { relicFor } from '../game/graft';
-import { SCENE_BY_ID } from '../scenes';
+import { bossBeaten, hasMet, owedTale, takeBoss, takeMet, whoIsDown } from '../game/scenes';
+import { hasWorker, takeWorker, workerDown } from '../game/work';
+import { dismissSpeech } from './speech';
+import { WORKERS, workerMark } from '../data';
+import { descentFacts, takeGrinds } from '../game/trials';
+import { SCENES, SCENE_BY_ID } from '../scenes';
+import type { Hotspot } from '../scenes/camp';
+import { initCamp, openCamp, closeCamp, isCampOpen, renderCamp, setCampEmber } from './camp';
+import { greetAfterTale, openTalk } from './talk';
+import { playTale } from './tale';
+import {
+  advanceRung, climbLine, initClimb, renderClimb, rungName, rungNow, socketsInClimb, whereNow,
+} from './climb';
+import { arenaAt, isProving, takeRung, zoneAt } from '../ladder';
+import type { RunWhere } from '../ladder';
+import type { Rung } from '../ladder';
 import type { SceneDef } from '../scenes';
 import { buildReport, lootRows } from '../game/report';
 import type { RunReport } from '../game/report';
-import { openHaul } from './haul';
-import type { Waiting } from '../game/crystals';
-import { closeMet, isMetOpen, lampwrightWords, openMet } from './met';
-import { closeGraft, isGraftOpen, openGraft } from './graft';
-import { endSpeech, speakingAt, speakingBeat, startSpeech, syncSpeech } from './speech';
+import { closeMet, isMetOpen } from './met';
+import { closeGraft, isGraftOpen } from './graft';
+import { anchor, endSpeech, speakingAt, speakingBeat, startSpeech, syncSpeech } from './speech';
 import { openCrystals } from './crystals';
+import { openWork } from './work';
+import { openForge } from './forge';
 import { createCanvasRenderer } from '../render/canvas2d';
 import { createPixiRenderer } from '../render/pixi';
+import { makeProp } from '../render/sprites';
 import { ZOOM_STEP, clampZoom, defaultZoom, readPalette } from '../render/renderer';
 import type { Palette, Renderer } from '../render/renderer';
+import type { Vec2 } from '../sim/grid';
 import { flaskIcon } from './flaskart';
-import { renderInventory, setInventoryBase, setInventoryHandler } from './inventory';
+import { potionReading, potionWorkings } from '../potion-text';
+import { skillWorkings } from '../skill-text';
+import { openInventory, renderInventory, setInventoryBase, setInventoryHandler } from './inventory';
 import { keyFor, keyName } from './keys';
 import { note } from './history';
 import { badge } from './badge';
-import { openCharacter, skillLines } from './character';
-import { skillIcon } from './icons';
+import { openCharacter } from './character';
+import { openCraft } from './craft';
+import { openStash } from './stash';
+import { openTrials } from './trials';
+import { drawn, portraitIcon, skillIcon } from './icons';
 import { itemIcon } from './icons';
 import { itemCard } from './itemcard';
-import { attachTooltip } from './tooltip';
+import { attachTooltip, hideTooltip } from './tooltip';
 import { starvedMultiplier } from '../sim/grants';
-import type { Item } from '../types';
+import type { PotionDef } from '../data';
 
 const $ = (id: string) => document.getElementById(id)!;
 
@@ -87,18 +114,21 @@ let sim: RunSim | null = null;
 let renderer: Renderer | null = null;
 let phase: Phase = 'menu';
 let playing = false;
+
+export const inDescent = (): boolean => playing; // a change made NOW waits for it
 let accumulator = 0;
 let lastFrame = 0;
 let seed = 0;
 /** Descents cleared without stopping. Reset by the click that starts the loop. */
 let streak = 0;
 /** Why the loop stopped, for the card that reports it. */
-let halt: 'died' | 'full' | 'once' | 'left' | 'chose' | 'met' = 'once';
-/** Armed mid-descent: finish this one, bank it, and do not go back down. */
-let leaving = false;
-/** A boss whose key is armed, spent by the launch. UI state like `leaving`:
- *  what is SAVED is the room a spent key has already paid for. */
-let calling: string | null = null;
+let halt: 'died' | 'full' | 'once' | 'left' | 'chose' | 'met' | 'dry' = 'once';
+/** THE RUNG THIS DESCENT IS, set at the launch: a clear records what was
+ *  walked rather than what is picked by the time it ends. */
+let ran: RunWhere | null = null;
+/** Whether the room being stood in is a REPEAT of a beaten boss: the speech
+ *  played once, so a bought rematch goes straight to the fight. */
+let revisit = false;
 
 /** The handover: down the hole at the exit, dark for the moment the map is
  *  swapped, out of the entrance of whatever is at the bottom. Nothing in
@@ -112,32 +142,39 @@ let handover = 0;
 let banked: RunReport | null = null;
 /** Set to `banked` when the loop is stopping and the drop has still to play. */
 let pending: RunReport | null = null;
-/** Held while the room is being crossed, for `land()` afterwards — the report
- *  and the STATE are the descent's, not the scene's, or the card that lands
- *  lists the loot of a room with nothing in it. */
-let greeted: RunReport | null = null;
-let greetedState: RunState | null = null;
-/** What he is holding, until the hero reaches him and the panel opens. */
-let greeting: Waiting | null = null;
-/** The room waiting at the bottom of the hole, until the drop has played. */
-let arriving: SceneDef | null = null;
+/** Set while the room was WALKED TO rather than scheduled: nothing was banked,
+ *  so leaving it goes back to the Fissure instead of down a stair. */
+let visiting = false;
 /** The room you are standing in, and whether its beats have been started. */
 let arrivedIn = '';
 let spoke = false;
-/** Close enough to see it. Fit (1×) makes a monster four pixels. */
+/** How long a phase's shout stays up. */
+const SHOUT_FOR = 1.9;
+/** The look at what you called up, there and back. */
+const ARRIVAL = 2.6;
+
+let arrival = 0;
 const DEFAULT_ZOOM = 2;
 let zoom = DEFAULT_ZOOM;
 
 function setPhase(next: Phase): void {
+  const was = phase;
   phase = next;
-  // A scene and a descent are both a map with nothing else on screen, so from
-  // outside they are indistinguishable by what is hidden. A harness needs to
-  // be able to tell the two apart, and this is the only thing that says so.
+  // A scene and a descent are both a map with nothing else on screen: this is
+  // the only thing that tells a harness the two apart.
   document.body.dataset.runPhase = next;
-  $('run-menu').hidden = next !== 'menu';
+  // A room is a fraction of a descent's size, so the scale that frames one
+  // leaves the other a postage stamp in the middle of the screen.
+  if (was !== next) fitCanvas();
+  // The crack is a window and closes when you go down it: a card offering the
+  // way in, over a descent already under way, is a way in twice.
+  if (next !== 'scene') closeFissure();
+  if (next !== 'scene') dismissSpeech(); // a line does not outlive the room it was said in
+  if (next !== 'menu') closeCamp();
   $('run-stagewrap').hidden = next === 'menu';
   $('run-results').hidden = next !== 'results';
   syncViewportLock();
+  syncRung();
   setInventoryBase(runHandler());
 }
 
@@ -145,7 +182,9 @@ function setPhase(next: Phase): void {
  *  map is up. Left on while you tabbed to the bench it froze that page with its
  *  items out of reach. `mapfull` rides on the same answer. */
 export function syncViewportLock(): void {
-  const showing = phase !== 'menu';
+  // The CAMP is full-bleed too, so the menu is no exception any more: a picture
+  // that fills the screen needs the shell over it and pointer-transparent.
+  const showing = true;
   document.querySelector('.viewport')?.classList.toggle('viewport--locked', showing);
   document.body.classList.toggle('mapfull', showing);
   // The stage's box just changed shape, and nothing else will tell the
@@ -160,13 +199,19 @@ export const runPhase = (): Phase => phase;
  *  cleared and banked long before anyone spoke, so this is the report landing
  *  rather than the run resuming. */
 export function sceneEnded(): void {
+  // Both panels are the CAMP's now: nothing is ticking and nothing is banked,
+  // so the whole of ending one is drawing the picture again.
+  if (isCampOpen()) {
+    renderCamp();
+    renderInventory();
+    return;
+  }
   sim?.takeGift();
-  const report = greeted;
-  const state = greetedState;
-  greeted = null;
-  greetedState = null;
-  greeting = null;
-  if (report && state) land(report, state);
+  if (visiting) {
+    visiting = false;
+    goHome();
+  }
+  renderInventory();
 }
 
 /** Escape, anywhere in a meeting: the rest of the lines are skipped and what
@@ -186,8 +231,8 @@ export function onRunFocused(): void {
   refreshRunPanels();
 }
 
-/** Nothing. Crystals are socketed from the collection and the dock holds only
- *  gear, so the shell's own actions are what a click there means. */
+/** Nothing: the dock holds only gear, so the shell's own actions are what a
+ *  click there means. */
 function runHandler() {
   return {
     actionFor: () => null,
@@ -199,8 +244,98 @@ function runHandler() {
 // Menu
 // ---------------------------------------------------------------------------
 
-function renderMenu(): void {
-  const grid = $('run-sockets');
+// --- the camp --------------------------------------------------------------
+//
+// A PICTURE rather than a map: `src/ui/camp.ts` owns everything on it and this
+// only says what a hotspot OPENS. A SOCKET does what its socket on the Fissure
+// card does; a PERSON is TALKED TO, where they are standing.
+const OPENS: Record<Hotspot['opens'], (spot: Hotspot, at: DOMRect) => void> = {
+  fissure: () => openFissure(),
+  craft: () => openCraft(),
+  stash: () => openStash(),
+  trials: () => openTrials(),
+  character: () => openCharacter(),
+  room: (spot, at) => {
+    const def = SCENE_BY_ID[spot.room ?? ''];
+    if (def) openTalk(def, at);
+  },
+  // A SOCKET IS THE ONLY DOOR TO THE CRYSTALS, so it opens them whether or not
+  // one is in it: taking a crystal BACK is the Fissure card's own sockets' job,
+  // and a filled socket that unsocketed instead would leave no door at all.
+  socket: () => openCrystals(),
+  // Every station is one room on its own tab: a smelter and a loom differ in
+  // the word and the picture, never the mechanism.
+  work: (spot) => openWork(spot.family),
+  forge: () => openForge(),
+};
+
+export function openFissure(): void {
+  renderMenu();
+  $('run-menu').hidden = false;
+}
+export function closeFissure(): void {
+  $('run-menu').hidden = true;
+}
+export const isFissureOpen = (): boolean => !$('run-menu').hidden;
+
+/**
+ * HOME. The camp is the ground the game stands on — every way out of a descent,
+ * a room or a wipe comes back to it, and `menu` is the phase it is.
+ */
+export function goHome(): boolean {
+  sim = null;
+  setPhase('menu');
+  banked = null;
+  pending = null;
+  handover = 0;
+  streak = 0;
+  refreshRunPanels();
+  openCamp();
+  setLeaveLabel();
+  tellTale();
+  return true;
+}
+
+/** THE STORY IS TOLD IN THE CAMP, where somebody is looking at the screen —
+ *  meeting a man in a descent is one line said in passing. Nobody with a tale
+ *  owed is left standing about: the queue does not move until it is watched,
+ *  so the next person down there arrives with it. */
+function tellTale(): void {
+  const owed = owedTale(game);
+  if (!owed) return;
+  const told = playTale(game, owed.id, () => {
+    renderCamp();
+    if (owed.scene) greetAfterTale(owed.scene);
+  });
+  if (!told) renderCamp(); // no art for this one, so it is heard the moment you are up
+}
+
+// WHO IS ABOUT is the CAMP's — *"that's what the camp is for."* A list of the
+// same people here was a second route to one conversation.
+
+/** WHETHER A CLEAR TAKES THE NEXT RUNG DOWN, rather than the same one again.
+ *  The chain itself is not a choice — *"you press Enter once"* — so this is
+ *  about DEPTH: grind a rung until the gear is there, then turn it on and let
+ *  the clears carry you. A DEATH turns it off, because a loop that keeps
+ *  walking you into what just killed you is a loop nobody asked for. */
+const climbing = (): boolean => game.climbing === true;
+
+function syncClimb(): void {
+  const btn = $('run-deeper') as HTMLButtonElement;
+  const on = climbing();
+  btn.classList.toggle('mini--on', on);
+  btn.setAttribute('aria-pressed', String(on));
+  attachTooltip(btn, () =>
+    on
+      ? 'Deeper — on.\nEvery clear takes the next depth instead of this one again. Dying turns it off and leaves you where you are.'
+      : 'Deeper — off.\nEvery clear goes back into the depth you picked, so one can be ground until the gear is there.'
+  );
+}
+
+/** THE FOUR SOCKETS, drawn wherever the Proving Ground's own tab puts them —
+ *  *"the crystal sockets laid out like the fissure entrance in the camp on top
+ *  of the map"* — and nowhere else, so the climb keeps the whole window. */
+function renderSockets(grid: HTMLElement): void {
   grid.replaceChildren();
 
   for (const slot of RUN_SLOTS) {
@@ -208,6 +343,13 @@ function renderMenu(): void {
     const button = el('button', 'socket') as HTMLButtonElement;
     button.id = `run-socket-${slot.id}`;
     button.classList.toggle('socket--full', !!held);
+    // THE CRACK'S OWN SOCKET, lit once something is in it: the same clawed
+    // recess the camp picture has, so the wall and the tab are one object.
+    const art = makeProp(held ? 'camp_socket_lit' : 'camp_socket');
+    if (art) {
+      art.className = 'socket__art';
+      button.append(art);
+    }
     // An empty socket is the question "what goes in here", and the answer is
     // a screen, not a bag: crystals are compared before one of them goes in.
     button.onclick = () => {
@@ -247,13 +389,22 @@ function renderMenu(): void {
     }
     grid.append(button);
   }
+  renderKeySocket(grid);
+  renderSelected(grid);
+}
 
-  const host = $('run-selected');
-  host.replaceChildren();
+/** WHAT THE SET COMES TO, under the sockets that made it. */
+function renderSelected(grid: HTMLElement): void {
+  const host = el('div', 'groundset');
+  host.id = 'run-selected';
 
   const set = socketed(game);
   const chips = el('div', 'setrows');
-  for (const row of setRows(set)) {
+  const standing = trialMod(game.character);
+  // Read WHERE YOU ARE GOING, or the danger printed is not the danger you
+  // walk into: the Proving Ground's floor is not a depth's.
+  const at = whereNow(game.character);
+  for (const row of setRows(set, standing, at)) {
     const chip = el('span', 'mult');
     chip.append(el('span', 'mult__k', row.label));
     chip.append(el('span', 'mult__v', row.value));
@@ -263,7 +414,7 @@ function renderMenu(): void {
   // What you will be fighting, before you commit to fighting it — and where,
   // since half of one world takes the rock as well as the packs.
   host.append(el('p', 'setcomp', compositionText(set)));
-  const zone = THEME_BY_ID[runSet(set).theme];
+  const zone = THEME_BY_ID[runSet(set, standing, at).theme];
   const where = el('p', 'setzone', zone.name);
   where.title = zone.blurb;
   where.append(el('span', 'setzone__blurb', ` — ${zone.blurb}`));
@@ -271,7 +422,7 @@ function renderMenu(): void {
 
   // What the set is FOR. Every world pays in its own currency and no two are
   // comparable, so this is the difference between choosing and guessing.
-  const farms = farmingText(set);
+  const farms = farmingText(set, standing, at);
   if (farms) host.append(el('p', 'setcomp', farms));
   host.append(
     el(
@@ -285,77 +436,122 @@ function renderMenu(): void {
     )
   );
 
-  renderCall();
+  grid.append(host);
+}
 
-  // The one thing that can shut the Fissure — and never a dead end, because
-  // selling out of the haul needs no room anywhere.
-  const blocked = haulFull(game);
+function renderMenu(): void {
+  syncClimb();
+  renderClimb($('run-climb'), game.character, () => renderMenu());
+
+  // The two things that can shut the Fissure, and neither is a dead end: gear
+  // sells from anywhere, and a weapon is one click on the sheet.
+  const why = bagsFull(game)
+    ? 'Your bags are full. Sell or stash some of it before you go back down.'
+    : weaponRefusal(game.character);
   const launcher = $('run-launch') as HTMLButtonElement;
-  launcher.disabled = blocked;
-  launcher.classList.toggle('mini--off', blocked);
-  $('run-blocked').textContent = blocked
-    ? 'Your haul is full. Empty some of it before you go back down.'
-    : '';
+  // Just ENTER: the rung is picked on the climb beside it and the crack is the
+  // only thing this opens. A KEY is the exception — the crack opens onto the
+  // boss instead of a descent, and the press is what spends the key.
+  launcher.textContent = game.called
+    ? `Face ${BOSS_BY_ID[game.called]?.name ?? game.called}`
+    : 'Enter';
+  launcher.disabled = why !== null;
+  launcher.classList.toggle('mini--off', why !== null);
+  $('run-blocked').textContent = why ?? '';
 }
 
 /**
- * Going back for one you have already put down. The button ARMS it and the
- * launch spends the key, so a descent you abandon costs you the way in — the
- * same rule as everywhere else.
+ * The FIFTH socket, under the four the crystals take. A key is SPENT the
+ * moment it goes in — the same rule as socketing anywhere else being
+ * permanent — and what it buys is the next entry: the Fissure opens onto the
+ * boss instead of a descent. Hidden until a boss has been met, since a
+ * keyhole to nowhere teaches nothing.
  */
-function renderCall(): void {
-  const button = $('run-call') as HTMLButtonElement;
+function renderKeySocket(grid: HTMLElement): void {
   const key = BOSS_KEYS.find((k) => (game.wallet[k.id] ?? 0) > 0 && bossBeaten(game, k.boss));
-  button.hidden = !key || game.called !== null;
-  if (!key) {
-    calling = null;
-    return;
+  const armed = game.called ? BOSS_BY_ID[game.called] : null;
+  if (!armed && !key) return;
+
+  const button = el('button', 'socket socket--key') as HTMLButtonElement;
+  button.id = 'run-socket-key';
+  button.classList.toggle('socket--full', !!armed);
+  if (armed) {
+    button.append(el('div', 'socket__name', armed.name));
+    button.append(el('div', 'socket__mods', `${armed.herald} Enter, and it is the fight.`));
+    button.disabled = true;
+  } else if (key) {
+    const who = BOSS_BY_ID[key.boss];
+    button.append(el('div', 'socket__name', `Set ${key.name} — ${game.wallet[key.id]} held`));
+    button.append(el('div', 'socket__mods', `Spends the key. The next entry is ${who?.name ?? key.boss}.`));
+    button.title = key.description;
+    button.onclick = () => {
+      if (!spend(game.wallet, { [key.id]: 1 })) return;
+      game.called = key.boss;
+      note(`${key.name} spent. ${who?.name ?? key.boss} is listening.`);
+      renderMenu();
+      renderInventory();
+    };
   }
-  if (calling && calling !== key.boss) calling = null;
-  const who = BOSS_BY_ID[key.boss];
-  button.textContent = calling
-    ? `Calling ${who?.name ?? key.boss} — ${key.name} spent on entering`
-    : `Call ${who?.name ?? key.boss} — 1 ${key.name}`;
-  button.classList.toggle('mini--on', calling !== null);
-  button.title = key.description;
-  button.onclick = () => {
-    calling = calling ? null : key.boss;
-    renderCall();
-  };
+  grid.append(button);
 }
 
 // ---------------------------------------------------------------------------
 // Run
 // ---------------------------------------------------------------------------
 
+/** What the sim needs of a meeting: who to stand there, and which sprite. A
+ *  WORKER at his own depth comes first; the people are on their schedule. */
+const meetsIn = (theme: MapTheme, rung: number) => {
+  const worker = workerDown(game, theme, rung);
+  if (worker) return { id: workerMark(worker.id), sprite: worker.sprite };
+  const def = whoIsDown(game, theme, rung);
+  return def ? { id: def.id, sprite: def.who } : undefined;
+};
+
 function launch(): void {
+  // A socketed key opens the fight AT the door: the descent this entry would
+  // have been is the fight, not a wait for one.
+  if (game.called) {
+    const den = SCENES.find((s) => s.encounter === game.called);
+    if (den) {
+      seed = Math.floor(Math.random() * 1e9);
+      enterScene(den);
+      return;
+    }
+  }
+
   // An empty set is a real descent, not a missing choice: the bare Fissure is
   // generated fresh each time and never taken from you, which is what makes
   // running out of crystals a setback rather than an end.
   const set = socketed(game);
 
-  // Spent HERE and not at the clear: a descent you walk out of costs you the
-  // way in, which is what abandoning costs everywhere else.
-  if (calling) {
-    const key = keyForBoss(calling);
-    if (key && spend(game.wallet, { [key.id]: 1 })) {
-      game.called = calling;
-      note(`${key.name} spent. ${BOSS_BY_ID[calling]?.name ?? calling} is listening.`);
-    }
-    calling = null;
+  // WHERE: read at the launch, so a chained descent stays where it started.
+  ran = whereNow(game.character);
+  const depth = isProving(ran) ? null : ran;
+
+  // THE TOP OF A ZONE IS A FIGHT, and clearing it opens the zone above.
+  const arena = depth ? SCENE_BY_ID[arenaAt(depth) ?? ''] : undefined;
+  if (arena && depth) {
+    seed = Math.floor(Math.random() * 1e9);
+    enterScene(arena, [], [], depth);
+    return;
   }
 
   seed = Math.floor(Math.random() * 1e9);
-  // Who you might meet is the player's business, not the set's: the chance
-  // falls as the collection fills, and the sim is only told the number.
+  // WHO IS DOWN THERE, scheduled off the DEPTH. The Proving Ground is past the
+  // whole campaign, which is where everybody who lives down here was met.
   sim = new RunSim(set, game.character, new Rng(seed), {
     potionThresholds: game.potions,
     beaten: game.bosses ?? [],
+    rung: depth ?? undefined,
+    meets: depth
+      ? meetsIn(runSet(set, trialMod(game.character), ran).theme, depth.rung)
+      : undefined,
   });
 
   note(
-    `${set.length} socketed · power ${sim.set.power.toFixed(1)} · seed ${seed} · ` +
-      `${sim.state.totalMonsters} monsters`
+    `${rungName(ran)} · ${set.length} socketed · power ${sim.set.power.toFixed(1)} · ` +
+      `seed ${seed} · ${sim.state.totalMonsters} monsters`
   );
   accumulator = 0;
   playing = true;
@@ -379,60 +575,61 @@ function launch(): void {
   renderInventory();
 }
 
+/** THE LEDGER counts at the CLEAR, on the same rule a boss is marked by, and
+ *  says what a count just finished: a point earned in silence is one nobody
+ *  spends. A DEATH counts nothing, like everything else a descent pays. */
+function payTrials(state: RunState): void {
+  const won = takeGrinds(game, descentFacts(state, socketed(game)));
+  for (const grind of won) {
+    note(`${grind.name}. ${grind.pays} ${grind.pays === 1 ? 'point' : 'points'}.`, 'add');
+  }
+  if (won.length > 0) renderBadges();
+}
+
 /**
  * A run ended. Bank it, then decide whether there is another one. Capacity is
- * read HERE and never during a run, which is why the haul may end up over its
+ * read HERE and never during a run, which is why the bag may end up over its
  * limit rather than a descent's drops being split.
  */
 function finish(left = false): void {
   if (!sim) return;
   const report = buildReport(game, sim.state, left);
   playing = false;
+  game.cameBack = true; // a death brings you back the same as a clear
   renderBadges(); // the level this descent bought has landed, so a point may have
 
   if (report.cleared) streak++;
 
-  // A room through the hole. Already banked, so it is a reason the loop
-  // stopped rather than a new ending — same `land()`, same report. You drop
-  // in exactly as a chained descent does and come up somewhere else. Asked
-  // AFTER the report, so the level and the crystal experience this descent
-  // just bought both count towards the meeting it schedules.
-  // A scene never schedules a scene: the queue is read at the end of a
-  // DESCENT, or a room hands you straight into the next room.
-  const scene = report.cleared && phase !== 'scene'
-    ? sceneWaiting(game, {
-        set: sim.state.set,
-        elapsed: sim.state.elapsed,
-        socketed: socketed(game),
-      })
-    : null;
-  if (scene) {
-    halt = 'met';
-    greeted = report;
-    greetedState = sim.state;
-    greeting = scene.gift;
-    arriving = scene.def;
-    handover = 0.0001;
-    banked = report;
-    pending = null;
-    absorbEvents();
-    return;
+  // THE CLIMB. A rung already cleared records nothing, and what FINISHING it
+  // pays is the Lampwright's to hand over in the camp. CLIMBING: the rung just
+  // recorded is behind you, so forgetting the pick is the whole of "go deeper".
+  if (report.cleared && !left && ran && !isProving(ran)) {
+    takeRung(game.character, ran);
+    if (climbing()) advanceRung();
   }
+  // THE LADDER'S OWN COUNT. Never on a walk: a walk buys no progress anywhere.
+  if (report.cleared && !left && isProving(ran)) {
+    game.provingClears = (game.provingClears ?? 0) + 1;
+  }
+  // A DEATH stops the descent AND the climb: walking straight back into what
+  // killed you is not a loop anybody turned on.
+  if (!report.cleared) game.climbing = false;
 
+  if (report.cleared) payTrials(sim.state);
+
+  // A ROLL RAN OUT: the next descent is not the one you set up.
+  const dry = report.burnt.length > 0;
   halt = left
     ? 'left'
     : !report.cleared
       ? 'died'
-      : report.haulFull
+      : report.bagsFull
         ? 'full'
-        : leaving
-          ? 'chose'
+        : dry
+          ? 'dry'
           : 'once';
 
-  // `leaving` is the only stop you choose while the fight is still on, so it
-  // is checked here rather than at the launch: the descent you armed it during
-  // still finishes and still banks.
-  if (report.cleared && !report.haulFull && !leaving) {
+  if (report.cleared && !report.bagsFull && !dry) {
     // Drop into the hole first. The next descent is built at the bottom of it.
     handover = 0.0001;
     banked = report;
@@ -446,32 +643,47 @@ function finish(left = false): void {
 /** Arriving. The lines come first, one at a time over his own head, and the
  *  last of them is the panel, which is where the gift is. `spoke` stops the
  *  frame after arriving from starting the whole thing again. */
+/** ARRIVING AT A FIGHT. The body is called up FIRST, so the camera has
+ *  something to cross to and it is standing there when you look rather than
+ *  appearing out of the air once you have finished talking. A REMATCH skips
+ *  the look, not the spawn. */
+function beginArrival(): void {
+  const boss = sim?.summonBoss();
+  arrival = revisit || !boss ? 0 : ARRIVAL;
+  if (arrival > 0 && boss) renderer?.lookAt(boss);
+}
+
+/** Halfway it comes back to the hero; at the end the room gets on with it. */
+function stepArrival(dt: number): void {
+  if (arrival <= 0) return;
+  const was = arrival;
+  arrival = Math.max(0, arrival - dt);
+  if (was > ARRIVAL / 2 && arrival <= ARRIVAL / 2) renderer?.follow();
+  if (arrival === 0 && sim?.state.meeting && !spoke) speak();
+}
+
 function speak(): void {
   spoke = true;
   const def = SCENE_BY_ID[arrivedIn];
   if (!def) return;
   // A room with something in it says its piece and then goes live; a quiet one
-  // ends on the panel, which is where the gift is.
+  // ends on the panel, which is where the gift is. A REMATCH skips the piece:
+  // the speech was the first meeting's, and a key bought a fight.
   if (def.encounter) {
-    startSpeech(def.who, def.name, def.beats ?? [], () => {
+    if (revisit) {
+      if (sim?.beginEncounter()) playing = true;
+      absorbEvents();
+      setLeaveLabel();
+      return;
+    }
+    // YOUR line, not its: a boss room has nobody living in it to say one.
+    startSpeech(game.character.name, game.character.name, def.beats ?? [], () => {
       if (sim?.beginEncounter()) playing = true;
       absorbEvents();
       setLeaveLabel();
     });
     return;
   }
-  // Somebody who wants what you are carrying. His bench is the last beat, the
-  // same shape as a gift's panel — the difference is that nothing is handed
-  // over until you press the button, and Keep it walks out still holding it.
-  const wanted = relicFor(game, def.id);
-  if (wanted) {
-    startSpeech(def.who, def.name, def.beats ?? [], () => openGraft(def, wanted));
-    return;
-  }
-  if (!greeting) return;
-  const words = lampwrightWords(greeting);
-  const held = greeting;
-  startSpeech(def.who, def.name, words.beats, () => openMet(held));
 }
 
 /** The boss is down, or you are. A boss room is a DESCENT: its loot banks, its
@@ -486,10 +698,14 @@ function endEncounter(): void {
 
   const def = SCENE_BY_ID[arrivedIn];
   const state = sim.state;
-  // Marked at the clear, so a room you died in is one you meet again.
+  // Marked at the clear, so a room you died in is one you meet again. BEFORE
+  // the trials are asked: the first rung is this boss being down.
   if (report.cleared && def?.encounter) takeBoss(game, def.encounter);
+  // A zone's ARENA is a rung; the Proving Ground never is.
+  if (report.cleared && ran && !isProving(ran)) takeRung(game.character, ran);
+  if (report.cleared) payTrials(state);
 
-  const after = report.cleared ? (def?.after ?? []) : [];
+  const after = report.cleared && !revisit ? (def?.after ?? []) : [];
   if (after.length === 0) return land(report, state);
   startSpeech(def!.who, def!.name, after, () => land(report, state));
 }
@@ -497,20 +713,32 @@ function endEncounter(): void {
 /** Up out of the hole, into a room nobody generated. A `RunSim` like any other
  *  — the packs are what a scene leaves out — so both renderers draw it with no
  *  changes, and nothing ticks: the walk across is the whole of it. */
-function enterScene(def: SceneDef): void {
+function enterScene(
+  def: SceneDef,
+  crowd: { sprite: string; at: Vec2 }[] = [],
+  dressing: { id: string; x: number; y: number }[] = [],
+  /** The depth this room IS when it is a zone's arena; any other is not one. */
+  at: Rung | null = null
+): void {
+  visiting = false;
+  ran = at;
   // The key bought this room, and arriving is what it bought.
   if (def.encounter && game.called === def.encounter) game.called = null;
-  arriving = null;
+  // Standing in somebody's room is MEETING them, which is what puts them on
+  // the list of people you can go back to and takes them off the schedule.
+  if (!def.encounter) takeMet(game, def.id);
+  revisit = def.encounter !== null && bossBeaten(game, def.encounter);
   arrivedIn = def.id;
   spoke = false;
+  arrival = 0;
   banked = null;
-  sim = new RunSim(socketed(game), game.character, new Rng(seed), { scene: def.id });
+  sim = new RunSim(socketed(game), game.character, new Rng(seed), { scene: def.id, crowd, dressing });
   playing = false;
   accumulator = 0;
   note(def.said, 'add');
-  // A camera left pointed at a corner of the descent that just ended is a
-  // black screen with no obvious way out of it.
+  // A camera left in a corner of the last descent is a black screen.
   renderer?.follow();
+  if (def.encounter) beginArrival();
   setPhase('scene');
   setLeaveLabel();
   fitCanvas();
@@ -522,13 +750,15 @@ function land(report: RunReport, run: RunState): void {
   handover = 0;
   pending = null;
   banked = null;
-  arriving = null;
   renderResults(report, run);
   setPhase('results');
   setLeaveLabel();
   renderInventory();
-  // Nothing to sort is the one case a grid of empty slots is wrong for.
-  if (game.haul.length > 0) openHaul(haltLine(report));
+  // The bag is where a descent's loot now IS, unless it found nothing at all.
+  if (report.items.length > 0) {
+    openInventory();
+    note(haltLine(report));
+  }
 }
 
 /** 1 standing, 0 underground. Drives the sprite and the dark over it. */
@@ -538,22 +768,24 @@ function emergeNow(): number {
   return t < DESCEND ? 1 - t / DESCEND : Math.min(1, (t - DESCEND) / (1 - DESCEND));
 }
 
-/** What the haul screen says about why you are looking at it. */
+/** Why the loop stopped, in one line on the log. */
 function haltLine(report: RunReport): string {
   const runs = streak === 1 ? 'one descent' : `${streak} descents`;
   // Losing the descent you were standing in is the whole cost, and the thing
   // it is easiest to read as losing the lot — so say what is still yours.
   const kept =
     streak > 0
-      ? `Everything ${runs} banked is here; only the one you were in is gone.`
-      : game.haul.length > 0
-        ? 'That descent banked nothing, but what was already here is still yours.'
-        : 'A descent only pays if you finish it.';
+      ? `Everything ${runs} banked is yours; only the one you were in is gone.`
+      : 'A descent only pays if you finish it.';
 
   if (halt === 'met') return `${LAMPWRIGHT.name} walked you out. Cleared ${runs}.`;
   if (halt === 'left') return `You walked out. ${kept}`;
   if (halt === 'died') return `You died. ${kept}`;
-  if (halt === 'full') return `The haul is full after ${runs}. Clear some of it to go again.`;
+  if (halt === 'full') return `Your bags are full after ${runs}. Clear some of it to go again.`;
+  if (halt === 'dry') {
+    const names = report.burnt.map((b) => b.name).join(', ');
+    return `Cleared ${runs}. ${names} ran out — roll the socket again before the next.`;
+  }
   if (halt === 'chose') return `Cleared ${runs}, and stopped where you asked.`;
   return `Cleared ${runs}.`;
 }
@@ -574,7 +806,9 @@ function renderCarrying(): void {
   if (!sim) return;
   const rows = lootRows(sim.state);
   const items = sim.state.loot.items;
-  const sig = rows.map((r) => `${r.label}${r.value}`).join('|') + `#${items.length}`;
+  // A material STACKS, so the count alone cannot see a node being worked.
+  const stacked = items.reduce((n, i) => n + ((i.meta.n as number) ?? 0), 0);
+  const sig = rows.map((r) => `${r.label}${r.value}`).join('|') + `#${items.length}.${stacked}`;
   if (sig === lootSig) return;
   lootSig = sig;
 
@@ -607,10 +841,10 @@ function renderCarrying(): void {
 }
 
 /**
- * The flasks. The KEYS are the shortcut and these are the interface — a phone
- * has no number row, so a potion reachable only by keyboard is missing rather
- * than optional. `fires at` is the same threshold the sim's own policy reads,
- * so setting it here is setting what a headless run does.
+ * The flasks. The KEYS are the shortcut and these are the interface, since a
+ * threshold has to be settable by something. `fires at` is the same threshold
+ * the sim's own policy reads, so setting it here is setting what a headless run
+ * does.
  */
 function renderFlasks(): void {
   const host = $('run-flasks');
@@ -625,13 +859,12 @@ function renderFlasks(): void {
     const row = el('div', `flask flask--${potion.pool}${drinking ? ' flask--live' : ''}`);
     const use = el('button', 'flask__use') as HTMLButtonElement;
     use.id = `flask-${potion.id}`;
-    use.append(flaskIcon(left, potion.charges));
+    use.append(flaskIcon(left, potion.charges, 46, potion.pool));
     use.append(el('span', 'flask__key', keyName(keyFor(game, potion.binding))));
     use.dataset.at = String(left);
     use.disabled = !live || !sim!.canDrink(potion.id);
     use.onclick = () => drinkPotion(potion.id);
-    // The art carries the count; the title is where the number belongs now.
-    use.title = `${potion.name} — ${left} of ${potion.charges}. ${potion.blurb}`;
+    attachTooltip(use, () => flaskSays(potion));
     row.append(use);
 
     const auto = el('div', 'flask__auto');
@@ -648,10 +881,28 @@ function renderFlasks(): void {
         auto.append(button);
       }
     }
-    auto.title = `Fires itself when ${potion.pool} falls to this share.`;
+    attachTooltip(
+      auto,
+      () =>
+        `Fires itself\nWhen your ${potion.pool} falls to this share — and a headless run obeys the same number.`
+    );
     row.append(auto);
     host.append(row);
   }
+}
+
+/**
+ * What THIS flask does for THIS character. Read live off the same grants the
+ * sim reads, because the Alchemist moves the pour, the length, the charges and
+ * three things you only get while one is running — a hover quoting the table
+ * would be wrong for the build the trade exists to make.
+ */
+function flaskSays(potion: PotionDef): string {
+  const stats = sim?.state.hero.stats ?? characterStats(game.character);
+  const max = potion.pool === 'life' ? stats.maxLife : stats.maxMana;
+  const left = sim?.state.charges[potion.id] ?? potion.charges;
+  const reading = potionReading(potion, max, treeGrants(game.character));
+  return [potion.name, ...potionWorkings(potion, reading, left)].join('\n');
 }
 
 /**
@@ -670,8 +921,7 @@ function syncFlasks(): void {
     use.parentElement?.classList.toggle('flask--live', drinking);
     if (use.dataset.at !== String(left)) {
       use.dataset.at = String(left);
-      use.querySelector('svg')?.replaceWith(flaskIcon(left, potion.charges));
-      use.title = `${potion.name} \u2014 ${left} of ${potion.charges}. ${potion.blurb}`;
+      use.querySelector('svg')?.replaceWith(flaskIcon(left, potion.charges, 46, potion.pool));
     }
   }
 }
@@ -681,6 +931,20 @@ function drinkPotion(id: string): void {
   if (!sim || !playing) return;
   sim.usePotion(id);
   syncFlasks();
+}
+
+/** Marks etched into a vessel at every 100 of the pool, heavier each 1000 —
+ *  rebuilt only when the pool itself moves, since the marks are the SCALE. */
+function syncTicks(host: HTMLElement, max: number): void {
+  const key = String(Math.round(max));
+  if (host.dataset.max === key) return;
+  host.dataset.max = key;
+  host.replaceChildren();
+  for (let at = 100; at < max; at += 100) {
+    const tick = el('div', `hp__tick${at % 1000 === 0 ? ' hp__tick--big' : ''}`);
+    tick.style.left = `${(at / max) * 100}%`;
+    host.append(tick);
+  }
 }
 
 function renderReadout(): void {
@@ -699,10 +963,15 @@ function renderReadout(): void {
   $('run-level').textContent = String(game.character.level);
   $('run-xp-text').textContent = `${game.character.xp} / ${need}`;
   ($('run-xp-fill') as HTMLElement).style.width =
-    `${Math.min(100, (game.character.xp / need) * 100)}%`;
+    `${need > 0 ? Math.min(100, (game.character.xp / need) * 100) : 0}%`; // 0/0 is EMPTY, never full
+
+  syncCooldowns();
+  syncBossBar();
+  syncDebuffs();
 
   const frac = Math.max(0, s.hero.life / s.hero.stats.maxLife);
   ($('run-hp-fill') as HTMLElement).style.width = `${frac * 100}%`;
+  syncTicks($('run-hp-ticks'), s.hero.stats.maxLife);
   $('run-hp-text').textContent =
     `${Math.max(0, Math.round(s.hero.life))} / ${Math.round(s.hero.stats.maxLife)}`;
 
@@ -710,6 +979,7 @@ function renderReadout(): void {
   const spare = Math.max(0, s.hero.mana);
   const pool = Math.max(1, s.hero.stats.maxMana);
   ($('run-mana-fill') as HTMLElement).style.width = `${Math.min(100, (spare / pool) * 100)}%`;
+  syncTicks($('run-mana-ticks'), pool);
   $('run-mana-text').textContent = `${Math.round(spare)} / ${Math.round(pool)}`;
   // Short of the cost is the state worth seeing: it is why the damage dropped.
   ($('run-mana-fill').parentElement as HTMLElement).classList.toggle('hp--dry', spare < cost);
@@ -739,6 +1009,9 @@ function renderResults(report: RunReport, run: RunState): void {
   if (streak > 1 || halt !== 'once') {
     card.append(el('p', 'resultcard__sub', haltLine(report)));
   }
+  // WHERE THE CLIMB IS NOW: the screen every descent ends on says it.
+  const step = climbLine(game.character, ran, report.cleared);
+  if (step) card.append(el('p', 'resultcard__climb', step));
 
   // Two columns: what happened on the left, what you got on the right. As one
   // stacked column a good run — several stat rows and a handful of drops —
@@ -758,7 +1031,7 @@ function renderResults(report: RunReport, run: RunState): void {
   cols.append(left);
 
   const right = el('div');
-  right.append(el('p', 'resultcard__sub', report.cleared ? 'Into the haul' : 'Loot lost'));
+  right.append(el('p', 'resultcard__sub', report.cleared ? 'Into your bags' : 'Loot lost'));
   const loot = el('div', 'lootlist');
   const rows = lootRows(run);
 
@@ -806,20 +1079,38 @@ function renderResults(report: RunReport, run: RunState): void {
     );
   }
 
-  const again = el('button', 'mini', 'Back to the Fissure') as HTMLButtonElement;
+  const again = el('button', 'mini', 'Back to camp') as HTMLButtonElement;
   again.id = 'run-again';
-  again.onclick = () => {
-    sim = null;
-    setPhase('menu');
-    renderMenu();
-  };
+  again.onclick = () => goHome();
   card.append(again);
 
   host.append(card);
 }
 
+/** FOUND SOMEBODY, mid-descent: their one line into the log, and MET. Nothing
+ *  stops. Marked here because the sim knows no `GameState`. */
+function absorbMeeting(): void {
+  const id = sim?.state.found;
+  if (!id) return;
+  // A WORKER is RESCUED by the same walk past: the mark is the slot.
+  const worker = WORKERS.find((w) => workerMark(w.id) === id);
+  if (worker) {
+    if (hasWorker(game, worker.id)) return;
+    takeWorker(game, worker.id);
+    note(`${worker.name}: ${worker.greets}`, 'add', sim?.state.elapsed);
+    renderBadges();
+    return;
+  }
+  if (hasMet(game, id)) return;
+  const def = SCENE_BY_ID[id];
+  takeMet(game, id);
+  if (def?.greets) note(`${def.name}: ${def.greets}`, 'add', sim?.state.elapsed);
+  renderBadges();
+}
+
 function absorbEvents(): void {
   if (!sim) return;
+  absorbMeeting();
   const at = sim.state.elapsed;
 
   // Kills aren't logged. Sixty "+1 killed" lines bury the three entries that
@@ -844,8 +1135,7 @@ function frame(now: number): void {
     if (playing === false && handover >= HANDOVER * DESCEND) {
       // The bottom of the hole: a report, a room, or the next descent. This
       // runs every frame of the climb out, so a room already entered says so.
-      if (pending) land(pending, greetedState ?? sim!.state);
-      else if (arriving) enterScene(arriving);
+      if (pending) land(pending, sim!.state);
       else if (phase !== 'scene') launch();
     }
     if (handover >= HANDOVER) handover = 0;
@@ -864,7 +1154,7 @@ function frame(now: number): void {
       accumulator -= TICK;
       steps++;
     }
-    if (sim.state.meeting && !spoke) speak();
+    if (sim.state.meeting && !spoke && arrival <= 0) speak();
   }
   if (sim && phase === 'scene' && sim.state.folk[0] && renderer) {
     syncSpeech(renderer, sim.state.folk[0]);
@@ -876,12 +1166,21 @@ function frame(now: number): void {
     // honest fix.
     accumulator += dt;
     let steps = 0;
+    if (document.body.dataset.hold) accumulator = 0; // a harness looking at one instant; the draw goes on
     while (accumulator >= TICK && steps < 400) {
       sim.step(TICK);
       accumulator -= TICK;
       steps++;
     }
     absorbEvents();
+    document.body.dataset.heroTool = sim.state.hero.tool ?? ''; // what a harness reads to catch a gather
+    document.body.dataset.effects = String(sim.state.vfx.length); // and to catch a cast
+    // Asked to hold on the first effect, the page holds ITSELF: a harness
+    // polling from outside is frames behind, and a bolt lives for fewer.
+    const asks = document.body.dataset;
+    if (asks.holdOn === 'cast' && sim.state.vfx.length > 0 && !asks.holdAt)
+      asks.holdAt = String(sim.state.elapsed + Number(asks.holdDelay ?? 0)); // sim seconds past the first effect
+    if (asks.holdAt && sim.state.elapsed >= Number(asks.holdAt)) asks.hold = '1';
 
     if (sim.state.status !== 'running') {
       setLeaveLabel();
@@ -894,38 +1193,37 @@ function frame(now: number): void {
 
   if (sim && renderer && phase !== 'menu') renderer.draw(sim.state, emerge);
   if (sim) renderReadout();
+  stepArrival(dt);
+  // After the draw: it anchors off where the camera just put the boss.
+  syncShout(dt);
   requestAnimationFrame(frame);
 }
 
 /**
- * The gentle way out, and the only stop you can choose while the fight is on.
- * Nothing to arm when this descent was already the last one — with the loop
- * off, or with the haul about to shut the Fissure, it ends by itself.
+ * THE ONE WAY OUT, and it keeps what you found. A room you WALKED to has a way
+ * back out of it too — a person with nothing to hand over would otherwise be a
+ * room with no exit.
  */
 function setLeaveLabel(): void {
-  const btn = $('run-leave') as HTMLButtonElement;
-  // Neither means anything outside a descent, and a room with a fight in it is
-  // the one you may not walk out of — leaving would be a way to skip a boss.
-  ($('run-abandon') as HTMLButtonElement).disabled = phase !== 'running';
-  const live = phase === 'running';
-  btn.textContent = !live
-    ? 'Last descent'
-    : leaving
-      ? 'Leaving after this one'
-      : 'Leave after this run';
-  btn.disabled = !live;
-  btn.classList.toggle('mini--on', live && leaving);
+  const btn = $('run-abandon') as HTMLButtonElement;
+  const back = phase === 'scene' && visiting;
+  btn.textContent = back ? 'Go back' : 'Return to camp';
+  btn.disabled = phase !== 'running' && !back;
 }
 
 /**
  * Once the player picks a zoom it is theirs and nothing moves it. Until then the
- * starting zoom is recomputed on every resize, so rotating a phone re-picks a
+ * starting zoom is recomputed on every resize, so a resized window re-picks a
  * sane scale rather than keeping one that suited the old shape.
  */
 let userZoomed = false;
 
 /** Matches the `.flasks` margin, because they describe the same gap. */
 const FLASK_GAP = 8;
+
+/** How much closer a ROOM is framed than a descent. `clampZoom` still bounds
+ *  it, so this asks rather than sets. */
+const SCENE_ZOOM = 2;
 
 function fitCanvas(): void {
   const box = $('run-stage');
@@ -940,7 +1238,9 @@ function fitCanvas(): void {
 
   // Now that the surface has a real size, pick the scale that fits it. At
   // startup the stage is still unmeasured, so this is the first honest chance.
-  if (!userZoomed && width > 0) setZoom(defaultZoom(Math.min(width, height)));
+  if (!userZoomed && width > 0) {
+    setZoom(defaultZoom(Math.min(width, height)) * (phase === 'scene' ? SCENE_ZOOM : 1));
+  }
 }
 
 /** The stage as a CELL: whatever the row has left once the panels have theirs. */
@@ -995,6 +1295,10 @@ async function upgradeRenderer(host: HTMLElement, palette: Palette): Promise<voi
 
 export function initRun(state: GameState): void {
   game = state;
+  // The sockets belong to the Proving Ground's tab, which is `climb.ts`'s to
+  // lay out. This is the only place they are ever drawn.
+  initClimb(game);
+  socketsInClimb(renderSockets, () => seamSocketed(socketed(game)));
 
   // Drawn from the very first paint, so the room they take is not something
   // the canvas discovers when a descent starts — and so the threshold is set
@@ -1006,27 +1310,27 @@ export function initRun(state: GameState): void {
   renderer = createCanvasRenderer(stage, palette);
   void upgradeRenderer(stage, palette);
 
+  ($('run-menu-close') as HTMLButtonElement).onclick = () => closeFissure();
+
+  initCamp(game, OPENS);
+
   ($('run-launch') as HTMLButtonElement).onclick = () => {
-    if (haulFull(game)) return;
+    if (bagsFull(game)) return;
     streak = 0;
-    leaving = false;
-    launch();
+      launch();
   };
 
-  ($('run-leave') as HTMLButtonElement).onclick = () => {
-    if (phase !== 'running') return;
-    leaving = !leaving;
-    note(leaving ? 'Leaving after this descent.' : 'Staying down.');
-    setLeaveLabel();
+  ($('run-deeper') as HTMLButtonElement).onclick = () => {
+    game.climbing = !climbing();
+    syncClimb();
   };
 
-  // The hard way out, and the only one that costs you something: this descent
-  // banks nothing, exactly as dying in it would. Every clear before it already
-  // banked as it happened, so it ends on the same card and the same haul.
+  // *"Change abandon to return to camp and make it where all the loot on the
+  // floor just gets picked up when you return to camp."* It costs the DESCENT
+  // — no rung, no crystal, no point — and nothing else.
   ($('run-abandon') as HTMLButtonElement).onclick = () => {
+    if (visiting) return sceneEnded();
     if (!sim || phase === 'scene') return;
-    // Walking over to him: already banked, so nothing to walk out of.
-    if (greeting) return;
     if (phase !== 'running') return;
     // Mid-drop the descent is already over and banked, so this means "do not
     // go back down": the report lands at the bottom instead of a new map.
@@ -1077,15 +1381,18 @@ export function initRun(state: GameState): void {
     renderer?.panBy(dx, dy);
     from = { x: event.clientX, y: event.clientY };
   });
-  const release = () => {
+  const release = (event?: PointerEvent) => {
     from = null;
     if (held !== null) stage.releasePointerCapture?.(held);
     held = null;
     stage.classList.remove('stage--drag');
   };
-  stage.addEventListener('pointerup', release);
-  stage.addEventListener('pointercancel', release);
-  stage.addEventListener('pointerleave', release);
+  stage.addEventListener('pointerup', (event) => release(event));
+  stage.addEventListener('pointercancel', () => release());
+  stage.addEventListener('pointerleave', () => {
+    release();
+    hideTooltip();
+  });
 
   // A drawer under its own button. Closed by default, because a descent is
   // something you watch and the numbers are something you go and look at.
@@ -1119,8 +1426,37 @@ export function drinkFlask(id: string): void {
 export function refreshRunPanels(): void {
   renderStatsPanel();
   renderMenu();
+  if (isCampOpen()) renderCamp();
   renderBadges();
   renderSkillIcons();
+}
+
+/** A WIPE replaces the game under this module, and what was held for the game
+ *  that is gone would otherwise be held against the new one: a gift nobody is
+ *  standing there to hand over refuses every Abandon for the rest of the run. */
+export function forgetRun(): void {
+  sim = null;
+  banked = null;
+  pending = null;
+  handover = 0;
+  playing = false;
+  setPhase('menu');
+}
+
+/** THE ARENA, now the only room there is: the dev menu's way into the fight,
+ *  with whatever a descent had half-finished dropped first. A person is not a
+ *  room any more — you talk to them where they stand. */
+export function enterRoomNow(id: string): boolean {
+  const def = SCENE_BY_ID[id];
+  if (!def?.plan) return false;
+  banked = null;
+  pending = null;
+  handover = 0;
+  streak = 0;
+  enterScene(def);
+  visiting = true;
+  setLeaveLabel();
+  return true;
 }
 
 /** What each screen is holding that has not been spent. One place, called
@@ -1133,16 +1469,23 @@ function renderSkillIcons(): void {
   const host = $('run-skills');
   host.replaceChildren();
 
-  for (const slot of SKILL_SLOTS) {
+  // OPEN ones only: a slot the level has not reached is not part of your kit
+  // yet, and the skills screen is where what is coming belongs.
+  for (const slot of openSlots(game.character)) {
     const held = SKILL_BY_ID[equippedSkill(game.character, slot.id) ?? ''];
     const cell = el('button', `mini skillslot${held ? '' : ' skillslot--empty'}`) as HTMLButtonElement;
     cell.id = `run-skill-${slot.id}`;
-    cell.append(held ? skillIcon(held.id, 30) : el('span', 'skillslot__none', slot.name[0]));
+    cell.append(held ? skillIcon(held.id, 34) : el('span', 'skillslot__none'));
+    // Built once and written per frame: a slot that rebuilt to count down
+    // would throw away whatever the cursor was over.
+    const cool = el('span', 'skillslot__cool');
+    cool.id = `run-skill-cool-${slot.id}`;
+    cell.append(cool);
+    // What it does for THIS character, not what the table prints: a slot's
+    // numbers move with the tree, the trade and every piece worn.
     attachTooltip(cell, () =>
       held
-        ? [`${slot.name} — ${held.name}`, held.description, ...skillLines(held).map((l) => `${l}.`)]
-            .filter(Boolean)
-            .join('\n')
+        ? [held.name, ...skillWorkings(game.character, slot.id, MAIN_SLOT)].join('\n')
         : `${slot.name}\n${slot.blurb}`
     );
     cell.onclick = () => openCharacter(slot.id);
@@ -1150,9 +1493,177 @@ function renderSkillIcons(): void {
   }
 }
 
+/** The wait on a skill that has one, counted down on its own socket. Only the
+ *  MOVEMENT slot has a cooldown today; the main slot's rate is its attack
+ *  speed, which is a number on the sheet rather than a wait you watch. */
+function syncCooldowns(): void {
+  const wait = sim?.moverWait;
+  for (const slot of SKILL_SLOTS) {
+    const cell = document.getElementById(`run-skill-${slot.id}`);
+    const face = document.getElementById(`run-skill-cool-${slot.id}`);
+    if (!cell || !face) continue;
+    const mine = slot.id === 'movement' && wait && wait.of > 0 && wait.left > 0.05;
+    cell.classList.toggle('skillslot--waiting', !!mine);
+    if (!mine) continue;
+    face.style.setProperty('--cool', `${Math.min(100, (wait!.left / wait!.of) * 100)}%`);
+    face.textContent = wait!.left.toFixed(1);
+  }
+}
+
+/** What phase the shout on screen belongs to, and how long it has left. */
+let shouted = '';
+let shoutFor = 0;
+/** How many phases have turned over, so the line varies without an rng. */
+let turns = 0;
+
+/** A phase turning over, thrown over its own head and gone. It says nothing
+ *  you have to read: the phase is drawn on the body, and this is what makes
+ *  you look at it. */
+function syncShout(dt: number): void {
+  const s = sim?.state;
+  const boss = s?.boss;
+  const now = s?.phase ?? '';
+  const live = !!boss && !boss.dead && now !== '';
+  if (live && now !== shouted) {
+    const lines = BOSS_SHOUTS[now] ?? [];
+    shouted = now;
+    shoutFor = lines.length > 0 ? SHOUT_FOR : 0;
+    if (lines.length > 0) $('run-shout-said').textContent = lines[turns++ % lines.length];
+  }
+  if (!live) {
+    shouted = '';
+    shoutFor = 0;
+  }
+  shoutFor = Math.max(0, shoutFor - dt);
+  const host = $('run-shout');
+  host.hidden = shoutFor <= 0;
+  if (!host.hidden && renderer && boss) anchor(host, renderer, { x: boss.x, y: boss.y });
+}
+
+/** THE THING IN THE ROOM WITH YOU, across the top and named. A boss carries no
+ *  bar over its own head: at `size` 5 that strip is tiny and a long way from
+ *  where you are looking. */
+function syncBossBar(): void {
+  const host = $('run-boss');
+  const boss = sim?.state.boss;
+  const live = !!boss && !boss.dead;
+  host.hidden = !live;
+  if (!live || !boss) return;
+  const def = BOSS_BY_ID[SCENE_BY_ID[arrivedIn]?.encounter ?? ''];
+  const name = def?.name ?? 'The Answering';
+  const label = $('run-boss-name');
+  if (label.textContent !== name) label.textContent = name;
+  const frac = Math.max(0, Math.min(1, boss.life / boss.stats.maxLife));
+  $('run-boss-fill').style.width = `${(frac * 100).toFixed(1)}%`;
+}
+
+/** WHICH RUNG IS UNDER YOU. `ran` is the depth being run rather than the one
+ *  picked, so a chained descent keeps saying the rung it stayed on, and a room
+ *  that is not a rung says nothing at all. */
+function syncRung(): void {
+  const host = $('run-rung');
+  const at = ran;
+  host.hidden = !at || (phase !== 'running' && phase !== 'scene');
+  if (host.hidden || !at) return;
+  if (isProving(at)) {
+    $('run-rung-zone').textContent = PROVING.name;
+    $('run-rung-n').textContent = THEME_BY_ID[at.influence]?.name ?? at.influence;
+  } else {
+    $('run-rung-zone').textContent = zoneAt(at.zone)?.name ?? '';
+    $('run-rung-n').textContent = `Depth ${at.rung}`;
+  }
+  const what = $('run-rung-what');
+  what.textContent = !isProving(at) && arenaAt(at) ? 'Boss' : '';
+  what.hidden = what.textContent === '';
+}
+
+/** What is ON you, over the pools it is spoiling: a picture, the seconds left
+ *  under it, and a hover that says what it does. Built when the SET of them
+ *  changes and only counted down per frame, so a tooltip survives its box. */
+function syncDebuffs(): void {
+  const host = $('run-debuffs');
+  const state = sim?.state;
+  const on: { id: string; icon: string; name: string; says: string; left: number }[] = [];
+  if (state) {
+    const stun = state.hero.stun ?? 0;
+    if (stun > 0) {
+      on.push({
+        id: 'stun',
+        icon: 'dbf_stun',
+        name: 'Stunned',
+        says: 'Held where you stand. You cannot walk, and nothing you turn to will move you until it passes.',
+        left: stun,
+      });
+    }
+    if (state.marks > 0) {
+      on.push({
+        id: 'mark',
+        icon: 'dbf_mark',
+        name: `Marked ×${state.marks}`,
+        says: `Every mark is ${Math.round(BOSS_FIGHT.markMore * 100)}% more damage taken, from anything. They fall off slowly once nothing is adding them — being caught by a Fall adds ${BOSS_FIGHT.markPerCatch}.`,
+        left: state.marks,
+      });
+    }
+  }
+
+  if (host.dataset.on !== on.map((d) => d.id).join(',')) {
+    host.dataset.on = on.map((d) => d.id).join(',');
+    host.replaceChildren();
+    for (const debuff of on) {
+      const box = el('div', `debuff${debuff.id === 'mark' ? ' debuff--bad' : ''}`);
+      box.id = `run-debuff-${debuff.id}`;
+      const art = drawn(debuff.icon, 22) ?? el('span', '', '?');
+      art.classList.add('debuff__art');
+      box.append(art);
+      box.append(el('span', 'debuff__left', ''));
+      attachTooltip(box, () => `${debuff.name}\n${debuff.says}`);
+      host.append(box);
+    }
+  }
+  for (const debuff of on) {
+    const left = document.getElementById(`run-debuff-${debuff.id}`)?.lastElementChild;
+    if (left) {
+      left.textContent = debuff.id === 'stun' ? `${debuff.left.toFixed(1)}s` : `×${debuff.left}`;
+    }
+  }
+  renderBuffs(state?.buffs ?? []);
+}
+
+/** WHAT IS ON YOU, beside what is being done TO you and read the same way. The
+ *  sim gathers them; this only draws. Rebuilt only when the SET changes, so a
+ *  timer ticking sixty times a second never tears down a node under the cursor. */
+function renderBuffs(on: Buff[]): void {
+  const host = $('run-buffs');
+  const key = on.map((b) => b.id).join(',');
+  if (host.dataset.on !== key) {
+    host.dataset.on = key;
+    host.replaceChildren();
+    for (const buff of on) {
+      const box = el('div', 'debuff debuff--good');
+      box.id = `run-buff-${buff.id}`;
+      const art = SKILL_BY_ID[buff.by] ? skillIcon(buff.by, 22) : drawn(`dbf_${buff.by}`, 22);
+      const mark = art ?? el('span', 'debuff__art', buff.name.slice(0, 1));
+      mark.classList.add('debuff__art');
+      box.append(mark);
+      box.append(el('span', 'debuff__left', ''));
+      attachTooltip(box, () => `${buff.name}\n${buff.says}`);
+      host.append(box);
+    }
+  }
+  for (const buff of on) {
+    const left = document.getElementById(`run-buff-${buff.id}`)?.lastElementChild;
+    if (left) left.textContent = `${buff.left.toFixed(1)}s`;
+  }
+}
+
 function renderBadges(): void {
   badge('open-character', attributePointsLeft(game.character));
+  // AN ACCENT, not a badge and not a word. Once opened it never returns.
+  document
+    .getElementById('open-skills')
+    ?.classList.toggle('railbtn--new', game.cameBack && !game.skillsSeen);
   badge('open-skills', spareTreePoints(game.character, mainSkillId(game.character)));
   badge('open-trade', tradePointsLeft(game.character));
+  setCampEmber(trialPointsLeft(game.character) > 0);
 }
 

@@ -5,7 +5,7 @@
  * limited by the callers, and only entities near the hero path at all, so
  * this has never been the bottleneck. Replace it if that stops being true.
  */
-import { Grid, WALL } from './grid';
+import { Grid } from './grid';
 import type { Vec2 } from './grid';
 
 const DIRS: Array<[number, number, number]> = [
@@ -58,11 +58,13 @@ class MinHeap {
   }
 }
 
-/** Diagonals may not cut a wall corner — otherwise entities clip through. */
+/** Diagonals may not cut a wall corner — otherwise entities clip through.
+ *  `walkable` and not the TILE, or a route runs through the altar standing on
+ *  it: furniture is a second layer and only that one answer reads both. */
 function canStep(grid: Grid, x: number, y: number, dx: number, dy: number): boolean {
-  if (grid.at(x + dx, y + dy) === WALL) return false;
+  if (!grid.walkable(x + dx, y + dy)) return false;
   if (dx !== 0 && dy !== 0) {
-    if (grid.at(x + dx, y) === WALL || grid.at(x, y + dy) === WALL) return false;
+    if (!grid.walkable(x + dx, y) || !grid.walkable(x, y + dy)) return false;
   }
   return true;
 }
@@ -114,7 +116,7 @@ export function nearestByPath(
     ]) {
       const nx = x + dx;
       const ny = y + dy;
-      if (!grid.inBounds(nx, ny) || grid.at(nx, ny) === WALL) continue;
+      if (!grid.inBounds(nx, ny) || !grid.walkable(nx, ny)) continue;
 
       const nk = ny * width + nx;
       if (seen.has(nk)) continue;
@@ -137,7 +139,7 @@ export function findPath(grid: Grid, from: Vec2, to: Vec2, maxNodes = 4000): Vec
   const gy = Math.round(to.y);
 
   if (sx === gx && sy === gy) return [];
-  if (grid.at(gx, gy) === WALL) return [];
+  if (!grid.walkable(gx, gy)) return [];
 
   const { width } = grid;
   const key = (x: number, y: number) => y * width + x;

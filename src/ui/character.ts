@@ -16,29 +16,51 @@ import {
   DEFENCE,
   EQUIP_SLOTS,
   LEVELLING,
-  SKILLS,
+  WEAPON_SLOT,
+  DUAL,
+  MATERIAL_FAMILY_BY_ID,
+  PROFESSION,
+  PROFESSIONS,
+  PROFESSION_BY_ID,
+  TOOL_SLOTS,
 } from '../data';
-import { characterStats, damageDetail, skillBase, treeGrants } from '../sim/stats';
-import { GRANT_BY_ID, starvedMultiplier } from '../sim/grants';
-import { damageWorkings } from '../damage-text';
+import {
+  attributeTotals, characterStats, damageDetail, offWeapon, skillBase, treeGrants, weaponRates,
+} from '../sim/stats';
+import { slotWorkings } from '../skill-text';
+import { starvedMultiplier } from '../sim/grants';
+import { ailmentReading, damageWorkings } from '../damage-text';
+import type { AilmentReading } from '../damage-text';
 import { describeStatLine } from '../mod-text';
 import {
   addXp,
   attributePointsLeft,
+  forgetAttributes,
   equippedSkill,
-  attributeSteps,
+  openSlots,
   spendAttribute,
+  weaponRefusal,
+  toolIn,
+  toolRung,
+  toolsOn,
   xpToNext,
 } from '../sim/character';
+import { professionAt, xpToNext as profXpToNext } from '../game/work';
+import { saysProfession, unlocksFor } from '../professions';
 import { fitsSlot, unequipItem } from '../game/state';
+import { TRADE_BY_ID, respecCost } from '../trades';
+import { ask } from './confirm';
 import { wear } from './wear';
 import type { GameState } from '../game/state';
-import { gearIcon } from './icons';
+import type { Character } from '../sim/character';
+import { drawn, gearIcon } from './icons';
 import { note } from './history';
+import { warnAtCamp } from './atcamp';
+import { inDescent } from './run';
 import { attachTooltip, hideTooltip } from './tooltip';
 import { itemCard } from './itemcard';
 import { setInventoryHandler } from './inventory';
-import type { EquipSlotDef, Item, SkillDef } from '../types';
+import type { EquipSlotDef, Item } from '../types';
 
 const $ = (id: string) => document.getElementById(id)!;
 
@@ -56,6 +78,9 @@ function el(tag: string, cls?: string, text?: string): HTMLElement {
 let game: GameState;
 /** Slot currently being filled. Drives what lights up in the dock. */
 let picking: string | null = null;
+/** Which TOOL slot is open, offering what you own for it. Its own cursor:
+ *  a gear slot's `picking` points the BAG at a slot, and a tool is not in it. */
+let pickingTool: string | null = null;
 /** Which stat row is unfolded. Only one, and it survives a redraw. */
 let openStat: string | null = null;
 let onChanged: (() => void) | null = null;
@@ -70,12 +95,23 @@ const tooltip = (item: Item): HTMLElement => itemCard(item, ['click to take it o
 
 function renderSlots(): void {
   const host = $('sheet-slots');
+  const tools = $('sheet-tools');
   host.replaceChildren();
+  tools.replaceChildren();
+
+  // The hand your skills are swung with, when the two disagree. Marked HERE
+  // because the weapon is the half you change: the Fissure says the sentence,
+  // this says which slot it is about.
+  const wrong = weaponRefusal(game.character);
 
   for (const slot of EQUIP_SLOTS) {
     const worn = game.character.equipment[slot.id];
     const cell = el('div', 'slotcell');
     cell.append(el('div', 'slotcell__label', slot.name));
+    if (wrong && slot.id === WEAPON_SLOT) {
+      cell.classList.add('slotcell--wrong');
+      cell.append(el('div', 'slotcell__wrong', wrong));
+    }
 
     const btn = el('button', 'slotcell__btn') as HTMLButtonElement;
     btn.id = slotButtonId(slot.id);
@@ -115,8 +151,13 @@ function renderSlots(): void {
       };
     }
     cell.append(btn);
-    host.append(cell);
+    (slot.group === 'tool' ? tools : host).append(cell);
   }
+
+  const takes = toolsOn(game.character).map((t) => MATERIAL_FAMILY_BY_ID[t.family]?.raw ?? t.family);
+  $('sheet-toolnote').textContent = takes.length === 0
+    ? 'Nothing on you takes anything off the floor. The smith has one for you.'
+    : `This lets you take ${takes.join(' and ')} — and nothing else.`;
 }
 
 /**
@@ -127,7 +168,7 @@ function sheetHandler() {
   const slot: EquipSlotDef | undefined = EQUIP_SLOTS.find((s) => s.id === picking);
   return {
     actionFor: (item: Item) => {
-      if (!slot || !fitsSlot(item, slot)) return null;
+      if (!slot || !fitsSlot(item, slot, game.character)) return null;
       return {
         label: `Wear as ${slot.name.toLowerCase()}`,
         run: () => {
@@ -137,7 +178,7 @@ function sheetHandler() {
         },
       };
     },
-    highlighted: (item: Item) => !!slot && fitsSlot(item, slot),
+    highlighted: (item: Item) => !!slot && fitsSlot(item, slot, game.character),
   };
 }
 
@@ -150,7 +191,7 @@ function renderPickHint(): void {
 
   // Only when there is nothing. Anything else is described by the slots
   // lighting up in the dock, which you are already looking at.
-  const options = game.inventory.filter((i) => fitsSlot(i, slot));
+  const options = game.inventory.filter((i) => fitsSlot(i, slot, game.character));
   host.hidden = options.length > 0;
   host.textContent = `Nothing you carry fits the ${slot.name.toLowerCase()} slot.`;
 }
@@ -174,18 +215,48 @@ function renderAttributes(): void {
   spare.hidden = left <= 0;
   spare.textContent = `${left} to spend`;
 
+  // A tree node refunds itself and so does a trade node; an attribute point is
+  // the one thing no click takes back, so gold does. Hidden with nothing spent.
+  const spent = Object.values(character.attributes ?? {}).reduce((a, b) => a + b, 0);
+  const cost = respecCost(character.level);
+  const undo = $('sheet-respec') as HTMLButtonElement;
+  undo.hidden = spent <= 0;
+  undo.textContent = `Take all ${spent} back — ${cost} gold`;
+  undo.disabled = game.wallet.gold < cost;
+  undo.onclick = async () => {
+    const yes = await ask({
+      title: `Take back all ${spent} attribute points?`,
+      text: `${cost} gold, and every point is yours to spend again.`,
+      confirm: `Pay ${cost}`,
+    });
+    if (!yes || game.wallet.gold < cost || !forgetAttributes(character)) return;
+    game.wallet.gold -= cost;
+    note(`You take back all ${spent} attribute points.`);
+    render();
+    onChanged?.();
+  };
+
+  // THE TOTAL, not the points spent: the sheet prints what the sim buys off,
+  // so a ring of the Spirit shows up here the way a level does.
+  const totals = attributeTotals(character);
+  const spread = character.trade ? TRADE_BY_ID[character.trade]?.spec.attributes : undefined;
   for (const attr of ATTRIBUTES) {
     const held = character.attributes?.[attr.id] ?? 0;
-    const steps = attributeSteps(character, attr.id);
+    const from = spread?.[attr.id] ?? 0;
+    const total = totals[attr.id] ?? 0;
+    const steps = total;
     const row = el('div', 'attr');
     row.append(el('span', 'attr__k', attr.name));
-    row.append(el('span', 'attr__v', String(held)));
+    row.append(el('span', 'attr__v', String(total)));
 
     const buy = el('button', 'mini attr__buy', '+') as HTMLButtonElement;
     buy.disabled = left <= 0;
     buy.title = `Put 1 point into ${attr.name}`;
     buy.onclick = () => {
-      if (spendAttribute(character, attr.id)) render();
+      if (spendAttribute(character, attr.id)) {
+        if (inDescent()) warnAtCamp();
+        render();
+      }
     };
     row.append(buy);
 
@@ -194,13 +265,17 @@ function renderAttributes(): void {
     const each = attr.per.map((s) => describeStatLine(s));
     const bought = attr.per.map((s) => describeStatLine({ ...s, value: s.value * steps }));
     row.append(el('span', 'attr__how', `${each.join(', ')} per point`));
+    const worn = total - from - held;
+    const where = [
+      from > 0 ? `${from} from the trade` : '',
+      `${held} spent`,
+      worn !== 0 ? `${worn} worn` : '',
+    ].filter(Boolean);
     attachTooltip(
       row,
       () =>
         `${attr.name}\nPer point: ${each.join(', ')}.\n` +
-        (held > 0
-          ? `${held} spent: ${bought.join(', ')}.\n`
-          : 'Nothing spent here yet.\n') +
+        `${total} in all — ${where.join(', ')}: ${bought.join(', ')}.\n` +
         `A level hands you ${LEVELLING.attributePointsPerLevel}.`
     );
     host.append(row);
@@ -234,6 +309,29 @@ function damagePanel(): HTMLElement {
     box.append(row);
   }
 
+  // REFRACTION and anything like it: a tail off the ELEMENTAL half, landing at
+  // the hit rather than in the pass above, and resisted as its own type. The
+  // sheet could not show it at all and the user could not tell a missing line
+  // from a dead passive.
+  const grants = treeGrants(game.character);
+  const tail = typeof grants.prismaticExtra === 'number' ? grants.prismaticExtra : 0;
+  const elemental = breakdown.parts
+    .filter((p) => DAMAGE_TYPE_BY_ID[p.type]?.group === 'elemental')
+    .reduce((sum, p) => sum + p.total, 0);
+  if (tail > 0) {
+    const row = el('div', `dmgrow${elemental === 0 ? ' dmgrow--nil' : ''}`);
+    row.append(el('span', 'dmgrow__n', `+${round(elemental * tail)}`));
+    row.append(el('span', 'dmgrow__t', 'Prismatic'));
+    row.append(
+      el(
+        'span',
+        'dmgrow__how',
+        `${round(elemental)} Elemental  ×${tail.toFixed(2)} on top  · resisted as Prismatic, not as what carried it`
+      )
+    );
+    box.append(row);
+  }
+
   // Every row lands as its own type, so the total has none: each is resisted
   // separately and the sum is only ever what you would deal to something that
   // resists nothing.
@@ -250,6 +348,33 @@ function damagePanel(): HTMLElement {
     )
   );
   box.append(total);
+
+  // AILMENTS, one fact a line: this column is four words wide and a sentence in
+  // it wraps into a wall. An ailment this build has NO chance to apply is left
+  // out entirely rather than printed as 0% — a row that can never happen is a
+  // row you read past every time.
+  const stats = characterStats(game.character);
+  const readings = breakdown.parts
+    .filter((p) => p.total > 0)
+    .map((p) => ailmentReading(p.type, stats))
+    .filter((r): r is AilmentReading => r !== null && r.chance > 0);
+  if (readings.length > 0) {
+    const after = el('div', 'statdetail__note');
+    after.textContent = 'Ailments';
+    box.append(after);
+    for (const read of readings) {
+      const head = el('div', 'stat stat--ail');
+      head.append(el('span', 'stat__k', read.head));
+      head.append(el('span', 'stat__v', `${read.chance}%`));
+      box.append(head);
+      for (const [k, v] of read.facts) {
+        const row = el('div', 'stat stat--under');
+        row.append(el('span', 'stat__k', k));
+        row.append(el('span', 'stat__v', v));
+        box.append(row);
+      }
+    }
+  }
   return box;
 }
 
@@ -287,7 +412,6 @@ interface StatRow {
 
 function renderStats(): void {
   const s = characterStats(game.character);
-  const detail = damageDetail(game.character);
   const host = $('sheet-stats');
   host.replaceChildren();
 
@@ -300,6 +424,21 @@ function renderStats(): void {
       key: 'armour',
       value: `${Math.round(s.armour)} (${s.armourReduction.toFixed(0)}%)`,
       why: `Against hits only, capped at ${DEFENCE.armourCap}%. Damage over time goes straight through it.`,
+    },
+    {
+      key: 'block',
+      value: `${Math.round(s.blockChance)}%`,
+      why:
+        `A Blocked hit deals nothing at all, capped at ${DEFENCE.blockCap}%. It ` +
+        'comes off a shield in your off hand and does nothing against damage over time.',
+    },
+    {
+      key: 'dodge',
+      value: `${Math.round(s.dodgeChance)}%`,
+      why:
+        `A Dodged hit deals nothing at all, capped at ${DEFENCE.dodgeCap}%. It is ` +
+        'TRADED for your Armour rather than worn beside it, and does nothing ' +
+        'against damage over time.',
     },
     { key: 'regen/sec', value: s.lifeRegen.toFixed(1) },
     { key: 'mana', value: round(s.maxMana) },
@@ -334,7 +473,7 @@ function renderStats(): void {
   $('sheet-level').textContent = String(game.character.level);
   $('sheet-xp-text').textContent = `${game.character.xp} / ${need}`;
   ($('sheet-xp-fill') as HTMLElement).style.width =
-    `${Math.min(100, (game.character.xp / need) * 100)}%`;
+    `${need > 0 ? Math.min(100, (game.character.xp / need) * 100) : 0}%`;
 }
 
 /** Id of one slot's section, so the run panel's icon can open the sheet at it. */
@@ -342,6 +481,21 @@ export const skillSectionId = (slotId: string): string => `sheet-skill-${slotId}
 
 /** The rows only true of the skill that SWINGS. Everything here would be a
  *  different number for a different main skill, which is why it lives here. */
+/** What the SECOND weapon is worth, or null with a hand free. Both figures, in
+ *  their own units: a pair is a damage decision and a rate decision at once. */
+function pairLine(character: Character): string | null {
+  const main = character.equipment?.[WEAPON_SLOT];
+  const off = offWeapon(character);
+  if (!main || !off) return null;
+  const rates = weaponRates(character);
+  return (
+    `dual wielding: ${Math.round(DUAL.main * 100)}% of ${main.name} and ` +
+    `${Math.round(DUAL.off * 100)}% of ` +
+    `${off.name} in every hit, swinging at ${rates[0].toFixed(2)} and then ` +
+    `${rates[1].toFixed(2)} a second, alternately`
+  );
+}
+
 function mainRows(): StatRow[] {
   const s = characterStats(game.character);
   const detail = damageDetail(game.character);
@@ -385,16 +539,7 @@ function mainRows(): StatRow[] {
 
 /** What a skill that never casts DOES, in figures, out of the grant table so
  *  the line and the switch the sim reads cannot come apart. */
-export function skillLines(skill: SkillDef): string[] {
-  const said = Object.entries(skill.grants ?? {})
-    .map(([id, value]) => GRANT_BY_ID[id]?.say?.(value))
-    .filter((line): line is string => typeof line === 'string');
-  const params = skill.params ?? {};
-  if (typeof params.distance === 'number' && typeof params.cooldown === 'number') {
-    said.push(`Steps up to ${params.distance} tiles every ${params.cooldown}s, on its own`);
-  }
-  return said;
-}
+
 
 /**
  * One block per slot. Every number that would be a different number for a
@@ -405,7 +550,9 @@ function renderSkills(): void {
   const host = $('sheet-skills');
   host.replaceChildren();
 
-  for (const slot of SKILL_SLOTS) {
+  // OPEN ones only: a slot the level has not reached is not part of your kit
+  // yet, and the skills screen is where what is coming belongs.
+  for (const slot of openSlots(game.character)) {
     const held = SKILL_BY_ID[equippedSkill(game.character, slot.id) ?? ''];
     const main = slot.id === MAIN_SLOT;
     const box = el('div', `skillsec${main ? ' skillsec--main' : ''}`);
@@ -439,18 +586,113 @@ function renderSkills(): void {
           `takes ${detail.skill.addedEffectiveness}% of added damage, as its own type`
         )
       );
+      // A PAIR is two numbers you cannot read off one total: what each hand
+      // puts into every hit, and the two rates the swing alternates between.
+      const pairing = pairLine(game.character);
+      if (pairing) box.append(el('div', 'skillsec__how', pairing));
       for (const row of mainRows()) statRow(box, row);
     } else {
-      for (const line of skillLines(held)) box.append(el('div', 'skillsec__how', `${line}.`));
+      for (const l of slotWorkings(held, game.character)) box.append(el('div', 'skillsec__how', l));
     }
     host.append(box);
   }
 }
 
+/** The sheet is TWO PAGES now: what you are wearing, and what you can do. */
+const SHEET_TABS = [
+  { id: 'gear', name: 'Character' },
+  { id: 'professions', name: 'Professions' },
+];
+let sheetTab = SHEET_TABS[0].id;
+let profShown = 'blacksmithing';
+export const sheetTabId = (id: string): string => `sheet-tab-${id}`;
+export const professionTileId = (id: string): string => `sheet-prof-${id}`;
+
+function renderTabs(): void {
+  const host = $('sheet-tabs');
+  host.replaceChildren();
+  for (const tab of SHEET_TABS) {
+    const btn = el('button', 'mini climbtab', tab.name) as HTMLButtonElement;
+    btn.id = sheetTabId(tab.id);
+    btn.classList.toggle('climbtab--on', tab.id === sheetTab);
+    btn.onclick = () => {
+      sheetTab = tab.id;
+      render();
+    };
+    host.append(btn);
+  }
+  const main = $('sheet-main') as HTMLElement;
+  const profs = $('sheet-professions') as HTMLElement;
+  // A TAB OPENS AT ITS OWN TOP. The panel scrolls, so the other page's position
+  // is carried over and the first three tiles arrive already off screen.
+  // GUARDED: a headless DOM has no layout, so neither scroll method exists
+  // there, and an unguarded call takes the whole render down with it.
+  if (main.hidden !== (sheetTab !== 'gear')) main.parentElement?.scrollTo?.({ top: 0 });
+  main.hidden = sheetTab !== 'gear';
+  profs.hidden = sheetTab !== 'professions';
+}
+
+/** A RUNESCAPE SKILLS PAGE: a tile a profession — its icon, its name, its level
+ *  — and the STEPS of whichever is picked underneath. Every step is derived
+ *  from the table that enforces it, so the page cannot promise what is untrue. */
+function renderProfessions(): void {
+  const list = $('sheet-proflist');
+  list.replaceChildren();
+  for (const def of PROFESSIONS) {
+    const at = professionAt(game, def.id);
+    const tile = el('div', `crystal${def.id === profShown ? ' crystal--t3' : ''}`);
+    tile.id = professionTileId(def.id);
+    const head = el('div', 'crystal__head');
+    const icon = drawn(def.icon, 26);
+    if (icon) head.append(icon);
+    // A TILE IS AN ICON, A NAME AND A LEVEL, like the page it is modelled on.
+    // What the profession is FOR belongs under it, where there is room to say it
+    // — three lines a tile pushed the steps off the bottom of the panel.
+    const title = el('div', 'crystal__title');
+    title.append(el('div', 'crystal__name', def.name));
+    head.append(title);
+    head.append(el('span', 'levelrow__value', `${at.level} / ${PROFESSION.maxLevel}`));
+    tile.append(head);
+    const need = profXpToNext(at.level);
+    const bar = el('div', 'grow');
+    const fill = el('div', 'grow__fill');
+    fill.style.width = `${at.level >= PROFESSION.maxLevel ? 100 : Math.round((at.xp / need) * 100)}%`;
+    bar.append(fill);
+    tile.append(bar);
+    tile.onclick = () => {
+      profShown = def.id;
+      render();
+      // YOU CLICKED IT TO READ IT: the nine tiles fill the panel, so the steps
+      // are under the fold and a click that changed nothing visible is a click
+      // that did nothing as far as anybody can tell.
+      $('sheet-profsteps').scrollIntoView?.({ block: 'nearest' });
+    };
+    list.append(tile);
+  }
+
+  const steps = $('sheet-profsteps');
+  steps.replaceChildren();
+  const def = PROFESSION_BY_ID[profShown];
+  const at = professionAt(game, profShown);
+  steps.append(el('p', 'panel__title', def?.name ?? profShown));
+  steps.append(el('p', 'skillhead__sub',
+    `${def?.kind === 'gather' ? 'Gathered' : 'Worked'} · ${def?.makes ?? ''}. ${saysProfession(profShown)}`));
+  for (const step of unlocksFor(profShown)) {
+    // LIT WHEN YOU HAVE IT, dim when you do not — the same two states the
+    // anvil's ledger uses, so one glance answers the same question everywhere.
+    const row = el('div', `forgeneed ${at.level >= step.at ? 'forgeneed--ok' : 'forgeneed--short'}`);
+    row.append(el('span', 'forgeneed__what', step.what));
+    row.append(el('span', 'forgeneed__n', `level ${step.at}`));
+    steps.append(row);
+  }
+}
+
 function render(): void {
   hideTooltip();
+  renderTabs();
   renderSkills();
   renderSlots();
+  renderProfessions();
   renderPickHint();
   renderAttributes();
   renderStats();

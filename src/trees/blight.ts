@@ -47,12 +47,12 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'bl_pandemic',
           name: 'Pandemic',
-          description: 'And a Cloud a Critical tick plants is +1.2 tiles wider again.',
+          description: 'A Cloud a Critical tick plants is +1.2 tiles wider.',
           grants: { contagionRadius: 1.2, manaMultiplier: 1.08 },
         },
       },
       {
-        minors: 4,
+        minors: 3,
         forkFrom: { twig: 1, at: 2 },
         notable: {
           id: 'bl_plaguebearer',
@@ -68,53 +68,47 @@ const BRANCHES: Branch[] = [
     minors: [COMMON[3], COMMON[4], COMMON[0], COMMON[3]],
   },
   {
-    id: 'rupture',
-    theme: 'Rupture',
+    id: 'fixation',
+    theme: 'Fixation',
     enabler: {
-      id: 'bl_rupture',
-      name: 'Rupture',
-      description:
-        'Blight Bursts as it lands, for 70% of the damage within 1.5 tiles. A ' +
-        'Burst is a HIT, so Armour blunts it where the Poison it leaves ignores it.',
-      grants: { explode: { radius: 1.5, multiplier: 0.7 }, manaMultiplier: 1.15 },
+      id: 'bl_fixation',
+      name: 'Fixation',
+      description: '+7% Momentum per use, up to 55%.',
+      grants: { momentum: { per: 7, max: 55 } },
     },
     twigs: [
       {
-        minors: 3,
+        minors: 4,
         notable: {
-          id: 'bl_shrapnel',
-          name: 'Shrapnel',
-          description: 'The Burst covers 50% more ground.',
-          grants: { explodeRadius: 1.5, manaMultiplier: 1.08 },
+          id: 'bl_saturation',
+          name: 'Saturation',
+          description: 'Momentum builds 4% faster per use.',
+          grants: { momentumPer: 4 },
         },
       },
       {
-        minors: 3,
-        forkFrom: { twig: 0, at: 1 },
+        minors: 4,
         notable: {
-          id: 'bl_overpressure',
-          name: 'Overpressure',
-          description: 'The Burst carries +30% of the damage, for all of it.',
-          grants: { explodeMultiplierAdd: 0.3, manaMultiplier: 1.08 },
+          id: 'bl_deepening',
+          name: 'Deepening',
+          description: 'Momentum reaches 40% higher.',
+          grants: { momentumMax: 40 },
         },
       },
       {
-        minors: 3,
-        forkFrom: { twig: 1, at: 1 },
+        minors: 4,
+        forkFrom: { twig: 1, at: 2 },
         notable: {
-          id: 'bl_sporeburst',
-          name: 'Sporeburst',
-          description: 'The Burst covers 35% more ground and carries +25% of the damage.',
-          grants: { explodeRadius: 1.35, explodeMultiplierAdd: 0.25, manaMultiplier: 1.08 },
+          id: 'bl_takehold',
+          name: 'Taking Hold',
+          description:
+            'Momentum carries to a new enemy whole instead of being halved, ' +
+            'and reaches 15% higher.',
+          grants: { momentumKeep: true, momentumMax: 15 },
         },
       },
     ],
-    minors: [
-      { text: '+4% larger Burst', grants: { explodeRadius: 1.04 } },
-      COMMON[1],
-      COMMON[0],
-      { text: '+5% larger Burst', grants: { explodeRadius: 1.05 } },
-    ],
+    minors: [COMMON[0], { text: '+2% Momentum per use', grants: { momentumPer: 2 } }, COMMON[1], COMMON[2]],
   },
   {
     id: 'miasma',
@@ -131,7 +125,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'bl_choking',
           name: 'Choking Haze',
-          description: 'And +1 Cloud on top of that, for three.',
+          description: '+1 Cloud.',
           grants: { extraFields: 1, manaMultiplier: 1.15 },
         },
       },
@@ -140,7 +134,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'bl_smother',
           name: 'Smother',
-          description: 'And +2 more Clouds beyond that, for five.',
+          description: '+2 Clouds.',
           grants: { extraFields: 2, manaMultiplier: 1.15 },
         },
       },
@@ -150,7 +144,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'bl_shroud',
           name: 'Shroud',
-          description: '+2 Clouds again, for seven, and every Cloud covers 15% more ground.',
+          description: '+2 Clouds, and every Cloud covers 15% more ground.',
           grants: { extraFields: 2, fieldRadius: 1.15, manaMultiplier: 1.15 },
         },
       },
@@ -163,9 +157,7 @@ const BRANCHES: Branch[] = [
     enabler: {
       id: 'bl_virulence',
       name: 'Virulence',
-      description:
-        'The Poison deals 50% more damage over a 35% shorter time. Blight kills ' +
-        'faster and holds ground worse.',
+      description: 'The Poison deals 50% more damage over a 35% shorter time.',
       grants: { ailmentMultiplier: 1.5, ailmentDuration: 0.65 },
     },
     twigs: [
@@ -211,9 +203,7 @@ const BRANCHES: Branch[] = [
     enabler: {
       id: 'bl_canopy',
       name: 'Canopy',
-      description:
-        'The Cloud covers 55% more ground, and its Poison deals 12% less damage. ' +
-        'Blight stops being aimed and starts being placed.',
+      description: 'The Cloud covers 55% more ground, and its Poison deals 12% less damage.',
       grants: { fieldRadius: 1.55, ailmentMultiplier: 0.88, manaMultiplier: 1.08 },
     },
     twigs: [
@@ -255,8 +245,8 @@ const BRANCHES: Branch[] = [
     enabler: {
       id: 'bl_spite',
       name: 'Spite',
-      description: 'Blight deals 30% more damage to enemies within 3 tiles of you.',
-      grants: { moreClose: { within: 3, more: 0.3 } },
+      description: 'For 4s after a kill, Blight deals 30% more damage.',
+      grants: { killMore: { seconds: 4, more: 0.3 } },
     },
     twigs: [
       {
@@ -302,9 +292,7 @@ const TRUNK_NOTABLES: Notable[] = [
   {
     id: 'bl_transmutation',
     name: 'Transmutation',
-    description:
-      'Blight stops dealing Poison. Pick what it deals instead — the Poison ' +
-      'modifiers in this tree change with it, the ones on your gear do not.',
+    description: 'Convert Blight to another damage type.',
     choices: [
       {
         id: 'dark',
@@ -354,9 +342,10 @@ export const BLIGHT_SPEC: TreeSpec = {
   branches: BRANCHES,
   trunkNotables: TRUNK_NOTABLES,
   needs: {
+    momentumPer: 'bl_fixation',
+    momentumMax: 'bl_fixation',
+    momentumKeep: 'bl_fixation',
     contagionRadius: 'bl_contagion',
-    explodeRadius: 'bl_rupture',
-    explodeMultiplierAdd: 'bl_rupture',
     extraFields: 'bl_miasma',
   },
 };

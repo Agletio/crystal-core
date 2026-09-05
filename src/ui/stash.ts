@@ -14,7 +14,6 @@
  * need it.
  */
 import {
-  CARRY,
   STASH_MAX,
   buyStashSpace,
   carryRoom,

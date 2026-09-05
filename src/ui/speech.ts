@@ -2,18 +2,18 @@
  * A bubble over the head of whoever is talking. Built once and UPDATED per
  * frame, never rebuilt: `renderFlasks` / `syncFlasks` is the precedent, and a
  * node replaced sixty times a second is a node a click lands on after it has
- * left the document. Where it hangs is `Renderer.screenAt`, asked every frame,
- * because the camera moves under it and a drag mid-sentence has to keep the
- * words on the speaker rather than where the speaker was.
+ * left the document. On a map it hangs off `Renderer.screenAt`, asked every
+ * frame, because the camera moves under it.
  */
 import type { SceneBeat } from '../scenes';
 import type { Renderer } from '../render/renderer';
-import { portraitIcon } from './icons';
+import { FACE, portraitIcon } from './icons';
 
 const $ = (id: string) => document.getElementById(id)!;
 
 /** How far above a body the bubble's point sits, in tiles. */
 const ABOVE = 0.6;
+const LIFT = 96; // above his head, clear of the room you came to look at
 const EDGE = 12; // pixels of window a clamped bubble keeps around itself
 
 let beats: SceneBeat[] = [];
@@ -37,6 +37,12 @@ function show(): void {
   $('speech-said').textContent = beat.said;
   $('speech').hidden = false;
   stood = null;
+}
+
+/** The room is LEFT with a line still up: the bubble goes with it, granting
+ *  like Escape does — one that outlived its room sat over 26 of 41 screens. */
+export function dismissSpeech(): void {
+  if (isSpeaking()) finish();
 }
 
 /** Every line has been said, or somebody pressed Escape through the lot. */
@@ -66,23 +72,17 @@ export function startSpeech(
   $('speech-name').textContent = name;
   const face = $('speech-face');
   face.replaceChildren();
-  const portrait = portraitIcon(who, 52);
+  const portrait = portraitIcon(who, FACE.bubble);
   if (portrait) face.append(portrait);
   show();
 }
 
-/** Anchors a fixed box over a tile. The renderer answers in pixels from the
- *  surface's own corner, so the surface's place on the page is added here. */
-export function anchor(node: HTMLElement, renderer: Renderer, on: { x: number; y: number }): void {
-  const box = document.getElementById('run-canvas')?.getBoundingClientRect();
-  if (!box) return;
-  const seen = renderer.screenAt({ x: on.x, y: on.y - ABOVE });
-  // The transform hangs the card ABOVE the point, so a TALL one over somebody
-  // standing near the top of the room is drawn off the screen entirely. A
-  // bubble a few tiles off the speaker beats one nobody can read.
+/** Hangs a fixed box over a point ON THE PAGE, clamped to the window: the
+ *  transform puts the card ABOVE the point, so a tall one near the top would
+ *  otherwise draw off screen. A body on the map and a body in the camp's
+ *  picture both anchor through this. */
+export function pin(node: HTMLElement, x: number, y: number): void {
   const size = node.getBoundingClientRect();
-  const x = box.left + seen.x;
-  const y = box.top + seen.y;
   const clamp = (v: number, lo: number, hi: number) => Math.min(Math.max(v, lo), Math.max(lo, hi));
   node.style.setProperty(
     '--sx',
@@ -90,8 +90,17 @@ export function anchor(node: HTMLElement, renderer: Renderer, on: { x: number; y
   );
   node.style.setProperty(
     '--sy',
-    `${Math.round(clamp(y, size.height + EDGE, globalThis.innerHeight - EDGE))}px`
+    `${Math.round(clamp(y - LIFT, size.height + EDGE, globalThis.innerHeight - EDGE))}px`
   );
+}
+
+/** The same, over a TILE. The renderer answers in pixels from the surface's
+ *  own corner, so the surface's place on the page is added here. */
+export function anchor(node: HTMLElement, renderer: Renderer, on: { x: number; y: number }): void {
+  const box = document.getElementById('run-canvas')?.getBoundingClientRect();
+  if (!box) return;
+  const seen = renderer.screenAt({ x: on.x, y: on.y - ABOVE });
+  pin(node, box.left + seen.x, box.top + seen.y);
 }
 
 /** Per frame, for whatever is currently anchored to a body. */

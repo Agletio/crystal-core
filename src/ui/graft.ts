@@ -8,19 +8,20 @@
  * out still holding the relic — they keep waiting, since carrying one is the
  * whole of what schedules them.
  */
-import { RELIC_BY_ID } from '../data';
+import { EQUIP_SLOTS, RELIC_BY_ID } from '../data';
 import type { ForgedDef } from '../data';
 import type { SceneDef } from '../scenes';
-import { forgedFor, graftable, spendRelic } from '../game/graft';
+import { forgedFor, graftRefusal, spendRelic } from '../game/graft';
 import type { GameState } from '../game/state';
-import { baseTier } from '../mods';
 import { describeStatLine } from '../mod-text';
 import { GRANT_BY_ID } from '../sim/grants';
 import type { Item } from '../types';
 import { note } from './history';
-import { itemIcon, portraitIcon } from './icons';
+import { FACE, itemIcon, portraitIcon } from './icons';
 import { itemCard } from './itemcard';
 import { attachTooltip, hideTooltip } from './tooltip';
+import { renderInventory, setInventoryHandler } from './inventory';
+import { refreshCharacter } from './character';
 
 const $ = (id: string) => document.getElementById(id)!;
 
@@ -63,52 +64,104 @@ export function forgedSays(def: ForgedDef): string {
   return said.join('. ');
 }
 
+/**
+ * What he will write. A kind has exactly ONE line today, so a list of one is a
+ * choice you have not made and a button that will not light until you make it
+ * — `take` picks it for you and this says it rather than asking. A second line
+ * for the same kind turns these back into buttons on their own.
+ */
 function renderLines(): void {
   const host = $('graft-lines');
   host.replaceChildren();
   $('graft-lineslabel').hidden = piece === null;
   if (!piece) return;
 
-  for (const def of forgedFor(piece, room?.id)) {
-    const btn = el('button', `graft__line${def === line ? ' graft__line--on' : ''}`);
-    btn.append(el('b', undefined, def.mod.name));
-    btn.append(el('span', undefined, forgedSays(def)));
-    btn.onclick = () => {
-      line = def;
-      renderLines();
-      sync();
-    };
-    host.append(btn);
+  const all = forgedFor(piece, room?.id);
+  for (const def of all) {
+    const only = all.length === 1;
+    const row = el(only ? 'div' : 'button', `graft__line${def === line ? ' graft__line--on' : ''}`);
+    row.append(el('b', undefined, def.mod.name));
+    row.append(el('span', undefined, forgedSays(def)));
+    if (!only) {
+      row.onclick = () => {
+        line = def;
+        renderLines();
+        sync();
+      };
+    }
+    host.append(row);
   }
 }
 
+/** Picking a piece, which is the WHOLE of the choice: the line comes with the
+ *  slot. Held only while it still fits — a pick that does not is one that would
+ *  write a helmet's line onto a pair of boots. */
+function take(item: Item): void {
+  piece = item;
+  const lines = forgedFor(item, room?.id);
+  if (!line || !lines.includes(line)) line = lines[0] ?? null;
+  renderPieces();
+  renderLines();
+  sync();
+  renderInventory();
+}
+
+/**
+ * WHAT YOU ARE WEARING, in the sheet's own labelled slots — *the user's call,*
+ * so it reads as your gear rather than as a tray of icons. Everything you were
+ * CARRYING was in here too, which is an inventory inside a speech bubble: at a
+ * full bag it ran off the side of the screen and pushed the lines off the
+ * bottom, so the bench could be opened and never used. A carried piece comes
+ * in through the DOCK, which is where it already is.
+ *
+ * Every slot is listed, and one he has no use for says so on its own row.
+ */
 function renderPieces(): void {
   const host = $('graft-pieces');
   host.replaceChildren();
 
-  const all = graftable(game, room?.id);
-  if (all.length === 0) {
-    host.append(el('p', 'empty', 'Nothing you are carrying is any use here.'));
-    return;
+  for (const slot of EQUIP_SLOTS) {
+    const item = game.character.equipment[slot.id];
+    const cell = el('div', 'slotcell');
+    cell.append(el('div', 'slotcell__label', slot.name));
+
+    const btn = el('button', 'slotcell__btn') as HTMLButtonElement;
+    if (!item) {
+      btn.append(el('span', 'slotcell__empty', 'empty'));
+      btn.disabled = true;
+      cell.append(btn);
+      host.append(cell);
+      continue;
+    }
+    const why = graftRefusal(item, room?.id);
+    btn.classList.add('slotcell__btn--worn');
+    if (item === piece) btn.classList.add('slotcell__btn--picking');
+    btn.append(itemIcon(item, 26));
+    const body = el('span', 'slotcell__body');
+    body.append(el('span', 'slotcell__name', item.name));
+    body.append(el('span', 'slotcell__meta', why ?? 'he can write on this'));
+    btn.append(body);
+    attachTooltip(btn, () =>
+      itemCard(item, [why ?? 'what the base gave it is what gets written over'])
+    );
+    btn.disabled = why !== null;
+    btn.onclick = () => take(item);
+    cell.append(btn);
+    host.append(cell);
   }
-  for (const item of all) {
-    const btn = el(
-      'button',
-      `slot slot--gear slot--t${baseTier(item)}${item === piece ? ' slot--on' : ''}`
-    ) as HTMLButtonElement;
-    btn.append(itemIcon(item, 30));
-    attachTooltip(btn, () => itemCard(item, ['what the base gave it is what gets written over']));
-    btn.onclick = () => {
-      piece = item;
-      // The lines are per slot, so a pick that no longer fits is a pick that
-      // would write a helmet's line onto a pair of boots.
-      if (line && !forgedFor(item, room?.id).includes(line)) line = null;
-      renderPieces();
-      renderLines();
-      sync();
-    };
-    host.append(btn);
-  }
+}
+
+/** And the dock answers the same question for what you are CARRYING, which is
+ *  the seam every other screen picks an item through. */
+function pieceHandler() {
+  return {
+    actionFor: (item: Item) =>
+      graftRefusal(item, room?.id) === null
+        ? { label: `Hand over ${item.name}`, run: () => take(item) }
+        : null,
+    highlighted: (item: Item) => item === piece,
+    dimmed: (item: Item) => graftRefusal(item, room?.id),
+  };
 }
 
 function sync(): void {
@@ -123,7 +176,7 @@ export function openGraft(def: SceneDef, held: Item): void {
 
   const face = $('graft-face');
   face.replaceChildren();
-  const portrait = portraitIcon(def.who, 52);
+  const portrait = portraitIcon(def.who, FACE.panel);
   if (portrait) face.append(portrait);
   $('graft-title').textContent = def.name;
 
@@ -138,6 +191,7 @@ export function openGraft(def: SceneDef, held: Item): void {
   renderLines();
   sync();
   $('graft').hidden = false;
+  setInventoryHandler(pieceHandler());
   ($('graft-do') as HTMLButtonElement).focus();
 }
 
@@ -148,6 +202,7 @@ export function closeGraft(): void {
   piece = null;
   line = null;
   $('graft').hidden = true;
+  setInventoryHandler(null);
   hideTooltip();
   onDone?.();
 }
@@ -159,7 +214,16 @@ export function initGraft(state: GameState, done: () => void): void {
   ($('graft-do') as HTMLButtonElement).onclick = () => {
     if (!relic || !piece || !line) return;
     const made = spendRelic(game, relic, piece, line.mod.id);
-    if (made) note(`${room?.name} wrote ${line.mod.name} into your ${made.name}`, 'add');
+    note(
+      made
+        ? `${room?.name} wrote ${line.mod.name} into your ${made.name}`
+        : `${room?.name} could not find that piece — nothing was spent`,
+      made ? 'add' : 'fail'
+    );
     closeGraft();
+    // The graft REPLACES the item object, and every card captured the old one:
+    // a dock slot nobody redrew keeps showing the line that was written over.
+    renderInventory();
+    refreshCharacter();
   };
 }

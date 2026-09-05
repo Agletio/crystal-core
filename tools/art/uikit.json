@@ -1,0 +1,86 @@
+{
+ "_": "What to SAY for the UI FIXTURE KIT, one create_ui_asset call. `tools/art/uikit.mts ask` fires it, `get` downloads, `emit` cuts the pieces and writes src/render/generated-ui.ts. Every piece is authored at the CSS pixel size it displays at, so a 9-slice's corners draw 1:1.",
+ "style": "Fantasy ARPG interface fixtures carved from near-black cavern stone, edged with dark iron banding and tarnished brass fittings, a thin warm amber lamplight rim along upper edges, aged, chipped and heavy, in the style of Path of Exile and Diablo interface furniture. Dark and carved, NOT bright, NOT colorful, NOT clean, NOT plastic, NOT sci-fi.",
+ "palette": "near-black warm stone, dark iron, tarnished brass, warm amber lamplight",
+ "size": {
+  "width": 512,
+  "height": 512
+ },
+ "asset": "650735a8-9d7a-4d8c-a3ca-fbf71a03a193",
+ "extras": [
+  {
+   "id": "plaque",
+   "width": 688,
+   "height": 384,
+   "asset": "02061775-6402-4fdf-8729-1160114162d0",
+   "say": "a grand ornamental ceremonial frame for a game TITLE SCREEN: a heavy carved near-black stone plaque border with ornate tarnished brass filigree flourishes swelling at the corners, small violet cut gems set into the border, a thin warm gold hairline along the inner edge, aged and chipped, the middle fully OPEN and EMPTY and transparent. NOT text, NOT letters, NOT a scene, NOT a landscape."
+  },
+  {
+   "id": "crackscene",
+   "width": 512,
+   "height": 288,
+   "asset": "3756c312-4e50-460f-82e8-edf335b8c270",
+   "crop": [
+    56,
+    46,
+    400,
+    196
+   ],
+   "say": "a wide pixel art landscape SCENE for a game title screen: the sheer cliff face of a huge near-black rock wall filling most of the frame, a strip of wild dark grassy meadow running along its base in the foreground, a tall narrow vertical CRACK split up the middle of the rock glowing warm amber from deep inside as if something wondrous is hidden within, the glow spilling out onto the grass, one small lit iron lantern standing at each side of the crack's mouth. Filled edge to edge. NOT a frame, NOT a border, NOT text, NOT letters, NOT people.",
+   "style": "Moody dark fantasy pixel art, near-black weathered stone, muted dark green grass, warm amber lamplight, in the style of Path of Exile and Diablo loading screen art. Dark and atmospheric, NOT bright, NOT colorful, NOT cartoonish, NOT sci-fi."
+  }
+ ],
+ "pieces": [
+  {
+   "id": "win",
+   "kind": "rounded_rect",
+   "label": "ornate window frame: thick carved near-black stone border with tarnished brass corner fittings and a hairline of warm gold light along the inner edge, open empty middle",
+   "x": 8,
+   "y": 8,
+   "w": 224,
+   "h": 224,
+   "radius": 4
+  },
+  {
+   "id": "card",
+   "kind": "rounded_rect",
+   "label": "small plain frame: slim carved dark stone border with a faint brass inner hairline, open empty middle",
+   "x": 248,
+   "y": 8,
+   "w": 140,
+   "h": 140,
+   "radius": 3
+  },
+  {
+   "id": "socket",
+   "kind": "rounded_rect",
+   "label": "square recessed button socket: riveted dark iron rim around a sunken dark stone recess",
+   "x": 404,
+   "y": 8,
+   "w": 48,
+   "h": 48,
+   "radius": 3
+  },
+  {
+   "id": "bar",
+   "kind": "rounded_rect",
+   "label": "long horizontal action-bar plate: a carved dark stone slab banded with dark iron, heavy tarnished brass end caps, warm lit top edge",
+   "x": 8,
+   "y": 248,
+   "w": 464,
+   "h": 56,
+   "radius": 4
+  },
+  {
+   "id": "channel",
+   "kind": "rounded_rect",
+   "label": "long narrow recessed gauge channel: a sunken groove in dark stone with a tarnished brass cap at each end, deep inner shadow",
+   "x": 8,
+   "y": 320,
+   "w": 464,
+   "h": 28,
+   "radius": 3
+  }
+ ],
+ "_rim": "A SLIM frame for the rail was asked twice and `create_ui_asset` returned a whole KIT SHEET both times \u2014 free-form, with no `pieces`, that tool's prior is a sheet of assets whatever the description says, and 'ONE frame filling the image, NOT a sheet, NOT a set' did not move it. Its minimum is 192x192, so a small piece cannot be asked for at all. Ask a new fixture through `pieces` or not at all. The `head` plate it once stood in for is gone: every plate is the panel with a hairline edge."
+}

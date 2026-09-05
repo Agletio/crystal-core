@@ -7,15 +7,27 @@
      home indicator once the browser chrome is gone. -->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>Crystal Core</title>
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
 <style>
   :root {
     /*
-     * The frame around the game: soot, ash and cold iron. Near-black and
-     * barely warm, so the frame and the map's stone read as one world. The
+     * THE FRAME, and nothing else reads these. Lamplit stone: the Fissure's own
+     * floor is rgb(132,126,111) and its rock is pure black, so the shell is that
+     * rock with the lamps on it and the parchment somebody wrote by them. The
      * frame's whole job is being quiet — COLOUR belongs to the accents below.
+     */
+    --ink:       #0A0806;
+    --panel:     #141009;
+    --panel-lit: #23190E;
+    --edge:      #4A3721;
+    --edge-lit:  #7A5C33;
+    --text:      #E9DCBE;
+    --text-dim:  #A08D6D;
+
+    /*
+     * And THE MAP, which the renderer reads by name (`VARS` in
+     * `src/render/renderer.ts`). Every one of these is pinned: `p.void` is the
+     * shade end of every hand-drawn creature and portrait in the game, so
+     * moving it to suit a panel re-inks the bestiary.
      */
     --void:      #0C0B0E;
     --matrix:    #1B1922;
@@ -90,21 +102,88 @@
     --orchid:    #5E4382;
     --pearl:     #F6EDF7;
 
-    --display: 'Silkscreen', 'Courier New', monospace;
-    --body: 'IBM Plex Mono', ui-monospace, 'Courier New', monospace;
-
-    --step: 4px;
+    /*
+     * NOTHING IS FETCHED, so the LAST name in each list is the face that draws:
+     * a serif, which is a book rather than a console, and it is what these are
+     * chosen for. The named webfonts render only where a player has them
+     * installed. Adding a <link> for them would change how every screen looks
+     * and would invalidate every screenshot judged so far, so it is a design
+     * decision rather than a fix.
+     */
+    --display: 'Cinzel', 'Trajan Pro', Georgia, 'Times New Roman', serif;
+    --body: 'EB Garamond', Georgia, 'Times New Roman', serif;
 
     /*
-     * Grime, in two layers of hard-stopped gradient: a dark 4px weave and a
-     * faint lit weave half a pixel off it. Hard stops rather than blends, so it
-     * dithers like a bitmap instead of smearing like a photograph.
+     * What the WEBS are made of, which is the one place the frame draws its own
+     * art: rusted chain between framed images — an ornate GOLD ring for a
+     * notable and a plainer SILVER band for a minor, so the two read apart at
+     * the size the whole web is drawn at rather than only close up.
      */
-    --grit:
-      repeating-linear-gradient(0deg, rgba(0,0,0,.30) 0 2px, transparent 2px 4px),
-      repeating-linear-gradient(90deg, rgba(255,255,255,.022) 0 2px, transparent 2px 4px);
+    --web-ground: #0A0705;
+    --chain:     #0B0806;
+    --chain-lit: #6A5232;
+    --on-lit:    #F0A055;
+    --on-gem-lit:#FBE49B;
+    /** The ring around a node you HAVE. The one white in the game, and it is
+     *  white so that no amount of lamp-lit rock can be mistaken for it. */
+    --node-on:   #FFFFFF;
+
+    /** The mark's three inks: the gem is lit from one side. */
+    --gem-hi:    #FBEDC6;
+    --gem-mid:   #E0AC48;
+    --gem-dim:   #A9711F;
+    --seam-cut:  #17100A;
+
+    /** A WOUND, floated over the hero. Darker than `--ember`, which is fire:
+     *  a number saying you were hit has to read as blood rather than flame. */
+    --hurt:      #8E2B22;
+
+    /** The two pools, on the flask each fills. */
+    --life:      #C4553F;
+    --mana:      #58B4E0;
+    /** EXPERIENCE. A blue nothing else in the game is: the bar runs the width
+     *  of the floor across lamplit rock, and rust sank into it. Deeper than
+     *  `--mana` on purpose, because the mana vessel sits in the same corner. */
+    --xp:        #7A5C33; /* brass, the frame's own lit edge: the one bar the camp and the descent share, in neither's cobalt */
+    /** The dark a letter is cut into. */
+    --cut:       #000;
+
+    /** Carved, not drawn: enough corner to lose the CSS rectangle, no more. */
+    --r: 3px;
+    /** The title plaque's width, and everything inside it scales off it. */
+    --plaque-w: min(688px, 94vw, 84vh);
+    /** How far a waiting skill's socket is darkened, written per frame. */
+    --cool: 0%;
+
+    /*
+     * A quiet stone wash: lamplight fading down the face, no pattern at all.
+     * Still an <image>, because half its users compose it under a gradient —
+     * `none` inside a background-image LIST invalidates the whole property.
+     */
+    --grit: linear-gradient(rgba(255,226,170,.028), rgba(0,0,0,.16));
+    /** A MASK, not a colour: only its alpha is read, so it takes no token. */
+    --fade-foot: linear-gradient(to bottom, #000 calc(100% - 26px), transparent 100%);
     /** A chiselled edge: lit from the top left, in whole pixels. */
-    --bevel: inset 2px 2px 0 rgba(255,255,255,.055), inset -2px -2px 0 rgba(0,0,0,.55);
+    --bevel: inset 2px 2px 0 rgba(255,224,168,.07), inset -2px -2px 0 rgba(0,0,0,.6);
+    /**
+     * THE FOUR TREATMENTS, defined once and reused, so a window, a button, a
+     * panel and a card cannot drift apart. `--gilt` is the hairline of lamplight
+     * inside the dark border, which is the whole of what makes an edge read as
+     * carved rather than as a stroke.
+     */
+    --gilt: inset 0 0 0 1px rgba(190,146,74,.22);
+    --sunk: inset 0 2px 7px rgba(0,0,0,.6);
+    --lift: 0 4px 0 rgba(0,0,0,.5), 0 14px 34px rgba(0,0,0,.6);
+    /**
+     * WHERE THE WINDOW FRAME'S ART ACTUALLY ENDS, measured off the fixture:
+     * its carved rail is 29px at the top, 28 right, 26 bottom, 30 left inside
+     * a slice of 30. Drawn into a uniform 30px border the interior stopped
+     * short of the stone and the world showed through the difference. The
+     * border is the art's own thickness and the SLICE stays 30, drawn at
+     * `/ 30px` so it is still 1:1 and overhangs the padding box rather than
+     * being squashed into a non-integer scale.
+     */
+    --win-edge: 29px 28px 26px 30px;
   }
 
   * { box-sizing: border-box; }
@@ -115,9 +194,8 @@
      rendering. Make hidden actually mean hidden. */
   [hidden] { display: none !important; }
 
-  /* App shell: the page itself never scrolls. Regions that can overflow get
-     their own scrollbar, so the frame stays put like an application window
-     rather than a document. */
+  /* App shell: the page never scrolls, and a region that can overflow gets its
+     own scrollbar, so the frame stays put like an application window. */
   html, body {
     margin: 0;
     /* dvh, not vh: on mobile Safari `vh` is the height with the browser chrome
@@ -125,8 +203,8 @@
     height: 100%;
     height: 100dvh;
     overflow: hidden;
-    background: var(--void);
-    color: var(--chalk);
+    background: var(--ink);
+    color: var(--text);
     font-family: var(--body);
     font-size: 14px;
     line-height: 1.5;
@@ -149,20 +227,17 @@
     cursor: text;
   }
 
-  /* Cave wall behind everything: a dark dithered weave, a cold glow at the top
-     where the Fissure is and a heavy vignette at the corners. */
+  /* Cave wall behind everything: quiet dark stone, lamplight banked at the
+     foot where the working is and a heavy vignette at the corners. */
   body::before {
     content: '';
     position: fixed;
     inset: 0;
     pointer-events: none;
     background-image:
-      radial-gradient(ellipse 90% 60% at 50% 0%, rgba(139,79,209,.12), transparent 70%),
-      radial-gradient(ellipse 130% 100% at 50% 50%, transparent 55%, rgba(0,0,0,.6)),
-      repeating-linear-gradient(0deg, rgba(0,0,0,.5) 0 2px, transparent 2px 6px),
-      repeating-linear-gradient(90deg, rgba(255,255,255,.02) 0 2px, transparent 2px 6px),
-      repeating-linear-gradient(45deg, rgba(255,255,255,.014) 0 3px, transparent 3px 9px);
-    image-rendering: pixelated;
+      radial-gradient(ellipse 72% 42% at 50% 112%, rgba(196,99,30,.12), transparent 68%),
+      radial-gradient(ellipse 60% 40% at 50% -10%, rgba(120,88,44,.06), transparent 70%),
+      radial-gradient(ellipse 120% 92% at 50% 50%, transparent 40%, rgba(0,0,0,.8));
     z-index: 0;
   }
 
@@ -182,55 +257,197 @@
   .viewport { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding-right: 4px; }
 
   header { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; }
-  h1 { font-family: var(--display); font-size: 20px; font-weight: 700; letter-spacing: .04em; margin: 0; color: var(--bone); text-shadow: 2px 2px 0 #000; }
+  h1 { font-family: var(--display); font-size: 20px; font-weight: 700; letter-spacing: .04em; margin: 0; color: var(--bone); text-shadow: 2px 2px 0 var(--cut); }
   h1 span { color: var(--rust); }
-  .sub { font-size: 12px; color: var(--dust); }
+  .sub { font-size: 12px; color: var(--text-dim); }
+  /* The camera hint sits on the FLOOR beside two plated buttons, so it takes
+     the same plate: words laid bare on sand are the one thing there unframed. */
+  #run-camhint {
+    padding: 4px 9px; background-color: var(--panel); background-clip: padding-box;
+    border: 1px solid var(--edge); border-radius: var(--r); letter-spacing: .06em; text-transform: uppercase; font-size: 10px;
+  }
   /* Wraps for the same reason <header> does: one unbreakable row overflows,
      and that drags the whole page sideways rather than just the bar. */
-  .seedbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 12px; color: var(--dust); }
-  .seedbar code { color: var(--quartz); }
+  .seedbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 12px; color: var(--text-dim); }
+  .seedbar code { color: var(--citrine); }
+  /* A count on a window's head is set in the shell's face: a monospace figure
+     beside a serif title is a second typeface for no reason a player can see. */
+  .seedbar code, .panel__head code, .dock__head code, .modal__head code {
+    font-family: var(--body); font-size: inherit; font-variant-numeric: tabular-nums;
+  }
 
   /* --- the title ---------------------------------------------------------
-     The front between the two far worlds: the Cavern top left, the Rot bottom
-     right, and a ragged seam across the diagonal. The rock is a canvas painted
-     by `src/ui/titleart.ts`; everything here is what keeps the words legible
-     over the busiest background in the game. */
+     The mark and the wordmark on a ceremonial PLAQUE — a generated frame —
+     over quiet lamplit stone. One lamp glow and a vignette are the whole
+     light; the two-worlds wall this replaced was the busiest picture in the
+     game behind the smallest text in it. */
   .title {
-    position: fixed; inset: 0; z-index: 60;
+    position: fixed; inset: 0; z-index: 80;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
-    gap: 18px; cursor: pointer; text-align: center;
-    background-color: var(--void); background-image: var(--grit);
+    gap: 26px; cursor: pointer; text-align: center;
+    background-color: var(--ink); background-image: var(--grit);
   }
   .title::after {
-    content: ''; position: absolute; inset: 0; pointer-events: none;
+    content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 0;
     background:
-      radial-gradient(46% 46% at 50% 50%, rgba(6,4,10,.9), rgba(6,4,10,.62) 62%, transparent 86%),
-      radial-gradient(115% 80% at 108% 112%, rgba(196,99,30,.20), transparent 58%),
-      radial-gradient(105% 70% at -8% -12%, rgba(214,190,232,.12), transparent 58%),
-      radial-gradient(140% 110% at 50% 50%, transparent 40%, rgba(6,4,10,.66));
+      radial-gradient(46% 40% at 50% 46%, rgba(196,99,30,.13), transparent 72%),
+      radial-gradient(130% 105% at 50% 50%, transparent 42%, rgba(4,3,2,.82));
   }
   .title > * { position: relative; z-index: 1; }
-  /* Under the scrim, and two classes because `.title > *` is one. A canvas is
-     REPLACED: without a width it is laid out at its own backing store, which is
-     the viewport times the device ratio, and `inset: 0` does not shrink it. */
-  .title .title__art { position: absolute; inset: 0; z-index: 0; display: block; width: 100%; height: 100%; }
-  .title__logo { margin: 0; font-size: clamp(34px, 7vw, 68px); letter-spacing: .06em; text-shadow: 3px 3px 0 #000, 0 0 22px rgba(6,4,10,.85); }
-  .title__logo span { color: var(--rust); }
-  .title__sub { margin: -6px 0 0; font-size: 13px; color: var(--dust); letter-spacing: .18em; text-transform: uppercase; text-shadow: 1px 1px 0 #000, 0 0 10px rgba(6,4,10,.9); }
-  .title__cast { display: flex; align-items: flex-end; gap: 8px; margin-top: 10px; }
-  .title__cast .icon { image-rendering: pixelated; filter: drop-shadow(0 6px 0 rgba(0,0,0,.55)); }
+  /* The fissure itself, GENERATED, and it IS the screen: a rock face split by
+     a lit crack, a lantern either side of the mouth, meadow at its foot,
+     covering the whole ground with the plaque floating over it. Anchored at
+     the BOTTOM so a tall window crops sky-rock, never the meadow. The
+     vignette (`::after`) shares its stack level and paints later, which is
+     what lets it darken the scene under the plaque. */
+  .title .title__crack {
+    position: absolute; inset: 0; z-index: 0;
+    background-image: var(--fix-crackscene); background-size: cover;
+    background-position: center bottom;
+    image-rendering: pixelated;
+  }
+  /* The plaque holds the mark and the words in its open middle; the padding
+     IS the frame's border, measured off the art. */
+  .title__plaque {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 12px;
+    /* The padding is 76px/64px at full width as a SHARE of the width the
+       plaque actually gets — percentage padding reads the parent's width,
+       not this box's. */
+    width: var(--plaque-w); aspect-ratio: 688 / 384;
+    background-image: var(--fix-plaque); background-size: 100% 100%;
+    image-rendering: pixelated;
+    padding: calc(var(--plaque-w) * .11) calc(var(--plaque-w) * .093);
+  }
+  /* The MARK, and the words under it are a caption to it rather than the logo.
+     Grid art, so its two inks are these and nothing is baked into the file. */
+  .title__mark { line-height: 0; filter: drop-shadow(0 4px 0 rgba(0,0,0,.75)); }
+  .title__mark .sicon, .title__mark .icon { width: clamp(64px, calc(var(--plaque-w) * .16), 110px); height: auto; image-rendering: pixelated; }
+  .title__mark .sicon__ink { fill: var(--seam-cut); }
+  .title__mark .sicon__fill { fill: var(--gem-dim); }
+  .title__mark .sicon__lit { fill: var(--citrine); }
+  /* Carved rather than printed: gold catching light down the face of the
+     letters, a dark stroke crisping their edge, and ONE hard shadow cut in
+     under them — a soft halo on top of it read as mush. */
+  .title__logo {
+    /* Sized off the PLAQUE, not the viewport: a wide window over a short one
+       gave a big wordmark in a small plaque, wrapped onto two lines. */
+    margin: 0; font-family: var(--display); font-size: clamp(26px, calc(var(--plaque-w) * .0756), 52px);
+    letter-spacing: .12em; text-transform: uppercase; font-weight: 700;
+    background: linear-gradient(var(--gem-hi) 24%, var(--gem-mid) 58%, var(--gem-dim) 90%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    -webkit-text-stroke: 1px rgba(0,0,0,.45);
+    filter: drop-shadow(0 3px 0 rgba(0,0,0,.9));
+  }
+  .title__sub {
+    margin: 2px 0 0; font-size: 13px; color: var(--citrine); letter-spacing: .34em;
+    text-transform: uppercase; text-shadow: 1px 1px 0 rgba(0,0,0,.95), 0 0 10px rgba(6,4,2,.9);
+    display: flex; align-items: center; gap: 14px;
+  }
+  /* A rule either side, fading out: the cheapest thing that reads as a title
+     page rather than as a heading. */
+  .title__sub::before, .title__sub::after {
+    content: ''; width: clamp(20px, calc(var(--plaque-w) * .1), 90px); height: 1px;
+    background: linear-gradient(90deg, transparent, var(--edge-lit));
+  }
+  .title__sub::after { background: linear-gradient(90deg, var(--edge-lit), transparent); }
   .title__go {
     margin: 10px 0 0; font-family: var(--display); font-size: 12px;
     letter-spacing: .22em; text-transform: uppercase; color: var(--citrine);
-    text-shadow: 1px 1px 0 #000, 0 0 10px rgba(6,4,10,.9);
+    /* Over the scene's own glow now, so the halo is doubled and the pulse
+       never dims past legible. */
+    text-shadow: 1px 1px 0 rgba(0,0,0,.95), 0 0 4px rgba(0,0,0,.9), 0 0 12px rgba(6,4,2,.95);
     animation: titlepulse 1.9s ease-in-out infinite;
   }
-  @keyframes titlepulse { 0%, 100% { opacity: .45; } 50% { opacity: 1; } }
+  @keyframes titlepulse { 0%, 100% { opacity: .62; } 50% { opacity: 1; } }
+
+  /* Character select. A hall of standing figures with the say-box across the
+     foot of it, so the cast is never covered by what the cast is saying. */
+  .pick {
+    position: fixed; inset: 0; z-index: 62;
+    display: flex; flex-direction: column; justify-content: flex-end;
+    background-color: var(--ink); background-image: var(--grit);
+  }
+  .pick::before {
+    content: ''; position: absolute; inset: 0; pointer-events: none;
+    background:
+      radial-gradient(70% 55% at 50% 78%, rgba(198,164,120,.16), transparent 70%),
+      radial-gradient(120% 90% at 50% 120%, rgba(196,99,30,.16), transparent 60%),
+      radial-gradient(150% 120% at 50% 40%, transparent 30%, rgba(6,4,2,.88));
+  }
+  .pick__hall {
+    position: relative; z-index: 1; flex: 1;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: clamp(14px, 4vh, 40px); padding: 24px 20px 0; min-height: 0;
+  }
+  .pick__title {
+    margin: 0; font-family: var(--display); font-size: clamp(16px, 2.4vw, 24px);
+    letter-spacing: .18em; text-transform: uppercase; color: var(--text-dim);
+    text-shadow: 2px 2px 0 var(--cut);
+  }
+  .pick__cast { display: flex; align-items: flex-end; justify-content: center; gap: clamp(20px, 7vw, 90px); flex-wrap: wrap; }
+  /* Every button on the page carries a bevel; a figure standing in a hall is
+     not a button-shaped thing, so this one gives all three back. */
+  .pickfig {
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    border: 0; box-shadow: none; padding: 10px 14px 6px; cursor: pointer; color: inherit;
+    background: radial-gradient(ellipse 70% 60% at 50% 55%, var(--panel-lit), transparent 100%); /* a ground lighter than a near-black body's darks */
+  }
+  /* The canvas is the sprite's own INK, cropped, and `fit()` in pick.ts sizes
+     it to a WHOLE multiple so the browser's nearest-neighbour is the only
+     resample and every pixel is one square. No blur may touch it: a soft
+     shadow behind hard pixels reads as a smear, so the ground takes the shadow. */
+  .pickfig__body {
+    image-rendering: pixelated;
+    background: radial-gradient(ellipse 46% 7% at 50% 100%, rgba(0,0,0,.75), rgba(0,0,0,0) 100%);
+    transition: transform .12s ease-out;
+  }
+  .pickfig__name {
+    font-family: var(--display); font-size: 12px; letter-spacing: .18em;
+    text-transform: uppercase; color: var(--text-dim); text-shadow: 1px 1px 0 var(--cut);
+    opacity: .6; transition: opacity .12s ease-out, color .12s ease-out;
+  }
+  .pickfig:hover .pickfig__name, .pickfig--on .pickfig__name { opacity: 1; color: var(--citrine); }
+  .pickfig:hover .pickfig__body { transform: translateY(-3px); }
+  /* A LIFT and never a scale: `fit()` sizes the canvas to a whole multiple and a
+     1.06 on top is a fractional resample, so the figure a player chose was the
+     one drawn blurred. The ground says which is picked. */
+  .pickfig--on .pickfig__body { transform: translateY(-6px); }
+  .pickfig--on { background: radial-gradient(ellipse 78% 66% at 50% 55%, var(--panel-lit), transparent 100%); }
+
+  .picksay {
+    position: relative; z-index: 1;
+    width: min(760px, calc(100vw - 28px)); margin: 0 auto clamp(14px, 4vh, 40px);
+    padding: 16px 18px; display: flex; flex-direction: column; gap: 8px;
+    border: 2px solid var(--edge); border-radius: var(--r);
+    background-color: var(--panel); background-image: var(--grit);
+    box-shadow: var(--bevel), var(--gilt), var(--lift);
+  }
+  .picksay__name { margin: 0; font-family: var(--display); font-size: 17px; letter-spacing: .08em; color: var(--citrine); }
+  .picksay__lore { margin: 0; font-size: 13px; line-height: 1.55; color: var(--text-dim); }
+  .picksay__rule { margin: 0; font-size: 13px; line-height: 1.5; color: var(--text); }
+  /* Hoverable, so it raises the Skills screen's own card. */
+  .picksay__arms { margin: 0; font-size: 12px; color: var(--text-dim); cursor: help; align-self: flex-start; }
+  .picksay__armslabel { letter-spacing: .08em; text-transform: uppercase; font-size: 11px; }
+  .picksay__armsname { color: var(--citrine); border-bottom: 1px dotted var(--edge-lit); }
+  .picksay__free { margin: 0; font-size: 12px; line-height: 1.5; color: var(--text); }
+  .picksay__freelabel { letter-spacing: .08em; text-transform: uppercase; font-size: 11px; color: var(--text-dim); }
+  .picksay__freesaid { color: var(--citrine); }
+  .picksay__cost { margin: 0; font-size: 12px; color: var(--text-dim); opacity: .8; }
+  .pickroads { display: flex; flex-wrap: wrap; gap: 6px; }
+  .pickroads__one {
+    font-family: var(--display); font-size: 11px; letter-spacing: .12em; text-transform: uppercase;
+    padding: 3px 8px; border: 1px solid var(--edge); border-radius: 3px; color: var(--text-dim);
+  }
+  #pick-take { align-self: flex-start; margin-top: 4px; }
+  /* Nothing behind it is reachable, because nothing behind it is chosen yet. */
+  body:has(.pick:not([hidden])) .corner,
+  body:has(.pick:not([hidden])) .dock { display: none; }
   /* Opened FROM the title it is the whole screen, not a window: there is
      nothing behind it yet to be a window over. */
   .modal--full {
-    bottom: 0; z-index: 55; pointer-events: auto;
-    background-color: var(--void); background-image: var(--grit);
+    bottom: 0; z-index: 75; pointer-events: auto;
+    background-color: var(--ink); background-image: var(--grit);
   }
   .modal--full .modal__card { width: min(720px, calc(100vw - 40px)); }
   /* Nothing behind it is reachable, because nothing behind it is chosen yet. */
@@ -240,133 +457,215 @@
   /* The bottom-right stack: skills, then the rail beneath them. One column, so
      a rail wrapping to a third row pushes the skills UP rather than under. */
   /* Over every window and every scrim: the rail is how a screen is opened and
-     shut, so it is the one thing that may never end up underneath one. */
+     shut, so it is the one thing that may never end up underneath one. The
+     window band is `Z_BASE + one per REGISTERED screen`, so these three climb
+     with the screen COUNT — at 32 the thirteenth window tied the scrim. */
   .corner {
-    position: fixed; right: 16px; bottom: 22px; z-index: 34;
+    position: fixed; right: 16px; bottom: 22px; z-index: 64;
     display: flex; flex-direction: column; align-items: flex-end; gap: 8px;
   }
-  .rail {
-    display: flex; flex-wrap: wrap-reverse; justify-content: flex-end;
-    align-items: center; gap: 6px; max-width: 248px;
+  /* The rail is an ACTION BAR: a carved stone plate with brass end caps, and
+     every button a riveted socket SET INTO it. The screens are ONE row of
+     touching sockets sized to clear the flask bar at 1280; the utility trio
+     — Fill, Hide, the dev kit — sits on its own small plate above. */
+  .rail { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+  /* Every plate is the PANEL with a hairline carved edge and nothing else.
+     A brass-edged band round a 34px row of buttons was more border than
+     content, and it read as a brown box round everything it touched. */
+  .rail__row {
+    display: flex; justify-content: flex-end;
+    align-items: center; gap: 0;
+    padding: 3px 4px;
+    background-color: var(--panel); background-image: var(--grit); background-clip: padding-box;
+    border: 1px solid var(--edge); border-radius: var(--r);
+    image-rendering: pixelated;
   }
+  /* ONE FRAME, and the icons sit in its groove. A riveted steel socket behind
+     every icon was a second frame inside the first, in another metal and
+     another temperature — the plate is warm brass and the sockets were cold
+     blue — so the row read as parts from two kits. */
   .railbtn {
     position: relative; display: grid; place-items: center;
-    width: 38px; height: 38px; padding: 0; font-size: 0;
-    background: var(--matrix); background-image: var(--grit); color: var(--dust);
-    border: 2px solid var(--seam); box-shadow: var(--bevel); cursor: pointer;
+    width: 34px; height: 34px; padding: 0; font-size: 0;
+    background: transparent; image-rendering: pixelated;
+    color: var(--text-dim);
+    border: 0; border-radius: 0; box-shadow: none; cursor: pointer;
   }
-  .railbtn:hover:not(:disabled), .railbtn:focus-visible { border-color: var(--citrine); color: var(--citrine); }
-  .railbtn--dev { border-style: dashed; }
+  .railbtn:hover:not(:disabled), .railbtn:focus-visible { color: var(--citrine); filter: brightness(1.15); }
+  .railbtn:active:not(:disabled) { box-shadow: none; }
+  .railbtn--dev { opacity: .7; }
+  /* NEVER OPENED. A slow breath on the edge, no badge and no words — it stops
+     the first time the screen is opened and does not come back. */
+  .railbtn--new { color: var(--citrine); animation: railnew 2.4s ease-in-out infinite; }
+  @keyframes railnew {
+    0%, 100% { box-shadow: inset 0 0 0 1px rgba(217,164,65,.25); }
+    50%      { box-shadow: inset 0 0 0 1px rgba(217,164,65,.75), 0 0 6px rgba(217,164,65,.35); }
+  }
+  /* Not a screen the game has: a way to reach a state you would have to play
+     to. Wide buttons, because each one says what it does under its name. */
+  .devgroup { margin-bottom: 14px; }
+  /* A generated sheet, drawn NEAREST: a 32px tile judged through a bilinear
+     resample is a judgement about the browser's filter, not about the art. */
+  .devsheet { display: block; image-rendering: pixelated; border: 1px solid var(--edge); }
+  /* ALL AT ONCE: a wall of 128px sheets wraps rather than one filling it. */
+  .devsheets { display: flex; flex-wrap: wrap; gap: 10px 12px; }
+  .devsheetbox { width: 128px; }
+  .devgroup__title { margin: 0; font-family: var(--display); font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--citrine); }
+  .devgroup__why { margin: 2px 0 7px; font-size: 10px; color: var(--text-dim); max-width: 62ch; }
+  .devgroup__row { display: flex; flex-wrap: wrap; gap: 6px; }
+  .devbtn { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; text-align: left; padding: 6px 10px; }
+  .devbtn__name { font-size: 11px; }
+  .devbtn__what { font-size: 9px; color: var(--text-dim); }
+  .devbtn--warn .devbtn__name { color: var(--ember); }
+  /* THE LEVEL BUILDER: palette left, the floor in the middle, the plan right,
+     so a brush, what it lays and what comes out are all on screen at once. */
+  .bldr { display: grid; grid-template-columns: 210px minmax(0, 1fr) 300px; gap: 12px; align-items: start; }
+  .bldr__tools, .bldr__plan { max-height: 70vh; overflow-y: auto; }
+  /* The floor scrolls in its OWN box: at 36px a plan is wider than any window,
+     and a stage that pushed the page would take the palette off screen. */
+  .bldr__stage { max-height: 70vh; overflow: auto; background: var(--void); border: 1px solid var(--edge); }
+  #builder-canvas { display: block; image-rendering: pixelated; cursor: crosshair; }
+  #builder-plan { width: 100%; height: 66vh; resize: none; font-family: ui-monospace, monospace; font-size: 9px; line-height: 1.35; color: var(--text); background: var(--ink); border: 1px solid var(--edge); }
+  .bldrbar__set { display: inline-flex; align-items: center; gap: 3px; margin-right: 8px; }
+  .bldrbar__label { font-size: 9px; color: var(--text-dim); text-transform: uppercase; letter-spacing: .08em; }
+  .bldrchip { padding: 3px 7px; font-size: 10px; display: inline-flex; align-items: center; gap: 4px; }
+  .bldrchip--on { color: var(--citrine); box-shadow: inset 0 0 0 1px var(--edge-lit); }
+  /* The thumbnail is the prop's OWN canvas, so a palette entry cannot show a
+     different picture from the tile it lays. */
+  .bldrchip__art { width: auto; height: 26px; max-width: 34px; object-fit: contain; image-rendering: pixelated; }
+  .bldrchip__name { font-size: 9px; }
+  .bldrfind { width: 100%; margin: 0 0 6px; padding: 3px 6px; font-size: 10px; color: var(--text); background: var(--ink); border: 1px solid var(--edge); }
   .sicon { display: block; image-rendering: pixelated; }
   .sicon__ink { fill: currentColor; }
   .sicon__lit { fill: var(--citrine); }
-  .rail__sep { width: 2px; height: 22px; background: var(--seam); margin: 0 2px; }
-  body.panelsoff .rail > :not(.railbtn--keep) { display: none; }
+  body.panelsoff .rail__row--main { display: none; }
+  body.panelsoff .rail__row--tools .railbtn:not(.railbtn--keep) { display: none; }
   body.panelsoff .viewport .panel,
   body.panelsoff .dock,
   body.panelsoff header { display: none; }
   .railbtn__key {
     position: absolute; right: 2px; bottom: 1px;
     font-family: var(--display); font-size: 8px; line-height: 1;
-    color: var(--dust); opacity: .8; pointer-events: none;
+    color: var(--text-dim); opacity: .8; pointer-events: none;
   }
 
-  /* Stamped metal, not a web control: two whole pixels of border, a chiselled
-     bevel and no radius anywhere. Pressing it drops it into the frame. */
+  /* TREATMENT 2 of 4 — the BUTTON. Cast metal set in stone: a dark edge with a
+     hairline of lamplight inside it, a chiselled bevel, and a lift off the
+     page. Pressing it drops it into the frame. */
   button {
-    font-family: var(--body); cursor: pointer;
-    border: 2px solid var(--seam-lit); background: var(--matrix); color: var(--chalk);
-    box-shadow: var(--bevel);
-    background-image: var(--grit);
+    font-family: var(--display); cursor: pointer;
+    letter-spacing: .06em;
+    border: 2px solid var(--edge); border-radius: var(--r);
+    background: linear-gradient(var(--panel-lit), var(--panel));
+    color: var(--text);
+    box-shadow: var(--bevel), var(--gilt);
+    background-image: linear-gradient(rgba(255,226,170,.05), rgba(0,0,0,.25)), var(--grit);
   }
-  button:active:not(:disabled) { box-shadow: inset 2px 2px 0 rgba(0,0,0,.55); transform: translateY(1px); }
+  button:hover:not(:disabled) { border-color: var(--edge-lit); color: var(--citrine); }
+  button:active:not(:disabled) { box-shadow: var(--sunk); transform: translateY(1px); }
   button:focus-visible { outline: 2px solid var(--citrine); outline-offset: 2px; }
-  button:disabled { cursor: not-allowed; }
+  button:disabled { cursor: not-allowed; opacity: .55; }
 
   .mini { font-size: 11px; padding: 4px 8px; letter-spacing: .04em; text-transform: uppercase; position: relative; }
   .mini:hover:not(:disabled) { border-color: var(--rust); color: var(--rust); }
   /* The count of what a screen has waiting. Outside the button's box on both
      axes, so a three-row header at 390px is no tighter for carrying one. */
-  .tabbadge { position: absolute; top: -7px; right: -7px; min-width: 15px; height: 15px; padding: 0 3px; border-radius: 8px; background: var(--citrine); color: var(--pitch); font-family: var(--display); font-size: 10px; line-height: 15px; text-align: center; pointer-events: none; }
+  .tabbadge { position: absolute; top: -7px; right: -7px; min-width: 15px; height: 15px; padding: 0 3px; border-radius: 8px; background: var(--citrine); color: var(--ink); font-family: var(--display); font-size: 10px; line-height: 15px; text-align: center; pointer-events: none; }
   /* Dev tools, marked so they read as scaffolding rather than features. */
-  .mini--dev { border-style: dashed; color: var(--dust); }
+  .mini--dev { border-style: dashed; color: var(--text-dim); }
   .mini--dev:hover:not(:disabled) { border-color: var(--citrine); color: var(--citrine); }
-  .devsep { width: 1px; align-self: stretch; background: var(--seam); margin: 0 4px; }
 
   /* The one dialog that stops you. Narrow on purpose — it has one question in
      it, and a card the width of the Shop would read as another screen. */
   .modal__card--ask { width: min(420px, 100%); }
-  .ask__text { color: var(--dust); font-size: 13px; line-height: 1.55; margin: 0 0 16px; }
+  .ask__text { color: var(--text-dim); font-size: 13px; line-height: 1.55; margin: 0 0 16px; }
   .ask__row { display: flex; justify-content: flex-end; gap: 8px; }
   /* The destructive answer is the one that looks dangerous, and it is not the
      one focus lands on. */
   /* A dev toggle that is currently OFF, so its state reads without a label. */
   .mini--off { border-style: solid; border-color: var(--ember); color: var(--ember); }
   .mini--on { border-style: solid; border-color: var(--citrine); color: var(--citrine); }
-  .mini--danger { border-color: var(--seam-lit); color: var(--ember); }
-  .mini--danger:hover:not(:disabled) { border-color: var(--ember); background: var(--seam); }
+  .mini--danger { border-color: var(--edge-lit); color: var(--ember); }
+  .mini--danger:hover:not(:disabled) { border-color: var(--ember); background: var(--edge); }
 
   .bases { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 18px; }
-  .chip { font-size: 11px; padding: 5px 10px; letter-spacing: .04em; color: var(--dust); }
-  .chip:hover { color: var(--chalk); border-color: var(--seam-lit); }
-  .chip--on { background: var(--seam); color: var(--chalk); border-color: var(--rust); }
+  .chip { font-size: 11px; padding: 5px 10px; letter-spacing: .04em; color: var(--text-dim); }
+  .chip:hover { color: var(--text); border-color: var(--edge-lit); }
 
   .cols { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1.05fr); gap: 20px; align-items: start; }
   @media (max-width: 860px) { .cols { grid-template-columns: 1fr; } }
 
-  /* A slab cut out of the wall: two-pixel edge, dark grain, sunk into the page
-     rather than floating above it. */
+  /* TREATMENT 3 of 4 — the PANEL. A slab cut out of the wall: two-pixel edge,
+     a stud driven into each corner, dark grain, and lamplight banked along the
+     top where it catches. */
   .panel {
-    background-color: var(--matrix);
+    background-color: var(--panel);
     background-image:
-      linear-gradient(var(--seam-lit) 0 0), linear-gradient(var(--seam-lit) 0 0),
-      linear-gradient(var(--seam-lit) 0 0), linear-gradient(var(--seam-lit) 0 0),
+      linear-gradient(var(--edge-lit) 0 0), linear-gradient(var(--edge-lit) 0 0),
+      linear-gradient(var(--edge-lit) 0 0), linear-gradient(var(--edge-lit) 0 0),
+      linear-gradient(rgba(255,226,170,.045), transparent 38%),
       var(--grit);
-    background-repeat: no-repeat, no-repeat, no-repeat, no-repeat, repeat, repeat;
-    background-size: 4px 4px, 4px 4px, 4px 4px, 4px 4px, auto, auto;
+    background-repeat: no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, repeat, repeat;
+    background-size: 4px 4px, 4px 4px, 4px 4px, 4px 4px, auto, auto, auto;
     background-position:
       5px 5px, calc(100% - 5px) 5px, 5px calc(100% - 5px), calc(100% - 5px) calc(100% - 5px),
-      0 0, 0 0;
-    border: 2px solid var(--seam);
-    box-shadow: var(--bevel), 0 3px 0 rgba(0,0,0,.45);
+      0 0, 0 0, 0 0;
+    border: 2px solid var(--edge); border-radius: var(--r);
+    box-shadow: var(--bevel), var(--gilt), 0 3px 0 rgba(0,0,0,.5);
     padding: 16px;
   }
   .panel + .panel { margin-top: 16px; }
-  .panel__title { font-family: var(--display); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--bone); margin: 0 0 12px; text-shadow: 1px 1px 0 #000; }
+  /* A rule under a heading is the cheapest thing that reads as a page somebody
+     ruled rather than as a div: it fades out rather than stopping square. */
+  .panel__title {
+    font-family: var(--display); font-size: 12px; letter-spacing: .16em;
+    text-transform: uppercase; color: var(--citrine); margin: 0 0 12px;
+    padding-bottom: 7px; text-shadow: 1px 1px 0 rgba(0,0,0,.9);
+    border-bottom: 1px solid transparent;
+    border-image: linear-gradient(90deg, var(--edge-lit), transparent) 1;
+  }
   /* A heading inside a panel, for when one panel holds two things. */
-  .panel__sub { font-family: var(--display); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--dust); margin: 14px 0 6px; border-top: 1px solid var(--seam); padding-top: 12px; }
+  .panel__sub { font-family: var(--display); font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--text-dim); margin: 14px 0 6px; border-top: 1px solid var(--edge); padding-top: 12px; }
 
   #item-name { font-family: var(--display); font-size: 16px; margin: 0; }
   #item-name.locked { color: var(--ember); }
-  #item-meta { font-size: 11px; color: var(--dust); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 16px; }
+  #item-meta { font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 16px; }
 
   /* --- the signature: slots as cut facets --------------------------- */
   /* Groups across, not stacked: stacked, the sockets alone are 600px and put
      every modifier of a finished item below the fold. */
   #sockets { display: flex; flex-wrap: wrap; gap: 18px; margin-bottom: 14px; }
   .slotgroup { min-width: 0; }
-  .slotgroup__label { font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--dust); margin-bottom: 6px; }
+  .slotgroup__label { font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 6px; }
   .facets { display: flex; gap: 6px; flex-wrap: wrap; }
 
+  /* A modifier slot is the generated SOCKET plate the skill slots wear with the
+     tier as a round stone in it. `--gem` is that ink; an empty socket sets none. */
   .facet {
-    width: 42px; height: 48px; padding: 0;
+    width: 48px; height: 48px; padding: 0;
     position: relative;
-    border: none; background: none;
+    border: none; background: transparent; background-image: var(--fix-socket);
+    background-size: 100% 100%; image-rendering: pixelated;
     display: grid; place-items: center;
-    clip-path: polygon(50% 0%, 100% 26%, 100% 74%, 50% 100%, 0% 74%, 0% 26%);
     transition: transform .12s steps(3), filter .12s steps(3);
   }
-  .facet--empty { background: var(--void); box-shadow: inset 0 0 0 2px var(--seam); }
-  .facet--set { box-shadow: inset 0 0 0 2px rgba(0,0,0,.35); }
+  .facet::before {
+    content: ''; width: 26px; height: 26px; border-radius: 50%;
+    background-color: var(--ink); background-image: radial-gradient(circle at 38% 32%, rgba(255,255,255,.55), transparent 38%);
+    box-shadow: inset 0 0 0 2px rgba(0,0,0,.45), 0 0 6px currentColor; /* the tier's ink is the button's colour */
+  }
+  .facet--empty { color: transparent; }
+  .facet--empty::before { box-shadow: inset 0 0 0 2px var(--edge); }
+  .facet__tier { position: absolute; }
   .facet--set:hover { transform: translateY(-3px); filter: brightness(1.18); }
   .facet--focus { transform: translateY(-3px); filter: brightness(1.25); }
-  .facet__tier { font-family: var(--display); font-size: 10px; color: var(--void); }
+  .facet__tier { font-family: var(--display); font-size: 10px; color: var(--ink); }
 
-  .facet--amethyst { background: var(--amethyst); }
-  .facet--citrine  { background: var(--citrine); }
-  .facet--quartz   { background: var(--quartz); }
-  .facet--verdite  { background: var(--verdite); }
-  .facet--ember    { background: var(--ember); }
+  .facet--amethyst { color: var(--amethyst); } .facet--amethyst::before { background-color: var(--amethyst); }
+  .facet--citrine  { color: var(--citrine); }  .facet--citrine::before  { background-color: var(--citrine); }
+  .facet--quartz   { color: var(--quartz); }   .facet--quartz::before   { background-color: var(--quartz); }
+  .facet--verdite  { color: var(--verdite); }  .facet--verdite::before  { background-color: var(--verdite); }
+  .facet--ember    { color: var(--ember); }    .facet--ember::before    { background-color: var(--ember); }
 
   /* Two columns, because a Brilliant item carries six modifiers plus its
      implicit and one column of those is taller than the window has left after
@@ -376,19 +675,19 @@
   #modlist .empty { grid-column: 1 / -1; }
   @media (max-width: 700px) { #modlist { grid-template-columns: 1fr; } }
 
-  .mod { display: flex; gap: 10px; padding: 6px 0; border-top: 1px solid var(--seam); }
+  .mod { display: flex; gap: 10px; padding: 6px 0; border-top: 1px solid var(--edge); }
 
   /* One rolled stat, wherever it is drawn. The whole point is the split: the
      number is one colour and the words around it are another, so the good roll
      is a glance rather than a read. */
   .rolled { display: flex; gap: 5px; align-items: baseline; }
   .rolled__v { color: var(--citrine); font-weight: 600; flex: none; }
-  .rolled__k { color: var(--chalk); }
-  .mod--focus { background: var(--seam); margin: 0 -8px; padding: 8px; }
+  .rolled__k { color: var(--text); }
+  .mod--focus { background: var(--edge); margin: 0 -8px; padding: 8px; }
   /* Part of the base, not something you rolled. */
   .mod--implicit .mod__stats { color: var(--citrine); }
   .mod__stats { font-size: 12.5px; line-height: 1.35; }
-  .mod__name { font-size: 10px; color: var(--dust); letter-spacing: .04em; line-height: 1.3; }
+  .mod__name { font-size: 10px; color: var(--text-dim); letter-spacing: .04em; line-height: 1.3; }
   .dot { width: 8px; height: 8px; margin-top: 6px; flex: none; clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%); }
   .dot--amethyst { background: var(--amethyst); }
   .dot--citrine  { background: var(--citrine); }
@@ -396,22 +695,21 @@
   .dot--verdite  { background: var(--verdite); }
   .dot--ember    { background: var(--ember); }
 
-  .empty { color: var(--dust); font-size: 12px; font-style: italic; }
+  .empty { color: var(--text-dim); font-size: 12px; font-style: italic; }
 
   #log { max-height: 320px; overflow-y: auto; font-size: 12px; }
-  .logline { padding: 2px 0; border-bottom: 1px solid var(--seam); }
+  .logline { padding: 2px 0; border-bottom: 1px solid var(--edge); }
   .logline--add    { color: var(--verdite); }
   .logline--remove { color: var(--ember); }
   .logline--fail   { color: var(--citrine); }
-  .logline--note   { color: var(--dust); letter-spacing: .04em; }
+  .logline--note   { color: var(--text-dim); letter-spacing: .04em; }
 
   /* --- run view ------------------------------------------------------ */
   .runcols { display: grid; grid-template-columns: minmax(0,1.7fr) minmax(0,1fr); gap: 20px; align-items: start; }
   @media (max-width: 900px) { .runcols { grid-template-columns: 1fr; } }
 
-  /* Watching a map is an application screen, not a document, so the page never
-     grows a scrollbar mid-run. Only the loot list scrolls, and only once it
-     has to. */
+  /* Watching a map is an application screen, so the page never grows a
+     scrollbar mid-run; only the loot list scrolls, and only once it has to. */
   .viewport--locked { overflow: hidden; }
   .viewport--locked #view-run { height: 100%; }
   #run-stagewrap { display: flex; flex-direction: column; gap: 12px; height: 100%; min-height: 0; }
@@ -449,7 +747,11 @@
   body.mapfull .viewport .runbar,
   body.mapfull .viewport .panel,
   body.mapfull .viewport .flasks,
-  body.mapfull .viewport .resultcard { pointer-events: auto; }
+  body.mapfull .viewport .resultcard,
+  /* The HUD stays transparent so a drag over the bars still moves the map, but
+     its LEAVES are a button you click and two boxes you hover. */
+  body.mapfull .viewport .skillslot,
+  body.mapfull .viewport .debuff { pointer-events: auto; }
   body.mapfull #run-stagewrap .stage,
   body.mapfull #run-stagewrap .fade {
     position: fixed; inset: 0; z-index: -1;
@@ -463,54 +765,80 @@
   }
   body.mapfull #run-stagewrap .resultcard { pointer-events: auto; }
   /* The one thing you DO in a fight gets a PLACE: bottom centre, clear of the dock. */
+  /* The plate's FILL middle tiles, and at the niche's height the seams read
+     as lines behind the flasks — so the interior is painted, not the art's. */
+  /* The two flasks stand on nothing: the bar plate behind them was a brown
+     box clipping their own arches, and the niches already read as fixtures. */
   body.mapfull #run-stagewrap .flasks {
     position: fixed; left: 50%; transform: translateX(-50%);
     bottom: calc(var(--dock-h, 0px) + 20px);
-    width: auto; margin: 0; gap: 20px; grid-template-columns: auto auto;
+    width: auto; margin: 0; gap: 12px; grid-template-columns: auto auto;
+    padding: 0; background: none; border: 0;
   }
-  .flask { display: flex; align-items: center; gap: 6px; }
+  /* A SHELF: each flask stands in its own dark arched niche cut into the bar,
+     and its threshold controls hang directly under it. */
+  .flask { display: flex; flex-direction: column; align-items: center; gap: 3px; }
   .flask__use {
-    position: relative; display: grid; place-items: center;
-    width: 40px; height: 44px; padding: 0;
-    background: var(--matrix); background-image: var(--grit);
-    border: 2px solid var(--seam); box-shadow: var(--bevel); cursor: pointer;
+    position: relative; display: grid; place-items: end center;
+    width: 54px; height: 58px; padding: 0 0 3px;
+    background: var(--cut);
+    border: 1px solid var(--edge-lit); border-radius: 26px 26px 2px 2px;
+    box-shadow: var(--sunk); cursor: pointer;
   }
-  .flask__use:hover:not(:disabled) { border-color: var(--citrine); }
+  .flask__use:hover:not(:disabled) { border-color: var(--citrine); filter: brightness(1.2); }
   .flask__use:disabled { opacity: .55; cursor: default; }
-  .flask--live .flask__use { border-color: var(--citrine); }
+  .flask--live .flask__use { border-color: var(--citrine); filter: brightness(1.25); }
   .flask__key {
-    position: absolute; right: 2px; bottom: 0;
-    font-family: var(--display); font-size: 8px; line-height: 1; color: var(--dust);
+    position: absolute; right: 5px; bottom: 2px;
+    font-family: var(--display); font-size: 8px; line-height: 1; color: var(--text-dim);
   }
-  .sicon--flask .sicon__ink { fill: var(--dust); }
-  .flask--life .sicon--flask .sicon__fill { fill: #C4553F; }
-  .flask--mana .sicon--flask .sicon__fill { fill: #58B4E0; }
+  .sicon--flask .sicon__ink { fill: var(--text-dim); }
+  .flask--life .sicon--flask .sicon__fill { fill: var(--life); }
+  .flask--mana .sicon--flask .sicon__fill { fill: var(--mana); }
+  /* Generated flask states: same picture, the liquid's shine turned down. */
+  .flaskart--low { filter: saturate(.75) brightness(.85); }
+  .flaskart--dry { filter: grayscale(.9) brightness(.5); }
   /* Each control keeps its own box. Squeezed onto one line beside the name the
      `+` shrank to nothing and stopped taking clicks at all. */
-  .flask__auto { display: flex; align-items: center; gap: 4px; }
+  .flask__auto { display: flex; align-items: center; justify-content: center; gap: 3px; }
   .flask__step {
-    width: 20px; height: 20px; padding: 0; flex: none;
-    background: var(--matrix); color: var(--dust);
-    border: 2px solid var(--seam); cursor: pointer; font: inherit; line-height: 1;
+    width: 16px; height: 16px; padding: 0; flex: none; font-size: 10px;
+    background: var(--panel); color: var(--text-dim);
+    border: 1px solid var(--edge); cursor: pointer; line-height: 1;
   }
   .flask__step:hover { border-color: var(--citrine); color: var(--citrine); }
-  .flask__at { min-width: 30px; text-align: center; font-size: 10px; color: var(--dust); }
+  .flask__at { min-width: 26px; text-align: center; font-size: 9px; color: var(--text-dim); }
 
   /* Corners, and each is a CHOICE rather than wherever the flow left it. The
      HUD takes the top left; the numbers stay in the column, which is the right
      hand side; the dock is the bottom, wide and shallow. */
   /* Bottom left, thin, and no panel around it: a slab of chrome around two
      bars is most of what made the old one big. */
+  /* The pools on the left, the three slots to the RIGHT of them: what you ARE
+     beside what you are made of, and the debuffs across the top of both. */
   body.mapfull #run-hud {
     position: fixed; left: 16px; bottom: 26px; z-index: 19;
-    width: 232px; display: flex; flex-direction: column; gap: 3px;
+    width: max-content; display: grid; gap: 3px 8px;
+    grid-template-columns: 232px auto;
+    grid-template-areas: 'marks marks' 'buffs buffs' 'who slots' 'life slots' 'mana slots';
+    align-items: center;
   }
-  .hud__who { display: flex; justify-content: space-between; align-items: baseline; font-size: 10px; }
-  .hud__name { font-family: var(--display); letter-spacing: .1em; text-transform: uppercase; color: var(--quartz); }
-  .hud__level { color: var(--dust); }
+  body.mapfull #run-hud .skillrow-icons { grid-area: slots; margin: 0; }
+  body.mapfull #run-hud .hud__who { grid-area: who; }
+  body.mapfull #run-hud .hp--slim:nth-of-type(1) { grid-area: life; }
+  body.mapfull #run-hud .hp--slim:nth-of-type(2) { grid-area: mana; }
+  body.mapfull #run-hud .debuffs { grid-area: marks; }
+  body.mapfull #run-hud #run-buffs { grid-area: buffs; }
+  .hud__who {
+    display: flex; justify-content: space-between; align-items: baseline; font-size: 10px;
+    padding: 3px 9px; margin-bottom: 2px;
+    background-color: var(--panel); background-clip: padding-box;
+    border: 1px solid var(--edge); border-radius: var(--r); image-rendering: pixelated;
+  }
+  .hud__name { font-family: var(--display); letter-spacing: .1em; text-transform: uppercase; color: var(--bone); }
+  .hud__level { color: var(--text-dim); }
   .hud__level b { color: var(--citrine); }
-  .hp--slim { height: 13px; }
-  .hp--slim .hp__text { font-size: 9px; line-height: 13px; }
+  .hp--slim .hp__text { font-size: 11px; line-height: 1; color: var(--bone); text-shadow: 0 1px 0 var(--ink), 0 0 2px var(--ink); }
 
   /* Flush with the floor, and UNDER everything: read at a glance, never clicked,
      so a window over it costs nothing. `margin: 0` is load-bearing — a fixed box
@@ -518,14 +846,43 @@
      carries 14px of it. */
   .hp.xpbar {
     position: fixed; left: 0; right: 0; bottom: 0; z-index: 2;
-    height: 10px; margin: 0; border: 0; pointer-events: none;
+    height: 14px; margin: 0; border: 0; pointer-events: none;
+    background-image: var(--grit);
+    box-shadow: inset 0 1px 0 var(--edge-lit), inset 0 -1px 0 rgba(0, 0, 0, .5);
   }
-  .hp.xpbar .hp__text { font-size: 8px; line-height: 10px; }
+  /* TICKED: a short dash every 5%, a full-height one every 25%, as repeating
+     gradients so nothing is measured and no mark can drift off the bar. On a
+     LAYER OVER the fill — under it they vanished exactly where the bar had
+     filled, which is the half you are reading the marks against. Each mark is
+     CUT and then LIT, 1px apiece: black alone is invisible against the empty
+     track, which is `--ink`. */
+  .hp.xpbar::after {
+    content: ''; position: absolute; inset: 0; pointer-events: none;
+    background-image:
+      repeating-linear-gradient(90deg,
+        var(--ink) 0 1px, var(--edge-lit) 1px 2px, transparent 2px 25%),
+      repeating-linear-gradient(90deg,
+        var(--ink) 0 1px, var(--edge) 1px 2px, transparent 2px 5%);
+    background-size: 100% 100%, 100% 60%;
+    background-position: 0 0, 0 100%;
+    background-repeat: no-repeat, repeat-x;
+  }
+  .hp.xpbar .hp__fill { opacity: .92; }
+  /* WHAT YOU HAVE AND WHAT IT TAKES, read off a bar one line tall: the shadow
+     is what carries it over both the blue fill and the black track behind it.
+     It keeps the base rule's `position: absolute`, which is the whole of how it
+     lies OVER the fill — turned relative it was laid out after the fill in
+     normal flow and drew 14px below the bar, off the bottom of the window. */
+  .hp.xpbar .hp__text {
+    font-size: 10px; line-height: 14px; z-index: 2;
+    font-family: var(--display); letter-spacing: .06em; color: var(--text);
+    text-shadow: 0 1px 0 var(--ink), 0 -1px 0 var(--ink), 1px 0 0 var(--ink), -1px 0 0 var(--ink);
+  }
   /* The column now holds only the numbers, so it stops reserving the HUD's
      height and lets the map have it. */
   body.mapfull #run-stagewrap .runside { align-self: flex-start; }
 
-  .stage { background: var(--void); border: 2px solid var(--seam); box-shadow: var(--bevel); line-height: 0; }
+  .stage { background: var(--ink); border: 2px solid var(--edge); box-shadow: var(--bevel); line-height: 0; }
   #run-canvas, .icon, .slot svg { image-rendering: pixelated; }
   #run-canvas { display: block; width: 100%; }
 
@@ -535,15 +892,15 @@
   .lootgrid { display: flex; flex-wrap: wrap; gap: 4px; }
   .lootgrid__cell {
     width: 32px; height: 32px; display: grid; place-items: center;
-    background: var(--void); border: 1px solid var(--seam);
+    background: var(--ink); border: 1px solid var(--edge);
   }
   .lootgrid__cell .icon { image-rendering: pixelated; }
   .runbar .spacer { flex: 1 1 auto; }
   .runbar .sub { letter-spacing: .08em; text-transform: uppercase; font-size: 10px; }
 
-  .hp { position: relative; height: 20px; background: var(--void); border: 1px solid var(--seam); margin-bottom: 8px; }
+  .hp { position: relative; height: 20px; background: var(--ink); border: 1px solid var(--edge); margin-bottom: 8px; }
   .hp__fill { height: 100%; background: var(--verdite); }
-  .hp__text { position: absolute; inset: 0; display: grid; place-items: center; font-size: 11px; color: var(--chalk); }
+  .hp__text { position: absolute; inset: 0; display: grid; place-items: center; font-size: 11px; color: var(--text); }
   .hp--mana { height: 14px; }
   .hp__fill--mana { background: var(--quartz); }
   .hp--mana .hp__text { font-size: 10px; }
@@ -552,98 +909,204 @@
   .hp--mana.hp--dry { border-color: var(--rust); }
   .hp--mana.hp--dry .hp__text { color: var(--rust); }
   .hp--xp { height: 14px; margin-bottom: 14px; }
-  .hp__fill--xp { background: var(--rust); }
-  .hp--xp .hp__text { font-size: 10px; color: var(--dust); }
+  .hp__fill--xp { background: var(--xp); }
+  .hp--xp .hp__text { font-size: 10px; color: var(--text-dim); }
+  /* Life and mana are VESSELS: the fill inside a carved channel with brass
+     caps. AFTER every base `.hp` rule, because the `border` shorthand in one
+     of those resets `border-image` and equal specificity is won by order.
+     The padding is the caps' own rounded art intruding past the border box —
+     without it a near-full fill draws over the right cap. */
+  .hp--slim {
+    height: 26px; margin-bottom: 0; background: none; box-shadow: none;
+    padding: 1px 5px;
+    border: 8px solid transparent; border-left-width: 14px; border-right-width: 14px;
+    border-image: var(--fix-channel) 9 14 fill / 8px 14px round;
+    image-rendering: pixelated;
+  }
+  .hp--mana.hp--dry { border: 8px solid transparent; border-left-width: 14px; border-right-width: 14px; border-image: var(--fix-channel) 9 14 fill / 8px 14px round; filter: drop-shadow(0 0 3px var(--rust)); }
+  .hp__track { position: relative; width: 100%; height: 100%; }
+  /* Lit along its top and settling dark at the foot, so the liquid reads as a
+     body rather than as a paint stripe. A treatment, not a colour. */
+  .hp--slim .hp__fill {
+    background-image: linear-gradient(
+      rgba(255,255,255,.55) 0, rgba(255,255,255,.2) 30%,
+      rgba(0,0,0,.06) 55%, rgba(0,0,0,.38) 100%
+    );
+  }
+  .hp__ticks { position: absolute; inset: 0; pointer-events: none; }
+  .hp__tick { position: absolute; top: 30%; bottom: 0; width: 1px; background: rgba(0,0,0,.45); }
+  .hp__tick--big { top: 0; width: 2px; background: rgba(0,0,0,.6); }
 
   /* Two across under the map: the keys are the shortcut and these are the
-     interface, because a phone has no number row. */
-  .flasks { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; }
-  .flask { display: flex; align-items: stretch; gap: 6px; min-width: 0; }
-  @media (max-width: 560px) { .flasks { grid-template-columns: 1fr; } }
-  .flask__use {
-    flex: 1 1 auto; display: flex; align-items: center; justify-content: space-between;
-    gap: 8px; padding: 6px 8px; text-align: left;
-  }
-  .flask__use:disabled { opacity: .4; }
-  .flask__name { font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .flask__charges { font-size: 11px; color: var(--citrine); flex: none; }
-  .flask__key {
-    flex: none; font-size: 10px; color: var(--dust); border: 1px solid var(--seam);
-    padding: 1px 5px;
-  }
-  /* Drinking, so the button says what the bar is doing. */
-  .flask--live .flask__use { border-color: var(--quartz); }
-  .flask__auto { display: flex; align-items: center; gap: 4px; flex: none; }
-  .flask__auto span { font-size: 10px; color: var(--dust); min-width: 30px; text-align: center; }
-  .flask__auto button { padding: 2px 6px; font-size: 11px; }
+     interface. One look with the shelf — the niche block above is the whole
+     of the styling, and this only places the pair. */
+  .flasks { display: grid; grid-template-columns: auto auto; justify-content: center; gap: 12px; margin-top: 8px; }
 
-  .whoami { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
-  .whoami__name { font-family: var(--display); font-size: 14px; color: var(--chalk); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .whoami__level { font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--dust); flex: none; }
-  .whoami__level b { color: var(--citrine); font-size: 12px; }
 
-  .lootline { display: flex; justify-content: space-between; gap: 10px; font-size: 12px; padding: 3px 0; border-bottom: 1px solid var(--seam); }
+  .lootline { display: flex; justify-content: space-between; gap: 10px; font-size: 12px; padding: 3px 0; border-bottom: 1px solid var(--edge); }
   .lootline__v { color: var(--verdite); }
 
   .levelrow { display: flex; align-items: baseline; gap: 8px; margin-bottom: 8px; }
-  .levelrow__label { font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--dust); }
-  .levelrow__value { font-family: var(--display); font-size: 18px; color: var(--citrine); }
+  .levelrow__label { font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--text-dim); }
+  .levelrow__value { font-family: var(--display); font-size: 18px; color: var(--citrine); white-space: nowrap; }
 
   /* Points in, what they bought, and the one button that spends. The `how`
      line drops to its own row so a long stat sentence never squeezes the
      number, which is the thing being compared between the four. */
   .attrleft { font-family: var(--display); font-size: 11px; color: var(--citrine); text-transform: none; letter-spacing: 0; margin-left: 6px; }
-  .attr { display: grid; grid-template-columns: 1fr auto 26px; gap: 8px; align-items: baseline; padding: 5px 0; border-bottom: 1px solid var(--seam); }
-  .attr__k { font-size: 12px; color: var(--chalk); }
+  .attr { display: grid; grid-template-columns: 1fr auto 26px; gap: 8px; align-items: baseline; padding: 5px 0; border-bottom: 1px solid var(--edge); }
+  .attr__k { font-size: 12px; color: var(--text); }
   .attr__v { font-family: var(--display); font-size: 13px; color: var(--citrine); }
   .attr__buy { padding: 0; width: 24px; height: 22px; line-height: 1; font-size: 13px; }
-  .attr__how { grid-column: 1 / -1; font-size: 10px; color: var(--dust); }
+  .attr__how { grid-column: 1 / -1; font-size: 10px; color: var(--text-dim); }
 
   .skillrow-icons { display: flex; gap: 8px; margin: 10px 0 12px; }
-  .skillslot { padding: 4px; display: flex; align-items: center; justify-content: center; min-width: 40px; min-height: 40px; }
-  .skillslot--empty { border-style: dashed; opacity: .5; }
+  /* The three skill slots are SOCKETS in the action bar's own family. On the
+     HUD they touch, so the three read as one bar rather than three buttons. */
+  .hud .skillrow-icons { gap: 2px; margin: 0 0 6px; }
+  .skillslot {
+    padding: 0; display: flex; align-items: center; justify-content: center;
+    width: 56px; height: 56px; min-width: 56px; min-height: 56px;
+    background: transparent; background-image: var(--fix-socket);
+    background-size: 100% 100%; image-rendering: pixelated;
+    border: 0; border-radius: 0; box-shadow: none;
+    position: relative;
+  }
+  .skillslot--empty { opacity: .45; }
+  /* An empty slot is an empty SOCKET, not a letter: the tooltip names the slot. */
+  .skillslot__none { width: 12px; height: 12px; border-radius: 50%; border: 1px solid var(--edge-lit); }
+  /* The TURN bar, over the HUD and only in a boss fight. Wider than a skill
+     slot because it carries a word, and lit on the face that is live. */
+  /* THE THING IN THE ROOM WITH YOU, across the top: a boss is the one enemy
+     worth a bar you never have to find. Narrow enough to leave the room in
+     view — it is a strip, not a curtain. */
+  #run-boss {
+    position: fixed; left: 50%; transform: translateX(-50%); top: 14px; z-index: 19;
+    width: min(520px, calc(100vw - 220px)); pointer-events: none;
+    padding: 6px 12px 8px;
+    background-color: var(--panel); background-image: var(--grit); background-clip: padding-box;
+    border: 1px solid var(--edge); border-radius: var(--r);
+    image-rendering: pixelated;
+  }
+  /* Top right, clear of the boss bar's own 110px of margin at 1280. Read at a
+     glance and never clicked, so a window over it costs nothing. */
+  #run-rung {
+    position: fixed; right: 16px; top: 14px; z-index: 19;
+    display: flex; flex-direction: column; align-items: flex-end; gap: 1px;
+    padding: 4px 8px 5px; pointer-events: none;
+    background-color: var(--panel); background-image: var(--grit); background-clip: padding-box;
+    border: 1px solid var(--edge); border-radius: var(--r); image-rendering: pixelated;
+  }
+  .rungtag__zone {
+    font-size: 9px; letter-spacing: .12em; text-transform: uppercase; color: var(--text-dim);
+  }
+  .rungtag__n {
+    font-family: var(--display); font-size: 13px; letter-spacing: .1em; color: var(--citrine);
+  }
+  .rungtag__what { font-size: 9px; letter-spacing: .06em; color: var(--ember); }
+  .bossbar__name {
+    font-family: var(--display); font-size: 11px; letter-spacing: .18em; text-transform: uppercase;
+    color: var(--citrine); text-align: center; margin-bottom: 4px;
+    text-shadow: 1px 1px 0 rgba(0,0,0,.95);
+  }
+  .bossbar__track {
+    position: relative; height: 13px; background: var(--ink);
+    border: 1px solid var(--edge); overflow: hidden;
+  }
+  .bossbar__fill {
+    position: absolute; inset: 0 auto 0 0; width: 100%;
+    background: linear-gradient(180deg, var(--ember) 0%, var(--ember) 45%, var(--gore) 100%);
+    transition: width .12s linear;
+  }
+  /* Every tenth, so a chunk taken out reads as a chunk rather than a slide. */
+  .bossbar__ticks {
+    position: absolute; inset: 0;
+    background: repeating-linear-gradient(90deg, transparent 0 calc(10% - 1px), rgba(0,0,0,.55) calc(10% - 1px) 10%);
+  }
+  .shout {
+    position: fixed; left: 0; top: 0; z-index: 66; pointer-events: none;
+    transform: translate(calc(-50% + var(--sx, 0px)), calc(-100% + var(--sy, 0px)));
+    padding: 5px 11px; max-width: 240px;
+    background-color: var(--panel); background-image: var(--grit); background-clip: padding-box;
+    border: 1px solid var(--edge); border-radius: var(--r);
+    image-rendering: pixelated;
+    font-family: var(--display); font-size: 13px; letter-spacing: .08em;
+    color: var(--ember); text-align: center; white-space: nowrap;
+  }
+  /* WHAT IS ON YOU, over the pools it is spoiling. One box each: the picture,
+     the seconds left under it, and a hover that says what it does. */
+  .debuffs { display: flex; gap: 4px; }
+  .debuff {
+    width: 40px; padding: 3px 0 2px; text-align: center;
+    background-color: var(--panel); background-clip: padding-box;
+    border: 1px solid var(--edge); border-radius: var(--r);
+    image-rendering: pixelated;
+  }
+  .debuff__art { display: block; margin: 0 auto; image-rendering: pixelated; }
+  .debuff__left {
+    font-family: var(--display); font-size: 9px; line-height: 1.2;
+    color: var(--citrine); margin-top: 1px;
+  }
+  .debuff--bad .debuff__left { color: var(--ember); }
+  .debuff--good { border-color: var(--edge-lit); }
+  .debuff--good .debuff__left { color: var(--citrine); }
+  /* A skill that is WAITING: the socket darkens from the bottom up as it comes
+     back, and the seconds left sit over it. Both are written per frame, so
+     nothing here is rebuilt to count down. */
+  .skillslot__cool {
+    position: absolute; inset: 0; display: none;
+    align-items: center; justify-content: center;
+    font-family: var(--display); font-size: 13px; color: var(--bone);
+    text-shadow: 1px 1px 0 rgba(0,0,0,.95);
+    background: linear-gradient(to top, rgba(4,3,2,.82) var(--cool, 0%), transparent var(--cool, 0%));
+    pointer-events: none;
+  }
+  .skillslot--waiting .skillslot__cool { display: flex; }
 
   /* One block per equipped skill: only the numbers true of THAT skill. */
-  .skillsec { border-left: 3px solid var(--seam-lit); padding: 2px 0 2px 9px; margin-bottom: 12px; }
+  .skillsec { border-left: 3px solid var(--edge-lit); padding: 2px 0 2px 9px; margin-bottom: 12px; }
   .skillsec--main { border-left-color: var(--citrine); }
-  .skillsec__slot { font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--dust); }
-  .skillsec__name { font-size: 13px; color: var(--chalk); margin-bottom: 2px; }
-  .skillsec__how { font-size: 11px; color: var(--dust); margin-bottom: 4px; }
-  .skillsec__empty { font-size: 11px; color: var(--dust); font-style: italic; }
+  .skillsec__slot { font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--text-dim); }
+  .skillsec__name { font-size: 13px; color: var(--text); margin-bottom: 2px; }
+  .skillsec__how { font-size: 11px; color: var(--text-dim); margin-bottom: 4px; }
+  .skillsec__empty { font-size: 11px; color: var(--text-dim); font-style: italic; }
 
-  .stat { display: flex; justify-content: space-between; font-size: 12px; padding: 4px 0; border-bottom: 1px solid var(--seam); }
-  .stat__k { color: var(--dust); }
-  .stat__unit { color: var(--seam-lit); font-size: 10px; margin-left: 5px; }
+  .stat { display: flex; justify-content: space-between; font-size: 12px; padding: 4px 0; border-bottom: 1px solid var(--edge); }
+  .stat__k { color: var(--text-dim); }
+  .stat__unit { color: var(--edge-lit); font-size: 10px; margin-left: 5px; }
 
   /* A row that opens. The whole row is the control, so the arrow is a marker
      rather than a second thing to hit. */
-  .stat--open { width: 100%; text-align: left; border: 0; border-bottom: 1px solid var(--seam); border-radius: 0; box-shadow: none; background: transparent; color: var(--chalk); font-family: inherit; align-items: baseline; }
-  .stat--open:hover { background: var(--seam); }
-  .stat--open .stat__k::after { content: ' ▸'; color: var(--seam-lit); }
+  .stat--open { width: 100%; text-align: left; border: 0; border-bottom: 1px solid var(--edge); border-radius: 0; box-shadow: none; background: transparent; color: var(--text); font-family: inherit; align-items: baseline; }
+  .stat--open:hover { background: var(--edge); }
+  .stat--open .stat__k::after { content: ' ▸'; color: var(--edge-lit); }
   .stat--on .stat__k::after { content: ' ▾'; color: var(--citrine); }
 
-  .statdetail { padding: 8px 0 10px; border-bottom: 1px solid var(--seam); font-size: 11px; }
+  .statdetail { padding: 8px 0 10px; border-bottom: 1px solid var(--edge); font-size: 11px; }
   .dmgrow { display: grid; grid-template-columns: 46px 62px 1fr; gap: 6px; padding: 2px 0; align-items: baseline; }
-  .dmgrow__n { text-align: right; font-family: var(--display); color: var(--chalk); }
-  .dmgrow__t { color: var(--dust); }
-  .dmgrow__how { color: var(--seam-lit); font-size: 10px; }
+  .dmgrow__n { text-align: right; font-family: var(--display); color: var(--text); }
+  .dmgrow__t { color: var(--text-dim); }
+  .dmgrow__how { color: var(--edge-lit); font-size: 10px; }
   .dmgrow--nil .dmgrow__n, .dmgrow--nil .dmgrow__t { color: var(--ember); }
-  .dmgrow--sum { margin-top: 5px; padding-top: 6px; border-top: 1px solid var(--seam); }
+  .dmgrow--sum { margin-top: 5px; padding-top: 6px; border-top: 1px solid var(--edge); }
   .dmgrow--sum .dmgrow__n { color: var(--citrine); }
-  .dmgrow--sum .dmgrow__t { color: var(--chalk); }
+  .dmgrow--sum .dmgrow__t { color: var(--text); }
+  /* What a hit LEAVES BEHIND: one row an ailment, under the damage it came
+     from, and no number of its own — the sentence carries them all. */
+  .statdetail__note { margin-top: 8px; padding-top: 6px; border-top: 1px solid var(--edge);
+                      font-size: 9px; letter-spacing: .1em; text-transform: uppercase;
+                      color: var(--text-dim); }
+  .dmgrow--ail .dmgrow__how { color: var(--text-dim); }
 
-  .skillline { margin: 0 0 14px; padding: 8px 10px; border-left: 3px solid var(--rust); background: var(--seam); }
-  .skillline__name { font-family: var(--display); font-size: 12px; }
-  .skillline__how { font-size: 10px; color: var(--dust); margin-top: 3px; line-height: 1.5; }
   .stat__v--capped { color: var(--citrine); }
   .stat__v--zero { color: var(--ember); }
 
   .readout { display: grid; gap: 4px; font-size: 12px; }
   .readout div { display: flex; justify-content: space-between; gap: 10px; }
-  .readout span { color: var(--dust); }
+  .readout span { color: var(--text-dim); }
   .readout code { color: var(--quartz); }
   .readout code.readout__v--bad { color: var(--rust); }
-  .runsrc { margin-top: 10px; font-size: 11px; color: var(--dust); }
+  .runsrc { margin-top: 10px; font-size: 11px; color: var(--text-dim); }
   .runblocked:not(:empty) { margin: 10px 0 0; font-size: 12px; color: var(--ember); }
 
 
@@ -653,24 +1116,25 @@
   /* Above the modals: it is opened from the dock, which sits under them. */
   .itemmenu {
     position: fixed; z-index: 95; min-width: 168px;
-    background: var(--matrix); border: 2px solid var(--seam-lit);
-    box-shadow: var(--bevel), 0 6px 0 rgba(0,0,0,.45);
+    background-color: var(--panel); background-image: var(--grit);
+    border: 2px solid var(--edge); border-radius: var(--r);
+    box-shadow: var(--bevel), var(--gilt), var(--lift);
     padding: 4px; display: flex; flex-direction: column; gap: 2px;
   }
   .itemmenu__head {
     font-size: 10px; letter-spacing: .12em; text-transform: uppercase;
-    color: var(--dust); padding: 5px 8px 6px; border-bottom: 1px solid var(--seam);
+    color: var(--text-dim); padding: 5px 8px 6px; border-bottom: 1px solid var(--edge);
     margin-bottom: 2px;
   }
   .itemmenu__item {
     text-align: left; padding: 7px 9px; font-size: 12px;
-    border: 0; background: transparent; box-shadow: none; color: var(--chalk);
+    border: 0; background: transparent; box-shadow: none; color: var(--text);
     display: flex; flex-direction: column; gap: 1px;
   }
-  .itemmenu__item:hover:not(:disabled) { background: var(--seam); color: var(--rust); }
+  .itemmenu__item:hover:not(:disabled) { background: var(--edge); color: var(--rust); }
   .itemmenu__item:focus-visible { outline: 2px solid var(--citrine); outline-offset: -2px; }
-  .itemmenu__item--off { color: var(--dust); }
-  .itemmenu__why { font-size: 10px; color: var(--seam-lit); }
+  .itemmenu__item--off { color: var(--text-dim); }
+  .itemmenu__why { font-size: 10px; color: var(--edge-lit); }
 
   /* --- dragging ---------------------------------------------------------- */
   /* The slot you picked up stays in place, dimmed: the row must not reflow
@@ -683,13 +1147,22 @@
 
   /* --- the toast --------------------------------------------------------- */
   /* Above every popup, clear of the dock: it must not cover what it reports on. */
+  /* A change made mid-descent: near the top, out of the way, gone on its own. */
+  .atcamp {
+    position: fixed; z-index: 96; left: 50%; transform: translateX(-50%); top: 12px;
+    padding: 6px 14px; font-size: 12px; color: var(--citrine);
+    background-color: var(--panel); background-image: var(--grit);
+    border: 2px solid var(--edge); border-radius: var(--r);
+    box-shadow: var(--bevel), var(--gilt), var(--lift);
+  }
   .toast {
     position: fixed; z-index: 96; left: 50%; transform: translateX(-50%);
     bottom: calc(var(--dock-h, 0px) + 14px);
     display: flex; align-items: center; gap: 10px;
     padding: 8px 8px 8px 14px; max-width: min(520px, calc(100vw - 24px));
-    background: var(--matrix); border: 2px solid var(--seam-lit);
-    box-shadow: var(--bevel), 0 6px 0 rgba(0,0,0,.45);
+    background-color: var(--panel); background-image: var(--grit);
+    border: 2px solid var(--edge); border-radius: var(--r);
+    box-shadow: var(--bevel), var(--gilt), var(--lift);
   }
   .toast__text { font-size: 12px; }
   .toast__do {
@@ -697,7 +1170,7 @@
     text-transform: uppercase; font-family: var(--display);
     border-color: var(--citrine); color: var(--citrine);
   }
-  .toast__x { padding: 3px 8px; font-size: 14px; line-height: 1; color: var(--dust); }
+  .toast__x { padding: 3px 8px; font-size: 14px; line-height: 1; color: var(--text-dim); }
   /* Follows the pointer and must never be hit-tested — elementFromPoint is how
      the drop target is found, and the ghost sits exactly under the pointer. */
   .dragghost {
@@ -717,22 +1190,27 @@
   .dock {
     position: fixed; left: 50%; transform: translateX(-50%); bottom: 16px; z-index: 20; /* the band's floor; the stack raises it */
     width: min(600px, calc(100vw - 40px)); max-height: 46vh; overflow-y: auto;
-    padding: 10px 14px 12px;
+    padding: 4px 8px 8px;
+    background-color: var(--panel); background-image: var(--grit); background-clip: padding-box;
+    border-style: solid; border-color: transparent; border-width: var(--win-edge);
+    border-image: var(--fix-win) 30 / 30px round; /* the WINDOW's own frame: one chrome below the windows */
+    image-rendering: pixelated; box-shadow: var(--lift);
   }
   .dock__head { display: flex; flex-wrap: wrap; gap: 10px; align-items: baseline; justify-content: space-between; margin-bottom: 8px; }
   .dock__head .panel__title { margin: 0; }
   .wallet { display: flex; flex-wrap: wrap; gap: 10px; }
   .coin { display: inline-flex; gap: 5px; align-items: baseline; font-size: 11px; }
   .coin__n { color: var(--citrine); font-weight: 600; }
-  .coin__id { color: var(--dust); text-transform: uppercase; letter-spacing: .06em; }
+  .coin__id { color: var(--text-dim); text-transform: uppercase; letter-spacing: .06em; }
 
   /* Sized to their contents, not to a share of the width. Each column draws
      exactly its capacity, so the widths ARE the capacities: gear gets most of
      the dock, currency the rest. */
   .dock__cols { display: flex; flex-wrap: wrap; gap: 20px; }
+  .dock__head .settabs { margin: 0 auto 0 0; }
   .dockcol { min-width: 0; }
   .dockcol__head { display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px; }
-  .dockcol__label { font-family: var(--display); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--dust); margin-bottom: 6px; }
+  .dockcol__label { font-family: var(--display); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 6px; }
   .dockcol__head .dockcol__label { margin-bottom: 0; }
   /* A full bag is the moment the limit starts mattering, so it says so before
      a run rather than in the report afterwards. */
@@ -749,9 +1227,6 @@
   /* The stash is a modal, not the dock: it can be as deep as you have paid
      for, and scroll if it outgrows the card. */
   /* Where the loop stops. The count going red is the whole warning. */
-  .haul__why { font-size: 12px; color: var(--citrine); margin: 0 0 8px; }
-  .haul__count--full { color: var(--ember); }
-  #haul-take, #haul-sellall { flex: 1 1 0; justify-content: center; text-align: center; }
   .slots--stash {
     grid-template-columns: repeat(auto-fill, 40px);
     grid-template-rows: none;
@@ -761,7 +1236,7 @@
   .slot {
     width: 40px; height: 40px; padding: 0;
     display: grid; place-items: center;
-    background: var(--void); border: 1px solid var(--seam);
+    background: var(--ink); border: 1px solid var(--edge);
     /* The stack count is positioned against this. */
     position: relative;
     /* A press that turns into a drag must not scroll the page under it. */
@@ -769,14 +1244,14 @@
   }
   .slot--empty { opacity: .5; }
   .slot--crystal { border-color: rgba(157,120,214,.45); }
-  .slot--gear { border-color: rgba(139,162,181,.4); }
-  .slot:hover:not(:disabled) { background: var(--seam); border-color: var(--seam-lit); }
+  .slot--gear { border-color: var(--edge-lit); }
+  .slot:hover:not(:disabled) { background: var(--edge); border-color: var(--edge-lit); }
   /* Claimed by the active screen: on the bench, in the socket, or fitting the
      equipment slot you just picked. Rings rather than just recolouring the
      border, because an exotic currency's border is citrine too and "lit up"
      has to be unmistakable next to it. */
   .slot--on {
-    background: var(--seam);
+    background: var(--edge);
     border-color: var(--citrine);
     box-shadow: 0 0 0 2px rgba(232,184,75,.4);
   }
@@ -790,19 +1265,50 @@
   .slot--t3     { border-color: var(--tier3); box-shadow: inset 0 0 0 1px rgba(217,164,65,.3); }
   .slot--locked { border-color: var(--locked); box-shadow: inset 0 0 0 1px rgba(196,99,30,.35); }
   .slot--unique { border-color: var(--ember); box-shadow: inset 0 0 0 1px rgba(196,72,58,.45); }
+  .slot--perfect { border-color: var(--gem-hi); box-shadow: inset 0 0 0 1px rgba(251,237,198,.45); }
 
-  /* Currency stacks. Class colours the border, matching the icon's fill, so
-     rarity reads from the grid before you've learned a single silhouette. */
-  .slot--basic    { border-color: rgba(139,129,159,.5); }
-  .slot--uncommon { border-color: rgba(95,217,164,.45); }
-  .slot--rare     { border-color: rgba(111,199,232,.5); }
-  .slot--exotic   { border-color: rgba(232,184,75,.55); }
+  /* A LEDGER, not a grid: an icon, a name and a number. Neither currency nor
+     material has a carry limit, so there is no capacity for a slot to make
+     visible — and eight shards over 28 materials in two states apiece is a list
+     you READ, where a bag is a thing you scan. Groups wrap into columns so the
+     dock keeps its height. */
+  /* FOUR ROWS STAY FOUR ROWS. The dock is the one window whose height is a
+     constant — every popup stops above it — so a tab holding one row must
+     still stand as tall as the gear grid, or looking at what you carry would
+     shove the Fissure around. `shots` measures all three and fails on a gap. */
+  .ledgercols {
+    display: flex; flex-wrap: wrap; gap: 4px 26px; align-items: flex-start;
+    min-height: 207px; align-content: flex-start;
+    max-height: 207px; overflow-y: auto;
+  }
+  .ledgergroup { min-width: 214px; }
+  .ledgerrow {
+    display: grid; grid-template-columns: 22px 1fr auto; align-items: center; gap: 9px;
+    width: 100%; padding: 3px 6px; text-align: left;
+    background: none; border: 1px solid transparent;
+    font-family: var(--body); font-size: 12px; color: var(--text);
+  }
+  .ledgerrow:hover:not(:disabled) { background: var(--ink); border-color: var(--edge-lit); }
+  .ledgerrow__name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ledgerrow__n { color: var(--citrine); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .ledgerrow--off { opacity: .45; }
+  .ledgerrow--on { background: var(--edge); border-color: var(--citrine); }
+  /* Class on the NAME, where the D3 shape puts it: rarity reads down the column
+     without a border to hunt for. */
+  .ledgerrow--basic    .ledgerrow__name { color: var(--text-dim); }
+  .ledgerrow--uncommon .ledgerrow__name { color: var(--verdite); }
+  .ledgerrow--rare     .ledgerrow__name { color: var(--quartz); }
+  .ledgerrow--exotic   .ledgerrow__name { color: var(--citrine); }
+  /* Raw is dim and worked is bright: the one distinction a station cares about,
+     said in the colour so the list is scannable without reading every noun. */
+  .ledgerrow--raw  .ledgerrow__name { color: var(--text-dim); }
+  .ledgerrow--done .ledgerrow__name { color: var(--chalk); }
   /* The count is the point of a stack, so it sits on the icon rather than in
      a hover. Boxed against the void so it stays legible over any silhouette. */
   .slot__n {
     position: absolute; right: 1px; bottom: 0;
     font-size: 10px; font-weight: 600; line-height: 1;
-    padding: 1px 2px; color: var(--chalk); background: var(--void);
+    padding: 1px 2px; color: var(--text); background: var(--ink);
     pointer-events: none;
   }
   /* A crafted item is worth spotting in a full dock. */
@@ -811,6 +1317,7 @@
      border rules so it beats every base tier: what a unique IS outranks what it
      is a version of. */
   .slot--unique { border-color: var(--ember); box-shadow: inset 0 0 0 1px rgba(196,72,58,.45); }
+  .slot--perfect { border-color: var(--gem-hi); box-shadow: inset 0 0 0 1px rgba(251,237,198,.45); }
   .icon { flex: none; display: block; }
 
   /* Narrow: the columns wrap rather than shrink, and the dock scrolls
@@ -821,37 +1328,8 @@
     .dockcol { flex: none; }
   }
 
-  /* Phones. The tablet rules above stack everything, which is right until the
-     screen is ~390px tall in the part that matters, and the dock is the one
-     region that does NOT need to grow. Slots shrink and the reclaimed height
-     goes to the view. The project is PC-first now, so this is about staying
-     usable on a phone rather than being tuned for one. */
-  @media (max-width: 430px) {
-    .wrap {
-      padding: 10px 12px 12px; gap: 8px;
-      padding-left: max(12px, env(safe-area-inset-left));
-      padding-right: max(12px, env(safe-area-inset-right));
-      padding-bottom: max(12px, env(safe-area-inset-bottom));
-    }
-    .dock { padding: 8px 10px 10px; }
-    .dock__cols { gap: 10px; }
-    .slots { grid-template-columns: repeat(var(--cols, 8), 34px); grid-template-rows: repeat(4, 34px); gap: 4px; }
-    .slots--stash { grid-template-columns: repeat(auto-fill, 34px); grid-template-rows: none; }
-    .slot { width: 34px; height: 34px; }
-    h1 { font-size: 17px; }
-  }
-
   /* The equip picker on the character sheet. A named list, not a grid of
      icons: you're comparing two helmets there, and the difference is words. */
-  .inv__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; }
-  .invitem { text-align: left; padding: 7px 9px; display: flex; align-items: center; gap: 9px; border-left-width: 3px; }
-  .invitem__body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-  .invitem--crystal { border-left-color: var(--amethyst); }
-  .invitem--gear { border-left-color: var(--quartz); }
-  .invitem__name { font-size: 12px; }
-  .invitem__meta { font-size: 10px; color: var(--dust); }
-  .invitem:hover:not(:disabled) { background: var(--seam); }
-  .invitem--off { opacity: .38; }
 
   /* --- the shop ------------------------------------------------------- */
   .buys { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 6px; }
@@ -860,9 +1338,9 @@
   .buy { text-align: left; padding: 7px 9px; display: flex; align-items: center; gap: 9px; }
   .buy__body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
   .buy__name { font-size: 12px; }
-  .buy__cost { font-size: 10px; color: var(--dust); }
+  .buy__cost { font-size: 10px; color: var(--text-dim); }
   .buy__why { font-size: 10px; color: var(--ember); }
-  .buy:hover:not(:disabled) { background: var(--seam); }
+  .buy:hover:not(:disabled) { background: var(--edge); }
   .buy--off { opacity: .38; }
   /* Alone on its row and carrying a sentence, not a name. */
   #shop-sell { grid-column: 1 / -1; justify-content: space-between; }
@@ -874,77 +1352,222 @@
   /* --- the socketed crystal ------------------------------------------- */
   /* Derived reward multipliers, shown right under a crystal's name. */
   .mults { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 14px; }
-  .mult { display: inline-flex; gap: 5px; align-items: baseline; background: var(--seam); padding: 3px 8px; font-size: 11px; }
-  .mult__k { color: var(--dust); text-transform: uppercase; letter-spacing: .06em; font-size: 10px; }
+  .mult { display: inline-flex; gap: 5px; align-items: baseline; background: var(--edge); padding: 3px 8px; font-size: 11px; }
+  .mult__k { color: var(--text-dim); text-transform: uppercase; letter-spacing: .06em; font-size: 10px; }
   .mult__v { color: var(--citrine); font-weight: 600; }
 
   /* --- the Fissure and its socket ------------------------------------- */
-  .fissure { font-size: 12px; color: var(--dust); margin: 0 0 14px; }
+  .fissure { font-size: 12px; color: var(--text-dim); margin: 0 0 14px; }
 
-  /* Deliberately looks like a slot waiting to be filled, not a button. */
+  /* A carved recess waiting to be filled, dimmed while empty. */
   .socket {
     display: block; width: 100%; text-align: left;
-    padding: 14px; background: var(--void);
-    border: 1px dashed var(--seam-lit);
+    background-color: var(--ink); background-image: var(--grit); background-clip: padding-box;
+    border: 1px solid var(--edge); border-radius: var(--r);
+    image-rendering: pixelated; box-shadow: none; border-radius: 0;
   }
-  .socket:hover { border-color: var(--rust); }
-  .socket--full { border-style: solid; border-color: var(--rust); background: var(--matrix); }
+  .socket:hover { filter: brightness(1.08) drop-shadow(0 0 4px var(--citrine)); }
+  /* The FIFTH socket: a keyhole the width of the wall, under the four the
+     crystals take. Armed, it is a held door rather than a control. */
+  .socket--key { grid-column: 1 / -1; }
+  .socket--key:disabled { cursor: default; opacity: 1; }
+  .socket--key .socket__name { color: var(--ember); }
+  .socket:not(.socket--full) { opacity: .62; }
+  .socket--full { box-shadow: inset 0 0 0 1px var(--rust); }
   .sockets { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
   .socket { padding: 10px; }
   .socket__name { font-family: var(--display); font-size: 13px; }
-  .socket__mods { font-size: 11px; color: var(--dust); }
+  .socket__mods { font-size: 11px; color: var(--text-dim); }
   /* The three worlds, in the three inks the palette already names them with. */
   .socket__family { font-size: 10px; text-transform: uppercase; letter-spacing: .08em; color: var(--rust); }
   .socket__family--demonic { color: var(--venom); }
   .socket__family--prismatic { color: var(--bone); }
-  .setcomp { font-size: 11px; color: var(--dust); margin-top: 8px; }
+  .setcomp { font-size: 11px; color: var(--text-dim); margin-top: 8px; }
   /* Where the composition puts you. The name is the fact; the line after it
-     is flavour, and goes quiet at phone width. */
+     is flavour. */
   .setzone { font-family: var(--display); font-size: 12px; color: var(--bone); margin: 4px 0 0; }
-  .setzone__blurb { font-family: var(--body); font-size: 11px; color: var(--dust); }
+  .setzone__blurb { font-family: var(--body); font-size: 11px; color: var(--text-dim); }
   .setrows { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
-  .socket__hint { font-size: 11px; color: var(--dust); font-style: italic; }
+  .socket__hint { font-size: 11px; color: var(--text-dim); font-style: italic; }
   /* How far a crystal has levelled. Only moves while it is socketed. */
-  .grow { height: 4px; background: var(--void); border: 1px solid var(--seam); margin: 6px 0 3px; }
+  .grow { height: 4px; background: var(--ink); border: 1px solid var(--edge); margin: 6px 0 3px; }
   .grow__fill { height: 100%; background: var(--amethyst); }
-  .socket__grow, .crystal__grow { font-size: 10px; color: var(--dust); }
+  .socket__grow, .crystal__grow { font-size: 10px; color: var(--text-dim); }
 
   /* --- the collection -------------------------------------------------- */
   .crystals { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 8px; }
-  .crystal { border: 1px solid var(--seam); border-left-width: 3px; border-left-color: var(--amethyst); padding: 8px 9px; display: flex; flex-direction: column; gap: 4px; }
+  /* THE ANVIL'S NEEDS LEDGER: one row a thing wanted, held against wanted as two numbers. */
+  .forgeneeds { display: flex; flex-direction: column; gap: 2px; padding: 4px 0; border-top: 1px solid var(--edge); border-bottom: 1px solid var(--edge); }
+  .forgeneed { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-dim); }
+  .forgeneed__what { flex: 1; }
+  .forgeneed__n { font-variant-numeric: tabular-nums; }
+  .forgeneed--ok .forgeneed__n { color: var(--citrine); }
+  .forgeneed--short { color: var(--text); }
+  .forgeneed--short .forgeneed__n { color: var(--hurt); }
+  /* The card the stations and the anvil borrow; only a CRYSTAL wears amethyst. */
+  #crystals .crystal { border-left-color: var(--amethyst); }
+  #crystals .crystal--socket { border-left-color: var(--citrine); }
+  .crystal { border: 1px solid var(--edge); border-left-width: 3px; border-left-color: var(--edge-lit); padding: 8px 9px; display: flex; flex-direction: column; gap: 4px; }
   /* The four that a run actually reads, told apart from the shelf behind them. */
-  .crystal--socket { background: var(--seam); border-left-color: var(--citrine); }
+  .crystal--socket { background: var(--edge); border-left-color: var(--citrine); }
   .crystal__head { display: flex; align-items: center; gap: 8px; }
   .crystal__title { min-width: 0; }
   .crystal__name { font-family: var(--display); font-size: 13px; }
   .crystal .mini { margin-top: 6px; }
   .quests { display: grid; gap: 8px; }
-  .quest { border: 1px solid var(--seam); border-left: 3px solid var(--rust); padding: 8px 9px; }
+  .quest { border: 1px solid var(--edge); border-left: 3px solid var(--rust); padding: 8px 9px; }
   .quest--done { opacity: .45; border-left-color: var(--verdite); }
-  .quest__detail { font-size: 11px; color: var(--dust); margin: 3px 0 4px; }
-  .socket__empty { font-family: var(--display); font-size: 13px; color: var(--dust); margin-bottom: 4px; }
+  .quest__detail { font-size: 11px; color: var(--text-dim); margin: 3px 0 4px; }
+  .socket__empty { font-family: var(--display); font-size: 13px; color: var(--text-dim); margin-bottom: 4px; }
 
   .mini--go { border-color: var(--rust); color: var(--bone); }
   /* The one decision on the screen, sized like it. */
+  /* The one decision on the screen is a carved PLATE, brass caps and all. */
+  /* `fill` puts the plate's own stone under the words: a flat panel there,
+     brightened on hover, lit up as a hard rectangle inside the carved edge. */
   .mini--enter {
-    padding: 12px 30px; font-size: 15px; letter-spacing: .1em;
-    border-width: 3px; box-shadow: var(--bevel), 0 4px 0 rgba(0,0,0,.5);
+    padding: 8px 22px; font-size: 15px; letter-spacing: .1em;
+    background: none;
+    border: 12px solid transparent;
+    border-left-width: 24px; border-right-width: 24px;
+    border-image: var(--fix-bar) 14 26 fill / 12px 24px round;
+    image-rendering: pixelated;
+    border-radius: 0; box-shadow: 0 4px 0 rgba(0,0,0,.5);
+    color: var(--citrine);
   }
-  .mini--enter:hover:not(:disabled) { border-color: var(--citrine); color: var(--citrine); }
+  .mini--enter:hover:not(:disabled) { filter: brightness(1.12) drop-shadow(0 0 5px var(--citrine)); color: var(--bone); }
+  .mini--enter:active:not(:disabled) { box-shadow: none; }
   .runbar--go { margin-top: 20px; justify-content: center; }
-  /* Centred and roomier, now that nothing shares the screen with it. */
-  .fissurecard {
-    width: min(620px, 100%); margin: min(6vh, 60px) auto 0;
-    padding: 22px 26px; text-align: center;
+  /* THE MAP IS THE SCREEN. Two columns: the climb takes whatever is left after
+     a fixed rail of everything you press, so nothing on it ever has to scroll.
+     NOTHING HERE SCROLLS, so the map is sized off the room LEFT rather than off
+     the viewport: every box between it and the seam gives up its minimum
+     height, and the seam is the one that stretches. */
+  /* A DEFINITE HEIGHT, or the whole chain collapses: the seam is the only box
+     with a flex basis and everything above it has `min-height: 0`, so with the
+     card sized by its content there is nothing to distribute and the window
+     shuts to 80px. Filling the viewport is also what the screen is FOR. */
+  #run-menu .modal__card {
+    height: calc(100vh - var(--dock-h, 0px) - 40px);
+    height: calc(100dvh - var(--dock-h, 0px) - 40px);
   }
-  .fissurecard .sockets { grid-template-columns: 1fr 1fr; gap: 12px; text-align: left; }
+  #run-menu .modal__body {
+    overflow: hidden; display: flex; flex-direction: column; min-height: 0; gap: 8px;
+    flex: 1 1 auto;
+  }
+  #run-menu .fissurecard { flex: 1 1 auto; min-height: 0; display: flex; }
+  /* THE MAP IS THE SCREEN, EDGE TO EDGE: nothing but the window frame bounds it. */
+  .fissurecard__map { min-height: 0; flex: 1 1 auto; display: flex; flex-direction: column; position: relative; }
+  .fissurecard__map .climbcard { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+  .fissurecard__over {
+    position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); z-index: 2;
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+  }
+  .fissurecard__go { display: flex; align-items: center; gap: 14px; }
+  .fissurecard__over .runblocked { margin: 0; }
+  /* NO FRAME OF ITS OWN: a second `win` inside the first separates nothing. */
+  .fissurecard {
+    display: grid; gap: 18px; align-items: stretch;
+    width: 100%; margin: 0; padding: 0; text-align: center;
+    background: none; border: 0; box-shadow: none;
+  }
+  /* ONE COLUMN, always: the map takes the whole width. */
+  .fissurecard { grid-template-columns: minmax(0, 1fr); }
+  /* THE INFLUENCE: three worlds, one picked, and it decides both the picture
+     and which pack joins whatever you socketed. */
+  .influences { display: flex; justify-content: center; gap: 6px; margin-bottom: 8px; }
+  /* The Seam has taken the pick off you, so no influence reads as chosen. */
+  .influence--over { opacity: .5; }
+  /* THE SOCKETS, over the map the way the camp's crack lays them out —
+     POSITIONED, never in flow, exactly as a station on the climb is. In flow
+     the panel became the seam's content height and squashed the picture it is
+     supposed to be standing on. */
+  .groundsockets {
+    position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px; text-align: left;
+    width: min(560px, 88%); max-height: 90%; overflow-y: auto;
+    padding: 10px; border-radius: var(--r);
+    background: color-mix(in srgb, var(--ink) 74%, transparent);
+    border: 1px solid var(--edge);
+  }
+  .groundset { grid-column: 1 / -1; text-align: center; }
+  /* ON THE PROVING GROUND the sockets are the crack's own clawed recesses on
+     the picture at full brightness; only the readout takes a dark plate. */
+  .groundsockets { background: none; border: 0; padding: 0; gap: 10px; }
+  .groundsockets .socket {
+    background-color: color-mix(in srgb, var(--ink) 58%, transparent); background-image: none;
+    border-color: color-mix(in srgb, var(--edge) 70%, transparent); text-align: center;
+  }
+  .groundsockets .socket:not(.socket--full) { opacity: .85; }
+  .socket__art { display: block; width: 76px; height: auto; margin: 0 auto 2px; image-rendering: pixelated; }
+  .groundsockets .socket { padding: 4px 8px 6px; }
+  .groundsockets .groundset {
+    background: color-mix(in srgb, var(--ink) 78%, transparent); border: 1px solid var(--edge);
+    padding: 8px 10px; border-radius: var(--r);
+  }
+  /* The climb, ruled off inside the Fissure's own card rather than framed
+     again — a third frame put Enter below the fold. */
+  .climbcard { text-align: left; margin: 0; padding: 0; position: relative; }
+  .climbcard .panel__title { font-size: 12px; margin-bottom: 1px; text-align: center; }
+  .climb__where { font-size: 11px; color: var(--citrine); margin-bottom: 3px; text-align: center; }
+  /* The finish line, said before you get there: nothing pays until it falls. */
+  .climb__prize { font-size: 10px; color: var(--text-dim); margin: 0 0 6px; text-align: center; }
+  /* THE SEAM: one zone at a time, down that zone's own cross-section. Every
+     station is in percent of the BOX and the picture is stretched to the same
+     box, so the two stay in register at any shape the window takes. */
+  .climbtabs {
+    position: absolute; left: 50%; top: 12px; transform: translateX(-50%); z-index: 2;
+    display: flex; justify-content: center; gap: 6px; margin: 0; flex-wrap: wrap;
+  }
+  .climbtab__done { color: var(--text-dim); font-size: 10px; }
+  /* THE ONE THAT IS UP IS FILLED: a tab under the pointer and the tab you are
+     reading were two lit tabs, and a tint cannot imitate a plate. */
+  .climbtab--on { border-color: var(--citrine); color: var(--citrine); background-color: var(--panel-lit); }
+  .climbtab--on .climbtab__done { color: var(--citrine); }
+  .climbtab--shut { border-style: dashed; }
+  .climbseam {
+    /* Capped by the HEIGHT there is and by the column it sits in, whichever
+       binds — the ratio turns one width into both, so the picture is whole and
+       a station cannot drift off the chamber it sits in. The height cap is what
+       the card is NOT: a modal head, the climb's own title and tabs, and the
+       window frame come to about 250px of the viewport. */
+    position: relative; margin: 0; min-height: 0;
+    flex: 1 1 auto; width: 100%;
+    background-color: var(--ink); background-size: 100% 100%;
+    image-rendering: pixelated;
+  }
+  .climbseam__line { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+  .climbseam__rock { fill: none; stroke: var(--edge-lit); stroke-width: 1.4; stroke-linecap: round; opacity: .7; vector-effect: non-scaling-stroke; }
+  .climbseam__lit { fill: none; stroke: var(--citrine); stroke-width: 1.4; stroke-linecap: round; opacity: .9; vector-effect: non-scaling-stroke; }
+  .pip {
+    position: absolute; transform: translate(-50%, -50%);
+    width: 19px; height: 19px; padding: 0; font: inherit; font-size: 9px; line-height: 17px;
+    background: var(--panel); color: var(--text-dim);
+    border: 1px solid var(--edge); border-radius: 50%; cursor: pointer;
+  }
+  /* A pip is PLACED by its transform, so the button treatment's nudge on press
+     would throw it half its own width out from under the cursor — which ate
+     the click that was landing on it. */
+  .pip:active:not(:disabled) { transform: translate(-50%, -50%); box-shadow: var(--sunk); }
+  /* A zone's LAST rung is its BOSS: bigger, and ringed twice so it is not read
+     as another challenge floor, which is also ember. */
+  .pip--boss {
+    width: 24px; height: 24px; font-size: 10px; border-color: var(--gore);
+    box-shadow: 0 0 0 1px var(--panel), 0 0 0 2px var(--gore);
+  }
+  .pip--done { background: var(--edge); color: var(--text); }
+  /* A CHALLENGE FLOOR, marked before you walk into it. */
+  .pip--next { border-color: var(--citrine); color: var(--citrine); }
+  .pip--shut { cursor: default; color: var(--text-dim); opacity: .7; }
+  /* Where you are pointed, ringed rather than outlined: a station is round. */
+  .pip--here { box-shadow: 0 0 0 2px var(--citrine); color: var(--bone); }
+  .pip:hover:not(:disabled) { background: var(--panel-lit); }
+  /* THE WINDOW IS THE SCREEN, near enough: the map is the whole point of it. */
+  #run-menu .modal__card { width: min(1240px, 100%); }
   .fissurecard .panel__title { font-size: 15px; }
   .fissurecard .fissure { font-size: 13px; margin-bottom: 18px; }
-  .mini--go:hover:not(:disabled) { background: var(--seam); }
+  .mini--go:hover:not(:disabled) { background: var(--edge); }
 
-  .chosen__name { font-family: var(--display); font-size: 15px; }
-  .chosen__meta { font-size: 11px; color: var(--dust); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 10px; }
-  .chosen__mod { font-size: 12px; padding: 3px 0; border-top: 1px solid var(--seam); }
 
   /* --- results overlay ------------------------------------------------ */
   .stagebox { position: relative; }
@@ -957,51 +1580,65 @@
   .met__row { display: flex; gap: 10px; align-items: center; }
   /* His bench. The piece grid is the dock's own slot, so a helmet in here and
      a helmet in the bag are the same picture. */
-  .graft__pieces { --cols: 6; max-width: 264px; }
+  /* WORN gear only, in the sheet's own labelled slots, so it is bounded and
+     it reads as your gear: eight rows, and the lines stay on screen under. */
+  /* The LIST scrolls, not the card: the lines and the button have to stay
+     under it, or picking a piece scrolls the thing you picked it for away. */
+  .graft__pieces { display: flex; flex-direction: column; gap: 4px; max-height: 22vh; overflow-y: auto; }
+  .graft__pieces .slotcell__btn { min-height: 34px; padding: 4px 7px; }
+  .graft__pieces .slotcell__label { margin-bottom: 1px; font-size: 9px; }
+  .graft__hint { margin: 0; font-size: 9px; color: var(--text-dim); }
+  /* A bubble is anchored over a head and can be near the top of the screen, so
+     it scrolls rather than growing off it. */
+  #graft-card { max-height: min(76vh, 620px); }
+  #graft-card .modal__body { overflow-y: auto; }
+
   .graft__go { display: flex; gap: 8px; align-items: center; margin-top: 4px; }
   .graft__line {
     display: flex; gap: 8px; align-items: baseline; width: 100%;
     text-align: left; padding: 6px 8px; cursor: pointer;
-    background: none; border: 1px solid var(--seam); color: var(--bone); font: inherit;
+    background: none; border: 1px solid var(--edge); color: var(--bone); font: inherit;
   }
-  .graft__line:hover { border-color: var(--dust); }
+  /* A DIV where there is only one line: it is what he writes, not a pick. */
+  button.graft__line:hover { border-color: var(--text-dim); }
+  div.graft__line { cursor: default; }
   .graft__line--on { border-color: var(--citrine); color: var(--citrine); }
   .graft__line b { font-family: var(--display); font-size: 11px; letter-spacing: .08em; }
-  .graft__line span { font-size: 12px; color: var(--dust); }
+  .graft__line span { font-size: 12px; color: var(--text-dim); }
   .graft__line--on span { color: var(--bone); }
   .met__name { font-size: 13px; color: var(--citrine); }
-  .met__said { line-height: 1.6; }
-  .met__said + .met__said { margin-top: 9px; }
+  .met__said { font-size: 13px; color: var(--citrine); padding-left: 4px; }
   /* The handover: dark at the swap, which is what hides one map becoming
      another. Never takes a click. */
-  .fade { position: absolute; inset: 0; background: var(--void); opacity: 0; pointer-events: none; }
+  .fade { position: absolute; inset: 0; background: var(--ink); opacity: 0; pointer-events: none; }
   .results { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(6,5,8,.88); padding: 16px; overflow-y: auto; }
   /* Two columns where there is room: what happened on the left, what you got
      on the right. One 360px column meant a good run — several stat rows and a
      handful of drops — pushed the button that dismisses it off the bottom. */
-  .resultcard { background-color: var(--matrix); background-image: var(--grit); border: 2px solid var(--seam-lit); box-shadow: var(--bevel); padding: 18px; width: min(600px, 100%); }
+  .resultcard { background-color: var(--panel); background-image: linear-gradient(rgba(255,226,170,.035), transparent 30%), var(--grit); background-clip: padding-box; border-style: solid; border-color: transparent; border-width: var(--win-edge); border-image: var(--fix-win) 30 / 30px round; image-rendering: pixelated; box-shadow: var(--lift); padding: 4px 8px 10px; width: min(600px, 100%); }
   .resultcard__cols { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 20px; align-items: start; }
   @media (max-width: 620px) { .resultcard__cols { grid-template-columns: 1fr; gap: 10px; } }
   .resultcard__sub:first-child { margin-top: 0; }
-  .resultcard--cleared { border-color: var(--citrine); }
-  .resultcard--died { border-color: var(--ember); }
+  .resultcard--cleared { box-shadow: inset 0 0 0 2px var(--citrine), var(--lift); }
+  .resultcard--died { box-shadow: inset 0 0 0 2px var(--ember), var(--lift); }
   /* Walking out is not a death, but it costs the same descent. */
-  .resultcard--left { border-color: var(--dust); }
+  .resultcard--left { box-shadow: inset 0 0 0 2px var(--text-dim), var(--lift); }
   .resultcard__head { font-family: var(--display); font-size: 16px; margin: 0 0 12px; }
   .resultcard--cleared .resultcard__head { color: var(--citrine); }
   .resultcard--died .resultcard__head { color: var(--ember); }
-  .resultcard--left .resultcard__head { color: var(--dust); }
-  .resultcard__sub { font-family: var(--display); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--dust); margin: 14px 0 6px; }
+  .resultcard--left .resultcard__head { color: var(--text-dim); }
+  .resultcard__sub { font-family: var(--display); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--text-dim); margin: 14px 0 6px; }
+  .resultcard__climb { font-size: 12px; color: var(--citrine); margin: 4px 0 0; }
   .resultcard__warn { font-size: 11px; color: var(--ember); margin: 8px 0 0; }
   .resultcard .mini { margin-top: 14px; width: 100%; }
 
   .resultgrid { display: grid; gap: 3px; }
   .resultrow { display: flex; justify-content: space-between; gap: 10px; font-size: 12px; }
-  .resultrow__k { color: var(--dust); white-space: pre; }
+  .resultrow__k { color: var(--text-dim); white-space: pre; }
   .resultrow--bad .resultrow__v { color: var(--ember); }
 
   .lootlist { display: grid; gap: 3px; }
-  .lootrow { display: flex; justify-content: space-between; gap: 10px; font-size: 12px; border-top: 1px solid var(--seam); padding-top: 3px; }
+  .lootrow { display: flex; justify-content: space-between; gap: 10px; font-size: 12px; border-top: 1px solid var(--edge); padding-top: 3px; }
   .lootrow__v { color: var(--verdite); }
   .lootrow--lost { opacity: .5; text-decoration: line-through; }
   .lootrow--lost .lootrow__v { color: var(--ember); }
@@ -1011,11 +1648,87 @@
      and any other window stay reachable. Only the CARD takes a click, which is
      what makes stacking two harmless. Each still stops above the dock, because
      the bench works ON the inventory it would otherwise cover. */
+  /* THE CAMP is the GROUND the game stands on, so it sits under every window
+     and over nothing. `--camp-sx` / `--camp-sy` are set once per resize and
+     everything inside the stage is in art pixels, which is what keeps a
+     hotspot on the thing it was measured against at any window size. */
+  .camp {
+    position: fixed; inset: 0; z-index: -1; overflow: hidden;
+    background-color: var(--ink); background-image: var(--grit);
+  }
+  .camp__stage {
+    position: absolute; left: 50%; top: 50%;
+    transform: translate(-50%, -50%) scale(var(--camp-sx, 1), var(--camp-sy, 1));
+    transform-origin: 50% 50%;
+  }
+  .camp__art, .camp__live, .camp__crystals, .camp__hotspots {
+    position: absolute; inset: 0;
+  }
+  .camp__art {
+    background-repeat: no-repeat; background-size: 100% 100%;
+    image-rendering: pixelated;
+  }
+  .camp__live { width: 100%; height: 100%; image-rendering: pixelated; pointer-events: none; }
+  /* Every layer over the art is full-bleed, so a structural one takes no
+     pointer and the BUTTONS take it back — the folk layer sits over the
+     fixtures and swallowed all eight of them the moment it existed. */
+  .camp__crystals, .camp__hotspots { pointer-events: none; }
+  /* Centred ON the socket it fills, at the size the hollow is. */
+  .camp__crystal { position: absolute; transform: translate(-50%, -50%); }
+  /* A hotspot DRAWS NOTHING — *"it should just highlight the charatcer or not
+     at all the box is weird"*. A person lights their own silhouette on the
+     canvas (`body()` in `ui/camp.ts`); a bench has no canvas to light, so what
+     says you are on it is the tooltip. A rectangle is never the answer, and
+     the button treatment's nudge on press would slide one off its thing. */
+  .camp__hot {
+    position: absolute; padding: 0; border: 0; border-radius: 0;
+    background: transparent; box-shadow: none; cursor: pointer;
+    pointer-events: auto;
+  }
+  .camp__hot:active:not(:disabled) { transform: none; box-shadow: none; }
+  .camp__hot:focus-visible { outline: 2px solid var(--citrine); outline-offset: 0; }
+  /* SOMEBODY WANTS YOU: over the head, and the only thing on the picture that
+     moves without the wind. It takes no pointer of its own, so the click still
+     lands on the person underneath it. */
+  .camp__mark {
+    position: absolute; left: 50%; top: -14px; transform: translateX(-50%);
+    font-family: var(--display); font-size: 20px; line-height: 1;
+    color: var(--citrine); text-shadow: 0 0 6px rgba(0,0,0,.9), 0 2px 0 rgba(0,0,0,.8);
+    pointer-events: none; animation: campmark 1.6s ease-in-out infinite;
+  }
+  @keyframes campmark {
+    0%, 100% { transform: translateX(-50%) translateY(0); }
+    50% { transform: translateX(-50%) translateY(-4px); }
+  }
+
+  /* A TALE covers the whole glass — *"you don't see the camp at all"* — above
+     the window band and the rail alike, and a click anywhere on it goes on. */
+  .tale {
+    position: fixed; inset: 0; z-index: 99;
+    display: grid; place-items: center; cursor: pointer;
+    background-color: var(--ink); background-image: var(--grit);
+  }
+  /* AS BIG AS THE GLASS ALLOWS, one scale on both axes so a pixel stays
+     square. An integer scale is not on offer: 2x is wider than the window it
+     is judged at, so it is fitted, like the camp. */
+  .tale__art { width: 100%; height: 100%; object-fit: contain; image-rendering: pixelated; }
+  /* CAPTIONS: over the picture, so the art is never cropped for the words. */
+  /* TWO CLASSES, because it wears `.modal__card` for the frame and that rule
+     is further down the sheet: an equal specificity tie is won by order, and
+     the card's own `column` would otherwise drop the count onto its own line. */
+  .tale .tale__cap {
+    position: absolute; left: 50%; bottom: 30px; transform: translateX(-50%);
+    width: min(920px, 92vw); max-height: none;
+    flex-direction: row; align-items: baseline; gap: 18px; padding: 10px 18px;
+  }
+  .tale__said { margin: 0; flex: 1; font-size: 17px; line-height: 1.5; color: var(--text); }
+  .tale__step { font-size: 12px; letter-spacing: .12em; color: var(--text-dim); }
+
   .modal { position: fixed; left: 0; right: 0; top: 0; bottom: var(--dock-h, 0px); z-index: 20; display: grid; place-items: center; padding: 20px; pointer-events: none; }
   /* A QUESTION stops you, and a beat does too: scrim on, click swallowed. Over
      the whole window band, since raising one on focus would otherwise let a
      screen you touched earlier paint through the scrim. Still under the rail. */
-  .modal--stop { background: rgba(6,5,8,.86); pointer-events: auto; z-index: 32; }
+  .modal--stop { background: rgba(6,4,2,.86); pointer-events: auto; z-index: 62; }
   .modal__card { pointer-events: auto; }
   /* A window is dragged by its HEAD, and the drag is a delta on top of whatever
      the layout decided — so a window nobody moves is exactly where it was, and
@@ -1033,29 +1746,44 @@
      transform hangs it above the head rather than on it. Over every window and
      every scrim. TWO classes on the card, because `.modal__card` is one and
      sets a width later in this same sheet. */
-  .speech, .modal--speech { z-index: 40; }
+  .speech, .modal--speech { z-index: 66; }
   .speech {
     position: fixed; left: 0; top: 0;
     transform: translate(calc(-50% + var(--sx, 0px)), calc(-100% + var(--sy, 0px)));
     width: max-content; max-width: min(300px, calc(100vw - 32px));
     display: flex; align-items: flex-end; gap: 8px;
-    background-color: var(--matrix); background-image: var(--grit);
-    border: 2px solid var(--seam-lit); box-shadow: var(--bevel), 0 5px 0 rgba(0,0,0,.55);
-    padding: 9px 11px 9px 8px;
+    background-color: var(--panel); background-image: var(--grit); background-clip: padding-box;
+    border: 1px solid var(--edge); border-radius: var(--r);
+    image-rendering: pixelated;
+    box-shadow: 0 5px 0 rgba(0,0,0,.55);
+    padding: 4px 7px 4px 4px;
   }
   /* Out of the box on two sides. A portrait cropped to the padding reads as an
-     icon; one that breaks the frame reads as somebody leaning in. */
+     icon; one that breaks the frame reads as somebody leaning in — and the
+     frame is a slim rail now, so the lean is over the brass END CAP rather
+     than up through a band that is barely there. */
   .speech__who {
-    flex: none; line-height: 0; margin: -18px 0 -9px -14px; align-self: flex-start;
+    flex: none; line-height: 0; margin: -12px 0 -6px -26px; align-self: flex-start;
   }
+  /* NO PORTRAIT, NO LEAN. An empty slot keeps its negative margin, and a
+     zero-width box pulled 26px left drags the words out through the side of
+     the card — which is what a boss with no portrait did to its own name. */
+  .speech__who:empty, .modal__card--bubble .met__who:empty { display: none; }
   .speech__who .icon { image-rendering: pixelated; }
   .speech__body { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+  /* A NAME IS TYPED BY A PLAYER, so it breaks wherever it has to: 24 characters
+     of one unbroken word is a name the card cannot widen for. */
   .speech__name {
     margin: 0; font-family: var(--display); font-size: 10px;
     letter-spacing: .12em; text-transform: uppercase; color: var(--rust);
+    overflow-wrap: anywhere; min-width: 0;
   }
   .speech__said { margin: 0; line-height: 1.5; font-size: 13px; }
   .speech__next { align-self: flex-end; padding: 2px 10px; font-size: 11px; }
+  /* A LIST, not prose: the card is as wide as its longest verb. */
+  .speech--menu { width: max-content; max-width: min(260px, calc(100vw - 32px)); }
+  .parley__list { display: flex; flex-direction: column; gap: 4px; min-width: 132px; }
+  .parley__list .mini { text-align: left; padding: 5px 10px; font-size: 12px; }
   /* The panel is the LAST beat, so it hangs where the bubble hangs rather than
      in the middle of a room it is meant to be standing in. */
   .modal.modal--speech { display: block; padding: 0; }
@@ -1069,17 +1797,31 @@
   .modal__card--bubble .modal__body { padding: 9px 11px; }
   .modal__card--bubble .met { padding: 0; gap: 9px; }
   /* Out of the frame, like the bubble's. Same person, same lean. */
-  .modal__card--bubble .met__who { margin: -18px 0 -8px -14px; align-self: flex-start; }
+  .modal__card--bubble .met__who { margin: -12px 0 -6px -26px; align-self: flex-start; }
   /* Bounded by the popup area, not the window — the area now stops above the
      dock, and a card measured in vh would hang over it. */
-  .modal__card { background-color: var(--matrix); background-image: var(--grit); border: 2px solid var(--seam-lit); box-shadow: var(--bevel), 0 8px 0 rgba(0,0,0,.5); width: min(720px, 100%); max-height: calc(100vh - var(--dock-h, 0px) - 40px); max-height: calc(100dvh - var(--dock-h, 0px) - 40px); display: flex; flex-direction: column; }
-  .modal__head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 14px 18px; border-bottom: 2px solid var(--seam); background-image: linear-gradient(rgba(196,99,30,.10), transparent); }
+  /* TREATMENT 1 of 4 — the WINDOW. The panel's slab, lifted off the map and
+     given a head to drag it by. */
+  .modal__card { background-color: var(--panel); background-image: linear-gradient(rgba(255,226,170,.035), transparent 30%), var(--grit); background-clip: padding-box; border-style: solid; border-color: transparent; border-width: var(--win-edge); border-image: var(--fix-win) 30 / 30px round; image-rendering: pixelated; box-shadow: var(--lift); width: min(720px, 100%); max-height: calc(100vh - var(--dock-h, 0px) - 40px); max-height: calc(100dvh - var(--dock-h, 0px) - 40px); display: flex; flex-direction: column; }
+  /* The head is the lit end of the slab, and still the drag handle. */
+  .modal__head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 6px 12px; margin: 2px 2px 6px; background-color: var(--panel); background-clip: padding-box; border: 1px solid var(--edge); border-radius: var(--r); image-rendering: pixelated; }
   /* A face beside the name rather than at the other end of the bar: the head's
      usual space-between would put the person and who they are as far apart as
      the box allows. */
   .modal__head--who { justify-content: flex-start; align-items: flex-end; gap: 14px; padding-bottom: 0; }
-  .modal__title { font-family: var(--display); font-size: 15px; margin: 0; color: var(--rust); text-shadow: 2px 2px 0 #000; }
-  .modal__body { padding: 16px 18px; overflow-y: auto; }
+  .modal__title { font-family: var(--display); font-size: 17px; letter-spacing: .1em; text-transform: uppercase; margin: 0; color: var(--citrine); text-shadow: 2px 2px 0 rgba(0,0,0,.9); }
+  /* THE FOOT FADES, and that says more is under it: the thumb says so to a
+     PLAYER only, since a headless shot is taken with scrollbars hidden. */
+  .modal__body {
+    padding: 16px 18px; overflow-y: auto; scrollbar-gutter: stable;
+    mask-image: var(--fade-foot);
+  }
+  /* The shell's own brass, always drawn, never the platform's. */
+  *::-webkit-scrollbar { width: 11px; height: 11px; }
+  *::-webkit-scrollbar-track { background-color: var(--ink); border-left: 1px solid var(--edge); }
+  *::-webkit-scrollbar-thumb { background-color: var(--edge-lit); border: 2px solid var(--ink); border-radius: var(--r); }
+  *::-webkit-scrollbar-thumb:hover { background-color: var(--citrine); }
+  *::-webkit-scrollbar-corner { background-color: var(--ink); }
 
   /* The stats side is the wider one now: it carries the damage workings, and a
      line of those wrapped three times is not a breakdown anyone reads. */
@@ -1087,57 +1829,68 @@
   /* The gear column stays put and the stats scroll past it. What you are
      equipping is the fixed reference for everything on the right — scrolling
      it away to read a resistance meant losing sight of the thing you were
-     reading it about. Sticky rather than a second scroller, so a short window
-     can still reach the bottom of the slots. */
-  .sheetcols__gear { position: sticky; top: 0; background: var(--matrix); z-index: 1; }
+     reading it about. STICKY pins its top for good, so when the dock shortens
+     the card the column scrolls ITSELF, or the ring slots are unreachable. */
+  .sheetcols__gear {
+    position: sticky; top: 0; background: var(--panel); z-index: 1;
+    max-height: calc(100vh - var(--dock-h, 0px) - 165px);
+    overflow-y: auto;
+  }
   @media (max-width: 720px) {
     .sheetcols { grid-template-columns: 1fr; }
     .sheetcols__gear { position: static; }
   }
 
   .slotgrid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 6px; }
-  .slotcell__label { font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--dust); margin-bottom: 3px; }
+  .slotcell__label { font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 3px; }
   .slotcell__btn { width: 100%; text-align: left; padding: 7px 9px; display: flex; align-items: center; gap: 8px; min-height: 46px; }
-  .slotcell__btn--worn { border-color: var(--seam-lit); }
-  .slotcell__btn--picking { border-color: var(--citrine); background: var(--seam); }
-  .slotcell__btn:hover { background: var(--seam); }
+  .slotcell__btn--worn { border-color: var(--edge-lit); }
+  .toolpick { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+  /* Something on the map you can click. The map itself is a thing you WATCH,
+     so this is the camp's alone and never a descent's. */
+  .stage--over { cursor: pointer; }
+  /* The hand your skill cannot be swung with. Marked, never emptied — the
+     Fissure is what refuses, and it says the sentence in full. */
+  .slotcell--wrong .slotcell__btn { border-color: var(--ember); }
+  .slotcell--wrong .slotcell__label { color: var(--ember); }
+  .slotcell__wrong { font-size: 10px; color: var(--ember); line-height: 1.35; margin-bottom: 3px; }
+  .slotcell__btn--picking { border-color: var(--citrine); background: var(--edge); }
+  .slotcell__btn:hover { background: var(--edge); }
   .slotcell__body { display: flex; flex-direction: column; min-width: 0; }
   .slotcell__name { font-size: 12px; }
-  .slotcell__meta { font-size: 10px; color: var(--dust); }
-  .slotcell__empty { font-size: 11px; color: var(--dust); font-style: italic; }
+  .slotcell__meta { font-size: 10px; color: var(--text-dim); }
+  .slotcell__empty { font-size: 11px; color: var(--text-dim); font-style: italic; }
 
-  #sheet-pick { margin-top: 12px; border-top: 1px solid var(--seam); padding-top: 10px; color: var(--citrine); }
+  #sheet-pick { margin-top: 12px; border-top: 1px solid var(--edge); padding-top: 10px; color: var(--citrine); }
 
   /* --- first run ------------------------------------------------------ */
   .namefield { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
-  .namefield__label { font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--dust); flex: none; }
+  .namefield__label { font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--text-dim); flex: none; }
   .namefield__input {
     flex: 1 1 auto; padding: 8px 10px;
-    background: var(--void); border: 1px solid var(--seam-lit);
-    color: var(--chalk); font-family: var(--body); font-size: 13px;
+    background: var(--ink); border: 1px solid var(--edge-lit);
+    color: var(--text); font-family: var(--body); font-size: 13px;
   }
   .namefield__input:focus { outline: none; border-color: var(--rust); }
-  .welcomegrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; }
-  .welcomecard { text-align: left; padding: 14px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
-  .welcomecard:hover { background: var(--seam); border-color: var(--rust); }
-  .welcomecard__name { font-family: var(--display); font-size: 13px; }
-  .welcomecard__desc { font-size: 11px; color: var(--dust); text-align: center; line-height: 1.4; }
 
-  .savemeta { font-size: 11px; color: var(--dust); margin: 0 0 14px; }
   /* Filters what is DRAWN and never what is held, so a narrow one is honest. */
-  .find { background: var(--void); border: 1px solid var(--seam); color: var(--bone);
+  .find { background: var(--ink); border: 1px solid var(--edge); color: var(--bone);
     font: inherit; font-size: 11px; padding: 2px 6px; width: 92px; }
   .find:focus { outline: none; border-color: var(--citrine); }
-  .find::placeholder { color: var(--dust); }
+  .find::placeholder { color: var(--text-dim); }
   .saveslots { display: flex; flex-direction: column; gap: 8px; margin: 14px 0; }
-  .saveslot { display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-    border: 1px solid var(--seam); padding: 10px 12px; }
-  .saveslot--live { border-color: var(--citrine); }
+  /* A slot is a BUTTON that selects itself; the verbs at the head and foot act
+     on the selection, so the box carries who is in it and nothing else. */
+  .saveslot { display: flex; align-items: center; gap: 12px; width: 100%;
+    background: var(--panel); color: var(--text); font: inherit; text-align: left;
+    border: 1px solid var(--edge); padding: 10px 12px; cursor: pointer;
+    box-shadow: none; }
+  .saveslot:hover { border-color: var(--text-dim); }
+  .saveslot--picked { border-color: var(--citrine); background: var(--panel-lit); }
   .saveslot__who { display: flex; flex-direction: column; gap: 2px; flex: 1 1 180px; min-width: 0; }
-  .saveslot__n { font-size: 11px; color: var(--dust); letter-spacing: .08em; }
+  .saveslot__n { font-size: 11px; color: var(--text-dim); letter-spacing: .08em; }
   .saveslot__name { color: var(--bone); }
-  .saveslot__when { font-size: 11px; color: var(--dust); }
-  .saveslot__acts { display: flex; gap: 6px; align-items: center; }
+  .saveslot__when { font-size: 11px; color: var(--text-dim); }
   .saveslot__live { font-size: 11px; color: var(--citrine); letter-spacing: .08em; }
   .savenote { font-size: 11px; color: var(--verdite); min-height: 16px; margin: 12px 0 0; }
   .savenote--bad { color: var(--ember); }
@@ -1158,103 +1911,203 @@
   .facet--armed, .mod--armed { cursor: pointer; }
   .facet--armed:hover { border-color: var(--ember); }
   .mod--armed { width: 100%; text-align: left; border: 0; background: none; padding: 0; }
-  .mod--armed:hover { background: var(--seam); }
+  .mod--armed:hover { background: var(--edge); }
 
   .worn { padding: 10px; }
   /* The collection only ever grows, so it gets its own scroll rather than
      making the whole bench taller than the window. */
   #craft-crystals { max-height: min(52vh, 430px); overflow-y: auto; }
-  .worn__label { font-family: var(--display); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--dust); margin-bottom: 8px; }
-  .worn__hint { font-size: 10px; color: var(--dust); font-style: italic; line-height: 1.4; margin: 8px 0 0; }
+  .worn__label { font-family: var(--display); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 8px; }
+  .worn__hint { font-size: 10px; color: var(--text-dim); font-style: italic; line-height: 1.4; margin: 8px 0 0; }
   .worn__grid { display: grid; gap: 4px; }
-  .wornslot { text-align: left; padding: 5px 7px; display: flex; align-items: center; gap: 7px; min-height: 34px; width: 100%; overflow: hidden; border-left-width: 3px; border-left-color: var(--seam-lit); }
-  .wornslot:hover:not(:disabled) { background: var(--seam); }
-  .wornslot--on { border-left-color: var(--citrine); background: var(--seam); }
+  .wornslot { text-align: left; padding: 5px 7px; display: flex; align-items: center; gap: 7px; min-height: 34px; width: 100%; overflow: hidden; border-left-width: 3px; border-left-color: var(--edge-lit); }
+  .wornslot:hover:not(:disabled) { background: var(--edge); }
+  .wornslot--on { border-left-color: var(--citrine); background: var(--edge); }
   .wornslot--bare { opacity: .55; }
+  /* A crystal the climb has not opened yet: shut, and the reason is on it. */
+  .wornslot--off { opacity: .45; cursor: default; }
   .wornslot__body { display: flex; flex-direction: column; flex: 1; min-width: 0; }
   .wornslot__name { font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .wornslot__slot { font-size: 9px; letter-spacing: .1em; text-transform: uppercase; color: var(--dust); }
+  .wornslot__slot { font-size: 9px; letter-spacing: .1em; text-transform: uppercase; color: var(--text-dim); }
 
   /* --- skills --------------------------------------------------------- */
   .modal__card--wide { width: min(940px, 100%); }
 
+  /* Five now, and auto-fit rather than a count: a sixth slot is a table row
+     and must never also be a CSS edit. */
+  .slotrow { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 14px; }
+  .slotcard { text-align: left; padding: 12px; display: flex; align-items: center; gap: 10px; }
+  .slotcard:hover { background: var(--edge); border-color: var(--rust); }
+  .slotcard--empty { border-style: dashed; }
+  .slotcard__what { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+  .slotcard__slot { font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--citrine); }
+  .slotcard__name { font-family: var(--display); font-size: 12px; }
+  .slotcard--empty .slotcard__name { color: var(--text-dim); }
+  /* A slot the level has not opened is READABLE and dead, never hidden: what
+     is coming is half the reason to keep climbing. */
+  .slotcard--locked { opacity: .45; border-style: dotted; cursor: default; }
+  .slotcard--locked:hover { background: none; border-color: var(--edge); }
+  /* Armed: the next skill you pick lands HERE, so the card says which. */
+  .slotcard--arming { border-color: var(--citrine); border-style: solid; }
   .catgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; }
   .catcard { text-align: left; padding: 14px; display: flex; flex-direction: column; gap: 5px; }
-  .catcard:hover:not(:disabled) { background: var(--seam); border-color: var(--rust); }
+  .catcard:hover:not(:disabled) { background: var(--edge); border-color: var(--rust); }
   .catcard:disabled { opacity: .5; }
   .catcard__head { display: flex; align-items: center; gap: 9px; }
   .catcard__name { font-family: var(--display); font-size: 13px; }
-  .catcard__blurb { font-size: 11px; color: var(--dust); line-height: 1.4; }
+  .catcard__blurb { font-size: 11px; color: var(--text-dim); line-height: 1.4; }
   .catcard__count { font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--citrine); }
 
-  .skilllist { display: grid; gap: 6px; }
-  .skillrow { text-align: left; padding: 9px 10px; display: flex; flex-direction: column; gap: 3px; border-left-width: 3px; border-left-color: var(--seam-lit); }
-  .skillrow:hover { background: var(--seam); }
-  .skillrow--on { background: var(--seam); border-left-color: var(--rust); }
-  .skillrow__head { display: flex; align-items: baseline; gap: 8px; justify-content: space-between; }
-  .skillrow__name { font-size: 12px; }
-  .skillrow__tag { font-size: 9px; letter-spacing: .1em; text-transform: uppercase; color: var(--citrine); }
-  .skillrow__meta { font-size: 10px; color: var(--dust); }
+  /* A shelf is PICTURES: eleven skills of prose is a wall in front of the
+     decision, and the same words are one hover away instead. It takes the
+     room the window actually has — 170px is the modal padding, the head and
+     the body's own — so a full screen never scrolls. The gutter is reserved
+     whatever the height, or a bar arriving mid-click slides the tile out from
+     under the cursor. */
+  .skilllist {
+    display: grid; gap: 6px; overflow-y: auto; scrollbar-gutter: stable;
+    max-height: max(240px, calc(100vh - var(--dock-h, 0px) - 170px));
+  }
+  /* One per CATEGORY inside the shelf — attacks and spells share a shelf and
+     are still told apart. */
+  .shelfhead { display: flex; align-items: center; gap: 8px; padding: 4px 2px 3px; border-bottom: 1px solid var(--edge-lit); margin-top: 4px; }
+  .shelfhead__name { font-family: var(--display); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--citrine); }
+  .shelfhead__count { margin-left: auto; font-size: 10px; color: var(--text-dim); }
+  .skillgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(88px, 1fr)); gap: 6px; }
+  .skilltile { position: relative; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 9px 5px 7px; text-align: center; }
+  .skilltile:hover { background: var(--edge); border-color: var(--rust); }
+  .skilltile--on { border-color: var(--citrine); }
+  .skilltile__name { font-size: 10px; line-height: 1.25; }
+  /* Always present, empty until it is held: a tag arriving on equip grew the
+     tile, and the grid reflowed under the next click. */
+  .skilltile__tag { font-size: 8px; line-height: 1.2; min-height: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--citrine); }
+  /* A point waiting, in the corner: the one number worth a tile this small. */
+  .skilltile__spare { position: absolute; top: 3px; right: 4px; font-size: 9px; color: var(--ink); background: var(--citrine); border-radius: 50%; min-width: 13px; line-height: 13px; }
 
   .skillhead { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
   .skillhead__title { font-family: var(--display); font-size: 14px; margin: 0; }
-  .skillhead__sub { font-size: 11px; color: var(--dust); }
+  .skillhead__sub { font-size: 11px; color: var(--text-dim); }
 
   /* The web is a map: it does not fit, and it is not supposed to. It hangs in
      a lit cavern — dithered rock, a warm glow at the middle where the skill
      itself sits, and the corners falling away into nothing. */
   .webwrap {
-    position: relative; height: min(50vh, 430px);
-    border: 2px solid var(--seam); box-shadow: var(--bevel);
-    background-color: #08070A;
+    /* The last term is the one that matters: an open dock shortens the card,
+       and a window that cannot shrink is a window whose bottom is cut off
+       instead — the spokes hanging off the low half of a web, gone. 205px is
+       everything above and below it inside the card. */
+    position: relative; height: min(50vh, 430px, calc(100vh - var(--dock-h, 0px) - 205px)); min-height: 170px;
+    border: 1px solid var(--edge); border-radius: var(--r);
+    box-shadow: none;
+    background-color: var(--web-ground); background-clip: padding-box;
     background-image:
-      radial-gradient(circle at 50% 50%, rgba(196,99,30,.16), transparent 42%),
-      radial-gradient(circle at 50% 50%, rgba(139,79,209,.09) 30%, transparent 68%),
-      radial-gradient(ellipse 130% 110% at 50% 50%, transparent 45%, rgba(0,0,0,.85)),
-      repeating-linear-gradient(0deg, rgba(255,255,255,.028) 0 2px, transparent 2px 10px),
-      repeating-linear-gradient(90deg, rgba(255,255,255,.028) 0 2px, transparent 2px 10px),
-      repeating-linear-gradient(0deg, rgba(0,0,0,.45) 0 5px, transparent 5px 10px);
-    image-rendering: pixelated;
+      radial-gradient(circle at 50% 50%, rgba(196,99,30,.20), transparent 44%),
+      radial-gradient(circle at 50% 50%, rgba(120,88,44,.12) 30%, transparent 68%),
+      radial-gradient(ellipse 130% 110% at 50% 50%, transparent 45%, rgba(0,0,0,.85));
     overflow: hidden;
   }
   .web { width: 100%; height: 100%; display: block; cursor: grab; touch-action: none; }
+  /* A web you ROAM is a big canvas under a window, and the camera is a CSS
+     transform ON IT: the compositor moves and scales a promoted layer without
+     re-rastering it, where the same camera written as the content group's own
+     SVG transform re-rasters every element every frame — 50ms a frame against
+     17. `.webwrap` is the window and already clips. */
+  .web--roam {
+    position: absolute; left: 0; top: 0;
+    transform-origin: 0 0; will-change: transform;
+  }
   .web--drag { cursor: grabbing; }
-  /* Twenty nodes fit, so the trade web is a picture rather than a map. */
-  .webwrap--trade { height: min(44vh, 380px); margin-top: 12px; }
+  /* The Reckoning shares its row with the Ledger, so it is the shorter one. */
+  .webwrap--trade { height: min(44vh, 380px, calc(100vh - var(--dock-h, 0px) - 205px)); margin-top: 12px; }
+  /* The ladder beside the web: the order is the story, so it is read down. */
+  .trialsplit { display: grid; grid-template-columns: minmax(220px, 1fr) 2fr; gap: 12px; align-items: start; }
+  .trialsplit .webwrap--trade { margin-top: 0; }
+  /* A HUNDRED AND FIFTY-SIX NODES want the room the Fissure's map got. At the
+     trade web's size the regions are a smudge and the SHAPE is the whole point,
+     so the ladder gives up its share of the width and scrolls on its own. */
+  .modal__card--atlas { width: min(1480px, 100%); }
+  .modal__card--builder { width: min(1520px, 100%); }
+  .trialsplit--atlas { grid-template-columns: minmax(250px, 0.85fr) 2.6fr; }
+  .webwrap--trials { height: min(74vh, calc(100vh - var(--dock-h, 0px) - 195px)); }
+  .trialladder {
+    display: flex; flex-direction: column; gap: 6px; margin-top: 0;
+    max-height: min(74vh, calc(100vh - var(--dock-h, 0px) - 195px));
+    overflow-y: auto; scrollbar-gutter: stable;
+  }
+  .trialrow { border: 1px solid var(--edge); border-radius: var(--r); background-color: var(--panel); background-clip: padding-box; padding: 5px 9px; }
+  .trialrow--done { filter: brightness(1.12); }
+  .trialrow__head { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+  .trialrow__name { color: var(--text); }
+  .trialrow--done .trialrow__name { color: var(--citrine); }
+  .trialrow__state { color: var(--text-dim); font-size: 11px; }
+  .trialrow__detail { color: var(--text-dim); font-size: 11px; margin-top: 2px; }
+  /* The COUNT, drawn: a grind is a thing to be partway through. */
+  .trialrow__bar { height: 3px; margin-top: 4px; background: var(--edge); border-radius: 2px; overflow: hidden; }
+  .trialrow__fill { height: 100%; background: var(--citrine); }
+  .settabs { display: flex; gap: 6px; margin-bottom: 10px; }
+  .keyrows, .bookrows { display: flex; flex-direction: column; gap: 4px; max-height: min(52vh, 440px); overflow-y: auto; }
+  .keyrow { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 3px 2px; }
+  .keyrow__what { color: var(--text-dim); font-size: 12px; }
+  .keyrow--wait .keyrow__key { color: var(--citrine); }
+  .bookrow { padding: 4px 2px; border-bottom: 1px solid var(--edge); }
+  .bookrow__name { color: var(--citrine); }
+  .bookrow__means { color: var(--text-dim); font-size: 12px; margin-top: 2px; }
   .web--still { cursor: default; }
   /* A node that asks a question opens this over itself. */
-  .webmenu { position: absolute; z-index: 2; min-width: 190px; background-color: var(--matrix); background-image: var(--grit); border: 2px solid var(--seam-lit); box-shadow: var(--bevel), 0 5px 0 rgba(0,0,0,.55); padding: 6px; display: flex; flex-direction: column; gap: 4px; }
+  .webmenu { position: absolute; z-index: 2; min-width: 190px; background-color: var(--panel); background-image: var(--grit); background-clip: padding-box; border: 1px solid var(--edge); border-radius: var(--r); image-rendering: pixelated; box-shadow: var(--lift); padding: 2px; display: flex; flex-direction: column; gap: 4px; }
   .webmenu__row { text-align: left; padding: 6px 8px; display: flex; flex-direction: column; gap: 2px; }
-  .webmenu__row:hover { background: var(--seam); border-color: var(--citrine); }
+  .webmenu__row:hover { background: var(--edge); border-color: var(--citrine); }
   .webmenu__row--on { border-color: var(--citrine); color: var(--citrine); }
   .webmenu__name { font-size: 11px; }
-  .webmenu__desc { font-size: 10px; color: var(--dust); line-height: 1.35; }
+  .webmenu__desc { font-size: 10px; color: var(--text-dim); line-height: 1.35; }
   .webmenu__row--drop { color: var(--ember); }
 
   .webhud { position: absolute; left: 8px; bottom: 8px; display: flex; align-items: center; gap: 8px; }
-  .webhud__hint { font-size: 10px; color: var(--dust); letter-spacing: .04em; }
+  .webhud__hint { font-size: 10px; color: var(--text-dim); letter-spacing: .04em; }
 
   /* Chains between nodes, drawn on the pixel grid rather than antialiased into
      a smudge. The dark casing under each one is what keeps a lit chain
      readable against the lit rock behind it. */
   .web { shape-rendering: crispEdges; }
-  .web__edge { stroke: #0A090C; }
-  .web__edge--lit { stroke: #55506A; }
-  .web__edge--lit.web__edge--on { stroke: var(--citrine); }
-  .web__hub__rim { fill: #07060A; }
-  .web__hub__body { fill: var(--gloom); }
-  .web__hub__lit { fill: var(--rust); }
+  /* Chain over the casing: rusted at rest, lit gold on a taken path. The
+     stroke rules are for the drawn fallback; a generated link is a picture,
+     so its states are treatments. */
+  /* SMOOTH, not pixelated, and only here: web art is 96px drawn at 76px or
+     less at every zoom the web allows, so it is always MINIFIED — nearest
+     sampling drops and doubles the art's own dark outline rows, which read as
+     black lines across a node at some zooms and not others. */
+  .web__chain { stroke: var(--chain-lit); fill: none; image-rendering: auto; }
+  .web__chain--on { stroke: var(--citrine); filter: brightness(1.6) drop-shadow(0 0 1px var(--citrine)); }
+  .web__node__img { image-rendering: auto; }
+  .web__node:hover .web__node__img { filter: brightness(1.25); }
+  /* State is a RING ON THE BORDER, not a glow around the picture: a filtered
+     halo takes the art's own silhouette, so it read as part of the drawing and
+     vanished into rock that is warm already. Allocated is white and thick over
+     a wide white core; available is cold cyan, thinner and unfilled — apart by
+     hue, value and weight at once, and neither is a brown. */
+  .web__node__halo { fill: none; stroke: none; pointer-events: none; }
+  .web__node--on .web__node__img { filter: brightness(1.45); }
+  .web__node--open .web__node__halo {
+    stroke: var(--quartz); opacity: .85;
+    filter: drop-shadow(0 0 3px var(--quartz));
+  }
+  .web__node--on .web__node__halo {
+    stroke: var(--node-on);
+    filter: drop-shadow(0 0 2px var(--node-on)) drop-shadow(0 0 7px var(--node-on));
+  }
+  .web__node:hover .web__node__halo { stroke: var(--node-on); opacity: 1; }
   .web__centre { cursor: help; }
 
   /* Tooltip. Custom because the native title is delayed and drawn in the OS's
      box; TOP LAYER, since what explains a thing may not sit under what rings it. */
   .tip {
     position: fixed; z-index: 100; pointer-events: none;
-    max-width: 340px; padding: 10px 12px;
-    background-color: var(--matrix); background-image: var(--grit);
-    border: 2px solid var(--seam-lit);
-    color: var(--chalk); font-size: 11px; line-height: 1.5;
-    box-shadow: var(--bevel), 0 6px 0 rgba(0,0,0,.55);
+    max-width: 340px; padding: 4px 6px;
+    background-color: var(--panel); background-image: var(--grit); background-clip: padding-box;
+    border: 15px solid transparent; border-image: var(--fix-win) 30 / 15px round; /* the window's frame at half its size */
+    image-rendering: pixelated;
+    color: var(--text); font-size: 11px; line-height: 1.5;
+    box-shadow: var(--lift);
   }
   /* A sentence per line, for a currency or a skill. An item card lays itself
      out and must not have its own newlines honoured on top of that. */
@@ -1263,6 +2116,8 @@
   /* An item. The border says the base's tier from across the screen, the same
      four colours the dock slots use. */
   .tip__card { border-left: 3px solid var(--tier1); padding-left: 9px; margin: -1px 0; }
+  .tip__head { display: flex; align-items: center; gap: 8px; }
+  .tip__head .icon { flex: none; image-rendering: pixelated; }
   .tip__card--t2 { border-left-color: var(--tier2); }
   .tip__card--t3 { border-left-color: var(--tier3); }
   .tip__card--locked { border-left-color: var(--locked); }
@@ -1271,42 +2126,49 @@
   .tip__card--t2 > .tip__name { color: var(--tier2); }
   .tip__card--t3 > .tip__name { color: var(--tier3); }
   .tip__card--locked > .tip__name { color: var(--locked); }
-  .tip__sub { font-size: 10px; color: var(--dust); letter-spacing: .04em; text-transform: uppercase; }
+  .tip__sub { font-size: 10px; color: var(--text-dim); letter-spacing: .04em; text-transform: uppercase; }
   .tip__locked { font-size: 10px; color: var(--locked); letter-spacing: .04em; margin-top: 3px; }
+  /* A base 25% above its own row. Rarer than a rare and worth reading first. */
+  .tip__perfect { font-size: 10px; color: var(--gem-hi); letter-spacing: .04em; margin-top: 3px; }
   .tip__chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
 
   /* One rule per group, so the base and each slot type read as blocks rather
      than as a wall. The gap is doing as much work as the line. */
-  .tip__group { margin-top: 8px; padding-top: 7px; border-top: 1px solid var(--seam); }
-  .tip__label { font-size: 9px; letter-spacing: .14em; text-transform: uppercase; color: var(--dust); margin-bottom: 3px; }
+  .tip__group { margin-top: 8px; padding-top: 7px; border-top: 1px solid var(--edge); }
+  .tip__label { font-size: 9px; letter-spacing: .14em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 3px; }
   .tip__mod + .tip__mod { margin-top: 5px; }
 
-  .tip__modname { font-size: 9px; letter-spacing: .08em; text-transform: uppercase; color: var(--dust); }
+  .tip__modname { font-size: 9px; letter-spacing: .08em; text-transform: uppercase; color: var(--text-dim); }
+  /* WHAT IS LEFT OF A ROLL. The last descent is lit, because a line about to
+     go is the one thing on the card you might act on before you press Enter. */
+  .tip__uses { color: var(--citrine); }
+  .tip__uses--last { color: var(--ember); }
 
   .tip__card--unique { border-left-color: var(--ember); }
   .tip__card--unique > .tip__name { color: var(--ember); }
   .tip__name--unique { color: var(--ember); }
+  .tip__name--perfect { color: var(--gem-hi); }
   .tip__grant { font-size: 11px; color: var(--verdite); }
   .tip__grant + .tip__grant { margin-top: 3px; }
   .tip__flavour { margin-top: 7px; font-size: 10px; color: var(--bone); font-style: italic; opacity: .75; }
 
-  .tip__none { margin-top: 7px; font-size: 10px; color: var(--dust); font-style: italic; }
-  .tip__note { margin-top: 7px; font-size: 10px; color: var(--dust); font-style: italic; }
+  .tip__none { margin-top: 7px; font-size: 10px; color: var(--text-dim); font-style: italic; }
+  .tip__note { margin-top: 7px; font-size: 10px; color: var(--text-dim); font-style: italic; }
   .tip__note + .tip__note { margin-top: 2px; }
 
   /* A KEYWORD. One word per mechanism, and one colour for it wherever it is
      written — the point is recognising it on a card you have never seen. */
   .kw { color: var(--quartz); }
   .tip__glossary .kw { font-weight: 600; }
-  .tip__kw { font-size: 10px; color: var(--dust); line-height: 1.45; }
+  .tip__kw { font-size: 10px; color: var(--text-dim); line-height: 1.45; }
   .tip__kw + .tip__kw { margin-top: 4px; }
 
   /* A tree or trade node. The state rides on the name's line rather than
      under it: it is one word and it is never the thing you came to read. */
-  .tip__card--node { border-left-color: var(--seam-lit); }
-  .tip__card--node > .tip__name { color: var(--chalk); }
+  .tip__card--node { border-left-color: var(--edge-lit); }
+  .tip__card--node > .tip__name { color: var(--text); }
   .tip__state { font-size: 9px; letter-spacing: .1em; text-transform: uppercase;
-                color: var(--dust); margin-left: 7px; }
+                color: var(--text-dim); margin-left: 7px; }
   .tip__body { margin-top: 4px; }
 
   /*
@@ -1316,23 +2178,21 @@
    * and a notable is the reason to walk somewhere.
    */
   .web__node { cursor: pointer; }
-  .web__node__rim { fill: #07060A; }
-  .web__node__body { fill: #35323F; }
-  .web__node__lit { fill: #4E4A5C; }
-  .web__node--notable .web__node__body { fill: #4A3A28; }
-  .web__node--notable .web__node__lit { fill: #6D5533; }
-  .web__node:hover .web__node__body { fill: #4A4658; }
-  .web__node--notable:hover .web__node__body { fill: #6A5232; }
+  /* A search DIMS rather than hides: a web with holes in it is a web whose
+     shape you can no longer read, and the shape is the distance. */
+  .web--finding .web__node--miss { opacity: .18; }
+  .web--finding .web__node--hit .web__node__halo { stroke: var(--citrine); opacity: 1; }
+  .web--finding .web__node--hit .web__node__img { filter: brightness(1.5); }
+  /* A node is a generated frame with its image inside. */
+  .web__node__img .sicon__ink { fill: var(--text-dim); }
+  .web__node__img .sicon__lit { fill: var(--rust); }
 
-  .web__node--on .web__node__body { fill: var(--rust); }
-  .web__node--on .web__node__lit { fill: #F0A055; }
-  .web__node--notable.web__node--on .web__node__body { fill: var(--citrine); }
-  .web__node--notable.web__node--on .web__node__lit { fill: #FBE49B; }
+  .web__node--on .web__node__img .sicon__ink { fill: var(--on-lit); }
+  .web__node--on .web__node__img .sicon__lit { fill: var(--on-gem-lit); }
 
   /* Reachable but unaffordable, and reachable-and-affordable. Distinguished
      because "why is this dim" has two different answers. */
   .web__node--locked { opacity: .42; cursor: not-allowed; }
-  .web__node--open .web__node__rim { fill: var(--bone); }
   #history-log { font-size: 12px; }
 
   @media (prefers-reduced-motion: reduce) {
@@ -1342,27 +2202,51 @@
 </head>
 <body>
 <div class="wrap">
+<!-- THE CAMP: one drawn picture, things on it you click, and the hero standing
+     in it. Not a map — there is no walk, so what a player does here is LOOK and
+     CLICK. Everything inside the stage is positioned in the art's own pixels
+     and the whole stage is scaled by one number, so nothing can drift. -->
+<div class="camp" id="camp" hidden>
+  <div class="camp__stage" id="camp-stage">
+    <div class="camp__art" id="camp-art"></div>
+    <canvas class="camp__live" id="camp-live"></canvas>
+    <div class="camp__crystals" id="camp-crystals"></div>
+    <div class="camp__hotspots" id="camp-hotspots"></div>
+    <!-- Everybody you have met, over the fixtures: a person standing in front
+         of the tent is the thing you meant to click. -->
+    <div class="camp__hotspots" id="camp-folk"></div>
+    <!-- The WORKERS, apart from the people: a worker opens the stations. -->
+    <div class="camp__hotspots" id="camp-workers"></div>
+  </div>
+</div>
+
+<!-- A TALE: what somebody you met down there tells you once you are back up. -->
+<div class="tale" id="tale" hidden>
+  <img class="tale__art" id="tale-art" alt="">
+  <div class="modal__card tale__cap">
+    <p class="tale__said" id="tale-said"></p>
+    <span class="tale__step" id="tale-count"></span>
+  </div>
+</div>
+
   <div class="corner" id="corner">
-    <!-- One per slot: what you ARE, over what you can open. In the stack rather
-         than positioned beside it, because a rail that wraps to a third row
-         would otherwise grow up into them. -->
-    <div class="skillrow-icons" id="run-skills"></div>
     <nav class="rail" id="rail">
-    <button class="railbtn" id="open-inventory" data-key="inventory">Inventory</button>
-    <button class="railbtn" id="open-craft" data-key="craft">Crafting</button>
-    <button class="railbtn" id="open-shop" data-key="shop">Shop</button>
-    <button class="railbtn" id="open-haul" data-key="haul">Haul</button>
-    <button class="railbtn" id="open-crystals" data-key="crystals">Crystals</button>
-    <button class="railbtn" id="open-stash" data-key="stash">Stash</button>
-    <button class="railbtn" id="open-character" data-key="character">Character</button>
-    <button class="railbtn" id="open-skills" data-key="skills">Skills</button>
-    <button class="railbtn" id="open-trade" data-key="trade">Trade</button>
-    <button class="railbtn" id="open-history" data-key="history">History</button>
-    <button class="railbtn" id="open-save" data-key="save">Save &amp; Load</button>
-    <span class="rail__sep"></span>
-    <button class="railbtn" id="ui-full" data-key="fullscreen">Fill the screen</button>
-    <button class="railbtn railbtn--keep" id="ui-hide" data-key="hide">Hide the panels</button>
-    <button class="railbtn railbtn--dev" id="dev-kit" title="Dev only">Dev kit</button>
+    <!-- The utility trio on its own small plate, above the screens. -->
+    <div class="rail__row rail__row--tools">
+      <button class="railbtn" id="ui-full" data-key="fullscreen">Fill the screen</button>
+      <button class="railbtn railbtn--keep" id="ui-hide" data-key="hide">Hide the panels</button>
+      <button class="railbtn railbtn--dev" id="open-dev">Dev menu</button>
+    </div>
+    <div class="rail__row rail__row--main">
+      <button class="railbtn" id="open-inventory" data-key="inventory">Inventory</button>
+      <button class="railbtn" id="open-craft" data-key="craft">Crafting</button>
+      <button class="railbtn" id="open-character" data-key="character">Character</button>
+      <button class="railbtn" id="open-skills" data-key="skills">Skills</button>
+      <button class="railbtn" id="open-trade" data-key="trade">Trade</button>
+      <button class="railbtn" id="open-history" data-key="history">History</button>
+      <button class="railbtn" id="open-save" data-key="save">Save &amp; Load</button>
+      <button class="railbtn" id="open-settings" data-key="settings">Settings</button>
+    </div>
     </nav>
   </div>
 
@@ -1376,37 +2260,8 @@
 
   <div class="viewport">
   <div id="view-run">
-    <div id="run-menu">
-      <!-- One place, always open. A crystal doesn't take you somewhere else,
-           it empowers what's already down there — so the socket is optional
-           and Enter is never disabled. Nothing else is on this screen: what a
-           character IS lives on the sheet, one key away, and putting it here
-           too made the one decision the screen exists for share the room. -->
-      <div class="panel fissurecard">
-        <p class="panel__title">The Fissure</p>
-        <p class="fissure">A thin place in the rock. Always open, always free.</p>
-
-        <div class="sockets" id="run-sockets"></div>
-        <div id="run-selected"></div>
-
-        <div class="runbar runbar--go">
-          <button class="mini mini--go mini--enter" id="run-launch">Enter the Fissure</button>
-          <!-- A way back to somebody you have already put down. Hidden until
-               you are holding the way in. -->
-          <button class="mini" id="run-call" hidden></button>
-        </div>
-        <p class="runblocked" id="run-blocked"></p>
-        <p class="runsrc">
-          Clear it all, then something waits at the exit.
-          A socketed crystal stays socketed, and a cleared descent starts the
-          next one until you die or the haul fills.
-        </p>
-      </div>
-    </div>
-
     <div id="run-stagewrap" hidden>
     <div class="runbar">
-      <button class="mini" id="run-leave">Leave after this run</button>
       <button class="mini" id="run-abandon">Abandon</button>
       <button class="mini" id="run-details" aria-expanded="false">Details</button>
       <span class="sub" id="run-camhint"></span>
@@ -1450,17 +2305,48 @@
              you cannot see the life bar of is one you are watching blind. -->
         <!-- Thin, and only what is TRUE OF YOU: the two pools you watch and
              the level they belong to. Bottom left, out of the way of the map. -->
+        <!-- WHICH RUNG YOU ARE ON, top right. Nothing on the map itself says,
+             and a rung is what a death sends you back down. -->
+        <div id="run-rung" hidden>
+          <span class="rungtag__zone" id="run-rung-zone"></span>
+          <span class="rungtag__n" id="run-rung-n"></span>
+          <span class="rungtag__what" id="run-rung-what" hidden></span>
+        </div>
+        <!-- THE TURN. Only up while something is listening: three faces, one
+             live, and turning is free. -->
+        <div id="run-boss" hidden>
+          <div class="bossbar__name" id="run-boss-name"></div>
+          <div class="bossbar__track">
+            <div class="bossbar__fill" id="run-boss-fill"></div>
+            <div class="bossbar__ticks"></div>
+          </div>
+        </div>
         <div class="hud" id="run-hud">
+          <!-- What is ON you: a picture, what is left of it, and a tooltip
+               saying what it does. Empty and gone when nothing is. -->
+          <div class="debuffs" id="run-debuffs"></div>
+          <!-- And what is ON you: the same strip, over the name, so a window a
+               build paid points for is something you can watch run down. -->
+          <div class="debuffs" id="run-buffs"></div>
+          <!-- What you ARE, over what you are made of: the three slots sit on
+               the HUD rather than on the rail, which is for screens. -->
+          <div class="skillrow-icons" id="run-skills"></div>
           <div class="hud__who">
             <span class="hud__name" id="run-name">—</span>
             <span class="hud__level">lv <b id="run-level">1</b></span>
           </div>
           <div class="hp hp--slim">
-            <div class="hp__fill" id="run-hp-fill"></div>
+            <div class="hp__track">
+              <div class="hp__fill" id="run-hp-fill"></div>
+              <div class="hp__ticks" id="run-hp-ticks"></div>
+            </div>
             <div class="hp__text" id="run-hp-text">—</div>
           </div>
           <div class="hp hp--slim hp--mana">
-            <div class="hp__fill hp__fill--mana" id="run-mana-fill"></div>
+            <div class="hp__track">
+              <div class="hp__fill hp__fill--mana" id="run-mana-fill"></div>
+              <div class="hp__ticks" id="run-mana-ticks"></div>
+            </div>
             <div class="hp__text" id="run-mana-text">—</div>
           </div>
         </div>
@@ -1478,10 +2364,18 @@
   <div class="panel dock" id="dock" hidden>
     <div class="dock__head">
       <p class="panel__title">Inventory</p>
+      <!-- THREE TABS OVER ONE DOCK. Gear is SLOTS because the slot count IS the
+           carry limit; currency and material are ROWS because neither has a
+           limit to make visible, and a row can carry a name a 40px icon cannot. -->
+      <div class="settabs">
+        <button class="mini mini--on" id="inv-tab-gear">Equipment</button>
+        <button class="mini" id="inv-tab-currency">Currency</button>
+        <button class="mini" id="inv-tab-materials">Materials</button>
+      </div>
       <div class="wallet" id="wallet"></div>
       <button class="mini" id="inv-close">Close</button>
     </div>
-    <div class="dock__cols">
+    <div class="dock__cols" id="inv-pane-gear">
       <div class="dockcol">
         <div class="dockcol__head">
           <div class="dockcol__label" id="inv-gear-label">Equipment</div>
@@ -1489,10 +2383,6 @@
           <button class="chip" id="inv-sort" title="Group by slot, best first">Sort</button>
         </div>
         <div class="slots" id="inv-gear"></div>
-      </div>
-      <div class="dockcol">
-        <div class="dockcol__label">Currency</div>
-        <div class="slots" id="inv-currency"></div>
       </div>
       <!-- LAST, and drawn only when you are holding one: nothing sells a relic
            and nothing at the bench sees it, so an empty column every run would
@@ -1502,6 +2392,8 @@
         <div class="slots" id="inv-relics"></div>
       </div>
     </div>
+    <div class="ledgercols" id="inv-currency" hidden></div>
+    <div class="ledgercols" id="inv-materials" hidden></div>
   </div>
 </div>
 
@@ -1557,9 +2449,6 @@
   </div>
 </div>
 
-<!-- The haul. One terminus for the loop: a death and a full haul both land
-     here, because both mean the same thing — the run is over, deal with your
-     things. Inert like the stash, and the only container the Fissure fills. -->
 <!-- The Lampwright. A body on the map you walk to, not a line in a report:
      the crystal is handed over here and is yours from that moment, whatever
      happens further down. -->
@@ -1591,7 +2480,8 @@
       <div class="panel met">
         <div class="met__row" id="graft-relic"></div>
         <div class="dockcol__label">What he takes it out on</div>
-        <div class="slots graft__pieces" id="graft-pieces"></div>
+        <div class="graft__pieces" id="graft-pieces"></div>
+        <p class="graft__hint">Worn gear. For something you are carrying, open your inventory and click it there.</p>
         <div class="dockcol__label" id="graft-lineslabel">What he writes</div>
         <div class="met__gift" id="graft-lines"></div>
         <div class="graft__go">
@@ -1605,6 +2495,10 @@
 
 <!-- One line, over the head of whoever is saying it. Anchored per frame, so a
      drag or a zoom mid-sentence keeps it where the words are coming from. -->
+<!-- One word over the boss's head as a phase turns over. No button and no
+     answer: it is noise that makes you look at the body. -->
+<div class="shout" id="run-shout" hidden><span id="run-shout-said"></span></div>
+
 <div class="speech" id="speech" hidden>
   <span class="speech__who" id="speech-face"></span>
   <div class="speech__body">
@@ -1614,30 +2508,14 @@
   </div>
 </div>
 
-<div class="modal" id="haul" hidden>
-  <div class="modal__card modal__card--wide">
-    <div class="modal__head">
-      <h2 class="modal__title">The Haul</h2>
-      <div class="seedbar">
-        <code id="haul-count">0 / 0</code>
-        <input class="find" id="haul-find" type="search" placeholder="Find" aria-label="Filter what is drawn" />
-        <button class="chip" id="haul-sort" title="Group by slot, best first">Sort</button>
-        <button class="mini" id="haul-close">Close</button>
-      </div>
-    </div>
-    <div class="modal__body">
-      <div class="panel">
-        <p class="haul__why" id="haul-why" hidden></p>
-        <p class="empty" id="haul-hint"></p>
-        <div class="slots slots--stash" id="haul-slots"></div>
-      </div>
-      <div class="panel">
-        <div class="runbar">
-          <button class="buy" id="haul-take"></button>
-          <button class="buy" id="haul-sellall"></button>
-        </div>
-      </div>
-    </div>
+<!-- WHAT SOMEBODY IS FOR, as a list. Clicking a person used to start talking
+     at you; a counter that opens only after the last line is a counter you
+     reach by clicking Next four times. Same bubble, same anchor. -->
+<div class="speech speech--menu" id="parley" hidden>
+  <span class="speech__who" id="parley-face"></span>
+  <div class="speech__body">
+    <p class="speech__name" id="parley-name"></p>
+    <div class="parley__list" id="parley-list"></div>
   </div>
 </div>
 
@@ -1661,6 +2539,89 @@
       <div class="panel">
         <h3 class="panel__title">What is earned</h3>
         <div class="quests" id="crystals-quests"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- THE ANVIL. Every base in the game, craftable or not: a row you cannot
+     afford says why in numbers, and the window your profession level buys is
+     printed on it, because a plan you cannot see is a plan nobody makes. -->
+<div class="modal" id="forge" hidden>
+  <div class="modal__card modal__card--wide">
+    <div class="modal__head">
+      <h2 class="modal__title">The anvil</h2>
+      <div class="seedbar">
+        <code id="forge-count">0</code>
+        <button class="mini" id="forge-close">Close</button>
+      </div>
+    </div>
+    <div class="modal__body">
+      <div class="climbtabs" id="forge-tabs"></div>
+      <div class="climbtabs" id="forge-filters"></div>
+      <p class="skillhead__sub" id="forge-note"></p>
+      <div class="crystals" id="forge-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- THE STATIONS. One tab a profession, because processing is ONE
+     mechanism however it is dressed — a smelter and a loom differ in the word
+     and the picture. Every station in the camp opens this on its own tab, so
+     the furnace and the loom are two doors into one room. -->
+<div class="modal" id="work" hidden>
+  <div class="modal__card modal__card--wide">
+    <div class="modal__head">
+      <h2 class="modal__title">The Works</h2>
+      <div class="seedbar">
+        <code id="work-slots">0/0 workers busy</code>
+        <button class="mini" id="work-close">Close</button>
+      </div>
+    </div>
+    <div class="modal__body">
+      <div class="climbtabs" id="work-tabs"></div>
+      <div class="panel">
+        <p class="skillhead__sub" id="work-note"></p>
+        <div class="grow"><div class="grow__fill" id="work-bar"></div></div>
+        <div class="crystal__grow" id="work-xp"></div>
+        <div class="crystals" id="work-raw"></div>
+      </div>
+      <div class="panel">
+        <h3 class="panel__title">The workers</h3>
+        <div class="quests" id="work-jobs"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- THE CRACK, opened by clicking it in the camp. One place, always open: a
+     crystal doesn't take you somewhere else, it empowers what's already down
+     there, so the socket is optional and Enter is never disabled. A WINDOW and
+     not a page — the camp is the ground the game stands on, and this is what
+     you walk up to the rock and look into. -->
+<div class="modal" id="run-menu" hidden>
+  <div class="modal__card">
+    <div class="modal__head">
+      <h2 class="modal__title">The Fissure</h2>
+      <div class="seedbar">
+        <button class="mini" id="run-menu-close">Close</button>
+      </div>
+    </div>
+    <div class="modal__body">
+      <!-- ONE COLUMN AND NOTHING SCROLLS: the map is the screen, and the tabs
+           and the way in lie ON it. -->
+      <div class="panel fissurecard">
+        <div class="fissurecard__map">
+          <div class="climbcard" id="run-climb"></div>
+          <!-- The way IN rests ON the map, like the tabs above it. -->
+          <div class="fissurecard__over">
+            <p class="runblocked" id="run-blocked"></p>
+            <div class="fissurecard__go">
+              <button class="mini mini--go mini--enter" id="run-launch">Enter</button>
+              <button class="mini" id="run-deeper">Deeper</button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -1694,6 +2655,27 @@
 <!-- The shop. Gold in, stock out, and the counter you sell across. Separate
      from crafting because they do unrelated jobs: this one turns what a run
      paid into things to spend, and what you buy lands in the dock. -->
+<!-- THE SMITH'S COUNTER: one list, two verbs. Buying and reforging are the
+     same four rows read two ways, so they share a window and a heading. -->
+<div class="modal" id="smith" hidden>
+  <div class="modal__card">
+    <div class="modal__head">
+      <h2 class="modal__title" id="smith-title">The Smith</h2>
+      <div class="seedbar">
+        <code id="smith-purse">0 gold</code>
+        <button class="mini" id="smith-close">Close</button>
+      </div>
+    </div>
+    <div class="modal__body">
+      <div class="panel">
+        <p class="panel__title" id="smith-what">Tools</p>
+        <p class="empty" id="smith-hint"></p>
+        <div class="forgelist" id="smith-list"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="modal" id="shop" hidden>
   <div class="modal__card">
     <div class="modal__head">
@@ -1705,12 +2687,18 @@
     </div>
     <div class="modal__body">
       <div class="panel">
-        <p class="panel__title">On the shelf</p>
-        <div class="buys" id="shop-stock"></div>
+        <p class="panel__title">Under the counter</p>
+        <p class="empty" id="shop-gamble-hint"></p>
+        <div class="buys" id="shop-gamble"></div>
       </div>
       <div class="panel">
         <p class="panel__title">Crafting supplies</p>
         <div class="buys" id="workshop"></div>
+      </div>
+      <div class="panel">
+        <p class="panel__title">Raw material</p>
+        <p class="empty" id="shop-raw-hint"></p>
+        <div class="buys" id="shop-raw"></div>
       </div>
       <div class="panel">
         <p class="panel__title">Selling</p>
@@ -1737,11 +2725,22 @@
       </div>
     </div>
     <div class="modal__body">
-      <div class="sheetcols">
+      <div class="climbtabs" id="sheet-tabs"></div>
+      <!-- THE PROFESSIONS PAGE: nine skills with a level each, and the derived
+           steps of whichever you click. -->
+      <div id="sheet-professions" hidden>
+        <div class="crystals" id="sheet-proflist"></div>
+        <div class="panel" id="sheet-profsteps"></div>
+      </div>
+      <div class="sheetcols" id="sheet-main">
         <div class="sheetcols__gear">
           <p class="panel__title">Equipment</p>
           <div class="slotgrid" id="sheet-slots"></div>
           <p class="empty" id="sheet-pick" hidden></p>
+          <!-- Beside the gear and never in the bag; the rod is always on. -->
+          <p class="panel__title" style="margin-top:14px">Tools</p>
+          <div class="slotgrid" id="sheet-tools"></div>
+          <p class="empty" id="sheet-toolnote"></p>
         </div>
         <div>
           <div class="levelrow">
@@ -1759,6 +2758,8 @@
                on this screen that is a decision rather than a readout. -->
           <p class="panel__title">Attributes <span class="attrleft" id="sheet-attr-left" hidden></span></p>
           <div id="sheet-attrs"></div>
+          <!-- The one allocation a click cannot undo, so gold undoes it. -->
+          <button class="mini" id="sheet-respec" hidden></button>
           <p class="panel__title" style="margin-top:16px">Stats</p>
           <div id="sheet-stats"></div>
           <p class="panel__title" style="margin-top:16px">Resistances</p>
@@ -1776,6 +2777,7 @@
       <h2 class="modal__title" id="skills-modal-title">Skills</h2>
       <div class="seedbar">
         <button class="mini" id="skills-devlevel" title="Dev only: grant a skill level">+1 level (dev)</button>
+        <input class="find" id="skills-shelffind" type="search" placeholder="Find a skill" aria-label="Filter the skills on this shelf" hidden />
         <button class="mini" id="skills-back" hidden>Back</button>
         <button class="mini" id="skills-close">Close</button>
       </div>
@@ -1784,6 +2786,10 @@
       <!-- Three depths, one at a time: what kind of skill, which skill, its
            web. Showing all three at once is what made the old screen a wall;
            you are only ever answering one of those questions. -->
+      <!-- What you are actually holding, over the shelves it came off. The
+           three slots are the answer to "which of these am I using", and the
+           shelves are the answer to "what else is there". -->
+      <div id="skills-slots" class="slotrow"></div>
       <div id="skills-cats" class="catgrid"></div>
 
       <div id="skills-list" class="skilllist" hidden></div>
@@ -1799,10 +2805,11 @@
         <!-- The web is bigger than the window on purpose: a hundred nodes
              legible at once would be a hundred dots you cannot read. -->
         <div class="webwrap" id="skills-webwrap">
-          <svg class="web" id="skills-web" role="img" aria-label="skill web"></svg>
+          <svg class="web web--roam" id="skills-web" role="img" aria-label="skill web"></svg>
           <div class="webmenu" id="skills-choice" hidden></div>
           <div class="webhud">
             <button class="mini" id="skills-fit">Fit</button>
+            <input class="find" id="skills-find" type="search" placeholder="Find a node" aria-label="Find a node in this web" />
             <span class="webhud__hint">scroll to zoom · drag to move</span>
           </div>
         </div>
@@ -1813,6 +2820,37 @@
 
 <!-- The trade: the part of a character that is not the skill. Twenty nodes fit
      on a screen, so this web is drawn to fit and has no map controls. -->
+<div class="modal" id="trials" hidden>
+  <div class="modal__card modal__card--wide modal__card--atlas">
+    <div class="modal__head">
+      <h2 class="modal__title">The Reckoning</h2>
+      <div class="seedbar">
+        <button class="mini" id="trials-close">Close</button>
+      </div>
+    </div>
+    <div class="modal__body">
+      <div class="skillhead">
+        <div>
+          <div class="skillhead__sub" id="trials-sub"></div>
+          <div class="skillhead__sub" id="trials-note"></div>
+        </div>
+      </div>
+      <div class="trialsplit trialsplit--atlas">
+        <div class="trialladder" id="trials-ladder"></div>
+        <div class="webwrap webwrap--trade webwrap--trials" id="trials-webwrap">
+          <svg class="web web--roam" id="trials-web" role="img" aria-label="the Reckoning"></svg>
+          <div class="webmenu" id="trials-choice" hidden></div>
+          <div class="webhud">
+            <button class="mini" id="trials-fit">Fit</button>
+            <input class="find" id="trials-find" type="search" placeholder="Find a node" aria-label="Find a node in this web" />
+            <span class="webhud__hint">scroll to zoom · drag to move</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="modal" id="trade" hidden>
   <div class="modal__card modal__card--wide">
     <div class="modal__head">
@@ -1827,11 +2865,14 @@
           <div class="skillhead__sub" id="trade-sub"></div>
           <div class="skillhead__sub" id="trade-placeholder"></div>
         </div>
-        <button class="mini" id="trade-swap" hidden></button>
       </div>
       <div id="trade-pick" class="catgrid"></div>
-      <div class="webwrap webwrap--trade" id="trade-webwrap" hidden>
-        <svg class="web web--still" id="trade-web" role="img" aria-label="trade web"></svg>
+      <div class="webwrap" id="trade-webwrap" hidden>
+        <svg class="web web--roam" id="trade-web" role="img" aria-label="trade web"></svg>
+        <div class="webhud">
+          <button class="mini" id="trade-fit">Fit</button>
+          <input class="find" id="trade-find" type="search" placeholder="Find a node" aria-label="Find a node in this web" />
+        </div>
       </div>
     </div>
   </div>
@@ -1853,15 +2894,75 @@
     </div>
   </div>
 </div>
+<!-- An empty shell on purpose: the button and the window exist so there is a
+     place when there is something to put in it. -->
+<div class="modal" id="dev" hidden>
+  <div class="modal__card">
+    <div class="modal__head">
+      <h2 class="modal__title">Dev menu</h2>
+      <div class="seedbar">
+        <button class="mini" id="dev-close">Close</button>
+      </div>
+    </div>
+    <div class="modal__body" id="dev-body"></div>
+  </div>
+</div>
+
+<div class="modal" id="builder" hidden>
+  <div class="modal__card modal__card--builder">
+    <div class="modal__head">
+      <h2 class="modal__title">Level builder</h2>
+      <div class="seedbar" id="builder-bar"></div>
+      <div class="seedbar">
+        <button class="mini" id="builder-close">Close</button>
+      </div>
+    </div>
+    <div class="modal__body bldr">
+      <div class="bldr__tools" id="builder-tools"></div>
+      <div class="bldr__stage"><canvas id="builder-canvas"></canvas></div>
+      <div class="bldr__plan">
+        <label class="dockcol__label" for="builder-plan">The plan</label>
+        <textarea id="builder-plan" spellcheck="false"></textarea>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="settings" hidden>
+  <div class="modal__card">
+    <div class="modal__head">
+      <h2 class="modal__title">Settings</h2>
+      <div class="seedbar">
+        <button class="mini" id="settings-close">Close</button>
+      </div>
+    </div>
+    <div class="modal__body">
+      <div class="settabs">
+        <button class="mini mini--on" id="set-tab-keys">Keys</button>
+        <button class="mini" id="set-tab-book">The Book</button>
+      </div>
+      <div id="set-pane-keys">
+        <p class="skillhead__sub">Click a key to rebind it. Escape always closes what is on top.</p>
+        <div class="keyrows" id="settings-keys"></div>
+      </div>
+      <div id="set-pane-book" hidden>
+        <input class="find" id="book-find" placeholder="Find a word" />
+        <div class="bookrows" id="book-rows"></div>
+      </div>
+    </div>
+  </div>
+</div>
 <!-- Where the save lives. There is no account behind the hosted build, so the
      screen's real job is saying which browser your progress is in. -->
 <!-- The first thing a load lands on. Above every window, because nothing else
      is up yet and nothing else may be reached past it. -->
 <div class="title" id="title">
-  <canvas class="title__art" id="title-art"></canvas>
-  <h1 class="title__logo">Crystal <span>Core</span></h1>
-  <p class="title__sub">A thin place in the rock.</p>
-  <div class="title__cast" id="title-cast"></div>
+  <div class="title__plaque">
+    <div class="title__mark" id="title-mark"></div>
+    <h1 class="title__logo">Crystal Core</h1>
+    <p class="title__sub">A thin place in the rock.</p>
+  </div>
+  <div class="title__crack" id="title-crack"></div>
   <p class="title__go">Click anywhere to begin</p>
 </div>
 
@@ -1869,15 +2970,16 @@
   <div class="modal__card modal__card--ask">
     <div class="modal__head">
       <h2 class="modal__title">Save &amp; Load</h2>
-      <button class="mini mini--go mini--enter" id="save-play" hidden>Play now</button>
+      <button class="mini mini--go mini--enter" id="save-play">Play now</button>
       <button class="mini" id="save-close">Close</button>
     </div>
     <div class="modal__body">
       <div id="save-where"></div>
       <div class="ask__row" style="justify-content:flex-start">
-        <!-- It autosaves, and people do not believe it. A button that writes
-             now and says so costs one line and buys the confidence to reload. -->
-        <button class="mini" id="save-now">Save now</button>
+        <!-- Save here overwrites the SELECTED slot with the live game; people
+             do not believe the autosave, and this is also that button. -->
+        <button class="mini" id="save-here">Save here</button>
+        <button class="mini mini--danger" id="save-delete">Delete</button>
         <button class="mini" id="save-download">Download backup</button>
         <button class="mini" id="save-load">Load backup</button>
       </div>
@@ -1889,6 +2991,16 @@
 
 <!-- First run: choose how you fight, then straight into the Fissure. Nothing
      to buy, nothing to understand first. -->
+<!-- Character select. Not a .modal: it is a PLACE, the way the title is, and a
+     card floating over the game would say a trade is a setting. -->
+<div class="pick" id="pick" hidden>
+  <div class="pick__hall">
+    <h2 class="pick__title">Who came down here?</h2>
+    <div class="pick__cast" id="pick-cast"></div>
+  </div>
+  <div class="picksay" id="pick-say" hidden></div>
+</div>
+
 <div class="modal modal--stop" id="welcome" hidden>
   <div class="modal__card">
     <div class="modal__head">
@@ -1900,10 +3012,7 @@
         <input id="welcome-name" class="namefield__input" type="text" maxlength="24"
                placeholder="Wanderer" autocomplete="off" />
       </label>
-      <p class="empty">
-        How do you fight? Each skill levels on its own, and you can change later.
-      </p>
-      <div class="welcomegrid" id="welcome-skills"></div>
+      <button class="mini mini--go" id="welcome-go">Go down</button>
     </div>
   </div>
 </div>
@@ -1929,7 +3038,10 @@
      rather than the OS's white box. -->
 <div class="tip" id="tooltip" hidden></div>
 <div class="itemmenu" id="itemmenu" hidden></div>
+<div class="atcamp" id="atcamp" hidden>Takes effect on your next run.</div>
 <div class="toast" id="toast" hidden></div>
 <script src="./app.js"></script>
+<!-- Page views only, and the one thing in the game that talks to a server. -->
+<script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "463cd895d5e94e6ea519cf6494fd2eb1"}'></script>
 </body>
 </html>

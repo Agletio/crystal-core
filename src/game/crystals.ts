@@ -1,30 +1,35 @@
 /**
- * What owning crystals turns into over time: they level while socketed, the
- * Lampwright gives you the Normal ones, and the other two worlds are quests.
+ * What owning crystals turns into over time: they level while socketed, and the
+ * Lampwright hands over every one the campaign pays for.
  *
  * A crystal is never spent, so this is the only thing that changes one without
  * a currency being poured on it — which is why the level, the base, the name
  * and the capacity are all rewritten together.
  */
 import {
-  CRYSTAL_QUESTS,
+  CAMPAIGN_REWARD,
+  CRYSTAL_LADDER,
+  CRYSTAL_STEP_BY_ID,
+  FAMILY_BY_ID,
+  LADDER,
+  PROVING,
   CRYSTAL_LEVELS,
   CRYSTAL_XP,
   INTRO,
   LAMPWRIGHT,
-  QUEST_BY_ID,
+  RUN_SLOTS,
   SKILL_BY_ID,
   crystalName,
 } from '../data';
-import type { CrystalQuest } from '../data';
-import { nodeById } from '../skills-tree';
 import { mainSkillId, pointsAvailable } from '../sim/character';
-import { giveGift, lampwrightWeapon } from './state';
-import type { GameState, GiftPlace } from './state';
+import { armForSkill, giveGift } from './state';
+import type { GameState } from './state';
 import { grant, makeCrystal } from '../economy';
-import { crystalFamily } from '../sim/crystal';
+import { crystalFamily, crystalLevel, crystalXp, levelForXp } from '../sim/crystal';
+import { campaignDone, campaignPrize, climbed } from '../ladder';
 import type { RunSet } from '../sim/crystal';
-import type { Item } from '../types';
+import type { CrystalStep } from '../data';
+import type { Item, MonsterFamily, RolledMod } from '../types';
 
 /** Every crystal you own: socketed, or in the collection. */
 export function ownedCrystals(game: GameState): Item[] {
@@ -41,7 +46,57 @@ export function ownedCrystals(game: GameState): Item[] {
 export interface Waiting {
   weapon: boolean;
   crystal: boolean;
-  quests: CrystalQuest[];
+  /** The whole campaign's reward. He holds it until you come and take it. */
+  campaign: boolean;
+  /** A `CRYSTAL_LADDER` step id, once its one condition is true. */
+  ladder: string | null;
+}
+
+/** A step already handed over, as a `given` entry. */
+const gaveStep = (id: string): string => `crystal:${id}`;
+
+/** HOW MANY YOU HOLD of a family at or past a level. Socketed counts: a crystal
+ *  in the wall is one you own, and it is the only one that levels. */
+const holding = (game: GameState, family: MonsterFamily, level: number): number =>
+  ownedCrystals(game).filter(
+    (c) => crystalFamily(c) === family && crystalLevel(c) >= level
+  ).length;
+
+/** WHETHER A STEP IS DUE. `clears` is the Proving Ground's own count; `hold` is
+ *  what the crystals you already have must have grown into. */
+export function stepMet(game: GameState, step: CrystalStep): boolean {
+  if (step.clears !== undefined) return (game.provingClears ?? 0) >= step.clears;
+  if (step.hold) return holding(game, step.hold.family, step.hold.level) >= step.hold.count;
+  return false;
+}
+
+/** THE NEXT STEP OWED, or null. IN ORDER and never out of it, so a crystal you
+ *  have not taken cannot be skipped by one further up. */
+export function ladderOwed(game: GameState): CrystalStep | null {
+  const given = game.given ?? [];
+  const next = CRYSTAL_LADDER.find((step) => !given.includes(gaveStep(step.id)));
+  return next && stepMet(game, next) ? next : null;
+}
+
+/** What the NEXT step is waiting on, in words a player can act on. */
+export function ladderSchedule(game: GameState): string | null {
+  const given = game.given ?? [];
+  const next = CRYSTAL_LADDER.find((step) => !given.includes(gaveStep(step.id)));
+  if (!next) return null;
+  const word = FAMILY_BY_ID[next.family]?.name ?? next.family;
+  if (next.clears !== undefined) {
+    return (
+      `The next crystal is ${word}, out of the wall at ${next.clears} clears of ` +
+      `${PROVING.name}. You have ${game.provingClears ?? 0}.`
+    );
+  }
+  const hold = next.hold!;
+  const held = FAMILY_BY_ID[hold.family]?.name ?? hold.family;
+  return (
+    `The next crystal is ${word}, and it waits on ${hold.count} ` +
+    `${held} ${hold.count === 1 ? 'crystal' : 'crystals'} at level ${hold.level}. ` +
+    `You have ${holding(game, hold.family, hold.level)}.`
+  );
 }
 
 /** The ACTIVE skill at `INTRO.crystalSkillLevel` with every point of it spent:
@@ -51,16 +106,26 @@ export function crystalEarned(game: GameState): boolean {
   const skillId = mainSkillId(game.character);
   const progress = game.character.skills?.[skillId];
   if (!progress || progress.level < INTRO.crystalSkillLevel) return false;
-  return pointsAvailable(progress) === 0;
+  return pointsAvailable(skillId, progress) === 0;
 }
 
-export function giftWaiting(game: GameState, clear?: QuestFacts): Waiting | null {
+/** THE LAMPWRIGHT OWES THREE THINGS AND NO MORE: the weapon your skill wants,
+ *  your FIRST crystal, and everything finishing the climb pays. **He is the
+ *  person the campaign ends at**, so its reward is handed over in his scene. */
+export function giftWaiting(game: GameState): Waiting | null {
   const given = game.given ?? [];
   const weapon = !given.includes('weapon');
   const crystal = !weapon && !given.includes('crystal') && crystalEarned(game);
-  const quests = clear ? openQuests(game).filter((q) => questMet(q, clear)) : [];
-  if (!weapon && !crystal && quests.length === 0) return null;
-  return { weapon, crystal, quests };
+  const campaign =
+    !weapon && !crystal && !game.character.paidCampaign && campaignDone(game.character);
+  // THE LADDER IS LAST: everything the campaign owes lands before the endless
+  // half of the game starts paying.
+  const ladder =
+    !weapon && !crystal && !campaign && game.character.paidCampaign
+      ? (ladderOwed(game)?.id ?? null)
+      : null;
+  if (!weapon && !crystal && !campaign && !ladder) return null;
+  return { weapon, crystal, campaign, ladder };
 }
 
 /** What the collection screen says about the next meeting. */
@@ -68,38 +133,53 @@ export function giftSchedule(game: GameState): string {
   const who = LAMPWRIGHT.name;
   const given = game.given ?? [];
   if (!given.includes('weapon')) {
-    return `${who} meets you at the mouth of your first cleared descent.`;
+    return `${who} owes you the weapon your skill wants. Find him below.`;
   }
   if (!given.includes('crystal')) {
     if (crystalEarned(game)) {
-      return `${who} is waiting at the mouth of your next cleared descent.`;
+      return `${who} has one for you. Go and talk to him in the camp.`;
     }
     const skillId = mainSkillId(game.character);
     const name = SKILL_BY_ID[skillId]?.name ?? 'your skill';
     const progress = game.character.skills?.[skillId];
-    const spare = progress ? pointsAvailable(progress) : 1;
+    const spare = progress ? pointsAvailable(skillId, progress) : 1;
     return (
-      `${who} brings your first crystal to the mouth of a cleared descent once ` +
+      `${who} has your first crystal for you in the camp once ` +
       `${name} is level ${INTRO.crystalSkillLevel} with every one of its points spent. ` +
       `${name} is level ${progress?.level ?? 1}, with ${spare} unspent.`
     );
   }
-  return `${who} hands over whatever is owed at the mouth of a cleared descent. Everything left is earned below.`;
+  // NAMING WHAT IS LEFT: "somewhere below" is what a player cannot act on.
+  if (game.character.paidCampaign) {
+    if (ladderOwed(game)) return `${who} has one for you. Go and talk to him in the camp.`;
+    return ladderSchedule(game) ?? `${who} has nothing else.`;
+  }
+  if (campaignDone(game.character)) {
+    return `${who} is holding ${campaignPrize()} for finishing the climb. Go and talk to him in the camp.`;
+  }
+  const left = LADDER.zones.filter((zone, z) => climbed(game.character, z) < zone.rungs);
+  return (
+    `${who} has ${campaignPrize()} for you once the climb is finished. ` +
+    `${left.map((z) => z.name).join(', ')} still ${left.length === 1 ? 'stands' : 'stand'} ` +
+    `between you and it.`
+  );
 }
 
-/** Everything one meeting puts in your hands. Currency has no slot. */
+/** Everything one meeting puts in your hands. Currency has no slot, and `says`
+ *  is what was handed over that is not a thing you can hold at all. */
 export interface Handover {
   items: Item[];
   currency: Record<string, number>;
+  says: string[];
 }
 
 export function takeHandover(game: GameState, waiting: Waiting): Handover {
   const items: Item[] = [];
   const currency: Record<string, number> = {};
+  const says: string[] = [];
 
   if (waiting.weapon) {
-    game.given = [...(game.given ?? []), 'weapon'];
-    const gift = lampwrightWeapon(game);
+    const gift = armForSkill(game); // marks `given` itself
     if (gift) items.push(gift.item);
   }
   if (waiting.crystal) {
@@ -113,34 +193,36 @@ export function takeHandover(game: GameState, waiting: Waiting): Handover {
     currency[INTRO.scriptedCurrency] = 1;
     items.push(crystal);
   }
-  // Marked as they are handed over, never at the report.
-  for (const quest of waiting.quests) {
-    game.quests = [...(game.quests ?? []), quest.id];
-    const crystal = makeCrystal(quest.gives.level, quest.gives.family);
-    giveGift(game, crystal);
-    items.push(crystal);
+  if (waiting.campaign) {
+    // The flag IS the points: `trialPointsFor` reads it, so the Reckoning
+    // fills the moment he lets go of them and never before.
+    game.character.paidCampaign = true;
+    for (let i = 0; i < CAMPAIGN_REWARD.crystals; i++) {
+      const crystal = makeCrystal(1, 'normal');
+      giveGift(game, crystal);
+      items.push(crystal);
+    }
+    says.push(`${CAMPAIGN_REWARD.points} points`);
   }
-  return { items, currency };
+  if (waiting.ladder) {
+    const step = CRYSTAL_STEP_BY_ID[waiting.ladder];
+    // Marked BEFORE the crystal is made, so a step can never pay twice even if
+    // making one throws — the ladder is in order and this is its only cursor.
+    if (step && !(game.given ?? []).includes(gaveStep(step.id))) {
+      game.given = [...(game.given ?? []), gaveStep(step.id)];
+      const crystal = makeCrystal(1, step.family);
+      giveGift(game, crystal);
+      items.push(crystal);
+    }
+  }
+  return { items, currency, says };
 }
 
 // --- levelling --------------------------------------------------------------
 
-export const crystalXp = (crystal: Item): number => Number(crystal.meta.xp) || 0;
-
-/** The highest level that much experience has paid for. */
-export function levelForXp(xp: number): number {
-  let level = CRYSTAL_LEVELS[0].level;
-  for (const def of CRYSTAL_LEVELS) {
-    if (xp >= def.xp) level = def.level;
-  }
-  return level;
-}
-
-/** The level a crystal is standing at, whatever its stored fields say. */
-export const crystalLevel = (crystal: Item): number =>
-  Number(crystal.meta.level) || levelForXp(crystalXp(crystal));
-
-export const topLevel = (): number => CRYSTAL_LEVELS[CRYSTAL_LEVELS.length - 1].level;
+// The three reads a crystal's LEVEL is made of live beside `crystalFamily`,
+// which is what the world rules ask, so nothing in `src/sim` has to reach up.
+export { crystalLevel, crystalXp, levelForXp } from '../sim/crystal';
 
 export interface CrystalProgress {
   level: number;
@@ -201,7 +283,32 @@ export interface CrystalGain {
   levels: number;
 }
 
-/** Only while socketed — a crystal in the collection is one not being used. */
+/** A roll that ran out on the descent just cleared. */
+export interface ModBurn { crystal: Item; name: string }
+
+/** WHAT A CLEAR SPENDS: one descent off every roll on every socketed crystal,
+ *  dropped at zero. It is what makes four permanent sockets a live decision —
+ *  the sockets do not move, what is on them runs out. A DEATH SPENDS NOTHING,
+ *  because failing a rung already costs nothing but time. */
+export function spendSocketed(game: GameState): ModBurn[] {
+  const gone: ModBurn[] = [];
+  for (const crystal of Object.values(game.sockets ?? {})) {
+    const kept: RolledMod[] = [];
+    for (const mod of crystal.mods) {
+      if (mod.uses === undefined) {
+        kept.push(mod);
+      } else if (mod.uses > 1) {
+        kept.push({ ...mod, uses: mod.uses - 1 });
+      } else {
+        gone.push({ crystal, name: mod.name });
+      }
+    }
+    crystal.mods = kept;
+  }
+  return gone;
+}
+
+/** Only while SOCKETED: a socket spent on a fresh crystal is the whole cost. */
 export function advanceSocketed(game: GameState, set: RunSet): CrystalGain[] {
   const xp = xpForClear(set.rewards.danger);
   const out: CrystalGain[] = [];
@@ -212,55 +319,19 @@ export function advanceSocketed(game: GameState, set: RunSet): CrystalGain[] {
   return out;
 }
 
-// --- quests -----------------------------------------------------------------
+// --- what a descent WAS -----------------------------------------------------
 
-export const questDone = (game: GameState, id: string): boolean =>
-  (game.quests ?? []).includes(id);
-
-/** Float shares: one crystal of four is 0.25 and must not miss its own gate. */
-const EPSILON = 1e-6;
-
-/** What one cleared descent was, for an objective to be asked about. */
+/** What one cleared descent WAS, for the Ledger to be counted off it. */
 export interface QuestFacts {
   set: RunSet;
   /** Seconds it took. */
   elapsed: number;
   /** The crystals it was launched with, already paid their experience. */
   socketed: Item[];
+  hoards?: number; // Hoards OPENED during it; absent for a caller with no run
+  veins?: number; // Veins opened during it — a lock that pays currency
+  welled?: number; // welled bodies put down during it
+  wardens?: number; // Wardens put down during it
+  bearers?: number; // Bearers put down during it
 }
 
-export type QuestConditionImpl = (facts: QuestFacts, params: any) => boolean;
-
-/**
- * THIS is the extension point, the same way `CONDITIONS` is for the bench: a
- * new objective is an entry here plus a row in `CRYSTAL_QUESTS`. A clause
- * naming a kind that is not in here is never met, and the demo holds the table
- * to the registry so a typo cannot become a quest nobody can finish.
- */
-export const QUEST_CONDITIONS: Record<string, QuestConditionImpl> = {
-  danger: (f, p) => f.set.rewards.danger >= p.value,
-
-  composition: (f, p) =>
-    ((f.set.composition as Record<string, number>)[p.family] ?? 0) + EPSILON >= (p.share ?? 0),
-
-  crystal_level: (f, p) => f.socketed.some((c) => crystalLevel(c) >= p.value),
-
-  under_seconds: (f, p) => f.elapsed <= p.value,
-};
-
-export const questMet = (quest: CrystalQuest, facts: QuestFacts): boolean =>
-  quest.need.every((clause) => QUEST_CONDITIONS[clause.kind]?.(facts, clause) === true);
-
-/** The danger a quest asks for, or 0. For harnesses that have to reach it. */
-export const questDanger = (quest: CrystalQuest): number =>
-  Math.max(0, ...quest.need.filter((c) => c.kind === 'danger').map((c) => Number(c.value) || 0));
-
-/** Still open, in table order: the screen shows them as a ladder. */
-export const openQuests = (game: GameState): CrystalQuest[] =>
-  CRYSTAL_QUESTS.filter((q) => !questDone(game, q.id));
-
-/** A quest id that no longer exists costs its entry and nothing else. */
-export function healQuests(game: GameState): void {
-  const held = Array.isArray(game.quests) ? game.quests : [];
-  game.quests = held.filter((id) => QUEST_BY_ID[id]);
-}

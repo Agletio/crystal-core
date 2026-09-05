@@ -1,0 +1,49 @@
+{
+ "_": "What to SAY to the generator for a PORTRAIT, one row per speaker. `tools/art/icon.mts faces.json` asks and downloads; `portrait.mts <id> <png> 96` puts one in `src/render/generated-portraits.ts`, which the hand-drawn table merges over its own rows. Asked at the Lampwright's own size so the four busts are one fidelity.",
+ "_how": "A bust is shoulders-up, one figure, lit from one side, on a dark ground the import floods away. The generator paints a face at 96 the way it painted the Lampwright and the Glasswright: hard outline, cluster shading, no gradient.",
+ "size": 96,
+ "grid": 96,
+ "how": " A PORTRAIT BUST: one figure from the shoulders up, head and shoulders filling the frame, seen from the front turned slightly to one side, lit from the upper left, painted pixel art with a hard dark outline and cluster shading. Transparent background. NOT full body, NOT a hand, NOT a weapon, NOT text, NOT a border, NOT a frame, NOT two people, NOT anime, NOT chibi, NOT cute, NOT a cartoon, NOT a big head, NOT smooth gradients.",
+ "inks": [
+  "#07060A",
+  "#14101A",
+  "#231B2B",
+  "#3A2C45",
+  "#55405F",
+  "#6E5A7A",
+  "#8F7A9C",
+  "#B29EBE",
+  "#D4C3DC",
+  "#EDE3F0",
+  "#F7F2F8",
+  "#E9B7C9",
+  "#D08BA6",
+  "#B0637F",
+  "#7E3F55",
+  "#4A2431",
+  "#2A1414",
+  "#4E1E1C",
+  "#7A2E27",
+  "#A64536",
+  "#C86A4E",
+  "#E0967A",
+  "#EFC6A8",
+  "#1E3A1C",
+  "#3B7A2C",
+  "#7CC93C",
+  "#B8F06A",
+  "#6C6E82",
+  "#9AA0B4",
+  "#C8CFDD"
+ ],
+ "icons": [
+  {
+   "id": "geometer",
+   "say": "a calm pale man with smooth rose-tinted skin and straight lavender-pink hair cut level at the jaw, his eyes hidden behind a narrow BANDED LENS strapped across them like a visor, a thin line of pearl light travelling along the band, no expression, unhurried, a high dark violet collar closed at the throat and a plain dark violet coat on narrow square shoulders. Cool and pale throughout, nothing warm about him. NOT a beard, NOT glasses with round lenses, NOT goggles, NOT a helmet, NOT a hood, NOT smiling, NOT angry, NOT tan, NOT orange, NOT gold."
+  },
+  {
+   "id": "osteomancer",
+   "say": "a gaunt stooped figure whose face is a bare SKULL of dark red-brown bone, deep sockets each holding one small round eye of glowing venom green, teeth bared in a fixed grin, a thin neck and narrow sloping shoulders wrapped in a ragged dark crimson robe, a necklace of small pale bones and knuckles strung on a cord across the chest. Dried blood red and rot brown throughout, the green of the eyes the only bright thing. NOT a helmet, NOT a mask, NOT flesh on the face, NOT a nose, NOT hair, NOT muscular, NOT broad, NOT bright red, NOT pink, NOT orange, NOT a cartoon skull."
+  }
+ ]
+}

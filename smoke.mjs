@@ -77,10 +77,16 @@ const dockItems = () => filled('#inv-gear');
 // own column is the only place one can be picked up and worked on.
 const benchCrystals = () => all('#craft-crystals .wornslot');
 const crystalCards = () => all('#crystals-list .crystal');
-const currencySlots = () => filled('#inv-currency');
+// Currency and material are ROWS on tabs of their own now — an icon, a name
+// and a count — because neither has a carry limit for a slot to make visible.
+const currencySlots = () => all('#inv-currency .ledgerrow');
 // Its own column, and drawn only while you are holding one. Nothing in it has
 // a click: a relic is carried to a person, never spent at the bench.
 const relicSlots = () => filled('#inv-relics');
+const materialSlots = () => all('#inv-materials .ledgerrow');
+/** The dock's tabs. Every one renders whether or not it is the one on top, so
+ *  a harness reads any of them without clicking — but a person needs the click. */
+const dockTab = (which) => $(`inv-tab-${which}`);
 const named = (btn) => btn.getAttribute('aria-label') ?? '';
 
 // --- the way in: title, then a slot, then one question ---------------------
@@ -96,18 +102,72 @@ assert(
 $('save-play').click();
 $('save-play').click();
 assert($('savedata').hidden === true, 'Play now takes you into the live slot');
+// A character is MADE before it is played, and the trade is who you ARE, so
+// the cast comes up before the name and the skill do.
+assert($('pick').hidden === false, 'and a character with no trade is made first');
+assert(all('#pick-cast .pickfig').length === 4, 'all four trades stand there');
+assert($('pick-warrior') !== null && $('pick-rogue') !== null, 'the warrior and the rogue among them');
+assert($('pick-say').hidden === true, 'saying nothing until one is clicked');
+$('pick-aethermancer').click();
+assert($('pick-say').hidden === false, 'clicking one says who he is');
+assert(
+  /starting skill/i.test(text('pick-say')) && /rimespike/i.test(text('pick-say')),
+  'and names the skill he comes down holding',
+  text('pick-say')
+);
+// WHAT HE GIVES FOR NOTHING, on the screen you pick on: a trade you cannot
+// tell from another until level 5 is four figures standing in a room.
+assert(
+  /comes with/i.test(text('pick-say')) && /mana/i.test(text('pick-say')),
+  'and says what the trade gives before a point is spent',
+  text('pick-say')
+);
+$('pick-rogue').click();
+assert(
+  /comes with/i.test(text('pick-say')) && /two weapons/i.test(text('pick-say')),
+  'which is a different line for a different trade',
+  text('pick-say')
+);
+$('pick-aethermancer').click();
+assert($('pick-take') !== null, 'and offers to be him');
+$('pick-take').click();
+assert($('pick').hidden === true, 'taking him closes the hall');
+
 // A slot can hold a game that was never asked what it swings, so playing one
 // still puts the question up rather than assuming a save answered it.
 assert($('welcome').hidden === false, 'and a game with no skill still asks for one');
-assert(all('#welcome-skills .welcomecard').length === 3, 'all skills offered');
+// The TRADE brings a skill with it, so the only question left is the name —
+// asking for a skill here was the cast hall's question a second time.
+assert(all('#welcome-skills .welcomecard').length === 0, 'and no longer offers a skill of its own');
 assert($('welcome-name') !== null, 'and asks who you are');
 
 $('welcome-name').value = 'Vespera';
-all('#welcome-skills .welcomecard')[0].click();
+$('welcome-go').click();
 assert(text('run-name') === 'Vespera', 'the chosen name is kept', text('run-name'));
 assert($('welcome').hidden === true, 'choosing dismisses the prompt');
-assert($('craft').hidden === true, 'and drops you straight at the Fissure, not the bench');
-assert($('run-launch').disabled === false, 'ready to enter immediately');
+assert($('craft').hidden === true, 'and drops you at the Fissure, not the bench');
+
+// --- armed, and standing in the camp ---------------------------------------
+// *"It should just be you pick character/name/skill and land in the town. Have
+// it just give you an appropriate weapon for the skill you picked."* No room
+// in between, and the weapon is ON rather than in the bag.
+{
+  assert(
+    document.body.dataset.runPhase === 'menu' && $('camp').hidden === false,
+    'choosing lands you in the camp rather than in a room',
+    document.body.dataset.runPhase
+  );
+  assert(dockItems().length === 0, 'and nothing of it lands in the bag', String(dockItems().length));
+  $('open-character').click();
+  const hand = $('slot-weapon');
+  assert(
+    hand.classList.contains('slotcell__btn--worn'),
+    'the skill you chose armed the hand it needs',
+    hand.className
+  );
+  $('sheet-close').click();
+}
+assert($('run-launch').disabled === false, 'ready to enter again');
 
 // --- a new game starts with literally nothing ------------------------------
 // The app boots fresh on purpose: judging the loop from a stocked inventory
@@ -126,20 +186,64 @@ assert(
 assert(all('#inv-gear .slot--empty').length > 0, 'the dock keeps empty slots');
 
 // One place, always open. An empty set is a real descent, not a missing
-// choice, and the only thing that ever shuts the Fissure is a full haul —
+// choice, and the only thing that ever shuts the Fissure is a full bag —
 // which selling always empties, so there is no state you cannot play out of.
-const socketButtons = () => all('#run-sockets .socket');
-assert(socketButtons().length === 4, 'the Fissure has four sockets', String(socketButtons().length));
+const socketButtons = () => all('.groundsockets .socket');
+// NOWHERE ON THE CLIMB. The sockets belong to the Proving Ground's own tab, so
+// while the campaign runs there is nothing on this screen to put one in.
+assert(socketButtons().length === 0, 'no sockets while the campaign runs', String(socketButtons().length));
+assert($('run-selected') === null, 'and nothing describing a set either');
+
+// THE CLIMB. ONE ZONE AT A TIME, on a tab, drawn as a seam down that zone's own
+// cross-section — and nothing ever taken away: a cleared rung stays clickable
+// so a wipe is answered by dropping back two and grinding.
+assert(all('#run-climb .climbtab').length === 4, 'a tab per zone, and the Proving Ground past them');
+assert($('climb-tab-3').disabled === true, 'which is shut until the campaign is paid for');
+assert($('climb-tab-0').disabled === false && $('climb-tab-1').disabled === true,
+  'and only the ones you have opened');
+assert(all('#run-climb .pip').length === 12, 'the Fissure alone is drawn, a station per rung',
+  String(all('#run-climb .pip').length));
+assert(all('#run-climb .climbseam__rock').length === 1, 'as one winding stretch',
+  String(all('#run-climb .climbseam__rock').length));
+assert($('climb-pip-0-1').classList.contains('pip--here'), 'a new character stands on the first');
+assert($('climb-pip-0-2').disabled === true, 'the rung above it is shut');
+// EVERY DEPTH IS A STEP. The ramp is straight, so nothing on the seam is
+// marked as costing more than the one under it — a spike is what was removed.
 assert(
-  socketButtons().every((b) => !b.classList.contains('socket--full')),
-  'which all start empty'
+  all('#run-climb .pip--spike').length === 0,
+  'no depth on the seam is marked a spike: the climb is a line',
+  String(all('#run-climb .pip--spike').length)
+);
+assert($('climb-pip-1-1') === null, 'and the zone above is behind its own tab');
+assert(
+  $('run-launch') !== null && $('run-deeper') !== null,
+  'and the way in is still on it'
 );
 assert(
-  /no crystals yet/i.test(text('run-selected')),
-  'and say so',
-  text('run-selected').slice(0, 80)
+  /^enter$/i.test($('run-launch').textContent.trim()),
+  'and the way in just says Enter: the rung is picked on the climb beside it',
+  $('run-launch').textContent
 );
+
 assert($('run-launch').disabled === false, 'the Fissure is enterable with nothing');
+
+// CLIMB: whether a clear takes the next RUNG down or the same one again. OFF
+// until you turn it on — grinding a rung is the default — and a preference.
+assert($('run-deeper') !== null, 'there is a Deeper toggle under the way in');
+assert(
+  $('run-deeper').getAttribute('aria-pressed') === 'false',
+  'and a clear goes back into the rung you picked until you say otherwise',
+  $('run-deeper').getAttribute('aria-pressed')
+);
+$('run-deeper').click();
+assert(
+  $('run-deeper').getAttribute('aria-pressed') === 'true'
+    && $('run-deeper').classList.contains('mini--on'),
+  'clicking it arms the climb, and it reads as on',
+  $('run-deeper').getAttribute('aria-pressed')
+);
+$('run-deeper').click();
+assert($('run-deeper').getAttribute('aria-pressed') === 'false', 'and off again');
 const beforeFissure = dockItems().length;
 $('run-launch').click();
 assert($('run-stagewrap').hidden === false, 'the Fissure starts');
@@ -148,11 +252,67 @@ assert(
   'the Fissure consumes nothing',
   `${dockItems().length} vs ${beforeFissure}`
 );
+// The dev MENU: a way to reach a state the game only reaches by playing to
+// it. Every room in the game has a button, because getting one to come up
+// otherwise is a cleared descent per look.
+$('open-dev').click();
+assert($('dev').hidden === false, 'the rail opens a dev menu rather than wiping on the spot');
+assert(
+  all('#dev-body .devbtn').length >= 5,
+  'with a button per room, per rung of gear, and the kit',
+  String(all('#dev-body .devbtn').length)
+);
+// A ROOM is a fight now; everybody else is somebody the kit can have met.
+for (const id of ['dev-meet-workshop', 'dev-room-answering_hall', 'dev-gear-3', 'dev-kit', 'dev-owe']) {
+  assert($(id) !== null, `and ${id} is one of them`);
+}
+// Clearing a zone from the kit is 12 real descents otherwise, so the zones
+// above the first are unreachable to every check under here without it.
+assert($('dev-climb-0') !== null, 'and a button that clears a zone of the climb');
+$('dev-climb-0').click();
+$('camp-crack').click();
+assert($('climb-pip-0-12').classList.contains('pip--done'), 'clearing the Fissure marks every rung of it');
+assert($('climb-tab-1').disabled === false, 'and opens the zone above');
+$('climb-tab-1').click();
+assert($('climb-pip-1-1').disabled === false, 'whose tab draws its own rungs');
+assert($('climb-pip-1-2').disabled === true, 'one rung at a time');
+assert($('climb-pip-0-1') === null, 'and only that zone');
+$('climb-tab-0').click();
+$('climb-pip-0-4').click();
+assert($('climb-pip-0-4').classList.contains('pip--here'), 'a cleared rung is still yours to grind');
+assert(
+  /^enter$/i.test($('run-launch').textContent.trim()),
+  'and still just says Enter after the pick moves',
+  $('run-launch').textContent
+);
+assert(
+  !/challenge floor/i.test(text('run-climb')),
+  'and no depth calls itself a challenge floor any more',
+  text('run-climb').slice(0, 120)
+);
+$('climb-pip-0-1').click();
+$('run-menu-close').click();
+
+// THE WEB IS SHUT UNTIL THE LAMPWRIGHT HAS PAID. It is on screen from the first
+// descent — a plan you cannot see is a plan nobody makes — and every node on it
+// is dead until he hands the campaign's own reward over in the camp.
+$('camp-fire').click();
+assert($('trials-webwrap').hidden === false, 'a new character sees the whole Reckoning');
+assert(
+  all('#trials-web .web__node--open').length === 0,
+  'and not one node of it is walkable before the campaign has been paid for',
+  String(all('#trials-web .web__node--open').length)
+);
+assert(/^0\//.test(text('trials-sub')), 'because it holds no points at all', text('trials-sub'));
+$('trials-close').click();
+
+$('open-dev').click();
 $('dev-kit').click();
 $('confirm-yes').click();
 await new Promise((r) => setTimeout(r, 0));
 assert(dockItems().length > 2, 'the dev kit stocks the dock', String(dockItems().length));
 assert($('craft').hidden === false, 'a stocked game opens on the bench');
+assert($('dev').hidden === true, 'and the menu shuts behind it');
 
 // --- the flasks --------------------------------------------------------------
 // The one thing a player DOES in a fight, and the first input a descent has
@@ -165,7 +325,8 @@ assert($('craft').hidden === false, 'a stocked game opens on the bench');
   const flasks = all('#run-flasks .flask');
   assert(flasks.length === 2, 'two flasks under the map', String(flasks.length));
   assert(
-    all('#run-flasks .flask__key').map((n) => n.textContent).join(',') === '1,2',
+    // 1-3 are the crystal's three faces now; the flasks come after them.
+    all('#run-flasks .flask__key').map((n) => n.textContent).join(',') === '4,5',
     'on the keys the table binds them to',
     all('#run-flasks .flask__key').map((n) => n.textContent).join(',')
   );
@@ -185,7 +346,12 @@ assert($('craft').hidden === false, 'a stocked game opens on the bench');
   assert(!use.disabled, 'and a flask you can drink is a button you can press');
   use.click();
   await new Promise((r) => setTimeout(r, 1500));
-  assert(charges()[0] === '1', 'drinking one spends a charge', charges().join(' '));
+  assert(
+    charges()[0] === '1',
+    'drinking one spends a charge',
+    `${charges().join(' ')} — phase ${document.body.dataset.runPhase}, ` +
+      `weapon ${$('slot-weapon') ? 'n/a' : 'n/a'}`
+  );
 
   $('run-abandon').click();
   $('run-again').click();
@@ -229,8 +395,8 @@ assert(invItems().length >= 4, 'dock populated', String(invItems().length));
 assert(all('#wallet .coin').length === 1, 'wallet shows gold only', text('wallet'));
 assert(text('wallet').includes('gold'), 'gold is held', text('wallet'));
 assert(
-  all('.dock .slot .icon').length ===
-    invItems().length + currencySlots().length + relicSlots().length,
+  all('.dock .slot .icon, .dock .ledgerrow .icon').length ===
+    invItems().length + currencySlots().length + relicSlots().length + materialSlots().length,
   'every item and every stack has an icon'
 );
 
@@ -239,7 +405,7 @@ assert(
 // made a Shard of Making a menu command rather than a thing you own.
 assert(currencySlots().length > 0, 'the dev kit stocks currency in the dock');
 assert(
-  currencySlots().every((b) => b.querySelector('.slot__n')),
+  currencySlots().every((b) => b.querySelector('.ledgerrow__n')),
   'every stack shows its count'
 );
 assert(
@@ -247,7 +413,19 @@ assert(
   'and says how many it holds out loud',
   named(currencySlots()[0])
 );
-assert(text('inv-currency').replace(/[0-9]/g, '') === '', 'currency is icons and counts, not names', text('inv-currency'));
+// A ROW READS ITS NAME. The 40px icon could only ever say what class a stack
+// was, so learning which silhouette was Making took the tooltip every time.
+assert(
+  currencySlots().every((b) => (b.querySelector('.ledgerrow__name')?.textContent ?? '').length > 3),
+  'and names itself, which a 40px icon could never do',
+  currencySlots()[0]?.querySelector('.ledgerrow__name')?.textContent ?? ''
+);
+// Grouped by CLASS, which is the word the counter and the tooltip already use.
+assert(
+  all('#inv-currency .ledgergroup').length > 1,
+  'and the column is grouped by class',
+  String(all('#inv-currency .ledgergroup').length)
+);
 
 // Gear and currency, and nothing else. A crystal is never spent, sold or
 // carried, so a dock column for it would be triage with nothing to triage.
@@ -338,7 +516,7 @@ const currencyButton = (name) =>
   currencySlots().find((b) => named(b).includes(name));
 
 const heldCount = (name) =>
-  Number(currencyButton(name)?.querySelector('.slot__n')?.textContent ?? 0) || 0;
+  Number(currencyButton(name)?.querySelector('.ledgerrow__n')?.textContent ?? 0) || 0;
 
 // A crystal's room comes from its LEVEL, so nothing opens a level 1 one.
 // The shard still CLICKS — it arms, and lights whatever else would take it —
@@ -444,9 +622,12 @@ assert(rolled().length === 2, 'a second modifier was added', String(rolled().len
     'crafting a mod changes what the crystal says it does',
     `${headerBefore} → ${multRows().join(' ')}`
   );
+  // Danger, density, a drop group, or what it PAYS — a crystal roll that
+  // changes none of those is one the panel cannot report.
   assert(
-    danger() > 0 || multRows().some((r) => /^(weapons|armour|trinkets)=/.test(r)),
-    'and it is either more dangerous or pointed at something',
+    danger() > 0 ||
+      multRows().some((r) => /^(weapons|armour|trinkets|density|currency|gilded)=/.test(r)),
+    'and it is more dangerous, denser, pointed at something, or paying better',
     multRows().join(' ')
   );
   $('craft-return').click();
@@ -595,14 +776,22 @@ assert($('craft-empty').hidden === false, 'bench is empty again');
 assert(invItems().length === inventoryBefore, 'item is still in the dock');
 assert(all('.dock .slot--on').length === 0, 'nothing highlighted after closing');
 
+
+/** THE COUNTER IS A PERSON'S, and clicking him puts up what he is FOR. The
+ *  entry ids outlive their wording, which is what a harness names. */
+const openCounter = () => {
+  $('camp-who-workshop').click();
+  $('parley-shop')?.click();
+};
+
 // --- the shop buys against gold -------------------------------------------
 // A separate window from crafting: one turns gold into stock, the other
 // spends stock on the item in front of you, and sharing a window meant that
 // item scrolled away exactly when you went to buy something for it.
 assert($('shop').hidden === true, 'the shop starts closed');
 assert(!$('craft').contains($('workshop')), 'the shop is not inside crafting');
-$('open-shop').click();
-assert($('shop').hidden === false, 'the shop opens');
+openCounter();
+assert($('shop').hidden === false, 'the shop opens — it is the Lampwright\'s counter');
 
 const buys = all('#workshop button.buy');
 assert(buys.length >= 1, 'the shop lists recipes', String(buys.length));
@@ -625,17 +814,29 @@ assert(
   buyNames().join(', ')
 );
 
-// Random gear on the shelf, priced and one-of-each.
-const stock = () => all('#shop-stock button.buy');
-assert(stock().length >= 2, 'the shop stocks gear', String(stock().length));
+// --- NOTHING NAMED IS SOLD: the counter is a gamble ------------------------
+// You buy "a ring", not a ring you read first. A shelf of named pieces was the
+// one place gold could beat the bench, and gear you wear is gear you MADE.
+assert($('shop-stock') === null, 'the shelf of named gear is gone');
+const gambles = () => all('#shop-gamble button.buy');
+assert(gambles().length >= 6, 'the counter offers one gamble per kind', String(gambles().length));
 assert(
-  all('#shop-stock .buy__cost').every((n) => /\d+ gold/.test(n.textContent)),
-  'every piece shows a price'
+  all('#shop-gamble .buy__name').every((n) => /^An? (pair of )?[a-z]+$/.test(n.textContent)),
+  'and every one of them names a KIND rather than a piece',
+  all('#shop-gamble .buy__name')[0]?.textContent
 );
 assert(
-  all('#shop-stock .buy__cost').every((n) => /Tier \d/.test(n.textContent)),
-  'and its base tier',
-  all('#shop-stock .buy__cost')[0]?.textContent
+  all('#shop-gamble .buy__cost').every((n) => /^\d+ gold$/.test(n.textContent)),
+  'each priced in gold'
+);
+
+// Raw material, at a bad rate: the smoothing for a recipe you are two short of.
+const raws = () => all('#shop-raw button.buy');
+assert(raws().length >= 1, 'the counter also sells raw material', String(raws().length));
+assert(
+  all('#shop-raw .buy__cost').every((n) => /\d+ gold · /.test(n.textContent)),
+  'priced in gold, and said with the world it comes out of',
+  all('#shop-raw .buy__cost')[0]?.textContent
 );
 
 // Prices print words, not wallet keys — a modifier rendering `areaOfEffect`
@@ -678,12 +879,19 @@ assert(
   'the dock is deeper than the two rows it replaced',
   String(slotsIn('#inv-gear').length)
 );
-// Currency is the column that gave up the width: a stack is one slot however
-// deep it is, and there are only thirteen kinds.
+// Currency is the column that GAVE UP the width, and gear took all of it: the
+// slot count IS the carry limit, so a wider dock is a bigger bag rather than a
+// grid that lies about one.
 assert(
-  slotsIn('#inv-currency').length < slotsIn('#inv-gear').length,
-  'currency takes less room than the items it is spent on',
-  `${slotsIn('#inv-currency').length} vs ${slotsIn('#inv-gear').length}`
+  slotsIn('#inv-currency').length === 0 && slotsIn('#inv-gear').length >= 48,
+  'currency left the grid entirely and gear took the width',
+  `${slotsIn('#inv-currency').length} currency slots, ${slotsIn('#inv-gear').length} gear`
+);
+// THE DOCK IS ONE HEIGHT whatever tab is up. `shots` measures the pixels; this
+// is the structural half — every tab draws into the same dock.
+assert(
+  ['gear', 'currency', 'materials'].every((t) => !!dockTab(t)),
+  'and all three tabs are there to switch between'
 );
 // Filling up is something you watch approaching, not something the report
 // tells you afterwards.
@@ -693,49 +901,59 @@ assert(
   text('inv-gear-label')
 );
 
-// --- the haul -------------------------------------------------------------
-// One terminus for the loop: a death and a full haul both land here. Only its
-// shape is checked in jsdom — a run takes a minute of real time, so the loop
-// itself is walked headlessly in the demo.
-assert($('haul').hidden === true, 'the haul starts closed');
-$('open-haul').click();
-assert($('haul').hidden === false, 'and opens from the header');
+// --- settings, which is keys and the book now -----------------------------
+// The FILTER is gone with the heap it existed to sort: a clear banks the lot,
+// and what you do not want is dismantled or sold rather than never picked up.
+assert($('settings').hidden === true, 'settings starts closed');
+$('open-settings').click();
+assert($('settings').hidden === false, 'and opens from the rail');
+assert(document.getElementById('open-filter') === null, 'the filter left the rail behind');
+assert(document.getElementById('set-tab-filter') === null, 'and its tab in settings with it');
+assert(document.getElementById('set-pane-filter') === null, 'and the pane behind that tab');
+
+// --- the keys, and the book ------------------------------------------------
+$('set-tab-keys').click();
 assert(
-  /^0 \/ \d+$/.test(text('haul-count')),
-  'a fresh haul is empty and says what it holds',
-  text('haul-count')
+  all('#settings-keys .keyrow').length >= 15,
+  'every binding there is has a row you can rebind',
+  String(all('#settings-keys .keyrow').length)
 );
-assert(all('#haul-slots .slot').length > 0, 'the grid draws the room it has');
+const wasKey = text('key-set-inventory');
+$('key-set-inventory').click();
+assert(/press/i.test(text('key-set-inventory')), 'clicking one waits for a press');
+document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'q', bubbles: true }));
 assert(
-  all('#haul-slots .slot:not(.slot--empty)').length === 0,
-  'and nothing is in it yet'
+  text('key-set-inventory') === 'Q' && text('key-set-inventory') !== wasKey,
+  'and the next key pressed is the new binding',
+  text('key-set-inventory')
 );
-// The rule the slot counts cannot show, and the reason it is not a third bag.
+$('key-set-inventory').click();
+document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'c', bubbles: true }));
 assert(
-  /worn, crafted or socketed/i.test(text('haul-hint')),
-  'it says nothing here can be used until you take it out',
-  text('haul-hint')
+  text('key-set-inventory') === 'Q',
+  'a key another binding already holds is REFUSED, never swapped',
+  text('key-set-inventory')
 );
-assert($('haul-take').disabled === true, 'with nothing to take');
-assert($('haul-sell') === null, 'and no second sell button beside the first');
-assert($('haul-sort') !== null, 'a Sort, the same one the dock has');
-assert($('haul-sort').disabled === true, 'off while there is nothing to order');
-// The way out of a full everything: a sale needs room nowhere, which is what
-// stops the one thing that can shut the Fissure from wedging it.
-assert($('haul-sellall') !== null, 'and a way to empty the whole thing');
-assert($('haul-sellall').disabled === true, 'off while there is nothing in it');
-assert($('haul-why').hidden === true, 'opening it yourself needs no explanation');
+
+$('set-tab-book').click();
+const bookRows = () => all('#book-rows .bookrow');
+assert(bookRows().length > 20, 'the book lists every keyword there is', String(bookRows().length));
+$('book-find').value = 'burn';
+$('book-find').dispatchEvent(new window.Event('input', { bubbles: true }));
+assert(bookRows().length > 0 && bookRows().length < 20, 'and a Find box narrows it', String(bookRows().length));
+$('book-find').value = '';
+$('book-find').dispatchEvent(new window.Event('input', { bubbles: true }));
 
 window.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
-assert($('haul').hidden === true, 'Escape closes it');
+assert($('settings').hidden === true, 'Escape closes it');
 
 // --- the collection --------------------------------------------------------
 // Four sockets against everything you have ever been given. Nothing here is
 // spent, so this screen only ever grows, and it is where two crystals are
 // compared before one of them goes in.
 assert($('crystals').hidden === true, 'the collection starts closed');
-$('open-crystals').click();
-assert($('crystals').hidden === false, 'and opens from the header');
+$('camp-socket0').click();
+assert($('crystals').hidden === false, 'and a socket in the camp rock is what opens it');
 
 assert(crystalCards().length > 0, 'the dev kit fills it', String(crystalCards().length));
 assert(
@@ -744,10 +962,12 @@ assert(
   text('crystals-count')
 );
 // Nothing about a gift is a probability any more, so the screen states a fact.
-// A percentage here would be the one thing on it a player cannot act on.
+// A percentage here would be the one thing on it a player cannot act on. The
+// Lampwright pays the whole campaign, so what is named is either the zones
+// still to clear, the meeting waiting on you, or that he is finished with you.
 assert(
-  /at the mouth of a cleared descent/i.test(text('crystals-npc')),
-  'the collection says where whatever is owed gets handed over',
+  /(talk to him in the camp|once the climb is finished|has nothing else|the next crystal is)/i.test(text('crystals-npc')),
+  'the collection says exactly where the next crystal stands',
   text('crystals-npc')
 );
 assert(
@@ -755,14 +975,26 @@ assert(
   'and never as odds',
   text('crystals-npc')
 );
+// THE LADDER, once the campaign is paid for — which the dev kit is. Twelve
+// steps in order, every one of them drawn: the whole ladder is the plan, and a
+// plan you cannot see is a plan nobody makes.
 assert(
-  all('#crystals-quests .quest').length === 7,
-  'every rung of both ladders is listed',
+  all('#crystals-quests .quest').length === 12,
+  'and the whole crystal ladder is listed under it, every step of it',
   String(all('#crystals-quests .quest').length)
 );
+// The panel tracks what has been TAKEN, never what you own. The dev kit is
+// handed every crystal in the game and has walked no step for any of them, so
+// nothing here reads as taken — which is the distinction worth holding.
 assert(
-  all('#crystals-quests .quest--done').length === 7,
-  'and the dev kit, which is handed every crystal, has them all answered'
+  all('#crystals-quests .quest--done').length === 0,
+  'and a step reads as taken only where it was taken, never off the kit',
+  String(all('#crystals-quests .quest--done').length)
+);
+assert(
+  /\d+ of \d+ .*clears/i.test(text('crystals-quests')),
+  'and the first of them says how many clears it waits on, in figures',
+  text('crystals-quests').slice(0, 90)
 );
 // A crystal levels only while socketed, which is the reason to socket a blank
 // one at all — so the row has to say where it stands.
@@ -775,12 +1007,21 @@ const socketFirst = [...all('#crystals-list .crystal .mini')].find((b) =>
   /^Socket/.test(b.textContent)
 );
 assert(!!socketFirst, 'a carried crystal offers the socket');
-const before = all('.socket--full').length;
+// COUNTED ON THE PROVING GROUND'S TAB, which is the only place a socket is
+// drawn now: opening the crack and that tab is what renders them.
+const socketsFull = () => {
+  $('camp-crack').click();
+  $('climb-tab-3').click();
+  const n = all('.groundsockets .socket--full').length;
+  $('run-menu-close').click();
+  return n;
+};
+const before = socketsFull();
 socketFirst.click();
 assert(
-  all('.socket--full').length === before + 1,
-  'clicking it fills a socket on the Fissure',
-  `${before} → ${all('.socket--full').length}`
+  socketsFull() === before + 1,
+  'clicking it fills a socket on the Proving Ground',
+  `${before} → ${socketsFull()}`
 );
 const socketedCard = [...crystalCards()].find((c) => c.classList.contains('crystal--socket'));
 assert(!!socketedCard, 'and the row moves to the top marked as socketed');
@@ -799,7 +1040,7 @@ assert(
 const back = [...socketedCard.querySelectorAll('.mini')].find((b) => /Take it back/.test(b.textContent));
 assert(!!back, 'a socketed crystal offers its way out');
 back.click();
-assert(all('.socket--full').length === before, 'and taking it back empties the socket again');
+assert(socketsFull() === before, 'and taking it back empties the socket again');
 
 window.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
 assert($('crystals').hidden === true, 'Escape closes the collection');
@@ -807,14 +1048,22 @@ assert($('crystals').hidden === true, 'Escape closes the collection');
 // --- the stash ------------------------------------------------------------
 // A carry limit needs somewhere for the overflow to go that isn't the floor.
 assert($('stash').hidden === true, 'the stash starts closed');
-$('open-stash').click();
-assert($('stash').hidden === false, 'the stash opens');
+$('camp-shelf').click();
+assert($('stash').hidden === false, 'the shelf in the camp opens it');
 
 const stashSlots = () => all('#stash-slots .slot');
 const stashed = () => all('#stash-slots .slot:not(.slot--empty)');
 assert(stashSlots().length >= 10 && stashSlots().length <= 15,
   'it starts at a usable size', String(stashSlots().length));
-assert(stashed().length === 0, 'and starts empty');
+// The dev kit stocks one of every family off both tables, which outgrew the
+// bag — so what is in here at the start is exactly what the bag could not
+// hold, and everything below counts from there rather than from zero.
+const stashedFirst = stashed().length;
+assert(
+  stashedFirst < stashSlots().length,
+  'and holds the kit’s overflow with room left',
+  `${stashedFirst} of ${stashSlots().length}`
+);
 
 // You move things in by clicking the DOCK, not a list inside the popup —
 // which only works because every popup stops above the dock.
@@ -823,13 +1072,15 @@ assert(stashed().length === 0, 'and starts empty');
   const target = filled('#inv-gear')[0];
   assert(/stash/i.test(named(target)), 'the dock offers to stash it', named(target));
   target.click();
-  assert(stashed().length === 1, 'the item is in the stash');
+  assert(stashed().length === stashedFirst + 1, 'the item is in the stash',
+    String(stashed().length));
   assert(dockItems().length === before - 1, 'and out of the bag', String(dockItems().length));
-  assert(text('stash-count').startsWith('1'), 'the count keeps up', text('stash-count'));
+  assert(text('stash-count').startsWith(String(stashedFirst + 1)), 'the count keeps up',
+    text('stash-count'));
 
   // And back out again. A stash you cannot empty is a bin.
-  stashed()[0].click();
-  assert(stashed().length === 0, 'it comes back out');
+  stashed()[stashed().length - 1].click();
+  assert(stashed().length === stashedFirst, 'it comes back out', String(stashed().length));
   assert(dockItems().length === before, 'and returns to the bag', String(dockItems().length));
 }
 
@@ -871,12 +1122,23 @@ assert(
 );
 $('craft-close').click();
 assert($('craft').hidden === true, 'crafting closes');
-assert($('run-menu').hidden === false, 'and the Fissure is waiting underneath');
-assert($('run-stagewrap').hidden === true, 'nothing running until you enter');
-// The Fissure screen is the sockets and the one button, and nothing else:
+assert($('camp').hidden === false, 'and the camp is waiting underneath');
+assert(document.body.dataset.runPhase === 'menu', 'which is home, and not a descent');
+// The crack, four sockets, the bench, the shelf, the fire, the tent, the anvil
+// and one station a profession: everything on the picture there is to click.
+assert(
+  document.querySelectorAll('#camp-hotspots .camp__hot').length === 15,
+  'with everything on the picture there is to click, the fire, the anvil and five stations among them',
+  String(document.querySelectorAll('#camp-hotspots .camp__hot').length)
+);
+// The Fissure window is the sockets and the one button, and nothing else:
 // what a character IS is on the sheet, which has its own checks below.
+$('camp-crack').click();
+assert($('run-menu').hidden === false, 'the crack opens over the camp');
 assert($('run-stats') === null, 'and the Fissure carries no character panel');
 assert($('run-launch') !== null, 'only the sockets and the way in');
+// The sockets are the Proving Ground's, so that is the tab they are on.
+$('climb-tab-3').click();
 
 // --- socketing a crystal --------------------------------------------------
 // One screen holds every crystal you own, socketed or not, because four
@@ -1024,6 +1286,41 @@ assert(
   one.dispatchEvent(new window.MouseEvent('mouseleave', { bubbles: true }));
 }
 
+// A PERFECT base: the same card again, saying the one number that is the whole
+// of what it is. Rarer than a named piece and worth reading first.
+{
+  const one = filled('#inv-gear').find((b) => b.className.includes('slot--perfect'));
+  assert(!!one, 'the dock marks a Perfect base apart from a plain one');
+  one.dispatchEvent(new window.MouseEvent('mouseenter', { bubbles: true }));
+  const card = $('tooltip').querySelector('.tip__card');
+  assert(!!card.querySelector('.tip__name--perfect'), 'and its card names it in its own colour');
+  assert(
+    /perfect — 25% more from the base/i.test(card.textContent),
+    'and says what it is with its figure in it',
+    card.textContent.slice(0, 120)
+  );
+  assert(
+    /^Perfect /.test(card.querySelector('.tip__name').textContent),
+    'and the piece is named for it',
+    card.querySelector('.tip__name').textContent
+  );
+  one.dispatchEvent(new window.MouseEvent('mouseleave', { bubbles: true }));
+}
+
+// THE BENCH CANNOT REACH A CRYSTAL until the climb is behind you. The dev kit
+// holds every crystal in the game, so this is the OPEN state; what it proves is
+// that the gate is a real one and says so rather than failing silently.
+{
+  $('open-craft').click();
+  const chips = benchCrystals();
+  assert(chips.length > 0, 'the dev kit stands every crystal beside the bench');
+  assert(
+    chips.every((c) => !c.disabled),
+    'and holding all four opens every one of them',
+    String(chips.filter((c) => c.disabled).length)
+  );
+}
+
 // A crystal is the same card, saying the things a crystal has instead: which
 // world it opens, what the danger buys, and how far it has left to level.
 {
@@ -1116,7 +1413,7 @@ const beforeLaunch = invItems().length;
 $('run-launch').click();
 
 assert($('run-stagewrap').hidden === false, 'the descent begins');
-assert($('run-menu').hidden === true, 'menu hides while running');
+assert($('run-menu').hidden === true, 'the crack closes behind you');
 assert(
   invItems().length === beforeLaunch,
   'and costs you nothing to enter',
@@ -1172,7 +1469,7 @@ assert(
 {
   const cells = all('#craft-worn .wornslot');
   // Empty ones too: they are where a dragged piece lands.
-  assert(cells.length === 8, 'every equip slot is drawn', String(cells.length));
+  assert(cells.length === 9, 'every equip slot is drawn', String(cells.length));
   const live = cells.filter((b) => !b.disabled);
   assert(live.length > 0, 'and what you are wearing is clickable', String(cells.length));
 
@@ -1202,34 +1499,32 @@ assert(
   'and to the map again once it closes'
 );
 
-// --- leaving, gently and otherwise ----------------------------------------
-// Pause is gone: there was nothing to do with a paused fight. What a running
-// descent needs instead is a way to say "this one, then stop", so the loop
-// ends on a clear rather than on a run you threw away.
-assert($('run-leave').disabled === false, 'a running descent can be told to be the last');
-assert(/leave after/i.test(text('run-leave')), 'and says so', text('run-leave'));
-$('run-leave').click();
-assert(/leaving after/i.test(text('run-leave')), 'arming it reads back', text('run-leave'));
-$('run-leave').click();
-assert(/leave after/i.test(text('run-leave')), 'and it un-arms', text('run-leave'));
-
-// Abandon is the hard version, and it ends where every other ending does: a
-// report, so what the earlier clears banked is something you can see rather
-// than something you hope happened.
+// --- the one way out ------------------------------------------------------
+// *"Change abandon to return to camp and make it where all the loot on the
+// floor just gets picked up when you return to camp."* One button, and it
+// KEEPS what the descent found — only dying banks nothing.
+assert($('run-abandon').disabled === false, 'a running descent can be walked out of');
+assert(/return to camp/i.test(text('run-abandon')), 'and says where it goes', text('run-abandon'));
+const carried = $('run-abandon') && dockItems().length;
 $('run-abandon').click();
-assert($('run-results').hidden === false, 'abandoning reports the run');
+assert($('run-results').hidden === false, 'walking out reports the run');
 assert(
-  /walked out/i.test(text('run-results')),
-  'and says you walked out rather than died',
+  /back at camp/i.test(text('run-results')),
+  'and says you came back rather than died',
   text('run-results').slice(0, 60)
+);
+assert(
+  dockItems().length >= carried,
+  'and nothing you were carrying was taken off you for leaving',
+  `${carried} before, ${dockItems().length} after`
 );
 $('run-again').click();
 assert(
-  !viewport.classList.contains('viewport--locked'),
-  'the frame unfreezes once the map is gone'
+  document.body.dataset.runPhase === 'menu' && $('camp').hidden === false,
+  'and going back comes up in the camp',
+  document.body.dataset.runPhase
 );
-assert($('run-menu').hidden === false, 'and going back returns to the menu');
-assert($('run-stagewrap').hidden === true, 'map hidden after abandoning');
+assert($('run-menu').hidden === true, 'with the crack shut until you click it');
 
 // --- character sheet ------------------------------------------------------
 assert($('sheet').hidden === true, 'character sheet starts closed');
@@ -1237,10 +1532,10 @@ $('open-character').click();
 assert($('sheet').hidden === false, 'character sheet opens');
 
 const slots = all('#sheet-slots .slotcell');
-assert(slots.length === 8, 'all eight equipment slots shown', String(slots.length));
+assert(slots.length === 9, 'every equipment slot shown', String(slots.length));
 
 const worn = all('#sheet-slots .slotcell__btn--worn');
-assert(worn.length === 8, 'starter set fills every slot', String(worn.length));
+assert(worn.length === 9, 'starter set fills every slot', String(worn.length));
 assert(all('#sheet-stats .stat').length >= 5, 'sheet lists the character’s own stats');
 
 // --- three sections, one per slot ------------------------------------------
@@ -1357,7 +1652,15 @@ assert(
 // Level 1 has none, which is the state the dev kit starts in — so the first
 // thing to prove is that nothing is offered before a level pays for one.
 const attrRows = all('#sheet-attrs .attr');
-assert(attrRows.length === 4, 'four attributes on the sheet', String(attrRows.length));
+assert(attrRows.length === 6, 'six attributes on the sheet', String(attrRows.length));
+// THE TOTAL, not the points spent. The dev kit's character has taken no trade
+// and worn nothing, so every one of them is honestly 0 here — the trade's own
+// spread is checked where a trade has been taken.
+assert(
+  attrRows.every((r) => /^\d+$/.test(r.querySelector('.attr__v')?.textContent ?? '')),
+  'and each reads a whole number: the TOTAL, not the points spent',
+  attrRows.map((r) => r.querySelector('.attr__v')?.textContent).join('/')
+);
 assert(
   attrRows.every((r) => r.querySelector('.attr__buy')?.disabled === true),
   'a level 1 character is offered nothing to spend'
@@ -1389,10 +1692,12 @@ assert(
 // Re-queried, not reused: every spend re-renders the block, so a row held
 // from before the level landed is a node no longer on the page.
 const granted = Number(text('sheet-attr-left').split(' ')[0]);
+const firstWas = Number(all('#sheet-attrs .attr')[0].querySelector('.attr__v')?.textContent ?? '0');
 all('#sheet-attrs .attr')[0].querySelector('.attr__buy').click();
 assert(
-  all('#sheet-attrs .attr')[0].querySelector('.attr__v')?.textContent === '1',
-  'clicking + puts one point in'
+  Number(all('#sheet-attrs .attr')[0].querySelector('.attr__v')?.textContent ?? '0') === firstWas + 1,
+  'clicking + puts one point in',
+  `${firstWas} → ${all('#sheet-attrs .attr')[0].querySelector('.attr__v')?.textContent}`
 );
 assert(
   text('sheet-attr-left') === `${granted - 1} to spend`,
@@ -1424,23 +1729,73 @@ assert(overCap.length === 0, 'no resistance exceeds the cap', String(overCap.len
 // Three depths now. The old screen put every skill and every node on one
 // page, which was fine at ten nodes and is a wall at a hundred.
 $('sheet-close').click();
-// --- three slots, and equipping into one -----------------------------------
+// --- the slot row, and equipping into one -----------------------------------
 // Equipping the passive must not stop you swinging: they are different slots,
 // and the button says which one it is talking about.
 {
   $('open-skills').click();
+  // Every slot is at the top of the screen — what you are holding, over the
+  // shelves it came off — INCLUDING the two nobody has reached yet: a slot you
+  // cannot fill is half the reason to keep levelling.
+  const slots = all('#skills-slots .slotcard');
+  assert(slots.length === 5, 'the top row is every slot', String(slots.length));
+  const locked = slots.filter((c) => c.classList.contains('slotcard--locked'));
+  assert(locked.length === 2, 'two of them locked at level 1', String(locked.length));
+  assert(
+    locked.every((c) => /level \d+/.test(c.textContent ?? '')),
+    'and each says which level opens it',
+    locked.map((c) => c.textContent).join(' | ')
+  );
+  assert(locked.every((c) => c.disabled), 'and neither can be clicked into');
+  assert(
+    slots.filter((c) => c.classList.contains('slotcard--empty')).length === 2,
+    'two of the three you HAVE are empty on a fresh character'
+  );
+
   all('#skills-cats .catcard').find((c) => /Passive/.test(c.textContent ?? '')).click();
-  const row = all('#skills-list .skillrow')[0];
+  assert(
+    all('#skills-list .shelfhead').length >= 1,
+    'a shelf opens under a header bar naming what is on it',
+    String(all('#skills-list .shelfhead').length)
+  );
+  const row = all('#skills-list .skilltile')[0];
   assert(!!row, 'the passive shelf has something on it');
+  assert(
+    (row.querySelector('.skilltile__name')?.textContent ?? '').length > 0 &&
+      !!row.querySelector('svg'),
+    'and a tile is a PICTURE with a name under it, not a paragraph',
+    row.textContent
+  );
+  // A webless skill is EQUIPPED by the click, so what it does has to be
+  // readable BEFORE the decision — one hover away rather than on the tile.
+  row.dispatchEvent(new window.MouseEvent('mouseenter', { bubbles: true }));
+  assert($('tooltip').hidden === false, 'hovering a tile raises its card');
+  assert(
+    /Critical/.test(text('tooltip')),
+    'and the card says what it DOES, before you pick it',
+    text('tooltip')
+  );
+  assert(
+    ($('tooltip').querySelector('.kw')?.textContent ?? '') !== '',
+    'with its keywords marked, like everywhere else they appear'
+  );
+  row.dispatchEvent(new window.MouseEvent('mouseleave', { bubbles: true }));
   row.click();
-  const equip = $('skills-equip');
-  assert(/passive/i.test(equip.textContent ?? ''), 'and the button names its slot', equip.textContent);
-  equip.click();
-  assert(/equipped/i.test(equip.textContent ?? ''), 'equipping it takes', equip.textContent);
-  // Back to the top before leaving: the screen remembers where it was, and
-  // every check below this one opens it expecting the categories.
+  assert(
+    $('skills-detail').hidden === true,
+    'a passive never opens a tree — there is not going to be one'
+  );
+  assert(
+    all('#skills-list .skilltile')[0].classList.contains('skilltile--on'),
+    'clicking it equipped it instead',
+    all('#skills-list .skilltile')[0].className
+  );
   $('skills-back').click();
-  $('skills-back').click();
+  assert(
+    all('#skills-slots .slotcard').filter((c) => c.classList.contains('slotcard--empty')).length === 1,
+    'and the slot row says so at the top'
+  );
+
   $('skills-close').click();
   $('open-character').click();
   assert(
@@ -1465,11 +1820,47 @@ assert($('skills').hidden === false, 'skills modal opens');
 assert($('skills-cats').hidden === false, 'it opens on the categories');
 assert($('skills-list').hidden === true, 'not on a skill list');
 assert($('skills-detail').hidden === true, 'and not on a web');
-assert(all('#skills-cats .catcard').length === 4, 'four categories offered');
+assert(all('#skills-cats .catcard').length === 3, 'three shelves offered');
 assert($('skills-back').hidden === true, 'nothing to go back to from the top');
 
-// All four shelves have something on them now: a character holds three skills
-// at once, one out of each of three slots.
+// A second way to move, and both of them have a web to spend points in — the
+// movement slot is a build decision now rather than a fixed convenience.
+{
+  const movement = all('#skills-cats .catcard').find((c) => /Movement/.test(c.textContent ?? ''));
+  movement.click();
+  const rows = all('#skills-list .skilltile');
+  assert(rows.length === 2, 'the movement shelf holds Blink and Leap', String(rows.length));
+  // The badge is only drawn for a skill that HAS a web with a point waiting,
+  // so its presence is the claim: both movers have one to spend in.
+  assert(
+    rows.every((r) => !!r.querySelector('.skilltile__spare')),
+    'and each has a web with a point waiting in it',
+    rows.map((r) => r.textContent).join(' | ')
+  );
+  rows.find((r) => /Leap/.test(r.textContent ?? '')).click();
+  assert($('skills-detail').hidden === false, 'Leap opens its own web');
+  assert(all('#skills-web .web__node').length === 9, 'nine nodes in it',
+    String(all('#skills-web .web__node').length));
+  assert(
+    all('#skills-web .web__node--notable').length === 3,
+    'three of them notable, one at the tip of each arm',
+    String(all('#skills-web .web__node--notable').length)
+  );
+  assert(
+    /6 at level 6/.test(text('skills-sub')),
+    'and six points to spend at most, not thirty',
+    text('skills-sub')
+  );
+  $('skills-close').click();
+}
+
+// It opens at the TOP, whatever it was showing when you shut it.
+$('open-skills').click();
+assert($('skills-cats').hidden === false, 'reopening lands on the categories again');
+assert($('skills-detail').hidden === true, 'never three deep where you left it');
+
+// Every shelf has something on it now: a character holds three kinds of skill
+// at once, and attacks and spells share one shelf.
 const cats = all('#skills-cats .catcard');
 assert(
   cats.filter((c) => c.disabled).length === 0,
@@ -1488,17 +1879,40 @@ cats[0].click();
 assert($('skills-cats').hidden === true, 'picking a category leaves the categories');
 assert($('skills-list').hidden === false, 'and shows what is on that shelf');
 assert($('skills-back').hidden === false, 'with a way back');
-assert(all('#skills-list .skillrow').length === 2, 'both spells listed');
+assert(all('#skills-list .skilltile').length === 8, 'every ability on the shelf is listed');
+
+// A SHELF you can search. Filters what is DRAWN and never what is held, and
+// it reads a skill's own card — so a damage type finds the skill that deals it.
+{
+  const box = $('skills-shelffind');
+  assert(box.hidden === false, 'the shelf carries a search box');
+  const all8 = all('#skills-list .skilltile').length;
+  box.value = 'poison';
+  box.dispatchEvent(new window.Event('input', { bubbles: true }));
+  const tiles = all('#skills-list .skilltile');
+  assert(tiles.length > 0 && tiles.length < all8,
+    'searching narrows the shelf', `${all8} -> ${tiles.length} for "poison"`);
+  assert(/Blight/.test(tiles.map((t) => t.textContent).join(' ')),
+    'and finds a skill by what it DEALS rather than what it is called',
+    tiles.map((t) => t.textContent).join(' '));
+  box.value = 'qqzz';
+  box.dispatchEvent(new window.Event('input', { bubbles: true }));
+  assert(all('#skills-list .skilltile').length === 0, 'a search matching nothing draws nothing');
+  box.value = '';
+  box.dispatchEvent(new window.Event('input', { bubbles: true }));
+  assert(all('#skills-list .skilltile').length === all8, 'and clearing it puts the shelf back',
+    String(all('#skills-list .skilltile').length));
+}
 
 // Back really does go back.
 $('skills-back').click();
 assert($('skills-cats').hidden === false, 'back returns to the categories');
 cats[0].click();
 
-const fireballRow = all('#skills-list .skillrow').find((b) =>
+const fireballRow = all('#skills-list .skilltile').find((b) =>
   /Fireball/.test(b.textContent ?? '')
 );
-assert(!!fireballRow, 'Fireball is on the spell shelf');
+assert(!!fireballRow, 'Fireball is on the ability shelf, beside the attacks');
 fireballRow.click();
 assert($('skills-detail').hidden === false, 'opening a skill shows its web');
 assert($('skills-list').hidden === true, 'and leaves the list behind');
@@ -1507,13 +1921,39 @@ assert($('skills-list').hidden === true, 'and leaves the list behind');
 const webNodes = () => all('#skills-web .web__node');
 
 // It opens zoomed in, at a size where you can read a node — not fitted to the
-// box, which for a hundred nodes is a grey smear. So it starts partial, and
-// only Fit shows the whole thing.
-const zoomedIn = webNodes().length;
-assert(zoomedIn < 100, 'it opens on part of the web, not all of it', String(zoomedIn));
+// box, which for a hundred nodes is a grey smear. The web is BUILT WHOLE and
+// one transform aims at part of it, so what is on screen is the camera's
+// business rather than the DOM's: Fit pulls that camera back.
+const viewScale = () =>
+  Number(/scale\(([\d.]+)\)/.exec($('skills-web').style.transform ?? '')?.[1] ?? 0);
+
+// FINDING A NODE. A web of a hundred and eleven is one you scroll past the
+// node you wanted; the box DIMS what does not match rather than hiding it, so
+// the shape of the web — which is the distance, which is the price — still reads.
+{
+  const box = $('skills-find');
+  const marked = (cls) => all(`#skills-web .${cls}`).length;
+  assert(marked('web__node--miss') === 0, 'nothing is dimmed before a search');
+  box.value = 'critical';
+  box.dispatchEvent(new window.Event('input', { bubbles: true }));
+  assert($('skills-web').classList.contains('web--finding'), 'the web knows it is being searched');
+  const hits = marked('web__node--hit');
+  assert(hits > 0 && hits < webNodes().length, 'the matches are marked',
+    `${hits} of ${webNodes().length}`);
+  assert(marked('web__node--miss') === webNodes().length - hits,
+    'and everything else is dimmed rather than removed',
+    `${marked('web__node--miss')} dimmed, ${webNodes().length} nodes`);
+  box.value = '';
+  box.dispatchEvent(new window.Event('input', { bubbles: true }));
+  assert(marked('web__node--miss') === 0 && marked('web__node--hit') === 0,
+    'and clearing it puts the whole web back');
+}
+const zoomedIn = viewScale();
+assert(zoomedIn > 0, 'the web is aimed by one transform', String(zoomedIn));
+assert(webNodes().length === 111, 'and built whole, every node once', String(webNodes().length));
 
 $('skills-fit').click();
-assert(webNodes().length === 112, 'every node, once fitted', String(webNodes().length));
+assert(viewScale() < zoomedIn, 'and Fit pulls back to all of it', `${zoomedIn} -> ${viewScale()}`);
 assert(
   all('#skills-web .web__node--notable').length === 28,
   'twenty-eight of them notable',
@@ -1525,7 +1965,7 @@ assert(
   all('#skills-web .web__node--notable.web__node--open').length === 0,
   'and none of them is a first move'
 );
-assert(all('#skills-web .web__edge').length > 100, 'and it is a web, not a list');
+assert(all('#skills-web .web__chain').length > 100, 'and it is a web, not a list');
 
 // The centre is an icon, not a word.
 assert(
@@ -1686,14 +2126,14 @@ assert($('skills').hidden === true, 'and only then closes');
 // that lost a branch still builds, and still draws, just smaller.
 $('open-skills').click();
 for (const [skill, shelf, total, notables] of [
-  ['Strike', 'Attacks', 115, 29],
-  ['Fireball', 'Spells', 112, 28],
-  ['Creeping Blight', 'Spells', 119, 30],
+  ['Strike', 'Abilities', 114, 29],
+  ['Fireball', 'Abilities', 111, 28],
+  ['Creeping Blight', 'Abilities', 118, 30],
 ]) {
   const card = all('#skills-cats .catcard').find((c) => c.textContent?.includes(shelf));
   assert(!!card, `${shelf} is a shelf you can open`);
   card.click();
-  const row = all('#skills-list .skillrow').find((b) => b.textContent?.includes(skill));
+  const row = all('#skills-list .skilltile').find((b) => b.textContent?.includes(skill));
   assert(!!row, `${skill} is on the ${shelf} shelf`);
   row.click();
 
@@ -1726,8 +2166,8 @@ $('skills-close').click();
 // applied where the working cannot show it is how the two stop matching.
 {
   $('open-skills').click();
-  all('#skills-cats .catcard').find((c) => c.textContent?.includes('Spells')).click();
-  all('#skills-list .skillrow').find((b) => b.textContent?.includes('Creeping Blight')).click();
+  all('#skills-cats .catcard').find((c) => c.textContent?.includes('Abilities')).click();
+  all('#skills-list .skilltile').find((b) => b.textContent?.includes('Creeping Blight')).click();
   $('skills-equip').click();
 
   // Canopy is the node that made this necessary: it buys a wider cloud with
@@ -1802,17 +2242,18 @@ $('skills-close').click();
     document.querySelector('.dmgrow--sum')?.textContent
   );
 
-  // A mace does nothing for a spell. The sheet no longer explains that in
-  // prose, so the mod line has to carry it — in the dock BEFORE you equip, and
-  // on the worn slot after. A cudgel has no rolled mods at all, which is how
-  // the sheet's tooltip came to print "no modifiers" over the only line on it.
+  // A weapon SAYS what it swings for, before you wear it — the number every
+  // increase rolled on the piece scales, and the reason two of one base are not
+  // one weapon. It says Attacks too: a mace does nothing for a spell, and the
+  // sheet no longer explains that in prose. A cudgel has no rolled mods at all,
+  // which is how the sheet's tooltip came to print "no modifiers" over it.
   const mace = filled('#inv-gear').find((b) => /cudgel|maul/i.test(named(b)));
   assert(!!mace, 'the dev kit carries a mace to test with', filled('#inv-gear').map(named).join(' | '));
 
   mace.dispatchEvent(new window.MouseEvent('mouseenter', { bubbles: true }));
   assert(
-    /Damage to Attacks/.test(text('tooltip')),
-    'a mace says its damage is for Attacks, before you wear it',
+    /\d+\s*Physical Damage to Attacks/.test(text('tooltip')),
+    'a mace says what it swings for, and that it is for Attacks, before you wear it',
     text('tooltip')
   );
   mace.dispatchEvent(new window.MouseEvent('mouseleave', { bubbles: true }));
@@ -1834,7 +2275,7 @@ $('open-character').click();
 const invBefore = invItems().length;
 worn[0].click();
 assert(
-  all('#sheet-slots .slotcell__btn--worn').length === 7,
+  all('#sheet-slots .slotcell__btn--worn').length === 8,
   'unequipping empties the slot'
 );
 assert(invItems().length === invBefore + 1, 'unequipped item returns to inventory');
@@ -1863,7 +2304,7 @@ assert(/wear as/i.test(named(lit[0])), 'the lit slot says what clicking does', n
 
 lit[0].click();
 assert(
-  all('#sheet-slots .slotcell__btn--worn').length === 8,
+  all('#sheet-slots .slotcell__btn--worn').length === 9,
   're-equipping fills the slot'
 );
 assert(invItems().length === invBefore, 'equipped item leaves the inventory');
@@ -1900,7 +2341,7 @@ const purse = () => Number(text('wallet').match(/\d+/)?.[0] ?? 0);
 // Crystals are a standing choice, not stock, so nothing offers to buy or sell
 // one — and the screen that holds them has no route to either.
 {
-  $('open-crystals').click();
+  $('camp-socket0').click();
   const labels = crystalCards().flatMap((c) =>
     [...c.querySelectorAll('button')].map((b) => b.textContent ?? '')
   );
@@ -1913,7 +2354,7 @@ const purse = () => Number(text('wallet').match(/\d+/)?.[0] ?? 0);
 // old bulk button could only take the heap nothing had been spent on, so the
 // pieces you actually wanted rid of still came out one right-click at a time.
 {
-  $('open-shop').click();
+  openCounter();
   const mode = () => $('shop-sell');
   assert(/sell mode/i.test(text('shop-sell')), 'the counter offers a sell mode', text('shop-sell'));
   assert(
@@ -1992,8 +2433,10 @@ assert($('history').hidden === true, 'history closes');
 // --- three slots -----------------------------------------------------------
 // The hosted build has no server behind it, so localStorage is the whole save.
 // A reload that starts you over is the one bug this feature can have — and now
-// that there are three of them, so is writing into the wrong one. Left near
-// the end on purpose: the last part of it really does wipe everything.
+// that there are three of them, so is writing into the wrong one. The model is
+// SELECT then act: a click picks a slot, and Play now, Save here and Delete
+// all act on the pick. Left near the end on purpose: the last part of it
+// really does wipe everything.
 {
   const stored = (slot) => {
     const raw = window.localStorage.getItem(`crystal-core.save.${slot}`);
@@ -2001,7 +2444,13 @@ assert($('history').hidden === true, 'history closes');
   };
 
   assert(stored(1) !== null, 'the game writes a save');
-  assert(stored(1).version === 1, 'stamped with the format it was written in');
+  // The FORMAT it was written in, whatever that number is today: what must
+  // hold is that the stamp is there and is a whole one, not that it is 1.
+  assert(
+    Number.isInteger(stored(1).version) && stored(1).version >= 1,
+    'stamped with the format it was written in',
+    `version ${stored(1).version}`
+  );
   assert(stored(2) === null, 'and only into the slot being played', 'slot 2 was written');
 
   $('open-save').click();
@@ -2017,39 +2466,57 @@ assert($('history').hidden === true, 'history closes');
     'the one you are playing says so',
     $('save-row-1').className
   );
-  // The live row offers nothing: a slot is somewhere to keep a game, not
-  // somewhere to remember to save one.
-  assert($('save-copy-1') === null && $('save-load-1') === null, 'and offers no buttons');
+  assert(
+    $('save-row-1').classList.contains('saveslot--picked'),
+    'and starts selected',
+    $('save-row-1').className
+  );
+  // The box is who is in it and nothing else: name, trade and level.
+  assert(/level \d+/i.test(text('save-row-1')), 'a held slot says its level', text('save-row-1'));
+  assert(
+    !/saved|ago/i.test(text('save-row-1')),
+    'and no longer narrates when it saved',
+    text('save-row-1')
+  );
   assert(/empty/i.test(text('save-row-2')), 'an empty slot says so', text('save-row-2'));
-  assert(!!$('save-new-2'), 'and offers to start a game there');
+  // Deleting the slot you are standing in is a question nobody meant to ask.
+  assert($('save-delete').disabled === true, 'Delete refuses the slot you are playing');
 
-  // Copying is how a second slot gets filled without leaving this game.
+  $('save-row-2').click();
+  assert($('save-row-2').classList.contains('saveslot--picked'), 'clicking a slot selects it');
+  assert(!$('save-row-1').classList.contains('saveslot--picked'), 'one selection at a time');
+
+  // Save here fills the selected slot with the live game.
   const owned = dockItems().length;
-  $('save-copy-2').click();
-  assert(stored(2) !== null, 'Copy here fills the other slot');
+  $('save-here').click();
+  assert(stored(2) !== null, 'Save here fills the selected slot');
   assert(
     stored(2).character.name === stored(1).character.name,
     'with the game you are playing',
     `${stored(2)?.character?.name} vs ${stored(1)?.character?.name}`
   );
-  assert(!!$('save-load-2'), 'and it now offers to be loaded');
   assert(
     window.localStorage.getItem('crystal-core.slot') !== '2',
-    'copying does not move you into it',
+    'saving does not move you into it',
     window.localStorage.getItem('crystal-core.slot') ?? '(unset)'
   );
 
-  // Loading asks first — it is the one action that puts a different game in
-  // front of you, and the answer arrives a microtask after the click.
-  $('save-load-2').click();
-  assert($('confirm').hidden === false, 'Load asks before it switches');
+  // Saving over a held game is the one save that destroys one, so it warns.
+  $('save-here').click();
+  assert($('confirm').hidden === false, 'Save here over a held game asks first');
+  document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+  assert($('confirm').hidden === true, 'Escape answers it no');
+
+  // Playing another game asks first — it puts a different game in front of
+  // you, and the answer arrives a microtask after the click.
+  $('save-play').click();
+  assert($('confirm').hidden === false, 'Play now on another game asks before it switches');
   assert(
     document.activeElement === $('confirm-no'),
     'and focus starts on Cancel',
     document.activeElement?.id ?? '(none)'
   );
   document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
-  assert($('confirm').hidden === true, 'Escape answers it no');
   await new Promise((r) => setTimeout(r, 0));
   assert(
     window.localStorage.getItem('crystal-core.slot') !== '2',
@@ -2057,7 +2524,7 @@ assert($('history').hidden === true, 'history closes');
     window.localStorage.getItem('crystal-core.slot') ?? '(unset)'
   );
 
-  $('save-load-2').click();
+  $('save-play').click();
   $('confirm-yes').click();
   await new Promise((r) => setTimeout(r, 0));
   assert(
@@ -2072,14 +2539,25 @@ assert($('history').hidden === true, 'history closes');
     `${dockItems().length} vs ${owned}`
   );
 
-  // A new game is a thing you do to a SLOT. Nothing is lost by it: what you
-  // were playing is still in the slot you left.
+  // Delete acts on the selection, with a warning of its own.
   $('open-save').click();
-  $('save-new-3').click();
+  $('save-row-1').click();
+  assert($('save-delete').disabled === false, 'a held slot you are not in can be deleted');
+  $('save-delete').click();
+  assert($('confirm').hidden === false, 'Delete asks first');
+  $('confirm-yes').click();
+  await new Promise((r) => setTimeout(r, 0));
+  assert(stored(1) === null, 'and the slot is gone');
+  assert(stored(2) !== null, 'while the others stay');
+
+  // A new game is Play now on an EMPTY slot. Nothing is lost by it: what you
+  // were playing is still in the slot you left.
+  $('save-row-3').click();
+  $('save-play').click();
   await new Promise((r) => setTimeout(r, 0));
   assert(
     window.localStorage.getItem('crystal-core.slot') === '3',
-    'New game starts in the slot you pressed it on',
+    'Play now on an empty slot starts a new game there',
     window.localStorage.getItem('crystal-core.slot') ?? '(unset)'
   );
   assert(
@@ -2142,7 +2620,8 @@ assert(
 {
   // The slot tests above ended on a NEW game, so there is nothing in the dock
   // to search. Restock — this is the last check in the file.
-  $('dev-kit').click();
+  $('open-dev').click();
+$('dev-kit').click();
   $('confirm-yes').click();
   await new Promise((r) => setTimeout(r, 0));
 
@@ -2214,14 +2693,13 @@ assert(
   $('open-trade').click();
   assert($('trade').hidden === false, 'and it opens a screen of its own');
   assert(
-    all('#trade-pick .catcard').length === 2,
-    'two trades are offered, and neither is picked for you',
+    all('#trade-pick .catcard').length === 4,
+    'four trades are offered, and none is picked for you',
     String(all('#trade-pick .catcard').length)
   );
-  assert($('trade-swap').hidden === true, 'and nothing offers to change one you do not have');
   assert(
     all('#trade-pick .catcard').every((c) => c.disabled === true),
-    'and neither can be taken up before a level has paid for a point'
+    'and none can be taken up before a level has paid for a point'
   );
   assert($('trade-webwrap').hidden === true, 'no web is drawn before one is taken up');
   assert(
@@ -2231,34 +2709,49 @@ assert(
   const before = text('trade-sub');
   assert(/\d/.test(before), 'the screen says which level hands over the first point', before);
 
-  // Five character levels buy the first point. Levelling is the only thing
-  // that does, which is what makes a trade the second job a level has.
+  // Five character levels buy the first PAIR, and a pair is what they come in:
+  // a notable is always two steps on, so an odd number would strand a build.
   $('trade-close').click();
   $('open-character').click();
   for (let i = 0; i < 6; i++) $('sheet-devlevel').click();
   $('sheet-close').click();
   assert(
-    $('open-trade').querySelector('.tabbadge')?.textContent === '1',
-    'the header says one trade point is waiting',
+    $('open-trade').querySelector('.tabbadge')?.textContent === '2',
+    'the header says a PAIR of trade points is waiting',
     $('open-trade').querySelector('.tabbadge')?.textContent ?? 'none'
   );
 
   $('open-trade').click();
   $('trade-pick-alchemist').click();
-  assert($('trade-webwrap').hidden === false, 'taking one up draws its web');
+  // Permanent, so it asks first — the one hard lock in a game that refunds
+  // everything else, and the only screen that has earned a confirm.
+  assert($('confirm').hidden === false, 'taking one up asks first, because it is for good');
+  $('confirm-yes').click();
+  await new Promise((r) => setTimeout(r, 0));
+  assert($('trade-webwrap').hidden === false, 'and then it draws its web');
   assert(
-    all('#trade-web .web__node').length === 20,
-    'twenty nodes, drawn to fit rather than scrolled',
+    all('#trade-web .web__node').length === 50,
+    'fifty nodes: five spokes of a minor, a gate and two branches of four',
     String(all('#trade-web .web__node').length)
   );
+  // It ROAMS now, like the skills web and through the same camera.
+  assert($('trade-fit') !== null, 'and it has a Fit button, so it is a map rather than a picture');
   assert(
-    $('trade-web').querySelector('.web--drag') === null &&
-      window.getComputedStyle($('trade-web')).cursor === 'default',
-    'and it is a picture rather than a map — nothing to drag'
+    /translate/.test($('trade-web').style.transform),
+    'the camera is a transform on the SVG element, never a rebuild per frame',
+    $('trade-web').style.transform
   );
 
   const open = () => all('#trade-web .web__node--open');
   assert(open().length === 5, 'five ways in, one per spoke', String(open().length));
+  // The FORK: nothing past a gate is reachable until the gate is.
+  assert(
+    all('#trade-web .web__node--locked').length === 45,
+    'and everything past the first step is locked behind the walk to it',
+    String(all('#trade-web .web__node--locked').length)
+  );
+  // A PAIR IS A MINOR AND THE NOTABLE BEHIND IT, which is the whole rework:
+  // spend both and you are standing on a notable rather than one step short.
   open()[0].dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
   assert(
     all('#trade-web .web__node--on').length === 1,
@@ -2266,47 +2759,377 @@ assert(
     String(all('#trade-web .web__node--on').length)
   );
   assert(
+    $('open-trade').querySelector('.tabbadge')?.textContent === '1',
+    'and the badge counts the other one of the pair down',
+    $('open-trade').querySelector('.tabbadge')?.textContent ?? 'none'
+  );
+  const second = open()[0];
+  assert(
+    second.classList.contains('web__node--notable'),
+    'the very next step is a NOTABLE, so the second of the pair lands on one'
+  );
+  second.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+  assert(
+    all('#trade-web .web__node--on.web__node--notable').length === 1,
+    'spending it takes the notable',
+    String(all('#trade-web .web__node--on.web__node--notable').length)
+  );
+  assert(
     $('open-trade').querySelector('.tabbadge') === null,
     'and the badge goes away rather than reading 0'
   );
-  assert(open().length === 0, 'nothing else lights up with nothing left to spend');
 
-  all('#trade-web .web__node--on')[0].dispatchEvent(
+  all('#trade-web .web__node--on.web__node--notable')[0].dispatchEvent(
     new window.MouseEvent('click', { bubbles: true })
   );
   assert(
-    all('#trade-web .web__node--on').length === 0 &&
+    all('#trade-web .web__node--on').length === 1 &&
       $('open-trade').querySelector('.tabbadge')?.textContent === '1',
     'clicking it again refunds the point',
     String(all('#trade-web .web__node--on').length)
   );
 
-  // Changing trade names its price. Nothing is unforgiving in this game.
+  // A trade is taken up ONCE: the one hard lock in a game that refunds
+  // everything else, and the user's own call.
   assert(
-    /\d+ gold/.test(text('trade-swap')),
-    'and swapping says what it costs, in figures',
-    text('trade-swap')
+    $('trade-swap') === null && $('trade-pick').hidden === true,
+    'nothing on the screen offers a different trade once one is taken up'
   );
-  $('trade-swap').click();
-  assert(
-    $('trade-pick').hidden === false && $('trade-webwrap').hidden === true &&
-      all('#trade-pick .catcard').length === 1,
-    'asking to change offers the other trade, and only the other one',
-    String(all('#trade-pick .catcard').length)
-  );
-  $('trade-swap').click();
-  assert($('trade-webwrap').hidden === false, 'and backing out puts the web back');
   $('trade-close').click();
   assert($('trade').hidden === true, 'and it closes again');
 }
 
-// --- keeping going is not a choice ----------------------------------------
-// Chaining descents is what this game is; Leave after this run and Abandon are
-// the two ways out and there is no third.
-assert($('run-repeat') === null, 'no checkbox offers to make the idle game not idle');
+// --- THE STATIONS: five doors into one room, and a job that moves on a clear -
+{
+  // NOT ON THE RAIL, like the shelf and the fire: the station in the picture
+  // is the way in, and it opens on its OWN tab.
+  assert($('open-work') === null, 'the rail has no button for a station');
+  $('camp-loom').click();
+  assert($('work').hidden === false, 'and the loom in the camp opens the stations');
+  assert(
+    $('work-tab-cloth').className.includes('climbtab--on'),
+    'on the tab of the station you actually clicked, not the first one',
+    $('work-tabs').textContent?.slice(0, 60)
+  );
+  assert(
+    all('#work-tabs .climbtab').length === 5,
+    'five professions, five tabs',
+    String(all('#work-tabs .climbtab').length)
+  );
+  // THE KIT'S RAW IS IN THE BAG, so the tab lists it with what a batch makes
+  // and the MINUTES it takes: a job's cost is said before it is loaded.
+  assert(
+    /\d+ → \d+ Bolts?, \d+ minutes/.test($('work-raw').textContent ?? ''),
+    'and a raw stack says what a batch of it becomes, and the minutes it takes',
+    $('work-raw').textContent?.slice(0, 60)
+  );
+  assert(
+    /Load raw/i.test($('work-jobs').textContent ?? '') && /0\/\d+ workers busy/.test($('work-slots').textContent ?? ''),
+    'and nothing is on any station yet: every worker the kit rescued is idle',
+    `${$('work-jobs').textContent?.slice(0, 40)} · ${$('work-slots').textContent}`
+  );
+
+  // ANOTHER STATION IS THE SAME ROOM. What differs is the tab.
+  $('work-close').click();
+
+  // THE PROFESSIONS PAGE, and the tool slots beside the gear. Nine skills with
+  // a level each, and clicking one says what its levels buy.
+  $('open-character').click();
+  $('sheet-tab-professions').click();
+  assert(
+    all('#sheet-proflist .crystal').length === 9,
+    'the sheet has a second page listing all nine professions',
+    String(all('#sheet-proflist .crystal').length)
+  );
+  $('sheet-prof-mining').click();
+  const steps = $('sheet-profsteps').textContent ?? '';
+  assert(
+    /Mining/.test(steps) && /level 20/.test(steps) && /every node/.test(steps),
+    'and clicking one says what its levels buy, in figures',
+    steps.slice(0, 90)
+  );
+  $('sheet-tab-gear').click();
+  assert(
+    $('slot-gather') !== null && $('slot-rod') !== null
+      && all('#sheet-tools .slotcell').length === 2,
+    'and the gear page carries the two tool slots, which ARE gear slots — same id, same box',
+    String(all('#sheet-tools .slotcell').length)
+  );
+  $('sheet-close').click();
+  $('camp-smelter').click();
+  assert(
+    $('work').hidden === false && $('work-tab-metal').className.includes('climbtab--on'),
+    'and the smelter opens the same screen on Blacksmithing',
+    $('work-tabs').textContent?.slice(0, 40)
+  );
+  assert(
+    /Level 1/.test($('work-xp').textContent ?? ''),
+    'every profession starts at level 1, and the screen says so in numbers',
+    $('work-xp').textContent
+  );
+  $('work-close').click();
+  assert($('work').hidden === true, 'and it closes again');
+
+  // THE WORKERS ARE THE SLOTS: the kit rescued all four, each a card on the
+  // screen and a body in the camp on its own layer, and a body opens the
+  // stations rather than a conversation.
+  $('camp-smelter').click();
+  assert(
+    all('#work-jobs .quest').length === 4 && /idle/i.test($('work-jobs').textContent ?? ''),
+    'four rescued workers are four cards, every one idle',
+    String(all('#work-jobs .quest').length)
+  );
+  $('work-close').click();
+  const crew = all('#camp-workers .camp__hot');
+  assert(crew.length === 4, 'and four bodies stand in the camp on the workers\' own layer', String(crew.length));
+  crew[0].click();
+  assert($('work').hidden === false && $('parley').hidden === true, 'and clicking one opens the stations, not a conversation');
+  $('work-close').click();
+}
+
+// --- COOKING: a buff that lasts RUNS --------------------------------------
+{
+  $('camp-kitchen').click();
+  assert(
+    $('work').hidden === false && $('work-tab-fish').className.includes('climbtab--on'),
+    'the kitchen opens the stations on Cooking'
+  );
+  // WITH NOTHING EATEN it says so, and says where a meal comes from: a buff
+  // with no readout is a buff nobody plans around.
+  assert(
+    /Nothing eaten/i.test($('work-note').textContent ?? ''),
+    'and says what you are under, which is nothing yet',
+    $('work-note').textContent?.slice(-80)
+  );
+  $('work-close').click();
+
+  // THE VERB IS ON THE STACK. The processed fish IS the meal, so eating one is
+  // an action on it rather than a second recipe behind a second screen — and a
+  // row you can CLICK is what makes it reachable at all. The slots this
+  // replaced were disabled with no menu, so "Eat it" existed and could not be
+  // got at from anywhere in the game.
+  $('open-inventory').click();
+  dockTab('materials').click();
+  const cooked = all('#inv-materials .ledgerrow');
+  assert(cooked.length > 0, 'the dock is holding cooked material', String(cooked.length));
+  const fish = cooked.find((b) => !b.disabled && /fish|fin/i.test(named(b)));
+  assert(!!fish, 'and a cooked fish is a row you can click', cooked.map(named).join(' | ').slice(0, 90));
+  fish.click();
+  const items = () => all('#itemmenu .itemmenu__item');
+  const eat = items().find((b) => /eat it/i.test(b.textContent ?? ''));
+  assert(!!eat, 'whose menu offers to eat it', items().map((b) => b.textContent).join(' | '));
+  assert(!eat.disabled, 'and it is not greyed out, because the fish is cooked');
+  eat.click();
+  // AND IT LANDED: the kitchen is where what you are under is printed.
+  $('camp-kitchen').click();
+  assert(
+    /You are on /.test($('work-note').textContent ?? ''),
+    'and eating it is what the kitchen then says you are under',
+    $('work-note').textContent?.slice(-90)
+  );
+  $('work-close').click();
+  dockTab('gear').click();
+}
+
+// --- THE ANVIL: what a heap of material could become ----------------------
+{
+  assert($('open-forge') === null, 'the rail has no button for the anvil');
+  $('camp-anvil').click();
+  assert($('forge').hidden === false, 'and the anvil in the camp opens it');
+  assert(
+    all('#forge-tabs .climbtab').length === 8,
+    'one tab a SLOT and nothing else — a tool is the smith\'s, not the anvil\'s',
+    String(all('#forge-tabs .climbtab').length)
+  );
+  // EVERY BASE IS LISTED, craftable or not: a plan you cannot see is a plan
+  // nobody makes, so a row you cannot afford says why rather than vanishing.
+  const rows = () => all('#forge-list .crystal');
+  assert(rows().length > 5, 'and every base in that slot is on the list', String(rows().length));
+  assert(
+    rows().every((row) => /Tier \d/.test(row.textContent ?? '')),
+    'each saying its tier and the window the level buys',
+    rows()[0]?.textContent?.slice(0, 70)
+  );
+  const stopped = rows().filter((row) => row.querySelector('button')?.disabled);
+  assert(
+    stopped.every((row) => /\d/.test(row.querySelector('button')?.textContent ?? '')),
+    'and a row you cannot make says what it wanted, in numbers',
+    stopped[0]?.querySelector('button')?.textContent
+  );
+  // A CARD IS THREE BLOCKS: the piece, then a NEEDS LEDGER — the profession
+  // level and every stack it eats, held against wanted as two numbers — then
+  // the button. *"Clear what items are needed and what level is required."*
+  assert(
+    rows().every((row) => row.querySelectorAll('.forgeneed').length >= 2),
+    'every card carries a needs ledger: the level it asks and the stacks it eats',
+    String(rows()[0]?.querySelectorAll('.forgeneed').length)
+  );
+  assert(
+    rows().every((row) => /level\s*\d+ \/ \d+/.test(row.querySelector('.forgeneed')?.textContent ?? '')),
+    'each level line said as where you are against what it wants',
+    rows()[0]?.querySelector('.forgeneed')?.textContent
+  );
+  // THE FILTERS: a tier alone, or only what you can make now. *"Filter down
+  // to like just t1 weapons or t2."*
+  const before = rows().length;
+  $('forge-tier-1').click();
+  assert(
+    rows().length > 0 && rows().length < before && rows().every((row) => /Tier 1/.test(row.textContent ?? '')),
+    'tier 1 alone lists only tier 1 pieces',
+    `${rows().length} of ${before}`
+  );
+  $('forge-makeable').click();
+  assert(
+    rows().every((row) => !row.querySelector('button')?.disabled),
+    'and "can make now" leaves nothing you cannot',
+    String(rows().length)
+  );
+  $('forge-makeable').click();
+  $('forge-tier-0').click();
+  assert(rows().length === before, 'and every tier again is the whole list', `${rows().length} of ${before}`);
+  // JEWELLERY IS TWENTY IMPLICITS OVER TWO DRAWINGS. What tells two rings
+  // apart is the COLOUR, so a shared silhouette is the point rather than a gap.
+  $('forge-tab-ring').click();
+  const rings = all('#forge-list .crystal');
+  assert(rings.length >= 30, 'the rings tab lists a ring of every implicit at every rung', String(rings.length));
+  const shapes = new Set(rings.map((r) => r.querySelector('.icon')?.dataset.sprite));
+  assert(
+    shapes.size >= 10,
+    'and every implicit draws the ring in a colour of its own, off one shape',
+    String(shapes.size)
+  );
+  assert(
+    rings.every((row) => /at level \d/.test(row.textContent ?? '')),
+    'each saying the window its implicit would land in',
+    rings[0]?.textContent?.slice(0, 70)
+  );
+  $('forge-close').click();
+  assert($('forge').hidden === true, 'and it closes again');
+}
+
+// --- the Reckoning: the one web a level never pays for --------------------
+{
+  // NOT ON THE RAIL any more: the fire in the camp is the only way in.
+  assert($('open-trials') === null, 'the rail has no button for it');
+  $('camp-fire').click();
+  assert($('trials').hidden === false, 'and the fire opens a screen of its own');
+
+  const ledger = () => all('#trials-ladder .trialrow');
+  assert(ledger().length >= 12, 'the Ledger lists every grind there is, done or not', String(ledger().length));
+  assert(
+    all('#trials-ladder .trialrow--done').length === ledger().length,
+    'and the dev kit has ground all of them out, so the web can be walked',
+    String(all('#trials-ladder .trialrow--done').length)
+  );
+  // EVERY LINE SHOWS ITS COUNT. A grind is a thing to be partway through, so
+  // the row says how far and draws it — "open" is a switch and says nothing.
+  assert(
+    ledger().every((row) => /\d+ \/ \d+/.test(row.textContent)),
+    'and every one of them says its count, not just whether it is done',
+    ledger()[0]?.textContent?.slice(0, 60)
+  );
+  assert(
+    all('#trials-ladder .trialrow__fill').length === ledger().length,
+    'and draws that count as a bar',
+    String(all('#trials-ladder .trialrow__fill').length)
+  );
+  // ALWAYS OPEN. It used to wait on the Fissure being whole; a web nobody can
+  // look at is a plan nobody can make.
+  assert(
+    $('trials-webwrap').hidden === false,
+    'the web is open from the first descent',
+    String($('trials-webwrap').hidden)
+  );
+  assert(
+    /points spent/.test(text('trials-sub')) && /nodes/.test(text('trials-sub')),
+    'and says what is spent, what is left to earn, and how big it is',
+    text('trials-sub')
+  );
+
+  assert(
+    all('#trials-web .web__node').length === 156,
+    'a hundred and fifty-six nodes, built whole and roamed',
+    String(all('#trials-web .web__node').length)
+  );
+
+  // FOUR ways in, one per road off the middle — everything else is reached by
+  // walking, which is the whole of what makes a route a decision. The kit has
+  // been paid for the campaign, which is the whole of what opens any of them.
+  const openTrial = () => all('#trials-web .web__node--open');
+  assert(openTrial().length === 4, 'four roads out of the middle', String(openTrial().length));
+  openTrial()[0].dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+  assert(
+    all('#trials-web .web__node--on').length === 1,
+    'a point spends on the node you clicked',
+    String(all('#trials-web .web__node--on').length)
+  );
+  all('#trials-web .web__node--on')[0].dispatchEvent(
+    new window.MouseEvent('click', { bubbles: true })
+  );
+  assert(
+    all('#trials-web .web__node--on').length === 0,
+    'clicking it again refunds it',
+    String(all('#trials-web .web__node--on').length)
+  );
+  $('trials-close').click();
+  assert($('trials').hidden === true, 'and it closes again');
+}
+
+// --- the Proving Ground: one area, past the whole climb --------------------
+// *"A 4th tab that only has one area and its where you can socket the
+// crystals… the crystal sockets laid out like the fissure entrance in the camp
+// on top of the map."* The dev kit has been paid for the campaign, so the tab
+// is open; the three campaign tabs above it have no sockets on them at all.
+{
+  $('camp-crack').click();
+  assert($('run-menu').hidden === false, 'the crack opens the Fissure');
+  assert($('climb-tab-3').disabled === false, 'the Proving Ground is a tab of its own');
+  $('climb-tab-0').click();
+  assert(
+    all('.groundsockets .socket').length === 0,
+    'and a campaign tab has no sockets on it at all',
+    String(all('.groundsockets .socket').length)
+  );
+  $('climb-tab-3').click();
+  assert(
+    all('.groundsockets .socket').length >= 4,
+    'while the Proving Ground lays all four over its own map',
+    String(all('.groundsockets .socket').length)
+  );
+  assert(
+    all('.influences .climbtab').length === 3,
+    'and offers three influences, never the Seam, on the same tab every other row uses',
+    String(all('.influences .climbtab').length)
+  );
+  assert(
+    $('climb-influence-fissure').classList.contains('climbtab--on'),
+    'one of which is picked, and lit the way every other selected tab is'
+  );
+  const where = () => (document.querySelector('.climb__where')?.textContent ?? '').trim();
+  assert(/Proving Ground/.test(where()), 'and the readout says where you are going', where());
+  $('climb-influence-demonic').click();
+  assert(
+    $('climb-influence-demonic').classList.contains('climbtab--on')
+      && !$('climb-influence-fissure').classList.contains('climbtab--on'),
+    'clicking another moves the pick, and only one is ever on'
+  );
+  assert(/The Rot/.test(where()), 'and the readout follows it', where());
+  // BACK TO A DEPTH. Clicking a station is picking that depth, so the Proving
+  // Ground stops being where you are going the moment one is clicked.
+  $('climb-tab-0').click();
+  $('climb-pip-0-1').click();
+  assert(!/Proving Ground/.test(where()), 'and a depth takes it back', where());
+  $('run-menu-close').click();
+}
+
+// --- keeping going, and the one toggle that says how DEEP ------------------
+// Chaining descents is what this game is and it is still unconditional. The
+// toggle is about depth: grind a rung, then turn Climb on and let the clears
+// carry you. "Leave after this run" armed a stop one descent ahead and is gone.
+assert($('run-deeper') !== null, 'one toggle says whether a clear goes DEEPER');
 assert(
-  $('run-leave') !== null && $('run-abandon') !== null,
-  'and the two buttons that stop the loop are still there'
+  $('run-leave') === null && $('run-abandon') !== null,
+  'and the one button that stops the loop mid-descent is still there'
 );
 
 // --- windows: on top is what you touched last ------------------------------
@@ -2319,7 +3142,7 @@ assert(
   // prompt in a browser, where it lands before the frame is painted.
   const settled = () => Promise.resolve();
 
-  $('open-stash').click();
+  $('camp-shelf').click();
   await settled();
   $('open-history').click();
   await settled();
@@ -2364,30 +3187,27 @@ assert(
 }
 
 // --- going back for one you have already put down --------------------------
-// The dev kit is handed every key and every door, so the way back is a button
-// on the Fissure rather than a thing you farm for before you can test it.
+// The dev kit is handed every key and every door, so the FIFTH socket is on
+// the Fissure rather than a thing you farm for before you can test it. It is
+// NOT clicked here: socketing consumes the key and arms the next entry, and a
+// smoke that armed it would fight a boss in every launch below.
 {
-  const call = $('run-call');
-  assert(call !== null, 'the Fissure offers a way back to somebody you put down');
-  assert(call.hidden === false, 'and it is offered while you are holding the way in');
-  assert(/^Call /.test(call.textContent), 'it names who, before you press it', call.textContent);
-  assert(/1 /.test(call.textContent), 'and what it costs, in figures', call.textContent);
-
-  call.click();
-  assert(call.classList.contains('mini--on'), 'pressing it arms the call');
-  assert(/^Calling /.test(call.textContent), 'and says so', call.textContent);
-  assert(
-    /spent on entering/.test(call.textContent),
-    'naming when the key actually goes',
-    call.textContent
-  );
-  call.click();
-  assert(!call.classList.contains('mini--on'), 'and pressing it again puts the key back');
+  // It sits with the four, which is the Proving Ground's tab.
+  $('camp-crack').click();
+  $('climb-tab-3').click();
+  const socket = $('run-socket-key');
+  assert(socket !== null, 'the Fissure offers a keyhole under the crystal sockets');
+  assert(/^Set /.test(socket.textContent), 'it names the key it takes', socket.textContent);
+  assert(/\d+ held/.test(socket.textContent), 'and how many are held, in figures', socket.textContent);
+  assert(/Spends the key/.test(socket.textContent), 'and says the cost is the socketing itself', socket.textContent);
+  assert(!socket.disabled, 'an unarmed keyhole is clickable');
+  $('run-menu-close').click();
 }
 
-// --- he talks in the room, not over a sheet covering it --------------------
-// A scene IS a stop — nothing is ticking and the map is not yours to click —
-// so it does not need a scrim to prove it.
+// --- TALKING TO SOMEBODY IN THE CAMP ---------------------------------------
+// *"Then they can be in the camp and you can just talk to them."* The bubble is
+// the map's own, pinned over the body the picture drew, and what follows the
+// last line is whatever they are for.
 {
   assert($('speech') !== null, 'there is a bubble to say a line in');
   assert($('speech').hidden === true, 'and nothing is being said before anyone speaks');
@@ -2397,13 +3217,109 @@ assert(
   );
   assert(
     !$('met').classList.contains('modal--stop'),
-    'the Lampwright no longer paints a scrim over his own workshop'
+    'a conversation paints no scrim over the camp it is standing in'
   );
   assert(
     $('met').classList.contains('modal--speech') && $('met-card') !== null,
-    'his panel is the last bubble, anchored like every line before it'
+    'the handover is the last bubble, anchored like every line before it'
   );
   assert($('met-said') === null, 'and his words are beats rather than a block of text');
+
+  // Clicking a body in the camp starts one. The kit has met everybody, so
+  // there is somebody standing there to click.
+  const who = [...document.querySelectorAll('#camp-folk .camp__hot')];
+  assert(who.length > 0, 'everybody the kit has met is standing in the camp', String(who.length));
+  // A MARK over anybody holding something for you. The kit carries a specimen,
+  // so the man who wants one is wearing it and nobody else is.
+  const marked = [...document.querySelectorAll('#camp-folk .camp__mark')];
+  assert(marked.length > 0, 'and a mark over whoever has something for you', String(marked.length));
+  assert(
+    marked.length < who.length,
+    'but not over everybody, or it says nothing at all',
+    `${marked.length} of ${who.length}`
+  );
+  assert(
+    marked.every((m) => window.getComputedStyle(m).pointerEvents === 'none'),
+    'and the mark takes no pointer, so the click still lands on the person'
+  );
+  // *"A menu that says like Dialogue option / Shop / Exit."* Clicking a person
+  // asks what you want of them; talking is one of the answers.
+  who[0].click();
+  assert($('parley').hidden === false, 'and clicking one asks what you want of them');
+  assert(
+    $('parley-talk') !== null && $('parley-leave') !== null,
+    'with their words and a way out on it',
+    text('parley-list')
+  );
+  assert($('speech').hidden === true, 'and it does not start talking at you');
+  $('parley-talk').click();
+  assert($('parley').hidden === true, 'picking one puts the list away');
+  assert($('speech').hidden === false, 'and Talk is what starts them talking');
+  assert(
+    $('speech-said').textContent.trim().length > 0,
+    'with a line in the bubble',
+    $('speech-said').textContent
+  );
+  for (let i = 0; i < 12 && $('speech').hidden === false; i++) $('speech-next').click();
+  assert($('speech').hidden === true, 'and the last line ends the conversation');
+  if ($('met').hidden === false) $('met-take').click();
+  if ($('graft').hidden === false) $('graft-leave').click();
+  if ($('smith').hidden === false) $('smith-close').click();
+}
+
+// --- THE SMITH: one free tool, three verbs, and none of it at the anvil -----
+// He is where every tool comes from, so the whole chain is one person: the
+// mark says he is holding something, Talk leads to the pick, and the counter
+// and the reforge are the same list with another verb on the end.
+{
+  $('open-dev').click();
+  $('dev-meet-smithy').click();
+  $('dev-close').click();
+  const him = $('camp-who-smithy');
+  assert(him !== null, 'the smith is in the camp once you have met him',
+    all('#camp-folk .camp__hot').map((b) => b.id).join(', '));
+  him.click();
+  assert(
+    $('parley-talk') && $('parley-shop') && $('parley-upgrade') && $('parley-leave'),
+    'and he offers Talk, Shop and Upgrade — the three a tool ever needs',
+    text('parley-list')
+  );
+
+  // THE FREE ONE, at the end of the lines that promise it.
+  $('parley-talk').click();
+  for (let i = 0; i < 12 && $('speech').hidden === false; i++) $('speech-next').click();
+  assert($('smith').hidden === false, 'his last line opens the pick, because it promises one');
+  const offered = all('#smith-list button.mini');
+  assert(offered.length === 4, 'with all four tools on it', String(offered.length));
+  offered[0].click();
+  assert($('smith').hidden === true, 'taking one puts the window away');
+
+  $('open-inventory').click();
+  const carried = all('#inv-gear .slot')
+    .filter((b) => /pick/i.test(b.getAttribute('aria-label') ?? ''));
+  assert(carried.length === 1, 'and the tool is an ITEM, in the bag like anything else', String(carried.length));
+  $('inv-close').click();
+
+  // AND HE STOPS OWING IT. The mark is the same question `offer` answers.
+  him.click();
+  $('parley-shop').click();
+  assert($('smith').hidden === false, 'Shop opens his counter');
+  assert(
+    all('#smith-list button.mini').some((b) => /gold/i.test(b.textContent ?? '')),
+    'which asks for gold',
+    text('smith-list').slice(0, 80)
+  );
+  $('smith-close').click();
+  him.click();
+  $('parley-upgrade').click();
+  assert($('smith').hidden === false, 'and Upgrade opens the reforge');
+  assert(
+    all('#smith-list button.mini').some((b) => b.disabled),
+    'which refuses in numbers rather than doing nothing',
+    text('smith-list').slice(0, 80)
+  );
+  $('smith-close').click();
+  if (!$('parley').hidden) $('parley-leave').click();
 }
 
 // --- the Osteomancer's bench ----------------------------------------------
@@ -2413,20 +3329,185 @@ assert(
   assert($('graft').hidden === true, 'his bench starts closed');
   assert(
     $('graft').classList.contains('modal--speech') && $('graft-card') !== null,
-    'and it is the last bubble of his room rather than a screen'
+    'and it is the last bubble of the conversation rather than a screen'
   );
   assert(
     !$('graft').classList.contains('modal--stop'),
-    'so it paints no scrim over the room it is standing in'
+    'so it paints no scrim over the camp it is standing in'
   );
 
-  // The dev kit carries one, which is the whole of what schedules him.
+  // The dev kit carries one, which is the whole of what puts his bench up.
   assert(relicSlots().length > 0, 'the dev kit carries a specimen', String(relicSlots().length));
   assert($('inv-relics-col').hidden === false, 'and the column it lives in is up');
   assert(
     relicSlots().every((b) => b.disabled),
     'and nothing in it has a click: it is carried to a person, never spent'
   );
+
+  // WHO IS ABOUT IS THE CAMP'S, and the Fissure holds no second list of the
+  // same people — *"that's what the camp is for, you can talk to them there."*
+  const folk = [...document.querySelectorAll('[id^="run-visit-"]')];
+  assert(folk.length === 0, 'the Fissure lists nobody: talking to people is the camp', String(folk.length));
+  const inCamp = [...document.querySelectorAll('#camp-folk .camp__hot')];
+  assert(inCamp.length > 0, 'and everybody the kit has met is standing there instead', String(inCamp.length));
+  assert(
+    inCamp.every((b) => b.getAttribute('aria-label') !== ''),
+    'and each one says who they are'
+  );
+}
+
+// --- dual wielding, on the sheet -------------------------------------------
+// LAST, because it changes what both hands hold and a dozen checks above pick a
+// dock item by position. What has to hold is that the second weapon is WEARABLE
+// and that the sheet says what it is worth, in both its units.
+{
+  // The kit wears a shield, and a full off hand makes the second weapon offer
+  // to SWAP the main one instead. Clicking a worn slot is how it comes off.
+  $('open-character').click();
+  // A TRADE COMES DOWN WITH A SPREAD, and the sheet reads the total, so the
+  // rogue's own attributes are on it before a single point has been spent.
+  {
+    const rows = all('#sheet-attrs .attr');
+    const shown = rows.map((r) => Number(r.querySelector('.attr__v')?.textContent ?? '0'));
+    assert(
+      shown.every((n) => n >= 6) && Math.max(...shown) >= 15,
+      'a trade comes down with its own attribute spread, and the sheet totals it',
+      shown.join('/')
+    );
+  }
+  if ($('slot-offhand').classList.contains('slotcell__btn--worn')) $('slot-offhand').click();
+  assert(
+    !$('slot-offhand').classList.contains('slotcell__btn--worn'),
+    'the off hand empties when you click what is in it'
+  );
+  $('sheet-close').click();
+
+  $('open-inventory').click();
+  const oneHanded = () =>
+    filled('#inv-gear').filter((b) => /wear as (main|off) hand/i.test(named(b)));
+  const before = oneHanded().length;
+  assert(before >= 2, 'the dev kit carries more than one one-handed weapon', String(before));
+  // DUAL WIELDING IS ONE TRADE'S PRIVILEGE. This character is an Aethermancer,
+  // so the empty off hand is not on offer at all: a second weapon can only
+  // swap the main one.
+  const second = oneHanded()[0];
+  assert(
+    /wear as main hand/i.test(named(second)),
+    'a one-handed weapon offers the MAIN hand — this trade may not hold two',
+    named(second)
+  );
+  second.click();
+  $('open-character').click();
+  assert(
+    !/dual wielding/i.test(text('sheet')),
+    'and the sheet says nothing about dual wielding, because nothing is',
+    (text('sheet').match(/dual wielding[^.]*/i) ?? ['nothing'])[0]
+  );
+  $('sheet-close').click();
+}
+
+// --- AND THE ONE TRADE THAT MAY -------------------------------------------
+// A trade is chosen once and never changes, so standing a rogue up inside one
+// run of this means dealing a new game. The pair's arithmetic is the demo's;
+// what is checked here is that the SCREEN lets it happen at all.
+{
+  $('open-dev').click();
+  $('dev-kit').click();
+  $('confirm-yes').click();
+  await new Promise((r) => setTimeout(r, 0));
+  assert($('pick').hidden === false, 'a wipe asks who you are again');
+  $('pick-rogue').click();
+  $('pick-take').click();
+  $('welcome-name').value = 'Sallow';
+  $('welcome-go').click();
+
+  $('open-character').click();
+  // A TRADE COMES DOWN WITH A SPREAD, and the sheet reads the total, so the
+  // rogue's own attributes are on it before a single point has been spent.
+  {
+    const rows = all('#sheet-attrs .attr');
+    const shown = rows.map((r) => Number(r.querySelector('.attr__v')?.textContent ?? '0'));
+    assert(
+      shown.every((n) => n >= 6) && Math.max(...shown) >= 15,
+      'a trade comes down with its own attribute spread, and the sheet totals it',
+      shown.join('/')
+    );
+  }
+  if ($('slot-offhand').classList.contains('slotcell__btn--worn')) $('slot-offhand').click();
+  $('sheet-close').click();
+  $('open-inventory').click();
+  const oneHanded = () =>
+    filled('#inv-gear').filter((b) => /wear as (main|off) hand/i.test(named(b)));
+  const second = oneHanded()[0];
+  assert(
+    !!second && /wear as off hand/i.test(named(second)),
+    'a rogue is offered the empty OFF hand for a second weapon',
+    named(second ?? {})
+  );
+  second.click();
+
+  $('open-character').click();
+  const said = text('sheet');
+  assert(
+    /dual wielding: \d+% of .+ and \d+% of .+ in every hit/i.test(said),
+    'and the sheet says what each hand puts into a hit',
+    (said.match(/dual wielding[^.]*/i) ?? ['nothing'])[0]
+  );
+  assert(
+    /swinging at [\d.]+ and then [\d.]+ a second, alternately/i.test(said),
+    'and that the swing alternates between their two rates',
+    (said.match(/swinging at[^.]*/i) ?? ['nothing'])[0]
+  );
+  $('sheet-close').click();
+}
+
+// A FILLED SLOT CAN BE CHANGED, and only a character with TWO open passive
+// slots can prove it. *"When trying to change your second passive it only ever
+// changes your first."* A filled card used to jump to its web rather than arm,
+// so with every fitting slot full `targetSlotFor` fell back to the first one
+// and the second passive was the one thing you could fill once and never swap.
+{
+  $('open-character').click();
+  for (let i = 0; i < 45 && Number(text('sheet-level')) < 40; i++) $('sheet-devlevel').click();
+  const level = Number(text('sheet-level'));
+  $('sheet-close').click();
+  $('open-skills').click();
+  const passives = () => all('#skills-slots .slotcard')
+    .filter((c) => /passive/i.test(c.querySelector('.slotcard__slot')?.textContent ?? ''));
+  assert(
+    passives().filter((c) => !c.classList.contains('slotcard--locked')).length === 3,
+    `every passive slot is open at level ${level}`,
+    passives().map((c) => c.className).join(' | ')
+  );
+
+  // Fill the SECOND one, then change what is in it.
+  const held = () => passives().map((c) => c.querySelector('.slotcard__name')?.textContent ?? '');
+  const fill = async (at) => {
+    passives()[at].click();
+    const tile = all('#skills-list .skilltile').find((t) =>
+      !held().includes(t.querySelector('.skilltile__name')?.textContent ?? ''));
+    tile.click();
+    await new Promise((r) => setTimeout(r, 0));
+    if ($('confirm').hidden === false) $('confirm-yes').click();
+    await new Promise((r) => setTimeout(r, 0));
+    $('skills-back').click();
+  };
+  await fill(0);
+  await fill(1);
+  const before = held();
+  assert(
+    before[1] !== 'empty' && before[0] !== before[1],
+    'two passive slots hold two different passives',
+    before.join(' | ')
+  );
+  await fill(1);
+  const after = held();
+  assert(
+    after[1] !== before[1] && after[0] === before[0],
+    'and changing the SECOND one changes the second one, not the first',
+    `${before.join(' | ')}  ->  ${after.join(' | ')}`
+  );
+  $('skills-close').click();
 }
 
 assert(pageErrors.length === 0, 'no console errors during interaction', pageErrors.join(' | '));

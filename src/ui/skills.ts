@@ -1,27 +1,28 @@
 /**
- * The Skills screen: three depths, one question each.
+ * The Skills screen: three depths, one question each — which SHELF, which
+ * skill, its web. Back is how you go up and only one level is ever on screen,
+ * because a list beside a hundred-node web is a wall in front of the only
+ * thing you came here to do.
  *
- *   1  what KIND of skill — spells, attacks, passives, movement
- *   2  which one
- *   3  its web
- *
- * It used to be a list beside a web, which meant every skill you owned and
- * every node of the one you were looking at were on screen at the same time.
- * That was survivable with ten nodes. At a hundred it is a wall, and the wall
- * is in the way of the only thing you came here to do, which is decide where
- * the next point goes. So: Back is how you go up, and the screen only ever
- * shows one level.
- *
- * The web is a MAP, not a diagram. It does not fit in the window and it is not
- * meant to — you scroll to zoom and drag to move, the same as any other map,
- * because a hundred nodes shrunk to fit are a hundred dots you cannot read.
+ * The web is a MAP, not a diagram. It does not fit the window and is not meant
+ * to — scroll to zoom, drag to move, because a hundred nodes shrunk to fit are
+ * a hundred dots you cannot read.
  */
-import { SKILL_BY_ID, SKILL_CATEGORIES, SKILL_SLOT_BY_ID, skillsInCategory } from '../data';
+import {
+  SKILL_BY_ID,
+  SKILL_CATEGORIES,
+  SKILL_SHELVES,
+  SKILL_SLOTS,
+  SKILL_SLOT_BY_ID,
+  SHELF_BY_ID,
+  shelfForCategory,
+  skillsInCategory,
+} from '../data';
 import { GRANT_BY_ID } from '../sim/grants';
 import {
   CENTRE,
-  MAX_TREE_POINTS,
   blockedBy,
+  pointCapFor,
   canAllocate,
   canDeallocate,
   neighboursOf,
@@ -29,22 +30,41 @@ import {
   treePointsFor,
 } from '../skills-tree';
 import { categoryIcon, skillIcon } from './icons';
-import { disc, gem, stud, svgEl } from './webart';
+import { chain, frame, mount, svgEl } from './webart';
+import { bakedArt, nodeGlyph } from './webicons';
 import { attachTooltip, hideTooltip } from './tooltip';
+import { ask } from './confirm';
 import { nodeCard } from './glossary';
+import { warnAtCamp } from './atcamp';
+import { inDescent } from './run';
+import { slotWorkings } from '../skill-text';
+import { ailmentLine } from '../damage-text';
 import type { SkillNodeDef } from '../skills-tree';
-import { characterStats, convertedType, damageDetail, skillBase, treeGrants } from '../sim/stats';
-import { addSkillXp, equipSkill, equippedSkill, mainSkillId, skillProgress, slotForSkill, xpToNext } from '../sim/character';
-import { AILMENT_NAMES, DAMAGE_TYPE_BY_ID } from '../data';
+import { characterStats, convertedType, damageDetail, retag, skillBase, treeGrants } from '../sim/stats';
+import {
+  addSkillXp,
+  equipSkill,
+  equippedSkill,
+  skillProgress,
+  slotForSkill,
+  slotIsOpen,
+  targetSlotFor,
+  weaponWanted,
+  xpToNext,
+} from '../sim/character';
+import { AILMENT_BY_ID, DAMAGE_TYPE_BY_ID } from '../data';
+import { WebFind } from './websearch';
 import type { GameState } from '../game/state';
 import type { SkillCategory, SkillDef } from '../types';
 
 const $ = (id: string) => document.getElementById(id)!;
 
-/** The three depths of this screen, each with a stable id. */
-export const skillCatId = (categoryId: string): string => `skillcat-${categoryId}`;
+/** The three depths, each with a stable id. `skillcat-` names a SHELF now; the
+ *  prefix outlives what it names, and every harness still finds one. */
+export const skillCatId = (shelfId: string): string => `skillcat-${shelfId}`;
 export const skillRowId = (skillId: string): string => `skillrow-${skillId}`;
 export const skillNodeId = (nodeId: string): string => `skillnode-${nodeId}`;
+export const skillSlotCardId = (slotId: string): string => `skillslot-${slotId}`;
 
 function el(tag: string, cls?: string, text?: string): HTMLElement {
   const node = document.createElement(tag);
@@ -56,9 +76,44 @@ function el(tag: string, cls?: string, text?: string): HTMLElement {
 let game: GameState;
 let onChanged: (() => void) | null = null;
 
-/** Where you are. Null category means the top. */
-let category: SkillCategory | null = null;
+/** Where you are. Null shelf means the top. */
+let shelf: string | null = null;
 let viewing: string | null = null;
+/** Which slot the next pick fills, set by clicking an empty one. A MODE, so it
+ *  lives here and never in the save. */
+let arming: string | null = null;
+
+/** WHICH SLOT A PICK LANDS IN, the one answer both roads read. The slot you
+ *  CLICKED wins: with every fitting slot full `targetSlotFor` takes the first. */
+function slotFor(skillId: string): string | null {
+  const category = SKILL_BY_ID[skillId]?.category;
+  if (arming && category && SKILL_SLOT_BY_ID[arming]?.accepts.includes(category as never)) {
+    return arming;
+  }
+  return targetSlotFor(game.character, skillId);
+}
+
+/** What is DRAWN on a SHELF. Eight abilities is already a screen you scan;
+ *  the filter reads a skill's own card, so "poison" finds Blight. */
+let shelfFind = '';
+
+/** FINDING A NODE in the web that is open. The camera is this screen's own, so
+ *  focusing one is a pan and a re-apply rather than anything the box knows. */
+const find = new WebFind({
+  input: 'skills-find',
+  svg: 'skills-web',
+  nodes: () => (viewing ? treeFor(viewing) : []),
+  focus: (node) => {
+    panX = node.x;
+    panY = node.y;
+    scale = Math.max(scale, BUILD);
+    applyView();
+  },
+});
+
+/** In ANY slot, which is the only right question once one shelf feeds three. */
+const heldAnywhere = (skillId: string): boolean =>
+  Object.values(game.character.equipped ?? {}).includes(skillId);
 
 // --- the map view ----------------------------------------------------------
 //
@@ -96,9 +151,10 @@ let dragged = false;
  * thing the smoke test cannot check.
  */
 function viewport(): { width: number; height: number } {
-  const box = $('skills-web').getBoundingClientRect();
-  return box.width > 0 && box.height > 0
-    ? { width: box.width, height: box.height }
+  // The WRAP, never the web: the web is a canvas that moves under this window.
+  const host = $('skills-webwrap');
+  return host.clientWidth > 0 && host.clientHeight > 0
+    ? { width: host.clientWidth, height: host.clientHeight }
     : { width: 760, height: 430 };
 }
 
@@ -127,6 +183,41 @@ const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v
 // The skill's own numbers
 // ---------------------------------------------------------------------------
 
+/** A node's sentence AS THE SIM READS IT. `treeMod` retags every line a node
+ *  carries, ailment tags included, so a wedge of Bleed chance walked to reach a
+ *  Conversion really is Burn chance. The `description` was written for the
+ *  unconverted skill and did not move with it. */
+function asConverted(node: SkillNodeDef, skillId: string): string {
+  const skill = SKILL_BY_ID[skillId];
+  const converted = skill && convertedType(skill, treeGrants(game.character));
+  if (!skill || !converted) return node.description;
+  let said = node.description;
+  for (const line of node.stats ?? []) {
+    for (const tag of line.tags ?? []) {
+      const was = AILMENT_BY_ID[tag];
+      const now = AILMENT_BY_ID[retag(tag, skill, converted)];
+      if (!was || !now || was === now) continue;
+      said = said.split(was.name).join(now.name).split(was.verb ?? was.name).join(now.verb ?? now.name);
+    }
+  }
+  return said;
+}
+
+/** A shelf row's card, in the shape a tree node takes so the glossary comes
+ *  with it. The only reading a WEBLESS skill has: the click equips it. Exported
+ *  because the cast hall names the skill a trade comes down holding, and a
+ *  second card written there would be the same card said differently. */
+export function skillCard(skill: SkillDef): HTMLElement {
+  const slot = slotForSkill(skill.id);
+  const where = slot ? SKILL_SLOT_BY_ID[slot]?.name.toLowerCase() : '';
+  const on = !!slot && equippedSkill(game.character, slot) === skill.id;
+  // A passive IS its grants, and `say` reads the same tables the sim does, so
+  // printing the description beside them is the same sentence twice.
+  const workings = slotWorkings(skill, game.character);
+  const body = skill.category === 'passive' ? workings : [skill.description, ...workings];
+  return nodeCard(skill.name, on ? 'equipped' : where ? `${where} slot` : '', body);
+}
+
 /**
  * The damage line, with the numbers that actually produced it.
  *
@@ -139,7 +230,7 @@ function skillSummary(skill: SkillDef): string[] {
   const stats = characterStats(game.character);
   const progress = skillProgress(game.character, skill.id);
   const grants = treeGrants(game.character);
-  const mine = skill.id === equippedSkill(game.character, slotForSkill(skill.id) ?? '');
+  const mine = heldAnywhere(skill.id);
 
   const converted = convertedType(skill, grants);
   const dealt = converted ?? skill.damageTypes[0] ?? 'physical';
@@ -154,6 +245,8 @@ function skillSummary(skill: SkillDef): string[] {
       (converted ? ` (converted from ${skill.damageTypes.join(', ')})` : ''),
     `added damage: ${skill.addedEffectiveness}%, as its own type`,
   ];
+  // Before the numbers, because it decides whether any of them apply to you.
+  if (skill.requires) lines.push(`swung with: ${weaponWanted(skill)}`);
 
   // Everything below is derived from what you are WEARING, which is only the
   // truth for the skill you actually have equipped.
@@ -171,11 +264,10 @@ function skillSummary(skill: SkillDef): string[] {
       ? `damage per cast: ${Math.round(detail.perApplication)} over ${detail.seconds}s`
       : `damage per hit: ${Math.round(detail.perApplication)}`,
     `rate: ${detail.rate.toFixed(2)}/s  →  ${Math.round(detail.perSecond)} dps`,
-    grants.critAilment
-      ? `crit: converted to ${AILMENT_NAMES[dealt] ?? 'a lasting wound'}`
-      : `crit: ${Math.round(stats.critChance)}% for ${(
-          2 + stats.critMultiplier / 100
-        ).toFixed(2)}x`
+    `crit: ${Math.round(stats.critChance)}% for ${(
+      2 + stats.critMultiplier / 100
+    ).toFixed(2)}x`,
+    ailmentLine(dealt, stats) // what its own damage type leaves behind
   );
 
   if (converted) {
@@ -189,31 +281,116 @@ function skillSummary(skill: SkillDef): string[] {
 // Level 1 — categories
 // ---------------------------------------------------------------------------
 
-function renderCategories(): void {
+/**
+ * What clicking a skill anywhere on this screen MEANS.
+ *
+ * One with a web opens it, since that is the decision the screen exists for.
+ * One without — a passive — is EQUIPPED instead: "no web yet" is a promise
+ * the game is not going to keep for a skill that will never have one, and a
+ * dead end is worse than a verb. Displacing something asks first, because
+ * swapping the skill you are holding is not what a click on a list means.
+ */
+async function open(skillId: string): Promise<void> {
+  if (treeFor(skillId).length > 0) {
+    shelf = shelfForCategory(SKILL_BY_ID[skillId]?.category ?? 'attack');
+    viewing = skillId;
+    home();
+    render();
+    renderWeb();
+    return;
+  }
+
+  const slot = slotFor(skillId);
+  if (!slot) return;
+  const held = SKILL_BY_ID[equippedSkill(game.character, slot) ?? ''];
+  if (held?.id === skillId) return;
+  if (
+    held &&
+    !(await ask({
+      title: `Equip ${SKILL_BY_ID[skillId]?.name ?? skillId}?`,
+      text: `${held.name} comes out of your ${SKILL_SLOT_BY_ID[slot]?.name.toLowerCase() ?? slot} slot.`,
+      confirm: 'Equip',
+    }))
+  ) {
+    return;
+  }
+  equipSkill(game.character, skillId, slot);
+  if (inDescent()) warnAtCamp();
+  arming = null;
+  render();
+}
+
+/**
+ * What you are HOLDING, over the shelves it came off. A filled slot goes
+ * straight to that skill's web, which is the thing you opened this screen to
+ * look at; an empty one goes to the shelf it accepts, which is the only place
+ * something that fits it can be.
+ */
+function renderSlots(): void {
+  const host = $('skills-slots');
+  host.replaceChildren();
+
+  for (const slot of SKILL_SLOTS) {
+    const locked = !slotIsOpen(game.character, slot.id);
+    const held = locked ? undefined : SKILL_BY_ID[equippedSkill(game.character, slot.id) ?? ''];
+    const card = el(
+      'button',
+      `slotcard${held || locked ? '' : ' slotcard--empty'}${locked ? ' slotcard--locked' : ''}` +
+        (arming === slot.id ? ' slotcard--arming' : '')
+    ) as HTMLButtonElement;
+    card.id = skillSlotCardId(slot.id);
+    card.append(held ? skillIcon(held.id, 26) : categoryIcon(slot.accepts[0], 26));
+
+    const what = el('span', 'slotcard__what');
+    what.append(el('span', 'slotcard__slot', slot.name));
+    what.append(
+      el('span', 'slotcard__name', locked ? `level ${slot.unlocksAt}` : (held?.name ?? 'empty'))
+    );
+    card.append(what);
+    attachTooltip(card, () =>
+      locked
+        ? `${slot.name}\nOpens at level ${slot.unlocksAt}. You are ${game.character.level}.`
+        : held
+          ? skillCard(held)
+          : `${slot.name}\n${slot.blurb}`
+    );
+
+    // EVERY slot arms itself and opens the shelf it accepts, so a pick lands in
+    // the slot you clicked. A FILLED one arms too: it used to jump to its web,
+    // which made the second passive the one thing you could fill once and never
+    // change, since every later pick fell back to the first slot that fits.
+    card.disabled = locked;
+    card.onclick = () => {
+      arming = slot.id;
+      shelf = shelfForCategory((held ? SKILL_BY_ID[held.id]?.category : null) ?? slot.accepts[0]);
+      viewing = null;
+      render();
+    };
+    host.append(card);
+  }
+}
+
+function renderShelves(): void {
   const host = $('skills-cats');
   host.replaceChildren();
 
-  for (const cat of SKILL_CATEGORIES) {
-    const skills = skillsInCategory(cat.id);
+  for (const rack of SKILL_SHELVES) {
+    const skills = rack.holds.flatMap((c) => skillsInCategory(c));
     const card = el('button', 'catcard') as HTMLButtonElement;
-    card.id = skillCatId(cat.id);
+    card.id = skillCatId(rack.id);
     const head = el('span', 'catcard__head');
-    head.append(categoryIcon(cat.id, 26));
-    head.append(el('span', 'catcard__name', cat.name));
+    head.append(categoryIcon(rack.holds[0], 26));
+    head.append(el('span', 'catcard__name', rack.name));
     card.append(head);
-    card.append(el('span', 'catcard__blurb', cat.blurb));
+    card.append(el('span', 'catcard__blurb', rack.blurb));
     card.append(
-      el(
-        'span',
-        'catcard__count',
-        skills.length === 0 ? 'empty' : `${skills.length} available`
-      )
+      el('span', 'catcard__count', skills.length === 0 ? 'empty' : `${skills.length} available`)
     );
     // An empty shelf is still shown — it says where something is going to go.
     // Making it clickable would only ever open a blank list.
     card.disabled = skills.length === 0;
     card.onclick = () => {
-      category = cat.id;
+      shelf = rack.id;
       viewing = null;
       render();
     };
@@ -225,43 +402,62 @@ function renderCategories(): void {
 // Level 2 — the skills on a shelf
 // ---------------------------------------------------------------------------
 
+/**
+ * A shelf, as PICTURES: a tile per skill, the name under it, and what it does
+ * on the hover. A row of prose each was readable at four skills and a wall at
+ * eleven; the information did not go anywhere, since the tooltip is the same
+ * card with the same keywords marked.
+ */
+/** Its name, what it does, its tags and its damage types: a skill is looked
+ *  for by what it IS as often as by what it is called. */
+function skillMatches(skill: SkillDef): boolean {
+  const words = shelfFind.toLowerCase().split(/\s+/).filter(Boolean);
+  if (words.length === 0) return true;
+  const said = `${skill.name} ${skill.description} ${skill.tags.join(' ')} ` +
+    `${skill.damageTypes.join(' ')} ${skill.category ?? ''}`.toLowerCase();
+  return words.every((word) => said.includes(word));
+}
+
 function renderSkillList(): void {
   const host = $('skills-list');
   host.replaceChildren();
-  if (!category) return;
+  const rack = shelf ? SHELF_BY_ID[shelf] : null;
+  if (!rack) return;
 
-  for (const skill of skillsInCategory(category)) {
-    const progress = skillProgress(game.character, skill.id);
-    const spare = treePointsFor(progress.level) - progress.allocated.length;
+  for (const category of rack.holds) {
+    const skills = skillsInCategory(category);
+    if (skills.length === 0) continue;
 
-    const btn = el('button', 'skillrow') as HTMLButtonElement;
-    btn.id = skillRowId(skill.id);
-    const head = el('span', 'skillrow__head');
-    head.append(el('span', 'skillrow__name', skill.name));
-    if (skill.id === equippedSkill(game.character, slotForSkill(skill.id) ?? '')) {
-      head.append(el('span', 'skillrow__tag', 'equipped'));
+    // Even when the shelf holds ONE: it names what you are looking at, and a
+    // shelf that grows a second kind needs no change here.
+    const shown = skills.filter(skillMatches);
+    if (shelfFind && shown.length === 0) continue;
+    const bar = el('div', 'shelfhead');
+    bar.append(categoryIcon(category, 18));
+    bar.append(el('span', 'shelfhead__name', SKILL_CATEGORIES.find((c) => c.id === category)?.name ?? category));
+    bar.append(el('span', 'shelfhead__count', shelfFind ? `${shown.length} of ${skills.length}` : `${skills.length}`));
+    host.append(bar);
+
+    const grid = el('div', 'skillgrid');
+    for (const skill of skills.filter(skillMatches)) {
+      const progress = skillProgress(game.character, skill.id);
+      const spare = treePointsFor(skill.id, progress.level) - progress.allocated.length;
+      const mine = heldAnywhere(skill.id);
+
+      const btn = el('button', `skilltile${mine ? ' skilltile--on' : ''}`) as HTMLButtonElement;
+      btn.id = skillRowId(skill.id);
+      btn.append(skillIcon(skill.id, 44));
+      btn.append(el('span', 'skilltile__name', skill.name));
+      // Two marks and no prose: what is held, and what has a point waiting.
+      btn.append(el('span', 'skilltile__tag', mine ? 'equipped' : ''));
+      if (spare > 0 && treeFor(skill.id).length > 0) {
+        btn.append(el('span', 'skilltile__spare', String(spare)));
+      }
+      attachTooltip(btn, () => skillCard(skill));
+      btn.onclick = () => void open(skill.id);
+      grid.append(btn);
     }
-    btn.append(head);
-
-    const web = treeFor(skill.id).length;
-    btn.append(
-      el(
-        'span',
-        'skillrow__meta',
-        web === 0
-          ? `level ${progress.level} · no web yet`
-          : `level ${progress.level} · ${progress.allocated.length}/${MAX_TREE_POINTS} spent · ` +
-            `${spare} unspent`
-      )
-    );
-
-    btn.onclick = () => {
-      viewing = skill.id;
-      home();
-      render();
-      renderWeb();
-    };
-    host.append(btn);
+    host.append(grid);
   }
 }
 
@@ -275,16 +471,18 @@ function renderHeader(): void {
 
   const skill = SKILL_BY_ID[skillId];
   const progress = skillProgress(game.character, skillId);
-  const cap = treePointsFor(progress.level);
+  const cap = treePointsFor(skillId, progress.level);
 
   $('skills-title').textContent = skill.name;
+  // The cap is the WEB's, so a nine-node movement web says 6 rather than 30.
+  const most = pointCapFor(skillId);
   $('skills-sub').textContent =
     `level ${progress.level} · ${progress.allocated.length}/${cap} points spent` +
-    (cap < MAX_TREE_POINTS ? ` · ${MAX_TREE_POINTS} at level ${MAX_TREE_POINTS}` : '') +
+    (cap < most ? ` · ${most} at level ${most}` : '') +
     ` · ${progress.xp}/${xpToNext(progress.level)} xp`;
 
   const equip = $('skills-equip') as HTMLButtonElement;
-  const slot = slotForSkill(skillId);
+  const slot = slotFor(skillId);
   const equipped = !!slot && equippedSkill(game.character, slot) === skillId;
   // Which of the three it goes in, said out loud: a skill that cannot displace
   // the one you are swinging is a skill nobody would guess is equippable.
@@ -292,7 +490,9 @@ function renderHeader(): void {
   equip.textContent = equipped ? `Equipped — ${where}` : where ? `Equip as ${where}` : 'Equip';
   equip.disabled = equipped || !slot;
   equip.onclick = () => {
-    equipSkill(game.character, skillId);
+    equipSkill(game.character, skillId, slot ?? undefined);
+    if (inDescent()) warnAtCamp();
+    arming = null;
     render();
     renderWeb();
   };
@@ -308,6 +508,34 @@ function project(
     x: box.width / 2 + (x - panX) * scale,
     y: box.height / 2 + (y - panY) * scale,
   };
+}
+
+/**
+ * The web is BUILT ONCE, at this many pixels per unit, and the camera is one
+ * transform over it. Rebuilding it per wheel tick and per pointer move meant
+ * tearing down and re-creating some six hundred elements a frame, which is
+ * what made a web of pixel art stutter. `NODE_R` is already written at 46, so
+ * a node built here is its own art's size.
+ */
+const BUILD = 46;
+
+/** Half the built canvas: a web is drawn about 0,0 and an SVG clips to its own
+ *  viewport, so it is shifted into the middle of one big enough to hold it. */
+let origin = 0;
+
+/** Web coordinates → the built web's own space, which no camera touches. */
+const place = (x: number, y: number) => ({ x: x * BUILD + origin, y: y * BUILD + origin });
+
+/** The camera: a CSS transform on the SVG ELEMENT, which the compositor moves
+ *  without re-rastering. As the view group's own `transform` — the obvious
+ *  way — every element re-rasters per frame: 50ms against 17. */
+function applyView(): void {
+  const box = viewport();
+  const k = scale / BUILD;
+  const tx = box.width / 2 - panX * scale - origin * k;
+  const ty = box.height / 2 - panY * scale - origin * k;
+  $('skills-web').style.transform =
+    `translate(${tx.toFixed(2)}px, ${ty.toFixed(2)}px) scale(${k.toFixed(4)})`;
 }
 
 /**
@@ -328,15 +556,24 @@ function renderWeb(): void {
   const skillId = viewing;
   if (!skillId) return;
 
-  const box = viewport();
+  // Everything goes in ONE group, built in the web's own space; the camera is
+  // that group's transform and nothing here is rebuilt to move it.
+  const view = svgEl('g', { class: 'web__view' });
   const skill = SKILL_BY_ID[skillId];
+  const nodesFor = treeFor(skillId);
+  // Sized to what it holds: the furthest node, plus room for its own art.
+  const reach =
+    Math.max(1, ...nodesFor.map((n) => Math.max(Math.abs(n.x), Math.abs(n.y)))) + 1.4;
+  origin = Math.ceil(reach * BUILD);
+  svg.style.width = `${origin * 2}px`;
+  svg.style.height = `${origin * 2}px`;
   const progress = skillProgress(game.character, skillId);
   const nodes = treeFor(skillId);
-  const spare = treePointsFor(progress.level) - progress.allocated.length;
+  const spare = treePointsFor(skillId, progress.level) - progress.allocated.length;
   const taken = new Set(progress.allocated);
 
-  const at = (n: SkillNodeDef) => project(n.x, n.y, box);
-  const middle = project(0, 0, box);
+  const at = (n: SkillNodeDef) => place(n.x, n.y);
+  const middle = place(0, 0);
 
   // Edges first, so nodes sit on top of them. Drawn once per pair — every link
   // is undirected, so drawing both ends would double every stroke and make the
@@ -362,8 +599,8 @@ function renderWeb(): void {
       const dx = to.x - from.x;
       const dy = to.y - from.y;
       const len = Math.max(1e-3, Math.hypot(dx, dy));
-      const rFrom = (NODE_R[node.kind] * scale) / 46;
-      const rTo = other === CENTRE ? HUB_R * (scale / 46) : (NODE_R[other_!.kind] * scale) / 46;
+      const rFrom = (NODE_R[node.kind] * BUILD) / 46;
+      const rTo = other === CENTRE ? HUB_R * (BUILD / 46) : (NODE_R[other_!.kind] * BUILD) / 46;
       const a = { x: from.x + (dx / len) * rFrom, y: from.y + (dy / len) * rFrom };
       const b = { x: to.x - (dx / len) * rTo, y: to.y - (dy / len) * rTo };
 
@@ -375,51 +612,34 @@ function renderWeb(): void {
     }
   }
 
-  // Casings first, then every chain: drawn interleaved, a later casing would
-  // cut across an earlier chain wherever two links cross.
-  const casing = Math.max(3, scale * 0.14);
+  // The chain alone, straight onto the ground: a casing under it read as a
+  // black box around every run of links.
+  const casing = Math.max(3, BUILD * 0.14);
   for (const l of links) {
-    svg.append(
-      svgEl('line', {
-        x1: l.a.x, y1: l.a.y, x2: l.b.x, y2: l.b.y,
-        class: 'web__edge', 'stroke-width': casing.toFixed(1),
-      })
-    );
-  }
-  for (const l of links) {
-    svg.append(
-      svgEl('line', {
-        x1: l.a.x, y1: l.a.y, x2: l.b.x, y2: l.b.y,
-        class: `web__edge--lit${l.live ? ' web__edge--on' : ''}`,
-        'stroke-width': (casing * (l.live ? 0.62 : 0.34)).toFixed(1),
-      })
-    );
+    for (const link of chain(l.a, l.b, casing * 0.5, `web__chain${l.live ? ' web__chain--on' : ''}`)) {
+      view.append(link);
+    }
   }
 
   // The middle: the skill itself, and the tooltip explaining its numbers.
   const hub = svgEl('g', { class: 'web__centre' });
-  const hubR = HUB_R * (scale / 46);
-  for (const part of stud(gem(19), 19, middle, hubR, 'web__hub')) hub.append(part);
-  const art = skillIcon(skillId, hubR * 1.25);
+  const hubR = HUB_R * (BUILD / 46);
+  for (const part of mount(middle, hubR, 'web__hub')) hub.append(part);
+  // Baked like the node glyphs: the middle is the biggest picture in the web
+  // and would open the same seams.
+  const art =
+    bakedArt(`sk_${skillId}`, hubR * 1.25, 'web__node__img') ?? skillIcon(skillId, hubR * 1.25);
   art.setAttribute('x', String(middle.x - hubR * 0.62));
   art.setAttribute('y', String(middle.y - hubR * 0.62));
   art.setAttribute('width', String(hubR * 1.25));
   art.setAttribute('height', String(hubR * 1.25));
   hub.append(art);
   attachTooltip(hub, () => skillSummary(skill).join('\n'));
-  svg.append(hub);
+  view.append(hub);
 
   for (const node of nodes) {
     const pos = at(node);
-    const r = (NODE_R[node.kind] * scale) / 46;
-    // Nothing gained by building DOM for a node three screens away.
-    if (
-      pos.x < -r * 2 || pos.y < -r * 2 ||
-      pos.x > box.width + r * 2 || pos.y > box.height + r * 2
-    ) {
-      continue;
-    }
-
+    const r = (NODE_R[node.kind] * BUILD) / 46;
     const owned = taken.has(node.id);
     const reachable = canAllocate(skillId, node.id, progress.allocated);
     const open = reachable && spare > 0;
@@ -435,13 +655,17 @@ function renderWeb(): void {
       tabindex: '0',
       role: 'button',
       'data-node': node.id,
-      // A stud is a stack of paths with no centre of its own to read back.
+      // Where it sits in the WEB, which a camera never changes: a stud is a
+      // stack of paths with no centre of its own to read back.
       'data-x': pos.x.toFixed(1),
       'data-y': pos.y.toFixed(1),
     });
-    const grid = node.kind === 'notable' ? 13 : 9;
-    const spans = node.kind === 'notable' ? gem(grid) : disc(grid);
-    for (const part of stud(spans, grid, pos, r, 'web__node')) group.append(part);
+    for (const part of frame(node.kind, pos, r, 'web__node')) group.append(part);
+    const glyphSize = r * 1.24;
+    const glyph = nodeGlyph(node, glyphSize);
+    glyph.setAttribute('x', (pos.x - glyphSize / 2).toFixed(2));
+    glyph.setAttribute('y', (pos.y - Number(glyph.getAttribute('height')) / 2).toFixed(2));
+    group.append(glyph);
 
     attachTooltip(group, () => {
       const picked = node.choices?.find((c) => c.id === progress.choices?.[node.id]);
@@ -464,7 +688,7 @@ function renderWeb(): void {
           ? `Chosen: ${picked.name} — ${picked.description}`
           : 'Click to choose.'
         : '';
-      return nodeCard(node.name, state, [node.description, cost(node), choice]);
+      return nodeCard(node.name, state, [asConverted(node, skillId), cost(node), choice]);
     });
 
     const act = () => {
@@ -472,7 +696,7 @@ function renderWeb(): void {
       if (dragged) return;
       // A node that asks a question never answers it for you.
       if (node.choices && (owned || open)) {
-        openChoice(node, pos, owned);
+        openChoice(node, owned);
         return;
       }
       if (owned) {
@@ -481,6 +705,7 @@ function renderWeb(): void {
         }
       } else if (open) {
         progress.allocated.push(node.id);
+        if (inDescent()) warnAtCamp();
       } else {
         return;
       }
@@ -495,9 +720,15 @@ function renderWeb(): void {
         act();
       }
     });
-    svg.append(group);
+    view.append(group);
   }
 
+  // Attached once it is whole, then aimed: a group built into the document is
+  // a layout pass per element added to it.
+  svg.append(view);
+  applyView();
+  // Every node is new, so whatever the box holds is marked again.
+  find.paint();
 }
 
 /**
@@ -507,12 +738,15 @@ function renderWeb(): void {
  * mean picking the wrong one first costs a point to undo, which is a tax on
  * finding out what a thing does rather than a decision about your build.
  */
-function openChoice(node: SkillNodeDef, pos: { x: number; y: number }, owned: boolean): void {
+function openChoice(node: SkillNodeDef, owned: boolean): void {
   const host = $('skills-choice');
   const skillId = viewing!;
   const progress = skillProgress(game.character, skillId);
   host.replaceChildren();
   host.hidden = false;
+  // Projected HERE rather than carried on the node: the web is built once, so
+  // what a node knows about itself is where it sits in the web, not on screen.
+  const pos = project(node.x, node.y, viewport());
   host.style.left = `${Math.round(pos.x + 18)}px`;
   host.style.top = `${Math.round(pos.y - 12)}px`;
 
@@ -520,6 +754,7 @@ function openChoice(node: SkillNodeDef, pos: { x: number; y: number }, owned: bo
     progress.choices ??= {};
     progress.choices[node.id] = id;
     if (!owned) progress.allocated.push(node.id);
+    if (inDescent()) warnAtCamp();
     host.hidden = true;
     render();
     renderWeb();
@@ -560,21 +795,30 @@ function render(): void {
   hideTooltip();
 
   closeChoice();
-  const depth = viewing ? 3 : category ? 2 : 1;
+  const depth = viewing ? 3 : shelf ? 2 : 1;
   $('skills-cats').hidden = depth !== 1;
   $('skills-list').hidden = depth !== 2;
   $('skills-detail').hidden = depth !== 3;
   ($('skills-back') as HTMLButtonElement).hidden = depth === 1;
   ($('skills-devlevel') as HTMLButtonElement).hidden = depth !== 3;
+  // The shelf's filter belongs to the shelf: on the web, the box beside it
+  // finds a NODE, and two search boxes doing different jobs at once is one
+  // of them being typed into by mistake.
+  ($('skills-shelffind') as HTMLInputElement).hidden = depth !== 2;
 
   $('skills-modal-title').textContent =
     depth === 1
       ? 'Skills'
       : depth === 2
-        ? SKILL_CATEGORIES.find((c) => c.id === category)?.name ?? 'Skills'
+        ? SHELF_BY_ID[shelf!]?.name ?? 'Skills'
         : SKILL_BY_ID[viewing!]?.name ?? 'Skills';
 
-  if (depth === 1) renderCategories();
+  $('skills-slots').hidden = depth !== 1;
+
+  if (depth === 1) {
+    renderSlots();
+    renderShelves();
+  }
   if (depth === 2) renderSkillList();
   if (depth === 3) renderHeader();
 
@@ -583,16 +827,28 @@ function render(): void {
 
 function back(): void {
   if (viewing) viewing = null;
-  else category = null;
+  else shelf = null;
+  clearShelfFind();
   render();
 }
 
+/** Always at the TOP. Where you were last time is not where you are going, and
+ *  a screen that reopens three deep hides the two questions above it. */
+function clearShelfFind(): void {
+  shelfFind = '';
+  const box = document.getElementById('skills-shelffind') as HTMLInputElement | null;
+  if (box) box.value = '';
+}
+
 export function openSkills(): void {
+  // Seen once is seen forever: the rail's accent has done its whole job.
+  game.skillsSeen = true;
   $('skills').hidden = false;
+  shelf = null;
+  viewing = null;
+  find.clear();
+  clearShelfFind();
   render();
-  // Measuring needs the element on screen, so the fit happens after the
-  // unhide rather than before it.
-  if (viewing) renderWeb();
 }
 
 export function closeSkills(): void {
@@ -606,7 +862,7 @@ export function isSkillsOpen(): boolean {
 
 /** Escape steps back one level, and only closes from the top. */
 export function skillsEscape(): void {
-  if (viewing || category) back();
+  if (viewing || shelf) back();
   else closeSkills();
 }
 
@@ -618,7 +874,22 @@ export function initSkills(state: GameState, changed?: () => void): void {
   ($('skills-back') as HTMLButtonElement).onclick = back;
   ($('skills-fit') as HTMLButtonElement).onclick = () => {
     fit();
-    renderWeb();
+    applyView();
+  };
+  find.attach();
+
+  const box = $('skills-shelffind') as HTMLInputElement;
+  box.value = '';
+  box.oninput = () => {
+    shelfFind = box.value.trim();
+    renderSkillList();
+  };
+  box.onkeydown = (event) => {
+    if (event.key === 'Escape' && box.value !== '') {
+      event.stopPropagation();
+      clearShelfFind();
+      renderSkillList();
+    }
   };
 
   const svg = $('skills-web');
@@ -645,7 +916,7 @@ export function initSkills(state: GameState, changed?: () => void): void {
       panY = before.y - py / scale;
       hideTooltip();
       closeChoice();
-      renderWeb();
+      applyView();
     },
     { passive: false }
   );
@@ -683,7 +954,7 @@ export function initSkills(state: GameState, changed?: () => void): void {
     panY -= dy / scale;
     from = { x: e.clientX, y: e.clientY };
     hideTooltip();
-    renderWeb();
+    applyView();
   });
   const release = () => {
     from = null;

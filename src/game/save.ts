@@ -5,8 +5,12 @@
  * made it. `GameState` is plain data, so `version` is the entire compatibility
  * story — a save from another one is refused rather than half-read.
  */
-import { SAVE_VERSION, createGame, findAnywhere, giftWeapon, wornItems } from './state';
-import { healQuests, ownedCrystals } from './crystals';
+import { SAVE_VERSION, addItem, createGame, findAnywhere, giftWeapon, wornItems } from './state';
+import { takeMet } from './scenes';
+import { ownedCrystals } from './crystals';
+import { healTrials } from './trials';
+import { collectWork, hasWorker, minutesMs, now, workersFound } from './work';
+import { fullUses } from '../mods';
 import { crystalFamily } from '../sim/crystal';
 import type { GameState } from './state';
 import {
@@ -19,21 +23,30 @@ import {
   FAMILY_BY_ID,
   FORGED_BY_ID,
   GEAR_BASE_BY_ID,
+  LADDER,
   MAIN_SKILLS,
   MAIN_SLOT,
+  OFF_SLOT,
+  WEAPON_SLOT,
   PLAYER_SKILLS,
   SKILL_SLOTS,
   POTION_BY_ID,
+  PROVING,
   RELIC_BY_ID,
   RUN_SLOTS,
   SKILL_BY_ID,
   UNIQUE_BY_ID,
   crystalName,
+  MATERIAL_BY_ID,
+  MEAL_BY_FISH,
+  PROFESSION_BY_ID,
+  WORK,
 } from '../data';
 import { nodeById, replayTreeNodes, treeFor, treePointsFor } from '../skills-tree';
 import { TRADE_BY_ID, replayTradeNodes, tradePointsFor } from '../trades';
-import { makeGear, reserveItemIds } from '../economy';
-import { attributePointsFor } from '../sim/character';
+import { isPerfect, makeGear, reserveItemIds, stackKey } from '../economy';
+import { canDualWield } from '../sim/character';
+import { attributePointsFor, weaponFits } from '../sim/character';
 import type { Character } from '../sim/character';
 import type { Item } from '../types';
 
@@ -121,6 +134,8 @@ export function savedAt(slot: Slot = liveSlot()): number | null {
  *  `readSave`: looking at a slot may not reserve the ids inside it. */
 export interface SlotInfo {
   name: string;
+  /** The trade's NAME, or null before one is taken up. */
+  trade: string | null;
   level: number;
   at: number | null;
 }
@@ -131,7 +146,12 @@ export function peekSlot(slot: Slot): SlotInfo | null {
   try {
     const who = (JSON.parse(raw) as Partial<GameState>).character;
     if (!who) return null;
-    return { name: who.name || 'wanderer', level: who.level ?? 1, at: savedAt(slot) };
+    return {
+      name: who.name || 'wanderer',
+      trade: (who.trade && TRADE_BY_ID[who.trade]?.spec.name) || null,
+      level: who.level ?? 1,
+      at: savedAt(slot),
+    };
   } catch {
     return null;
   }
@@ -187,12 +207,8 @@ export function clearSave(slot: Slot = liveSlot()): void {
 // --- healing an old save ----------------------------------------------------
 //
 // A save is full of IDS pointing into the data tables and the trees, and those
-// move as the game is built. The shape looks after itself — a field added since
-// the save was written takes its default, one removed is simply never read
-// again — so what actually rots is a reference to something that is gone.
-//
-// Every one of them is dropped rather than trusted, and anything paid for is
-// handed back. A tree that was reshaped costs you a respec, not the character.
+// move as the game is built. What rots is a reference to something gone: every
+// one is dropped rather than trusted, and anything paid for is handed back.
 
 /** What a load had to throw away. Empty when the save was already current. */
 export interface Healed {
@@ -212,6 +228,7 @@ const baseExists = (item: Item): boolean => {
     return CRYSTAL_LEVELS.some((t) => item.base === `crystal_t${t.level}`);
   }
   if (item.kind === 'relic') return RELIC_BY_ID[item.base] !== undefined;
+  if (item.kind === 'material') return MATERIAL_BY_ID[item.base] !== undefined;
   if (item.meta.unique !== undefined && !UNIQUE_BY_ID[String(item.meta.unique)]) return false;
   return GEAR_BASE_BY_ID[item.base] !== undefined;
 };
@@ -222,7 +239,7 @@ function replayTree(character: Character, skillId: string): number {
   const progress = character.skills[skillId];
   if (!progress) return 0;
 
-  const kept = replayTreeNodes(skillId, progress.allocated, treePointsFor(progress.level));
+  const kept = replayTreeNodes(skillId, progress.allocated, treePointsFor(skillId, progress.level));
   const lost = progress.allocated.length - kept.length;
   progress.allocated = kept;
 
@@ -291,12 +308,31 @@ function healSkillSlots(character: Character): boolean {
   const legacy = (character as unknown as { skillId?: string }).skillId;
   const kept: Record<string, string> = {};
 
+  // A slot the level has not reached drops what is in it, and one skill may sit
+  // in only one: a passive held twice merges its own grants into itself.
+  const seen = new Set<string>();
   for (const slot of SKILL_SLOTS) {
     const held = character.equipped?.[slot.id] ?? (slot.id === MAIN_SLOT ? legacy : undefined);
     const category = held ? SKILL_BY_ID[held]?.category : undefined;
-    if (held && category && slot.accepts.includes(category)) kept[slot.id] = held;
+    if (!held || !category || !slot.accepts.includes(category)) continue;
+    if (character.level < (slot.unlocksAt ?? 1) || seen.has(held)) continue;
+    seen.add(held);
+    kept[slot.id] = held;
   }
-  if (!kept[MAIN_SLOT]) kept[MAIN_SLOT] = MAIN_SKILLS[0]?.id ?? PLAYER_SKILLS[0]?.id ?? 'strike';
+  // A skill the weapon cannot swing is LEGAL — the Fissure refuses to open on
+  // it — so nothing is healed away here; that would undo a swap in progress.
+  if (!kept[MAIN_SLOT]) {
+    // What the weapon is FOR first, then anything it can swing: a bow healing
+    // to a spell keeps you playing but throws away the shape of the build.
+    const held = character.equipment?.[WEAPON_SLOT] ?? null;
+    const family = held ? GEAR_BASE_BY_ID[held.base]?.family : undefined;
+    kept[MAIN_SLOT] =
+      MAIN_SKILLS.find((sk) => sk.requires && family && weaponFits(sk, held))?.id
+      ?? MAIN_SKILLS.find((sk) => weaponFits(sk, held))?.id
+      ?? MAIN_SKILLS[0]?.id
+      ?? PLAYER_SKILLS[0]?.id
+      ?? 'strike';
+  }
 
   character.equipped = kept;
   delete (character as unknown as { skillId?: string }).skillId;
@@ -314,10 +350,68 @@ export function heal(game: GameState): Healed {
   };
   game.inventory = keep(game.inventory);
   game.stash = keep(game.stash);
-  // Hand-edited saves reach here, and one that predates the haul has no key.
-  game.haul = keep(Array.isArray(game.haul) ? game.haul : []);
+  // The haul is gone: what a save held in it comes into the bag, over the limit
+  // if that is where it lands. Over is a real state, and a better one than a
+  // night's loot vanishing on load.
+  const hauled = (game as unknown as { haul?: Item[] }).haul;
+  if (Array.isArray(hauled)) game.inventory.push(...keep(hauled));
+  delete (game as unknown as { haul?: Item[] }).haul;
   game.crystals = keep(Array.isArray(game.crystals) ? game.crystals : []);
   game.relics = keep(Array.isArray(game.relics) ? game.relics : []);
+  game.materials = keep(Array.isArray(game.materials) ? game.materials : []);
+  // ONE ROW A STACK is the invariant the whole crafting arc reads, so a save
+  // that somehow holds two of one is merged rather than trusted.
+  const stacks = new Map<string, Item>();
+  for (const row of game.materials) {
+    const n = Math.max(1, Math.floor(Number(row.meta.n) || 1));
+    const key = stackKey(row);
+    const held = stacks.get(key);
+    if (held) held.meta.n += n;
+    else stacks.set(key, { ...row, meta: { ...row.meta, n } });
+  }
+  game.materials = [...stacks.values()];
+
+  // A MEAL POINTS AT A FISH. One whose row is gone, or whose descents have run
+  // out on disk, is a buff that would never end.
+  const meal = game.character?.meal;
+  if (meal && (!MEAL_BY_FISH[String(meal.defId).replace('meal_', '')]
+    || !Number.isFinite(meal.uses) || (meal.uses ?? 0) < 1)) {
+    delete game.character.meal;
+    out.items++;
+  }
+
+  // A JOB POINTS AT A MATERIAL and at a profession. Either being gone takes the
+  // job with it — the raw is already spent, so this is a loss, and refunding
+  // into a table that has moved is the worse answer.
+  const jobs = Array.isArray(game.jobs) ? game.jobs : [];
+  game.jobs = jobs.filter((job) => {
+    // Written when a job counted DESCENTS: each one left is a batch's minutes.
+    const old = (job as { left?: number }).left;
+    if (job && !Number.isFinite(job.doneAt) && Number.isFinite(old) && (old ?? 0) > 0) {
+      job.doneAt = now() + minutesMs(WORK.minutes) * (old ?? 0);
+    }
+    delete (job as { left?: number }).left;
+    const ok =
+      job && MATERIAL_BY_ID[job.material] !== undefined &&
+      PROFESSION_BY_ID[job.profession] !== undefined &&
+      Number.isFinite(job.doneAt) && Number.isFinite(job.n) && job.n > 0;
+    if (!ok) out.items++;
+    return ok;
+  });
+  // A JOB NAMES ITS WORKER. One naming nobody rescued goes to whoever is idle,
+  // and with nobody idle it is lost — the raw is already spent either way.
+  for (const job of [...game.jobs]) {
+    if (hasWorker(game, job.worker) && game.jobs.filter((j) => j.worker === job.worker)[0] === job) continue;
+    const free = workersFound(game).find((w) => !game.jobs.some((j) => j !== job && j.worker === w.id));
+    if (free) job.worker = free.id;
+    else {
+      game.jobs = game.jobs.filter((j) => j !== job);
+      out.items++;
+    }
+  }
+  for (const id of Object.keys(game.character.professions ?? {})) { // a cut profession takes its level
+    if (!PROFESSION_BY_ID[id]) delete game.character.professions![id];
+  }
   // Same rule as every other container: a base that is gone takes its entry.
   game.sold = (Array.isArray(game.sold) ? game.sold : []).filter((e) => {
     const ok = e && e.item && baseExists(e.item) && Number.isFinite(e.price);
@@ -332,16 +426,15 @@ export function heal(game: GameState): Healed {
     const stays = list.filter((i) => i.kind === 'gear');
     game.crystals.push(...list.filter((i) => i.kind === 'crystal'));
     game.relics.push(...list.filter((i) => i.kind === 'relic'));
+    for (const row of list.filter((i) => i.kind === 'material')) addItem(game, row);
     return stays;
   };
   game.inventory = container(game.inventory);
   game.stash = container(game.stash);
-  game.haul = container(game.haul);
 
   for (const item of [...game.crystals, ...Object.values(game.sockets ?? {})]) {
     if (item.kind !== 'crystal') continue;
-    // `tier` was the word before levels; the base id never moved, so this is
-    // the whole of that rename's cost.
+    // `tier` was the word before levels; the base id never moved.
     if (item.meta.level === undefined && item.meta.tier !== undefined) {
       item.meta.level = item.meta.tier;
       delete item.meta.tier;
@@ -359,23 +452,37 @@ export function heal(game: GameState): Healed {
     if (item.mods.length > 0 || !ALL_MODS.some((m) => m.id === item.meta.scripted)) {
       delete item.meta.scripted;
     }
+    // A ROLL WRITTEN BEFORE USES gets what its tier would have rolled, so an
+    // old save comes back full. Out of range is CLAMPED rather than dropped.
+    for (const mod of item.mods) {
+      const full = fullUses(mod);
+      if (!(Number(mod.uses) >= 1)) mod.uses = full;
+      else mod.uses = Math.min(Math.round(Number(mod.uses)), full);
+    }
   }
-  // The first heal that repairs a LINE rather than dropping an item. A graft
-  // stands where the base's own implicit stood, so a forged def that no longer
-  // resolves has to put that line BACK — otherwise the piece keeps a hole
-  // where the base's line used to be and nothing can ever fill it.
-  for (const item of [...game.inventory, ...game.stash, ...game.haul, ...wornItems(game)]) {
+  // GEAR IS KEPT: a count on a worn piece would silently eat it, so it goes.
+  for (const item of [...game.inventory, ...game.stash, ...wornItems(game)]) {
+    for (const mod of item.mods) delete mod.uses;
+  }
+  // The one heal that repairs a LINE rather than dropping an item: a graft
+  // stands where the base's implicit stood, so a forged def that no longer
+  // resolves has to put that line BACK or the piece keeps a hole.
+  for (const item of [...game.inventory, ...game.stash, ...wornItems(game)]) {
     if (item.meta.grafted === undefined || FORGED_BY_ID[String(item.meta.grafted)]) continue;
-    item.implicits = makeGear(item.base, item.ilvl).implicits;
+    item.implicits = makeGear(item.base, item.ilvl, undefined, isPerfect(item)).implicits;
     delete item.meta.grafted;
     out.items++;
   }
-  healQuests(game);
+  // The quest ladder is gone: a crystal comes out of the ground at a depth.
+  delete (game as { quests?: unknown }).quests;
 
   // A boss id no table resolves is the whole cost of ever renaming one, and a
   // room called up by a key that has since been cut is a room nobody can enter.
   game.bosses = (Array.isArray(game.bosses) ? game.bosses : []).filter((id) => BOSS_BY_ID[id]);
   if (game.called && !BOSS_BY_ID[game.called]) game.called = null;
+
+  // The FILTER is gone with the heap it sorted, and so is its stored list.
+  delete (game as unknown as { junk?: string[] }).junk;
 
   // A threshold for a potion that no longer exists costs its entry; one out of
   // range is clamped rather than dropped, so a save never fires a flask at a
@@ -395,11 +502,40 @@ export function heal(game: GameState): Healed {
     if (ownedCrystals(game).some((c) => crystalFamily(c) === 'normal')) game.given.push('crystal');
   }
 
+  // Before a person you had met stayed met: a GRAFTED piece is the only proof
+  // a save holds that you stood in that room. Anyone met and not spent is found
+  // again the next time a relic schedules him, which is the old behaviour.
+  for (const item of [...game.inventory, ...game.stash, ...wornItems(game)]) {
+    const who = FORGED_BY_ID[String(item.meta.grafted)]?.who;
+    if (who) takeMet(game, who);
+  }
+
   // Before descents were counted: read the count off the one milestone the
   // save already holds. Nothing is scheduled on it, so an undercount costs
   // a number on a screen rather than a gift.
   if (!Number.isFinite(game.clears)) {
     game.clears = game.firstClearDone ? 1 : 0;
+  }
+
+  // THE CLIMB. A zone that is gone takes its progress, and a count past what
+  // the zone holds is clamped: the zone after it reads that number.
+  const climbed: Record<string, number> = {};
+  for (const zone of LADDER.zones) {
+    const was = Math.floor(Number(game.character.climbed?.[zone.id] ?? 0));
+    if (Number.isFinite(was) && was > 0) climbed[zone.id] = Math.min(zone.rungs, was);
+  }
+  game.character.climbed = climbed;
+
+  // DUAL WIELDING IS ONE TRADE'S PRIVILEGE now. A save written before that can
+  // hold two weapons on somebody who may not: the off hand comes off into the
+  // bag rather than the piece being dropped — it is still a real item.
+  {
+    const off = game.character.equipment[OFF_SLOT];
+    if (off && GEAR_BASE_BY_ID[off.base]?.kind === 'weapon' && !canDualWield(game.character)) {
+      delete game.character.equipment[OFF_SLOT];
+      game.inventory.push(off);
+      out.items++;
+    }
   }
 
   for (const [slot, worn] of Object.entries(game.character.equipment)) {
@@ -445,8 +581,18 @@ export function heal(game: GameState): Healed {
     out.points += replayTree(game.character, skillId);
   }
 
+  // A COUNT that is not one would pay the ladder's first four at once.
+  const clears = Number(game.provingClears);
+  game.provingClears = Number.isFinite(clears) ? Math.max(0, Math.floor(clears)) : 0;
+
+  // A PREFERENCE naming no world sends you somewhere that does not exist.
+  if (game.influence && !PROVING.influences.includes(game.influence)) {
+    game.influence = PROVING.influences[0];
+  }
+
   out.points += replayAttributes(game.character);
   out.points += replayTrade(game.character);
+  out.points += healTrials(game.character);
 
   out.skill = healSkillSlots(game.character);
   return out;
@@ -458,7 +604,9 @@ export function heal(game: GameState): Healed {
  */
 export function applySave(game: GameState, save: GameState): Healed {
   Object.assign(game, createGame('fresh'), save);
-  return heal(game);
+  const out = heal(game);
+  collectWork(game); // what the clock finished while the save sat
+  return out;
 }
 
 /** A file the player can keep. */

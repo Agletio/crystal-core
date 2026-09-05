@@ -34,10 +34,8 @@ const BRANCHES: Branch[] = [
     enabler: {
       id: 'fb_kindling',
       name: 'Kindling',
-      description:
-        'Fireball can no longer Critically strike. A cast that would have ' +
-        'instead leaves a Burn worth 260% of the hit over 4s.',
-      grants: { critAilment: { multiplier: 2.6, seconds: 4 } },
+      description: '+55% chance to apply Burn.',
+      grants: { ailmentChance: 55 },
     },
     twigs: [
       {
@@ -59,73 +57,65 @@ const BRANCHES: Branch[] = [
         },
       },
       {
-        minors: 4,
+        minors: 3,
         forkFrom: { twig: 1, at: 2 },
         notable: {
           id: 'fb_wildfire',
           name: 'Wildfire',
-          description:
-            'A Burn ticking Critically lays the same Burn on everything within 2 tiles.',
-          grants: { ailmentSpread: 2, manaMultiplier: 1.15 },
+          description: '+45% chance to apply Burn.',
+          grants: { ailmentChance: 45, manaMultiplier: 1.15 },
         },
       },
     ],
     minors: [
       { text: '+6% increased Burn Damage', grants: { ailmentMultiplier: 1.06 } },
-      { text: '+5% increased Burn Duration', grants: { ailmentDuration: 1.05 } },
+      { text: '+9% chance to apply Burn', stats: [stat('ailmentChance', 'flat', 9, ['burn'])] },
       COMMON[0],
       { text: '+1% Critical Chance', stats: [stat('critChance', 'flat', 1)] },
     ],
   },
   {
-    id: 'detonation',
-    theme: 'Blastwork',
+    id: 'bellows',
+    theme: 'Bellows',
     enabler: {
-      id: 'fb_detonation',
-      name: 'Detonation',
-      description:
-        'Fireball Bursts where it lands, for 55% of the damage within 1.8 ' +
-        'tiles. Fireball gains the Area tag.',
-      grants: { explode: { radius: 1.8, multiplier: 0.55 }, addTags: ['area'], manaMultiplier: 1.15 },
+      id: 'fb_bellows',
+      name: 'Bellows',
+      description: '+8% Momentum per use, up to 60%.',
+      grants: { momentum: { per: 8, max: 60 } },
     },
     twigs: [
       {
-        minors: 3,
+        minors: 4,
         notable: {
-          id: 'fb_concussive',
-          name: 'Concussive Blast',
-          description: 'The Burst covers 45% more ground.',
-          grants: { explodeRadius: 1.45, manaMultiplier: 1.08 },
+          id: 'fb_draught',
+          name: 'Draught',
+          description: 'Momentum builds 4% faster per use.',
+          grants: { momentumPer: 4 },
         },
       },
       {
-        minors: 3,
-        forkFrom: { twig: 0, at: 1 },
+        minors: 4,
         notable: {
-          id: 'fb_fuelair',
-          name: 'Fuel-Air Charge',
-          description: 'The Burst carries +45% of the damage, for all of it.',
-          grants: { explodeMultiplierAdd: 0.45, manaMultiplier: 1.08 },
+          id: 'fb_furnace',
+          name: 'Furnace',
+          description: 'Momentum reaches 40% higher.',
+          grants: { momentumMax: 40 },
         },
       },
       {
-        minors: 3,
-        forkFrom: { twig: 1, at: 1 },
+        minors: 4,
+        forkFrom: { twig: 1, at: 2 },
         notable: {
-          id: 'fb_chainreaction',
-          name: 'Cascade',
+          id: 'fb_forgefire',
+          name: 'Forge-Fire',
           description:
-            'An enemy killed by Fireball Bursts, for 60% of the damage within 2.2 tiles.',
-          grants: { explodeOnKill: { radius: 2.2, multiplier: 0.6 }, manaMultiplier: 1.15 },
+            'Momentum carries to a new enemy whole instead of being halved, ' +
+            'and reaches 15% higher.',
+          grants: { momentumKeep: true, momentumMax: 15 },
         },
       },
     ],
-    minors: [
-      { text: '+5% increased Area of Effect', stats: [stat('areaOfEffect', 'inc', 5)] },
-      { text: '+4% larger Burst', grants: { explodeRadius: 1.04 } },
-      COMMON[0],
-      { text: '+6% increased Area of Effect', stats: [stat('areaOfEffect', 'inc', 6)] },
-    ],
+    minors: [COMMON[0], { text: '+2% Momentum per use', grants: { momentumPer: 2 } }, COMMON[1], COMMON[2]],
   },
   {
     id: 'volley',
@@ -153,7 +143,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'fb_volley',
           name: 'Volley',
-          description: 'Fireball throws +1 Projectile on top of that, for three.',
+          description: 'Fireball throws +1 Projectile.',
           grants: { extraTargets: 1, manaMultiplier: 1.15 },
         },
       },
@@ -163,7 +153,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'fb_barrage',
           name: 'Barrage',
-          description: 'And +2 more Projectiles beyond that, for five.',
+          description: '+2 Projectiles.',
           grants: { extraTargets: 2, manaMultiplier: 1.15 },
         },
       },
@@ -194,7 +184,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'fb_overpen',
           name: 'Overpenetration',
-          description: 'Fireball gains +1 more Pierce, for two.',
+          description: 'Fireball gains +1 Pierce.',
           grants: { pierce: 1, manaMultiplier: 1.15 },
         },
       },
@@ -226,7 +216,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'fb_leaping',
           name: 'Leaping Flame',
-          description: 'Fireball gains +1 more Arc, for two.',
+          description: 'Fireball gains +1 Arc.',
           grants: { chains: 1, manaMultiplier: 1.15 },
         },
       },
@@ -247,9 +237,9 @@ const BRANCHES: Branch[] = [
         minors: 3,
         notable: {
           id: 'fb_closequarters',
-          name: 'Close Quarters',
-          description: 'Fireball deals 30% more damage to enemies within 2.5 tiles of you.',
-          grants: { moreClose: { within: 2.5, more: 0.3 } },
+          name: 'Clean Sweep',
+          description: 'For 4s after a kill, Fireball deals 30% more damage.',
+          grants: { killMore: { seconds: 4, more: 0.3 } },
         },
       },
       {
@@ -285,15 +275,13 @@ const TRUNK_NOTABLES: Notable[] = [
   {
     id: 'fb_longfuse',
     name: 'Long Fuse',
-    description: 'Fireball deals 30% more damage to enemies more than 5 tiles away.',
-    grants: { moreFar: { beyond: 5, more: 0.3 } },
+    description: 'Fireball deals 30% more damage while nothing has hit you for 3s.',
+    grants: { untouchedMore: { after: 3, more: 0.3 } },
   },
   {
     id: 'fb_transmutation',
     name: 'Transmutation',
-    description:
-      'Fireball stops dealing Fire. Pick what it deals instead — the Fire ' +
-      'modifiers in this tree change with it, the ones on your gear do not.',
+    description: 'Convert Fireball to another damage type.',
     choices: [
       {
         id: 'cold',
@@ -343,13 +331,12 @@ export const FIREBALL_SPEC: TreeSpec = {
   branches: BRANCHES,
   trunkNotables: TRUNK_NOTABLES,
   needs: {
-    areaOfEffect: 'fb_detonation',
-    explodeRadius: 'fb_detonation',
-    explodeMultiplierAdd: 'fb_detonation',
-    explodeOnKill: 'fb_detonation',
+    momentumPer: 'fb_bellows',
+    momentumMax: 'fb_bellows',
+    momentumKeep: 'fb_bellows',
     ailmentMultiplier: 'fb_kindling',
     ailmentDuration: 'fb_kindling',
-    ailmentSpread: 'fb_kindling',
+    ailmentChance: 'fb_kindling',
     spreadRange: 'fb_splitcast',
     spreadFar: 'fb_splitcast',
     pierceDamage: 'fb_piercing',

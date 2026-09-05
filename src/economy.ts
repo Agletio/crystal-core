@@ -1,6 +1,13 @@
 import { Rng } from './rng';
-import { ModPool, baseTier, computeStat, modCapacity, rollRandomMod } from './mods';
+import { ModPool, baseTier, modCapacity, rollRandomMod } from './mods';
 import {
+  KIND_VARIETY,
+  DROP_BANDS,
+  GAMBLE,
+  MATERIAL_PRICE,
+  MATERIAL_SOLD_AT,
+  UNIQUES,
+  opensHere,
   CRYSTAL_ILVL,
   CRYSTAL_LEVELS,
   EQUIP_SLOTS,
@@ -8,14 +15,15 @@ import {
   GEAR_BASES,
   GEAR_SLOTS,
   GROUP_OF_KIND,
+  PERFECT,
   RECIPES,
+  RUN_SLOTS,
   SHOP,
   crystalName,
 } from './data';
 import type {
   GearBase,
   Item,
-  ItemKind,
   MonsterFamily,
   Recipe,
   RolledMod,
@@ -23,6 +31,8 @@ import type {
   UniqueDef,
   Wallet,
 } from './types';
+import type { MaterialDef } from './data';
+import { MATERIAL_FAMILY_BY_ID } from './data';
 
 let nextId = 1;
 const uid = (p: string) => `${p}_${nextId++}`;
@@ -53,9 +63,6 @@ export function reserveItemIds(value: unknown): void {
   for (const nested of Object.values(value)) reserveItemIds(nested);
 }
 
-/** True for an id this module minted. The demo holds every factory to it. */
-export const isItemId = (id: string): boolean => ITEM_ID.test(id);
-
 // ---------------------------------------------------------------------------
 // Item factory
 // ---------------------------------------------------------------------------
@@ -82,52 +89,87 @@ export function makeCrystal(level: number, family: MonsterFamily = 'normal'): It
   };
 }
 
-/**
- * Implicits use fixed ranges, so nothing here is random — they take a mod's
- * shape purely so stat aggregation needs no special case for them.
- */
-function implicitsFor(def: GearBase | undefined): RolledMod[] {
+/** Implicits use fixed ranges: they take a mod's shape purely so stat
+ *  aggregation needs no special case for them. */
+function implicitsFor(def: GearBase | undefined, perfect = false, made = 1): RolledMod[] {
   if (!def?.implicit?.length) return [];
+  const lift = (perfect ? 1 + PERFECT.lift : 1) * made; // both, and they stack
   return [
     {
       entryId: `${def.id}_implicit`,
       defId: `${def.id}_implicit`,
       group: 'implicit',
       slot: 'implicit',
-      name: 'Base',
+      name: perfect ? 'Perfect' : 'Base',
       tier: 0,
       tags: ['implicit'],
       stats: def.implicit.map((s) => ({
         stat: s.stat,
         form: s.form,
-        value: s.range[0],
+        value: lift === 1 ? s.range[0] : Math.ceil(s.range[0] * lift),
         tags: s.tags ?? [],
       })),
     },
   ];
 }
 
-/** Drop weight per kind: how many equip slots accept it. Two rings, twice as often. */
-const KIND_WEIGHT: Record<string, number> = EQUIP_SLOTS.reduce(
-  (acc, slot) => ({ ...acc, [slot.accepts]: (acc[slot.accepts] ?? 0) + 1 }),
+/** `meta.perfect` is the flag; what it lifts is written onto the ITEM. */
+export const isPerfect = (item: Item): boolean => item.meta.perfect === true;
+
+/** HOW LOUD A DROP IS, one number the floor and its beam both read: ordinary,
+ *  well rolled, a Perfect base, a named piece. */
+export function lootRank(item: Item): number {
+  if (item.kind === 'relic' || item.meta.unique !== undefined) return 3;
+  if (isPerfect(item)) return 2;
+  return item.mods.length >= 4 ? 1 : 0;
+}
+
+/** HANDS ARE A FACT ABOUT THE BASE, never a tag and never a family name. Lives
+ *  beside the other base facts so the sim can ask without reaching into game/. */
+export const isTwoHanded = (item: Item): boolean =>
+  (GEAR_BASE_BY_ID[item.base]?.hands ?? 1) > 1;
+
+/** Whether a base may be one at all: the top tier, and never a unique. */
+export const canBePerfect = (base: string): boolean =>
+  (GEAR_BASE_BY_ID[base]?.tier ?? 0) >= PERFECT.tier;
+
+/** THE ODDS per gear drop. Zero under `PERFECT.minSockets` — it is what the
+ *  last two sockets are for — and danger only ever lifts it. */
+export function perfectChance(sockets: number, danger: number): number {
+  if (sockets < PERFECT.minSockets) return 0;
+  const at = sockets >= RUN_SLOTS.length ? PERFECT.atFull : PERFECT.atThree;
+  const steep = Math.min(1, Math.max(0, danger) / PERFECT.dangerFull);
+  return at * (1 + steep * PERFECT.dangerLift);
+}
+
+/** Equip slots FOR a kind, counted ONCE each: the off hand also takes a
+ *  weapon, and counting it twice doubles every weapon drop by accident. */
+const SLOTS_FOR: Record<string, number> = EQUIP_SLOTS.reduce(
+  (acc, slot) => ({ ...acc, [slot.accepts[0]]: (acc[slot.accepts[0]] ?? 0) + 1 }),
   {} as Record<string, number>
 );
 
-/**
- * Kind first, base only within it: one uniform pick would make composition a
- * side effect of content volume, and there are 144 armour bases to one ring.
- * Bases above the item level are ineligible.
- */
+/** Drop weight per kind: its SLOTS times its `KIND_VARIETY`. Slots alone made
+ *  rings the commonest drop at 22% and the whole weapon kind rarer than boots,
+ *  because a kind holding eight different weapons needs more rolls to find the
+ *  one you want than a kind holding one shape. */
+const KIND_WEIGHT: Record<string, number> = Object.fromEntries(
+  Object.entries(SLOTS_FOR).map(([kind, slots]) => [kind, slots * (KIND_VARIETY[kind] ?? 1)])
+);
+
+/** Kind first, base only within it: a uniform pick would make composition a
+ *  side effect of content volume — 144 armour bases to one ring. */
 export function pickGearBase(
   ilvl: number,
   rng: Rng,
-  bias: Record<string, number> = {}
+  bias: Record<string, number> = {},
+  /** Best base TIER this may drop: what a SOCKET buys, not what a rung does. */
+  maxTier = Infinity
 ): GearBase | undefined {
-  const eligible = GEAR_BASES.filter((b) => (b.ilvl ?? 1) <= ilvl);
+  const eligible = GEAR_BASES.filter((b) => (b.ilvl ?? 1) <= ilvl && (b.tier ?? 1) <= maxTier);
   const kinds = [...new Set(eligible.map((b) => b.kind))];
   // A crystal hunting weapons weights the KIND pick and nothing else, so it
-  // cannot conjure a base the item level does not already allow.
-  // dropBias is already a multiplier: 1 is untouched.
+  // cannot conjure a base the item level does not allow. 1 is untouched.
   const kind = rng.weighted(kinds, (k) => (KIND_WEIGHT[k] ?? 1) * (bias[GROUP_OF_KIND[k]] ?? 1));
   if (!kind) return undefined;
   return rng.pick(eligible.filter((b) => b.kind === kind));
@@ -147,24 +189,42 @@ export function defaultGearBase(
   );
 }
 
-export function makeGear(base: string, ilvl: number, name?: string): Item {
+/** `made` is a CRAFT's lift on the row, and 1 is exactly the row — which is
+ *  what a DROP pays, so the level is what separates made from found. */
+export function makeGear(
+  base: string,
+  ilvl: number,
+  name?: string,
+  perfect = false,
+  made = 1
+): Item {
   const def = GEAR_BASE_BY_ID[base];
+  // A base that cannot be Perfect simply is not one, so a caller may ask.
+  const lifted = perfect && canBePerfect(base);
+  const lift = (n: number) => Math.ceil(n * (1 + PERFECT.lift) * made);
+  const plain = (n: number) => (made === 1 ? n : Math.ceil(n * made));
   return {
     id: uid('gear'),
     kind: 'gear',
     base,
-    name: name ?? def?.name ?? base,
-    tags: ['gear', base],
+    name: name ?? `${lifted ? 'Perfect ' : ''}${def?.name ?? base}`,
+    tags: ['gear', base, ...(lifted ? ['perfect'] : [])],
     ilvl,
     // The whole restriction mechanism: a base with no utility slots can never
     // roll move speed, whatever its tier.
     slots: { ...(def?.slots ?? GEAR_SLOTS) },
     mods: [],
-    implicits: implicitsFor(def),
-    ...(def?.armour ? { armour: def.armour } : {}), // the item outlives its base
+    implicits: implicitsFor(def, lifted, made),
+    // The item outlives its base, and a Perfect one differs from its row.
+    ...(def?.armour ? { armour: lifted ? lift(def.armour) : plain(def.armour) } : {}),
+    ...(def?.damage ? { damage: lifted ? lift(def.damage) : plain(def.damage) } : {}),
     // Which slot type this fits. Kept on the item so equipping doesn't have
     // to reach back into the base table every time it asks.
-    meta: { gearKind: def?.kind ?? 'body', art: def?.art ?? 'body' },
+    meta: {
+      gearKind: def?.kind ?? 'body',
+      art: def?.art ?? 'body',
+      ...(lifted ? { perfect: true } : {}),
+    },
   };
 }
 
@@ -177,9 +237,10 @@ export function rollGear(
   ilvl: number,
   mods: number,
   pool: ModPool,
-  rng: Rng
+  rng: Rng,
+  perfect = false
 ): Item {
-  const item = makeGear(base, ilvl);
+  const item = makeGear(base, ilvl, undefined, perfect);
   // modCapacity is the truth, not the caller: a tier 1 base asked for four
   // mods gets two, and a base with no utility slots gets whatever fits.
   const want = Math.min(mods, modCapacity(item));
@@ -244,6 +305,35 @@ export function makeRelic(def: RelicDef): Item {
   };
 }
 
+/** A STACK of one material: `meta.n` is how many, so a bag holds one row.
+ *  `done` is the PROCESSED form — the same row worked at a station, named for
+ *  what one of it is, so a family is two stacks and never two tables. */
+export function makeMaterial(def: MaterialDef, n = 1, done = false): Item {
+  const one = def.family ? MATERIAL_FAMILY_BY_ID[def.family]?.one : undefined;
+  return {
+    id: uid('material'),
+    kind: 'material',
+    base: def.id,
+    name: done && one ? `${def.name} ${one}` : def.name,
+    tags: [
+      'material',
+      def.id,
+      def.world,
+      ...(def.family ? [def.family] : ['unique']),
+      done ? 'processed' : 'raw',
+    ],
+    ilvl: 1,
+    slots: {},
+    mods: [],
+    implicits: [],
+    meta: done ? { n, done: true } : { n },
+  };
+}
+
+/** THE STACK a material belongs in. Raw and processed are the same row worked
+ *  or not, so the id alone cannot tell two stacks apart. */
+export const stackKey = (item: Item): string => `${item.base}${item.meta.done ? ':done' : ''}`;
+
 export function makeItem(base: string, ilvl = 1): Item {
   const m = /^crystal_t(\d+)$/.exec(base);
   return m ? makeCrystal(Number(m[1])) : makeGear(base, ilvl);
@@ -257,14 +347,53 @@ export function balance(w: Wallet, id: string): number {
   return w[id] ?? 0;
 }
 
+/** The item level the counter deals at, off the character's own level. */
+export const shopIlvl = (level: number): number =>
+  Math.max(1, Math.round(level * SHOP.ilvlPerLevel));
+
+/** MOST any one piece of this item level could ever sell for: the top base
+ *  tier, every slot filled. What a gamble has to cost more than. */
+export const bestSale = (ilvl: number): number =>
+  ilvl *
+  SHOP.pricePerIlvl *
+  Math.max(...SHOP.sellByTier) *
+  (1 + GAMBLE.fill * SHOP.pricePerMod) *
+  SHOP.sellFraction;
+
+/** DERIVED, so no edit to the counter's own numbers can leave a gamble paying
+ *  for itself: buy, sell it back, and you are down however the roll landed. */
+export const gamblePrice = (ilvl: number): number =>
+  Math.max(GAMBLE.floor, Math.round(bestSale(ilvl) * GAMBLE.over));
+
+/** What the counter's stock is worth in RUN POWER: the deepest band whose own
+ *  item level it has reached. A counter has no descent behind it, so this is
+ *  the only honest answer, and it is what gates a named piece out of one. */
+export const shopPower = (ilvl: number): number =>
+  Math.max(0, DROP_BANDS.filter((b) => b.ilvl <= ilvl).length - 1);
+
 /**
- * Priced off item level and tier, never off what rolled. Charging for a good
- * roll would turn a shelf you can SEE into the gamble maps already are.
+ * ONE PIECE OF A KIND, unseen until it is paid for. The counter stands in the
+ * camp above the Fissure, so the Fissure is the whole of what it can name.
+ * NEVER Perfect: that is the floor's own chase, and gold is not allowed at it.
  */
-export function priceOfItem(item: Item): number {
-  const byTier = SHOP.priceByTier[baseTier(item) - 1] ?? 1;
-  return Math.max(4, Math.round(item.ilvl * SHOP.pricePerIlvl * byTier));
+export function gambleFor(kind: string, ilvl: number, pool: ModPool, rng: Rng): Item | undefined {
+  const power = shopPower(ilvl);
+  const named = UNIQUES.filter(
+    (u) => GEAR_BASE_BY_ID[u.base]?.kind === kind && opensHere(u.gate, power, 'fissure', 'gamble')
+  );
+  if (named.length > 0 && rng.next() < GAMBLE.uniqueChance) {
+    return makeUnique(rng.pick(named)!, ilvl, rng);
+  }
+  const base = rng.pick(GEAR_BASES.filter((b) => b.kind === kind && (b.ilvl ?? 1) <= ilvl));
+  return base ? rollGear(base.id, ilvl, GAMBLE.fill, pool, rng) : undefined;
 }
+
+/** Raw only, and never a world's unique: the counter smooths a recipe you are
+ *  two short of, and the best inputs stay something you went and got. */
+export const materialPrice = (def: MaterialDef): number => MATERIAL_PRICE[def.world];
+
+export const soldHere = (def: MaterialDef, level: number): boolean =>
+  def.family !== null && level >= MATERIAL_SOLD_AT[def.world];
 
 /** Gear only. A crystal is a standing choice, not stock. */
 export const canSell = (item: Item): boolean => item.kind === 'gear';
@@ -306,11 +435,21 @@ export interface RecipeResult {
   error?: string;
 }
 
-export function runRecipe(wallet: Wallet, recipeId: string): RecipeResult {
+/** WHAT THE SHELF CHARGES THIS CHARACTER. One price for a whole climb is what
+ *  made adding a modifier free; the shelf's item level is what it rides. */
+export function recipeInputs(recipe: Recipe, level: number): Record<string, number> {
+  if (!recipe.goldPerIlvl) return recipe.inputs;
+  const ilvl = Math.max(1, level) * SHOP.ilvlPerLevel;
+  const gold = (recipe.inputs.gold ?? 0) + Math.round(recipe.goldPerIlvl * ilvl * ilvl);
+  return { ...recipe.inputs, gold };
+}
+
+export function runRecipe(wallet: Wallet, recipeId: string, level = 1): RecipeResult {
   const recipe = RECIPE_BY_ID[recipeId];
   if (!recipe) return { ok: false, error: `no recipe '${recipeId}'` };
-  if (!spend(wallet, recipe.inputs)) {
-    const need = Object.entries(recipe.inputs)
+  const inputs = recipeInputs(recipe, level);
+  if (!spend(wallet, inputs)) {
+    const need = Object.entries(inputs)
       .map(([id, n]) => `${n} ${id}`)
       .join(', ');
     return { ok: false, error: `need ${need}` };
@@ -321,14 +460,6 @@ export function runRecipe(wallet: Wallet, recipeId: string): RecipeResult {
     return { ok: true };
   }
   return { ok: true, item: makeItem(recipe.output.base) };
-}
-
-// A run reports what it was worth itself — see RunState.loot. It drops gold and
-// gear only, so the rare sigils and the Shard of Ruin have no source at all
-// outside the dev kit; see DEV_CURRENCY.
-
-export function kindOf(item: Item): ItemKind {
-  return item.kind;
 }
 
 /** A crystal with its level's slots filled at random. */

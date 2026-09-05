@@ -1,32 +1,39 @@
 /**
- * The Trade screen: pick one, then walk it.
+ * The Trade screen: the web you walk, and the one place you may become
+ * something else.
  *
- * Twenty nodes fit on a screen, so unlike the skill web this one is drawn to
- * FIT and has no pan, no zoom and no Fit button. A map you scroll is what a
- * hundred nodes need; five spokes of four are a picture.
+ * FORTY-FIVE nodes no longer fit a card, so this roams: scroll to zoom, drag
+ * to move, Fit to see the shape of it. Through `webcam.ts`, which the skills
+ * web uses too — one camera, and it already knows why rebuilding per frame is
+ * what made the other one stutter.
  *
- * How you COME BY a trade is a placeholder and is marked as one on the screen:
- * the intent is a storyline with the Lampwright that is not written, and it
- * will replace the ACQUISITION without touching the tree, the points or the
- * allocation.
+ * A trade is chosen when the character is MADE — it is who you are, and the
+ * body you are drawn as — so the picker here is the CHANGE, not the start. A
+ * save from before that has none, and the character-select screen catches it.
  */
 import { TRADE, TRADE as TRADE_RULES } from '../data';
 import { GRANT_BY_ID } from '../sim/grants';
 import {
   TRADES,
   TRADE_BY_ID,
+  baselineLines,
   canAllocateTrade,
   canDeallocateTrade,
   neighboursOfTrade,
   tradeNodes,
+  tradeNextAt,
   tradePointsFor,
-  tradeSwitchCost,
 } from '../trades';
 import { CENTRE } from '../trees/node';
 import { allocateTrade, deallocateTrade, takeUpTrade, tradePointsLeft } from '../sim/character';
 import { attachTooltip, hideTooltip } from './tooltip';
 import { nodeCard } from './glossary';
-import { disc, gem, stud, svgEl } from './webart';
+import { warnAtCamp } from './atcamp';
+import { inDescent } from './run';
+import { chain, frame, mount, svgEl } from './webart';
+import { WebFind } from './websearch';
+import { BUILD, Camera } from './webcam';
+import { nodeGlyph } from './webicons';
 import { ask } from './confirm';
 import { note } from './history';
 import type { GameState } from '../game/state';
@@ -46,15 +53,36 @@ let onChanged: (() => void) | null = null;
 /** Whether the two cards are up. Forced open with no trade taken; otherwise it
  *  is a decision you made once, and leaving it on screen buries the web. */
 let picking = false;
+/** Cleared whenever the web goes away, so it is framed again on the way back. */
+let framed = false;
 
-// Everything below is in WEB units, and the svg carries a viewBox that frames
-// them. Nothing measures the element: the wrapper is inside a modal whose own
-// height is decided after this draws, so a box read here is a box that has
-// already moved by the time anyone looks at it.
-const NODE_R = { minor: 0.19, notable: 0.32 };
-const HUB_R = 0.52;
-/** Room round the outermost node, so a stud's rim is never against the edge. */
-const MARGIN = 0.7;
+/** In WEB UNITS; `BUILD` turns them into the pixels the art is drawn at. */
+const NODE_R = { minor: 0.23, notable: 0.37 };
+const HUB_R = 0.56;
+
+/** Forty-five nodes no longer fit a card, so this web roams like the skills
+ *  one — and through the SAME camera, or the two drift and one of them is the
+ *  slow one. */
+const cam = new Camera({
+  svg: 'trade-web',
+  wrap: 'trade-webwrap',
+  home: 46,
+  zoom: { min: 14, max: 130, step: 1.18 },
+});
+
+/** FINDING A NODE. Forty-five of them across five spokes is a web you scroll
+ *  past the one you were looking for. */
+const find = new WebFind({
+  input: 'trade-find',
+  svg: 'trade-web',
+  nodes: () => tradeNodes(game?.character.trade),
+  focus: (node) => {
+    cam.panX = node.x;
+    cam.panY = node.y;
+    cam.scale = Math.max(cam.scale, BUILD);
+    cam.apply();
+  },
+});
 
 /** Every node's own line, printed from the GRANT rather than its prose, so
  *  what the sim does and what the card says cannot come apart. */
@@ -90,8 +118,8 @@ function renderPicker(): void {
         'span',
         'catcard__count',
         earned > 0
-          ? `${TRADE_RULES.maxPoints} points, half the web`
-          : `not until level ${TRADE_RULES.levelsPerPoint}`
+          ? `${TRADE_RULES.maxPoints} points, ${TRADE_RULES.pointsPerGrant} at a time`
+          : `not until level ${TRADE_RULES.firstAt}`
       )
     );
     card.onclick = () => choose(trade.spec.id);
@@ -99,26 +127,19 @@ function renderPicker(): void {
   }
 }
 
-/** Taking one up. A swap refunds every point and costs gold; the first one is
- *  free, because nothing has been walked yet to pay for. */
+/** Taking one up, and there is no taking it back: who you are is chosen when
+ *  you come down here. The WALK still refunds a node at a time. */
 async function choose(tradeId: string): Promise<void> {
   const { character } = game;
   const name = TRADE_BY_ID[tradeId]?.spec.name ?? tradeId;
+  if (character.trade) return;
 
-  if (character.trade) {
-    const cost = tradeSwitchCost(character.level);
-    if (game.wallet.gold < cost) {
-      note(`Taking up the ${name} costs ${cost} gold — you have ${game.wallet.gold}`, 'fail');
-      return;
-    }
-    const yes = await ask({
-      title: `Take up the ${name}?`,
-      text: `${cost} gold, and all ${character.tradeAllocated.length} points you have spent come back.`,
-      confirm: `Pay ${cost}`,
-    });
-    if (!yes) return;
-    game.wallet.gold -= cost;
-  }
+  const yes = await ask({
+    title: `Take up the ${name}?`,
+    text: 'This is who you are for the rest of this character. The points you spend on its web come back one at a time; the trade itself does not.',
+    confirm: `Take it up`,
+  });
+  if (!yes) return;
 
   if (!takeUpTrade(character, tradeId)) return;
   note(`You take up the ${name}.`);
@@ -141,13 +162,20 @@ function renderWeb(): void {
   const taken = new Set(allocated);
   const spare = tradePointsLeft(game.character);
 
-  const reach = Math.max(1, ...nodes.map((n) => Math.hypot(n.x, n.y))) + MARGIN;
-  svg.setAttribute('viewBox', `${-reach} ${-reach} ${reach * 2} ${reach * 2}`);
-  svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+  // ONE group, built in the web's own space at a fixed scale. The camera is a
+  // transform over the whole thing and nothing here is rebuilt to move it —
+  // rebuilding per wheel tick is what made the skills web stutter.
+  const view = svgEl('g', { class: 'web__view' });
+  const reach = Math.max(1, ...nodes.map((n) => Math.max(Math.abs(n.x), Math.abs(n.y)))) + 1.4;
+  cam.origin = Math.ceil(reach * BUILD);
+  svg.style.width = `${cam.origin * 2}px`;
+  svg.style.height = `${cam.origin * 2}px`;
 
-  const at = (n: { x: number; y: number }) => ({ x: n.x, y: n.y });
-  const middle = { x: 0, y: 0 };
+  const at = (n: { x: number; y: number }) => cam.place(n.x, n.y);
+  const middle = cam.place(0, 0);
   const byId = new Map(nodes.map((n) => [n.id, n]));
+  const rOf = (kind: 'minor' | 'notable') => NODE_R[kind] * BUILD;
+  const hubR = HUB_R * BUILD;
 
   // Edges first, so studs sit on top of them, and trimmed to each end's rim: a
   // line drawn centre to centre shows through a dimmed node.
@@ -169,8 +197,8 @@ function renderWeb(): void {
       const dx = to.x - from.x;
       const dy = to.y - from.y;
       const len = Math.max(1e-3, Math.hypot(dx, dy));
-      const rFrom = NODE_R[node.kind];
-      const rTo = other === CENTRE ? HUB_R : NODE_R[far!.kind];
+      const rFrom = rOf(node.kind);
+      const rTo = other === CENTRE ? hubR : rOf(far!.kind);
       links.push({
         a: { x: from.x + (dx / len) * rFrom, y: from.y + (dy / len) * rFrom },
         b: { x: to.x - (dx / len) * rTo, y: to.y - (dy / len) * rTo },
@@ -179,34 +207,26 @@ function renderWeb(): void {
     }
   }
 
-  const casing = 0.16;
+  const casing = Math.max(3, BUILD * 0.14);
   for (const l of links) {
-    svg.append(
-      svgEl('line', {
-        x1: l.a.x, y1: l.a.y, x2: l.b.x, y2: l.b.y,
-        class: 'web__edge', 'stroke-width': casing,
-      })
-    );
-  }
-  for (const l of links) {
-    svg.append(
-      svgEl('line', {
-        x1: l.a.x, y1: l.a.y, x2: l.b.x, y2: l.b.y,
-        class: `web__edge--lit${l.live ? ' web__edge--on' : ''}`,
-        'stroke-width': casing * (l.live ? 0.62 : 0.34),
-      })
-    );
+    for (const link of chain(l.a, l.b, casing * 0.5, `web__chain${l.live ? ' web__chain--on' : ''}`)) {
+      view.append(link);
+    }
   }
 
   const spec = TRADE_BY_ID[tradeId].spec;
   const hub = svgEl('g', { class: 'web__centre' });
-  for (const part of stud(gem(19), 19, middle, HUB_R, 'web__hub')) hub.append(part);
-  attachTooltip(hub, () => `${spec.name}\n${spec.blurb}`);
-  svg.append(hub);
+  for (const part of mount(middle, hubR, 'web__hub')) hub.append(part);
+  // The middle is WHAT THE TRADE ITSELF GIVES, said with every figure in it —
+  // off each grant's own `say`, so the card and the sim cannot come apart.
+  attachTooltip(hub, () =>
+    [spec.name, spec.blurb, '', spec.baseline.short, ...baselineLines(spec)].join('\n')
+  );
+  view.append(hub);
 
   for (const node of nodes) {
     const pos = at(node);
-    const r = NODE_R[node.kind];
+    const r = rOf(node.kind);
     const owned = taken.has(node.id);
     const reachable = canAllocateTrade(tradeId, node.id, allocated);
     const open = reachable && spare > 0;
@@ -223,10 +243,12 @@ function renderWeb(): void {
       role: 'button',
       'data-node': node.id,
     });
-    const grid = node.kind === 'notable' ? 13 : 9;
-    for (const part of stud(node.kind === 'notable' ? gem(grid) : disc(grid), grid, pos, r, 'web__node')) {
-      group.append(part);
-    }
+    for (const part of frame(node.kind, pos, r, 'web__node')) group.append(part);
+    const glyphSize = r * 1.24;
+    const glyph = nodeGlyph(node, glyphSize);
+    glyph.setAttribute('x', (pos.x - glyphSize / 2).toFixed(2));
+    glyph.setAttribute('y', (pos.y - Number(glyph.getAttribute('height')) / 2).toFixed(2));
+    group.append(glyph);
 
     attachTooltip(group, () => {
       const state = owned
@@ -242,8 +264,11 @@ function renderWeb(): void {
     });
 
     const act = () => {
+      // A drag that ends over a node is not a click on it.
+      if (cam.dragged) return;
       if (owned) deallocateTrade(game.character, node.id);
       else if (!allocateTrade(game.character, node.id)) return;
+      if (inDescent()) warnAtCamp();
       render();
     };
     group.addEventListener('click', act);
@@ -254,8 +279,13 @@ function renderWeb(): void {
         act();
       }
     });
-    svg.append(group);
+    view.append(group);
   }
+
+  svg.append(view);
+  cam.apply();
+  // Every node is new, so whatever the box holds is marked again.
+  find.paint();
 }
 
 /** Stable id per node, so a tutorial step could ring one. */
@@ -269,43 +299,53 @@ function render(): void {
   const { character } = game;
   const earned = tradePointsFor(character.level);
   const chosen = character.trade ? TRADE_BY_ID[character.trade] : null;
-  const nextAt = (Math.floor(character.level / TRADE.levelsPerPoint) + 1) * TRADE.levelsPerPoint;
+  const nextAt = tradeNextAt(character.level);
 
   $('trade-modal-title').textContent = chosen ? chosen.spec.name : 'Trade';
   $('trade-sub').textContent = chosen
     ? `${character.tradeAllocated.length}/${earned} points spent` +
-      (earned < TRADE.maxPoints
-        ? ` · next at level ${nextAt} · ${TRADE.maxPoints} at level ${TRADE.maxPoints * TRADE.levelsPerPoint}`
+      (nextAt !== null
+        ? ` · ${TRADE.pointsPerGrant} more at level ${nextAt} · ${TRADE.maxPoints} in all`
         : ' · every point earned')
     : earned > 0
       ? `${earned} point${earned === 1 ? '' : 's'} waiting — choose what to be.`
-      : `A trade is yours at level ${TRADE.levelsPerPoint}. You are ${character.level}.`;
+      : `A trade is yours at level ${TRADE.firstAt}. You are ${character.level}.`;
 
-  // The placeholder, said out loud rather than hidden: what replaces it is a
-  // storyline, and it will replace how you GET one and nothing else.
-  $('trade-placeholder').textContent =
-    'Anyone may take one up for now. Earning one is the Lampwright’s business.';
+  // Who you ARE is chosen once, so this screen is where one is WALKED.
+  $('trade-placeholder').textContent = chosen
+    ? 'You chose this when you came down here, and it does not change.'
+    : '';
 
   const open = picking || !chosen;
+  const showWeb = !!chosen && !open;
   $('trade-pick').hidden = !open;
-  $('trade-webwrap').hidden = !chosen || open;
-
-  const swap = $('trade-swap') as HTMLButtonElement;
-  swap.hidden = !chosen;
-  swap.textContent = open ? 'Never mind' : `Change trade — ${tradeSwitchCost(character.level)} gold`;
-  swap.onclick = () => {
-    picking = !picking;
-    render();
-  };
+  $('trade-webwrap').hidden = !showWeb;
+  if (!showWeb) framed = false;
 
   if (open) renderPicker();
   else renderWeb();
+  // Opens FRAMED, unlike the skills web. That one holds a hundred and sixteen
+  // nodes and fitting them is a grey smear you would zoom straight out of;
+  // forty-five fit and stay readable, and a web whose shape you cannot see is
+  // a web nobody plans a route through.
+  //
+  // Framed HERE rather than in `openTrade`, and after the wrap is shown: a
+  // hidden element measures nothing, so a fit before the render is a fit to a
+  // guessed box — and taking a trade up reaches the web without opening the
+  // screen at all.
+  if (showWeb && !framed) {
+    cam.fit(tradeNodes(character.trade!), 1.1);
+    cam.apply();
+    framed = true;
+  }
   onChanged?.();
 }
 
 export function openTrade(): void {
   $('trade').hidden = false;
   picking = false;
+  framed = false;
+  find.clear();
   render();
 }
 
@@ -321,4 +361,10 @@ export function initTrade(state: GameState, changed?: () => void): void {
   onChanged = changed ?? null;
 
   ($('trade-close') as HTMLButtonElement).onclick = closeTrade;
+  ($('trade-fit') as HTMLButtonElement).onclick = () => {
+    cam.fit(tradeNodes(game.character.trade));
+    cam.apply();
+  };
+  cam.attach();
+  find.attach();
 }

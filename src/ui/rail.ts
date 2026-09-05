@@ -8,27 +8,31 @@
 import type { GameState } from '../game/state';
 import { keyFor, keyName } from './keys';
 import { screenIcon } from './screenicons';
+import { attachTooltip } from './tooltip';
 
 function dress(button: HTMLElement, game: GameState): void {
   const label = button.textContent?.trim() ?? '';
-  const icon = screenIcon(button.id);
+  const icon = screenIcon(button.id, 24); // a 16-grid glyph at 18 is a smudge in a 34px socket
   if (!icon) return;
   button.replaceChildren(icon);
 
-  // A glyph with no accessible name is a button that reads as nothing.
-  if (label) {
-    button.setAttribute('aria-label', label);
-    button.title = label;
-  }
+  // A glyph with no accessible name is a button that reads as nothing. The
+  // hover name is the game's own tooltip — never `title`, which the browser delays.
+  if (label) button.setAttribute('aria-label', label);
 
   const binding = button.dataset.key;
   const key = binding ? keyFor(game, binding) : '';
-  if (!key) return;
-  const badge = document.createElement('span');
-  badge.className = 'railbtn__key';
-  badge.textContent = keyName(key);
-  button.append(badge);
-  button.title = `${label} (${keyName(key)})`;
+  if (key) {
+    const badge = document.createElement('span');
+    badge.className = 'railbtn__key';
+    badge.textContent = keyName(key);
+    button.append(badge);
+  }
+  if (label)
+    attachTooltip(button, () => {
+      const now = binding ? keyFor(game, binding) : '';
+      return now ? `${label} (${keyName(now)})` : label;
+    });
 }
 
 /** The save is where parking lives, so it survives a reload like a keybind. */
@@ -45,11 +49,6 @@ export function toggleParkedPanels(force?: boolean): void {
 /** After a load: another slot's game may have been playing with them away. */
 export const syncParkedPanels = (): void => {
   if (state) document.body.classList.toggle('panelsoff', state.parked);
-};
-
-/** The opening cannot ring a button that is parked, so it un-parks first. */
-export const unparkPanels = (): void => {
-  if (parked()) toggleParkedPanels(false);
 };
 
 /** Reads `fullscreenElement`, never a boolean of its own: the browser leaves

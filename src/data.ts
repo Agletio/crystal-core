@@ -13,6 +13,7 @@ import type {
   DropGate,
   GearKind,
   MapTheme,
+  LadderZoneDef,
   MapThemeDef,
   MonsterFamilyDef,
   MonsterRankDef,
@@ -71,7 +72,7 @@ export const DAMAGE_GROUPS = ['elemental', 'occult'] as const;
  *  crystal that hunts boots is one you socket for a day. */
 export const DROP_GROUPS: Array<{ id: string; mod: string; kinds: GearKind[] }> = [
   { id: 'weapons', mod: 'of the Armoury', kinds: ['weapon'] },
-  { id: 'armour', mod: 'of the Foundry', kinds: ['helmet', 'body', 'gloves', 'boots'] },
+  { id: 'armour', mod: 'of the Foundry', kinds: ['helmet', 'body', 'gloves', 'boots', 'shield'] },
   { id: 'trinkets', mod: 'of the Reliquary', kinds: ['amulet', 'ring'] },
 ];
 
@@ -88,15 +89,94 @@ export const GROUP_OF_KIND: Record<string, string> = Object.fromEntries(
  * — a converted skill burns, bleeds or withers without any node saying so.
  */
 export const AILMENT_NAMES: Record<string, string> = {
-  physical: 'bleeding',
-  fire: 'burning',
-  cold: 'frostbite',
-  lightning: 'arcing',
-  poison: 'poison',
-  dark: 'withering',
-  light: 'searing',
-  prismatic: 'resonance',
+  physical: 'Bleed',
+  fire: 'Burn',
+  cold: 'Chill',
+  lightning: 'Shock',
+  poison: 'Poison',
+  dark: 'Curse',
+  light: 'Exposure',
 };
+
+/**
+ * WHAT A DAMAGE TYPE DOES over time. Dealing the type applies it at `chance`
+ * percent, so an ailment is a fact about the damage. One scales by its OWN tags
+ * and nothing else — Fire, Burn and Damage over Time reach a Burn where Spell,
+ * Attack and Critical never do. Prismatic has no row on purpose: what it gets
+ * instead is that little down here wards against it, a `DEFENCE` rule.
+ */
+export interface AilmentDef {
+  id: string;
+  name: string;
+  type: string; // the damage type that applies it
+  /** The name as a VERB, for "Chance to Bleed" — only where it is not one. */
+  verb?: string;
+  kind: 'damage' | 'chill' | 'shock' | 'curse' | 'exposure';
+  /** Percent per HIT before anything raises it, and ZERO for everything a
+   *  damage type applies: an Ailment is BOUGHT, never free. A baseline would
+   *  be unconditional damage on every build in the game, which measured as the
+   *  boss ceasing to be a barrier — a thin-geared runner beat it 4 times in 8.
+   *  Over 100% stacks: 250% is two and a 50% roll at a third. */
+  chance: number;
+  seconds: number;
+  tags?: string[]; // what its damage scales by; never the skill's, which is the point
+  dps?: number; // per second at ONE stack, before its own scaling
+  bySource?: boolean; // only applied by something that SAYS so. Poison alone
+  slowPer?: number; // Chill: percent off movement, attack and cast speed per stack
+  /** Stacks that Freeze. The hit after one is a Critical. */
+  freezeAt?: number;
+  freezeSeconds?: number;
+  /** Shock: what each tick throws at neighbours, and how far. */
+  arcShare?: number;
+  arcTargets?: number;
+  arcRadius?: number;
+  /** Curse: share of the target's MAXIMUM life it bursts for, per stack. */
+  burstShare?: number;
+  burstRadius?: number;
+  /** Exposure: percent increased damage taken, per stack. */
+  takenPer?: number;
+}
+
+export const AILMENTS: AilmentDef[] = [
+  {
+    id: 'burn', name: 'Burn', type: 'fire', kind: 'damage', chance: 0, seconds: 4,
+    tags: ['fire', 'burn', 'overTime'], dps: 26,
+  },
+  {
+    id: 'bleed', name: 'Bleed', type: 'physical', kind: 'damage', chance: 0, seconds: 5,
+    tags: ['physical', 'bleed', 'overTime'], dps: 22,
+  },
+  {
+    id: 'poison', name: 'Poison', type: 'poison', kind: 'damage', chance: 100, seconds: 6,
+    tags: ['poison', 'overTime'], dps: 19, bySource: true,
+  },
+  {
+    id: 'chill', name: 'Chill', type: 'cold', kind: 'chill', chance: 0, seconds: 3,
+    slowPer: 6, freezeAt: 8, freezeSeconds: 1.4,
+  },
+  {
+    id: 'shock', name: 'Shock', type: 'lightning', kind: 'shock', chance: 0, seconds: 4,
+    tags: ['lightning', 'shock', 'overTime'], dps: 7,
+    arcShare: 0.8, arcTargets: 3, arcRadius: 2.4,
+  },
+  {
+    id: 'curse', name: 'Curse', type: 'dark', kind: 'curse', chance: 0, seconds: 8,
+    burstShare: 4, burstRadius: 2.2,
+  },
+  {
+    id: 'exposure', name: 'Exposure', verb: 'Expose', type: 'light', kind: 'exposure', chance: 0, seconds: 5,
+    takenPer: 4,
+  },
+];
+
+export const AILMENT_BY_ID: Record<string, AilmentDef> = Object.fromEntries(
+  AILMENTS.map((a) => [a.id, a])
+);
+
+/** The ailment a damage type carries, or undefined for one that carries none. */
+export const AILMENT_OF_TYPE: Record<string, AilmentDef> = Object.fromEntries(
+  AILMENTS.map((a) => [a.type, a])
+);
 
 /** Damage that nothing scales and nothing resists. */
 export const TYPELESS = 'typeless';
@@ -107,15 +187,30 @@ export const AILMENT = {
   tick: 0.5, // poison lands in half-second lumps, which is also the crit cadence
 };
 
-/**
- * Resistance and armour are separate MULTIPLIERS — at both caps you take
- * 0.25 * 0.25 of a hit; adding them would be immunity at 75 + 75. Armour
- * curves with armour POINTS, not with the size of the hit, and applies to HITS
- * only: damage over time goes through resistance alone.
- */
+/** Resistance and armour are separate MULTIPLIERS — at both caps you take
+ *  0.25 * 0.25 of a hit; adding them would be immunity at 75 + 75. Armour
+ *  curves with armour POINTS and applies to HITS only. */
+/** What a passive deals on its OWN, off character LEVEL and nothing else: a
+ *  share of your hit is a rider no build declines, and a flat number dies by
+ *  band 3. Level is the one input that is not a choice. */
+export const PASSIVE_DAMAGE = {
+  sunderPerLevel: 5.5, // Sundering's Burst, physical
+  sunderEvery: 4, // seconds between one Burst being armed and the next
+  sunderRadius: 2.4,
+  frostPerLevel: 0.9, // Hoarfrost's spike, cold, and it goes off far more often
+  frostEvery: 0.7,
+  frostRange: 7,
+};
+
 export const DEFENCE = {
   resistanceCap: 75,
   armourCap: 75,
+  /** A Dodge stops a HIT outright like a Block, and caps lower: armour is
+   *  traded for it rather than worn beside it. */
+  dodgeCap: 50,
+  /** A Block stops a HIT outright, so the chance is the whole of it. Short of
+   *  certain, or a shield would be the only defence worth wearing. */
+  blockCap: 60,
   /** Armour points at which reduction reaches half the cap. */
   armourHalfPoint: 300,
   /**
@@ -124,6 +219,38 @@ export const DEFENCE = {
    * Armour gives way to the wards, so hardening one type costs the other.
    */
   monsterHitFloor: 0.25,
+};
+
+/** The fixed halves of the warrior's switches: a grant carries the AMOUNT and
+ *  this carries what it is measured against, so two nodes ADD UP. */
+export const WARRIOR = {
+  corneredBelow: 50, // percent of maximum life
+  riposteSeconds: 4, // how long a Block leaves the next hit sharpened
+  heavyHandSeconds: 2,
+  staggerSeconds: 3,
+  paintSeconds: 4, // how long the paint answers a blow, on both of its lines
+  shieldLessCap: 0.6,
+  secondSkinCap: 1,
+  stunPower: 1.5, // above 1, so a graze nearly never Stuns and a heavy blow nearly always does
+  stunBurstRadius: 2.6,
+};
+
+/** A hit's chance to Stun, off the share of MAXIMUM life it took. ONE
+ *  implementation, so the line a card prints is the roll the sim makes. */
+export const stunChanceFor = (share: number): number =>
+  Math.max(0, Math.min(1, share ** WARRIOR.stunPower));
+
+/**
+ * WHAT A TRADE GIVES FOR NOTHING, before a point is spent — what tells two of
+ * them apart in the first hour rather than at the point cap. The Alchemist's is
+ * charged by KILLS and never by a clock: seconds would hand a build grinding
+ * down one tanky body permanent regeneration for nothing.
+ */
+export const TRADE_BASE = {
+  alchemistChargePerKill: 1 / 8,
+  warriorStunSeconds: 1.1,
+  aethermancerPoolRegen: 2.5, // percent of maximum mana a second, over the base
+  aethermancerShield: 0.1,
 };
 
 /** Sockets in the Fissure. Count is run LENGTH; what is in them is difficulty. */
@@ -145,12 +272,6 @@ export const BASE_TIER_MODS = [2, 4, 6];
 export const baseMods = (tier: number): number =>
   BASE_TIER_MODS[Math.max(0, Math.min(BASE_TIER_MODS.length - 1, tier - 1))];
 
-/**
- * Where a modifier may go. Restricting what a piece can roll is a table, not
- * an engine feature: a base with zero utility slots cannot roll move speed.
- */
-export const GEAR_SLOT_TYPES = ['offence', 'defence', 'utility'] as const;
-
 /** Kept for crystals and any caller that still wants a default gear layout. */
 export const GEAR_SLOTS = { offence: 3, defence: 2, utility: 1 };
 
@@ -159,30 +280,66 @@ export const GEAR_SLOTS = { offence: 3, defence: 2, utility: 1 };
 // Gear mods declare appliesTo: ['gear'], so every base rolls from one pool and
 // a new base needs no new mod content.
 
+// The main hand keeps the id `weapon`: a save points at it.
+/** What a weapon COUNTS AS, so a requirement is answered by anything that is a
+ *  bigger version of what it named: a skill wanting a mace is answered by a
+ *  maul, and one naming the maul itself is answered by nothing else. DERIVED
+ *  rather than listed the other way round — a new family declares what it
+ *  counts as, and every requirement already written picks it up. */
+export const WEAPON_COUNTS_AS: Record<string, string[]> = {
+  sword: ['sword', 'melee'],
+  sword2h: ['sword2h', 'sword', 'melee', 'twohand'],
+  dagger: ['dagger', 'melee'],
+  mace: ['mace', 'melee'],
+  mace2h: ['mace2h', 'mace', 'melee', 'twohand'],
+  staff: ['staff', 'melee', 'twohand'],
+  wand: ['wand'],
+  bow: ['bow', 'twohand'],
+};
+
+/** The hand a weapon's own damage is read off, named rather than searched for. */
+export const WEAPON_SLOT = 'weapon';
+export const OFF_SLOT = 'offhand';
+
 export const EQUIP_SLOTS: EquipSlotDef[] = [
-  { id: 'weapon', name: 'Weapon', accepts: 'weapon' },
-  { id: 'helmet', name: 'Helmet', accepts: 'helmet' },
-  { id: 'body', name: 'Body', accepts: 'body' },
-  { id: 'gloves', name: 'Gloves', accepts: 'gloves' },
-  { id: 'boots', name: 'Boots', accepts: 'boots' },
-  { id: 'amulet', name: 'Amulet', accepts: 'amulet' },
-  { id: 'ring1', name: 'Ring I', accepts: 'ring' },
-  { id: 'ring2', name: 'Ring II', accepts: 'ring' },
+  { id: 'weapon', name: 'Main Hand', accepts: ['weapon'] },
+  // A SHIELD or a second one-handed weapon; a two-hander empties it.
+  { id: 'offhand', name: 'Off Hand', accepts: ['shield', 'weapon'] },
+  { id: 'helmet', name: 'Helmet', accepts: ['helmet'] },
+  { id: 'body', name: 'Body', accepts: ['body'] },
+  { id: 'gloves', name: 'Gloves', accepts: ['gloves'] },
+  { id: 'boots', name: 'Boots', accepts: ['boots'] },
+  { id: 'amulet', name: 'Amulet', accepts: ['amulet'] },
+  { id: 'ring1', name: 'Ring I', accepts: ['ring'] },
+  { id: 'ring2', name: 'Ring II', accepts: ['ring'] },
+  { id: 'gather', name: 'Tool', accepts: ['tool'], group: 'tool' },
+  { id: 'rod', name: 'Rod', accepts: ['rod'], group: 'tool' },
 ];
+
+/** DUAL WIELDING: every hit is BOTH hands and the rate ALTERNATES between them.
+ *  The shares add to more than one because a pair gives up a shield's armour and
+ *  its Block; what it is NOT is a second, independent swing. */
+export const DUAL = { main: 0.75, off: 0.55 };
 
 /** Where each rung of a family starts dropping, against a run's drop ilvl. */
 export const BASE_TIER_ILVL = [1, 22, 46];
 
 // --- armour ----------------------------------------------------------------
 //
-// Twelve families across four slots and three rungs. Every family spends the
-// SAME budget at the same rate and differs only in how it splits it, so a
-// hybrid is a redistribution rather than a surplus — the demo re-adds the
-// points to prove it. Slot layouts never vary by family: a better split AND
-// more openings is how one becomes the only choice.
+// Twelve families across four slots and three rungs, every one spending the
+// SAME budget and differing only in how it splits it. Slot layouts never vary
+// by family: a better split AND more openings is how one becomes the only
+// choice.
 
 /** Budget points per rung, before the slot share. */
 const ARMOUR_BUDGET = [20, 32, 46];
+
+/** **A HYBRID IS MORE TOTAL POWER; A SPECIALIST IS MORE OF ONE THING.** *"The
+ *  hybrids can be strictly more overall stat power… but you can get more of one
+ *  stat going specific."* So the two professions a hybrid costs buy BREADTH: it
+ *  spends `lift` times the budget, and no single share of it may reach a
+ *  specialist's — which the demo holds, for every stat there is. */
+export const HYBRID = { lift: 1.2 };
 
 /** How much of the budget a slot carries. Body armour is the armour piece. */
 const ARMOUR_SLOT_SHARE: Record<string, number> = {
@@ -199,7 +356,7 @@ const ARMOUR_SLOT_LAYOUT: Record<string, Record<string, number>> = {
 /**
  * What one budget point buys. These rates are what make the budget comparable
  * across families — a point of move speed has to be worth a point of armour or
- * the invariant is decoration. Crit is flat on a 5% base, so it is the dearest.
+ * the invariant is decoration. Crit is INCREASED, scaling a base of about 5.
  */
 const IMPLICIT_PER_POINT: Record<string, number> = {
   armour: 6,
@@ -208,23 +365,23 @@ const IMPLICIT_PER_POINT: Record<string, number> = {
   attackSpeed: 0.75,
   castSpeed: 0.75,
   moveSpeed: 0.5,
-  critChance: 0.25,
+  critChance: 3,
 };
 
 /** Armour and increases are whole numbers; the dear stats need a decimal. */
 const IMPLICIT_STEP: Record<string, number> = {
   armour: 1, attackDamage: 1, spellDamage: 1,
-  attackSpeed: 0.1, castSpeed: 0.1, moveSpeed: 0.1, critChance: 0.1,
+  attackSpeed: 0.1, castSpeed: 0.1, moveSpeed: 0.1, critChance: 1,
 };
 
-const IMPLICIT_STAT: Record<string, { stat: string; form: 'flat' | 'inc'; tags?: string[] }> = {
+export const IMPLICIT_STAT: Record<string, { stat: string; form: 'flat' | 'inc'; tags?: string[] }> = {
   armour: { stat: 'armour', form: 'flat' },
   attackDamage: { stat: 'damage', form: 'inc', tags: ['attack'] },
   spellDamage: { stat: 'damage', form: 'inc', tags: ['spell'] },
   attackSpeed: { stat: 'attackSpeed', form: 'inc' },
   castSpeed: { stat: 'castSpeed', form: 'inc' },
   moveSpeed: { stat: 'moveSpeed', form: 'inc' },
-  critChance: { stat: 'critChance', form: 'flat' },
+  critChance: { stat: 'critChance', form: 'inc' },
 };
 
 interface ArmourFamily {
@@ -248,7 +405,9 @@ export const ARMOUR_FAMILIES: ArmourFamily[] = [
   },
   {
     id: 'vanguard', archetypes: ['melee'],
-    mix: { armour: 0.7, attackDamage: 0.3 },
+    // It carries the ATTACK SPEED, and it is the only specialist that does: no
+    // hybrid may be the most of any stat, so every stat needs a home here.
+    mix: { armour: 0.6, attackDamage: 0.22, attackSpeed: 0.18 },
     words: ['Scored', 'Honed', 'Warlord'],
     nouns: { helmet: 'Barbute', body: 'Brigandine', gloves: 'Handguards', boots: 'Sabatons' },
   },
@@ -290,7 +449,7 @@ export const ARMOUR_FAMILIES: ArmourFamily[] = [
   },
   {
     id: 'runeguard', archetypes: ['melee', 'spell'],
-    mix: { armour: 0.4, spellDamage: 0.35, castSpeed: 0.25 },
+    mix: { armour: 0.4, spellDamage: 0.4, castSpeed: 0.2 },
     words: ['Etched', 'Warded', 'Aegis'],
     nouns: { helmet: 'Crown', body: 'Scalemail', gloves: 'Bracers', boots: 'Sollerets' },
   },
@@ -302,7 +461,7 @@ export const ARMOUR_FAMILIES: ArmourFamily[] = [
   },
   {
     id: 'whisper', archetypes: ['spell', 'rogue'],
-    mix: { armour: 0.22, spellDamage: 0.33, castSpeed: 0.25, moveSpeed: 0.2 },
+    mix: { armour: 0.22, spellDamage: 0.38, castSpeed: 0.2, moveSpeed: 0.2 },
     words: ['Hushed', 'Muted', 'Sibilant'],
     nouns: { helmet: 'Cap', body: 'Cloak', gloves: 'Fingers', boots: 'Padfeet' },
   },
@@ -314,20 +473,20 @@ export const ARMOUR_FAMILIES: ArmourFamily[] = [
   },
   {
     id: 'duelist', archetypes: ['melee', 'rogue'],
-    mix: { armour: 0.45, attackDamage: 0.3, attackSpeed: 0.13, moveSpeed: 0.12 },
+    mix: { armour: 0.45, attackDamage: 0.28, attackSpeed: 0.13, moveSpeed: 0.14 },
     words: ['Fenced', 'Parried', 'Bladed'],
     nouns: { helmet: 'Visor', body: 'Doublet', gloves: 'Guards', boots: 'Stepplates' },
   },
 ];
 
-const ARMOUR_SLOT_KINDS = ['helmet', 'body', 'gloves', 'boots'] as const;
+export const ARMOUR_SLOT_KINDS = ['helmet', 'body', 'gloves', 'boots'] as const;
 
 /** What the balance harnesses wear. Middling armour, or they measure the tank. */
 export const REFERENCE_ARMOUR_FAMILY = 'skirmisher';
 
 /** Budget a family may spend on one slot at one rung. */
-export const armourBudget = (kind: string, tier: number): number =>
-  ARMOUR_BUDGET[tier - 1] * (ARMOUR_SLOT_SHARE[kind] ?? 1);
+export const armourBudget = (kind: string, tier: number, hybrid = false): number =>
+  ARMOUR_BUDGET[tier - 1] * (ARMOUR_SLOT_SHARE[kind] ?? 1) * (hybrid ? HYBRID.lift : 1);
 
 /**
  * toFixed, not the bare multiply: 7 * 0.1 is 0.7000000000000001 in binary
@@ -352,7 +511,7 @@ const armourBases = (): GearBase[] => {
   for (const family of ARMOUR_FAMILIES) {
     for (const kind of ARMOUR_SLOT_KINDS) {
       for (let tier = 1; tier <= 3; tier++) {
-        const budget = armourBudget(kind, tier);
+        const budget = armourBudget(kind, tier, family.archetypes.length > 1);
         const implicit = Object.entries(family.mix)
           .filter(([key, share]) => key !== 'armour' && share > 0)
           .map(([key, share]) => spend(key, budget * share));
@@ -378,11 +537,9 @@ const armourBases = (): GearBase[] => {
 
 export const ARMOUR_BASES: GearBase[] = armourBases();
 
-/**
- * A base read back into budget points — the inverse of spend(), and the only
- * check that two families priced the same thing the same way. The rating counts;
- * it comes out of the same budget. Lossy by under a point per line.
- */
+/** A base read back into budget points — the inverse of spend(), and the only
+ *  check that two families priced the same thing the same way. Lossy by under
+ *  a point per line. */
 export const implicitSpend = (base: GearBase): number =>
   (base.armour ?? 0) / IMPLICIT_PER_POINT.armour +
   (base.implicit ?? []).reduce((total, s) => {
@@ -395,123 +552,406 @@ export const implicitSpend = (base: GearBase): number =>
     return key ? total + s.range[0] / IMPLICIT_PER_POINT[key] : total;
   }, 0);
 
-/** Points a family spends on one stat key, at a slot and rung. */
-export const familySpendOn = (familyId: string, kind: string, tier: number, key: string): number => {
-  const family = ARMOUR_FAMILIES.find((f) => f.id === familyId);
-  return (family?.mix[key] ?? 0) * armourBudget(kind, tier);
-};
-
 /**
- * One-handed weapons, in four families. Every weapon carries an IMPLICIT no
- * craft can touch — wands spell damage or cast speed, swords attack speed,
- * daggers flat crit, maces flat damage of ONE type, so a mace commits you.
- * Rungs within a family are gated by ilvl, so bases are themselves progression.
+ * Weapons, in five families, each carrying an IMPLICIT no craft can touch —
+ * wands spell damage or cast speed, swords attack speed, daggers flat crit,
+ * maces flat damage of ONE type, so a mace commits you. Bows are the one
+ * TWO-HANDED family, and the off hand is what pays for their increase.
  */
 const WEAPON_SLOTS = { offence: 5, defence: 1, utility: 0 };
+
+/** Swings a second per FAMILY, before anything worn scales it. This is the
+ *  whole of what a two-hander PAYS for its damage — a Sledge hits for 44 where
+ *  a Cudgel hits for 24, and swings at three quarters of the speed with no off
+ *  hand to put a shield in. A spell never reads it: `heroStats` keeps the
+ *  hero's own rate for one, so a wand's number is here for a wand ATTACK. */
+export const WEAPON_RATE: Record<string, number> = {
+  dagger: 1.55, sword: 1.3, wand: 1.25, bow: 1.2, mace: 1.05,
+  staff: 1.0, sword2h: 0.95, mace2h: 0.8,
+};
 
 const weapon = (
   id: string,
   name: string,
   family: string,
   ilvl: number,
-  implicit: StatSpec[]
+  damage: number,
+  implicit: StatSpec[],
+  hands = 1
 ): GearBase => ({
-  id, name, kind: 'weapon', art: family, family, ilvl,
+  id, name, kind: 'weapon', art: family, family, ilvl, damage,
+  attackSpeed: WEAPON_RATE[family] ?? HERO_BASE.attacksPerSecond,
   // Off the rung it drops at, so a side-grade arriving beside a rung holds
   // exactly what that rung holds.
   tier: BASE_TIER_ILVL.indexOf(ilvl) + 1,
   slots: { ...WEAPON_SLOTS },
   implicit,
+  ...(hands > 1 ? { hands } : {}),
 });
 
 export const WEAPON_BASES: GearBase[] = [
   // --- wands: the spell family ---------------------------------------
-  weapon('ash_wand', 'Ash Wand', 'wand', BASE_TIER_ILVL[0], [
+  weapon('ash_wand', 'Ash Wand', 'wand', BASE_TIER_ILVL[0], 5, [
     { stat: 'damage', form: 'inc', range: [10, 10], tags: ['spell'] },
   ]),
-  weapon('carved_wand', 'Carved Wand', 'wand', BASE_TIER_ILVL[1], [
+  weapon('carved_wand', 'Carved Wand', 'wand', BASE_TIER_ILVL[1], 8, [
     { stat: 'damage', form: 'inc', range: [16, 16], tags: ['spell'] },
   ]),
-  weapon('quartz_wand', 'Quartz Wand', 'wand', BASE_TIER_ILVL[2], [
+  weapon('quartz_wand', 'Quartz Wand', 'wand', BASE_TIER_ILVL[2], 12, [
     { stat: 'damage', form: 'inc', range: [24, 24], tags: ['spell'] },
   ]),
   // A side-grade rather than a fourth rung: it arrives beside the Carved Wand
   // and trades every point of the ladder for speed.
-  weapon('whisper_wand', 'Whispering Wand', 'wand', BASE_TIER_ILVL[1], [
+  weapon('whisper_wand', 'Whispering Wand', 'wand', BASE_TIER_ILVL[1], 7, [
     { stat: 'castSpeed', form: 'inc', range: [12, 12] },
   ]),
 
   // --- swords: attack speed ------------------------------------------
-  weapon('rusted_sword', 'Rusted Sword', 'sword', BASE_TIER_ILVL[0], [
+  weapon('rusted_sword', 'Rusted Sword', 'sword', BASE_TIER_ILVL[0], 21, [
     { stat: 'attackSpeed', form: 'inc', range: [8, 8] },
   ]),
-  weapon('iron_sword', 'Iron Sword', 'sword', BASE_TIER_ILVL[1], [
+  weapon('iron_sword', 'Iron Sword', 'sword', BASE_TIER_ILVL[1], 26, [
     { stat: 'attackSpeed', form: 'inc', range: [13, 13] },
   ]),
-  weapon('steel_sword', 'Steel Sword', 'sword', BASE_TIER_ILVL[2], [
+  weapon('steel_sword', 'Steel Sword', 'sword', BASE_TIER_ILVL[2], 48, [
     { stat: 'attackSpeed', form: 'inc', range: [18, 18] },
   ]),
 
   // --- daggers: crit --------------------------------------------------
-  weapon('shiv', 'Shiv', 'dagger', BASE_TIER_ILVL[0], [
-    { stat: 'critChance', form: 'flat', range: [3, 3] },
+  weapon('shiv', 'Shiv', 'dagger', BASE_TIER_ILVL[0], 19, [
+    { stat: 'critChance', form: 'inc', range: [25, 25] },
   ]),
-  weapon('stiletto', 'Stiletto', 'dagger', BASE_TIER_ILVL[1], [
-    { stat: 'critChance', form: 'flat', range: [5, 5] },
+  weapon('stiletto', 'Stiletto', 'dagger', BASE_TIER_ILVL[1], 25, [
+    { stat: 'critChance', form: 'inc', range: [45, 45] },
   ]),
-  weapon('fang', 'Fang', 'dagger', BASE_TIER_ILVL[2], [
-    { stat: 'critChance', form: 'flat', range: [8, 8] },
+  weapon('fang', 'Fang', 'dagger', BASE_TIER_ILVL[2], 47, [
+    { stat: 'critChance', form: 'inc', range: [75, 75] },
   ]),
 
-  // --- maces: one damage type each, so the choice commits you ---------
+  // --- maces: the heaviest base, and one damage type each ------------
   //
-  // Tagged 'attack' as well as their type. Without it a mace's flat fire
-  // damage would arm a spell too — a wand user could hold a mace for free
-  // damage, which defeats the point of families.
-  weapon('cudgel', 'Cudgel', 'mace', BASE_TIER_ILVL[0], [
-    { stat: 'damage', form: 'flat', range: [5, 5], tags: ['physical', 'attack'] },
+  // A typed maul's flat line is tagged 'attack' too, or a wand user could hold
+  // one for free spell damage. A plain mace's increased PHYSICAL is local.
+  weapon('cudgel', 'Cudgel', 'mace', BASE_TIER_ILVL[0], 24, [
+    { stat: 'damage', form: 'inc', range: [20, 20], tags: ['physical'] },
   ]),
-  weapon('ember_maul', 'Ember Maul', 'mace', BASE_TIER_ILVL[1], [
+  weapon('ember_maul', 'Ember Maul', 'mace', BASE_TIER_ILVL[1], 36, [
     { stat: 'damage', form: 'flat', range: [9, 9], tags: ['fire', 'attack'] },
   ]),
-  weapon('frost_maul', 'Frost Maul', 'mace', BASE_TIER_ILVL[1], [
+  weapon('frost_maul', 'Frost Maul', 'mace', BASE_TIER_ILVL[1], 36, [
     { stat: 'damage', form: 'flat', range: [9, 9], tags: ['cold', 'attack'] },
   ]),
-  weapon('storm_maul', 'Storm Maul', 'mace', BASE_TIER_ILVL[1], [
+  weapon('storm_maul', 'Storm Maul', 'mace', BASE_TIER_ILVL[1], 36, [
     { stat: 'damage', form: 'flat', range: [9, 9], tags: ['lightning', 'attack'] },
   ]),
-  weapon('skull_maul', 'Skull Maul', 'mace', BASE_TIER_ILVL[2], [
-    { stat: 'damage', form: 'flat', range: [14, 14], tags: ['physical', 'attack'] },
+  weapon('skull_maul', 'Skull Maul', 'mace', BASE_TIER_ILVL[2], 58, [
+    { stat: 'damage', form: 'inc', range: [20, 20], tags: ['physical'] },
+  ]),
+
+  // --- bows: the attack family, and the only two-handed one -----------
+  //
+  // Tagged 'attack' where the wand's line is tagged 'spell'. Twice the increase,
+  // because holding one gives up an off hand — a shield's Block and its rating.
+  weapon('crude_bow', 'Crude Bow', 'bow', BASE_TIER_ILVL[0], 29, [
+    { stat: 'attackRange', form: 'inc', range: [25, 25] },
+  ], 2),
+  weapon('horn_bow', 'Horn Bow', 'bow', BASE_TIER_ILVL[1], 37, [
+    { stat: 'attackRange', form: 'inc', range: [38, 38] },
+  ], 2),
+  weapon('yew_longbow', 'Yew Longbow', 'bow', BASE_TIER_ILVL[2], 70, [
+    { stat: 'attackRange', form: 'inc', range: [55, 55] },
+  ], 2),
+
+  // --- greatswords, mauls and staves: two hands, and a family a one-handed
+  // requirement is answered BY. See WEAPON_COUNTS_AS — a skill wanting a mace
+  // takes a maul, and only one naming the maul refuses everything else.
+  weapon('war_sword', 'War Sword', 'sword2h', BASE_TIER_ILVL[0], 45, [
+    { stat: 'attackSpeed', form: 'inc', range: [5, 5] },
+  ], 2),
+  weapon('great_sword', 'Great Sword', 'sword2h', BASE_TIER_ILVL[1], 55, [
+    { stat: 'attackSpeed', form: 'inc', range: [8, 8] },
+  ], 2),
+  weapon('reaver_sword', 'Reaver', 'sword2h', BASE_TIER_ILVL[2], 105, [
+    { stat: 'attackSpeed', form: 'inc', range: [11, 11] },
+  ], 2),
+
+  weapon('sledge', 'Sledge', 'mace2h', BASE_TIER_ILVL[0], 45, [
+    { stat: 'damage', form: 'inc', range: [25, 25], tags: ['physical'] },
+  ], 2),
+  weapon('great_maul', 'Great Maul', 'mace2h', BASE_TIER_ILVL[1], 52, [
+    { stat: 'damage', form: 'inc', range: [38, 38], tags: ['physical'] },
+  ], 2),
+  weapon('breaker_maul', 'Breaker', 'mace2h', BASE_TIER_ILVL[2], 87, [
+    { stat: 'damage', form: 'inc', range: [58, 58], tags: ['physical'] },
+  ], 2),
+
+  // One ART and two implicits, at every rung: the shod one is swung and the
+  // grey one is cast with, and which you are holding is the line on the piece.
+  weapon('shod_staff', 'Shod Staff', 'staff', BASE_TIER_ILVL[0], 38, [
+    { stat: 'damage', form: 'inc', range: [18, 18], tags: ['physical'] },
+  ], 2),
+  weapon('grey_staff', 'Grey Staff', 'staff', BASE_TIER_ILVL[0], 12, [
+    { stat: 'damage', form: 'inc', range: [22, 22], tags: ['spell'] },
+  ], 2),
+  weapon('ironshod_staff', 'Ironshod Staff', 'staff', BASE_TIER_ILVL[1], 45, [
+    { stat: 'damage', form: 'inc', range: [28, 28], tags: ['physical'] },
+  ], 2),
+  weapon('ashen_staff', 'Ashen Staff', 'staff', BASE_TIER_ILVL[1], 19, [
+    { stat: 'damage', form: 'inc', range: [35, 35], tags: ['spell'] },
+  ], 2),
+  weapon('warden_staff', 'Warden Staff', 'staff', BASE_TIER_ILVL[2], 77, [
+    { stat: 'damage', form: 'inc', range: [42, 42], tags: ['physical'] },
+  ], 2),
+  weapon('seer_staff', 'Seer Staff', 'staff', BASE_TIER_ILVL[2], 28, [
+    { stat: 'damage', form: 'inc', range: [52, 52], tags: ['spell'] },
+  ], 2),
+
+  // The same split on the dagger, one-handed: a shiv stabs, a kris is a focus.
+  weapon('bone_kris', 'Bone Kris', 'dagger', BASE_TIER_ILVL[0], 6, [
+    { stat: 'damage', form: 'inc', range: [12, 12], tags: ['spell'] },
+  ]),
+  weapon('rune_kris', 'Rune Kris', 'dagger', BASE_TIER_ILVL[1], 10, [
+    { stat: 'damage', form: 'inc', range: [19, 19], tags: ['spell'] },
+  ]),
+  weapon('sigil_kris', 'Sigil Kris', 'dagger', BASE_TIER_ILVL[2], 15, [
+    { stat: 'damage', form: 'inc', range: [28, 28], tags: ['spell'] },
   ]),
 ];
 
-/**
- * Jewellery carries no implicit, so a rung differs from the one below in
- * exactly one way: how many modifiers it holds. The first rung keeps the ids
- * `amulet` and `ring` — a save points at them.
- */
+/** The off hand, and the only source of Block in the game: a rating like a body
+ *  armour's and a chance to turn a hit aside. A bow gives up the lot. */
+const SHIELD_SLOTS = { offence: 1, defence: 4, utility: 1 };
+
+const shield = (
+  id: string,
+  name: string,
+  tier: number,
+  armour: number,
+  block: number
+): GearBase => ({
+  id, name, kind: 'shield', art: 'shield', family: 'shield',
+  ilvl: BASE_TIER_ILVL[tier - 1],
+  tier,
+  slots: { ...SHIELD_SLOTS },
+  armour,
+  implicit: [{ stat: 'blockChance', form: 'flat', range: [block, block] }],
+});
+
+export const SHIELD_BASES: GearBase[] = [
+  shield('bark_buckler', 'Bark Buckler', 1, 34, 15),
+  shield('banded_kite', 'Banded Kite Shield', 2, 62, 22),
+  shield('tower_shield', 'Graven Tower Shield', 3, 96, 30),
+];
+
+/** Every rung holds the same modifiers, so a rung buys the IMPLICIT's size. */
 const TRINKET_SLOTS = { offence: 3, defence: 2, utility: 1 };
 
-const trinket = (id: string, name: string, kind: GearKind, tier: number): GearBase => ({
-  id, name, kind, art: kind, tier,
-  ilvl: BASE_TIER_ILVL[tier - 1],
-  slots: { ...TRINKET_SLOTS },
-});
+/**
+ * TEN IMPLICITS, and JEWELLERY IS WHAT CARRIES THEM: a ring and an amulet of
+ * each, at three rungs. `per` is what one POINT of the budget buys, the one
+ * place a resistance point and a Strength point are priced against each other.
+ * `hue` is what the icon is washed toward — *"no new icons"*.
+ */
+export interface JewelImplicit {
+  id: string;
+  name: string;
+  /** The base's own noun, so a ring of Life is not "Ring of life". */
+  word: string;
+  stat: string;
+  form: 'flat' | 'inc';
+  per: number;
+  hue: string;
+}
+
+export const JEWEL_IMPLICITS: JewelImplicit[] = [
+  { id: 'elemental', name: 'Elemental Resistance', word: 'Bulwark',
+    stat: 'elementalRes', form: 'flat', per: 0.5, hue: 'var(--flame)' },
+  { id: 'occult', name: 'Occult Resistance', word: 'Veil',
+    stat: 'occultRes', form: 'flat', per: 0.5, hue: 'var(--amethyst)' },
+  { id: 'life', name: 'Life', word: 'Quick', stat: 'life', form: 'inc', per: 0.4,
+    hue: 'var(--hurt)' },
+  { id: 'mana', name: 'Mana', word: 'Well', stat: 'mana', form: 'inc', per: 0.7,
+    hue: 'var(--mana)' },
+  { id: 'strength', name: 'Strength', word: 'Ox', stat: 'strength', form: 'flat',
+    per: 0.6, hue: 'var(--rust)' },
+  { id: 'intelligence', name: 'Intelligence', word: 'Lens', stat: 'intelligence',
+    form: 'flat', per: 0.6, hue: 'var(--quartz)' },
+  { id: 'dexterity', name: 'Dexterity', word: 'Hare', stat: 'dexterity', form: 'flat',
+    per: 0.6, hue: 'var(--verdite)' },
+  { id: 'acuity', name: 'Acuity', word: 'Hawk', stat: 'acuity', form: 'flat',
+    per: 0.6, hue: 'var(--citrine)' },
+  { id: 'spirit', name: 'Spirit', word: 'Ember', stat: 'spirit', form: 'flat',
+    per: 0.6, hue: 'var(--flame-core)' },
+  { id: 'constitution', name: 'Constitution', word: 'Stone', stat: 'constitution',
+    form: 'flat', per: 0.6, hue: 'var(--bone)' },
+];
+
+export const JEWEL_IMPLICIT_BY_ID: Record<string, JewelImplicit> = Object.fromEntries(
+  JEWEL_IMPLICITS.map((j) => [j.id, j])
+);
+
+/** **THE AMULET'S IMPLICIT ROLLS STRONGER THAN A RING'S.** Two ring slots and
+ *  one amulet: without the split the answer is always "wear the three best"
+ *  and the amulet slot is not contested by anything. */
+export const JEWEL = {
+  ring: [12, 22, 34], // budget POINTS a ring's implicit gets, by rung
+  amuletLift: 1.5,
+  words: { ring: ['Band', 'Ring', 'Signet'], amulet: ['Pendant', 'Amulet', 'Torc'] },
+};
+
+const jewellery = (): GearBase[] => {
+  const out: GearBase[] = [];
+  for (const kind of ['ring', 'amulet'] as const) {
+    for (const line of JEWEL_IMPLICITS) {
+      for (let tier = 1; tier <= 3; tier++) {
+        const points = JEWEL.ring[tier - 1] * (kind === 'amulet' ? JEWEL.amuletLift : 1);
+        const value = Math.round(points * line.per);
+        out.push({
+          id: `${kind}_${line.id}_t${tier}`,
+          name: `${JEWEL.words[kind][tier - 1]} of the ${line.word}`,
+          kind,
+          art: kind,
+          family: line.id,
+          ilvl: BASE_TIER_ILVL[tier - 1],
+          tier,
+          slots: { ...TRINKET_SLOTS },
+          implicit: [{ stat: line.stat, form: line.form, range: [value, value] }],
+        });
+      }
+    }
+  }
+  return out;
+};
+
+/**
+ * A TOOL DECIDES WHAT YOU GATHER. *"You can only collect one at a time — if you
+ * don't have the correct one equipped you don't gather it."* A tool is NOT an
+ * `Item`: it never enters the bag, rolls a modifier or sells. **The deal only
+ * deals what your tools can work** — a cloth node put in front of a hero
+ * carrying a pick would pay nothing and stand there unusable, which is the
+ * never-prevented rule broken. Same node count either way.
+ */
+export interface ToolRungDef {
+  name: string;
+  at: number; // the GATHERING level that opens it
+  gold: number;
+  eats: number; // processed material of the tool's `eats` family
+  more: number; // extra RAW every node of its family hands over
+}
+
+export interface ToolDef {
+  id: string;
+  name: string;
+  slot: string;
+  skill: string; // the gathering profession it levels
+  family: string;
+  icon: string;
+  // Blades are the smith's and a line is spun, so nothing is paid for in its
+  // own output: every tool pulls on a profession other than the one it feeds.
+  eats: string;
+  rungs: ToolRungDef[];
+}
+
+/** THE ROD IS ITS OWN SLOT AND ALWAYS ON — *"a separate equip that is always
+ *  on"* — because water is outside the node count, so it costs the other
+ *  families nothing. The other slot is the CHOICE. */
+export interface ToolSlotDef {
+  id: string;
+  name: string;
+  blurb: string;
+}
+
+export const TOOL_SLOTS: ToolSlotDef[] = [
+  { id: 'gather', name: 'Tool', blurb: 'What you can take off the floor. One at a time.' },
+  { id: 'rod', name: 'Rod', blurb: 'Water is outside the count, so this costs the others nothing.' },
+];
+
+export const TOOLS: ToolDef[] = [
+  { id: 'pick', name: 'Pick', slot: 'gather', skill: 'mining', family: 'metal',
+    icon: 'tool_pick', eats: 'metal', rungs: [
+      { name: 'Chipped Pick', at: 1, gold: 0, eats: 0, more: 0 },
+      { name: 'Lamped Pick', at: 20, gold: 900, eats: 12, more: 1 },
+      { name: 'Seamed Pick', at: 50, gold: 6500, eats: 30, more: 2 },
+    ] },
+  { id: 'sickle', name: 'Sickle', slot: 'gather', skill: 'harvesting', family: 'cloth',
+    icon: 'tool_sickle', eats: 'metal', rungs: [
+      { name: 'Chipped Sickle', at: 1, gold: 0, eats: 0, more: 0 },
+      { name: 'Lamped Sickle', at: 20, gold: 900, eats: 12, more: 1 },
+      { name: 'Seamed Sickle', at: 50, gold: 6500, eats: 30, more: 2 },
+    ] },
+  { id: 'knife', name: 'Skinning Knife', slot: 'gather', skill: 'skinning', family: 'hide',
+    icon: 'tool_knife', eats: 'metal', rungs: [
+      { name: 'Chipped Knife', at: 1, gold: 0, eats: 0, more: 0 },
+      { name: 'Lamped Knife', at: 20, gold: 900, eats: 12, more: 1 },
+      { name: 'Seamed Knife', at: 50, gold: 6500, eats: 30, more: 2 },
+    ] },
+  { id: 'rod', name: 'Rod', slot: 'rod', skill: 'fishing', family: 'fish',
+    icon: 'tool_rod', eats: 'cloth', rungs: [
+      { name: 'Bent Rod', at: 1, gold: 0, eats: 0, more: 0 },
+      { name: 'Lamped Rod', at: 20, gold: 900, eats: 12, more: 1 },
+      { name: 'Seamed Rod', at: 50, gold: 6500, eats: 30, more: 2 },
+    ] },
+];
+
+export const TOOL_BY_ID: Record<string, ToolDef> = Object.fromEntries(TOOLS.map((t) => [t.id, t]));
+export const toolsForSlot = (slot: string): ToolDef[] => TOOLS.filter((t) => t.slot === slot);
+
+/** EVERY RUNG IS A BASE, derived so the two cannot drift. A tool holds no
+ *  modifier slots and never rolls — what it is worth is `more`, off the rung —
+ *  but it is an `Item` in every other way, so the bag, the sheet, a drag and
+ *  the smith's counter all read it through the code gear already goes through. */
+export const toolBaseId = (tool: ToolDef, rung: number): string => `${tool.id}_r${rung}`;
+
+export const TOOL_BASES: GearBase[] = TOOLS.flatMap((tool) =>
+  tool.rungs.map((rung, at) => ({
+    id: toolBaseId(tool, at),
+    name: rung.name,
+    kind: (tool.slot === 'rod' ? 'rod' : 'tool') as GearKind,
+    art: tool.icon,
+    slots: {},
+    tier: 1,
+  }))
+);
+
+/** The tool a base belongs to, and which rung of it — the one way back. */
+export const TOOL_OF_BASE: Record<string, { tool: ToolDef; rung: number }> = Object.fromEntries(
+  TOOLS.flatMap((tool) => tool.rungs.map((_, at) => [toolBaseId(tool, at), { tool, rung: at }]))
+);
+
+export const JEWEL_BASES: GearBase[] = jewellery();
 
 export const GEAR_BASES: GearBase[] = [
   ...WEAPON_BASES,
+  ...SHIELD_BASES,
   ...ARMOUR_BASES,
-  trinket('amulet', 'Bone Amulet', 'amulet', 1),
-  trinket('jade_amulet', 'Jade Amulet', 'amulet', 2),
-  trinket('onyx_amulet', 'Onyx Amulet', 'amulet', 3),
-  trinket('ring', 'Copper Band', 'ring', 1),
-  trinket('silver_band', 'Silver Band', 'ring', 2),
-  trinket('gold_band', 'Gold Band', 'ring', 3),
+  ...JEWEL_BASES,
+  ...TOOL_BASES,
 ];
 
 export const GEAR_BASE_BY_ID: Record<string, GearBase> = Object.fromEntries(
   GEAR_BASES.map((b) => [b.id, b])
 );
+
+// --- what a kind is WORTH as a drop ----------------------------------------
+
+/**
+ * **HOW MANY MEANINGFULLY DIFFERENT THINGS A KIND HOLDS**, authored and never
+ * COUNTED: ten ring implicits counted took rings to 39% of every drop. A weight
+ * that tracks content volume is a bug waiting for the next table to grow, so
+ * this is a decision and the demo holds every kind to being in it.
+ */
+export const KIND_VARIETY: Record<string, number> = {
+  weapon: 8,
+  shield: 1,
+  helmet: 3,
+  body: 3,
+  gloves: 3,
+  boots: 3,
+  ring: 1,
+  amulet: 1,
+  tool: 0, // NEVER A DROP: the smith hands a tool over, so the floor may not
+  rod: 0, //  pay one — and the `?? 1` default would weight it like a shield
+};
 
 // --- mod pool --------------------------------------------------------------
 //
@@ -519,16 +959,31 @@ export const GEAR_BASE_BY_ID: Record<string, GearBase> = Object.fromEntries(
 // oversubscribed: more candidates than slots is what makes a roll a roll.
 
 /** A crystal's ward names the thing it turns aside, not the type by id. */
-const MONSTER_WARD_NAMES: Record<string, string> = {
-  physical: 'of Thick Hide',
-  fire: 'of Cinders',
-  cold: 'of Deep Frost',
-  lightning: 'of Earthing',
-  poison: 'of Clean Blood',
-  dark: 'of Lanterns',
-  light: 'of Long Shadow',
-  prismatic: 'of Dull Facets',
-};
+/** WARDS BY FAMILY: a ward has to be one NO BUILD CAN IGNORE, and one per type
+ *  failed that seven times in eight. Prismatic rides with Elemental. */
+/** A ward's rungs, PER TYPE — scaled down from a single-type ward's by the
+ *  average family size, so what a build actually FACES did not move. */
+export const WARD_TIERS: ReadonlyArray<readonly [number, number, number, number]> = [
+  [60, 120, 15, 19],
+  [40, 260, 10, 13],
+  [1, 620, 4, 7],
+];
+
+export const WARD_GROUPS = [
+  { id: 'elemental', name: 'of Cinders and Frost', types: ['fire', 'cold', 'lightning', 'prismatic'] },
+  { id: 'occult', name: 'of Clean Blood', types: ['poison', 'dark', 'light'] },
+  { id: 'physical', name: 'of Thick Hide', types: ['physical'] },
+];
+
+/** DESCENTS A ROLL IS WORTH, off its tier's own WEIGHT: what decides how OFTEN
+ *  it turns up decides how LONG it stays — *"super rare ones last less."* */
+export const USES = { most: 20, least: 5, common: 1000, rare: 100 };
+
+export function usesFor(weight: number): number {
+  const lo = Math.log(USES.rare);
+  const at = (Math.log(Math.max(1, weight)) - lo) / (Math.log(USES.common) - lo);
+  return Math.round(USES.least + Math.max(0, Math.min(1, at)) * (USES.most - USES.least));
+}
 
 export const CRYSTAL_MODS: ModDef[] = [
   {
@@ -554,122 +1009,121 @@ export const CRYSTAL_MODS: ModDef[] = [
       { ilvl: 1, weight: 800, stats: [{ stat: 'packCount', form: 'inc', range: [12, 27] }] },
     ],
   },
-  // Reward is derived from danger, so no crystal modifier is pure upside: a mod
-  // that only gave you something would be a mod with no decision in it.
+  // Reward is derived from danger, so no crystal modifier is pure upside.
+  // --- what the ROCK DOES, never what a monster's numbers are -------------
+  //
+  // *"Change all the mods to be effectively just powerful nodes."* Raw scaling
+  // is the RUNG's, so every row under this is a rule the sim runs.
+
   {
-    id: 'monster_armour',
+    id: 'crystal_watch',
     slot: 'mod',
-    name: 'of Hardened Hide',
+    name: 'of the Second Watch',
     appliesTo: ['crystal'],
-    tags: ['danger'],
-    // Armour is POINTS — it feeds armourReduction, which curves them into a
-    // percentage. Written as 'inc' it multiplied a base of zero and did
-    // nothing at all; these same numbers are meaningful as flat armour.
+    tags: ['danger', 'hoard'],
     tiers: [
-      {
-        ilvl: 60,
-        weight: 150,
-        name: 'of Scaled Hide',
-        stats: [
-          { stat: 'monsterArmour', form: 'flat', range: [110, 160] },
-          { stat: 'monsterArmour', form: 'inc', range: [50, 70] },
-        ],
-      },
-      {
-        ilvl: 45,
-        weight: 300,
-        stats: [
-          { stat: 'monsterArmour', form: 'flat', range: [60, 90] },
-          { stat: 'monsterArmour', form: 'inc', range: [30, 45] },
-        ],
-      },
-      { ilvl: 1, weight: 800, stats: [{ stat: 'monsterArmour', form: 'flat', range: [25, 45] }] },
+      { ilvl: 55, weight: 170, stats: [{ stat: 'watchChance', form: 'flat', range: [55, 75] }], name: 'of the Long Watch' },
+      { ilvl: 20, weight: 460, stats: [{ stat: 'watchChance', form: 'flat', range: [30, 50] }] },
+      { ilvl: 1, weight: 820, stats: [{ stat: 'watchChance', form: 'flat', range: [15, 28] }], name: 'of the Standing Watch' },
     ],
   },
   {
-    id: 'monster_crit',
+    id: 'crystal_hoard',
     slot: 'mod',
-    name: 'of Cruelty',
+    name: 'of the Hoard',
     appliesTo: ['crystal'],
-    tags: ['danger'],
+    tags: ['danger', 'hoard', 'quantity'],
     tiers: [
-      { ilvl: 60, weight: 130, name: 'of Malice', stats: [{ stat: 'monsterCrit', form: 'inc', range: [45, 65] }] },
-      { ilvl: 50, weight: 250, stats: [{ stat: 'monsterCrit', form: 'inc', range: [25, 40] }] },
-      { ilvl: 1, weight: 700, stats: [{ stat: 'monsterCrit', form: 'inc', range: [10, 20] }] },
-    ],
-  },
-  /* Three modifiers, one per element, rather than one that rolls which: a
-     crystal modifier is read and answered with a resistance, and a name saying
-     Cinders over a roll saying cold is worse than two more rows. Each ADDS a
-     share of what a monster already hits for, as its own type on top of what
-     the monster brings, so a ward blunts it rather than switching it off. */
-  {
-    id: 'monster_fire',
-    slot: 'mod',
-    name: 'of Cinders',
-    appliesTo: ['crystal'],
-    tags: ['danger', 'fire'],
-    tiers: [
-      { ilvl: 40, weight: 280, stats: [{ stat: 'monsterFire', form: 'inc', range: [225, 375] }] },
-      { ilvl: 1, weight: 700, stats: [{ stat: 'monsterFire', form: 'inc', range: [35, 75] }] },
+      { ilvl: 50, weight: 190, stats: [{ stat: 'hoardChance', form: 'flat', range: [26, 38] }], name: 'of the Cache' },
+      { ilvl: 20, weight: 520, stats: [{ stat: 'hoardChance', form: 'flat', range: [14, 24] }] },
+      { ilvl: 1, weight: 900, stats: [{ stat: 'hoardChance', form: 'flat', range: [6, 12] }], name: 'of the Stash' },
     ],
   },
   {
-    id: 'monster_cold',
+    id: 'crystal_vein',
     slot: 'mod',
-    name: 'of Frost',
+    name: 'of the Vein',
     appliesTo: ['crystal'],
-    tags: ['danger', 'cold'],
+    tags: ['danger', 'hoard', 'finding'],
     tiers: [
-      { ilvl: 40, weight: 280, stats: [{ stat: 'monsterCold', form: 'inc', range: [225, 375] }] },
-      { ilvl: 1, weight: 700, stats: [{ stat: 'monsterCold', form: 'inc', range: [35, 75] }] },
+      { ilvl: 50, weight: 180, stats: [{ stat: 'veinChance', form: 'flat', range: [24, 36] }], name: 'of the Lode' },
+      { ilvl: 20, weight: 500, stats: [{ stat: 'veinChance', form: 'flat', range: [13, 22] }] },
+      { ilvl: 1, weight: 880, stats: [{ stat: 'veinChance', form: 'flat', range: [6, 11] }], name: 'of the Seam' },
     ],
   },
   {
-    id: 'monster_lightning',
+    id: 'crystal_warden',
     slot: 'mod',
-    name: 'of Storms',
-    appliesTo: ['crystal'],
-    tags: ['danger', 'lightning'],
-    tiers: [
-      { ilvl: 40, weight: 280, stats: [{ stat: 'monsterLightning', form: 'inc', range: [225, 375] }] },
-      { ilvl: 1, weight: 700, stats: [{ stat: 'monsterLightning', form: 'inc', range: [35, 75] }] },
-    ],
-  },
-  {
-    id: 'monster_damage',
-    slot: 'mod',
-    name: 'of Ferocity',
+    name: 'of the Warden',
     appliesTo: ['crystal'],
     tags: ['danger'],
     tiers: [
-      { ilvl: 60, weight: 180, name: 'of Savagery', stats: [{ stat: 'monsterDamage', form: 'inc', range: [450, 640] }] },
-      { ilvl: 40, weight: 400, stats: [{ stat: 'monsterDamage', form: 'inc', range: [175, 250] }] },
-      { ilvl: 1, weight: 900, stats: [{ stat: 'monsterDamage', form: 'inc', range: [45, 90] }] },
+      { ilvl: 55, weight: 160, stats: [{ stat: 'wardenChance', form: 'flat', range: [45, 65] }], name: 'of the Keeper' },
+      { ilvl: 20, weight: 470, stats: [{ stat: 'wardenChance', form: 'flat', range: [22, 38] }] },
+      { ilvl: 1, weight: 850, stats: [{ stat: 'wardenChance', form: 'flat', range: [10, 18] }], name: 'of the Watchman' },
     ],
   },
   {
-    id: 'monster_life',
+    id: 'crystal_split',
     slot: 'mod',
-    name: 'of Resilience',
+    name: 'of the Splitting',
     appliesTo: ['crystal'],
-    tags: ['danger'],
+    tags: ['danger', 'density'],
     tiers: [
-      { ilvl: 60, weight: 180, name: 'of Endurance', stats: [{ stat: 'monsterLife', form: 'inc', range: [400, 560] }] },
-      { ilvl: 40, weight: 400, stats: [{ stat: 'monsterLife', form: 'inc', range: [150, 225] }] },
-      { ilvl: 1, weight: 900, stats: [{ stat: 'monsterLife', form: 'inc', range: [35, 75] }] },
+      { ilvl: 55, weight: 175, stats: [{ stat: 'splitChance', form: 'flat', range: [50, 70] }], name: 'of the Sundering' },
+      { ilvl: 20, weight: 490, stats: [{ stat: 'splitChance', form: 'flat', range: [26, 44] }] },
+      { ilvl: 1, weight: 870, stats: [{ stat: 'splitChance', form: 'flat', range: [12, 22] }], name: 'of the Parting' },
     ],
   },
   {
-    id: 'monster_speed',
+    id: 'crystal_welling',
     slot: 'mod',
-    name: 'of Swiftness',
+    name: 'of the Welling',
     appliesTo: ['crystal'],
     tags: ['danger'],
     tiers: [
-      { ilvl: 1, weight: 700, stats: [{ stat: 'monsterMoveSpeed', form: 'inc', range: [10, 22] }] },
+      { ilvl: 55, weight: 165, stats: [{ stat: 'wellChance', form: 'flat', range: [16, 24] }], name: 'of the Rising' },
+      { ilvl: 20, weight: 480, stats: [{ stat: 'wellChance', form: 'flat', range: [8, 14] }] },
+      { ilvl: 1, weight: 840, stats: [{ stat: 'wellChance', form: 'flat', range: [3, 7] }], name: 'of the Stirring' },
     ],
   },
+  {
+    id: 'crystal_bearer',
+    slot: 'mod',
+    name: 'of the Bearer',
+    appliesTo: ['crystal'],
+    tags: ['danger'],
+    tiers: [
+      { ilvl: 60, weight: 140, stats: [{ stat: 'bearerChance', form: 'flat', range: [9, 14] }], name: 'of the Procession' },
+      { ilvl: 25, weight: 420, stats: [{ stat: 'bearerChance', form: 'flat', range: [4, 8] }] },
+      { ilvl: 1, weight: 760, stats: [{ stat: 'bearerChance', form: 'flat', range: [2, 3] }], name: 'of the Carrier' },
+    ],
+  },
+  {
+    id: 'crystal_watched',
+    slot: 'mod',
+    name: 'of the Watched',
+    appliesTo: ['crystal'],
+    tags: ['danger', 'quantity'],
+    tiers: [
+      { ilvl: 55, weight: 175, stats: [{ stat: 'monsterRank', form: 'inc', range: [180, 260] }], name: 'of the Assembly' },
+      { ilvl: 20, weight: 500, stats: [{ stat: 'monsterRank', form: 'inc', range: [80, 150] }] },
+      { ilvl: 1, weight: 900, stats: [{ stat: 'monsterRank', form: 'inc', range: [30, 65] }], name: 'of the Few' },
+    ],
+  },
+  // No danger at all, so it is priced as the find modifiers are.
+  {
+    id: 'crystal_gilded',
+    slot: 'mod',
+    name: 'Gilded',
+    appliesTo: ['crystal'],
+    tags: ['finding'],
+    tiers: [
+      { ilvl: 55, weight: 180, stats: [{ stat: 'giltChance', form: 'flat', range: [28, 40] }], name: 'Gold-Struck' },
+      { ilvl: 1, weight: 480, stats: [{ stat: 'giltChance', form: 'flat', range: [10, 20] }] },
+    ],
+  },
+
   {
     id: 'layout_maze',
     slot: 'mod',
@@ -687,34 +1141,6 @@ export const CRYSTAL_MODS: ModDef[] = [
       },
     ],
   },
-  // One ward per damage type, so a map can be hostile to what you deal rather
-  // than to everything at once. Uniform resistance is a wall; a named one is a
-  // reason to carry a second damage type.
-  ...DAMAGE_TYPES.map((type) => ({
-    id: `monster_${type.id}_ward`,
-    slot: 'mod' as const,
-    name: MONSTER_WARD_NAMES[type.id] ?? `of the ${type.name} Ward`,
-    appliesTo: ['crystal' as const],
-    tags: ['danger'],
-    tiers: [
-      {
-        ilvl: 60,
-        weight: 120,
-        stats: [{ stat: monsterResStat(type.id), form: 'inc' as const, range: [40, 50] as [number, number] }],
-      },
-      {
-        ilvl: 40,
-        weight: 260,
-        stats: [{ stat: monsterResStat(type.id), form: 'inc' as const, range: [26, 34] as [number, number] }],
-      },
-      {
-        ilvl: 1,
-        weight: 620,
-        stats: [{ stat: monsterResStat(type.id), form: 'inc' as const, range: [10, 18] as [number, number] }],
-      },
-    ],
-  })),
-
   // What the rock gives up, rather than what it holds. These carry no danger
   // and never raise a drop's item level: the run pays exactly what it paid,
   // in a shape you chose. The cost is the socket, and the mod slot in it
@@ -1029,6 +1455,65 @@ const DELIVERY_DAMAGE_MODS: ModDef[] = DELIVERY_TAGS.map((tag) => ({
   ],
 }));
 
+/**
+ * What scales an AILMENT, and the only gear that does. `overTime` reaches every
+ * damage ailment; a per-ailment line reaches one. Neither is tagged spell,
+ * attack or critical, which is the whole of why none of those touch a Burn.
+ */
+const AILMENT_MODS: ModDef[] = [
+  {
+    id: 'inc_over_time_damage',
+    slot: 'offence',
+    name: 'Lingering',
+    appliesTo: ['gear'],
+    tags: ['damage', 'overTime'],
+    tiers: [
+      { ilvl: 45, weight: 260, stats: [{ stat: 'damage', form: 'inc', range: [26, 40], tags: ['overTime'] }] },
+      { ilvl: 1, weight: 700, stats: [{ stat: 'damage', form: 'inc', range: [10, 22], tags: ['overTime'] }] },
+    ],
+  },
+  ...AILMENTS.filter((a) => a.dps).map((a) => ({
+    id: `inc_${a.id}_damage`,
+    slot: 'offence' as const,
+    name: `of ${a.name}s`,
+    appliesTo: ['gear' as const],
+    tags: ['damage', a.id],
+    tiers: [
+      {
+        ilvl: 40,
+        weight: 220,
+        stats: [{ stat: 'damage', form: 'inc' as const, range: [34, 52] as [number, number], tags: [a.id] }],
+      },
+      {
+        ilvl: 1,
+        weight: 620,
+        stats: [{ stat: 'damage', form: 'inc' as const, range: [14, 28] as [number, number], tags: [a.id] }],
+      },
+    ],
+  })),
+  // Not for a `bySource` ailment: Poison is applied BY a skill and never by
+  // dealing the type, so a chance to apply one is a line that does nothing.
+  ...AILMENTS.filter((a) => !a.bySource).map((a) => ({
+    id: `chance_${a.id}`,
+    slot: 'offence' as const,
+    name: `of the ${a.name}`,
+    appliesTo: ['gear' as const],
+    tags: ['ailment', a.id],
+    tiers: [
+      {
+        ilvl: 35,
+        weight: 200,
+        stats: [{ stat: 'ailmentChance', form: 'flat' as const, range: [18, 30] as [number, number], tags: [a.id] }],
+      },
+      {
+        ilvl: 1,
+        weight: 560,
+        stats: [{ stat: 'ailmentChance', form: 'flat' as const, range: [7, 15] as [number, number], tags: [a.id] }],
+      },
+    ],
+  })),
+];
+
 const TYPED_DAMAGE_MODS: ModDef[] = DAMAGE_TYPES.flatMap((type) => [
   {
     id: `flat_${type.id}_damage`,
@@ -1112,26 +1597,145 @@ const RESISTANCE_MODS: ModDef[] = [
   })),
 ];
 
+/** Every POINT pays. There is no step to bank toward and nothing is floored,
+ *  so a point spent is a number that moved. */
+export const ATTRIBUTE_STEP = 1;
+
+/**
+ * The four, and what one POINT of each is worth. Every line is an ordinary
+ * stat under a name the modifier engine already reads, so an attribute
+ * reaches the sim by exactly the path gear does. The TAGS are the whole of
+ * what keeps them apart: a critical chance tagged `attack` does nothing for a
+ * spell, and `attackSpeed` is already the wrong stat for one, so Dexterity
+ * and Acuity are two halves of one shape rather than a stat with a switch.
+ */
+export const ATTRIBUTES: AttributeDef[] = [
+  {
+    id: 'strength',
+    name: 'Strength',
+    per: [
+      { stat: 'damage', form: 'inc', value: 1, tags: ['attack'] },
+      { stat: 'life', form: 'inc', value: 0.6, tags: [] },
+    ],
+  },
+  {
+    id: 'intelligence',
+    name: 'Intelligence',
+    per: [
+      { stat: 'damage', form: 'inc', value: 1, tags: ['spell'] },
+      { stat: 'mana', form: 'inc', value: 1.2, tags: [] },
+    ],
+  },
+  {
+    id: 'dexterity',
+    name: 'Dexterity',
+    per: [
+      { stat: 'critChance', form: 'inc', value: 1.5, tags: ['attack'] },
+      { stat: 'attackSpeed', form: 'inc', value: 0.4, tags: [] },
+    ],
+  },
+  {
+    id: 'acuity',
+    name: 'Acuity',
+    per: [
+      { stat: 'critChance', form: 'inc', value: 1.5, tags: ['spell'] },
+      { stat: 'castSpeed', form: 'inc', value: 0.4, tags: [] },
+    ],
+  },
+  {
+    id: 'spirit',
+    name: 'Spirit',
+    per: [
+      { stat: 'lifeRegen', form: 'inc', value: 2, tags: [] },
+      { stat: 'manaRegen', form: 'inc', value: 2, tags: [] },
+    ],
+  },
+  {
+    id: 'constitution',
+    name: 'Constitution',
+    per: [
+      { stat: 'armour', form: 'inc', value: 1.5, tags: [] },
+      { stat: 'elementalRes', form: 'flat', value: 0.3, tags: [] },
+      { stat: 'occultRes', form: 'flat', value: 0.3, tags: [] },
+    ],
+  },
+];
+
+export const ATTRIBUTE_BY_ID: Record<string, AttributeDef> = Object.fromEntries(
+  ATTRIBUTES.map((a) => [a.id, a])
+);
+
+/** **WHAT ONE UNIT OF A STAT IS WORTH, HERO-SIDE.** `DANGER_STATS` prices what
+ *  a MONSTER carries; this prices what YOU do. One POWER is one point of an
+ *  armour family's budget — 6 armour, or 1% increased damage. The seven a base
+ *  implicit carries are DERIVED off `IMPLICIT_PER_POINT` so the two can never
+ *  drift; the rest are balance numbers the demo PRINTS. */
+export const STAT_POWER: Record<string, number> = {
+  ...Object.fromEntries(
+    Object.entries(IMPLICIT_STAT).map(([key, s]) => [
+      `${s.stat}:${s.form}`,
+      1 / IMPLICIT_PER_POINT[key],
+    ])
+  ),
+  'damage:flat': 1.2, // a flat line beats an increase: it is multiplied afterwards
+  'life:inc': 1.4,
+  'life:flat': 0.05,
+  'mana:inc': 0.5,
+  'mana:flat': 0.02,
+  'lifeRegen:flat': 0.4,
+  'manaRegen:flat': 0.15,
+  'critMultiplier:inc': 0.5,
+  'areaOfEffect:inc': 0.7,
+  'attackRange:flat': 1.5,
+  'attackRange:inc': 0.3, // a bow's own line, and reach is worth less as a share
+  'dodgeChance:flat': 1.2,
+  'blockChance:flat': 1.2,
+  'rarity:inc': 0.2,
+  'currencyFind:inc': 0.2,
+  ...Object.fromEntries(DAMAGE_TYPES.map((t) => [`${t.id}Res:flat`, 0.5])),
+  ...Object.fromEntries(DAMAGE_GROUPS.map((g) => [`${g}Res:flat`, 0.5])),
+  ...Object.fromEntries(ATTRIBUTES.map((a) => [`${a.id}:flat`, 0.9])),
+};
+
+
+/** One per attribute, so the four you SPEND points on are also four you can
+ *  find. `ATTRIBUTE_STEP` is 1, so a point off a ring is worth a point spent,
+ *  and `attributeMod` adds the two before it works out what they buy. */
+const ATTRIBUTE_MODS: ModDef[] = ATTRIBUTES.map((attr) => ({
+  id: `attr_${attr.id}`,
+  slot: 'offence' as const,
+  name: `of the ${attr.name}`,
+  appliesTo: ['gear' as const],
+  tags: ['attribute', attr.id],
+  tiers: [
+    {
+      ilvl: 40,
+      weight: 240,
+      stats: [{ stat: attr.id, form: 'flat' as const, range: [14, 26] as [number, number], tags: [] }],
+    },
+    {
+      ilvl: 1,
+      weight: 620,
+      stats: [{ stat: attr.id, form: 'flat' as const, range: [4, 12] as [number, number], tags: [] }],
+    },
+  ],
+}));
+
 export const GEAR_MODS: ModDef[] = [
+  ...ATTRIBUTE_MODS,
   ...GEAR_MAIN_MODS,
   ...GEAR_SECONDARY_MODS,
   ...GEAR_UTILITY_MODS,
   ...TYPED_DAMAGE_MODS,
   ...DELIVERY_DAMAGE_MODS,
+  ...AILMENT_MODS,
   ...RESISTANCE_MODS,
 ];
 
-/**
- * What somebody will write over a base's own line, and nothing else in the game
- * can. Never rolled — weight 0, and the pool is weighted — but present in
- * `ALL_MODS`, so a save resolves one and `npm run mods` holds it to the same
- * rules as a line that drops.
- *
- * `kinds` is which gear a line may be grafted onto, read by the panel rather
- * than by `appliesTo`: a graft is not a currency and never asks the pool.
- * `who` is whose room it is written in — the man who takes bodies has no
- * opinion about a ring, and says so out loud.
- */
+/** What somebody will write over a base's own line. Never rolled — weight 0 —
+ *  but present in `ALL_MODS`, so a save resolves one and `npm run mods` holds
+ *  it to the same rules. `kinds` is which gear it may be grafted onto, read by
+ *  the panel rather than by `appliesTo`; `who` is whose room writes it. */
 export interface ForgedDef {
   mod: ModDef;
   kinds: string[];
@@ -1150,7 +1754,7 @@ export const FORGED: ForgedDef[] = [
       tags: ['forged'],
       grants: { explodeOnKill: { radius: 2, multiplier: 0.35 } },
       tiers: [
-        { ilvl: 1, weight: 0, stats: [{ stat: 'critChance', form: 'flat', range: [4, 4] }] },
+        { ilvl: 1, weight: 0, stats: [{ stat: 'critChance', form: 'inc', range: [40, 40] }] },
       ],
     },
   },
@@ -1195,9 +1799,9 @@ export const FORGED: ForgedDef[] = [
       name: 'Facet-Cut',
       appliesTo: ['gear'],
       tags: ['forged'],
-      grants: { explode: { radius: 1.4, multiplier: 0.3 }, manaMultiplier: 1.15 },
+      grants: { burstOnHit: { every: 5, perLevel: 3.5 } },
       tiers: [
-        { ilvl: 1, weight: 0, stats: [{ stat: 'areaOfEffect', form: 'inc', range: [10, 10] }] },
+        { ilvl: 1, weight: 0, stats: [{ stat: 'damage', form: 'inc', range: [10, 10] }] },
       ],
     },
   },
@@ -1210,7 +1814,7 @@ export const FORGED: ForgedDef[] = [
       name: 'Long-Angle',
       appliesTo: ['gear'],
       tags: ['forged'],
-      grants: { moreFar: { beyond: 4, more: 1.25 } },
+      grants: { untouchedMore: { after: 3, more: 1.25 } },
       tiers: [
         { ilvl: 1, weight: 0, stats: [{ stat: 'attackRange', form: 'flat', range: [1, 1] }] },
       ],
@@ -1346,20 +1950,57 @@ export const CURRENCY_BY_ID: Record<string, CurrencyDef> = Object.fromEntries(
 
 /** A crystal's level is its MOD CAPACITY and nothing else: two blank level 4s
  *  are as dangerous as two blank level 1s. `xp` is the total to sit at it. */
+/** A LEVEL BUYS `mods` — lines it holds — and `tier`, the best gear BASE a run
+ *  may drop. Levelling IS gear progression, so `xp` is a real climb. */
 export const CRYSTAL_LEVELS = [
-  { level: 1, mods: 0, xp: 0 },
-  { level: 2, mods: 1, xp: 5 },
-  { level: 3, mods: 2, xp: 20 },
-  { level: 4, mods: 3, xp: 60 },
+  { level: 1, mods: 0, tier: 1, xp: 0 },
+  { level: 2, mods: 1, tier: 1, xp: 25 },
+  { level: 3, mods: 2, tier: 2, xp: 120 },
+  { level: 4, mods: 3, tier: 3, xp: 400 },
 ];
 
-/**
- * What one cleared descent is worth to every crystal SOCKETED for it. Danger
- * is the multiplier, so a socket spent on a fresh crystal is a socket not
- * carrying danger, which is the whole cost. The flat term is why it is
- * `1 + danger`: four blanks are a set with no danger at all, and a game whose
- * first crystals can never level is a game with no way up.
- */
+/** WHICH TIER A LEVEL ROLLS — a LIFT, never a gate: an entry's weight raised to
+ *  how far its tier sits above the worst its modifier has, so the best and the
+ *  worst both stay possible at every level. Indexed by level, 1 first. */
+export const MOD_TIER_LIFT = [1, 1.2, 2, 3.6];
+
+export const tierForLevel = (level: number): number =>
+  CRYSTAL_LEVELS.find((l) => l.level === Math.round(level))?.tier ?? 1;
+
+/** ONE STEP OF THE CRYSTAL LADDER: a crystal, and the one thing true before it
+ *  is handed over. *"Normal crystals pay out at 25/50/75/100 runs of this new
+ *  zone. Prismatic crystal pays out and full lvl 4 normal crystals, then
+ *  another at level 2 prismatic, another at level 3, another at lvl 4, and then
+ *  the same thing for demonic."* */
+export interface CrystalStep {
+  id: string;
+  family: MonsterFamily;
+  clears?: number; // PROVING GROUND clears, which is what buys the Normal four
+  hold?: { family: MonsterFamily; count: number; level: number };
+}
+
+/** IN ORDER: nothing is skipped, so the step you are on is the only one owed. */
+export const CRYSTAL_LADDER: CrystalStep[] = [
+  { id: 'normal_1', family: 'normal', clears: 25 },
+  { id: 'normal_2', family: 'normal', clears: 50 },
+  { id: 'normal_3', family: 'normal', clears: 75 },
+  { id: 'normal_4', family: 'normal', clears: 100 },
+  { id: 'prismatic_1', family: 'prismatic', hold: { family: 'normal', count: 4, level: 4 } },
+  { id: 'prismatic_2', family: 'prismatic', hold: { family: 'prismatic', count: 1, level: 2 } },
+  { id: 'prismatic_3', family: 'prismatic', hold: { family: 'prismatic', count: 1, level: 3 } },
+  { id: 'prismatic_4', family: 'prismatic', hold: { family: 'prismatic', count: 1, level: 4 } },
+  { id: 'demonic_1', family: 'demonic', hold: { family: 'prismatic', count: 4, level: 4 } },
+  { id: 'demonic_2', family: 'demonic', hold: { family: 'demonic', count: 1, level: 2 } },
+  { id: 'demonic_3', family: 'demonic', hold: { family: 'demonic', count: 1, level: 3 } },
+  { id: 'demonic_4', family: 'demonic', hold: { family: 'demonic', count: 1, level: 4 } },
+];
+
+export const CRYSTAL_STEP_BY_ID: Record<string, CrystalStep> = Object.fromEntries(
+  CRYSTAL_LADDER.map((c) => [c.id, c])
+);
+
+/** What a clear is worth to every SOCKETED crystal. Danger multiplies; the flat
+ *  term is why it is `1 + danger`, or four blanks would never level. */
 export const CRYSTAL_XP = {
   perClear: 1,
   /** Danger points that add one clear's worth on top. */
@@ -1372,6 +2013,7 @@ export const LAMPWRIGHT = {
   name: 'the Lampwright',
   sprite: 'lampwright', // in BEASTIARY; the map and the panel draw the same one
   scene: 'workshop', // the room he is met in, in `SCENES`
+  rung: 2, // THE FIRST PERSON A NEW ACCOUNT MEETS, so he is the shallowest
   /** Said in the log the moment you come up in his room, before the walk. */
   seen: 'A lantern, further back than you have been. Something is holding it up.',
   /** Level 1 holds 0 modifiers: it is socketed blank, and the descent it makes
@@ -1389,15 +2031,19 @@ export const LAMPWRIGHT = {
     title: 'The Lampwright',
     beats: [
       {
-        said: 'You came back up. Most do not. I hear the ones that do not, sometimes, still going.',
+        said: 'Going down. Everyone is, when they come past me. Most of them are only going down the once.',
         act: 'face',
       },
       {
-        said: 'You went down there with nothing in your hands. Do not do that again. Take this one — I have carried it a long way and it has never once been any use to me.',
+        said: 'It does not end where you think it ends. There is always another way further in, and the things in it take their opinions from somewhere deeper than you.',
+        act: 'pace',
+      },
+      {
+        said: 'Do not go with nothing in your hands. Take this one — I have carried it a long way and it has never once been any use to me.',
         act: 'work',
       },
       {
-        said: 'Things that come out of the rock can be argued with. Not much. A little. You will find out what I mean and then you will not stop.',
+        said: 'The stair behind me keeps going. I stopped following it. You will not.',
         act: 'face',
       },
     ] as SceneBeat[],
@@ -1422,20 +2068,211 @@ export const LAMPWRIGHT = {
     ] as SceneBeat[],
     button: 'Take it',
   },
-  again: {
+  /** THE END OF THE CAMPAIGN, which is the one thing he has been waiting for.
+   *  Three bosses down and the climb whole; what he hands over is the first
+   *  crystal out of the wall and the first points on the web. */
+  campaign: {
     title: 'The Lampwright',
-    beats: [{ said: 'You went and got this one. I only carried it up.', act: 'work' }] as SceneBeat[],
+    beats: [
+      {
+        said: 'You went all the way down. Nobody has done that and come back up past me. I had stopped watching the stair.',
+        act: 'face',
+      },
+      {
+        said: 'So there is nothing under it after all. Only more of it, and it wants something else from you now.',
+        act: 'pace',
+      },
+      {
+        said: 'Here. I have been keeping these two for whoever finished it, and I had begun to think that was nobody.',
+        act: 'work',
+      },
+    ] as SceneBeat[],
+    button: 'Take them',
+  },
+  /** EVERY CRYSTAL AFTER THE CAMPAIGN'S. Said each time, so it is short and it
+   *  does not pretend to be an occasion the way the first two were. */
+  deeper: {
+    title: 'The Lampwright',
+    beats: [
+      { said: 'Another one. They come up out of the wall down there faster than I can carry them.', act: 'work' },
+      { said: 'Take it. I have stopped asking what it is I am handing you.', act: 'face' },
+    ] as SceneBeat[],
     button: 'Take it',
   },
+  again: {
+    title: 'The Lampwright',
+    // He KEEPS a counter, so the line that plays when he owes nothing has to
+    // say what clicking him does next.
+    beats: [
+      { said: 'You went and got this one. I only carried it up.', act: 'work' },
+      { said: 'I keep a shelf here. Shards, mostly. Come and look when you have the gold.', act: 'face' },
+    ] as SceneBeat[],
+    button: 'Take it',
+  },
+};
+
+
+/** WHAT YOU SEE WHEN YOU GET BACK UP. Meeting somebody in a descent is a line
+ *  said in passing — *"no big deal if you're afk grinding"* — and the story is
+ *  told in the camp, where a player is looking at the screen: full-screen art
+ *  with a caption under it, one panel a click.
+ *
+ *  Keyed by the MEETING id. Somebody with no row is simply in the camp when
+ *  you come up — *"less important characters like the workers can be a single
+ *  frame"*, and none is drawn yet. */
+export interface TalePanel {
+  art: string; // a key in `SCENE_ART`: one 688x384 picture, drawn whole
+  said: string;
+}
+
+export const TALES: Record<string, TalePanel[]> = {
+  workshop: [
+    {
+      art: 'tale_lamp_1',
+      said: 'I went in a long time ago, to see how far it went. I had a lamp and I had a season of food.',
+    },
+    {
+      art: 'tale_lamp_2',
+      said: 'The season went. The rock changed twice and kept going. And then, at last, I thought I had found the end of it.',
+    },
+    {
+      art: 'tale_lamp_3',
+      said: 'What I had found was that something down there was alive, and that it had been waiting a great deal longer than I had been walking.',
+    },
+  ],
+  smithy: [
+    {
+      art: 'tale_smith_1',
+      said: 'I came down for the ore. There is more of it in this rock than anybody above has ever wanted to believe.',
+    },
+    {
+      art: 'tale_smith_2',
+      said: 'I made them for the men who would come down here and buy them. Not one of those men ever came down.',
+    },
+    {
+      art: 'tale_smith_3',
+      said: 'What came down instead was the rest of the working, and it had been here a good deal longer than the ore had.',
+    },
+    {
+      art: 'tale_smith_4',
+      said: 'So I found out what my own work is worth. It is worth a great deal.',
+    },
+    {
+      art: 'tale_smith_5',
+      said: 'And I have been down here ever since, making the next one.',
+    },
+  ],
+  reading_room: [
+    {
+      art: 'tale_glass_1',
+      said: 'There were nine of us who could read it. We came down together to copy the wall out, and we agreed on almost nothing else.',
+    },
+    {
+      art: 'tale_glass_2',
+      said: 'The others went back up. I stayed. Two hundred and eleven marks on the one wall, and all of it is a single sentence.',
+    },
+    {
+      art: 'tale_glass_3',
+      said: 'Reading it was not enough. So I set the first of them into myself, to find out whether it would read back.',
+    },
+    {
+      art: 'tale_glass_4',
+      said: 'It read back. After that I stopped deciding how many there should be, and the rock decided instead.',
+    },
+    {
+      art: 'tale_glass_5',
+      said: 'Three marks, copied off a face nobody was meant to reach. I have been waiting a long while for somebody to carry them.',
+    },
+  ],
+  // NOT SAID BUT SEEN. *"By some magic you can see his memories."* So the
+  // first line is the only one that explains itself and the rest are the
+  // memory in his own broken mouth: he has been down here too long to have
+  // sentences left, and the last panel is not a memory at all — it is him,
+  // now, working out that you are too big to eat and worth trading with.
+  ossuary: [
+    {
+      art: 'tale_bone_1',
+      said: 'He touches your arm and his head comes into yours. It is soft at first. A boy came down here for the work. Nineteen. Boy had a lamp. Boy had food for a season.',
+    },
+    {
+      art: 'tale_bone_2',
+      said: 'Food gone. Lamp gone. Then boy finds the other thing there is down here. Boy does not say it out loud. Boy just does it.',
+    },
+    {
+      art: 'tale_bone_3',
+      said: 'Hands went first. Hands went first and hands never asked him. Head stayed boy a long while after. Head sat and watched hands.',
+    },
+    {
+      art: 'tale_bone_4',
+      said: 'Then head goes too. No hurt in it. No fight in it. Something down in boy said YES, and boy stopped being boy.',
+    },
+    {
+      art: 'tale_bone_5',
+      said: 'Now it is all mine. All of it, in rows, and I know every one by the sound it makes. I am good. I am the BEST there is at this.',
+    },
+    {
+      art: 'tale_bone_6',
+      said: 'You are too big. Too big, too bright, I do not try, no. But you go down and things stop down there — bring the stopped ones to ME. I give good things back. I have SO many good things.',
+    },
+  ],
+  orrery: [
+    {
+      art: 'tale_orrery_1',
+      said: 'I began with one shard, and the angle it made where it broke. Then the next one. Then the next.',
+    },
+    {
+      art: 'tale_orrery_2',
+      said: 'Nine rooms. A hundred and forty shards, measured against each other. Not once a different angle.',
+    },
+    {
+      art: 'tale_orrery_3',
+      said: 'So I hung the thing that would be wrong if I were. It has been turning ever since and it has not been wrong.',
+    },
+    {
+      art: 'tale_orrery_4',
+      said: 'The other one takes bodies. I take the dust, which is what is left when the rock has finished deciding.',
+    },
+    {
+      art: 'tale_orrery_5',
+      said: 'A body is an opinion. Dust is a measurement, and a measurement will fit inside a ring.',
+    },
+  ],
+  // ONE FRAME EACH. *"Less important characters like the workers can be a
+  // single frame."* A worker is somebody you got out, not somebody with a
+  // history, and one picture is the whole of what there is to say.
+  'worker:hob': [
+    {
+      art: 'tale_hob',
+      said: 'Four days on that ledge with the lamp out and nothing coming. Then you. I am not going to forget which of us walked down there.',
+    },
+  ],
+  'worker:nell': [
+    {
+      art: 'tale_nell',
+      said: 'I can smelt, weave, tan, cook and cut, and down there not one of the five was worth anything. Up here they are yours.',
+    },
+  ],
+  'worker:wat': [
+    {
+      art: 'tale_wat',
+      said: 'I came down for the glass and the glass kept me, and I had stopped counting. You got me out. Put me to work and we are square.',
+    },
+  ],
+  'worker:ida': [
+    {
+      art: 'tale_ida',
+      said: 'Nothing down there troubles a body that keeps moving, so I moved for a long while. I would rather stand still now, at your fire, and owe you for it.',
+    },
+  ],
 };
 
 /** The opening, in numbers: the one stretch where what happens next is
  *  scheduled rather than earned. */
 export const INTRO = {
   /** What the first crystal is paid for, with a notable taken in the ACTIVE
-   *  skill's tree: the cheapest notable in every tree is 3 points away, so 3
-   *  is the first level that can afford one. */
-  crystalSkillLevel: 3,
+   *  skill's tree: the cheapest is 4 points away — a way off the centre, a
+   *  step onto the ring, and the short chain there. */
+  crystalSkillLevel: 4,
   /** Forced onto that crystal by the first Shard of Making spent on it, at its
    *  cheapest tier, so a first crystal can never be what walls the game. */
   scriptedMod: 'layout_maze',
@@ -1444,104 +2281,14 @@ export const INTRO = {
   /** Two crystals set in the wall is what it takes for somebody to object. */
   bossSockets: 2,
   bossScene: 'reading_room',
+  /** Where his key's fight is: the fifth socket is the only way in. */
+  bossRoom: 'answering_hall',
 };
 
-/**
- * Every crystal past the first is gone and got. One clause of an objective:
- * `kind` names an entry in `QUEST_CONDITIONS` and everything else on it is
- * that condition's own parameters, so a new objective is a registry entry and
- * a row here rather than a change to anything that reads quests.
- */
-export interface QuestNeed {
-  kind: string;
-  [param: string]: unknown;
-}
+/** WHAT CLEARING THE CAMPAIGN PAYS: *"1 crystal and 10 trial points"* — one
+ *  crystal and the first 10 POINTS. */
+export const CAMPAIGN_REWARD = { crystals: 1, points: 10 };
 
-/** ALL of `need`. `detail` is the objective in words, and the screen shows it,
- *  so it and the clauses have to be changed together. */
-export interface CrystalQuest {
-  id: string;
-  name: string;
-  detail: string;
-  need: QuestNeed[];
-  gives: { level: number; family: MonsterFamily };
-}
-
-/**
- * Two ladders in one list, walkable in any order. The Normal rungs open the
- * sockets; the other two worlds are the opponents you take into them. A share
- * of 0.25 is ONE socketed crystal of that family out of four, so the second
- * gift of a world is earned by using its first.
- *
- * Every rung has to be plausible to a character that has just done the one
- * before it — the demo measures that, which is why the numbers can be soft.
- */
-export const CRYSTAL_QUESTS: CrystalQuest[] = [
-  {
-    id: 'normal_ii',
-    name: 'A Second Lamp',
-    detail: 'Bring a socketed crystal to level 3.',
-    need: [{ kind: 'crystal_level', value: 3 }],
-    gives: { level: 1, family: 'normal' },
-  },
-  {
-    id: 'demonic_i',
-    name: 'The First Door',
-    detail: 'Clear a descent at 30 danger.',
-    need: [{ kind: 'danger', value: 30 }],
-    gives: { level: 1, family: 'demonic' },
-  },
-  {
-    id: 'normal_iii',
-    name: 'Wider Ground',
-    detail: 'Clear a descent at 40 danger.',
-    need: [{ kind: 'danger', value: 40 }],
-    gives: { level: 1, family: 'normal' },
-  },
-  {
-    id: 'prismatic_i',
-    name: 'The Lit Seam',
-    detail: 'Clear a descent at 60 danger.',
-    need: [{ kind: 'danger', value: 60 }],
-    gives: { level: 1, family: 'prismatic' },
-  },
-  {
-    id: 'normal_iv',
-    name: 'Before The Lamp Dies',
-    detail: 'Clear a descent at 70 danger in under 90 seconds.',
-    need: [
-      { kind: 'danger', value: 70 },
-      { kind: 'under_seconds', value: 90 },
-    ],
-    gives: { level: 1, family: 'normal' },
-  },
-  {
-    id: 'demonic_ii',
-    name: 'Deeper In',
-    detail: 'Clear a descent at 110 danger with a Demonic crystal socketed.',
-    need: [
-      { kind: 'danger', value: 110 },
-      { kind: 'composition', family: 'demonic', share: 0.25 },
-    ],
-    gives: { level: 1, family: 'demonic' },
-  },
-  {
-    id: 'prismatic_ii',
-    name: 'Further Through',
-    detail: 'Clear a descent at 110 danger with a Prismatic crystal socketed.',
-    need: [
-      { kind: 'danger', value: 110 },
-      { kind: 'composition', family: 'prismatic', share: 0.25 },
-    ],
-    gives: { level: 1, family: 'prismatic' },
-  },
-];
-
-export const QUEST_BY_ID: Record<string, CrystalQuest> = Object.fromEntries(
-  CRYSTAL_QUESTS.map((q) => [q.id, q])
-);
-
-/** Every crystal rolls at the same item level, so a level buys room, never power. */
 export const CRYSTAL_ILVL = 70;
 
 // --- combat baselines ------------------------------------------------------
@@ -1558,7 +2305,7 @@ export const HERO_BASE = {
   critChance: 5,
   /** Extra percent on a crit, on top of the base doubling. */
   critMultiplier: 0,
-  moveSpeed: 3.4,
+  moveSpeed: 2.9,
   armour: 0,
   attackRange: 1.7,
   /** Body radius in tiles. */
@@ -1601,6 +2348,34 @@ export const PROJECTILE = {
   corridor: 0.85, // half-width of the corridor a Pierce searches
   pierceDamage: 0.7, // what a pierced enemy takes unless a talent says otherwise
   arcDamage: 0.7, // and what an arced-to one takes
+  fork: 3.2, // how far a Fork falls, from the enemy you aimed at
+  forkDamage: 0.45, // and what it lands for. A Fork is a second bolt, not the same one
+};
+
+/** An Echo is the same blow arriving at the next body out, each one looking
+ *  FURTHER — so buying more reaches deeper with no second switch for range. */
+export const MELEE = {
+  echo: 1.5, // how far the FIRST Echo looks, from the enemy you struck
+  echoStep: 0.6, // and how much further out each one after it may look
+  echoDamage: 0.7, // what an Echo lands for, where the one you aimed at takes all
+};
+
+/** AMBUSH puts you BEHIND the body before it hits it, and a Critical does the
+ *  whole thing again on somebody else. The follow-up is DELAYED on purpose:
+ *  instant, it reads as one hit doing double damage rather than as a second
+ *  teleport, and watching it happen is the point of the node. */
+export const AMBUSH = {
+  behind: 0.45, // the gap past both bodies' radii: touching, the two sprites overlap
+  chainDelay: 0.3, // seconds before a Critical's follow-up lands
+  chainReach: 9, // how far a follow-up may cross, in tiles
+  chainDamage: 0.7, // what it lands for, where the one you aimed at takes all
+};
+
+/** A killed enemy's Burst sets off the Burst of whatever IT kills, so a floor
+ *  packed tightly enough goes up off one cast. Depth is a COUNT and never a
+ *  time or a budget — one seed has to replay one chain. */
+export const BURST = {
+  chainDepth: 8, // how many times a death may set off the next death's Burst
 };
 
 /**
@@ -1609,14 +2384,15 @@ export const PROJECTILE = {
  * with a skill tree for the same point.
  */
 export const TRADE = {
-  levelsPerPoint: 5, // level 5 buys the first point, and picks the trade
-  maxPoints: 10,
-  /**
-   * Gold to take up a different trade, per character level. Every point comes
-   * back — what you pay for is the walk — because a hard lock would be the only
-   * unforgiving thing in a game that replays allocations rather than trusting them.
-   */
-  switchPerLevel: 40,
+  firstAt: 5, // the level that picks the trade AND hands over the first pair
+  levelsPerGrant: 20, // so the three pairs land at 5, 25 and 45
+  pointsPerGrant: 2, // TWO AT A TIME: a notable is two steps on, so a pair buys one
+
+  maxPoints: 6,
+  /** Gold to take every ATTRIBUTE point back, per level: the one allocation a
+   *  click cannot undo. The TRADE is permanent — *"I think trade should be a
+   *  permanent decision"* — so nothing buys a different one. */
+  respecPerLevel: 40,
 };
 
 /**
@@ -1634,20 +2410,14 @@ export const MONSTER_BASE = {
   aggroRange: 8,
 };
 
-/**
- * How long a descent runs, indexed by FILLED SOCKETS — index 0 is the bare
- * Fissure. Length only: monsters are exactly as strong in a four-socket run as
- * in an empty one. `size` is linear, so area goes as its square.
- */
+/** How long a descent runs, indexed by FILLED SOCKETS — index 0 is the bare
+ *  Fissure. Length only: what a socket holds is the difficulty, never the count.
+ *  `size` is linear, so area goes as its square. */
 export const SOCKET_SCALE = {
   size: [0.62, 1, 1.15, 1.3, 1.45],
   packs: [0.66, 1, 1.5, 2, 2.5],
-  /**
-   * Thinner packs at the bottom. Every other rung adds LENGTH, which a level
-   * one character survives by walking out hurt — but the first crystal you are
-   * given lands on a character who has cleared the Fissure exactly once, and a
-   * full-sized pack at 50 monsters is what kills them.
-   */
+  /** Thinner packs at the bottom: length is survived by walking out hurt, where
+   *  a full-sized pack of 50 kills a character one clear old. */
   packSize: [0.66, 0.8, 1, 1, 1],
 };
 
@@ -1658,17 +2428,371 @@ export const socketSize = (filled: number): number => rung(filled, SOCKET_SCALE.
 export const socketPacks = (filled: number): number => rung(filled, SOCKET_SCALE.packs);
 export const socketPackSize = (filled: number): number => rung(filled, SOCKET_SCALE.packSize);
 
+/** THE LADDER, in order. A RUNG is CHOSEN, one cleared stays open, and its
+ *  difficulty rides the crystal seam through `rungMod`. `*AtTop` is the LAST
+ *  depth of the LAST zone, and the ramp to it is STRAIGHT — every step costs
+ *  the same, so the climb is one line rather than three. */
+export const LADDER = {
+  // THE CAMPAIGN, run with NOTHING SOCKETED, so each zone carries the two things
+  // a crystal would otherwise decide: the WORLD you walk into and the best base
+  // TIER its depths drop. `arena` is its LAST depth, a fight rather than a
+  // descent; `id` is the save key, still spelt the way the worlds were.
+  zones: [
+    {
+      id: 'fissure', name: 'The Answering', art: 'climb_act1',
+      blurb: 'Shallow workings, shored and square. Somebody came back out of these.',
+      rungs: 12, arena: 'answering_hall', world: 'fissure', tier: 1,
+    },
+    {
+      id: 'prismatic', name: 'The Refraction', art: 'climb_act2',
+      blurb: 'Below daylight, where the rock has started closing what was cut.',
+      rungs: 14, arena: 'refraction_hall', world: 'prismatic', tier: 2,
+    },
+    {
+      id: 'demonic', name: 'The Flowering', art: 'climb_act3',
+      blurb: 'Older than anybody who dug toward it. Nothing down here was worked.',
+      rungs: 16, arena: 'flowering_hall', world: 'demonic', tier: 3,
+    },
+  ] as LadderZoneDef[],
+  lifeAtTop: 520,
+  damageAtTop: 430,
+  packAtTop: 55,
+};
+
+// --- what gear is MADE of -------------------------------------------------
+//
+// MATERIALS HAVE VERSIONS, NEVER TIERS: demonic cloth is not better than
+// prismatic cloth, so the shallow end stays an ingredient at the deep end and a
+// tier is how many DIFFERENT versions a recipe demands.
+
+/** One of the five things gear is made OF, and the one profession that works
+ *  it. `raw` comes out of a descent and `processed` is what camp turns it into.
+ *  `node` is what it looks like on a floor and `spent` the same object worked
+ *  out; *"ore is mined, hide is skinned"* is `verb` on ONE mechanism. */
+export type MaterialSource = 'gathered' | 'dropped'; // rock: gathered. body: dropped.
+
+export interface MaterialFamilyDef {
+  id: string;
+  name: string;
+  raw: string;
+  processed: string;
+  station: string;
+  verb: string;
+  node?: string; // a node's two frames; a DROPPED family has none
+  spent?: string;
+  /** The `HELD` row he holds while gathering it, for `GATHER.pause` seconds. */
+  tool?: string;
+  /** MORE pairs, a room drawing any of them evenly, so one plant is not wallpaper. */
+  also?: [string, string][];
+  from: MaterialSource;
+  /** What ONE processed unit of it is called, so a stack reads as a thing
+   *  rather than as a plural stuck on a name. */
+  one: string;
+}
+
+export const MATERIAL_FAMILIES: MaterialFamilyDef[] = [
+  { id: 'metal', name: 'Metal', raw: 'ore', processed: 'bars', station: 'the smelter',
+    verb: 'Mined', node: 'node_ore', spent: 'node_ore_spent', tool: 'pick',
+    also: [['node_ore2', 'node_ore2_spent'], ['node_ore3', 'node_ore3_spent']], from: 'gathered', one: 'Bar' },
+  // CLOTH IS A PLANT, which is where the herb went: something you cut.
+  { id: 'cloth', name: 'Cloth', raw: 'fibre', processed: 'bolts', station: 'the loom',
+    verb: 'Cut', node: 'node_fibre', spent: 'node_fibre_spent', tool: 'hook',
+    also: [['node_fibre2', 'node_fibre2_spent']], from: 'gathered', one: 'Bolt' },
+  { id: 'hide', name: 'Hide', raw: 'skins', processed: 'leather', station: 'the tanning frame',
+    verb: 'Skinned', from: 'dropped', one: 'Leather' },
+  { id: 'gem', name: 'Gem', raw: 'rough', processed: 'cut stones', station: "the jeweller's",
+    verb: 'Prised', from: 'dropped', one: 'Gem' },
+  { id: 'fish', name: 'Fish', raw: 'a catch', processed: 'meals', station: 'the kitchen',
+  // RIPPLES ON the water: a body of it is the map's job now.
+    verb: 'Netted', node: 'node_ripple', spent: 'node_ripple_spent', tool: 'rod',
+    from: 'gathered', one: 'Meal' },
+];
+
+/** Derived: a family changing source moves both with one edit. */
+export const GATHERED = MATERIAL_FAMILIES.filter((f) => f.from === 'gathered');
+export const DROPPED = MATERIAL_FAMILIES.filter((f) => f.from === 'dropped');
+
+export const MATERIAL_FAMILY_BY_ID: Record<string, MaterialFamilyDef> = Object.fromEntries(
+  MATERIAL_FAMILIES.map((f) => [f.id, f])
+);
+
+/** A FAMILY in a WORLD, or a world's own `unique` — which belongs to no family
+ *  and is what the best recipes ask for. */
+export interface MaterialDef {
+  id: string;
+  name: string;
+  world: MapTheme;
+  family: string | null;
+  icon: string;
+  description: string;
+  /** A UNIQUE'S OWN NODE, the two frames; without one it wears the ore's. */
+  node?: string;
+  spent?: string;
+}
+
+/** TWENTY VERSIONS AND FOUR UNIQUES: every family in every world, named for
+ *  the world — a naming problem is never a reason to drop a family from one. */
+export const MATERIALS: MaterialDef[] = [
+  { id: 'pale_iron', name: 'Pale Iron', world: 'fissure', family: 'metal', icon: 'mat_pale_iron',
+    description: 'Ore out of the old workings, more rust than iron.' },
+  { id: 'wickcloth', name: 'Wickflax', world: 'fissure', family: 'cloth', icon: 'mat_wickcloth',
+    description: 'Pale flax off the lamp shelves. It was grown for wicks, and it spins.' },
+  { id: 'sump_hide', name: 'Sump Hide', world: 'fissure', family: 'hide', icon: 'mat_sump_hide',
+    description: 'Skinned off something that drowned in the low workings.' },
+  { id: 'lampstone', name: 'Lampstone', world: 'fissure', family: 'gem', icon: 'mat_lampstone',
+    description: 'Holds a light it was never given.' },
+  { id: 'blindfish', name: 'Blindfish', world: 'fissure', family: 'fish', icon: 'mat_blindfish',
+    description: 'Pale and eyeless. It has never needed either.' },
+  { id: 'deadlight', name: 'Deadlight', world: 'fissure', family: null, icon: 'mat_deadlight',
+    node: 'node_deadlight', spent: 'node_deadlight_spent',
+    description: 'A candle still burning that warms nothing and lights nothing.' },
+
+  { id: 'lattice_ore', name: 'Lattice Ore', world: 'prismatic', family: 'metal', icon: 'mat_lattice_ore',
+    description: 'Ore the crystal grew through instead of round.' },
+  { id: 'glassweave', name: 'Glasshemp', world: 'prismatic', family: 'cloth', icon: 'mat_glassweave',
+    description: 'A fibre that grew up through the crystal, and pulls as fine as glass thread.' },
+  { id: 'shardhide', name: 'Shardhide', world: 'prismatic', family: 'hide', icon: 'mat_shardhide',
+    description: 'What grew a shell down here instead of a skin.' },
+  { id: 'clearheart', name: 'Clearheart', world: 'prismatic', family: 'gem', icon: 'mat_clearheart',
+    description: 'Cut once, a long way down, and never clouded.' },
+  { id: 'palefin', name: 'Palefin', world: 'prismatic', family: 'fish', icon: 'mat_palefin',
+    description: 'Out of the warm pools the crystal keeps.' },
+  { id: 'measured_dust', name: 'Measured Dust', world: 'prismatic', family: null, icon: 'mat_measured_dust',
+    node: 'node_dust', spent: 'node_dust_spent',
+    description: 'What is left when the rock has finished deciding.' },
+
+  { id: 'bloodiron', name: 'Bloodiron', world: 'demonic', family: 'metal', icon: 'mat_bloodiron',
+    description: 'Ore that stays wet however long it is left out.' },
+  { id: 'rotsilk', name: 'Rotcotton', world: 'demonic', family: 'cloth', icon: 'mat_rotsilk',
+    description: 'Grey bolls off a bush that feeds on what lies under it.' },
+  { id: 'rotting_leather', name: 'Rotting Leather', world: 'demonic', family: 'hide', icon: 'mat_rotting_leather',
+    description: 'It was going to rot anyway. Tanned, it takes longer.' },
+  { id: 'marrowstone', name: 'Marrowstone', world: 'demonic', family: 'gem', icon: 'mat_marrowstone',
+    description: 'Porous, warm, and it keeps a red light inside.' },
+  { id: 'sumpfish', name: 'Sumpfish', world: 'demonic', family: 'fish', icon: 'mat_sumpfish',
+    description: 'Hauled out of water warmer than it has any right to be.' },
+  { id: 'quick_marrow', name: 'Quick Marrow', world: 'demonic', family: null, icon: 'mat_quick_marrow',
+    node: 'node_marrow', spent: 'node_marrow_spent',
+    description: 'The bone stopped. What is in it did not.' },
+
+  { id: 'seamsteel', name: 'Seamsteel', world: 'seam', family: 'metal', icon: 'mat_seamsteel',
+    description: 'Two metals fused at a join neither one made.' },
+  { id: 'weldcloth', name: 'Seamflax', world: 'seam', family: 'cloth', icon: 'mat_weldcloth',
+    description: 'Grown across the join, one fibre on each side, and it spins as one.' },
+  { id: 'fusedhide', name: 'Fusedhide', world: 'seam', family: 'hide', icon: 'mat_fusedhide',
+    description: 'Scaled along one flank and furred along the other.' },
+  { id: 'joinstone', name: 'Joinstone', world: 'seam', family: 'gem', icon: 'mat_joinstone',
+    description: 'Red on one side of the line and clear on the other.' },
+  { id: 'riftfin', name: 'Riftfin', world: 'seam', family: 'fish', icon: 'mat_riftfin',
+    description: 'Dark down one flank, pale down the other, split at the spine.' },
+  { id: 'fault_glass', name: 'Fault Glass', world: 'seam', family: null, icon: 'mat_fault_glass',
+    description: 'The join itself, broken off and carried out.' },
+];
+
+export const MATERIAL_BY_ID: Record<string, MaterialDef> = Object.fromEntries(
+  MATERIALS.map((m) => [m.id, m])
+);
+
 /**
- * Run power: the one number every reward reads, so difficulty and payout
- * cannot drift apart. 0 is the bare Fissure and the baseline for XP, gold,
- * drops and item level. Danger carries most of it; sockets add a little, never
- * enough that filling sockets beats rolling danger — which is what stops a
- * safe grind from being the best farm.
+ * NINE PROFESSIONS: five that WORK a family at a station and four that GATHER
+ * one with a tool. `kind` is the whole of what tells them apart, so one
+ * `professionAt`, one `payXp` and one `xpToNext` serve both and the Works still
+ * lists only what has a station. A hybrid armour family asks for the two
+ * PROCESSING professions its `ARMOUR_FAMILIES.archetypes` name.
  */
+export interface ProfessionDef {
+  id: string;
+  name: string;
+  family: string;
+  makes: string;
+  kind: 'process' | 'gather';
+  icon: string;
+}
+
+export const PROFESSIONS: ProfessionDef[] = [
+  { id: 'blacksmithing', name: 'Blacksmithing', family: 'metal', kind: 'process', icon: 'mat_pale_iron',
+    makes: 'melee armour, and most weapons' },
+  { id: 'weaving', name: 'Weaving', family: 'cloth', kind: 'process', icon: 'mat_wickcloth',
+    makes: 'spell armour, and staves' },
+  { id: 'leatherworking', name: 'Leatherworking', family: 'hide', kind: 'process', icon: 'mat_sump_hide',
+    makes: 'rogue armour, and bows' },
+  { id: 'jewelling', name: 'Jewelling', family: 'gem', kind: 'process', icon: 'mat_lampstone',
+    makes: 'every ring and amulet, and wands' },
+  { id: 'cooking', name: 'Cooking', family: 'fish', kind: 'process', icon: 'mat_blindfish',
+    makes: 'the meals a buff comes out of' },
+  // GATHERED WITH A TOOL, and levelled by using it. Gem is on none of them: it
+  // is the universal material and falls out of everything.
+  { id: 'mining', name: 'Mining', family: 'metal', kind: 'gather', icon: 'tool_pick',
+    makes: 'ore, out of a vein in the rock' },
+  { id: 'harvesting', name: 'Harvesting', family: 'cloth', kind: 'gather', icon: 'tool_sickle',
+    makes: 'fibre, cut off what grows down there' },
+  { id: 'skinning', name: 'Skinning', family: 'hide', kind: 'gather', icon: 'tool_knife',
+    makes: 'skins, off what you put down' },
+  { id: 'fishing', name: 'Fishing', family: 'fish', kind: 'gather', icon: 'tool_rod',
+    makes: 'a catch, out of standing water' },
+];
+
+export const PROFESSION_BY_ID: Record<string, ProfessionDef> = Object.fromEntries(
+  PROFESSIONS.map((p) => [p.id, p])
+);
+
+/** Derived, so a profession changing kind moves both lists with one edit. */
+export const PROCESSING = PROFESSIONS.filter((p) => p.kind === 'process');
+export const GATHERING = PROFESSIONS.filter((p) => p.kind === 'gather');
+
+/** Who WORKS a family at a station, and who GATHERS it. A family has exactly
+ *  one of each, except gem, which nothing gathers. */
+export const processorOf = (family: string): ProfessionDef | undefined =>
+  PROCESSING.find((p) => p.family === family);
+export const gathererOf = (family: string): ProfessionDef | undefined =>
+  GATHERING.find((p) => p.family === family);
+
+/** NOTHING CAPS A PROFESSION — *"you can freely level them all but it just
+ *  costs your time"* — so the early choice is what is real. `xpTo1` is the
+ *  first level and `curve` how much steeper each one after it is. */
+export const PROFESSION = { maxLevel: 99, xpTo1: 20, curve: 1.05 };
+
+/**
+ * A JOB AT A STATION, and it RUNS ON THE CLOCK. *"Change the materials to
+ * process on a timer… it's annoying having to go in and out to see if they are
+ * ready."* Wall-clock minutes, so it finishes whether you are down a hole, in
+ * the camp or gone: the one thing in the game a player can wait out, and it
+ * pays materials rather than power. ONE FOR ONE: what a job COSTS is the
+ * minutes and the slot, never a conversion rate — so the SIZE of a job is what
+ * you happen to hold, and `most` is the only reason a worker is worth finding.
+ */
+export const WORK = {
+  least: 1, // a bare clear gathers 1.0 ore: a floor of 4 was four descents before a station took anything
+  most: 20, // raw one job eats, and processed it hands back
+  minutes: 5, // wall-clock minutes a job takes
+  xp: 6, // FLAT, never by world, or the no-tiers rule breaks in its easiest place
+};
+
+/** WORKERS: the station slots are PEOPLE, found at ONE depth of one world's
+ *  zone and RESCUED — *"start with finding one immediately and unlocking the
+ *  first slot, and as you progress you find more, say one per area."* */
+export interface WorkerDef {
+  id: string;
+  name: string;
+  sprite: string; // his own generated body, in GENERATED
+  world: MapTheme;
+  rung: number;
+  greets: string;
+}
+
+export const WORKERS: WorkerDef[] = [
+  { id: 'hob', name: 'Hob', sprite: 'hob', world: 'fissure', rung: 5,
+    greets: 'Get me up out of this and I will work whatever you put in front of me.' },
+  { id: 'nell', name: 'Nell', sprite: 'nell', world: 'fissure', rung: 7,
+    greets: 'Three days down here. I can smelt, weave, tan, cook or cut. Take me up.' },
+  { id: 'wat', name: 'Wat', sprite: 'wat', world: 'prismatic', rung: 7,
+    greets: 'I came down for the glass and the glass kept me. Show me the way out and I am yours.' },
+  { id: 'ida', name: 'Ida', sprite: 'ida', world: 'demonic', rung: 8,
+    greets: 'Nothing here eats a body that keeps moving. I have been moving. Let me stop, at your camp.' },
+];
+
+export const WORKER_BY_ID: Record<string, WorkerDef> = Object.fromEntries(WORKERS.map((w) => [w.id, w]));
+export const workerMark = (id: string): string => `worker:${id}`; // the `given` entry a rescue leaves
+/** EVERY WORKER HAS HIS OWN BODY. *"The old wanderer model is really bad…
+ *  make new ones for each worker."* `WorkerDef.sprite` is that body, so a
+ *  rescued face is a person rather than four copies of one man. */
+
+/**
+ * CRAFTING. **MATERIALS DECIDE WHAT AN ITEM IS; CURRENCY DECIDES WHAT IS ON
+ * IT.** **A LEVEL SLIDES THE WINDOW**: *"a plate helm can get between 100–150
+ * armour, where if you're 1 blacksmithing it's always 100–105 and if you're 99
+ * it's always 145–150."* `span` is how far off the row a craft lands EACH WAY,
+ * so a DROP is exactly the row. **A TIER IS HOW MANY DIFFERENT VERSIONS THE
+ * RECIPE DEMANDS**, which is why depth matters without deep ore being better.
+ */
+export const CRAFT = {
+  span: 0.15,
+  /** The window's width as a share of the whole span, and it NARROWS. */
+  widthAt1: 0.15,
+  widthAtTop: 0.1,
+  /** A PERFECT base out of a craft, at level 1 and at the cap. The floor pays
+   *  one as a share of a rare drop and neither road closes the other. */
+  perfectAt1: 0,
+  perfectAtTop: 0.06,
+  /** The profession level a tier asks for, and what it asks in materials:
+   *  how many DIFFERENT world versions and how many of each. */
+  needs: [1, 20, 45],
+  versions: [1, 2, 4],
+  each: [2, 3, 4],
+  uniqueFrom: 3, // from this tier a recipe also wants a world's UNIQUE, which is what it is FOR
+  /** CUT STONES EVERY RECIPE WANTS, by tier. ANY world's, where a part wants
+   *  `versions` different ones, and PROCESSED like every other input. */
+  gems: [1, 2, 3],
+  /** XP a craft pays, by tier: a higher recipe beats spamming the cheapest. */
+  xp: [12, 40, 130],
+  /** A DISMANTLE's share of what the recipe took. NEVER 1 or more, or craft →
+   *  dismantle → craft is a material printer. */
+  back: 0.5,
+};
+
+/** WHICH PROFESSION AN ARCHETYPE IS, so a hybrid armour family's recipe names
+ *  exactly the two professions its archetypes already name. */
+export const ARCHETYPE_PROFESSION: Record<string, string> = {
+  melee: 'blacksmithing',
+  spell: 'weaving',
+  rogue: 'leatherworking',
+};
+
+/** A weapon has no archetypes, so its family says who makes it: iron is the
+ *  smith's, and the three that are not iron go to the profession whose
+ *  archetype swings them. */
+export const WEAPON_PROFESSIONS: Record<string, string[]> = {
+  sword: ['blacksmithing'],
+  sword2h: ['blacksmithing'],
+  dagger: ['blacksmithing'],
+  mace: ['blacksmithing'],
+  mace2h: ['blacksmithing'],
+  bow: ['leatherworking'],
+  staff: ['weaving'],
+  wand: ['jewelling'],
+  shield: ['blacksmithing'],
+};
+
+/** THE PROVING GROUND: one area past the climb, at a set floor. *"A set
+ *  difficulty even harder than the final 'story mode' level which you can scale
+ *  with more crystals and more trial points."* `rungMod` is 1 at depth 42, so
+ *  `overTop` is a MULTIPLE of it; points scale it through the Reckoning. */
+export const PROVING = {
+  name: 'The Proving Ground',
+  blurb: 'Past the last of the climb, and it does not end. What you socket is where you go.',
+  overTop: 1.25,
+  perSocket: 0.15,
+  tier: 3, // the best gear BASE it drops, floored as a campaign zone floors it
+  influences: ['fissure', 'prismatic', 'demonic'] as MapTheme[], // never the Seam
+  seamOf: 2, // of EACH aura world, at the top level, and nothing else socketed
+};
+
+/** Rungs below this one across the WHOLE ladder. */
+export function rungsBelow(zone: number, rung: number): number {
+  let below = 0;
+  for (let z = 0; z < zone; z++) below += LADDER.zones[z]?.rungs ?? 0;
+  return below + Math.max(0, rung - 1);
+}
+
+export const LADDER_RUNGS = LADDER.zones.reduce((n, z) => n + z.rungs, 0);
+
+/** What DANGER does to the bodies in a map. Danger 0 is exactly 1, so a new
+ *  character's Fissure is untouched. */
+export const DANGER = {
+  lifeAtTop: 10, // what the top of the curve adds to a body's life
+  hitAtTop: 14, //  and to its hit
+};
+
+/** How far up that curve a map sits, 0 to 1. Sockets are LENGTH, so they stay
+ *  out of it however much run power they buy. */
+export const dangerStep = (danger: number): number =>
+  Math.min(POWER.max, danger / POWER.perDanger) / POWER.max;
+
+/** RUN POWER: the one number every reward reads, so difficulty and payout
+ *  cannot drift apart. 0 is the bare Fissure. */
 export const POWER = {
-  perSocket: 0.3,
-  /** Danger points that buy one point of run power. */
-  perDanger: 55,
+  perSocket: 0.3, // sockets are LENGTH, so they never buy enough to beat danger
+  perDanger: 55, // danger points that buy one point of run power
   max: 6,
 };
 
@@ -1685,7 +2809,7 @@ export const MONSTER_FAMILIES: MonsterFamilyDef[] = [
     id: 'normal',
     name: 'Normal',
     word: '',
-    blurb: 'What the rock already holds. Beasts, husks and the things that eat them.',
+    blurb: 'What the rock already holds. Its own dead, and what they were carrying.',
   },
   {
     id: 'demonic',
@@ -1795,23 +2919,25 @@ export const AURA_BY_ID: Record<string, AuraDef> = Object.fromEntries(
 //
 // Multipliers on MONSTER_BASE, so identity and difficulty stay independent. A
 // pack rolls ONE kind and spawns all of it: mixed packs read as noise, uniform
-// packs read as "that's a Brute pack, careful".
+// packs read as "that's a Heap pack, careful".
 
 export const MONSTERS: MonsterDef[] = [
+  // One dead told apart by SILHOUETTE. Six rather than eleven, because half a
+  // pool at grid 24 and half at 96 is two art eras standing in one pack.
   {
-    id: 'grub',
-    name: 'Grub',
+    id: 'crawler',
+    name: 'Crawler',
     family: 'normal',
     life: 0.8,
     damage: 0.85,
-    moveSpeed: 0.85,
+    moveSpeed: 0.9,
     attacksPerSecond: 1,
     attackRange: 1,
-    radius: 0.3,
-    sprite: 'grub',
-    scale: 0.95,
+    radius: 0.28,
+    sprite: 'dragger',
+    scale: 1.35,
     weight: 1000,
-    tags: ['beast'],
+    tags: ['undead'],
   },
   {
     id: 'husk',
@@ -1823,14 +2949,14 @@ export const MONSTERS: MonsterDef[] = [
     attacksPerSecond: 0.9,
     attackRange: 1,
     radius: 0.32,
-    sprite: 'husk',
-    scale: 1,
+    sprite: 'hewer',
+    scale: 1.45,
     weight: 800,
     tags: ['undead'],
   },
   {
-    id: 'stalker',
-    name: 'Stalker',
+    id: 'hound',
+    name: 'Hound',
     family: 'normal',
     life: 0.6,
     damage: 1,
@@ -1838,107 +2964,64 @@ export const MONSTERS: MonsterDef[] = [
     attacksPerSecond: 1.25,
     attackRange: 1,
     radius: 0.26,
-    sprite: 'stalker',
-    scale: 0.85,
+    sprite: 'courser',
+    scale: 1.45,
     weight: 600,
-    tags: ['beast'],
+    tags: ['undead'],
   },
   {
-    id: 'brute',
-    name: 'Brute',
+    id: 'heap',
+    name: 'Heap',
     family: 'normal',
     life: 2.2,
-    damage: 1.6,
-    moveSpeed: 0.7,
+    damage: 1.15,
+    moveSpeed: 0.8,
     attacksPerSecond: 0.7,
     attackRange: 1.15,
-    radius: 0.44,
-    sprite: 'brute',
-    scale: 1.25,
-    weight: 260,
-    tags: ['humanoid'],
+    radius: 0.45,
+    sprite: 'heap',
+    scale: 1.9,
+    weight: 320,
+    tags: ['undead'],
   },
   {
-    id: 'cinder_hound',
-    name: 'Cinder Hound',
+    id: 'gaunt',
+    name: 'Gaunt',
     family: 'normal',
-    life: 0.9,
+    life: 1.45,
     damage: 1.15,
-    moveSpeed: 1.3,
-    attacksPerSecond: 1.1,
-    attackRange: 1,
-    radius: 0.3,
-    sprite: 'cinder_hound',
-    scale: 1,
-    weight: 520,
-    tags: ['beast'],
+    moveSpeed: 0.92,
+    attacksPerSecond: 0.75,
+    attackRange: 1.2,
+    // Twice the height of the rest, and twice the WIDTH with it: `scale` is one
+    // number applied uniformly. The radius follows, or a pack walks through its
+    // legs; `fits` clamps at `BODY_MAX`, so it still takes a one-tile gap.
+    radius: 0.7,
+    sprite: 'gaunt',
+    scale: 3.2,
+    weight: 300,
+    tags: ['undead'],
   },
   {
-    id: 'shale_crawler',
-    name: 'Shale Crawler',
+    id: 'bonecaller',
+    name: 'Bonecaller',
     family: 'normal',
-    life: 1.6,
-    damage: 0.9,
-    moveSpeed: 0.75,
+    life: 0.85,
+    damage: 0.95,
+    moveSpeed: 1,
     attacksPerSecond: 0.85,
     attackRange: 1,
-    radius: 0.36,
-    sprite: 'shale_crawler',
-    scale: 1.05,
-    weight: 480,
-    tags: ['beast'],
+    radius: 0.3,
+    throws: true,
+    sprite: 'shroud',
+    scale: 1.45,
+    weight: 300,
+    tags: ['undead'],
   },
-  {
-    id: 'gale_wisp',
-    name: 'Gale Wisp',
-    family: 'normal',
-    life: 0.5,
-    damage: 0.95,
-    moveSpeed: 1.6,
-    attacksPerSecond: 1.4,
-    attackRange: 1,
-    radius: 0.24,
-    sprite: 'gale_wisp',
-    scale: 0.9,
-    weight: 420,
-    tags: ['elemental'],
-  },
-  {
-    id: 'rime_crab',
-    name: 'Rime Crab',
-    family: 'normal',
-    life: 1.9,
-    damage: 1.25,
-    moveSpeed: 0.65,
-    attacksPerSecond: 0.75,
-    attackRange: 1.1,
-    radius: 0.38,
-    sprite: 'rime_crab',
-    scale: 1.1,
-    weight: 340,
-    tags: ['beast'],
-  },
-  {
-    id: 'sparkmite',
-    name: 'Sparkmite',
-    family: 'normal',
-    life: 0.45,
-    damage: 0.8,
-    moveSpeed: 1.7,
-    attacksPerSecond: 1.5,
-    attackRange: 1,
-    radius: 0.22,
-    sprite: 'sparkmite',
-    scale: 0.8,
-    weight: 700,
-    tags: ['elemental'],
-  },
-
   // --- demonic: slower, and every swing is a real one ------------------
   //
-  // More life and more damage per hit, paid for in attack speed. The pool
-  // weighs out to the same threat as the Normal one; what changes is that a
-  // demonic room punishes standing still rather than out-numbering you.
+  // More life and more damage per hit, paid for in attack speed: the pool weighs
+  // out to the same threat as the Normal one, and punishes standing still.
   {
     id: 'imp',
     name: 'Imp',
@@ -1948,9 +3031,9 @@ export const MONSTERS: MonsterDef[] = [
     moveSpeed: 1.4,
     attacksPerSecond: 1.15,
     attackRange: 1,
-    radius: 0.26,
+    radius: 0.3,
     sprite: 'imp',
-    scale: 0.85,
+    scale: 1.35,
     weight: 1000,
     tags: ['demon'],
   },
@@ -1963,9 +3046,9 @@ export const MONSTERS: MonsterDef[] = [
     moveSpeed: 1.35,
     attacksPerSecond: 1,
     attackRange: 1.05,
-    radius: 0.3,
+    radius: 0.32,
     sprite: 'flenser',
-    scale: 0.98,
+    scale: 1.5,
     weight: 650,
     tags: ['demon'],
   },
@@ -1981,7 +3064,7 @@ export const MONSTERS: MonsterDef[] = [
     attackRange: 1.1,
     radius: 0.44,
     sprite: 'bloat',
-    scale: 1.2,
+    scale: 1.75,
     weight: 430,
     tags: ['demon'],
   },
@@ -1994,9 +3077,9 @@ export const MONSTERS: MonsterDef[] = [
     moveSpeed: 0.75,
     attacksPerSecond: 0.65,
     attackRange: 1.15,
-    radius: 0.46,
+    radius: 0.62, // follows the scale, or a pack walks through its legs
     sprite: 'hornfiend',
-    scale: 1.32,
+    scale: 2.2,
     weight: 240,
     tags: ['demon'],
   },
@@ -2011,7 +3094,7 @@ export const MONSTERS: MonsterDef[] = [
     attackRange: 1,
     radius: 0.34,
     sprite: 'maw',
-    scale: 1.05,
+    scale: 1.6,
     weight: 780,
     tags: ['demon'],
   },
@@ -2026,8 +3109,9 @@ export const MONSTERS: MonsterDef[] = [
     attacksPerSecond: 0.8,
     attackRange: 1.05,
     radius: 0.3,
+    throws: true,
     sprite: 'chanter',
-    scale: 1,
+    scale: 1.5,
     weight: 720,
     tags: ['demon'],
   },
@@ -2046,9 +3130,9 @@ export const MONSTERS: MonsterDef[] = [
     moveSpeed: 1.75,
     attacksPerSecond: 1.6,
     attackRange: 1,
-    radius: 0.24,
+    radius: 0.26,
     sprite: 'shardling',
-    scale: 0.82,
+    scale: 1.35,
     weight: 1100,
     tags: ['construct'],
   },
@@ -2062,26 +3146,27 @@ export const MONSTERS: MonsterDef[] = [
     moveSpeed: 0.9,
     attacksPerSecond: 0.95,
     attackRange: 1.05,
-    radius: 0.36,
+    radius: 0.38,
     sprite: 'lattice',
-    scale: 1.05,
+    scale: 1.6,
     weight: 700,
     tags: ['construct'],
   },
   {
-    id: 'geode',
-    name: 'Geode',
+    // A Fissure skeleton the Cavern got to: the only one here that was somebody
+    id: 'bloom',
+    name: 'Bloom',
     family: 'prismatic',
     life: 2.1,
     damage: 1,
     moveSpeed: 0.6,
     attacksPerSecond: 0.7,
     attackRange: 1.1,
-    radius: 0.42,
-    sprite: 'geode',
-    scale: 1.2,
+    radius: 0.44,
+    sprite: 'bloom',
+    scale: 1.75,
     weight: 380,
-    tags: ['construct'],
+    tags: ['undead', 'construct'],
   },
   {
     id: 'prism',
@@ -2092,24 +3177,27 @@ export const MONSTERS: MonsterDef[] = [
     moveSpeed: 1.5,
     attacksPerSecond: 1.35,
     attackRange: 1,
-    radius: 0.28,
+    radius: 0.3,
+    throws: true,
     sprite: 'prism',
-    scale: 0.95,
+    scale: 1.05,
     weight: 620,
     tags: ['construct'],
   },
   {
+    // Never moves, so it THROWS: a rooted thing that only swings never reaches
     id: 'spire',
     name: 'Spire',
     family: 'prismatic',
     life: 1.8,
     damage: 1.45,
-    moveSpeed: 0.7,
+    moveSpeed: 0,
     attacksPerSecond: 0.75,
     attackRange: 1.15,
-    radius: 0.4,
+    radius: 0.42,
+    throws: true,
     sprite: 'spire',
-    scale: 1.3,
+    scale: 1.9,
     weight: 250,
     tags: ['construct'],
   },
@@ -2123,9 +3211,9 @@ export const MONSTERS: MonsterDef[] = [
     moveSpeed: 1.6,
     attacksPerSecond: 1.5,
     attackRange: 1,
-    radius: 0.26,
+    radius: 0.28,
     sprite: 'chime',
-    scale: 0.88,
+    scale: 1.35,
     weight: 800,
     tags: ['construct'],
   },
@@ -2149,8 +3237,10 @@ export const MONSTERS_BY_FAMILY: Record<MonsterFamily, MonsterDef[]> = {
  */
 export const MONSTER_RANKS: MonsterRankDef[] = [
   { id: 'common', weight: 1000, life: 1, damage: 1, bounty: 1, scale: 1 },
-  { id: 'magic', weight: 90, life: 2.6, damage: 1.35, bounty: 3.5, scale: 1.18 },
-  { id: 'rare', weight: 18, life: 6, damage: 1.7, bounty: 10, scale: 1.36 },
+  { id: 'magic', weight: 90, life: 2.6, damage: 1.35, bounty: 3.5, scale: 1.4 },
+  { id: 'rare', weight: 18, life: 6, damage: 1.7, bounty: 10, scale: 1.7 },
+  // WEIGHT 0, so nothing rolls one: the top of the Welling's ladder, which is
+  { id: 'risen', weight: 0, life: 14, damage: 2.2, bounty: 25, scale: 2 }, // its termination proof
 ];
 
 export const MONSTER_BY_ID: Record<string, MonsterDef> = Object.fromEntries(
@@ -2158,9 +3248,8 @@ export const MONSTER_BY_ID: Record<string, MonsterDef> = Object.fromEntries(
 );
 
 /** What a monster does, and what it deals doing it: an element belongs to the
- *  MONSTER, not the room. Rolled per PACK, as being ranged was, since a pack
- *  throwing two elements reads as noise — and the three ranged entries weigh
- *  250 of 1000, which is the 25% `RANGED_PACK_CHANCE` used to be. */
+ *  MONSTER, not the room. Rolled per PACK off the half of this table its BODY
+ *  can do, since two elements in one pack read as noise. */
 export const MONSTER_ABILITIES: MonsterAbilityDef[] = [
   { id: 'claws', name: 'Claws', damageType: 'physical', skill: null, weight: 600 },
   { id: 'emberbite', name: 'Emberbite', damageType: 'fire', skill: null, weight: 75 },
@@ -2169,6 +3258,11 @@ export const MONSTER_ABILITIES: MonsterAbilityDef[] = [
   { id: 'frost_bolt', name: 'Frost Bolt', damageType: 'cold', skill: 'frost_bolt', weight: 83 },
   { id: 'lightning_arc', name: 'Lightning Arc', damageType: 'lightning', skill: 'arc', weight: 83 },
 ];
+
+/** Which of them a BODY may roll, split on the `skill` field: a thrower throws
+ *  and nothing else does. */
+export const abilitiesFor = (def: MonsterDef): MonsterAbilityDef[] =>
+  MONSTER_ABILITIES.filter((a) => !!a.skill === !!def.throws);
 
 export const MONSTER_ABILITY_BY_ID: Record<string, MonsterAbilityDef> = Object.fromEntries(
   MONSTER_ABILITIES.map((a) => [a.id, a])
@@ -2201,7 +3295,50 @@ export interface BossDef {
    *  adds are pressure and the boss is the objective. `size` at a time, or
    *  twenty bodies on one tile read as two. */
   reinforce: { every: number; size: number; from: string };
+  /** Run in order and then again from the top, for as long as it lives. */
+  phases?: BossPhase[];
 }
+
+
+/** What a boss DOES, as a cycle — a second boss is a table row. `fall` drops
+ *  circles where you stand, `reading` cannot be dodged, `split` opens it. */
+export interface BossPhase {
+  kind: 'fall' | 'reading' | 'split';
+  seconds: number;
+}
+
+/** A boss's own windups — neither an action nor a skill, looked up by the
+ *  seam a thrown skill uses. */
+export const BOSS_POSES = ['slam', 'roar'] as const;
+
+export const BOSS_FIGHT = {
+  fallBurst: 3, // a BURST and then a rest, and it does not SWING through one
+  fallEvery: 0.95,
+  fallRest: 3.4,
+  /** THE SPLIT, read together. Leaving crosses `fallRadius` + a stride, 5
+   *  tiles: 1.72s at a bare 2.9 move speed and the fuse beats you, 1.42s with
+   *  move speed on. Blink's own 5 tiles clear it outright, which is what makes
+   *  the movement slot an answer. Neither, and you stand in it. */
+  fallFuse: 1.5,
+  fallRadius: 4.4,
+  fallDamage: 19, // a multiple of the boss's SWING, so gear outscales it
+  fallStun: 1.1,
+  /** A share of max life per second, climbing by `readingRamp` a second. */
+  readingPerSecond: 3,
+  readingRamp: 0.3,
+  /** What an open crystal costs it. */
+  splitMore: 2.2,
+  windup: 0.9, // the rear-back before a circle appears
+  markEvery: 1,
+  markMore: 0.1,
+  markCap: 10,
+  /** Being CAUGHT marks you too: tank them if you can, but not forever. */
+  markPerCatch: 2,
+  markFall: 0.75,
+  /** THE DPS CHECK, behind the measured kill at the rung it is met at. */
+  enrageAt: 70,
+  enrageRamp: 0.1,
+} as const;
 
 export const BOSSES: BossDef[] = [
   {
@@ -2209,13 +3346,71 @@ export const BOSSES: BossDef[] = [
     name: 'The Answering',
     sprite: 'answering',
     herald: 'Something in the rock has heard its own name.',
-    life: 260,
-    damage: 2.4,
-    size: 2.4,
+    /** FULL TIER 1 GEAR: 65s runner, 52s tank, measured. Twice its own cycle. */
+    life: 600,
+    damage: 1.4, // under the swing, the slam and the Reading alike
+    size: 5, // COLOSSAL: `radius` is 0.34 of it, so separation grows too
     bounty: 30,
     reinforce: { every: 6, size: 2, from: 'husk' },
+    // Short, and round quickly: every phase has to come up early enough to
+    // matter rather than once.
+    phases: [
+      { kind: 'fall', seconds: 6 },
+      { kind: 'split', seconds: 4 },
+      { kind: 'reading', seconds: 5 },
+      { kind: 'fall', seconds: 5 },
+      { kind: 'split', seconds: 4 },
+    ],
+  },
+  // ONE PER ZONE, and each is the last rung of its own. Life and damage ride
+  // the Fissure's, scaled by where its zone sits on the climb — a boss you
+  // reach at rung 14 of the Cavern is fought by a character the Cavern built.
+  {
+    id: 'refraction',
+    name: 'The Refraction',
+    sprite: 'refraction',
+    herald: 'The light in the walls stops moving, and gathers.',
+    life: 2600,
+    damage: 3.4,
+    size: 5,
+    bounty: 60,
+    reinforce: { every: 6, size: 2, from: 'shardling' },
+    // Longer Falls than the Fissure's and one fewer opening: the Cavern's is
+    // fought by a build that has already answered the Answering.
+    phases: [
+      { kind: 'fall', seconds: 7 },
+      { kind: 'reading', seconds: 5 },
+      { kind: 'split', seconds: 4 },
+      { kind: 'fall', seconds: 7 },
+      { kind: 'reading', seconds: 6 },
+    ],
+  },
+  {
+    id: 'flowering',
+    name: 'The Flowering',
+    sprite: 'flowering',
+    herald: 'Everything that grew down here turns to face one way.',
+    life: 7200,
+    damage: 6.2,
+    size: 5,
+    bounty: 110,
+    reinforce: { every: 5, size: 3, from: 'flenser' },
+    phases: [
+      { kind: 'fall', seconds: 7 },
+      { kind: 'reading', seconds: 6 },
+      { kind: 'fall', seconds: 6 },
+      { kind: 'split', seconds: 3 },
+      { kind: 'reading', seconds: 7 },
+    ],
   },
 ];
+
+/** Noise that makes you LOOK at the body, where the phase is drawn already. */
+export const BOSS_SHOUTS: Record<string, string[]> = {
+  fall: ['DOWN.', 'BE STILL.', 'HOLD.'],
+  reading: ['RRRRAAAAGHHH', 'I HAVE YOUR NAME', 'AAAAAAHHHH'],
+  split: ['...ngh', '...aah', '...hh'],
+};
 
 export const BOSS_BY_ID: Record<string, BossDef> = Object.fromEntries(
   BOSSES.map((b) => [b.id, b])
@@ -2229,8 +3424,8 @@ export interface BossKeyDef {
   name: string;
   boss: string; // a `BossDef` id
   description: string;
-  /** Chance a cleared descent drops one, before power, and only once its boss
-   *  is down: a way back to somewhere you have never been reads as junk. */
+  /** Chance a KILL drops one, before power, and only once its boss is down —
+   *  a way back to somewhere you have never been reads as junk. Tuned rare. */
   chance: number;
   perPower: number; // per point of run power, so more crystals buys more fights
 }
@@ -2241,8 +3436,8 @@ export const BOSS_KEYS: BossKeyDef[] = [
     name: 'A Written Name',
     boss: 'answering',
     description: 'Three marks copied off a wall. Said aloud in the right place, something turns round.',
-    chance: 0.12,
-    perPower: 1.08,
+    chance: 0.002,
+    perPower: 1.05,
   },
 ];
 
@@ -2250,10 +3445,48 @@ export const BOSS_KEY_BY_ID: Record<string, BossKeyDef> = Object.fromEntries(
   BOSS_KEYS.map((k) => [k.id, k])
 );
 
-/** The key that opens a given boss's room, or nothing. */
-export const keyForBoss = (bossId: string): BossKeyDef | undefined =>
-  BOSS_KEYS.find((k) => k.boss === bossId);
+/** WHAT THE RECKONING IS SIZED FOR: the campaign's handout and the whole
+ *  Ledger, held to summing to exactly this. A LINE of it is a thing done over
+ *  and over, paying points at the count — *"100 runs gets you 5 points."* */
+export const POINTS = { max: 60 };
 
+export interface GrindDef {
+  id: string;
+  name: string;
+  detail: string; // the objective, in words a player can act on
+  counter: string; // an entry in `GRIND_COUNTERS`: what one descent adds
+  need: number;
+  pays: number; // points, once
+}
+
+/** THE LEDGER: what a descent is, locks, meets, and where — each a LADDER. */
+export const GRINDS: GrindDef[] = [
+  { id: 'run_25', name: 'A Habit', detail: 'Clear 25 descents.', counter: 'descents', need: 25, pays: 1 },
+  { id: 'run_100', name: 'A Trade', detail: 'Clear 100 descents.', counter: 'descents', need: 100, pays: 2 },
+  { id: 'run_400', name: 'A Life Down Here', detail: 'Clear 400 descents.', counter: 'descents', need: 400, pays: 4 },
+
+  { id: 'hoard_50', name: 'Prising', detail: 'Open 50 Hoards.', counter: 'hoards', need: 50, pays: 1 },
+  { id: 'hoard_250', name: 'Everything Shut', detail: 'Open 250 Hoards.', counter: 'hoards', need: 250, pays: 3 },
+  { id: 'vein_50', name: 'Following the Lode', detail: 'Open 50 Veins.', counter: 'veins', need: 50, pays: 2 },
+  { id: 'vein_250', name: 'The Whole Seam', detail: 'Open 250 Veins.', counter: 'veins', need: 250, pays: 4 },
+
+  { id: 'welled_250', name: 'Nothing Stays Down', detail: 'Put down 250 bodies that welled up out of another.', counter: 'welled', need: 250, pays: 2 },
+  { id: 'welled_1000', name: 'And Nothing Ever Will', detail: 'Put down 1000 bodies that welled up out of another.', counter: 'welled', need: 1000, pays: 4 },
+  { id: 'warden_250', name: 'Past the Keeper', detail: 'Put down 250 Wardens.', counter: 'wardens', need: 250, pays: 2 },
+  { id: 'warden_2500', name: 'Nobody Left Watching', detail: 'Put down 2500 Wardens.', counter: 'wardens', need: 2500, pays: 5 },
+  { id: 'bearer_50', name: 'Carried Out', detail: 'Put down 50 Bearers and take what they carried.', counter: 'bearers', need: 50, pays: 2 },
+  { id: 'bearer_250', name: 'Everything They Held', detail: 'Put down 250 Bearers.', counter: 'bearers', need: 250, pays: 4 },
+
+  { id: 'demonic_50', name: 'A Taste for Rot', detail: 'Clear 50 descents under Demonic influence.', counter: 'demonic', need: 50, pays: 2 },
+  { id: 'demonic_200', name: 'At Home in It', detail: 'Clear 200 descents under Demonic influence.', counter: 'demonic', need: 200, pays: 3 },
+  { id: 'prismatic_50', name: 'Reading the Light', detail: 'Clear 50 descents under Prismatic influence.', counter: 'prismatic', need: 50, pays: 2 },
+  { id: 'prismatic_200', name: 'Every Angle of It', detail: 'Clear 200 descents under Prismatic influence.', counter: 'prismatic', need: 200, pays: 3 },
+  { id: 'seam_25', name: 'Where It Meets', detail: 'Clear 25 descents in the Seam.', counter: 'seam', need: 25, pays: 4 },
+];
+
+export const GRIND_BY_ID: Record<string, GrindDef> = Object.fromEntries(
+  GRINDS.map((g) => [g.id, g])
+);
 
 /**
  * The Osteomancer, who is in the Rot and wants what it did not finish. His
@@ -2264,23 +3497,56 @@ export const OSTEOMANCER = {
   sprite: 'osteomancer',
   scene: 'ossuary',
   seen: 'Somebody has been sorting down here. The sorting is not finished.',
-  /** Said over his own head while you cross to him, before the bench is up. */
+  /** HIS MOUTH HAS BEEN DOWN HERE TOO LONG. He had sentences once and the
+   *  tale shows you where they went; every line of his is the same broken
+   *  register, or the man in the camp is not the man in the memory. */
   beats: [
     {
-      said: 'You have one. You have one on you, I can hear it not rotting. Give it here, give it here — no, hold it up, let me look at it first.',
+      said: 'You have one. You have one on you, I hear it not rotting. Give here. Give here — no. Hold it up. Let me look first.',
       act: 'face' as const,
     },
     {
-      said: 'They come apart wrong down here. Everything does. This one came apart RIGHT, which means something was still deciding when it stopped, and a thing that was still deciding can be asked what it decided.',
+      said: 'They come apart WRONG down here. All of them. Not this one. This one came apart right, and a thing that came apart right was still deciding when it stopped, and a thing still deciding can be ASKED.',
       act: 'pace' as const,
     },
     {
-      said: 'I will put it in something of yours. Not on top of — into. Whatever the smith meant that piece to be, it will stop being, and it will be this instead. You choose which. I do not care which. Choose.',
+      said: 'I put it in something of yours. Not on top. IN. Whatever the smith meant that piece to be, it stops being that, and it is this now. You pick which one. I do not care which one.',
       act: 'work' as const,
     },
   ],
   /** Once the graft is written. */
-  done: 'There. Do not thank me, bring me another one. Bring me a worse one, I want to see a worse one.',
+  done: 'There. Do not thank. Bring another. Bring me a WORSE one, I want to see a worse one.',
+};
+
+/**
+ * THE SMITH, where every TOOL comes from: the first free, the rest across his
+ * counter, every reforge his. `SMITH.rung` is his own depth, ahead of the
+ * schedule — *"after you clear depth 4 you find a blacksmith."*
+ */
+export const SMITH = {
+  name: 'the Smith',
+  sprite: 'smith',
+  scene: 'smithy',
+  rung: 4, // HIS depth of the Fissure, not a meeting depth
+  seen: 'Somebody has been working down here, and recently. The stone is still warm.',
+  /** The FREE one, taken in person. `given` holds this once he has paid it. */
+  gave: 'smith:first',
+  beats: [
+    {
+      said: 'You came down that ladder with nothing on your belt. Nothing. No wonder the walls are still full.',
+      act: 'face' as const,
+    },
+    {
+      said: 'There is ore in here, and hide on the things that come at you, and fibre where the damp is. All of it stays where it is unless you are carrying the thing that takes it.',
+      act: 'work' as const,
+    },
+    {
+      said: 'Pick one and it is yours. The others I will sell you, and when you have worn one down far enough to have learned something, bring it back and I will make it better.',
+      act: 'face' as const,
+    },
+  ],
+  /** Once the free one is taken. */
+  idles: 'Wear it out. Then we will talk about what comes after it.',
 };
 
 /**
@@ -2295,15 +3561,15 @@ export const ASTRAL_GEOMETER = {
   seen: 'Something turning, slowly, and a long way in. Somebody hung it there.',
   beats: [
     {
-      said: 'Do not put that down. Hold it where the light is — there, you see the angle it makes. It makes that angle everywhere. I have measured it in nine rooms and it has never once been wrong.',
+      said: 'Do not put that down. Hold it where the light is — there, you see the angle it makes. It makes that angle everywhere. Nine rooms, and never once wrong.',
       act: 'face' as const,
     },
     {
-      said: 'The other one takes bodies. I take the dust, which is what is left when the rock has finished deciding, and it is the only honest thing down here. A body is an opinion. Dust is a measurement.',
+      said: 'The other one takes bodies. I take the dust, which is what is left when the rock has finished deciding. A body is an opinion. Dust is a measurement.',
       act: 'pace' as const,
     },
     {
-      said: 'I will set it into something small of yours. Small, because the angle does not care how much of it there is. Give me a ring, or the thing you wear at your throat, and I will show you what it does.',
+      said: 'I will set it into something small of yours. Small, because the angle does not care how much of it there is. Give me a ring, or the thing at your throat, and I will show you.',
       act: 'work' as const,
     },
   ],
@@ -2311,10 +3577,9 @@ export const ASTRAL_GEOMETER = {
 };
 
 /**
- * Something you carry to a PERSON. It is loot, so it lands in the haul like
- * everything else; it is never sold, never spent at the bench, and it is the
- * whole of what schedules the room of whoever wants it. One per world that
- * has somebody in it.
+ * Something you carry to a PERSON. It is loot, so it banks like everything
+ * else; it is never sold, never spent at the bench, and it is the whole of what
+ * schedules the room of whoever wants it. One per world with somebody in it.
  */
 export const RELICS: RelicDef[] = [
   {
@@ -2420,7 +3685,6 @@ export interface PotionDef {
    * no build's power may depend on somebody watching.
    */
   threshold: number;
-  blurb: string;
 }
 
 export const POTIONS: PotionDef[] = [
@@ -2433,7 +3697,6 @@ export const POTIONS: PotionDef[] = [
     pool: 'life',
     percentPerSecond: 5,
     threshold: 0.35,
-    blurb: '5% of your life a second for 4s. Fires itself at 35% life.',
   },
   {
     id: 'flask_of_mana',
@@ -2444,7 +3707,6 @@ export const POTIONS: PotionDef[] = [
     pool: 'mana',
     percentPerSecond: 6,
     threshold: 0.12,
-    blurb: '6% of your mana a second for 4s. Fires itself at 12% mana, which is about one cast left.',
   },
 ];
 
@@ -2474,7 +3736,7 @@ export interface DangerStat {
 
 const ARMOUR_SATURATION = 900; // where reduction reaches the cap
 export const DANGER_STATS: Record<string, DangerStat> = {
-  // A ward is ONE type: it costs a character that deals two almost nothing.
+  // Weighed PER TYPE: what a family's ward is worth falls out of its size.
   ...Object.fromEntries(
     DAMAGE_TYPES.map((t) => [
       monsterResStat(t.id),
@@ -2485,11 +3747,8 @@ export const DANGER_STATS: Record<string, DangerStat> = {
   monsterLife: { weight: 0.7, rewards: true },
   monsterArmour: { weight: 0.55, rewards: true, cap: ARMOUR_SATURATION },
   monsterCrit: { weight: 0.5, rewards: true, cap: 100 }, // a chance saturates at certain
-  // Unchanged at 0.9 from when this was a conversion, and deliberately: the
-  // arithmetic is the same either way — a hit is still multiplied by
-  // (1 + share/100) — and what moved is only that the share now lands as its
-  // own type on TOP of the monster's rather than replacing the whole hit. That
-  // makes it harder to answer, not easier, so nothing here comes down.
+  // 0.9, and it does not come down: added damage still multiplies a hit by
+  // (1 + share/100), and landing as its OWN type is harder to answer.
   ...Object.fromEntries(
     ADDED_DAMAGE_STATS.map((stat) => [stat, { weight: 0.9, rewards: true }])
   ),
@@ -2497,13 +3756,125 @@ export const DANGER_STATS: Record<string, DangerStat> = {
   layoutComplexity: { weight: 0.2, rewards: true },
   packCount: { weight: 0.5, rewards: false },
   packSize: { weight: 0.5, rewards: false },
+  // +100% lifts average monster life 14.4% and damage 3.0% over `MONSTER_RANKS`
+  // — 0.10 and 0.03 of those. Capped: the effect saturates, the score does not.
+  monsterRank: { weight: 0.13, rewards: true, cap: 400 },
+  // Percent of PACKS guarding a Hoard, so it caps at every one. Scores their
+  // RANK; the extra BODIES are density, which pays in kills and not here.
+  hoardChance: { weight: 0.33, rewards: true, cap: 100 },
+  // Percent chance a death wells a body ONE RANK UP; the ladder bounds it.
+  wellChance: { weight: 0.5, rewards: true, cap: 100 },
+  // Percent of PACKS carrying a Bearer: a `risen` body roughly triples a pack's
+  bearerChance: { weight: 1.2, rewards: true, cap: 100 }, // life, weighed as monsterLife would
+  // Percent of HOARDS whose guards stand back up once: that pack again, halved
+  // because it fires on hoards alone.
+  watchChance: { weight: 0.17, rewards: true, cap: 100 },
+  veinChance: { weight: 0.33, rewards: true, cap: 100 }, // a Hoard's guard
+  // Cheaper than the Welling, which goes the other way: what a split leaves is
+  // always weaker than what fell.
+  splitChance: { weight: 0.3, rewards: true, cap: 100 },
+  // Fight LENGTH rather than threat, so it is weighed the way density is.
+  wardenChance: { weight: 0.45, rewards: true, cap: 100 },
+  giltChance: { weight: 0, rewards: false, cap: 100 }, // coin, and no danger at all
+};
+
+/** THE SECOND WATCH — *"50% chance for enemies guarding a box to all respawn
+ *  once they die."* ONCE, flagged on the HOARD rather than counted. */
+export const WATCH = { life: 1 };
+
+/** THE VEIN: a Hoard that pays CURRENCY. Same guard, same lock. */
+/** A lock paying currency where a Hoard pays gear. ONE piece, like the Hoard. */
+export const VEIN = { drops: 1 };
+
+/** THE SPLITTING: what dies leaves one of the rank below; a common leaves
+ *  nothing, which is the whole of what bounds it. */
+export const SPLIT = { life: 0.55 };
+
+export const GILT = { gold: 14 };
+
+/** THE WARDEN: one body a pack, and nothing else in it can be hurt while it
+ *  stands. It ends because the warden itself always can. */
+export const WARDEN = { rank: 900 };
+
+/** A pack with something in it worth walking towards. Nothing is CLICKED, which
+ *  is what makes it legal under universal automation: the last guard down. */
+export const HOARD = {
+  // LOCKS A DESCENT AT 100% CHANCE — the pack count IS the difficulty, so a
+  // per-pack roll paid the deep end 24 Veins a clear.
+  mostPerRun: 3,
+  baseline: 0.2, // and one every five descents for NOTHING, on blank crystals
+  size: 1.6, // the guard, against an ordinary pack
+  rank: 250, // `monsterRank`, on the guard alone
+  drops: 1, // ONE thing when the last of them is down, never a pile
+  goldChance: 0.3, // or coin instead, which makes opening one a small gamble
+  gold: 90, // at the bare Fissure, lifted by the run's own danger
+  reach: 1.2, // how close he walks: guards falling only UNLOCKS a lock
+};
+
+/** WHAT A LOCK LOOKS LIKE, and it is made of the world it stands in: two
+ *  ordinary and one RARE, each a `shut` prop and the `open` frame of THE SAME
+ *  generated object. A rare one pays Rarity, never a bigger pile. */
+export interface LockSet {
+  common: { shut: string; open: string }[];
+  rare: { shut: string; open: string };
+}
+
+const lock = (id: string) => ({ shut: `lock_${id}`, open: `lock_${id}_open` });
+
+export const LOCKS: Record<MapTheme, LockSet> = {
+  fissure: {
+    common: [lock('fissure_plain'), lock('fissure_iron')],
+    rare: lock('fissure_locked'),
+  },
+  demonic: {
+    common: [lock('rot_bound'), lock('rot_ribbed')],
+    rare: lock('rot_horned'),
+  },
+  prismatic: {
+    common: [lock('cavern_pane'), lock('cavern_teeth')],
+    rare: lock('cavern_gem'),
+  },
+  seam: {
+    common: [lock('seam_slab'), lock('seam_split')],
+    rare: lock('seam_crown'),
+  },
+};
+
+export const LOCK = {
+  rareChance: 0.16, // of the locks a run puts down, how many are the rare one
+  rareRarity: 140, // what its ONE drop is worth EXTRA, in Rarity
+  rareGold: 2.2,
 };
 
 /**
- * What each world pays in, on top of what every world pays, read off the SHARE
- * of the run it holds. Three different currencies deliberately: they cannot be
- * compared, so no world is strictly best and what you want decides where to go.
+ * GATHERING, and it is A LOCK WITH A FAMILY ON IT: a node stands in a pack's
+ * room and frees when that pack is down, so nothing is channelled while
+ * something is hitting you. A RUN NUMBER AND NEVER A PER-KILL RATE — the pack
+ * count IS the difficulty. SPREAD, NOT ROLLED, or six draws could come up all
+ * metal.
  */
+export const GATHER = {
+  perRun: 1.5, // nodes a bare Fissure clear grows, riding run LENGTH; a fishing spot rides the water instead
+  single: 0.75, // the share of nodes handing over exactly ONE
+  yield: [2, 3] as [number, number], // what the rest hand over
+  reach: 1.2, // the lock's own: it is the same walk
+  pause: 1.0, // seconds he stands at one with the family's `tool` in hand; a headless run pays them too
+  /** HOW FAR HE WILL GO OUT OF HIS WAY for one, in tiles. Unbounded, the
+   *  nearest free node outranks advancing whenever nothing is in range, and a
+   *  deep map's far corner cost one descent 165 seconds — the backtracking the
+   *  ask forbids. */
+  walk: 22,
+  near: 9, // and how far he steps aside for one with a pack still standing
+  /** A world's UNIQUE belongs to no family, so it is never dealt — it is a
+   *  node of its own, at this chance a run, handing over one. */
+  uniqueChance: 0.07,
+  xpPerRaw: 5, // xp a gathering profession banks per RAW, so its ladder is climbed by gathering alone
+};
+
+
+/** What each world pays in, on top of what every world pays, read off the SHARE
+ *  of the run it holds. Three different currencies deliberately: they cannot be
+ *  compared, so no world is strictly best. */
 export const FAMILY_YIELD: Record<MonsterFamily, { gold: number; currency: number; rarity: number }> = {
   normal: { gold: 0.6, currency: 0, rarity: 0 },
   demonic: { gold: 0, currency: 1.1, rarity: 0 },
@@ -2514,74 +3885,143 @@ export const FAMILY_YIELD: Record<MonsterFamily, { gold: number; currency: numbe
 export const REWARD = {
   /** Rarity percent gained per danger point. */
   rarityPerDanger: 0.8,
-  /**
-   * What a set fully MIXED between the two other worlds pays over one made of
-   * a single world. Not difficulty and not access: the same monsters, the same
-   * item level, more of what they carry — so it can never skip a rung.
-   */
+  /** What a set fully MIXED between the two other worlds pays over one made of
+   *  a single world. Not difficulty and not access: the same monsters at the
+   *  same item level carrying more, so it can never skip a rung. */
   mixYield: 0.25,
 };
 
-/**
- * A drop picks a class first, then a currency within it, so rarity climbing
- * `basic → uncommon → rare → exotic` is the only route to the scarce ones.
- */
+/** **A MEAL IS A BUFF THAT LASTS RUNS**, and that shape already ships:
+ *  `RolledMod.uses` is descents left, spent one per CLEAR. The PROCESSED fish
+ *  IS the meal, so eating one is a verb rather than a second recipe. ONE AT A
+ *  TIME — a second sits down the first, which is what makes it a decision. */
+export interface MealDef {
+  /** The PROCESSED material eating it spends — a world's own fish. */
+  fish: string;
+  name: string;
+  stats: StatSpec[];
+  say: string;
+}
+
+export const MEAL = {
+  // Descents one lasts, the LEVEL sliding where in here it lands exactly as it
+  // slides a base's roll: *"one buff can give 5–15 runs, and at level 1 you can
+  // only get it to land on 5–8."*
+  runs: [5, 15] as [number, number],
+};
+
+export const MEALS: MealDef[] = [
+  {
+    fish: 'blindfish', name: 'Blindfish Broth',
+    stats: [{ stat: 'life', form: 'inc', range: [8, 8] }],
+    say: 'Thin, grey and hot. It sits in you for days.',
+  },
+  {
+    fish: 'palefin', name: 'Palefin, Split and Salted',
+    stats: [{ stat: 'rarity', form: 'inc', range: [28, 28] }],
+    say: 'The eyes are the part worth keeping.',
+  },
+  {
+    fish: 'sumpfish', name: 'Sumpfish Stew',
+    stats: [{ stat: 'currencyFind', form: 'inc', range: [28, 28] }],
+    say: 'It was warm before it was cooked.',
+  },
+  {
+    fish: 'riftfin', name: 'Riftfin, Both Halves',
+    stats: [{ stat: 'damage', form: 'inc', range: [11, 11] }],
+    say: 'One side of it tastes of the other side.',
+  },
+];
+
+export const MEAL_BY_FISH: Record<string, MealDef> = Object.fromEntries(
+  MEALS.map((m) => [m.fish, m])
+);
+
+/** A drop picks a class first, then a currency within it, so rarity climbing
+ *  `basic → uncommon → rare → exotic` is the only route to the scarce ones. */
+/** WHAT A BODY LEAVES: hide, and gems out of anything. A PER-RUN DEPLETING
+ *  BUDGET, never a per-kill rate — kills run 26 at the bare Fissure against 847
+ *  at the deep end. `perRun` is WHOLE: on a fraction a run pays `left ×
+ *  H(bodies)`, 7.4 over 850. */
+/** THE UNIVERSAL MATERIAL: the one family with no tool, no node and no deal.
+ *  *"Don't spam too many"* — every recipe asks for some, so the demo PRINTS it. */
+export const GEM_DROP = {
+  perRun: 0.7,
+  each: [1, 2] as [number, number],
+};
+
+export const BODY_DROP = {
+  /** DROPS a clear pays, NOT raw — each hands over `each`. Scarce like the
+   *  floor's nodes: *"make all the materials less common."* */
+  perRun: 1,
+  each: [1, 2] as [number, number], // what ONE body hands over
+};
+
 export const CURRENCY_DROP = {
-  chancePerKill: 0.022,
+  /** Currency a CLEAR pays, before Currency Find. **A SHARD IS A DECISION
+   *  ABOUT ONE PIECE**: at 0.18 it is one shard per ten clears. */
+  perRun: 0.18,
   /** Per-step chance to climb one class, before rarity is applied. */
   upgradeChance: 0.17,
 };
 
 // --- what a run drops ------------------------------------------------------
 //
-// Indexed by run power, which decides what a map can GIVE you and not just how
-// much. `ilvl` is the load-bearing one: it decides which modifier TIERS are
-// reachable AND which gear bases can drop, and a base's tier is the whole of
-// how many modifiers it holds — so a band's item level is its ceiling twice
-// over. `fill` is only how finished a piece ARRIVES.
+// Indexed by run power. `ilvl` decides which modifier TIERS are reachable AND
+// which bases can drop; a base's tier is how many modifiers it holds.
+//
+// **DANGER BUYS QUALITY, NEVER QUANTITY.** Kills run 26 at the bare Fissure
+// against 847 at the deep end: a per-KILL rate paid 1.5 a clear, then 84.
 
 export interface DropBand {
-  /** Mods a dropped piece arrives with, as [min, max] of its cap. */
+  /** Mods a dropped piece arrives with, as [min, max] SHARES of its own cap.
+   *  Never all of them: headroom is what a Shard of Making is spent on. */
   fill: [number, number];
   /** Best currency class this band can produce. */
   currency: CurrencyClass;
-  /** Chance per kill that a piece of gear drops at all. */
-  gearChance: number;
+  /** Pieces of gear a CLEAR pays, before the crystals' own yield and rarity. */
+  gearPerRun: number;
   /** Item level dropped gear rolls at. */
   ilvl: number;
 }
 
 export const DROP_BANDS: DropBand[] = [
-  // The bare Fissure. Mostly junk, occasionally a one-modifier piece — enough
-  // that the free descent has some upside, which is the difference between a
-  // tutorial and a tax.
-  { fill: [1, 1], currency: 'basic', gearChance: 0.05, ilvl: 10 },
-  { fill: [1, 2], currency: 'basic', gearChance: 0.075, ilvl: 10 },
-  { fill: [1, 2], currency: 'uncommon', gearChance: 0.068, ilvl: 22 },
-  // Tier 2 bases are in reach here, and deliberately not filled.
-  { fill: [2, 3], currency: 'uncommon', gearChance: 0.06, ilvl: 34 },
+  // ONE PIECE EVERY FOUR CLEARS, AND IT MAY BE ANY BASE — *"it'll be very
+  // unlikely it's what your character wants, so when you do finally get a piece
+  // it'll feel good."* The gear you WEAR is gear you MADE.
+  { fill: [0.4, 0.5], currency: 'basic', gearPerRun: 0.25, ilvl: 10 },
+  { fill: [0.4, 0.55], currency: 'basic', gearPerRun: 0.26, ilvl: 10 },
+  { fill: [0.45, 0.6], currency: 'uncommon', gearPerRun: 0.27, ilvl: 22 },
+  { fill: [0.5, 0.65], currency: 'uncommon', gearPerRun: 0.28, ilvl: 34 },
   // Where a build becomes possible: tier 3 bases, six modifiers apiece.
-  { fill: [3, 4], currency: 'rare', gearChance: 0.052, ilvl: 46 },
-  { fill: [3, 5], currency: 'rare', gearChance: 0.045, ilvl: 58 },
-  { fill: [4, 6], currency: 'exotic', gearChance: 0.038, ilvl: 70 },
+  { fill: [0.5, 0.7], currency: 'rare', gearPerRun: 0.29, ilvl: 46 },
+  { fill: [0.55, 0.75], currency: 'rare', gearPerRun: 0.3, ilvl: 58 },
+  { fill: [0.6, 0.85], currency: 'exotic', gearPerRun: 0.3, ilvl: 70 },
 ];
+
 
 export const bandFor = (power: number): DropBand =>
   DROP_BANDS[Math.max(0, Math.min(DROP_BANDS.length - 1, Math.round(power)))];
 
-/** Whether a gated thing exists in this run at all. No gate opens everywhere. */
-export const opensHere = (gate: DropGate | undefined, power: number, zone: MapTheme): boolean =>
-  !gate || ((gate.minPower ?? 0) <= power && (gate.zone === undefined || gate.zone === zone));
+/** Whether a gated thing exists HERE. `from` is which road is asking — the
+ *  floor or the counter — and an absent `source` opens to both. */
+export const opensHere = (
+  gate: DropGate | undefined,
+  power: number,
+  zone: MapTheme,
+  from: 'floor' | 'gamble' = 'floor'
+): boolean =>
+  !gate
+  || ((gate.minPower ?? 0) <= power
+    && (gate.zone === undefined || gate.zone === zone)
+    && (gate.source === undefined || gate.source === from));
 
 // --- uniques ---------------------------------------------------------------
 //
-// A named piece whose lines are fixed and whose real content is a `grants`
-// entry — the same table the trees hand switches to the sim through, so the
-// merge rules and the demo's "declared, and read by something" rule apply to
-// gear for free. Every one is a TRADE: the switch is paid for on the item.
-//
-// A unique declares no modifier slots, so no currency reaches it. The whole
-// point is a fixed thing you build around rather than a canvas.
+// A named piece whose real content is a `grants` entry — the same table the
+// trees hand switches through, so every merge rule applies to gear for free.
+// Every one is a TRADE: the switch is paid for on the item. It declares no
+// modifier slots, so no currency reaches it.
 
 export const UNIQUES: UniqueDef[] = [
   // The Fissure's own, which is what it gets for being the shallow end: two
@@ -2619,7 +4059,7 @@ export const UNIQUES: UniqueDef[] = [
     flavour: 'The dead are a resource. It is only manners to say so.',
     stats: [
       { stat: 'life', form: 'inc', range: [-30, -20] },
-      { stat: 'critChance', form: 'flat', range: [6, 10] },
+      { stat: 'critChance', form: 'inc', range: [60, 100] },
     ],
     grants: { explodeOnKill: { radius: 2.2, multiplier: 0.6 } },
     gate: { zone: 'demonic', minPower: 2 },
@@ -2627,7 +4067,7 @@ export const UNIQUES: UniqueDef[] = [
   {
     id: 'second_mouth',
     name: 'The Second Mouth',
-    base: 'jade_amulet',
+    base: 'amulet_life_t2',
     flavour: 'One of them is yours.',
     stats: [
       { stat: 'attackSpeed', form: 'inc', range: [-25, -18] },
@@ -2660,7 +4100,7 @@ export const UNIQUES: UniqueDef[] = [
       { stat: 'life', form: 'inc', range: [-45, -35] },
       { stat: 'damage', form: 'inc', range: [40, 60] },
     ],
-    grants: { explode: { radius: 1.6, multiplier: 0.5 }, explodeRadius: 1.5, explodeMultiplierAdd: 0.4 },
+    grants: { burstOnHit: { every: 2.5, perLevel: 7 } },
     gate: { zone: 'seam', minPower: 4 },
   },
 ];
@@ -2673,38 +4113,94 @@ export const UNIQUE_BY_ID: Record<string, UniqueDef> = Object.fromEntries(
  *  the chance the same way it moves everything else; a gate is still a wall. */
 export const UNIQUE_DROP = { chance: 0.015 };
 
-// --- the shop's shelf ------------------------------------------------------
+/** WHAT EACH WEAPON FAMILY IS FOR, as the Specialist reads it — *"crit per
+ *  dagger equipped, attack speed for swords."* PER WEAPON HELD, so a matched
+ *  pair is the bonus twice. */
+export const WEAPON_SPECIALITY: Record<string, { stat: string; per: number }> = {
+  dagger: { stat: 'critChance', per: 4 },
+  sword: { stat: 'attackSpeed', per: 7 },
+  mace: { stat: 'damage', per: 12 },
+  wand: { stat: 'castSpeed', per: 9 },
+  staff: { stat: 'castSpeed', per: 9 },
+  bow: { stat: 'attackSpeed', per: 7 },
+};
+
+/** THE OBSIDIAN ORDER, written HERE and quoted from so it has one spelling. */
+export const ORDER = {
+  name: 'the Obsidian Order',
+  blurb: 'They hold that everything down here has a true name, and that the rock is writing.',
+};
+
+/** The fixed halves of the rogue's switches, beside `WARRIOR`'s. */
+export const ROGUE = {
+  guardSeconds: 3, // how long a kill's cover lasts
+  hasteSeconds: 3,
+};
+
+/** A PERFECT base: 25% more of everything the BASE hands over — the armour
+ *  rating, the swing, every implicit. It rolls modifiers like any other. */
+/** THE ENDGAME CHASE. A SHARE of drops: at 84 a clear it paid 3.79 a descent. */
+export const PERFECT = {
+  lift: 0.25,
+  tier: 3, // the top base tier and no other
+  minSockets: 3, // what the last two sockets are FOR
+  atThree: 0.0016, // share of gear drops, before danger
+  atFull: 0.006,
+  dangerLift: 2, // at `dangerFull`, three times the odds
+  dangerFull: 900,
+};
+
+// --- the shop's counter ----------------------------------------------------
 //
-// Grows with you. At level 1 it holds a Rough piece or two and the currencies
-// that work on them. It never reaches the top: the best a shop sells is a rung
-// below what a map of the same era drops, so buying is a floor under your luck
-// rather than a way around the crystal ladder.
+// NOTHING NAMED IS SOLD. You buy "a ring", not a ring you read first, so the
+// counter can never be the piece you were going to make — gear you WEAR is
+// gear you MADE, and this is the gold sink beside it.
 
 export const SHOP = {
-  /** Pieces on the shelf: grows one per this many levels, capped. */
-  slotsPerLevel: 4,
-  minSlots: 2,
-  maxSlots: 8,
-  /** Item level of stock, as a multiple of character level. */
+  /** Item level of what the counter deals in, as a multiple of character level. */
   ilvlPerLevel: 1.6,
   /** Gold per item level, before the base's tier. */
   pricePerIlvl: 2.4,
   /** Price multiplier by base tier. Steeper than the mod count, on purpose. */
   priceByTier: [1, 2.6, 7],
-  /**
-   * What a SALE pays, against the same base. Six modifiers reach 1.9×, so the
-   * fraction has to stay under 1/1.9 or buying a full piece and selling it back
-   * would mint gold out of the shelf.
-   */
+  /** What a SALE pays, against the same base. */
   sellFraction: 0.35,
   /** What one rolled modifier adds to a sale, as a fraction of the base. */
   pricePerMod: 0.15,
-  /**
-   * What a SALE pays for the tier, flatter than what a purchase charges for
-   * it: a good piece is worth having, not worth selling. Every entry stays at
-   * or under its purchase multiplier, or the counter would mint gold.
-   */
+  /** What a SALE pays for the tier: a good piece is worth having, not worth
+   *  selling, so this stays flat where the gamble's price does not. */
   sellByTier: [1, 1.8, 3.2],
+};
+
+/**
+ * THE GAMBLE. One entry per kind, priced ABOVE what the best possible piece of
+ * that item level could ever sell for — so buying and selling back is a loss
+ * however the roll lands, which is the whole of what stops a gold press.
+ */
+export const GAMBLE = {
+  /** What one costs, as a multiple of the dearest sale at that item level. */
+  over: 1.75,
+  floor: 120, // so a level-1 gamble is several clears, not pocket change
+  fill: 6, // modifiers a bought piece rolls; never a Perfect base
+  uniqueChance: 0.004, // a named piece instead: a lottery on the end of a sink
+};
+
+/** WHAT GOLD BUYS OTHERWISE: raw, at a rate a descent beats every time. It
+ *  finishes a recipe you are two Bolts short of, never feeds one — a clear
+ *  gathers about 21. By WORLD, which is what makes one material deeper. */
+export const MATERIAL_PRICE: Record<MapTheme, number> = {
+  fissure: 60,
+  prismatic: 400,
+  demonic: 900,
+  seam: 2200,
+};
+
+/** Level the counter starts stocking each world's raw at. */
+export const MATERIAL_SOLD_AT: Record<MapTheme, number> = {
+  fissure: 1,
+  prismatic: 20,
+  demonic: 40,
+  seam: 60,
 };
 
 export const LOOT = {
@@ -2754,8 +4250,17 @@ export const STARTER_WEAPON: Record<string, string> = {
   attack: 'rusted_sword',
 };
 
-export const starterWeapon = (skill: SkillDef | undefined): string | null =>
-  skill?.weapon ?? STARTER_WEAPON[skill?.category ?? ''] ?? null;
+/** Its own override, else the humblest base it can swing, else the category's.
+ *  DERIVED from `requires`, or the opening arms you with a piece it refuses. */
+export const starterWeapon = (skill: SkillDef | undefined): string | null => {
+  if (skill?.weapon) return skill.weapon;
+  const wants = skill?.requires
+    ? Object.keys(WEAPON_COUNTS_AS).filter((f) => WEAPON_COUNTS_AS[f].includes(skill.requires!))
+    : [];
+  const fitting = WEAPON_BASES.filter((b) => b.family && wants.includes(b.family));
+  const humblest = fitting.sort((a, b) => (a.ilvl ?? 1) - (b.ilvl ?? 1))[0];
+  return humblest?.id ?? STARTER_WEAPON[skill?.category ?? ''] ?? null;
+};
 
 /** What a key DOES, declared once. The default is here and an override lands
  *  on `GameState.keys` under the same id, so the screen that edits them later
@@ -2768,15 +4273,17 @@ export interface BindingDef {
 
 export const BINDINGS: BindingDef[] = [
   { id: 'centre', what: 'Centre the view on your character, and follow them', key: ' ' },
-  { id: 'potion_life', what: 'Drink the Flask of Blood', key: '1' },
-  { id: 'potion_mana', what: 'Drink the Flask of Quiet', key: '2' },
+  { id: 'potion_life', what: 'Drink the Flask of Blood', key: '4' },
+  { id: 'potion_mana', what: 'Drink the Flask of Quiet', key: '5' },
+  { id: 'fissure', what: 'Look into the crack, and go down it', key: 'g' },
   { id: 'inventory', what: 'Open what you are carrying', key: 'i' },
   { id: 'character', what: 'Open the character sheet', key: 'c' },
   { id: 'skills', what: 'Open the skills and their webs', key: 's' },
   { id: 'trade', what: 'Open your trade', key: 't' },
+  { id: 'trials', what: 'Open the Reckoning and its Ledger', key: 'r' },
+  { id: 'settings', what: 'Open settings, the auto-sell filter and the book', key: 'j' },
   { id: 'craft', what: 'Open the bench', key: 'b' },
   { id: 'shop', what: 'Open the shop', key: 'v' },
-  { id: 'haul', what: 'Open the haul', key: 'h' },
   { id: 'crystals', what: 'Open the crystal collection', key: 'y' },
   { id: 'stash', what: 'Open the stash', key: 'x' },
   { id: 'history', what: 'Open the log', key: 'l' },
@@ -2793,9 +4300,10 @@ export interface StartPreset {
   gold: number;
   currency: Record<string, number>;
   crystals: Array<{ level: number; family: MonsterFamily }>;
-  gear: Array<{ base: string; ilvl: number }>;
+  gear: Array<{ base: string; ilvl: number; perfect?: boolean }>;
   uniques?: string[];
   relics?: string[];
+  materials?: number; // raw of EVERY one, so a station can be loaded without mining
   /** Whether that gear starts worn, or has to be earned first. */
   equipped: boolean;
 }
@@ -2821,6 +4329,8 @@ export const START_PRESETS: Record<'fresh' | 'dev', StartPreset> = {
     uniques: UNIQUES.map((u) => u.id),
     // And one of every relic, so the room it schedules is one press away.
     relics: RELICS.map((r) => r.id),
+    // Enough raw of every one to load a station three times over.
+    materials: 24,
     equipped: true,
   },
 };
@@ -2848,23 +4358,40 @@ export const DEV_CURRENCY: Record<string, number> = {
  * each weapon family. NOT one of every base or icon: a kit that overflows the
  * dock is a kit you cannot read.
  */
-export const DEV_GEAR = [
+const ONE_HANDED = WEAPON_BASES.filter(
+  (b, i) => (b.hands ?? 1) === 1 && WEAPON_BASES.findIndex((o) => o.family === b.family) === i
+);
+
+export const DEV_GEAR = ([
+  // One PERFECT of each shape, FIRST so both are in the bag: a rating, a swing.
+  { base: 'bulwark_body_t3', ilvl: 60, perfect: true },
+  { base: 'steel_sword', ilvl: 60, perfect: true },
+] as Array<{ base: string; ilvl: number; perfect?: boolean }>).concat([
   ...new Set([
     ...ARMOUR_SLOT_KINDS.map((k) => `${REFERENCE_ARMOUR_FAMILY}_${k}_t2`),
     ...ARMOUR_FAMILIES.map((f) => `${f.id}_body_t2`),
     ...WEAPON_BASES.filter(
       (b, i) => WEAPON_BASES.findIndex((o) => o.family === b.family) === i
     ).map((b) => b.id),
-    'amulet',
-    'ring',
+    'banded_kite',
+    // One RING and one AMULET of two implicits: the kit is for looking at the
+    // mechanism — the split between the two slots — rather than owning every
+    // row of it, and thirty of them would be the whole bag and the stash.
+    ...JEWEL_BASES.filter(
+      (b) => b.tier === 2 && ['life', 'elemental'].includes(b.family ?? '')
+    ).map((b) => b.id),
   ]),
-].map((base) => ({ base, ilvl: 20 }));
+  // A SECOND of every one-handed family: one of each makes no matched pair.
+  ...ONE_HANDED.map((b) => b.id),
+].map((base) => ({ base, ilvl: 20 })));
 
 START_PRESETS.dev.currency = DEV_CURRENCY;
 START_PRESETS.dev.gear = DEV_GEAR;
 
 /** What each level is worth, and how much XP a level costs. */
 export const LEVELLING = {
+  maxLevel: 99, // the top of the climb; XP past it is banked and buys nothing
+
   lifePerLevel: 14,
   /** PERCENT of the skill's own base per level, so skills stay in proportion. */
   damagePerLevel: 2.2,
@@ -2883,56 +4410,6 @@ export const LEVELLING = {
   curveExponent: 1.8,
 };
 
-/** Every POINT pays. There is no step to bank toward and nothing is floored,
- *  so a point spent is a number that moved. */
-export const ATTRIBUTE_STEP = 1;
-
-/**
- * The four, and what one POINT of each is worth. Every line is an ordinary
- * stat under a name the modifier engine already reads, so an attribute
- * reaches the sim by exactly the path gear does. The TAGS are the whole of
- * what keeps them apart: a critical chance tagged `attack` does nothing for a
- * spell, and `attackSpeed` is already the wrong stat for one, so Dexterity
- * and Acuity are two halves of one shape rather than a stat with a switch.
- */
-export const ATTRIBUTES: AttributeDef[] = [
-  {
-    id: 'strength',
-    name: 'Strength',
-    per: [
-      { stat: 'damage', form: 'inc', value: 1, tags: ['attack'] },
-      { stat: 'life', form: 'inc', value: 0.6, tags: [] },
-    ],
-  },
-  {
-    id: 'intelligence',
-    name: 'Intelligence',
-    per: [
-      { stat: 'damage', form: 'inc', value: 1, tags: ['spell'] },
-      { stat: 'mana', form: 'inc', value: 1.2, tags: [] },
-    ],
-  },
-  {
-    id: 'dexterity',
-    name: 'Dexterity',
-    per: [
-      { stat: 'critChance', form: 'flat', value: 0.12, tags: ['attack'] },
-      { stat: 'attackSpeed', form: 'inc', value: 0.4, tags: [] },
-    ],
-  },
-  {
-    id: 'acuity',
-    name: 'Acuity',
-    per: [
-      { stat: 'critChance', form: 'flat', value: 0.12, tags: ['spell'] },
-      { stat: 'castSpeed', form: 'inc', value: 0.4, tags: [] },
-    ],
-  },
-];
-
-export const ATTRIBUTE_BY_ID: Record<string, AttributeDef> = Object.fromEntries(
-  ATTRIBUTES.map((a) => [a.id, a])
-);
 
 // --- skills ----------------------------------------------------------------
 //
@@ -2942,22 +4419,99 @@ export const ATTRIBUTE_BY_ID: Record<string, AttributeDef> = Object.fromEntries(
 
 export const SKILLS: SkillDef[] = [
   {
+    /** The hardest single hit in the game, reaching ONE enemy: everything past
+     *  what you aimed at is BOUGHT. The NUMBER did not move with the kit — the
+     *  boss gate is calibrated on this figure with this skill, and the pass is
+     *  held. */
     id: 'strike',
+    requires: 'melee',
     name: 'Strike',
     category: 'attack',
-    description:
-      'A sweeping melee hit. Full damage to the target, 10% to everything else in reach.',
+    description: 'A hard melee blow. One enemy.',
     tags: ['attack', 'melee'],
-    behaviour: 'cleave',
+    behaviour: 'melee',
     damageTypes: ['physical'],
-    baseDamage: 72,
+    baseDamage: 80,
+    critChance: 6,
     addedEffectiveness: 100,
     rateMultiplier: 1,
     manaCost: 7.5,
     range: HERO_BASE.attackRange,
-    vfxKind: 'sweep',
-    // Splash is placeholder-cheap: the mechanism is the point, not the 10%.
-    params: { splashRadius: 2.2, splashMultiplier: 0.1 },
+    vfxKind: 'slash',
+  },
+  {
+    /** The DELIVERY is the skill: it closes 5.5 tiles by itself and opens from
+     *  behind, so the hit lands where a walk would still be arriving. Paid for
+     *  in damage — 64 against Strike's 80 at the same rate — and the 25% base
+     *  crit is what the rest of it is built on. */
+    id: 'ambush',
+    requires: 'melee',
+    name: 'Ambush',
+    category: 'attack',
+    description:
+      'You step through the room to behind one enemy and open on it. One ' +
+      'target, from 5.5 tiles, and it crits at 25%.',
+    tags: ['attack', 'melee'],
+    behaviour: 'ambush',
+    damageTypes: ['physical'],
+    weapon: 'shiv', // the knife the whole skill is written for
+    baseDamage: 64,
+    critChance: 25,
+    addedEffectiveness: 100,
+    rateMultiplier: 1,
+    manaCost: 7.5,
+    range: 5.5,
+    vfxKind: 'slash',
+  },
+  {
+    /** The opposite trade to Strike: that takes ONE enemy hard, this takes
+     *  everything in the wedge for less each — 58 at 0.90/s against 72 at 1.20. */
+    id: 'shockwave',
+    requires: 'mace',
+    name: 'Shockwave',
+    category: 'attack',
+    description:
+      'A wave driven through the ground. A Cone in front of you, and everything ' +
+      'standing in it takes the whole hit.',
+    // Area from the start, unlike Strike: the wedge IS the skill.
+    tags: ['attack', 'melee', 'area'],
+    behaviour: 'cone',
+    damageTypes: ['physical'],
+    baseDamage: 58,
+    critChance: 5,
+    addedEffectiveness: 100,
+    rateMultiplier: 0.75,
+    manaCost: 10,
+    // Shorter than the wedge it throws: you swing when something is in sword
+    // reach and the wave carries out past it.
+    range: 2.2,
+    vfxKind: 'wedge',
+    params: { coneReach: 3.4, coneArc: 100 },
+  },
+  {
+    /**
+     * ONE target, and the hardest single hit a spell has: 104 at 0.90/s where
+     * Fireball takes 72 at 1.20. The spikes come up UNDER what you aimed at, so
+     * there is nothing in flight to pierce, fork or arc — what its tree buys
+     * instead is what a Chill is worth, which is the one thing Cold has that
+     * nothing else does.
+     */
+    id: 'rimespike',
+    name: 'Rimespike',
+    category: 'spell',
+    description:
+      'Ice drives up through the ground under one enemy. One target, and it ' +
+      'hits harder for it.',
+    tags: ['spell'],
+    behaviour: 'single_target',
+    damageTypes: ['cold'],
+    baseDamage: 104,
+    critChance: 6,
+    addedEffectiveness: 100,
+    rateMultiplier: 0.75,
+    manaCost: 10,
+    range: 5,
+    vfxKind: 'spikes',
   },
   {
     /**
@@ -2969,11 +4523,12 @@ export const SKILLS: SkillDef[] = [
     name: 'Fireball',
     category: 'spell',
     description:
-      'A ball of fire at range. One target, until its tree says otherwise.',
+      'A ball of fire at range. One target.',
     tags: ['spell', 'projectile'],
     behaviour: 'projectile',
     damageTypes: ['fire'],
     baseDamage: 72,
+    critChance: 5,
     addedEffectiveness: 100,
     rateMultiplier: 1,
     manaCost: 7.5,
@@ -2994,7 +4549,7 @@ export const SKILLS: SkillDef[] = [
     rateMultiplier: 1,
     manaCost: 0,
     range: 6.5,
-    vfxKind: 'bolt',
+    vfxKind: 'shard',
   },
   {
     id: 'frost_bolt',
@@ -3030,6 +4585,59 @@ export const SKILLS: SkillDef[] = [
   },
   {
     /**
+     * Born with three Arcs where every other skill buys its second target with
+     * a point, and it pays in the only currency left: what ONE target is worth.
+     * 44 where Fireball lands 72, so it takes four enemies standing near each
+     * other to come out ahead. The tree widens the Arcs, never the discount.
+     */
+    id: 'arc_lightning',
+    name: 'Arc Lightning',
+    category: 'spell',
+    description:
+      'A bolt of lightning with 3 Arcs, each for 70% of the damage. It hits a ' +
+      'crowd bare, and hits one enemy for less than anything else does.',
+    tags: ['spell', 'projectile'],
+    behaviour: 'projectile',
+    damageTypes: ['lightning'],
+    baseDamage: 44,
+    critChance: 4,
+    addedEffectiveness: 100,
+    rateMultiplier: 1,
+    manaCost: 7.5,
+    range: 6,
+    vfxKind: 'arc',
+    params: { chains: 3, chainDamage: 0.7 },
+  },
+  {
+    /**
+     * The bow skill. One arrow at full damage, and where it lands the sky opens
+     * on enemies near it — Forks, which are their OWN bolts rather than the
+     * arrow carrying on, so the shot's line decides nothing about who takes one. */
+    id: 'lightning_arrow',
+    requires: 'bow',
+    // The tail left unturned keeps Physical on your bow worth scaling.
+    convert: { from: 'physical', to: 'lightning', share: 0.6 },
+    name: 'Lightning Arrow',
+    category: 'attack',
+    description:
+      'An arrow of lightning at range. Full damage to what it hits, and 2 ' +
+      'Forks fall on enemies near it for 45% each.',
+    tags: ['attack', 'projectile'],
+    behaviour: 'projectile',
+    damageTypes: ['lightning'],
+    weapon: 'crude_bow', // a bow, not the attack shelf's sword
+    baseDamage: 58,
+    critChance: 7,
+    addedEffectiveness: 100,
+    rateMultiplier: 1,
+    manaCost: 7.5,
+    range: 7,
+    vfxKind: 'arrow',
+    impact: 'storm',
+    params: { forks: 2, forkDamage: 0.45 },
+  },
+  {
+    /**
      * Doesn't work by hitting things. Damage over time is resisted but NOT
      * armoured, so this is the answer to a target you can't punch through. Low
      * per-stack damage that stacks: the payoff is a crowd, not a cast.
@@ -3049,6 +4657,7 @@ export const SKILLS: SkillDef[] = [
     // Both high because a cast is spread over 10s and caps at 9 stacks at the
     // base cast rate — 0.9 applications a second against a hit skill's 1.2.
     baseDamage: 115,
+    critChance: 4,
     addedEffectiveness: 160,
     rateMultiplier: 0.75,
     manaCost: 10,
@@ -3069,7 +4678,8 @@ export const SKILLS: SkillDef[] = [
     name: 'Killing Surge',
     category: 'passive',
     description:
-      'A Critical deals no extra damage. Landing one grants 35% more damage for 5 seconds.',
+      'A Critical deals no extra damage; landing one grants 35% more damage ' +
+      'for 5s.',
     tags: ['passive'],
     behaviour: 'no_cast',
     damageTypes: [],
@@ -3080,6 +4690,172 @@ export const SKILLS: SkillDef[] = [
     range: 0,
     grants: { critIntoBuff: { more: 35, seconds: 5 } },
   },
+  // The rest of the shelf. Every one is a TRADE — what it takes away is the
+  // reason the thing it gives is worth a slot — and every one is `no_cast`
+  // with static `grants`, which `treeGrants` merges out of whichever passive
+  // slot it happens to sit in.
+  {
+    id: 'contagion',
+    name: 'Contagion',
+    category: 'passive',
+    description:
+      'A body dying with an Ailment gives 1 stack of each to every enemy ' +
+      'within 3 tiles, and Ailments you apply are 40% weaker.',
+    tags: ['passive'],
+    behaviour: 'no_cast',
+    damageTypes: [],
+    baseDamage: 0,
+    addedEffectiveness: 0,
+    rateMultiplier: 1,
+    manaCost: 0,
+    range: 0,
+    // One stack and no onward spread: a room where every death re-ails the
+    // room is a room that never stops, and a headless run that never ends.
+    grants: { ailmentSpread: { radius: 3, stacks: 1, targets: 2 }, ailmentWeak: 0.6 },
+  },
+  {
+    id: 'bloodpact',
+    name: 'Blood Pact',
+    category: 'passive',
+    description:
+      'Your mana pool is 0, every use costs 1.4 life per point of mana it ' +
+      'would have cost, and 3% of the damage you deal returns to you as ' +
+      'life.',
+    tags: ['passive'],
+    behaviour: 'no_cast',
+    damageTypes: [],
+    baseDamage: 0,
+    addedEffectiveness: 0,
+    rateMultiplier: 1,
+    manaCost: 0,
+    range: 0,
+    // The leech is ON the passive rather than left to the tables: a build with
+    // no pool and no way back is a passive nobody can finish a descent with.
+    grants: { bloodCost: 1.4, lifeLeech: 0.03 },
+  },
+  {
+    id: 'refraction',
+    name: 'Refraction',
+    category: 'passive',
+    description:
+      'You deal 30% of your Elemental damage as extra Prismatic damage.',
+    tags: ['passive'],
+    behaviour: 'no_cast',
+    damageTypes: [],
+    baseDamage: 0,
+    addedEffectiveness: 0,
+    rateMultiplier: 1,
+    manaCost: 0,
+    range: 0,
+    grants: { prismaticExtra: 0.3 },
+  },
+  {
+    id: 'unmaking',
+    name: 'Unmaking',
+    category: 'passive',
+    description:
+      'Enemies within 5 tiles have 25% less Fire, Cold and Lightning Resistance.',
+    tags: ['passive'],
+    behaviour: 'no_cast',
+    damageTypes: [],
+    baseDamage: 0,
+    addedEffectiveness: 0,
+    rateMultiplier: 1,
+    manaCost: 0,
+    range: 0,
+    grants: { elementalShred: { radius: 5, amount: 25 } },
+  },
+  {
+    id: 'unbinding',
+    name: 'Unbinding',
+    category: 'passive',
+    description:
+      'Enemies within 5 tiles have 25% less Poison, Dark and Light Resistance.',
+    tags: ['passive'],
+    behaviour: 'no_cast',
+    damageTypes: [],
+    baseDamage: 0,
+    addedEffectiveness: 0,
+    rateMultiplier: 1,
+    manaCost: 0,
+    range: 0,
+    grants: { occultShred: { radius: 5, amount: 25 } },
+  },
+  {
+    /**
+     * The BURST, taken out of every tree and made a slot you spend. What it
+     * deals comes off character LEVEL and nothing about the build, so it is the
+     * one area answer that cannot be stacked — and it is on a clock, so it is a
+     * rhythm rather than a rider on every hit.
+     */
+    id: 'sundering',
+    name: 'Sundering',
+    category: 'passive',
+    description:
+      'Every 4s your next hit Bursts around you for 5.5 Physical damage per ' +
+      'character level, 2.4 tiles across.',
+    tags: ['passive'],
+    behaviour: 'no_cast',
+    damageTypes: [],
+    baseDamage: 0,
+    addedEffectiveness: 0,
+    rateMultiplier: 1,
+    manaCost: 0,
+    range: 0,
+    grants: {
+      burstOnHit: { every: PASSIVE_DAMAGE.sunderEvery, perLevel: PASSIVE_DAMAGE.sunderPerLevel },
+    },
+  },
+  {
+    /**
+     * Worth exactly what the rest of the build already does to the room: it
+     * asks for a Chill it cannot apply itself, so it is dead in a hand that
+     * deals no Cold and an engine in one that does.
+     */
+    id: 'hoarfrost',
+    name: 'Hoarfrost',
+    category: 'passive',
+    description:
+      'Every 0.7s a spike goes out at every Chilled enemy within 7 tiles, ' +
+      'for 0.9 Cold damage per character level.',
+    tags: ['passive'],
+    behaviour: 'no_cast',
+    damageTypes: [],
+    baseDamage: 0,
+    addedEffectiveness: 0,
+    rateMultiplier: 1,
+    manaCost: 0,
+    range: 0,
+    grants: {
+      frostVolley: { every: PASSIVE_DAMAGE.frostEvery, perLevel: PASSIVE_DAMAGE.frostPerLevel },
+    },
+  },
+  {
+    /**
+     * SPEED as a defensive layer: armour stops blunting and starts Dodging at
+     * 60% of what it was worth, and standing untouched makes you faster. On
+     * average 60% of your armour is less mitigation than all of it, and it
+     * arrives all-or-nothing — the squishy half of the trade is both at once.
+     * Giving ground is NOT here: kiting is what a RANGED build does, and one
+     * passive owning it made the same build play differently for one point.
+     */
+    id: 'featherstep',
+    name: 'Featherstep',
+    category: 'passive',
+    description:
+      'Your Armour blunts nothing and is instead 60% of itself as Dodge, ' +
+      'and you gain 60% increased Movement Speed once 2s have passed ' +
+      'without a hit landing on you.',
+    tags: ['passive'],
+    behaviour: 'no_cast',
+    damageTypes: [],
+    baseDamage: 0,
+    addedEffectiveness: 0,
+    rateMultiplier: 1,
+    manaCost: 0,
+    range: 0,
+    grants: { armourToDodge: 0.6, unhitHaste: { after: 2, more: 0.6 } },
+  },
 
   // Never cast either: `RunSim` reads these params off the equipped slot and
   // fires it ITSELF, because automation is universal.
@@ -3088,9 +4864,12 @@ export const SKILLS: SkillDef[] = [
     name: 'Blink',
     category: 'movement',
     description:
-      'Step up to 5 tiles along the way you are already walking, once every 3 seconds.',
+      'Step up to 5 tiles along the way you are already walking, once every 3 ' +
+      'seconds. A step needs a clear line and takes you through what is in it.',
     tags: ['movement'],
-    behaviour: 'no_cast',
+    // Its OWN behaviour rather than the shared `no_cast`, so `GrantDef.reads`
+    // can tell a jump's landing from a step that never lands anywhere.
+    behaviour: 'step',
     damageTypes: [],
     baseDamage: 0,
     addedEffectiveness: 0,
@@ -3099,6 +4878,24 @@ export const SKILLS: SkillDef[] = [
     range: 0,
     vfxKind: 'blink',
     params: { distance: 5, cooldown: 3 },
+  },
+  {
+    id: 'leap',
+    name: 'Leap',
+    category: 'movement',
+    description:
+      'Jump up to 6 tiles along the way you are already walking, once every 4 ' +
+      'seconds. A jump needs no clear line — it goes over — and it LANDS.',
+    tags: ['movement'],
+    behaviour: 'leap',
+    damageTypes: [],
+    baseDamage: 0,
+    addedEffectiveness: 0,
+    rateMultiplier: 1,
+    manaCost: 0,
+    range: 0,
+    vfxKind: 'leap',
+    params: { distance: 6, cooldown: 4 },
   },
 ];
 
@@ -3121,6 +4918,31 @@ export const SKILL_CATEGORIES: Array<{
   { id: 'movement', name: 'Movement', blurb: 'Crossing ground. Fires itself.' },
 ];
 
+/** What the Skills screen offers: a shelf is everything ONE KIND OF SLOT takes,
+ *  so Attacks and Spells share one because one slot takes both. Inside it they
+ *  are still told apart, by a header bar per category. */
+export const SKILL_SHELVES: Array<{
+  id: string;
+  name: string;
+  blurb: string;
+  holds: SkillCategory[];
+}> = [
+  {
+    id: 'ability',
+    name: 'Abilities',
+    blurb: 'What you kill with. Attacks swing, spells cast.',
+    holds: ['attack', 'spell'],
+  },
+  { id: 'passive', name: 'Passive Skills', blurb: 'Always on, and always a trade.', holds: ['passive'] },
+  { id: 'movement', name: 'Movement', blurb: 'Crossing ground. Fires itself.', holds: ['movement'] },
+];
+
+export const SHELF_BY_ID = Object.fromEntries(SKILL_SHELVES.map((s) => [s.id, s]));
+
+/** Every category is on exactly one, and the demo holds it to that. */
+export const shelfForCategory = (category: SkillCategory): string =>
+  SKILL_SHELVES.find((s) => s.holds.includes(category))?.id ?? SKILL_SHELVES[0].id;
+
 /** The three a character holds at once, as a TABLE like `EQUIP_SLOTS`: a
  *  fourth is one entry rather than a fourth named field. */
 export const SKILL_SLOTS: SkillSlotDef[] = [
@@ -3135,6 +4957,22 @@ export const SKILL_SLOTS: SkillSlotDef[] = [
     name: 'Passive',
     accepts: ['passive'],
     blurb: 'Always on, and paid for by giving something up.',
+  },
+  // Two more of the same shelf, LEVEL-GATED: three at once is a build rather
+  // than a pick, so they arrive across the climb instead of at the start.
+  {
+    id: 'passive2',
+    name: 'Second Passive',
+    accepts: ['passive'],
+    blurb: 'A second one, from level 20.',
+    unlocksAt: 20,
+  },
+  {
+    id: 'passive3',
+    name: 'Third Passive',
+    accepts: ['passive'],
+    blurb: 'A third one, from level 40.',
+    unlocksAt: 40,
   },
   {
     id: 'movement',
@@ -3163,14 +5001,14 @@ export const skillsInCategory = (category: SkillCategory): SkillDef[] =>
   SKILLS.filter((s) => s.category === category);
 
 export const RECIPES: Recipe[] = [
-  // The whole shelf. Everything else drops, because a shop that stocks the
-  // bench is a shop that replaces the map — and adding a modifier is the one
-  // thing you need enough of that running out of it is only tedious.
+  // An ANTI-BRICK, not a supply. At 22 a level-1 character banked 42 gold a
+  // clear and bought one and a half. TEN TIMES that, at the user's word.
   {
     id: 'make_shard_of_making',
     name: 'Shard of Making',
     level: 1,
-    inputs: { gold: 5 },
+    inputs: { gold: 220 },
+    goldPerIlvl: 22,
     output: { type: 'currency', id: 'shard_of_making', qty: 1 },
   },
 ];

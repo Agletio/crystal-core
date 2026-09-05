@@ -1,5 +1,14 @@
 import { Rng } from './rng';
-import { GEAR_BASE_BY_ID, baseMods } from './data';
+import {
+  DANGER_STATS,
+  GEAR_BASE_BY_ID,
+  MOD_BY_ID,
+  MOD_TIER_LIFT,
+  STAT_POWER,
+  USES,
+  baseMods,
+  usesFor,
+} from './data';
 import type {
   FillState,
   Item,
@@ -9,6 +18,33 @@ import type {
   RolledMod,
   StatRoll,
 } from './types';
+
+/** No tag filter, and NOT computeStat: these are design metrics, not combat. */
+function totalOf(mods: RolledMod[], stat: string): number {
+  let total = 0;
+  for (const mod of mods) {
+    for (const line of mod.stats) {
+      if (line.stat === stat) total += line.value;
+    }
+  }
+  return total;
+}
+
+/** How dangerous a socketed set is, and how much of that the rewards pay for.
+ *  Here rather than beside `crystalRewards` because the MONSTERS read it too —
+ *  two sums of the same table is one sum that is wrong. */
+export function dangerScore(mods: RolledMod[]): { danger: number; paying: number } {
+  let danger = 0;
+  let paying = 0;
+  for (const [stat, def] of Object.entries(DANGER_STATS)) {
+    const amount = Math.min(totalOf(mods, stat), def.cap ?? Infinity);
+    if (amount === 0) continue;
+    const scored = amount * def.weight;
+    danger += scored;
+    if (def.rewards) paying += scored;
+  }
+  return { danger, paying };
+}
 
 /** Slot types this item actually has. */
 export function slotTypes(item: Item): ModSlot[] {
@@ -38,6 +74,21 @@ export const baseTier = (item: Item): number =>
   item.kind === 'crystal'
     ? Number(item.meta?.level) || 1
     : (GEAR_BASE_BY_ID[item.base]?.tier ?? 1);
+
+/** **TOTAL STAT POWER**, off `STAT_POWER` — every line a piece carries, base
+ *  and rolled alike, in one number. An UNPRICED stat is worth nothing here
+ *  rather than guessed at, and the demo holds every implicit to being priced. */
+export function statPower(item: Item): number {
+  const weigh = (stat: string, form: string, value: number): number =>
+    (STAT_POWER[`${stat}:${form}`] ?? 0) * value;
+  // The rating and the swing are not LINES, and are the same kind of thing.
+  let power = weigh('armour', 'flat', item.armour ?? 0)
+    + weigh('damage', 'flat', item.damage ?? 0);
+  for (const mod of [...item.implicits, ...item.mods]) {
+    for (const line of mod.stats) power += weigh(line.stat, line.form, line.value);
+  }
+  return power;
+}
 
 /** What that ladder is called on screen. A crystal's is a level, not a tier. */
 export const tierName = (item: Item): string =>
@@ -185,7 +236,7 @@ export function rollValues(entry: ModEntry, rng: Rng): StatRoll[] {
 }
 
 export function instantiate(entry: ModEntry, rng: Rng): RolledMod {
-  return {
+  const rolled: RolledMod = {
     entryId: entry.id,
     defId: entry.defId,
     group: entry.group,
@@ -195,6 +246,27 @@ export function instantiate(entry: ModEntry, rng: Rng): RolledMod {
     tags: entry.tags,
     stats: rollValues(entry, rng),
   };
+  // A CRYSTAL ROLL BURNS DOWN, and only a crystal roll: gear is kept.
+  if (entry.appliesTo.includes('crystal')) rolled.uses = usesFor(entry.weight);
+  return rolled;
+}
+
+/** DESCENTS A ROLL STARTED WITH, off the tier it actually came from. Asked by
+ *  `heal` and by the card, so what is repaired and what is printed agree. */
+export function fullUses(mod: RolledMod): number {
+  const tier = MOD_BY_ID[mod.defId]?.tiers[mod.tier - 1];
+  return tier ? usesFor(tier.weight) : USES.most;
+}
+
+/** WHAT A CRYSTAL'S LEVEL DOES TO THE ODDS: a lift on the entry's own weight,
+ *  raised to how far its tier sits above the WORST its modifier has. A level 4
+ *  can still roll the worst line and a level 2 the best — the level moves the
+ *  odds, never the ceiling. Pure, so a seed still replays. */
+export function tierLift(item: Item, entry: ModEntry): number {
+  if (item.kind !== 'crystal') return 1;
+  const lift = MOD_TIER_LIFT[Math.min(MOD_TIER_LIFT.length, Math.max(1, Number(item.meta.level) || 1)) - 1];
+  const worst = MOD_BY_ID[entry.defId]?.tiers.length ?? entry.tier;
+  return lift ** (worst - entry.tier);
 }
 
 /** Weighted pick from the eligible pool, then roll it. Null if nothing fits. */
@@ -205,7 +277,7 @@ export function rollRandomMod(
   opts: { slot?: ModSlot; tag?: string } = {}
 ): RolledMod | null {
   const candidates = pool.eligible(item, opts);
-  const entry = rng.weighted(candidates, (e) => e.weight);
+  const entry = rng.weighted(candidates, (e) => e.weight * tierLift(item, e));
   return entry ? instantiate(entry, rng) : null;
 }
 

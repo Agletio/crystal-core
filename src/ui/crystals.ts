@@ -7,11 +7,13 @@
  * what separates two of them is danger, family and how far they have levelled,
  * and none of that is a silhouette.
  */
-import { CRYSTAL_QUESTS, FAMILY_BY_ID, RUN_SLOTS } from '../data';
-import type { CrystalQuest } from '../data';
+import { CRYSTAL_LADDER, FAMILY_BY_ID, LADDER, PROVING, RUN_SLOTS } from '../data';
+import { climbed } from '../ladder';
+import type { CrystalStep } from '../data';
+import type { LadderZoneDef } from '../types';
 import { crystalsIn, socketFor, socketItem, unsocket } from '../game/state';
 import type { GameState } from '../game/state';
-import { crystalProgress, giftSchedule, questDone } from '../game/crystals';
+import { crystalProgress, giftSchedule } from '../game/crystals';
 import { crystalFamily, crystalRewards } from '../sim/crystal';
 import { modCapacity } from '../mods';
 import { describeMod } from '../crafting';
@@ -151,19 +153,31 @@ function renderRow(row: Row): HTMLElement {
   return card;
 }
 
-function renderQuest(quest: CrystalQuest): HTMLElement {
-  const done = questDone(game, quest.id);
-  const family = FAMILY_BY_ID[quest.gives.family];
+/** THE CLIMB, as the one thing standing between you and a crystal. Nothing is
+ *  paid out of the wall — the Lampwright pays the whole campaign, once. */
+function renderZone(zone: LadderZoneDef, z: number): HTMLElement {
+  const done = climbed(game.character, z) >= zone.rungs;
   const card = el('div', `quest${done ? ' quest--done' : ''}`);
-  card.append(el('div', 'crystal__name', quest.name));
-  card.append(el('div', 'quest__detail', quest.detail));
-  card.append(
-    el(
-      'div',
-      `socket__family socket__family--${family.id}`,
-      done ? `${family.name} crystal — taken` : `Pays a ${family.name} crystal`
-    )
-  );
+  card.append(el('div', 'crystal__name', zone.name));
+  card.append(el('div', 'quest__detail', done
+    ? 'Cleared, top to bottom.'
+    : `${climbed(game.character, z)} of ${zone.rungs} depths cleared.`));
+  return card;
+}
+
+/** THE CRYSTAL LADDER, once the campaign has paid: twelve steps in order, each
+ *  saying what it is waiting on. A step past the one you are on is drawn too —
+ *  the whole ladder is the plan, and a plan you cannot see is one nobody makes. */
+function renderStep(step: CrystalStep, at: number, now: number): HTMLElement {
+  const done = at < now;
+  const card = el('div', `quest${done ? ' quest--done' : ''}`);
+  const family = FAMILY_BY_ID[step.family];
+  card.append(el('div', 'crystal__name', `${family?.name ?? step.family} crystal`));
+  const said = step.clears !== undefined
+    ? `${Math.min(step.clears, game.provingClears ?? 0)} of ${step.clears} ${PROVING.name} clears.`
+    : `${step.hold!.count} ${FAMILY_BY_ID[step.hold!.family]?.name ?? step.hold!.family} ` +
+      `${step.hold!.count === 1 ? 'crystal' : 'crystals'} at level ${step.hold!.level}.`;
+  card.append(el('div', 'quest__detail', done ? 'Taken.' : said));
   return card;
 }
 
@@ -176,9 +190,18 @@ export function render(): void {
     host.append(el('p', 'empty', 'None yet. Clear a descent and the Lampwright will find you.'));
   }
 
+  // THE CAMPAIGN'S three zones until it is paid for, and the LADDER after —
+  // one list, saying the only thing between you and the next crystal.
   const quests = $('crystals-quests');
   quests.replaceChildren();
-  for (const quest of CRYSTAL_QUESTS) quests.append(renderQuest(quest));
+  if (game.character.paidCampaign) {
+    const given = game.given ?? [];
+    const now = CRYSTAL_LADDER.findIndex((step) => !given.includes(`crystal:${step.id}`));
+    const at = now === -1 ? CRYSTAL_LADDER.length : now;
+    CRYSTAL_LADDER.forEach((step, i) => quests.append(renderStep(step, i, at)));
+  } else {
+    LADDER.zones.forEach((zone, z) => quests.append(renderZone(zone, z)));
+  }
 
   $('crystals-count').textContent = `${all.length} owned · ${
     all.filter((r) => r.held === 'socket').length

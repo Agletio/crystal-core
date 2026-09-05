@@ -34,6 +34,7 @@ export interface NodeChoice {
   name: string;
   description: string;
   grants?: Record<string, unknown>;
+  stats?: NodeStat[]; // for a web whose content is stats rather than switches
 }
 
 /** The skill itself, at the middle of its own web. Always allocated. */

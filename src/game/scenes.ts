@@ -1,22 +1,11 @@
-/**
- * The schedule: what happens at the end of THIS clear. `src/game/crystals.ts`
- * is the same shape for gifts and this ASKS it. At most ONE scene per cleared
- * descent, highest rung first and never rolled — schedules that interleave are
- * schedules nobody can read off a screen.
- */
-import { INTRO, LAMPWRIGHT } from '../data';
-import { SCENES, SCENE_BY_ID } from '../scenes';
+/** WHO YOU HAVE MET, and where. Found in a descent, in the camp from then on,
+ *  so a queue of rooms is one `given` mark apiece. */
+import { INTRO, LADDER, WORKERS, workerMark } from '../data';
+import type { WorkerDef } from '../data';
+import { SCENES } from '../scenes';
 import type { SceneDef } from '../scenes';
-import { giftWaiting } from './crystals';
-import { relicFor } from './graft';
-import type { QuestFacts, Waiting } from './crystals';
+import type { MapTheme } from '../types';
 import type { GameState } from './state';
-
-/** A room, and what the person in it is holding. */
-export interface SceneCall {
-  def: SceneDef;
-  gift: Waiting | null; // null once a scene exists that hands nothing over
-}
 
 /** At the clear, never the door: a room you died in comes back. */
 export function takeBoss(game: GameState, id: string): void {
@@ -26,30 +15,97 @@ export function takeBoss(game: GameState, id: string): void {
 export const bossBeaten = (game: GameState, id: string): boolean =>
   (game.bosses ?? []).includes(id);
 
-/** Rung 2 up: a condition, never a roll, and a room a key PAID for goes first. */
-function scheduled(game: GameState): SceneDef[] {
-  const out: SceneDef[] = [];
-  const called = SCENES.find((s) => s.encounter && s.encounter === game.called);
-  if (called) out.push(called);
+/** A key already handed over, as a `given` entry. */
+export const gaveKey = (id: string): string => `key:${id}`;
 
-  const boss = SCENE_BY_ID[INTRO.bossScene];
-  const socketed = Object.keys(game.sockets ?? {}).length;
-  if (boss?.encounter && socketed >= INTRO.bossSockets && !bossBeaten(game, boss.encounter)) {
-    out.push(boss);
+export const metMark = (sceneId: string): string => `met:${sceneId}`;
+
+export const hasMet = (game: GameState, sceneId: string): boolean =>
+  (game.given ?? []).includes(metMark(sceneId));
+
+export function takeMet(game: GameState, sceneId: string): void {
+  if (!hasMet(game, sceneId)) game.given = [...(game.given ?? []), metMark(sceneId)];
+}
+
+/** THEIR KEY: `INTRO.bossSockets` crystals set in the wall, and never twice. */
+export function keyOwed(game: GameState, def: SceneDef): boolean {
+  if (!def.gives || (game.given ?? []).includes(gaveKey(def.gives))) return false;
+  return Object.keys(game.sockets ?? {}).length >= INTRO.bossSockets;
+}
+
+/** Everyone you can go and see. A BOSS is not one: his room is a descent. */
+export const folkMet = (game: GameState): SceneDef[] =>
+  SCENES.filter((s) => !s.encounter && hasMet(game, s.id));
+
+/** Who LIVES in a world, in the order a campaign meets them. */
+export const folkOf = (theme: MapTheme): SceneDef[] =>
+  SCENES.filter((s) => !s.encounter && s.theme === theme);
+
+/** HEARD IN TOWN, which is not the same as walked past: the queue moves on
+ *  this and never on the meeting. */
+export const heardMark = (id: string): string => `heard:${id}`;
+
+export const hasHeard = (game: GameState, id: string): boolean =>
+  (game.given ?? []).includes(heardMark(id));
+
+export function takeHeard(game: GameState, id: string): void {
+  if (!hasHeard(game, id)) game.given = [...(game.given ?? []), heardMark(id)];
+}
+
+/** EVERYBODY FOUND DOWN THERE, IN ONE ORDER. People and workers are two
+ *  tables and one QUEUE, DERIVED off the depth each already names rather than
+ *  written a second time where it can disagree. */
+export interface Meeting {
+  id: string;
+  rung: number;
+  theme: MapTheme;
+  scene?: SceneDef;
+  worker?: WorkerDef;
+}
+
+/** ZONE FIRST, THEN DEPTH: a man at depth 3 of the second zone comes after
+ *  everybody in the first, however shallow he stands. */
+const zoneOf = (theme: MapTheme): number => {
+  const at = LADDER.zones.findIndex((z) => z.world === theme);
+  return at < 0 ? LADDER.zones.length : at;
+};
+
+export const MEETINGS: Meeting[] = [
+  ...SCENES.filter((s) => !s.encounter && s.rung !== undefined)
+    .map((s) => ({ id: s.id, rung: s.rung!, theme: s.theme, scene: s })),
+  ...WORKERS.map((w) => ({ id: `worker:${w.id}`, rung: w.rung, theme: w.world, worker: w })),
+].sort((a, b) => zoneOf(a.theme) - zoneOf(b.theme) || a.rung - b.rung);
+
+const wasMet = (game: GameState, m: Meeting): boolean =>
+  m.worker ? (game.given ?? []).includes(workerMark(m.worker.id)) : hasMet(game, m.id);
+
+/** THE NEXT ONE OWED, and NOBODY IS SKIPPED. The queue advances only on a
+ *  scene HEARD IN TOWN, so diving from 2 to 6 without going up finds nobody:
+ *  the smith waits on the Lampwright's own scene, and Hob waits on the
+ *  smith's. Depth only says how DEEP the next one stands, never who. */
+export function nextMeeting(game: GameState): Meeting | undefined {
+  for (const m of MEETINGS) {
+    if (!wasMet(game, m)) return m;
+    if (!hasHeard(game, m.id)) return undefined; // met, not yet heard: the queue stops here
   }
-  return out;
+  return undefined;
 }
 
-export function sceneWaiting(game: GameState, clear: QuestFacts): SceneCall | null {
-  const gift = giftWaiting(game, clear); // rung 1, and his schedule moves nowhere
-  const workshop = SCENE_BY_ID[LAMPWRIGHT.scene];
-  if (gift && workshop) return { def: workshop, gift };
-
-  const next = scheduled(game)[0];
-  if (next) return { def: next, gift: null }; // rung 2
-
-  // Rung 3: HOLDING one is the whole condition. Nothing is rolled, and a room
-  // owed keeps being owed until you have walked into it.
-  const wanted = SCENES.find((s) => relicFor(game, s.id) !== null);
-  return wanted ? { def: wanted, gift: null } : null;
+/** MET BUT NOT YET HEARD: whose story is owed the next time you come up. At
+ *  most one is ever waiting, because the queue does not move until it is. */
+export function owedTale(game: GameState): Meeting | undefined {
+  for (const m of MEETINGS) {
+    if (!wasMet(game, m)) return undefined;
+    if (!hasHeard(game, m.id)) return m;
+  }
+  return undefined;
 }
+
+/** WHO IS DOWN THERE: the one the queue owes, if this descent is deep enough
+ *  and in his world. A man who turns up in every world lives in none. */
+export function whoIsDown(game: GameState, theme: MapTheme, rung: number): SceneDef | undefined {
+  const next = nextMeeting(game);
+  if (!next?.scene || next.theme !== theme || rung < next.rung) return undefined;
+  return next.scene;
+}
+

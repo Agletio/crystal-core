@@ -9,7 +9,7 @@
 import { FORGED, FORGED_BY_ID, RELIC_BY_ID } from '../data';
 import type { ForgedDef } from '../data';
 import { clone } from '../crafting';
-import { gearKindOf, isUnique, relicsIn, wornItems } from './state';
+import { gearKindOf, isUnique, relicsIn } from './state';
 import type { GameState } from './state';
 import type { Item, RolledMod } from '../types';
 
@@ -27,19 +27,15 @@ export function graftRefusal(item: Item, who?: string): string | null {
   return null;
 }
 
-export const graftable = (game: GameState, who?: string): Item[] =>
-  [...game.inventory, ...wornItems(game)].filter((i) => graftRefusal(i, who) === null);
-
 /** What THIS person writes on this piece: the man who takes bodies has no
- *  opinion about a ring, and says so out loud. */
+ *  opinion about a ring. */
 export const forgedFor = (item: Item, who?: string): ForgedDef[] => {
   const kind = gearKindOf(item);
   if (!kind) return [];
   return FORGED.filter((f) => f.kinds.includes(kind) && (who === undefined || f.who === who));
 };
 
-/** Fixed values: a decision that rolls badly is a gamble rather than a trade. */
-function forgedLine(def: ForgedDef): RolledMod {
+function forgedLine(def: ForgedDef): RolledMod { // fixed: a bad roll is a gamble
   const tier = def.mod.tiers[def.mod.tiers.length - 1];
   return {
     entryId: `${def.mod.id}_forged`,
@@ -58,11 +54,9 @@ function forgedLine(def: ForgedDef): RolledMod {
   };
 }
 
-/**
- * The piece with its base line replaced. Pure, like `craft`. A second graft
- * replaces the first: the base's own line went the moment one landed, so
- * leaving a piece stuck on one choice makes a first graft unwalkbackable.
- */
+/** The piece with its base line replaced. Pure, like `craft`. A second graft
+ *  replaces the first: the base's own line went the moment one landed, so one
+ *  choice per piece would make a first graft unwalkbackable. */
 export function graft(item: Item, forgedId: string): Item | null {
   const def = FORGED_BY_ID[forgedId];
   if (!def || graftRefusal(item)) return null;
@@ -77,24 +71,37 @@ export function graft(item: Item, forgedId: string): Item | null {
 export const relicFor = (game: GameState, sceneId: string): Item | null =>
   relicsIn(game).find((r) => RELIC_BY_ID[r.base]?.wants === sceneId) ?? null;
 
-/** Spends the relic and writes the line, in place. */
+/** Spends the relic and writes the line, in place. Nothing is spent unless the
+ *  piece was actually found and swapped: a relic gone with the gear unchanged
+ *  is the one outcome no screen can report and no bench can undo. */
 export function spendRelic(game: GameState, relic: Item, item: Item, forgedId: string): Item | null {
   const made = graft(item, forgedId);
   if (!made) return null;
   const at = game.relics.indexOf(relic);
   if (at < 0) return null;
+  if (!replaceGraft(game, item, made)) return null;
   game.relics.splice(at, 1);
-  replaceGraft(game, item, made);
   return made;
 }
 
-function replaceGraft(game: GameState, was: Item, now: Item): void {
-  const at = game.inventory.indexOf(was);
+/** Whether the piece was found. Matched by `id`, not by object, so a card
+ *  holding a stale copy still lands on the live one. */
+function replaceGraft(game: GameState, was: Item, now: Item): boolean {
+  const at = game.inventory.findIndex((i) => i.id === was.id);
   if (at >= 0) {
     game.inventory[at] = now;
-    return;
+    return true;
+  }
+  const stashed = game.stash.findIndex((i) => i.id === was.id);
+  if (stashed >= 0) {
+    game.stash[stashed] = now;
+    return true;
   }
   for (const [slot, worn] of Object.entries(game.character.equipment)) {
-    if (worn === was) game.character.equipment[slot] = now;
+    if (worn.id === was.id) {
+      game.character.equipment[slot] = now;
+      return true;
+    }
   }
+  return false;
 }

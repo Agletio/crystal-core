@@ -10,7 +10,7 @@ import type { Handover, Waiting } from '../game/crystals';
 import { takeHandover } from '../game/crystals';
 import type { GameState } from '../game/state';
 import { itemCard } from './itemcard';
-import { currencyIcon, itemIcon, portraitIcon } from './icons';
+import { FACE, currencyIcon, itemIcon, portraitIcon } from './icons';
 import { attachTooltip, hideTooltip } from './tooltip';
 import { note } from './history';
 
@@ -33,7 +33,15 @@ export const isMetOpen = (): boolean => !$('met').hidden;
 /** Which of his three speeches this meeting is. Read by the run loop to play
  *  the beats, and again here for the title and the button on the last one. */
 export const lampwrightWords = (waiting: Waiting) =>
-  waiting.weapon ? LAMPWRIGHT.first : waiting.crystal ? LAMPWRIGHT.crystal : LAMPWRIGHT.again;
+  waiting.weapon
+    ? LAMPWRIGHT.first
+    : waiting.crystal
+      ? LAMPWRIGHT.crystal
+      : waiting.campaign
+        ? LAMPWRIGHT.campaign
+        : waiting.ladder
+          ? LAMPWRIGHT.deeper
+          : LAMPWRIGHT.again;
 
 function row(icon: SVGElement, name: string, card: () => HTMLElement | string): HTMLElement {
   const line = el('div', 'met__row');
@@ -50,7 +58,8 @@ function row(icon: SVGElement, name: string, card: () => HTMLElement | string): 
  */
 export function openMet(waiting: Waiting): void {
   const hand = takeHandover(game, waiting);
-  if (hand.items.length === 0 && Object.keys(hand.currency).length === 0) return;
+  const held = hand.items.length + Object.keys(hand.currency).length + hand.says.length;
+  if (held === 0) return;
   taken = hand;
 
   const words = lampwrightWords(waiting);
@@ -58,7 +67,7 @@ export function openMet(waiting: Waiting): void {
   // you recognise rather than something you read.
   const face = $('met-face');
   face.replaceChildren();
-  const portrait = portraitIcon(LAMPWRIGHT.sprite, 52);
+  const portrait = portraitIcon(LAMPWRIGHT.sprite, FACE.panel);
   if (portrait) face.append(portrait);
   $('met-title').textContent = words.title;
   ($('met-take') as HTMLButtonElement).textContent = words.button;
@@ -73,6 +82,9 @@ export function openMet(waiting: Waiting): void {
     if (!def) continue;
     gift.append(row(currencyIcon(def, 28), `${def.name} \u00d7${n}`, () => def.description));
   }
+  // What has no icon because it is not a thing you can hold: the Reckoning's
+  // own points, which land on the character the moment he lets go of them.
+  for (const said of hand.says) gift.append(el('div', 'met__said', said));
 
   $('met').hidden = false;
   ($('met-take') as HTMLButtonElement).focus();
@@ -83,6 +95,7 @@ export function closeMet(): void {
   for (const [id, n] of Object.entries(taken?.currency ?? {})) {
     note(`${LAMPWRIGHT.name} gave you ${n} ${CURRENCY_BY_ID[id]?.name ?? id}`, 'add');
   }
+  for (const said of taken?.says ?? []) note(`${LAMPWRIGHT.name} gave you ${said}`, 'add');
   taken = null;
   $('met').hidden = true;
   hideTooltip();

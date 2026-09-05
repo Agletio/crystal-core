@@ -6,11 +6,17 @@
  * it, uncovered — crafting works ON the dock, so covering it is the one mistake
  * this layout cannot afford.
  */
-import { createGame, resetGame, sellItem, slotFor, stashRoom, toStash } from './game/state';
+import { armForSkill, createGame, resetGame, sellItem, slotFor, stashRoom, toStash } from './game/state';
 import { canSell, sellPrice } from './economy';
 import { onWearChanged, wear } from './ui/wear';
 import { dismissToast } from './ui/toast';
-import { EQUIP_SLOTS, POTIONS } from './data';
+import {
+  EQUIP_SLOTS,
+  MATERIAL_BY_ID,
+  MATERIAL_FAMILY_BY_ID,
+  MEAL_BY_FISH,
+  POTIONS,
+} from './data';
 import type { StartMode } from './game/state';
 import { applySave, clearSave, healedAnything, loadGame, saveGame, startAutosave } from './game/save';
 import type { Healed } from './game/save';
@@ -25,12 +31,42 @@ import {
 import { closeMenu, initMenu, isMenuOpen } from './ui/menu';
 import { initCraft, openCraft, closeCraft, isCraftOpen, refreshCraft } from './ui/craft';
 import { initShop, openShop, closeShop, isShopOpen, refreshShop } from './ui/shop';
+import { initSmith, openSmith, closeSmith, isSmithOpen } from './ui/smith';
 import { initStash, openStash, closeStash, isStashOpen } from './ui/stash';
-import { initHaul, openHaul, closeHaul, isHaulOpen } from './ui/haul';
 import { initMet, isMetOpen } from './ui/met';
+import { initTale, isTaleUp, stepTale } from './ui/tale';
 import { initGraft, isGraftOpen } from './ui/graft';
 import { initSpeech, isSpeaking } from './ui/speech';
+import { closeParley, initTalk, isParleying } from './ui/talk';
 import { initCrystals, openCrystals, closeCrystals, isCrystalsOpen } from './ui/crystals';
+import { initWork, openWork, closeWork, isWorkOpen } from './ui/work';
+import { initForge, openForge, closeForge, isForgeOpen } from './ui/forge';
+import { dismantle, dismantleYield } from './game/forge';
+import { eatMeal, mealRuns, professionAt, whyNotEat } from './game/work';
+import { Rng } from './rng';
+import { statParts } from './mod-text';
+
+/** The meal roll's own stream: a buff you re-roll by closing a menu is not a
+ *  buff, so it is seeded once and never from the run's own seed. */
+const mealRng = new Rng(Date.now() & 0x7fffffff);
+
+/** What eating one would be worth, at the level you cook at — in the game's own
+ *  words for a line, so a meal reads the way every other modifier does. */
+const saysMeal = (fish: string, level: number): string => {
+  const def = MEAL_BY_FISH[fish];
+  const line = def?.stats[0];
+  const runs = `${mealRuns(level, new Rng(1))}–${mealRuns(level, new Rng(99))} descents`;
+  if (!line) return runs;
+  const said = statParts({ stat: line.stat, form: line.form, value: line.range[0], tags: line.tags ?? [] });
+  return `${said.value} ${said.label} for ${runs}`;
+};
+
+/** A refund is PROCESSED, so it is said the way a processed stack is named. */
+const workedName = (id: string): string => {
+  const def = MATERIAL_BY_ID[id];
+  const one = def?.family ? MATERIAL_FAMILY_BY_ID[def.family]?.one : undefined;
+  return one ? `${def!.name} ${one}` : (def?.name ?? id);
+};
 import {
   centreCamera,
   drinkFlask,
@@ -39,9 +75,16 @@ import {
   onRunFocused,
   skipToGift,
   refreshRunPanels,
+  forgetRun,
+  goHome,
+  openFissure,
+  closeFissure,
+  isFissureOpen,
+  enterRoomNow,
 } from './ui/run';
 import { initWelcome, maybeShowWelcome } from './ui/welcome';
-import { ask, cancelConfirm, initConfirm, isConfirmOpen } from './ui/confirm';
+import { initPick, maybeShowPick } from './ui/pick';
+import {cancelConfirm, initConfirm, isConfirmOpen } from './ui/confirm';
 import {
   initCharacter,
   refreshCharacter,
@@ -57,6 +100,7 @@ import {
   skillsEscape,
 } from './ui/skills';
 import { initTrade, openTrade, closeTrade, isTradeOpen } from './ui/trade';
+import { initTrials, openTrials, closeTrials, isTrialsOpen } from './ui/trials';
 import {
   initHistory,
   openHistory,
@@ -66,9 +110,13 @@ import {
   note,
 } from './ui/history';
 import { initSaveData, openSaveData, closeSaveData, isSaveDataOpen } from './ui/savedata';
+import { initSettings, openSettings, closeSettings, isSettingsOpen } from './ui/settings';
+import { initDev, openDev, closeDev, isDevOpen } from './ui/dev';
+import { initBuilder, openBuilder, closeBuilder, isBuilderOpen } from './ui/builder';
 import { initKeys } from './ui/keys';
 import { initTitle } from './ui/title';
 import { dressRail, syncParkedPanels, toggleFullscreen, toggleParkedPanels } from './ui/rail';
+import { mountFixtures } from './ui/fixtures';
 import { initWindows, topWindow, windowOffset } from './ui/windows';
 
 // Judging the loop from a stocked inventory is judging the endgame at the start.
@@ -93,12 +141,14 @@ function healingNote(healed: Healed): string | null {
 /** Wipe and re-render everything. Both buttons are dev tools. */
 function restart(mode: StartMode): void {
   resetGame(game, mode);
+  forgetRun();
   // The old save outlives the wipe otherwise, and the next reload undoes it.
   clearSave();
   saveGame(game);
   clearHistory();
   note(mode === 'fresh' ? 'New game — nothing but the Fissure.' : 'Dev kit granted.');
   refreshRunPanels();
+  goHome();
   // Same rule as booting: a stocked game has something to spend, a fresh one
   // has a map to run.
   if (mode === 'dev') openCraft();
@@ -106,47 +156,56 @@ function restart(mode: StartMode): void {
     closeCraft();
     closeShop();
     closeStash();
-    closeHaul();
+    closeSettings();
     closeCrystals();
+    closeWork();
+    closeForge();
     onRunFocused();
   }
-  maybeShowWelcome();
+  makeCharacter();
 }
 
-/** After choosing a skill: the Fissure, and nothing explaining it. */
+/** A character is MADE before it is played: which trade you ARE, then the name
+ *  and the skill. `maybeShowPick` is false once a trade is set, so both are one gate. */
+function makeCharacter(): void {
+  if (!maybeShowPick()) maybeShowWelcome();
+}
+
+/** After choosing a skill: the weapon that skill wants, and the camp. There is
+ *  no room in between — *"It should just be you pick character/name/skill and
+ *  land in the town. Have it just give you an appropriate weapon for the skill
+ *  you picked."* */
 function begin(): void {
+  const armed = armForSkill(game);
+  if (armed) note(`You set out with ${armed.item.name}`, 'add');
   refreshRunPanels();
+  goHome();
   onRunFocused();
 }
 
 document.getElementById('open-craft')!.addEventListener('click', openCraft);
-document.getElementById('open-shop')!.addEventListener('click', openShop);
-document.getElementById('open-haul')!.addEventListener('click', () => openHaul());
-document.getElementById('open-crystals')!.addEventListener('click', openCrystals);
-document.getElementById('open-stash')!.addEventListener('click', openStash);
 document.getElementById('open-inventory')!.addEventListener('click', openInventory);
 document.getElementById('open-character')!.addEventListener('click', () => openCharacter());
 document.getElementById('open-skills')!.addEventListener('click', openSkills);
 document.getElementById('open-trade')!.addEventListener('click', openTrade);
 document.getElementById('open-history')!.addEventListener('click', openHistory);
 document.getElementById('open-save')!.addEventListener('click', () => openSaveData());
-// The dev kit wipes what you are playing, and it sits in a row you click all
-// day. A new game is a SLOT's action now, on the Save & Load screen.
-const guard = (id: string, title: string, mode: StartMode) =>
-  document.getElementById(id)!.addEventListener('click', async () => {
-    if (await ask({ title, text: 'You lose everything.', confirm: 'Wipe' })) restart(mode);
-  });
-
-guard('dev-kit', 'Restart with the dev kit?', 'dev');
+document.getElementById('open-settings')!.addEventListener('click', () => openSettings());
+document.getElementById('open-dev')!.addEventListener('click', openDev);
 
 // Escape closes whatever is on top. Cheap, and the first thing anyone tries.
 globalThis.addEventListener('keydown', (event) => {
   if (event.key !== 'Escape') return;
+  // A TALE is above everything and the only thing any press can do is go on:
+  // it is watched once, and there is no state to be stuck in.
+  if (isTaleUp()) stepTale();
   // The question is on top of everything, and Escape can only answer it "no".
-  if (isConfirmOpen()) cancelConfirm();
+  else if (isConfirmOpen()) cancelConfirm();
   // The crystal is already granted by the time a panel is on screen, so Escape
   // takes it rather than refusing it — and from a line before the panel it
   // skips the rest of them and takes it anyway.
+  // The list is a QUESTION about a person and Escape answers it "nobody".
+  else if (isParleying()) closeParley();
   else if (isSpeaking() || isMetOpen() || isGraftOpen()) skipToGift();
   // The item menu is above every window, so it is what Escape is aimed at
   // while one is open — closing the window under it loses your place.
@@ -179,9 +238,19 @@ if (typeof ResizeObserver === 'function') new ResizeObserver(measureDock).observ
 globalThis.addEventListener('resize', measureDock);
 measureDock();
 
+mountFixtures();
 initInventory(game);
 initHistory();
+initSettings(game, refreshRunPanels);
+initDev(game, {
+  enterRoom: enterRoomNow,
+  restock: () => restart('dev'),
+  refresh: refreshRunPanels,
+  build: openBuilder,
+});
+initBuilder();
 initConfirm();
+initTale();
 // A loaded backup replaces everything, so every screen has to look again.
 initSaveData(
   game,
@@ -190,13 +259,14 @@ initSaveData(
     if (said) note(said);
     syncParkedPanels();
     refreshRunPanels();
+    goHome();
     onRunFocused();
-    maybeShowWelcome();
+    makeCharacter();
   },
   // A new game in another slot. The slot has already moved, so `restart` is
   // wiping and writing the one being started rather than the one left behind.
   () => restart('fresh'),
-  maybeShowWelcome
+  makeCharacter
 );
 // Equipping gear or spending a tree point changes derived stats, so the map
 // screen's readouts have to re-read after either.
@@ -204,21 +274,30 @@ initCharacter(game, refreshRunPanels, onRunFocused);
 initSkills(game, refreshRunPanels);
 // A trade node changes what the sim does, so the map's readouts re-read too.
 initTrade(game, refreshRunPanels);
+// A trial node changes what the DESCENT is, so the set's readouts re-read too.
+initTrials(game, refreshRunPanels);
 // A craft can land on a worn piece now, so the map's readouts re-read after one.
 initCraft(game, onRunFocused, () => {
   refreshRunPanels();
   refreshCharacter();
 });
 initShop(game);
+// A tool bought or reforged changes what the sheet and the bag are showing.
+initSmith(game, () => { refreshCharacter(); renderInventory(); });
 // Closing the stash hands the dock back to the map, same as crafting does.
 initStash(game, onRunFocused);
-// Taking things out of the haul is what unblocks Enter, so the map re-reads.
-initHaul(game, () => {
-  refreshRunPanels();
-  refreshShop();
-});
 // Socketing from here changes the set the Fissure is holding, so the map re-reads.
 initCrystals(game, refreshRunPanels);
+// Loading a batch takes the raw out of the bag, so the dock is already stale.
+initWork(game, () => {
+  refreshRunPanels();
+  renderInventory();
+});
+// A craft spends materials and puts a piece in the bag, so both are stale.
+initForge(game, () => {
+  refreshRunPanels();
+  renderInventory();
+});
 // The crystal is in your hands the moment the panel closes, so the collection
 // and the Fissure's counts are both already out of date.
 initMet(game, () => {
@@ -234,6 +313,7 @@ initGraft(game, () => {
 });
 initRun(game);
 initSpeech();
+initTalk(game);
 initMenu();
 
 /**
@@ -287,6 +367,42 @@ setItemActions({
         },
       });
     }
+    // EAT IT. A meal is a buff that lasts RUNS, and the processed fish IS the
+    // meal — so the verb sits on the stack rather than behind a second recipe.
+    const why = whyNotEat(game, item.base);
+    if (item.kind === 'material' && MEAL_BY_FISH[item.base]) {
+      const level = professionAt(game, 'cooking').level;
+      out.push({
+        label: why ?? `Eat it — ${saysMeal(item.base, level)}`,
+        menuOnly: true,
+        blocked: why ?? undefined,
+        run: () => {
+          const meal = eatMeal(game, item.base, mealRng);
+          if (!meal) return;
+          note(`Ate ${meal.name} — ${meal.uses} descents`);
+          renderInventory();
+          refreshRunPanels();
+          refreshCharacter();
+        },
+      });
+    }
+    // DISMANTLE, and it can never hand back more than the recipe took — the
+    // one thing that would make craft → dismantle → craft a printer. Menu
+    // only, beside the sale: both are one-way.
+    const back = dismantleYield(game, item);
+    if (back.length > 0) {
+      out.push({
+        label: `Dismantle for ${back.map((r) => `${r.n} ${workedName(r.material)}`).join(', ')}`,
+        menuOnly: true,
+        run: () => {
+          const paid = dismantle(game, item);
+          if (!paid) return;
+          note(`Dismantled ${item.name}`);
+          renderInventory();
+          refreshRunPanels();
+        },
+      });
+    }
     return out;
   },
   // Dragging onto a slot in the crafting window's worn column. A deliberate
@@ -311,6 +427,7 @@ const SCREENS: Record<
   { el: string; open: () => void; close: () => void; isOpen: () => boolean }
 > = {
   inventory: { el: 'dock', open: openInventory, close: closeInventory, isOpen: isInventoryOpen },
+  fissure: { el: 'run-menu', open: openFissure, close: closeFissure, isOpen: isFissureOpen },
   character: {
     el: 'sheet',
     open: () => openCharacter(),
@@ -319,13 +436,19 @@ const SCREENS: Record<
   },
   skills: { el: 'skills', open: openSkills, close: closeSkills, isOpen: isSkillsOpen },
   trade: { el: 'trade', open: openTrade, close: closeTrade, isOpen: isTradeOpen },
+  trials: { el: 'trials', open: openTrials, close: closeTrials, isOpen: isTrialsOpen },
   craft: { el: 'craft', open: openCraft, close: closeCraft, isOpen: isCraftOpen },
   shop: { el: 'shop', open: openShop, close: closeShop, isOpen: isShopOpen },
-  haul: { el: 'haul', open: openHaul, close: closeHaul, isOpen: isHaulOpen },
+  smith: { el: 'smith', open: () => openSmith('shop'), close: closeSmith, isOpen: isSmithOpen },
   crystals: { el: 'crystals', open: openCrystals, close: closeCrystals, isOpen: isCrystalsOpen },
+  work: { el: 'work', open: () => openWork(), close: closeWork, isOpen: isWorkOpen },
+  forge: { el: 'forge', open: openForge, close: closeForge, isOpen: isForgeOpen },
   stash: { el: 'stash', open: openStash, close: closeStash, isOpen: isStashOpen },
   history: { el: 'history', open: openHistory, close: closeHistory, isOpen: isHistoryOpen },
   save: { el: 'savedata', open: openSaveData, close: closeSaveData, isOpen: isSaveDataOpen },
+  settings: { el: 'settings', open: () => openSettings(), close: closeSettings, isOpen: isSettingsOpen },
+  dev: { el: 'dev', open: openDev, close: closeDev, isOpen: isDevOpen },
+  builder: { el: 'builder', open: openBuilder, close: closeBuilder, isOpen: isBuilderOpen },
 };
 
 initWindows(Object.fromEntries(Object.entries(SCREENS).map(([id, s]) => [id, s.el])));
@@ -343,11 +466,14 @@ initKeys(game, {
 
 dressRail(game);
 
+// THE CAMP IS HOME, and boot always lands in it: a hideout you leave to go
+// down, rather than a screen you visit. Opening a screen over it belongs to
+// the dev kit's stocked start.
+goHome();
 onRunFocused();
 
-// The Fissure is home, and boot always lands there. Opening a screen over it
-// belongs to the dev kit's stocked start.
 initWelcome(game, begin);
+initPick(game, maybeShowWelcome); // the trade, and then the name and the skill
 
 // The title, and what it opens onto: choosing a game comes before playing one,
 // and a fresh browser goes title -> slots -> New game -> name and skill.

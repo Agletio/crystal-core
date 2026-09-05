@@ -1,13 +1,11 @@
 /**
- * Core types.
- *
- * Gear and crystals are the SAME structure — a crystal is an item whose mods
- * affect map generation instead of your character — so every currency works on
- * both with no special-casing.
+ * Core types. Gear and crystals are the SAME structure — a crystal's mods
+ * affect map generation — so every currency works on both with no special case.
  */
 
 export type StatForm = 'flat' | 'inc' | 'more';
-export type ItemKind = 'gear' | 'crystal' | 'relic';
+/** A MATERIAL stacks: `Item.meta.n` is how many, so a bag holds one row. */
+export type ItemKind = 'gear' | 'crystal' | 'relic' | 'material';
 
 /** Declared per base, so a new base can invent its own layout. */
 export type ModSlot = string;
@@ -81,6 +79,8 @@ export interface RolledMod {
   tier: number;
   tags: string[];
   stats: StatRoll[];
+  /** Descents left, on a CRYSTAL alone: a clear spends one, zero drops it. */
+  uses?: number;
 }
 
 export interface Item {
@@ -96,6 +96,7 @@ export interface Item {
   implicits: RolledMod[];
   /** Armour rating off the base. Increases scale it; crafting cannot reach it. */
   armour?: number;
+  damage?: number; // one swing off the base: a PERFECT one beats its row
   meta: Record<string, any>; // one-off state: bonus slots, corruption, …
 }
 
@@ -119,11 +120,13 @@ export interface DropGate {
   minPower?: number;
   /** The one world it comes out of. */
   zone?: MapTheme;
+  /** WHERE it can come from. Absent means both, and nothing is authored
+   *  behind it yet: the seam is here so a counter-only piece is a table row. */
+  source?: 'floor' | 'gamble';
 }
 
-/** A fixed identity: lines no currency can touch and a switch out of `GRANTS`,
- *  closer to a tree passive than to a rolled modifier. A version of a BASE, so
- *  slot, art and armour come from there. */
+/** A fixed identity: lines no currency can touch and a switch out of `GRANTS`.
+ *  A version of a BASE, so slot, art and armour come from there. */
 export interface UniqueDef {
   id: string;
   name: string;
@@ -165,12 +168,16 @@ export interface CurrencyDef {
 /** What slot a base occupies. Rings fit either ring slot. */
 export type GearKind =
   | 'weapon'
+  | 'shield'
   | 'helmet'
   | 'body'
   | 'gloves'
   | 'boots'
   | 'amulet'
-  | 'ring';
+  | 'ring'
+  // Two kinds: the ROD has its own slot and never competes with the other three.
+  | 'tool'
+  | 'rod';
 
 export interface GearBase {
   id: string;
@@ -180,14 +187,15 @@ export interface GearBase {
   /** Which slot types it can roll, and the ceiling on each. The TOTAL a piece
    *  may hold comes off `tier` — this only says where those go. */
   slots: Record<string, number>;
-  /** 1, 2 or 3. Holds `BASE_TIER_MODS[tier - 1]` modifiers, and nothing raises
-   *  it: a bigger item means going and finding a better base. */
-  tier: number;
+  tier: number; // 1-3, holding BASE_TIER_MODS[tier - 1]; nothing raises it
   /** Never rolled, never removable — what makes a wand worth more than a stick. */
   implicit?: StatSpec[];
+  /** Bare PHYSICAL added to an ATTACK; increases rolled ON it scale this alone. */
+  damage?: number;
+  attackSpeed?: number; // swings a second, its OWN: a maul is slow, a dagger is not
+  hands?: number; // two is a bow, and its off hand stays empty
   family?: string;
-  /** Lowest item level that may drop this base. Absent means from the start. */
-  ilvl?: number;
+  ilvl?: number; // lowest item level that may drop it; absent means from the start
   /** Armour rating the piece carries before any modifier. */
   armour?: number;
 }
@@ -195,10 +203,11 @@ export interface GearBase {
 export interface EquipSlotDef {
   id: string;
   name: string;
-  accepts: GearKind;
+  accepts: GearKind[];
+  group?: 'tool'; // which block of the sheet; absent is the gear grid
 }
 
-/** A socket in the Fissure. `accepts` is an item kind, so a slot that takes
+/** A socket in the Fissure. `accepts` is an item KIND, so a slot taking
  *  something other than a crystal is one more entry. */
 export interface RunSlotDef {
   id: string;
@@ -209,7 +218,7 @@ export interface RunSlotDef {
 /** Stat fields are MULTIPLIERS on MONSTER_BASE, so identity and difficulty
  *  stay independent. `sprite` is a name, not an asset. */
 export interface MonsterRankDef {
-  id: 'common' | 'magic' | 'rare';
+  id: 'common' | 'magic' | 'rare' | 'risen';
   weight: number;
   life: number;
   damage: number;
@@ -237,6 +246,19 @@ export interface MapThemeDef {
   id: MapTheme;
   name: string;
   blurb: string;
+}
+
+/** ONE ZONE OF THE CAMPAIGN, which is run with NOTHING SOCKETED — so the zone
+ *  carries the two things a crystal would otherwise decide. */
+export interface LadderZoneDef {
+  id: string; // the save key under `character.climbed`
+  name: string;
+  blurb: string;
+  rungs: number;
+  arena?: string; // its LAST depth: a fight in a room of its own
+  art?: string; // the generated cross-section the climb is drawn on
+  world: MapTheme; // the rock you walk into for every depth of it
+  tier: number; // the best base TIER its depths may drop
 }
 
 /** A monster that makes its neighbours worse. One family adds a fixed amount,
@@ -285,6 +307,7 @@ export interface MonsterDef {
   attacksPerSecond: number;
   attackRange: number;
   radius: number; // in tiles; units push each other apart rather than stacking
+  throws?: boolean; // picks its half of `MONSTER_ABILITIES`: throwers only throw
   sprite: string;
   /** How much of a tile the art covers. Nothing derives it from radius. */
   scale: number;
@@ -296,11 +319,16 @@ export interface MonsterDef {
 export type SkillCategory = 'spell' | 'attack' | 'passive' | 'movement';
 
 export interface SkillDef {
+  /** What this is swung with — any name in `WEAPON_COUNTS_AS`. Spells: none. */
+  requires?: string;
+  /** A share of one type reaching this skill, delivered as another; `to`
+   *  follows a tree Conversion. */
+  convert?: { from: string; to: string; share: number };
   id: string;
   name: string;
   description: string;
   category?: SkillCategory; // omitted for monster-only skills
-  /** Base the Lampwright hands a character who chose this, over the category's. */
+  /** Base the Lampwright hands you, over what `requires` would pick. */
   weapon?: string;
   /** 'attack', 'spell', 'melee', … NEVER damage types, or they'd scale the lot. */
   tags: string[];
@@ -308,6 +336,9 @@ export interface SkillDef {
   damageTypes: string[]; // what the SKILL'S OWN damage is dealt as
   /** The skill's own damage at level 1. Grows by LEVELLING.damagePerLevel. */
   baseDamage: number;
+  /** What this crits at BARE. Gear rolls INCREASED crit and SCALES this, so
+   *  the skill decides how near the cap a build gets. Absent takes HERO_BASE. */
+  critChance?: number;
   /**
    * Percent of flat damage from gear and the tree this skill takes on. 100 is
    * a point for a point; the number is per skill because a lasting skill
@@ -318,6 +349,7 @@ export interface SkillDef {
   manaCost: number; // per USE, so a slower skill's number is a bigger one
   range: number; // in tiles
   vfxKind?: string; // a name, not a shape. Unset draws a generic line
+  impact?: string; // a second kind, drawn where each of its hits LANDS
   params?: Record<string, any>; // behaviour-specific knobs
   grants?: Record<string, unknown>; // switches an EQUIPPED skill hands the sim
 }
@@ -328,32 +360,20 @@ export interface SkillSlotDef {
   name: string;
   accepts: SkillCategory[]; // which shelves may fill it
   blurb: string; // what an empty one is for
-}
-
-/** What the figure is wearing, as art keys. Empty slots are simply absent. */
-export interface WornPiece {
-  family: string;
-  tier: number;
-}
-
-export interface Look {
-  helmet?: WornPiece;
-  body?: WornPiece;
-  gloves?: WornPiece;
-  boots?: WornPiece;
-  /** A weapon's shape is its family: mace, sword, dagger, wand. */
-  weapon?: { kind: string };
+  /** Character level the slot opens at. Absent is level 1, which is most. */
+  unlocksAt?: number;
 }
 
 export interface Recipe {
   id: string;
   name: string;
-  /**
-   * Character level the shop starts stocking this at; omitted means 1. Also
-   * what stops the shop short-cutting the crystal ladder.
-   */
+  /** Character level the shelf starts stocking this at, omitted means 1 — and
+   *  what stops it short-cutting the crystal ladder. */
   level?: number;
   inputs: Record<string, number>; // currency id -> quantity consumed
+  /** Gold per point of the shelf's item level, SQUARED — one flat price is
+   *  unbuyable at the bottom of the climb and free at the top. */
+  goldPerIlvl?: number;
   output:
     | { type: 'currency'; id: string; qty: number }
     | { type: 'item'; base: string; qty: number };

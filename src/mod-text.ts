@@ -4,6 +4,8 @@
  * and generic damage are all `stat: 'damage'` and differ only by tag.
  */
 import {
+  AILMENT_BY_ID,
+  AILMENTS,
   ADDED_DAMAGE_TYPES,
   DAMAGE_TYPES,
   DAMAGE_TYPE_BY_ID,
@@ -31,6 +33,7 @@ const NAMED: Record<string, string> = {
   castSpeed: 'Cast Speed',
   critChance: 'Critical Chance',
   critMultiplier: 'Critical Damage',
+  blockChance: 'Block Chance',
   areaOfEffect: 'Area of Effect',
   moveSpeed: 'Movement Speed',
   attackRange: 'Attack Range',
@@ -57,6 +60,7 @@ const NAMED: Record<string, string> = {
     ])
   ),
   ...Object.fromEntries(DROP_GROUPS.map((g) => [findStat(g.id), `Chance to Find ${titled(g.id)}`])),
+  ailmentChance: 'Chance to apply your Ailment',
 };
 
 /** Every tag that names a thing worth putting in front of "Damage". */
@@ -65,6 +69,10 @@ const TAG_WORDS: Record<string, string> = Object.fromEntries([
   ...DAMAGE_GROUPS.map((g) => [g, titled(g)]),
   ...DELIVERY_TAGS.map((t) => [t, titled(t)]),
   ['attack', 'Attack'], // not in DELIVERY_TAGS: that list mints a mod per entry
+  ['overTime', 'Damage over Time'],
+  // Every ailment names itself, so "increased Burn Damage" and "increased
+  // Bleed Damage" are two lines rather than two spellings of one.
+  ...AILMENTS.map((a) => [a.id, a.name]),
 ]);
 
 /** Null when nothing here can say it, which is what the mods check refuses. */
@@ -79,6 +87,19 @@ function resistancePrefix(stat: string): string | null {
   const key = stat.slice(0, -3);
   return TAG_WORDS[key] ?? titled(key);
 }
+
+/** Stats whose FLAT form is a PERCENTAGE. "+8 Chance to apply Bleed" is eight
+ *  of nothing, and so is every chance beside it. */
+const FLAT_PERCENT = new Set([
+  'ailmentChance',
+  'critChance',
+  'blockChance',
+  'dodgeChance',
+  'monsterCrit',
+  ...DROP_GROUPS.map((g) => findStat(g.id)),
+]);
+
+const percentFlat = (stat: string): boolean => FLAT_PERCENT.has(stat) || stat.endsWith('Res');
 
 /** Falls back to splitting camelCase, so a new stat is unpolished, not unreadable. */
 export function statLabel(stat: string): string {
@@ -102,6 +123,12 @@ export function qualify(stat: string, tags: string[] = []): string {
   // A resistance already names its type; tagging it again would stutter.
   if (resistancePrefix(stat)) return base;
 
+  // The one stat whose tag reads AFTER it: "Chance to Bleed", not "Bleed Chance".
+  if (stat === 'ailmentChance') {
+    const named = tags.map((t) => AILMENT_BY_ID[t]).filter(Boolean);
+    return named.length ? `Chance to apply ${named.map((a) => a.name).join(' ')}` : base;
+  }
+
   const words = tags.map((t) => TAG_WORDS[t]).filter(Boolean);
   return words.length ? `${words.join(' ')} ${base}` : base;
 }
@@ -120,6 +147,8 @@ export interface StatParts {
 
 export function statParts(line: StatRoll): StatParts {
   const sign = line.value >= 0 ? '+' : '';
+  const shown = String(Math.round(line.value * 100) / 100); // never float noise
+
 
   // Flat damage always names who can use it. A mace and a ring both grant
   // "+5 Physical Damage" and only one of them arms a spell.
@@ -128,15 +157,17 @@ export function statParts(line: StatRoll): StatParts {
     const name = qualify(line.stat, line.tags.filter((t) => !FAMILY_WORDS[t]));
     const reach = families.length ? families : Object.keys(FAMILY_WORDS);
     return {
-      value: `${sign}${line.value}`,
+      value: `${sign}${shown}`,
       label: `${name} to ${reach.map((t) => FAMILY_WORDS[t]).join(' and ')}`,
     };
   }
 
   const name = qualify(line.stat, line.tags);
-  if (line.form === 'flat') return { value: `${sign}${line.value}`, label: name };
-  if (line.form === 'inc') return { value: `${sign}${line.value}%`, label: `increased ${name}` };
-  return { value: `${line.value}%`, label: `more ${name}` };
+  if (line.form === 'flat') {
+    return { value: `${sign}${shown}${percentFlat(line.stat) ? '%' : ''}`, label: name };
+  }
+  if (line.form === 'inc') return { value: `${sign}${shown}%`, label: `increased ${name}` };
+  return { value: `${shown}%`, label: `more ${name}` };
 }
 
 /** The same line as one run of text, for anywhere without room for markup. */

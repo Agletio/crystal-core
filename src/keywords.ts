@@ -14,7 +14,7 @@
  * `means` carries its own numbers, out of the same tables the sim reads. A
  * glossary quoting a figure by hand is a glossary that goes stale silently.
  */
-import { DEFENCE, MANA, POTIONS, PROJECTILE } from './data';
+import { AILMENT_BY_ID, BURST, DAMAGE_TYPE_BY_ID, DEFENCE, MANA, MELEE, PASSIVE_DAMAGE, POTIONS, PROJECTILE, WARRIOR, stunChanceFor } from './data';
 
 export interface KeywordDef {
   id: string;
@@ -43,6 +43,28 @@ export interface KeywordDef {
 }
 
 const pct = (n: number): string => `${Math.round(n * 100)}%`;
+
+/**
+ * An ailment's line, out of `AILMENTS` rather than quoted by hand — the table
+ * the sim reads is the table the glossary prints, so the two cannot drift.
+ */
+function ailmentMeans(id: string): string {
+  const a = AILMENT_BY_ID[id];
+  const applied = a.bySource
+    ? 'Applied only by something that says it applies one'
+    : `Applied by a hit dealing ${DAMAGE_TYPE_BY_ID[a.type]?.name ?? a.type} damage, at whatever chance you have bought`;
+  const does =
+    a.kind === 'chill'
+      ? `Each stack takes ${a.slowPer}% off movement, attack and cast speed. ${a.freezeAt} stacks FREEZE it for ${a.freezeSeconds}s and clear them, and the next hit on a body coming out of one is a Critical whatever your chance is.`
+      : a.kind === 'curse'
+        ? `When the body dies it bursts for ${a.burstShare}% of its maximum life per stack, ${a.burstRadius} tiles across.`
+        : a.kind === 'exposure'
+          ? `Each stack is ${a.takenPer}% increased damage taken, from anyone.`
+          : a.kind === 'shock'
+            ? `${a.dps} damage a second, and every tick throws ${pct(a.arcShare ?? 0)} of it at up to ${a.arcTargets} enemies within ${a.arcRadius} tiles.`
+            : `${a.dps} damage a second. Scaled by ${(a.tags ?? []).join(', ')} and by nothing else — never by Spell, Attack or Critical.`;
+  return `${applied}, for ${a.seconds}s. ${does}`;
+}
 
 /**
  * Ordered longest-first at the bottom of this file, so "Critical Damage" is
@@ -82,6 +104,17 @@ export const KEYWORDS: KeywordDef[] = [
     grants: ['chains', 'chainDamage'],
   },
   {
+    id: 'fork',
+    name: 'Fork',
+    says: ['Fork', 'Forks'],
+    means:
+      `A bolt falls from above on an enemy near the one you hit — within ` +
+      `${PROJECTILE.fork} tiles of it — for ${pct(PROJECTILE.forkDamage)} of ` +
+      `the damage. It is its own bolt, not the shot carrying on, so where the ` +
+      `shot came from decides nothing. Nothing is hit twice by one use.`,
+    grants: ['forks', 'forkDamage'],
+  },
+  {
     id: 'spread',
     name: 'Spread',
     says: ['Spread', 'Spreads'],
@@ -104,20 +137,59 @@ export const KEYWORDS: KeywordDef[] = [
     name: 'Burst',
     says: ['Burst', 'Bursts'],
     means:
-      'Damage in a circle around what was hit, for a share of that hit. It ' +
-      'overlaps freely — two Bursts on one enemy both land — and Area of ' +
-      'Effect widens every Burst.',
-    grants: ['explode', 'explodeRadius', 'explodeMultiplierAdd', 'explodeOnKill'],
+      `Damage in a circle. A Burst you carry goes off around YOU on a cooldown, ` +
+      `${PASSIVE_DAMAGE.sunderRadius} tiles across, for a figure off your ` +
+      `character level that nothing but increased Damage moves. A Burst set off ` +
+      `by a DEATH is a share of the hit that killed it, and sets off the Bursts ` +
+      `of whatever IT kills, ${BURST.chainDepth} deep. Bursts overlap freely.`,
+    grants: ['burstOnHit', 'explodeOnKill'],
   },
   {
-    id: 'splash',
-    name: 'Splash',
-    says: ['Splash', 'Splashes'],
+    id: 'convert',
+    name: 'Convert',
+    says: ['Convert', 'Converts', 'Converted'],
     means:
-      'A swing hits everything in its reach for a share of what it deals the ' +
-      'target. The circle is around YOU, not around what you hit, so Splash ' +
-      'is about where you stand.',
-    grants: ['splashMultiplier', 'splashRadius'],
+      'The skill stops dealing its own damage type and deals another instead. ' +
+      'Its OWN tree follows the change — a node reading the old type reads the ' +
+      'new one, so no point you walked is stranded — and your gear does not, so ' +
+      'a line on a ring keeps naming the type it named.',
+    grants: ['convertTree'],
+  },
+  {
+    id: 'momentum',
+    name: 'Momentum',
+    says: ['Momentum'],
+    means:
+      'Damage that BUILDS while you keep using the skill on one enemy. Each ' +
+      'use on the same enemy as the last adds to it, up to a cap; using it on ' +
+      'anything else HALVES what you have built. It reaches the enemy you ' +
+      'aimed at and no other, so it is worth nothing to a build that spreads ' +
+      'its uses around.',
+    grants: ['momentum', 'momentumPer', 'momentumMax', 'momentumKeep'],
+  },
+  {
+    id: 'echo',
+    name: 'Echo',
+    says: ['Echo', 'Echoes'],
+    means:
+      `The swing landing again on the next enemy out from the one you struck, ` +
+      `for ${pct(MELEE.echoDamage)} of it. The first looks ${MELEE.echo} tiles ` +
+      `from that enemy and each one after it looks ${MELEE.echoStep} tiles ` +
+      `further, so more Echoes reach deeper into a pack. Nothing is hit twice ` +
+      `by one use.`,
+    grants: ['echoes', 'echoDamage'],
+  },
+  {
+    id: 'cone',
+    name: 'Cone',
+    says: ['Cone', 'Cones'],
+    means:
+      'A wedge in front of you. Everything standing in it takes the WHOLE hit ' +
+      'and nothing takes a share, and there is no target limit — so how many ' +
+      'bodies the wedge holds is the whole of what a use is worth. Area of ' +
+      'Effect reaches every Cone further. Opened past 360° it is every ' +
+      'direction at once and what you are facing stops mattering.',
+    grants: ['coneArc', 'coneReach'],
   },
   {
     id: 'cloud',
@@ -136,15 +208,61 @@ export const KEYWORDS: KeywordDef[] = [
     name: 'Ailment',
     says: ['Ailment', 'Ailments'],
     means:
-      'Damage left ON an enemy, paid out over a duration rather than at once ' +
-      '— a Burn, a Bleed or a Poison. Resistance blunts an Ailment; Armour ' +
-      'never does, which is what makes one the answer to something you cannot ' +
-      'punch through.',
-    grants: ['critAilment', 'ailmentMultiplier', 'ailmentDuration', 'ailmentSpread', 'bleedOnHit'],
+      'What a DAMAGE TYPE leaves behind. Dealing a type applies its Ailment at ' +
+      `that Ailment's own chance; past 100% you apply a second, past 200% a ` +
+      'third. Resistance blunts one and Armour never does, which is what makes ' +
+      'an Ailment the answer to something you cannot punch through.',
+    grants: ['ailmentChance', 'ailmentMultiplier', 'ailmentDuration', 'bleedOnHit'],
   },
-  { id: 'burn', name: 'Burn', says: ['Burn', 'Burns', 'Burning'], means: 'The Fire Ailment.', kin: 'ailment' },
-  { id: 'bleed', name: 'Bleed', says: ['Bleed', 'Bleeds', 'Bleeding'], means: 'The Physical Ailment.', kin: 'ailment' },
-  { id: 'poison', name: 'Poison', says: ['Poison', 'Poisons', 'Poisoned'], means: 'The Poison Ailment.', kin: 'ailment' },
+  {
+    id: 'burn',
+    name: 'Burn',
+    says: ['Burn', 'Burns', 'Burning'],
+    means: ailmentMeans('burn'),
+    kin: 'ailment',
+  },
+  {
+    id: 'bleed',
+    name: 'Bleed',
+    says: ['Bleed', 'Bleeds', 'Bleeding'],
+    means: ailmentMeans('bleed'),
+    kin: 'ailment',
+  },
+  {
+    id: 'poison',
+    name: 'Poison',
+    says: ['Poison', 'Poisons', 'Poisoned'],
+    means: ailmentMeans('poison'),
+    kin: 'ailment',
+  },
+  {
+    id: 'chill',
+    name: 'Chill',
+    says: ['Chill', 'Chills', 'Chilled'],
+    means: ailmentMeans('chill'),
+    kin: 'ailment',
+  },
+  {
+    id: 'shock',
+    name: 'Shock',
+    says: ['Shock', 'Shocks', 'Shocked'],
+    means: ailmentMeans('shock'),
+    kin: 'ailment',
+  },
+  {
+    id: 'curse',
+    name: 'Curse',
+    says: ['Curse', 'Curses', 'Cursed'],
+    means: ailmentMeans('curse'),
+    kin: 'ailment',
+  },
+  {
+    id: 'exposure',
+    name: 'Exposure',
+    says: ['Exposure', 'Expose', 'Exposes', 'Exposed'],
+    means: ailmentMeans('exposure'),
+    kin: 'ailment',
+  },
 
   // --- the stats every line leans on --------------------------------------
   {
@@ -152,7 +270,8 @@ export const KEYWORDS: KeywordDef[] = [
     name: 'Area of Effect',
     says: ['Area of Effect'],
     means:
-      'Widens every Burst, Cloud and Splash the skill makes. It grows the ' +
+      'Widens every Burst and Cloud the skill makes, and reaches a Cone ' +
+      'further. It grows the ' +
       'AREA, so a radius goes by the square root of it, and it never touches ' +
       'damage.',
   },
@@ -180,8 +299,9 @@ export const KEYWORDS: KeywordDef[] = [
     says: ['Critical', 'Critically', 'Criticals'],
     means:
       'A Critical hit deals ×2 your damage, plus whatever Critical Damage you ' +
-      'have found. Critical Chance is how often, and a spell and an attack ' +
-      'count it separately.',
+      'have found. Critical Chance is how often: every skill has its own, and ' +
+      'increased Critical Chance scales THAT. A spell and an attack count it ' +
+      'separately.',
   },
   {
     id: 'resistance',
@@ -191,6 +311,26 @@ export const KEYWORDS: KeywordDef[] = [
       `Blunts one damage type, Ailments included. It caps at ` +
       `${DEFENCE.resistanceCap}%, and Resistance and Armour multiply rather ` +
       `than adding — at both caps a hit lands for a sixteenth.`,
+  },
+  {
+    id: 'block',
+    name: 'Block',
+    says: ['Block', 'Blocks', 'Blocked'],
+    means:
+      `A Blocked hit deals nothing at all — there is no second number. Block ` +
+      `Chance caps at ${DEFENCE.blockCap}%, comes off a shield in your off ` +
+      `hand and from nowhere else, and does nothing against an Ailment.`,
+  },
+  {
+    id: 'dodge',
+    name: 'Dodge',
+    says: ['Dodge', 'Dodges', 'Dodged'],
+    means:
+      `A Dodged hit deals nothing at all, exactly as a Blocked one does, and ` +
+      `does nothing against an Ailment either. It caps at ${DEFENCE.dodgeCap}% ` +
+      `and is TRADED for Armour rather than worn beside it: what stops some ` +
+      `hits outright no longer blunts the rest.`,
+    grants: ['armourToDodge'],
   },
   {
     id: 'armour',
@@ -213,6 +353,17 @@ export const KEYWORDS: KeywordDef[] = [
       `never a wall.`,
     grants: ['starvedDamage'],
   },
+  // --- what a movement skill does -----------------------------------------
+  {
+    id: 'slow',
+    name: 'Slow',
+    says: ['Slow', 'Slows', 'Slowed'],
+    means:
+      'An enemy swings and casts more slowly for a duration. It is NOT a ' +
+      'Burst — a Burst is damage in a circle and a Slow deals none, because ' +
+      'every damage number in the game belongs to the skill in your main slot.',
+    grants: ['landingSlow'],
+  },
   {
     id: 'charge',
     name: 'Charge',
@@ -221,13 +372,22 @@ export const KEYWORDS: KeywordDef[] = [
       `What a flask holds. Each carries ${POTIONS[0]?.charges ?? 2}, a descent ` +
       `always begins full, and nothing about them survives one — there is ` +
       `nothing to hoard.`,
-    grants: ['chargeRegen'],
+    grants: ['chargeRegen', 'chargeOnKill'],
+  },
+  {
+    id: 'stun',
+    name: 'Stun',
+    says: ['Stun', 'Stuns', 'Stunned', 'Stunning'],
+    means:
+      'An enemy neither swings nor closes for a duration. The chance is the ' +
+      `share of its MAXIMUM life the one hit took, raised to the power ` +
+      `${WARRIOR.stunPower} — ${pct(stunChanceFor(0.1))} for a tenth of it, ` +
+      `${pct(stunChanceFor(0.8))} for four fifths — and a hit that kills a body ` +
+      'outright always Stuns it, so what a Stun sets off still fires on one you ' +
+      'take down in a single blow.',
+    grants: ['stunSeconds', 'stunMore', 'stunBurst'],
   },
 ];
-
-export const KEYWORD_BY_ID: Record<string, KeywordDef> = Object.fromEntries(
-  KEYWORDS.map((k) => [k.id, k])
-);
 
 /** Which keyword owns a grant, for the demo's "every switch has a word" check. */
 export const KEYWORD_BY_GRANT: Record<string, KeywordDef> = Object.fromEntries(
@@ -247,9 +407,12 @@ export const BANNED: Record<string, string> = {
   chain: 'Arc',
   chains: 'Arc',
   chaining: 'Arc',
-  leap: 'Arc',
-  leaps: 'Arc',
+  // The PHRASE, never the bare word: a movement skill called Leap cannot be
+  // forbidden from saying its own name, and Arc's own `means` line says
+  // "leaps from what it hits" — which is the sentence that owns the idea.
   'leaps to': 'Arc',
+  'leaping to': 'Arc',
+  'leaps from one': 'Arc',
   'passes through': 'Pierce',
   'pass through': 'Pierce',
   'passing through': 'Pierce',
@@ -262,6 +425,16 @@ export const BANNED: Record<string, string> = {
   explodes: 'Burst',
   explosion: 'Burst',
   'blows up': 'Burst',
+  splash: 'Burst',
+  splashes: 'Burst',
+  'knocks out': 'Stun',
+  stagger: 'Stun',
+  staggers: 'Stun',
+  // What the Reckoning was called while points came from authored trials. The
+  // PHRASE, never the bare word: a trial is still an ordinary English word and
+  // the Trials of a boss fight may yet want it.
+  'trials web': 'the Reckoning',
+  'the trials tree': 'the Reckoning',
 };
 
 /**

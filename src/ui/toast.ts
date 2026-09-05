@@ -56,5 +56,3 @@ export function toast(text: string, action?: ToastAction): void {
   host.hidden = false;
   timer = globalThis.setTimeout(dismissToast, LIFE_MS);
 }
-
-export const isToastOpen = (): boolean => !$('toast').hidden;

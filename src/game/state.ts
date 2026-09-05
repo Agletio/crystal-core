@@ -7,53 +7,72 @@
 import { Rng } from '../rng';
 import {
   BOSSES,
-  CRYSTAL_QUESTS,
   EQUIP_SLOTS,
+  OFF_SLOT,
   FISSURE,
-  INTRO,
+  GEAR_BASE_BY_ID,
   RELIC_BY_ID,
   RUN_SLOTS,
   SKILL_BY_ID,
+  WEAPON_SLOT,
   START_PRESETS,
+  GRINDS,
+  MATERIALS,
+  TOOLS,
+  WORKERS,
+  workerMark,
+  PROVING,
   CRYSTAL_ILVL,
   UNIQUE_BY_ID,
   starterWeapon,
 } from '../data';
-import type { EquipSlotDef, RunSlotDef } from '../types';
-import { canSell, grant, makeCrystal, makeGear, makeRelic, makeUnique, sellPrice } from '../economy';
+import type { EquipSlotDef, MapTheme, RunSlotDef } from '../types';
+import {
+  canSell,
+  grant,
+  isPerfect,
+  isTwoHanded,
+  makeCrystal,
+  makeGear,
+  makeMaterial,
+  makeRelic,
+  makeUnique,
+  sellPrice,
+  stackKey,
+} from '../economy';
 import { baseTier } from '../mods';
-import { mainSkillId, makeCharacter } from '../sim/character';
+import { canDualWield, equippedSkill, mainSkillId, makeCharacter } from '../sim/character';
 import { starterLoadout } from '../sim/loadout';
+import { SCENES } from '../scenes';
+import { heardMark, metMark } from './scenes';
 import type { Character } from '../sim/character';
 import type { Item, ItemKind, Wallet } from '../types';
+import type { WorkJob } from './work';
 
-export const SAVE_VERSION = 1;
+// BUMPED ONCE for the whole crafting arc; nothing later in it may bump again.
+export const SAVE_VERSION = 2;
 
-/**
- * What you can carry. The dock draws exactly this many and never scrolls, so
- * the limit is visible rather than discovered. Crystals are not in here: they
- * are never spent, sold or carried, so a container for them is triage with
- * nothing to triage, and `GameState.crystals` takes every one uncapped.
- */
+/** What you can carry. The dock draws exactly this many and never scrolls, so
+ *  the limit is visible rather than discovered. Crystals are not in here: one
+ *  is never spent, sold or carried, and `GameState.crystals` takes every one. */
 export const CARRY: Record<'gear', number> = {
-  gear: 32,
+  // TWELVE COLUMNS of four. Currency and material moved to tabs of their own,
+  // and the grid took the width they left — the slot count IS the limit, so a
+  // wider dock is a bigger bag rather than a grid that lies about one.
+  gear: 48,
 };
 
-/**
- * Bigger than either bag: a night's work waiting to be sorted. Read BETWEEN
- * runs, so it overflows by one descent rather than splitting a run's drops.
- */
-export const HAUL_CAP = 48;
+/** What shuts the Fissure. Read BETWEEN runs and never during one, so a
+ *  descent's drops arrive whole and the bag ends a floor slightly over. */
+export const bagsFull = (game: GameState): boolean =>
+  carried(game, 'gear').length >= CARRY.gear;
 
 /** Sales the counter remembers — about one triage's worth. */
 export const SOLD_CAP = 12;
 
-/** Stash slots you start with. */
-export const STASH_START = 12;
-/** Slots one purchase adds. */
-export const STASH_STEP = 6;
-/** Where buying more stops. */
-export const STASH_MAX = 60;
+export const STASH_START = 12; // stash slots you start with
+export const STASH_STEP = 6; // slots one purchase adds
+export const STASH_MAX = 60; // where buying more stops
 
 /** The next block, or null at the top. Steep: storage is gold not spent. */
 export function stashUpgradeCost(slots: number): number | null {
@@ -73,8 +92,10 @@ export interface GameState {
   /** What you are carrying to a PERSON. Uncapped for the reason crystals are:
    *  nothing sells one, so a cap could only lose loot. */
   relics: Item[];
-  /** A cleared run's loot. Inert as the stash is: take it out to use it. */
-  haul: Item[];
+  /** MATERIALS, ONE ROW A STACK: `stackKey` is which, `meta.n` is how many. */
+  materials: Item[];
+  /** WHAT THE STATIONS ARE WORKING ON, advanced by a CLEAR. */
+  jobs: WorkJob[];
   /** How big the stash currently is. Bought up with gold. */
   stashSlots: number;
   character: Character;
@@ -89,8 +110,14 @@ export interface GameState {
    * the list, highlighted, and returning it is just dropping the reference.
    */
   craftId: string | null;
-  /** False until a skill has been chosen on the first run. */
+  /** False until a trade has been chosen on the first run. */
   onboarded: boolean;
+  /** False until the Skills screen has been opened once, ever, and false until
+   *  a descent has ENDED. The rail wears an accent while the first is false and
+   *  the second true — a death brings you back to camp the same as a clear, so
+   *  this cannot read off `clears`. */
+  skillsSeen: boolean;
+  cameBack: boolean;
   /** False until the Fissure has been cleared once. Gates the opening payout. */
   firstClearDone: boolean;
   /** Descents cleared, ever. What the opening's schedule is measured in. */
@@ -102,17 +129,18 @@ export interface GameState {
   /** What you sold, newest first, each at what it paid. Buying one back costs
    *  the same, so the counter can never mint or eat gold. */
   sold: SoldEntry[];
-  /** Stored, not rolled on open: one you re-roll by closing is not a choice. */
-  shopStock: Item[];
-  shopLevel: number;
   /** Key overrides by binding id; a missing one takes the table's default. */
   keys: Record<string, string>;
   /** Share of a pool a potion fires at, by id. Charges are `RunState`'s. */
   potions: Record<string, number>;
   /** Panels away, map alone. A preference like `keys`, so a wipe keeps it. */
   parked: boolean;
+  climbing: boolean; // a CLEAR takes the next RUNG down; absent is off, and dying clears it
+  influence?: MapTheme; // WHICH WORLD the Proving Ground runs in; a preference
+  provingClears?: number; // what the crystal ladder's first four are bought with
+
   bosses: string[]; // put down: stops one being scheduled twice, opens its key
-  called: string | null; // a room a spent key has paid for, owed at the next clear
+  called: string | null; // a fight a socketed key has paid for: the next entry is it
 }
 
 export interface SoldEntry {
@@ -130,28 +158,39 @@ export function createGame(mode: StartMode = 'dev'): GameState {
     stash: [],
     crystals: [],
     relics: [],
-    haul: [],
+    materials: [],
+    jobs: [],
     stashSlots: STASH_START,
     character: makeCharacter({}, 'strike'),
     sockets: {},
     craftId: null,
     onboarded: false,
+    skillsSeen: false,
+    cameBack: false,
     firstClearDone: false,
     clears: 0,
     given: [],
     quests: [],
     sold: [],
-    shopStock: [],
-    shopLevel: 0,
     keys: {},
     potions: {},
     parked: false,
+    climbing: false,
+    influence: PROVING.influences[0],
     bosses: [],
     called: null,
   };
   resetGame(game, mode);
   return game;
 }
+
+/** EVERY LINE OF THE LEDGER at its threshold, off the table rather than a list,
+ *  so a grind added later is in the kit with no second edit. */
+const devGrinds = (): Record<string, number> => {
+  const out: Record<string, number> = {};
+  for (const grind of GRINDS) out[grind.counter] = Math.max(out[grind.counter] ?? 0, grind.need);
+  return out;
+};
 
 /** IN PLACE: every view captured this object at init. */
 export function resetGame(game: GameState, mode: StartMode): void {
@@ -161,17 +200,33 @@ export function resetGame(game: GameState, mode: StartMode): void {
   grant(game.wallet, 'gold', preset.gold);
   for (const [id, n] of Object.entries(preset.currency)) grant(game.wallet, id, n);
 
-  game.inventory = preset.gear.map((g) => makeGear(g.base, g.ilvl));
+  const plain = preset.gear.map((g) => makeGear(g.base, g.ilvl, undefined, g.perfect));
   const rng = new Rng(7);
+  const named: Item[] = [];
   for (const id of preset.uniques ?? []) {
     const def = UNIQUE_BY_ID[id];
-    if (def) game.inventory.push(makeUnique(def, CRYSTAL_ILVL, rng));
+    if (def) named.push(makeUnique(def, CRYSTAL_ILVL, rng));
   }
+  // Overflow to the STASH, keeping TWO slots: a kit that fills the bag cannot
+  // enter the Fissure, and a two-hander puts the off hand back in it — so one
+  // spare slot is one equip away from locked out. A BASE gives way, never a
+  // unique, and the bases keep the FRONT: a unique holds nothing to craft on.
+  const room = Math.max(0, CARRY.gear - 2 - named.length);
+  const stocked = [...plain.slice(0, room), ...named];
+  game.inventory = stocked;
   game.crystals = preset.crystals.map((c) => makeCrystal(c.level, c.family));
   game.relics = (preset.relics ?? []).map((id) => makeRelic(RELIC_BY_ID[id]!));
-  game.stash = [];
-  game.haul = [];
-  game.stashSlots = STASH_START;
+  // RAW and WORKED both: a kit that could not reach the anvil is one that can
+  // look at half the arc.
+  game.materials = preset.materials
+    ? MATERIALS.flatMap((def) => [
+        makeMaterial(def, preset.materials!),
+        ...(def.family ? [makeMaterial(def, preset.materials!, true)] : []),
+      ])
+    : [];
+  game.jobs = [];
+  game.stash = plain.slice(room);
+  game.stashSlots = Math.max(STASH_START, game.stash.length);
 
   // The dev preset wears a rolled set, so the stat pipeline has something in it.
   game.character = makeCharacter(
@@ -183,20 +238,32 @@ export function resetGame(game: GameState, mode: StartMode): void {
 
   // A fresh game asks which skill you want; the dev kit assumes you know.
   game.onboarded = mode === 'dev';
+  game.skillsSeen = mode === 'dev';
+  game.cameBack = mode === 'dev';
   game.firstClearDone = mode === 'dev';
   game.clears = mode === 'dev' ? 1 : 0; // the same descent `firstClearDone` is
-  // The dev kit is armed and holds every crystal: nothing waits at the mouth.
-  game.given = mode === 'dev' ? ['weapon', 'crystal'] : [];
+  // The dev kit is armed, holds every crystal, and has MET everybody AND HEARD
+  // them: nothing waits at the mouth, every room is one click off the Fissure,
+  // and no tale is owed — one still owed would take the whole screen the next
+  // time the kit came home.
+  game.given =
+    mode === 'dev'
+      ? [
+          'weapon', 'crystal',
+          ...SCENES.filter((s) => !s.encounter).flatMap((s) => [metMark(s.id), heardMark(s.id)]),
+          ...WORKERS.flatMap((w) => [workerMark(w.id), heardMark(`worker:${w.id}`)]),
+        ]
+      : [];
   // The dev kit is handed every crystal in the game, so its quests are already
   // answered — left open, the first dangerous descent pays out four duplicates.
-  game.quests = mode === 'dev' ? CRYSTAL_QUESTS.map((q) => q.id) : [];
   game.bosses = mode === 'dev' ? BOSSES.map((b) => b.id) : []; // handed the door too
+  // THE WHOLE LEDGER ground out, and the campaign's reward already TAKEN —
+  // never the climb itself, which the kit has walked none of. Between them
+  // that is every point there is, and sockets for the crystals to go in.
+  game.character.grinds = mode === 'dev' ? devGrinds() : {};
+  if (mode === 'dev') game.character.paidCampaign = true;
   game.called = null;
   game.sold = [];
-  // Zero, not the character's level, so the next open restocks rather than
-  // showing whatever the previous game happened to be carrying.
-  game.shopStock = [];
-  game.shopLevel = 0;
 }
 
 /** Granted once, on the first cleared descent. Returns what it gave. */
@@ -211,18 +278,25 @@ export function grantFirstClear(game: GameState): {
   grant(game.wallet, 'gold', gift.gold);
   for (const [id, n] of Object.entries(gift.currency)) grant(game.wallet, id, n);
 
-  // No weapon here: `lampwrightWeapon` is where one is put in your hands.
+  // No weapon here: `armForSkill` is where one is put in your hands.
   return { gold: gift.gold, currency: gift.currency };
 }
 
-/** The first weapon, picked off the SKILL. Marked, because the guided opening
- *  rings this piece and every looser reading let a drop satisfy the step. */
-export function lampwrightWeapon(game: GameState): { item: Item; where: GiftPlace } | null {
+/** THE FIRST WEAPON, picked off the SKILL and put in your hands as the
+ *  character is MADE — *"It should just be you pick character/name/skill and
+ *  land in the town. Have it just give you an appropriate weapon for the skill
+ *  you picked."* Marked twice over: `given` so nobody hands you a second, and
+ *  `meta.firstClear` so a heal can find the piece again. */
+export function armForSkill(game: GameState): { item: Item; where: GiftPlace } | null {
   const base = starterWeapon(SKILL_BY_ID[mainSkillId(game.character)]);
   if (!base) return null;
+  if (!(game.given ?? []).includes('weapon')) game.given = [...(game.given ?? []), 'weapon'];
   const item = makeGear(base, 1);
   item.meta.firstClear = true;
-  return { item, where: giveGift(game, item) };
+  const where = giveGift(game, item);
+  // Only an empty hand: a later gift never takes off what you chose.
+  if (!game.character.equipment[WEAPON_SLOT]) equipItem(game, item, WEAPON_SLOT);
+  return { item, where };
 }
 
 export const carried = (game: GameState, kind: ItemKind): Item[] =>
@@ -230,7 +304,9 @@ export const carried = (game: GameState, kind: ItemKind): Item[] =>
     ? (game.crystals ?? [])
     : kind === 'relic'
       ? (game.relics ?? [])
-      : game.inventory.filter((i) => i.kind === kind);
+      : kind === 'material'
+        ? (game.materials ?? [])
+        : game.inventory.filter((i) => i.kind === kind);
 
 /** Only gear is capped. A crystal is never carried and a relic is never sold,
  *  so a limit on either could only throw loot away. */
@@ -243,10 +319,8 @@ export const stashRoom = (game: GameState): number =>
 /** Where an item ended up. */
 export type Placement = 'carried' | 'stashed' | 'lost';
 
-/**
- * Bags first, then the stash, then nowhere. Every caller must report what this
- * returned: loot that silently fails to arrive reads as a bug.
- */
+/** Bags, then the stash, then nowhere. Every caller must report what this
+ *  returned: loot that silently fails to arrive reads as a bug. */
 export function addItem(game: GameState, item: Item): Placement {
   if (item.kind === 'crystal') {
     game.crystals.push(item);
@@ -254,6 +328,16 @@ export function addItem(game: GameState, item: Item): Placement {
   }
   if (item.kind === 'relic') {
     game.relics.push(item);
+    return 'carried';
+  }
+  // A STACK, so the bag holds one row however many descents fed it — and RAW
+  // and PROCESSED are two stacks of the same row, which is what `stackKey` is.
+  if (item.kind === 'material') {
+    game.materials = game.materials ?? [];
+    const key = stackKey(item);
+    const held = game.materials.find((i) => stackKey(i) === key);
+    if (held) held.meta.n = (held.meta.n ?? 0) + (item.meta.n ?? 0);
+    else game.materials.push(item);
     return 'carried';
   }
   if (carryRoom(game, item.kind) > 0) {
@@ -268,17 +352,15 @@ export function addItem(game: GameState, item: Item): Placement {
 }
 
 /** Where a gift landed. No 'lost': see giveGift. */
-export type GiftPlace = 'carried' | 'stashed' | 'hauled';
+export type GiftPlace = 'carried' | 'stashed';
 
-/**
- * A gift refuses nowhere. Bags, then the stash, then the haul — which takes
- * anything — so what you were handed is never quietly dropped.
- */
+/** A gift refuses nowhere: bags, then the stash, then the bag OVER its limit.
+ *  What you were handed in person is never quietly dropped. */
 export function giveGift(game: GameState, item: Item): GiftPlace {
   const where = addItem(game, item);
   if (where !== 'lost') return where;
-  bankToHaul(game, [item]);
-  return 'hauled';
+  game.inventory.push(item);
+  return 'carried';
 }
 
 function takeFrom(list: Item[], item: Item): boolean {
@@ -288,45 +370,31 @@ function takeFrom(list: Item[], item: Item): boolean {
   return true;
 }
 
+export { isTwoHanded };
+
 export function removeItem(game: GameState, item: Item): boolean {
   if (item.kind === 'crystal') return takeFrom(game.crystals, item);
   return takeFrom(game.inventory, item);
 }
 
-export const haulRoom = (game: GameState): number => HAUL_CAP - game.haul.length;
-
-/** At or over. Over is legal — a run's drops are never split to fit. */
-export const haulFull = (game: GameState): boolean => haulRoom(game) <= 0;
-
-/** A cleared run's loot, banked whole. Nothing is refused and nothing is lost. */
-export function bankToHaul(game: GameState, items: Item[]): void {
-  game.haul.push(...items);
+/** What a cleared descent came up with. */
+export interface Banked {
+  kept: Item[];
 }
 
-/** Haul → carried. Fails when that kind's bag is full, the same as the stash. */
-export function fromHaul(game: GameState, item: Item): boolean {
-  if (carryRoom(game, item.kind) <= 0) return false;
-  if (!takeFrom(game.haul, item)) return false;
-  // By KIND: a relic taken out of the haul belongs in its own column.
-  addItem(game, item);
-  return true;
-}
-
-/** Haul → stashed, skipping the bag: triage should not need a spare slot. */
-export function haulToStash(game: GameState, item: Item): boolean {
-  if (stashRoom(game) <= 0) return false;
-  if (!takeFrom(game.haul, item)) return false;
-  game.stash.push(item);
-  return true;
-}
-
-/** As many as the bags will take, oldest first. Reports what actually moved. */
-export function takeWhatFits(game: GameState): number {
-  let moved = 0;
-  for (const item of [...game.haul]) {
-    if (fromHaul(game, item)) moved++;
+/**
+ * A cleared run's loot, banked WHOLE — there is no filter any more, because
+ * there is nothing to filter. It goes into the bag even when that puts it OVER
+ * its limit: splitting a descent's drops is worse than a bag reading 34/32.
+ */
+export function bankLoot(game: GameState, items: Item[]): Banked {
+  const out: Banked = { kept: [] };
+  for (const item of items) {
+    out.kept.push(item);
+    if (item.kind === 'gear') game.inventory.push(item);
+    else addItem(game, item);
   }
-  return moved;
+  return out;
 }
 
 export function findItem(game: GameState, id: string): Item | undefined {
@@ -334,23 +402,20 @@ export function findItem(game: GameState, id: string): Item | undefined {
 }
 
 /**
- * Gear → gold, from the bag or the haul. A sale needs no room anywhere, which
- * is the way out of a full haul on top of full bags: the loop cannot wedge.
+ * Gear → gold. A sale needs no room anywhere, which is the way out of a bag
+ * that came up over its limit: the loop cannot wedge.
  */
 export function sellItem(game: GameState, item: Item): number {
   if (!canSell(item)) return 0;
   const paid = sellPrice(item);
-  if (!takeFrom(game.inventory, item) && !takeFrom(game.haul, item)) return 0;
+  if (!takeFrom(game.inventory, item)) return 0;
   grant(game.wallet, 'gold', paid);
   game.sold = [{ item, price: paid }, ...(game.sold ?? [])].slice(0, SOLD_CAP);
   return paid;
 }
 
-/**
- * Off the counter, at what it sold for. Room is needed HERE and only here,
- * because this is a purchase — selling still needs room nowhere, which is
- * what stops a full haul wedging the loop.
- */
+/** Off the counter, at what it sold for. Room is needed HERE and only here,
+ *  because this is a purchase: selling still needs room nowhere. */
 export function buyBack(game: GameState, entry: SoldEntry): { ok: boolean; error?: string } {
   const at = (game.sold ?? []).indexOf(entry);
   if (at < 0) return { ok: false, error: 'it is no longer on the counter' };
@@ -370,9 +435,12 @@ export const isUnique = (i: Item): boolean => i.meta.unique !== undefined; // se
 
 /** Gear with nothing rolled on it: the heap you can clear without reading it.
  *  A named piece rolls nothing and is never in it — the bulk button exists
- *  because it cannot eat a decision, and a unique is only a decision. */
+ *  because it cannot eat a decision, and a unique is only a decision. Nor is a
+ *  PERFECT base, which is worth keeping with nothing on it at all. */
 export const plainGear = (items: Item[]): Item[] =>
-  items.filter((i) => i.kind === 'gear' && i.mods.length === 0 && !isUnique(i));
+  items.filter(
+    (i) => i.kind === 'gear' && i.mods.length === 0 && !isUnique(i) && !isPerfect(i)
+  );
 
 /** Sells a list in one go. Reports the total, since the wallet only shows a sum. */
 export function sellAll(game: GameState, items: Item[]): { count: number; gold: number } {
@@ -433,10 +501,8 @@ export function findAnywhere(game: GameState, id: string): Item | undefined {
   );
 }
 
-/**
- * The item crafting is working on: a reference that resolves or does not,
- * rather than an id something has to remember to clear.
- */
+/** A reference that resolves or does not, rather than an id something has to
+ *  remember to clear. */
 export function craftItem(game: GameState): Item | null {
   if (!game.craftId) return null;
   return findAnywhere(game, game.craftId) ?? null;
@@ -446,7 +512,7 @@ export function craftItem(game: GameState): Item | null {
  *  the save. By SLOT: "all the boots together" is what scanning the dock asks. */
 export function sortGear(items: Item[]): void {
   const rank = (i: Item) => {
-    const at = EQUIP_SLOTS.findIndex((s) => s.accepts === gearKindOf(i));
+    const at = EQUIP_SLOTS.findIndex((s) => s.accepts[0] === gearKindOf(i));
     return at < 0 ? EQUIP_SLOTS.length : at;
   };
   items.sort(
@@ -458,13 +524,11 @@ export function sortGear(items: Item[]): void {
   );
 }
 
-/** One comparator, so the dock and the haul order a pile the same way. */
+/** One comparator, so every screen orders a pile the same way. */
 export const sortInventory = (game: GameState): void => sortGear(game.inventory);
 
-/**
- * Exchanges two carried items' places. A swap rather than an insert-before,
- * which puts an item back where it started when you drop it on its neighbour.
- */
+/** A swap rather than an insert-before, which puts an item back where it
+ *  started when you drop it on its neighbour. */
 export function swapItems(game: GameState, a: Item, b: Item): void {
   const i = game.inventory.findIndex((x) => x.id === a.id);
   const j = game.inventory.findIndex((x) => x.id === b.id);
@@ -551,8 +615,28 @@ export function gearKindOf(item: Item): string | null {
   return (item.meta.gearKind as string) ?? null;
 }
 
-export function fitsSlot(item: Item, slot: EquipSlotDef): boolean {
-  return gearKindOf(item) === slot.accepts;
+export function fitsSlot(item: Item, slot: EquipSlotDef, character: Character): boolean {
+  const kind = gearKindOf(item);
+  if (!kind || !slot.accepts.includes(kind as never)) return false;
+  if (slot.id !== OFF_SLOT) return true;
+  // A two-hander is held in BOTH hands, so the off hand is not a second place
+  // to put one — `handClash` empties the off hand for it instead.
+  if (isTwoHanded(item)) return false;
+  // And a second WEAPON there is one trade's privilege. A shield is anybody's.
+  return kind !== 'weapon' || canDualWield(character);
+}
+
+/** The slot this equip would empty, or null. A bow and an off hand cannot both
+ *  be held, and putting one on takes the other off rather than being refused. */
+export function handClash(character: Character, item: Item, slotId: string): string | null {
+  if (slotId === 'weapon' && isTwoHanded(item)) {
+    return character.equipment.offhand ? 'offhand' : null;
+  }
+  if (slotId === 'offhand') {
+    const held = character.equipment.weapon;
+    return held && isTwoHanded(held) ? 'weapon' : null;
+  }
+  return null;
 }
 
 /** Puts an equip back. False once the slot holds something chosen since. */
@@ -561,29 +645,42 @@ export type Undo = () => boolean;
 /** Worn items leave the inventory: the character sheet is where they now live. */
 export function equipItem(game: GameState, item: Item, slotId: string): Undo | null {
   const slot = EQUIP_SLOTS.find((s) => s.id === slotId);
-  if (!slot || !fitsSlot(item, slot)) return null;
+  if (!slot || !fitsSlot(item, slot, game.character)) return null;
+
+  // What comes off the OTHER hand is a net addition to the bag, so it can be
+  // refused for the same reason unequipping can: the removal below frees the
+  // slot `previous` takes, which leaves this room exactly as it reads now.
+  const clashSlot = handClash(game.character, item, slotId);
+  const clash = clashSlot ? game.character.equipment[clashSlot] ?? null : null;
+  if (clash && carryRoom(game, clash.kind) <= 0) return null;
 
   const previous = game.character.equipment[slotId] ?? null;
   // Removing first guarantees room, so what comes off is carried, never stashed.
   const at = game.inventory.indexOf(item);
   if (!removeItem(game, item)) return null;
   if (previous) addItem(game, previous);
+  if (clash && clashSlot) {
+    delete game.character.equipment[clashSlot];
+    addItem(game, clash);
+  }
   game.character.equipment[slotId] = item;
 
   return () => {
     if (game.character.equipment[slotId] !== item) return false;
     delete game.character.equipment[slotId];
     if (previous) removeItem(game, previous);
+    if (clash && clashSlot) {
+      removeItem(game, clash);
+      game.character.equipment[clashSlot] = clash;
+    }
     game.inventory.splice(Math.min(Math.max(at, 0), game.inventory.length), 0, item);
     if (previous) game.character.equipment[slotId] = previous;
     return true;
   };
 }
 
-/**
- * Refuses when there is nowhere to put it. Unequipping is a net addition to the
- * bag, and a helmet that vanishes is the worst version of a carry limit.
- */
+/** Refuses when there is nowhere to put it: unequipping is a net addition to
+ *  the bag, and a helmet that vanishes is the worst kind of carry limit. */
 export function unequipItem(game: GameState, slotId: string): boolean {
   const worn = game.character.equipment[slotId];
   if (!worn) return false;
@@ -595,7 +692,7 @@ export function unequipItem(game: GameState, slotId: string): boolean {
 
 /** The first empty slot this item fits, else the first it fits at all. */
 export function slotFor(game: GameState, item: Item): string | null {
-  const fitting = EQUIP_SLOTS.filter((s) => fitsSlot(item, s));
+  const fitting = EQUIP_SLOTS.filter((s) => fitsSlot(item, s, game.character));
   if (fitting.length === 0) return null;
   const empty = fitting.find((s) => !game.character.equipment[s.id]);
   return (empty ?? fitting[0]).id;
