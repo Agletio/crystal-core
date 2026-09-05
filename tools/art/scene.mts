@@ -16,8 +16,18 @@ import { callTool, download, urlsIn } from './mcp.mts';
 const here = (f: string) => new URL(`./${f}`, import.meta.url).pathname;
 const OUT = new URL('../../src/render/generated-scene.ts', import.meta.url).pathname;
 const words = JSON.parse(readFileSync(here('scenes.json'), 'utf8')) as {
-  scenes: Record<string, { width: number; height: number; say: string }>;
+  scenes: Record<string, { width: number; height: number; say: string; like?: string }>;
 };
+
+/** ANOTHER PANEL'S OWN PICTURE, as a `data:` URI out of what already shipped.
+ *  Two panels of one scene have to be the same room: words alone gave the same
+ *  chamber a different wall texture and a tunnel running the other way. */
+function shipped(id: string): string | undefined {
+  if (!existsSync(OUT)) return undefined;
+  const row = new RegExp(`^  ${id}: \\{ w: \\d+, h: \\d+, png: '([^']+)' \\},$`, 'm')
+    .exec(readFileSync(OUT, 'utf8'));
+  return row?.[1];
+}
 
 const [command, id, ...rest] = process.argv.slice(2);
 
@@ -26,12 +36,21 @@ if (command === 'ask') {
   if (!scene) throw new Error(`name a scene: ${Object.keys(words.scenes).join(', ')}`);
   const seeds = rest.length ? rest.map(Number) : [1];
   for (const seed of seeds) {
+    const like = scene.like ? shipped(scene.like) : undefined;
+    if (scene.like && !like) throw new Error(`${scene.like} has not been emitted`);
     const out = await callTool('create_image_pro', {
       description: scene.say,
       width: scene.width,
       height: scene.height,
       no_background: false,
       seed,
+      // The room is taken from the picture and the words only say what CHANGED.
+      ...(like
+        ? {
+            style_image_url: like,
+            reference_images: [{ url: like, usage: 'the chamber itself: its wall texture, its colours, and the direction it opens' }],
+          }
+        : {}),
     });
     const said = out.split('\n').filter((l) => /id|status|cost|error|valid/i.test(l)).join(' | ');
     console.log(`${id}/${seed}: ${said.slice(0, 400)}`);
