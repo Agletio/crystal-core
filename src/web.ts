@@ -31,6 +31,7 @@ import {
 import { closeMenu, initMenu, isMenuOpen } from './ui/menu';
 import { initCraft, openCraft, closeCraft, isCraftOpen, refreshCraft } from './ui/craft';
 import { initShop, openShop, closeShop, isShopOpen, refreshShop } from './ui/shop';
+import { initSmith, openSmith, closeSmith, isSmithOpen } from './ui/smith';
 import { initStash, openStash, closeStash, isStashOpen } from './ui/stash';
 import { initMet, isMetOpen } from './ui/met';
 import { initGraft, isGraftOpen } from './ui/graft';
@@ -276,6 +277,8 @@ initCraft(game, onRunFocused, () => {
   refreshCharacter();
 });
 initShop(game);
+// A tool bought or reforged changes what the sheet and the bag are showing.
+initSmith(game, () => { refreshCharacter(); renderInventory(); });
 // Closing the stash hands the dock back to the map, same as crafting does.
 initStash(game, onRunFocused);
 // Socketing from here changes the set the Fissure is holding, so the map re-reads.
@@ -431,6 +434,7 @@ const SCREENS: Record<
   trials: { el: 'trials', open: openTrials, close: closeTrials, isOpen: isTrialsOpen },
   craft: { el: 'craft', open: openCraft, close: closeCraft, isOpen: isCraftOpen },
   shop: { el: 'shop', open: openShop, close: closeShop, isOpen: isShopOpen },
+  smith: { el: 'smith', open: () => openSmith('shop'), close: closeSmith, isOpen: isSmithOpen },
   crystals: { el: 'crystals', open: openCrystals, close: closeCrystals, isOpen: isCrystalsOpen },
   work: { el: 'work', open: () => openWork(), close: closeWork, isOpen: isWorkOpen },
   forge: { el: 'forge', open: openForge, close: closeForge, isOpen: isForgeOpen },

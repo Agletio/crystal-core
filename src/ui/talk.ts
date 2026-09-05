@@ -14,6 +14,7 @@ import { relicFor } from '../game/graft';
 import type { GameState } from '../game/state';
 import { openGraft } from './graft';
 import { openShop } from './shop';
+import { openSmith } from './smith';
 import { lampwrightWords, openMet } from './met';
 import { note } from './history';
 import { renderInventory } from './inventory';
@@ -49,6 +50,12 @@ function options(def: SceneDef): Array<{ id: string; said: string; go: () => voi
   const wanted = relicFor(game, def.id);
   if (wanted) out.push({ id: 'bench', said: 'Give him what you found', go: () => bench(def) });
   else if (def.keeps === 'shop') out.push({ id: 'shop', said: 'Shop', go: counter });
+  else if (def.keeps === 'tools') {
+    // TWO VERBS, not one screen with a mode nobody can see: buying and
+    // reforging are separate asks and the menu is where they are told apart.
+    out.push({ id: 'shop', said: 'Shop', go: () => { closeParley(); openSmith('shop'); syncTalk(); } });
+    out.push({ id: 'upgrade', said: 'Upgrade', go: () => { closeParley(); openSmith('upgrade'); syncTalk(); } });
+  }
   out.push({ id: 'leave', said: 'Leave', go: closeParley });
   return out;
 }

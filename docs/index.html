@@ -2624,6 +2624,27 @@
 <!-- The shop. Gold in, stock out, and the counter you sell across. Separate
      from crafting because they do unrelated jobs: this one turns what a run
      paid into things to spend, and what you buy lands in the dock. -->
+<!-- THE SMITH'S COUNTER: one list, two verbs. Buying and reforging are the
+     same four rows read two ways, so they share a window and a heading. -->
+<div class="modal" id="smith" hidden>
+  <div class="modal__card">
+    <div class="modal__head">
+      <h2 class="modal__title" id="smith-title">The Smith</h2>
+      <div class="seedbar">
+        <code id="smith-purse">0 gold</code>
+        <button class="mini" id="smith-close">Close</button>
+      </div>
+    </div>
+    <div class="modal__body">
+      <div class="panel">
+        <p class="panel__title" id="smith-what">Tools</p>
+        <p class="empty" id="smith-hint"></p>
+        <div class="forgelist" id="smith-list"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="modal" id="shop" hidden>
   <div class="modal__card">
     <div class="modal__head">

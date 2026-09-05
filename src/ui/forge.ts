@@ -13,11 +13,8 @@ import {
   MATERIALS,
   MATERIAL_FAMILY_BY_ID,
   PROFESSION_BY_ID,
-  TOOLS,
 } from '../data';
 import type { GearBase } from '../types';
-import type { ToolDef } from '../data';
-import { toolRung } from '../sim/character';
 import {
   craftBase,
   craftLevel,
@@ -25,11 +22,8 @@ import {
   perfectChanceAt,
   recipeFor,
   uniqueFor,
-  nextRung,
-  upgradeTool,
   versionsFor,
   whyNotCraft,
-  whyNotUpgrade,
 } from '../game/forge';
 import type { CraftPart, CraftRecipe } from '../game/forge';
 import { collectWork, professionAt } from '../game/work';
@@ -64,9 +58,6 @@ const KINDS = [
   { id: 'boots', name: 'Boots' },
   { id: 'ring', name: 'Rings' },
   { id: 'amulet', name: 'Amulets' },
-  // TOOLS ARE MADE HERE TOO, and they are a KIND rather than a screen of their
-  // own: a smith is who reforges a pick, and the tab machinery already exists.
-  { id: 'tool', name: 'Tools' },
 ];
 let shown = KINDS[0].id;
 /** THE FILTERS, beside the kind tabs: a tier, or only what you can make now.
@@ -77,14 +68,10 @@ let makeableOnly = false;
 export const forgeMakeId = (baseId: string): string => `forge-make-${baseId}`;
 export const forgeTabId = (kind: string): string => `forge-tab-${kind}`;
 export const forgeTierId = (tier: number): string => `forge-tier-${tier}`;
-export const forgeToolId = (toolId: string): string => `forge-tool-${toolId}`;
 
 function filters(): void {
   const host = $('forge-filters');
   host.replaceChildren();
-  // A TIER IS A FACT ABOUT A BASE, and a tool has none: a row of filters that
-  // cannot filter what is under them is a row somebody will click at.
-  if (shown === 'tool') return;
   for (const tier of [0, 1, 2, 3]) {
     const btn = el('button', 'mini climbtab', tier === 0 ? 'Every tier' : `Tier ${tier}`) as HTMLButtonElement;
     btn.id = forgeTierId(tier);
@@ -163,54 +150,6 @@ const windowWidth = (level: number): number =>
   CRAFT.widthAt1 + (CRAFT.widthAtTop - CRAFT.widthAt1) * windowShare(level);
 const windowLow = (level: number): number => windowShare(level) * (1 - windowWidth(level));
 const windowHigh = (level: number): number => windowLow(level) + windowWidth(level);
-
-/** A TOOL'S CARD: what it is now, what the next rung takes, and the button.
- *  The same three blocks a base card has, because it is the same verb. */
-function toolCard(tool: ToolDef): HTMLElement {
-  const owned = toolRung(game.character, tool.id);
-  const now = tool.rungs[owned];
-  const next = nextRung(game, tool);
-  const card = el('div', `crystal crystal--t${owned + 1}`);
-
-  const head = el('div', 'crystal__head');
-  const icon = drawn(tool.icon, 26);
-  if (icon) head.append(icon);
-  const title = el('div', 'crystal__title');
-  title.append(el('div', 'crystal__name', now.name));
-  const who = PROFESSION_BY_ID[tool.skill]?.name ?? tool.skill;
-  title.append(el('div', 'socket__family',
-    `${who} · ${now.more > 0 ? `+${now.more} every node` : 'the plain one'}`));
-  head.append(title);
-  card.append(head);
-
-  if (next) {
-    const needs = el('div', 'forgeneeds');
-    needs.append(needRow(null, `${who} level`, professionAt(game, tool.skill).level, next.at));
-    needs.append(needRow(null, 'gold', Math.floor(game.wallet.gold ?? 0), next.gold));
-    const family = MATERIAL_FAMILY_BY_ID[tool.eats];
-    const stacks = MATERIALS.filter((m) => m.family === tool.eats);
-    const held = stacks.reduce((n, m) => n
-      + (((game.materials ?? []).find((i) => i.base === m.id && i.meta.done)?.meta.n as number) ?? 0), 0);
-    needs.append(needRow(itemIcon(makeMaterial(stacks[0], 1, true), 22),
-      family?.one.toLowerCase() ?? 'material', held, next.eats));
-    card.append(needs);
-    card.append(el('div', 'crystal__grow', `${next.name} takes +${next.more} out of every node`));
-  }
-
-  const why = whyNotUpgrade(game, tool);
-  const button = el('button', 'mini', why ?? `Reforge into ${next?.name}`) as HTMLButtonElement;
-  button.id = forgeToolId(tool.id);
-  button.disabled = why !== null;
-  button.onclick = () => {
-    const got = upgradeTool(game, tool);
-    if (!got) return;
-    note(`Reforged: ${got.name}`);
-    render();
-    onChanged?.();
-  };
-  card.append(button);
-  return card;
-}
 
 /** One row of the NEEDS ledger: an icon, a name, and held against wanted as
  *  two numbers — lit when it is enough, dim when it is not. */
@@ -308,14 +247,6 @@ export function render(): void {
   const host = $('forge-list');
   host.replaceChildren();
 
-  if (shown === 'tool') {
-    for (const tool of TOOLS) host.append(toolCard(tool));
-    $('forge-count').textContent = `${TOOLS.filter((t) => whyNotUpgrade(game, t) === null).length} you can reforge`;
-    $('forge-note').textContent =
-      'A tool decides what you can take off the floor. A better one takes more out of every node, '
-      + 'and the level that opens it is climbed by gathering with the one you have.';
-    return;
-  }
 
   const all = GEAR_BASES.filter((b) => b.kind === shown)
     .map((base) => ({ base, recipe: recipeFor(base.id) }))

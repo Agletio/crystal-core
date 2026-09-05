@@ -2937,8 +2937,8 @@ $('dev-kit').click();
   $('camp-anvil').click();
   assert($('forge').hidden === false, 'and the anvil in the camp opens it');
   assert(
-    all('#forge-tabs .climbtab').length === 9,
-    'one tab a slot, plus TOOLS, so a piece is looked for where it is worn',
+    all('#forge-tabs .climbtab').length === 8,
+    'one tab a SLOT and nothing else — a tool is the smith\'s, not the anvil\'s',
     String(all('#forge-tabs .climbtab').length)
   );
   // EVERY BASE IS LISTED, craftable or not: a plan you cannot see is a plan
