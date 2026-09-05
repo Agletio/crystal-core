@@ -180,7 +180,10 @@ export function markScroll(node: HTMLElement): void {
 
 /** Every scrollable body at once: a SCROLL does not bubble, so the listener is
  *  in the capture phase, and a body whose CONTENT changed under a still
- *  scrollbar is re-marked off its own mutations, folded into one frame. */
+ *  scrollbar is re-marked off its own mutations, folded into one frame.
+ *  CHILDLIST ONLY, and never the subtree: a screen rebuilds by replacing its
+ *  body's children, and watching a whole subtree allocates a record per node —
+ *  the skill web alone is thousands, which took the headless suite to 8 GB. */
 function watchScroll(): void {
   const bodies = [...document.querySelectorAll<HTMLElement>('.modal__body')];
   let due = 0;
@@ -202,7 +205,7 @@ function watchScroll(): void {
   globalThis.addEventListener('resize', soon);
   const changed = new MutationObserver(soon);
   for (const body of bodies) {
-    changed.observe(body, { childList: true, subtree: true, characterData: true });
+    changed.observe(body, { childList: true });
     markScroll(body);
   }
 }

@@ -829,6 +829,18 @@ assert(
   all('#shop-gamble .buy__cost').every((n) => /^\d+ gold$/.test(n.textContent)),
   'each priced in gold'
 );
+// A COUNTER WITH NO DRAWN THING ON IT was ten identical text plates. A gamble
+// sells a KIND, so the kind is what carries the picture.
+assert(
+  gambles().every((b) => b.querySelector('.icon')),
+  'and every one of them shows the kind it sells'
+);
+// EVERY TOOL COMES FROM THE SMITH, so the counter may not be a second source.
+assert(
+  all('#shop-gamble .buy__name').every((n) => !/rod|tool/i.test(n.textContent)),
+  'and no tool is on it: the smith is the only source there is',
+  all('#shop-gamble .buy__name').map((n) => n.textContent).join(', ')
+);
 
 // Raw material, at a bad rate: the smoothing for a recipe you are two short of.
 const raws = () => all('#shop-raw button.buy');

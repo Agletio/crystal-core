@@ -3,7 +3,7 @@
  * buy lands in the dock, which is where you spend it from. NOTHING NAMED IS
  * SOLD — you buy a KIND and it is rolled at the click.
  */
-import { ALL_MODS, CURRENCY_BY_ID, KIND_VARIETY, MATERIALS, RECIPES, THEME_BY_ID } from '../data';
+import { ALL_MODS, CURRENCY_BY_ID, GEAR_BASES, KIND_VARIETY, MATERIALS, RECIPES, THEME_BY_ID } from '../data';
 import type { MaterialDef } from '../data';
 import { Rng } from '../rng';
 import { ModPool } from '../mods';
@@ -26,7 +26,7 @@ import { addItem, buyBack, carryRoom, sellItem, stashRoom } from '../game/state'
 import type { Placement } from '../game/state';
 import type { GameState } from '../game/state';
 import { note } from './history';
-import { crystalIcon, currencyIcon, itemIcon } from './icons';
+import { crystalIcon, currencyIcon, gearIcon, itemIcon } from './icons';
 import { openMenu } from './menu';
 import { renderInventory, setInventoryOverride } from './inventory';
 import { attachTooltip, hideTooltip } from './tooltip';
@@ -340,6 +340,11 @@ function renderSold(): void {
 
 /** What a kind is CALLED on the button. A pair is a pair, and a vowel takes
  *  its own article — the kind ids are the game's words and stay them. */
+/** DERIVED, never a second table: the first tier-1 base of that kind, so the
+ *  face on the counter cannot drift from the bases it sells. */
+const kindArt = (kind: string): string | undefined =>
+  GEAR_BASES.find((b) => b.kind === kind && b.tier === 1)?.art;
+
 const saysKind = (kind: string): string =>
   kind === 'gloves' || kind === 'boots'
     ? `A pair of ${kind}`
@@ -360,9 +365,15 @@ function gambleHost(): void {
     `${cost} gold apiece, at item level ${ilvl}. Whatever it is, it is worth ` +
     'less than it cost — that is what makes it a gamble.';
 
-  for (const kind of Object.keys(KIND_VARIETY)) {
+  // NEVER A TOOL: `KIND_VARIETY` is 0 for the two the SMITH is the only source
+  // of, and a counter offering one would be a second source.
+  for (const kind of Object.keys(KIND_VARIETY).filter((k) => KIND_VARIETY[k] > 0)) {
     const btn = el('button', 'buy') as HTMLButtonElement;
     btn.id = gambleButtonId(kind);
+    // THE KIND'S OWN FACE: a counter with no drawn thing on it was ten
+    // identical text plates. What it draws is the plainest base that kind has.
+    const face = kindArt(kind);
+    if (face) btn.append(gearIcon(face, 34));
     const body = el('span', 'buy__body');
     body.append(el('span', 'buy__name', saysKind(kind)));
     body.append(el('span', 'buy__cost', `${cost} gold`));
