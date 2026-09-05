@@ -2184,26 +2184,29 @@ export const TALES: Record<string, TalePanel[]> = {
       said: 'Three marks, copied off a face nobody was meant to reach. I have been waiting a long while for somebody to carry them.',
     },
   ],
+  // HE WAS A MAN AND HE IS TELLING YOU SO. The arc is the body changing, and
+  // the voice changes with it: the first two lines are the young man's and the
+  // last two are the thing's, and the fifth is both at once.
   ossuary: [
     {
       art: 'tale_bone_1',
-      said: 'Everything that stops down here comes to me sooner or later, and I lay it out. I have laid out a very great deal.',
+      said: 'I came down for the work. I was nineteen. I want you to know there was a me before this, because nothing down here believes it.',
     },
     {
       art: 'tale_bone_2',
-      said: 'Almost all of it came apart wrong. The wall takes what came apart wrong, and keeps it, and there is nothing left in it worth asking.',
+      said: 'The food went, and then the lamp went. And then — you will not want this part — I found out what else there is to eat.',
     },
     {
       art: 'tale_bone_3',
-      said: 'And then once — once — one came apart RIGHT. Something in it was still deciding when it stopped.',
+      said: 'Something in me AGREED with it. That is the part I cannot make sound right. It did not hurt, and I did not mind.',
     },
     {
       art: 'tale_bone_4',
-      said: 'A thing still deciding can be asked. Working out what to ask it took me rather longer than finding it did.',
+      said: 'And this is mine now, all of it, laid out in rows, and I know every piece by the sound it makes. I am very GOOD at this.',
     },
     {
       art: 'tale_bone_5',
-      said: 'It answered by becoming part of something else. I have been sorting ever since, looking for the second one.',
+      said: 'Then you came past with a light on, and I remembered the word for what you are. Do not go. Bring me one. Bring me a WORSE one.',
     },
   ],
   orrery: [

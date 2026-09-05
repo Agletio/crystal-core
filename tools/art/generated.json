@@ -1,7 +1,7 @@
 {
- "_": "What the generated art is, as ids on the generator. The SOURCE of truth, the way manifest.json is for the pipeline: `npx tsx tools/art/tables.mts` reads this and writes the three tables in src/render. Every id names something already generated \u2014 nothing here asks for one, so re-running costs nothing.",
- "_states": "A body's STATES are rows here and nowhere else. `group` is what the animation is called on the generator, `frames` is how many to keep, and `from`/`to` are the fraction of it worth keeping \u2014 a generated animation degrades across its run, so which window is usable is a fact about that generation. A state is named for an ACTION \u2014 idle, walk, attack \u2014 or for the SKILL a body throws, which is looked up first: `cast` is the fallback for a thrower with no animation of its own, and a body with neither reuses its melee swing.",
- "_dirs": "Which facings to pull, north to south. Only the east half of the compass is generated \u2014 the renderer mirrors anything facing left, so the western three are reflections.",
+ "_": "What the generated art is, as ids on the generator. The SOURCE of truth, the way manifest.json is for the pipeline: `npx tsx tools/art/tables.mts` reads this and writes the three tables in src/render. Every id names something already generated — nothing here asks for one, so re-running costs nothing.",
+ "_states": "A body's STATES are rows here and nowhere else. `group` is what the animation is called on the generator, `frames` is how many to keep, and `from`/`to` are the fraction of it worth keeping — a generated animation degrades across its run, so which window is usable is a fact about that generation. A state is named for an ACTION — idle, walk, attack — or for the SKILL a body throws, which is looked up first: `cast` is the fallback for a thrower with no animation of its own, and a body with neither reuses its melee swing.",
+ "_dirs": "Which facings to pull, north to south. Only the east half of the compass is generated — the renderer mirrors anything facing left, so the western three are reflections.",
  "tileset": {
   "id": "8887f424-d99a-4bc3-9b1a-9c311105a687",
   "floorIs": "lower"
@@ -4121,6 +4121,90 @@
     "attack": {
      "group": "7fa4500c-b13c-455d-90ea-83a50c6422de",
      "frames": 5
+    }
+   }
+  },
+  {
+   "grid": 48,
+   "inks": 24,
+   "luma": 32,
+   "sprite": "hob",
+   "character": "41cf55ad-0e58-45c7-8075-d09438c2b0b1",
+   "dirs": [
+    "south-east"
+   ],
+   "states": {
+    "idle": {
+     "group": "e7b18ea9-02e0-4a9b-a66f-353ac992d785"
+    },
+    "walk": {
+     "group": "c06e1192-b1ff-4395-b8e2-b2bf958f5766"
+    },
+    "attack": {
+     "group": "605e2f09-801e-4d40-b434-57d0adb50886"
+    }
+   }
+  },
+  {
+   "grid": 48,
+   "inks": 24,
+   "luma": 32,
+   "sprite": "nell",
+   "character": "04fd726b-937f-42da-abfb-8df7d872bbd8",
+   "dirs": [
+    "south-east"
+   ],
+   "states": {
+    "idle": {
+     "group": "8a180ddc-3d37-4edf-a270-0ea383d7ed9e"
+    },
+    "walk": {
+     "group": "54f3cf24-fdc0-406d-8171-187274c44abf"
+    },
+    "attack": {
+     "group": "3bb4df79-19c1-4073-bc83-9ce49382755f"
+    }
+   }
+  },
+  {
+   "grid": 48,
+   "inks": 24,
+   "luma": 32,
+   "sprite": "ida",
+   "character": "c0426a7f-68fa-47ef-a9cc-0926e77a59e3",
+   "dirs": [
+    "south-east"
+   ],
+   "states": {
+    "idle": {
+     "group": "de21e30c-81cb-4819-9019-2129252be0b7"
+    },
+    "walk": {
+     "group": "a1f95b52-3baf-4b6d-9a1d-d4a00d319cb0"
+    },
+    "attack": {
+     "group": "f93774da-0de3-499f-8f62-5676401b972e"
+    }
+   }
+  },
+  {
+   "grid": 48,
+   "inks": 24,
+   "luma": 32,
+   "sprite": "osteomancer",
+   "character": "6f301d8e-2da0-4381-bb5d-dae9faefaec2",
+   "dirs": [
+    "south-east"
+   ],
+   "states": {
+    "idle": {
+     "group": "2d328d1a-1747-4990-9c8c-fafdc41619e3"
+    },
+    "walk": {
+     "group": "d535b8b5-d840-490e-9b61-8b8dfcc3a13e"
+    },
+    "attack": {
+     "group": "ef5432a6-86a5-43c9-80df-8e8f8783be6a"
     }
    }
   }

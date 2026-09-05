@@ -16,7 +16,7 @@ import { callTool, download, urlsIn } from './mcp.mts';
 const here = (f: string) => new URL(`./${f}`, import.meta.url).pathname;
 const OUT = new URL('../../src/render/generated-scene.ts', import.meta.url).pathname;
 const words = JSON.parse(readFileSync(here('scenes.json'), 'utf8')) as {
-  scenes: Record<string, { width: number; height: number; say: string; like?: string }>;
+  scenes: Record<string, { width: number; height: number; say: string; like?: string; ref?: string }>;
 };
 
 /** ANOTHER PANEL'S OWN PICTURE, as a `data:` URI out of what already shipped.
@@ -38,6 +38,12 @@ if (command === 'ask') {
   for (const seed of seeds) {
     const like = scene.like ? shipped(scene.like) : undefined;
     if (scene.like && !like) throw new Error(`${scene.like} has not been emitted`);
+    // A BODY'S OWN DESIGN, so a panel draws the person the game will stand in
+    // the camp rather than the generator's idea of the words. `ref` is a path
+    // under `tools/art/`, which is where an approved design already lives.
+    const who = scene.ref
+      ? `data:image/png;base64,${readFileSync(here(scene.ref)).toString('base64')}`
+      : undefined;
     const out = await callTool('create_image_pro', {
       description: scene.say,
       width: scene.width,
@@ -45,10 +51,13 @@ if (command === 'ask') {
       no_background: false,
       seed,
       // The room is taken from the picture and the words only say what CHANGED.
-      ...(like
+      ...(like ? { style_image_url: like } : {}),
+      ...(like || who
         ? {
-            style_image_url: like,
-            reference_images: [{ url: like, usage: 'the chamber itself: its wall texture, its colours, and the direction it opens' }],
+            reference_images: [
+              ...(like ? [{ url: like, usage: 'the chamber itself: its wall texture, its colours, and the direction it opens' }] : []),
+              ...(who ? [{ url: who, usage: 'the PERSON in the picture: his face, his build and what he is wearing' }] : []),
+            ],
           }
         : {}),
     });
