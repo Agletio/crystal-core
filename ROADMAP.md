@@ -24,7 +24,10 @@ All three are done:
 order: a tool you equip decides what the floor holds, gem is the universal
 material every recipe wants, four gathering professions are levelled by using
 their tool, and the sheet's second page is a Professions page whose every
-unlock row is derived from the table that enforces it.
+unlock row is derived from the table that enforces it. **ROUND TWO IS DONE
+TOO**: a tool is an ITEM in a gear slot rather than a row beside one, you start
+with none, and the SMITH at depth 4 is where every one of them comes from —
+Talk, Shop, Upgrade, and the anvil back to one tab a slot.
 
 **PHASE 10 IS DONE AND DELETED** — `git log` from `45c9106` to the anvil
 commit: wood gone, gathering seen, the creative director and the critics, the

@@ -1,7 +1,7 @@
 {
- "_": "What the generated art is, as ids on the generator. The SOURCE of truth, the way manifest.json is for the pipeline: `npx tsx tools/art/tables.mts` reads this and writes the three tables in src/render. Every id names something already generated \u2014 nothing here asks for one, so re-running costs nothing.",
- "_states": "A body's STATES are rows here and nowhere else. `group` is what the animation is called on the generator, `frames` is how many to keep, and `from`/`to` are the fraction of it worth keeping \u2014 a generated animation degrades across its run, so which window is usable is a fact about that generation. A state is named for an ACTION \u2014 idle, walk, attack \u2014 or for the SKILL a body throws, which is looked up first: `cast` is the fallback for a thrower with no animation of its own, and a body with neither reuses its melee swing.",
- "_dirs": "Which facings to pull, north to south. Only the east half of the compass is generated \u2014 the renderer mirrors anything facing left, so the western three are reflections.",
+ "_": "What the generated art is, as ids on the generator. The SOURCE of truth, the way manifest.json is for the pipeline: `npx tsx tools/art/tables.mts` reads this and writes the three tables in src/render. Every id names something already generated — nothing here asks for one, so re-running costs nothing.",
+ "_states": "A body's STATES are rows here and nowhere else. `group` is what the animation is called on the generator, `frames` is how many to keep, and `from`/`to` are the fraction of it worth keeping — a generated animation degrades across its run, so which window is usable is a fact about that generation. A state is named for an ACTION — idle, walk, attack — or for the SKILL a body throws, which is looked up first: `cast` is the fallback for a thrower with no animation of its own, and a body with neither reuses its melee swing.",
+ "_dirs": "Which facings to pull, north to south. Only the east half of the compass is generated — the renderer mirrors anything facing left, so the western three are reflections.",
  "tileset": {
   "id": "8887f424-d99a-4bc3-9b1a-9c311105a687",
   "floorIs": "lower"
@@ -4113,6 +4113,14 @@
     "idle": {
      "group": "4ffd402d-1a2a-4f36-9ca6-b2297dd84b44",
      "frames": 5
+    },
+    "walk": {
+     "group": "7a60aa2f-7b14-4458-aa15-d44f8b710de0",
+     "frames": 9
+    },
+    "attack": {
+     "group": "7fa4500c-b13c-455d-90ea-83a50c6422de",
+     "frames": 5
     }
    }
   }
@@ -4456,7 +4464,7 @@
    "id": "mouth_stair",
    "object": "115b3791-54a1-4f55-99bc-7a4bcab6434d",
    "tiles": 2,
-   "tone": 0.0,
+   "tone": 0,
    "dull": 0.1
   },
   {

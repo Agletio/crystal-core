@@ -112,6 +112,8 @@ import {
   PROFESSION,
   PROFESSIONS,
   TOOLS,
+  MEET,
+  SMITH,
   TOOL_BY_ID,
   TOOL_OF_BASE,
   toolBaseId,
@@ -174,7 +176,10 @@ import { LIVE_PROPS, RIPPLE, lootSpan, rippleRings } from './render/renderer';
 import { RunSim, TICK, runToCompletion, walkToMeeting } from './sim/run';
 import { tierForSet } from './sim/crystal';
 import { findPath } from './sim/pathfind';
-import { folkMet, gaveKey, hasMet, keyOwed, takeBoss, takeMet, whoIsDown } from './game/scenes';
+import { folkMet, gaveKey, hasMet, keyOwed, meetingDepth, takeBoss, takeMet, whoIsDown } from './game/scenes';
+import {
+  TOOL_PRICE, buyTool, holdsTool, owesFirstTool, takeFirstTool, toolsOnOffer, whyNotBuyTool,
+} from './game/smith';
 import { GRIND_COUNTERS, descentFacts, healTrials, takeGrinds } from './game/trials';
 import {
   POINT_CAP, TRIAL_POINTS_MAX, canAllocateTrial, canDeallocateTrial, trialNodes, trialPointsFor,
@@ -4113,6 +4118,43 @@ rule('THE WORKS — does a job run on the clock, and on nothing else?');
       gatherableFamilies(createGame('fresh').character).length === 0,
       'and a new character owns no tool at all, so the floor grows nothing for him',
       gatherableFamilies(createGame('fresh').character).join(', ')
+    );
+  }
+
+  // THE SMITH IS WHERE EVERY TOOL COMES FROM, and he stands at his OWN depth.
+  // A pin has to beat the rota, or the person who owes you a tool at 4 is
+  // handed out at 6 with somebody else in his place.
+  {
+    const pinned = whoIsDown(createGame('fresh'), 'fissure', SMITH.rung);
+    const rota = whoIsDown(createGame('fresh'), 'fissure', MEET.first);
+    check(
+      pinned?.id === SMITH.scene && rota?.id !== SMITH.scene && !meetingDepth(SMITH.rung),
+      `the smith stands at depth ${SMITH.rung}, which is not a meeting depth, and the rota never stands in for him`,
+      `${SMITH.rung}: ${pinned?.id ?? 'nobody'}, ${MEET.first}: ${rota?.id ?? 'nobody'}`
+    );
+  }
+
+  // ONE FREE, THE REST FOR GOLD, and never a second copy of one you hold.
+  {
+    const met = createGame('fresh');
+    const first = owesFirstTool(met);
+    takeFirstTool(met, TOOL_BY_ID.pick);
+    const twice = takeFirstTool(met, TOOL_BY_ID.sickle);
+    const holding = toolsOnOffer().filter((t) => holdsTool(met, t)).map((t) => t.id);
+    check(
+      first && !owesFirstTool(met) && !twice && holding.join() === 'pick',
+      'the smith owes one tool, hands it over once, and owes nothing after',
+      `${holding.join('+') || 'nothing'}, second gift ${twice}`
+    );
+
+    const broke = whyNotBuyTool(met, TOOL_BY_ID.sickle);
+    met.wallet.gold = TOOL_PRICE;
+    const bought = buyTool(met, TOOL_BY_ID.sickle);
+    check(
+      broke !== null && /\d/.test(broke) && bought && met.wallet.gold === 0
+        && whyNotBuyTool(met, TOOL_BY_ID.pick) !== null,
+      `a tool is refused in numbers, bought for ${TOOL_PRICE} gold, and never sold to you twice: "${broke}"`,
+      `${broke} -> bought ${bought}, ${Math.floor(met.wallet.gold)} left`
     );
   }
 

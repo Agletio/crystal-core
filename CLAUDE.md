@@ -216,9 +216,7 @@ profession level, every stack a part eats with its icon, the world's own
 material) said as *held / wanted* and lit or dim, then the button — and the
 list is FILTERED beside the kind tabs: one tier or every tier, and *Can make
 now*. *"Clean up the actual boxes so it's clear what items are needed and
-what level is required."* **TOOLS ARE A KIND ON IT**, not a screen of their own
-— a smith is who reforges a pick — and the tier filters are HIDDEN on that tab,
-since a tier is a fact about a base and a tool has none.
+what level is required."*
 Everything else is still on the rail, and a screen with neither a
 button nor a hotspot is one somebody will lose.
 
@@ -606,7 +604,20 @@ knife equipped"* — off bodies, with no node and no walk, and without the knife
 that budget is never drawn against. **A BETTER TOOL TAKES MORE OUT OF ONE
 NODE** (`ToolRungDef.more`) and is reforged for gold and the material it `eats`,
 gated on the gathering level — a swap of the piece in the slot, since a rung is
-another base. **Nothing is paid for in its
+another base.
+
+**EVERY TOOL COMES FROM THE SMITH, AND HE IS FOUND AT DEPTH 4.** *"After you
+clear depth 4 you find a blacksmith who will greet you in town when you return.
+He has the quest icon, offers you one tool for free and lets you buy any
+starting tool for gold… have him be the source of the upgraded tools."*
+`SceneDef.rung` is a person's OWN depth, ahead of the meeting rota the way a
+worker's is, and a pinned person is never handed out by the rota in his place.
+`src/game/smith.ts` is the counter and `src/ui/smith.ts` ONE LIST READ THREE
+WAYS — take, buy, reforge — because they are the same four rows with a different
+verb on the end. `keeps: 'tools'` puts **Talk, Shop and Upgrade** in his parley
+menu, and `smith:first` in `given` is the free one, taken in person like every
+other gift. **THE ANVIL IS BACK TO ONE TAB A SLOT**: a tool is a person's, not
+a screen's. **Nothing is paid for in its
 own output**: the three blades are the smith's and the rod's line is the
 weaver's, so every tool pulls on a profession other than the one it feeds.
 
