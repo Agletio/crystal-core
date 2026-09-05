@@ -24,6 +24,7 @@ import {
 } from '../data';
 import type { MaterialDef, ProfessionDef, WorkerDef } from '../data';
 import type { MapTheme } from '../types';
+import { nextMeeting } from './scenes';
 import { makeMaterial } from '../economy';
 import { addItem } from './state';
 import type { GameState } from './state';
@@ -55,10 +56,13 @@ export function takeWorker(game: GameState, id: string): void {
 export const workersFound = (game: GameState): WorkerDef[] =>
   WORKERS.filter((w) => hasWorker(game, w.id));
 
-/** WHO STANDS AT THIS DEPTH of this world, not yet rescued. Placed like anybody
- *  else met down there, and ahead of them: a worker's depth is his own. */
-export const workerDown = (game: GameState, theme: MapTheme, rung: number): WorkerDef | undefined =>
-  WORKERS.find((w) => w.world === theme && w.rung === rung && !hasWorker(game, w.id));
+/** WHO STANDS DOWN HERE, off the ONE queue everybody found is in — a worker is
+ *  not a separate rota, or two schedules would each think it was their turn. */
+export const workerDown = (game: GameState, theme: MapTheme, rung: number): WorkerDef | undefined => {
+  const next = nextMeeting(game);
+  if (!next?.worker || next.theme !== theme || rung < next.rung) return undefined;
+  return next.worker;
+};
 
 export const jobOf = (game: GameState, workerId: string): WorkJob | undefined =>
   jobsIn(game).find((j) => j.worker === workerId);

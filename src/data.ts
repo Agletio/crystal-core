@@ -2013,6 +2013,7 @@ export const LAMPWRIGHT = {
   name: 'the Lampwright',
   sprite: 'lampwright', // in BEASTIARY; the map and the panel draw the same one
   scene: 'workshop', // the room he is met in, in `SCENES`
+  rung: 2, // THE FIRST PERSON A NEW ACCOUNT MEETS, so he is the shallowest
   /** Said in the log the moment you come up in his room, before the walk. */
   seen: 'A lantern, further back than you have been. Something is holding it up.',
   /** Level 1 holds 0 modifiers: it is socketed blank, and the descent it makes
@@ -2529,7 +2530,7 @@ export interface WorkerDef {
 }
 
 export const WORKERS: WorkerDef[] = [
-  { id: 'hob', name: 'Hob', world: 'fissure', rung: 1,
+  { id: 'hob', name: 'Hob', world: 'fissure', rung: 5,
     greets: 'Get me up out of this and I will work whatever you put in front of me.' },
   { id: 'nell', name: 'Nell', world: 'fissure', rung: 7,
     greets: 'Three days down here. I can smelt, weave, tan, cook or cut. Take me up.' },

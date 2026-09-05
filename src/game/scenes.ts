@@ -1,6 +1,7 @@
 /** WHO YOU HAVE MET, and where. Found in a descent, in the camp from then on,
  *  so a queue of rooms is one `given` mark apiece. */
-import { INTRO, MEET } from '../data';
+import { INTRO, MEET, WORKERS, workerMark } from '../data';
+import type { WorkerDef } from '../data';
 import { SCENES } from '../scenes';
 import type { SceneDef } from '../scenes';
 import type { MapTheme } from '../types';
@@ -43,14 +44,55 @@ export const folkOf = (theme: MapTheme): SceneDef[] =>
 export const meetingDepth = (rung: number): boolean =>
   rung >= MEET.first && (rung - MEET.first) % MEET.every === 0;
 
-/** WHO IS DOWN THERE, only ever from THAT WORLD — a man who turns up in every
- *  world lives in none — and SCHEDULED: finishing a zone is meeting everybody
- *  who lives in it, where a coin could leave a bench behind a roll. */
+/** HEARD IN TOWN: the scene watched, which is a different thing from having
+ *  walked past him. The queue moves on this and never on the meeting. */
+export const heardMark = (id: string): string => `heard:${id}`;
+
+export const hasHeard = (game: GameState, id: string): boolean =>
+  (game.given ?? []).includes(heardMark(id));
+
+export function takeHeard(game: GameState, id: string): void {
+  if (!hasHeard(game, id)) game.given = [...(game.given ?? []), heardMark(id)];
+}
+
+/** EVERYBODY FOUND DOWN THERE, IN ONE ORDER. People and workers are two
+ *  tables and one QUEUE — the Lampwright at 2, the smith at 4, Hob at 5 — so
+ *  the order is DERIVED off the depth each already names rather than written a
+ *  second time where it can disagree. Ties keep the tables' own order. */
+export interface Meeting {
+  id: string;
+  rung: number;
+  theme: MapTheme;
+  scene?: SceneDef;
+  worker?: WorkerDef;
+}
+
+export const MEETINGS: Meeting[] = [
+  ...SCENES.filter((s) => !s.encounter && s.rung !== undefined)
+    .map((s) => ({ id: s.id, rung: s.rung!, theme: s.theme, scene: s })),
+  ...WORKERS.map((w) => ({ id: `worker:${w.id}`, rung: w.rung, theme: w.world, worker: w })),
+].sort((a, b) => a.rung - b.rung);
+
+const wasMet = (game: GameState, m: Meeting): boolean =>
+  m.worker ? (game.given ?? []).includes(workerMark(m.worker.id)) : hasMet(game, m.id);
+
+/** THE NEXT ONE OWED, and NOBODY IS SKIPPED. The queue advances only on a
+ *  scene HEARD IN TOWN, so diving from 2 to 6 without going up finds nobody:
+ *  the smith waits on the Lampwright's own scene, and Hob waits on the
+ *  smith's. Depth only says how DEEP the next one stands, never who. */
+export function nextMeeting(game: GameState): Meeting | undefined {
+  for (const m of MEETINGS) {
+    if (!wasMet(game, m)) return m;
+    if (!hasHeard(game, m.id)) return undefined; // met, not yet heard: the queue stops here
+  }
+  return undefined;
+}
+
+/** WHO IS DOWN THERE: the one the queue owes, if this descent is deep enough
+ *  and in his world. A man who turns up in every world lives in none. */
 export function whoIsDown(game: GameState, theme: MapTheme, rung: number): SceneDef | undefined {
-  // A PINNED DEPTH WINS, and the rota never hands that person out in its place.
-  const pinned = folkOf(theme).find((s) => s.rung === rung && !hasMet(game, s.id));
-  if (pinned) return pinned;
-  if (!meetingDepth(rung)) return undefined;
-  return folkOf(theme).find((s) => s.rung === undefined && !hasMet(game, s.id));
+  const next = nextMeeting(game);
+  if (!next?.scene || next.theme !== theme || rung < next.rung) return undefined;
+  return next.scene;
 }
 

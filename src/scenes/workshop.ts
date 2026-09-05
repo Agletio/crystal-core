@@ -10,6 +10,7 @@ export const WORKSHOP: SceneDef = {
   who: LAMPWRIGHT.sprite,
   name: LAMPWRIGHT.name,
   theme: 'fissure', // a working, and it is the shallow end's
+  rung: LAMPWRIGHT.rung,
   said: LAMPWRIGHT.seen,
   greets:
     'Do not put it out. Do NOT — thank you. That is eleven hours of lamp and I am not walking back up in the dark. I keep a bench at the top; come and find me.',
