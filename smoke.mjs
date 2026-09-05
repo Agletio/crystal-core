@@ -3275,9 +3275,10 @@ assert(
   $('open-dev').click();
   $('dev-meet-smithy').click();
   $('dev-close').click();
-  const who = all('.camp-folk').filter((b) => /smith/i.test(b.getAttribute('aria-label') ?? ''));
-  assert(who.length === 1, 'the smith is in the camp once you have met him', String(who.length));
-  who[0].click();
+  const him = $('who-smithy');
+  assert(him !== null, 'the smith is in the camp once you have met him',
+    all('#camp-folk .camp__hot').map((b) => b.id).join(', '));
+  him.click();
   assert(
     $('parley-talk') && $('parley-shop') && $('parley-upgrade') && $('parley-leave'),
     'and he offers Talk, Shop and Upgrade — the three a tool ever needs',
@@ -3300,7 +3301,7 @@ assert(
   $('inv-close').click();
 
   // AND HE STOPS OWING IT. The mark is the same question `offer` answers.
-  who[0].click();
+  him.click();
   $('parley-shop').click();
   assert($('smith').hidden === false, 'Shop opens his counter');
   assert(
@@ -3309,7 +3310,7 @@ assert(
     text('smith-list').slice(0, 80)
   );
   $('smith-close').click();
-  who[0].click();
+  him.click();
   $('parley-upgrade').click();
   assert($('smith').hidden === false, 'and Upgrade opens the reforge');
   assert(

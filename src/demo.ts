@@ -4121,6 +4121,19 @@ rule('THE WORKS — does a job run on the clock, and on nothing else?');
     );
   }
 
+  // EVERYBODY MET HAS A SPOT OF HIS OWN IN THE CAMP. `CAMP_SPOTS` is indexed
+  // `i % length`, so one person past the end does not overflow or throw — he
+  // stands exactly where the first one is, and two bodies share a hotspot with
+  // nothing anywhere saying so. Adding a person means adding a spot.
+  {
+    const standing = SCENES.filter((s) => !s.encounter).length;
+    check(
+      standing <= CAMP_SPOTS.length,
+      `all ${standing} people who stand in the camp have a spot of their own`,
+      `${standing} people against ${CAMP_SPOTS.length} spots — the extra stack on the first`
+    );
+  }
+
   // THE SMITH IS WHERE EVERY TOOL COMES FROM, and he stands at his OWN depth.
   // A pin has to beat the rota, or the person who owes you a tool at 4 is
   // handed out at 6 with somebody else in his place.
