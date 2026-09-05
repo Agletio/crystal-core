@@ -16,7 +16,7 @@ import { callTool, download, urlsIn } from './mcp.mts';
 const here = (f: string) => new URL(`./${f}`, import.meta.url).pathname;
 const OUT = new URL('../../src/render/generated-scene.ts', import.meta.url).pathname;
 const words = JSON.parse(readFileSync(here('scenes.json'), 'utf8')) as {
-  scenes: Record<string, { width: number; height: number; say: string; like?: string; ref?: string }>;
+  scenes: Record<string, { width: number; height: number; say: string; like?: string; ref?: string | string[] }>;
 };
 
 /** ANOTHER PANEL'S OWN PICTURE, as a `data:` URI out of what already shipped.
@@ -41,9 +41,10 @@ if (command === 'ask') {
     // A BODY'S OWN DESIGN, so a panel draws the person the game will stand in
     // the camp rather than the generator's idea of the words. `ref` is a path
     // under `tools/art/`, which is where an approved design already lives.
-    const who = scene.ref
-      ? `data:image/png;base64,${readFileSync(here(scene.ref)).toString('base64')}`
-      : undefined;
+    const refs = scene.ref ? [scene.ref].flat() : [];
+    const who = refs.map(
+      (at) => `data:image/png;base64,${readFileSync(here(at)).toString('base64')}`
+    );
     const out = await callTool('create_image_pro', {
       description: scene.say,
       width: scene.width,
@@ -52,11 +53,11 @@ if (command === 'ask') {
       seed,
       // The room is taken from the picture and the words only say what CHANGED.
       ...(like ? { style_image_url: like } : {}),
-      ...(like || who
+      ...(like || who.length
         ? {
             reference_images: [
               ...(like ? [{ url: like, usage: 'the chamber itself: its wall texture, its colours, and the direction it opens' }] : []),
-              ...(who ? [{ url: who, usage: 'the PERSON in the picture: his face, his build and what he is wearing' }] : []),
+              ...who.map((url) => ({ url, usage: 'the PERSON: his FACE, the size of his ears, his build and what he is wearing' })),
             ],
           }
         : {}),

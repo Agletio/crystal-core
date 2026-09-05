@@ -2198,14 +2198,18 @@ export const TALES: Record<string, TalePanel[]> = {
     },
     {
       art: 'tale_bone_3',
-      said: 'Something in me AGREED with it. That is the part I cannot make sound right. It did not hurt, and I did not mind.',
+      said: 'There is a stretch after that I do not have in any order. I know what I did in it, because I have not stopped.',
     },
     {
       art: 'tale_bone_4',
-      said: 'And this is mine now, all of it, laid out in rows, and I know every piece by the sound it makes. I am very GOOD at this.',
+      said: 'Something in me AGREED with it. That is the part I cannot make sound right. It did not hurt, and I did not mind.',
     },
     {
       art: 'tale_bone_5',
+      said: 'And this is mine now, all of it, laid out in rows, and I know every piece by the sound it makes. I am very GOOD at this.',
+    },
+    {
+      art: 'tale_bone_6',
       said: 'Then you came past with a light on, and I remembered the word for what you are. Do not go. Bring me one. Bring me a WORSE one.',
     },
   ],

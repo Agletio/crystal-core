@@ -3823,7 +3823,9 @@
      "frames": 4,
      "say": "lunging onto the front foot at a three-quarter angle and driving one fist forward at chest height, ending at full extension and facing the same way in every frame"
     }
-   }
+   },
+   "approved": "cache/designs/wat-2.png",
+   "character": "28ea65d1-00c4-4ad4-93b2-308d4edc8476"
   },
   {
    "sprite": "ida",

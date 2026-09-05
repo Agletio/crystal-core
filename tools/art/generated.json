@@ -4135,13 +4135,16 @@
    ],
    "states": {
     "idle": {
-     "group": "e7b18ea9-02e0-4a9b-a66f-353ac992d785"
+     "group": "81ec3c07-ee89-4a54-9d55-493baf3f2472",
+     "frames": 5
     },
     "walk": {
-     "group": "c06e1192-b1ff-4395-b8e2-b2bf958f5766"
+     "group": "c06e1192-b1ff-4395-b8e2-b2bf958f5766",
+     "frames": 7
     },
     "attack": {
-     "group": "605e2f09-801e-4d40-b434-57d0adb50886"
+     "group": "605e2f09-801e-4d40-b434-57d0adb50886",
+     "frames": 5
     }
    }
   },
@@ -4156,13 +4159,16 @@
    ],
    "states": {
     "idle": {
-     "group": "8a180ddc-3d37-4edf-a270-0ea383d7ed9e"
+     "group": "8a180ddc-3d37-4edf-a270-0ea383d7ed9e",
+     "frames": 5
     },
     "walk": {
-     "group": "54f3cf24-fdc0-406d-8171-187274c44abf"
+     "group": "54f3cf24-fdc0-406d-8171-187274c44abf",
+     "frames": 7
     },
     "attack": {
-     "group": "3bb4df79-19c1-4073-bc83-9ce49382755f"
+     "group": "3bb4df79-19c1-4073-bc83-9ce49382755f",
+     "frames": 5
     }
    }
   },
@@ -4177,13 +4183,16 @@
    ],
    "states": {
     "idle": {
-     "group": "de21e30c-81cb-4819-9019-2129252be0b7"
+     "group": "de21e30c-81cb-4819-9019-2129252be0b7",
+     "frames": 5
     },
     "walk": {
-     "group": "a1f95b52-3baf-4b6d-9a1d-d4a00d319cb0"
+     "group": "a1f95b52-3baf-4b6d-9a1d-d4a00d319cb0",
+     "frames": 7
     },
     "attack": {
-     "group": "f93774da-0de3-499f-8f62-5676401b972e"
+     "group": "f93774da-0de3-499f-8f62-5676401b972e",
+     "frames": 5
     }
    }
   },
@@ -4198,13 +4207,37 @@
    ],
    "states": {
     "idle": {
-     "group": "2d328d1a-1747-4990-9c8c-fafdc41619e3"
+     "group": "2d328d1a-1747-4990-9c8c-fafdc41619e3",
+     "frames": 5
     },
     "walk": {
-     "group": "d535b8b5-d840-490e-9b61-8b8dfcc3a13e"
+     "group": "d535b8b5-d840-490e-9b61-8b8dfcc3a13e",
+     "frames": 7
     },
     "attack": {
-     "group": "ef5432a6-86a5-43c9-80df-8e8f8783be6a"
+     "group": "ef5432a6-86a5-43c9-80df-8e8f8783be6a",
+     "frames": 5
+    }
+   }
+  },
+  {
+   "grid": 48,
+   "inks": 24,
+   "luma": 32,
+   "sprite": "wat",
+   "character": "28ea65d1-00c4-4ad4-93b2-308d4edc8476",
+   "dirs": [
+    "south-east"
+   ],
+   "states": {
+    "idle": {
+     "group": "12f37266-529b-4777-9978-97abb5c48f11"
+    },
+    "walk": {
+     "group": "b65c9d02-1e15-4049-b62b-b498e45c4773"
+    },
+    "attack": {
+     "group": "5c82fcd4-c1e4-4a17-acba-17a5825116d0"
     }
    }
   }
