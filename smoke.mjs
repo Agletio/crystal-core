@@ -3102,8 +3102,8 @@ $('dev-kit').click();
     String(all('.influences .climbtab').length)
   );
   assert(
-    $('climb-influence-fissure').classList.contains('influence--on'),
-    'one of which is picked'
+    $('climb-influence-fissure').classList.contains('climbtab--on'),
+    'one of which is picked, and lit the way every other selected tab is'
   );
   const where = () => (document.querySelector('.climb__where')?.textContent ?? '').trim();
   assert(/Proving Ground/.test(where()), 'and the readout says where you are going', where());
