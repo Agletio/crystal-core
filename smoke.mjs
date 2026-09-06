@@ -209,6 +209,13 @@ assert(all('#run-climb .climbseam__rock').length === 1, 'as one winding stretch'
   String(all('#run-climb .climbseam__rock').length));
 assert($('climb-pip-0-1').classList.contains('pip--here'), 'a new character stands on the first');
 assert($('climb-pip-0-2').disabled === true, 'the rung above it is shut');
+// AND SO IS EVERY WAY ROUND IT: a side room opens off something CLEARED, and a
+// new character has cleared nothing.
+assert(
+  all('[id^="climb-side-0-"]').every((b) => b.disabled),
+  'and every side room with it, since nothing is cleared to open one from',
+  all('[id^="climb-side-0-"]').filter((b) => !b.disabled).map((b) => b.id).join(' ')
+);
 // EVERY DEPTH IS A STEP. The ramp is straight, so nothing on the seam is
 // marked as costing more than the one under it — a spike is what was removed.
 assert(
@@ -3119,29 +3126,33 @@ $('dev-kit').click();
     $('climb-influence-fissure').classList.contains('climbtab--on'),
     'one of which is picked, and lit the way every other selected tab is'
   );
-  // BRANCHES OFF THE MAIN LINE: a side room hangs off a depth, at that depth's
-  // own danger, for one bonus. It is drawn on the picture and it is NOT a step.
+  // THE SIDE ROOMS ARE A NETWORK, not spurs: each is a node on the picture and
+  // a run of them arrives at a depth you never climbed to. A clear in one is
+  // never a level.
   $('climb-tab-0').click();
   const sides = all('[id^="climb-side-0-"]');
-  assert(sides.length > 0, `the first zone draws ${sides.length} side rooms off its depths`);
-  // WHAT IT PAYS IS THE NAME: a picture, never `3A`. The id still carries the
-  // depth and the letter, which is what every harness names one by.
+  assert(sides.length > 0, `the first zone stands ${sides.length} side rooms off its line`);
+  // WHAT IT PAYS IS THE NAME: a picture, never `3A`. The id carries the room,
+  // which is what every harness names one by.
   assert(
-    sides.every((b) => /^climb-side-0-\d+[A-Z]$/.test(b.id) && b.querySelector('svg')),
+    sides.every((b) => /^climb-side-0-[a-z]+$/.test(b.id) && b.querySelector('svg')),
     'each drawn as the bonus it pays rather than numbered',
     sides[0]?.id
   );
-  // OPEN EXACTLY WHEN ITS DEPTH IS, in both directions: on a fresh character
-  // every depth past the first is shut, so "some are open" would be a check
-  // that only ever passed on a save it was never run against.
+  // OPEN WHERE THE MAP REACHES. The kit has climbed this zone whole, so every
+  // room touches a clear; a fresh character above has none of them.
   assert(
-    sides.every((b) => {
-      const depth = $(`climb-pip-0-${b.id.match(/-(\d+)[A-Z]$/)?.[1]}`);
-      return depth && b.disabled === depth.disabled;
-    }),
-    'and a branch is open exactly when its depth is',
-    sides.map((b) => `${b.id}:${b.disabled}`).join(' ')
+    sides.every((b) => !b.disabled),
+    'and with the zone climbed whole every one of them is open',
+    sides.filter((b) => b.disabled).map((b) => b.id).join(' ')
   );
+  // A LINK IS DRAWN for every way round the line, over its own dark casing.
+  assert(
+    all('#run-climb .climbseam__side').length >= sides.length,
+    'and every way round the line is drawn',
+    String(all('#run-climb .climbseam__side').length)
+  );
+
   $('climb-tab-3').click();
 
   // FIVE SIDE AREAS off the one area, each its own world and one bonus, all at

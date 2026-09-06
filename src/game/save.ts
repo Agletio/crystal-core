@@ -42,6 +42,7 @@ import {
   PROFESSION_BY_ID,
   WORK,
 } from '../data';
+import { sideRoom } from '../ladder';
 import { nodeById, replayTreeNodes, treeFor, treePointsFor } from '../skills-tree';
 import { TRADE_BY_ID, replayTradeNodes, tradePointsFor } from '../trades';
 import { isPerfect, makeGear, reserveItemIds, stackKey } from '../economy';
@@ -525,6 +526,18 @@ export function heal(game: GameState): Healed {
     if (Number.isFinite(was) && was > 0) climbed[zone.id] = Math.min(zone.rungs, was);
   }
   game.character.climbed = climbed;
+  // A SIDE ROOM'S ID IS WHAT A SAVE POINTS AT, so one the table no longer
+  // holds is dropped rather than left opening a node nothing draws.
+  const opened: Record<string, string[]> = {};
+  for (let z = 0; z < LADDER.zones.length; z++) {
+    const zone = LADDER.zones[z];
+    const had = game.character.opened?.[zone.id];
+    const kept = Array.isArray(had)
+      ? had.filter((id) => typeof id === 'string' && !!sideRoom(z, id))
+      : [];
+    if (kept.length) opened[zone.id] = [...new Set(kept)];
+  }
+  game.character.opened = opened;
 
   // DUAL WIELDING IS ONE TRADE'S PRIVILEGE now. A save written before that can
   // hold two weapons on somebody who may not: the off hand comes off into the

@@ -256,20 +256,29 @@ export interface LadderZoneDef {
   arena?: string; // its LAST depth: a fight in a room of its own
   art?: string; // the generated cross-section the climb is drawn on
   path?: [number, number][]; // its COURSE through that picture, in percent of it
-  branches?: BranchDef[]; // the side rooms hanging off its depths
+  sides?: SideRoomDef[]; // the rooms off the line
+  links?: LinkDef[]; // the ways round it
   world: MapTheme; // the rock you walk into for every depth of it
   tier: number; // the best base TIER its depths may drop
 }
 
-/** A SIDE ROOM OFF THE MAIN LINE, for grinding one thing. It hangs off a DEPTH
- *  and runs at that depth's difficulty, so what you pick is the bonus and never
- *  how hard it is. NEVER A STEP: a clear there records no rung. */
-export interface BranchDef {
-  at: number; // the DEPTH it hangs off, and whose danger it runs at
-  letter: string; // 'A'; the label is `${at}${letter}` and the id `${zone}-${at}${letter}`
+/** A SIDE ROOM: a node OFF the main line. Its DIFFICULTY is where it sits —
+ *  the nearest point of that zone's course — so no depth is written down
+ *  twice. Clearing one opens what it touches and records no depth. */
+export interface SideRoomDef {
+  id: string; // unique within the zone; a save points at it
   name: string;
   bonus: string; // a `BRANCH_BONUSES` id
-  path: [number, number][]; // its course AWAY from that station, in percent
+  x: number; // percent across the picture
+  y: number; // percent down it
+}
+
+/** WHAT TOUCHES WHAT. `d<N>` is that zone's Nth depth, anything else a side
+ *  room's id. The chain d1…dN is implicit; a link is a way ROUND it. */
+export interface LinkDef {
+  from: string;
+  to: string;
+  path?: [number, number][]; // traced off the picture's floors; absent is straight
 }
 
 /** WHAT A BRANCH PAYS: a PAYOUT and never a rule — the rules are the crystals'

@@ -27,7 +27,8 @@ import { drawn } from './icons';
 import { openTalk, closeParley, syncTalk } from './talk';
 import { isTaleUp, playTale } from './tale';
 import {
-  branchAt, branchLabel, branchesAt, canEnter, climbed, furthest, isProving, provingOpen, zoneAt, zoneOpen,
+  canEnter, climbed, courseOf, depthOfId, depthOfSide, furthest, isCleared, isProving,
+  linksIn, nodeSpot, provingOpen, sideAt, sideRooms, zoneAt, zoneOpen,
 } from '../ladder';
 import type { Proving, Rung, RunWhere } from '../ladder';
 import { SCENE_ART } from '../render/generated-scene';
@@ -110,11 +111,11 @@ export function pickRung(character: Character, at: Rung): boolean {
 export const rungName = (at: RunWhere, theme?: MapTheme): string => {
   if (isProving(at)) return `${PROVING.name}, ${provingWorld(at, theme)}`;
   const where = zoneAt(at.zone)?.name ?? '?';
-  const side = branchAt(at);
-  // A BRANCH IS NAMED FOR ITSELF and says which depth it hangs off, since its
-  // danger is that depth's and a report has to say what it ran at.
+  const side = sideAt(at);
+  // A SIDE ROOM IS NAMED FOR ITSELF and says the depth it stands at, since
+  // that is its danger and a report has to say what it ran at.
   return side
-    ? `${where}, ${side.name} — off depth ${at.rung}`
+    ? `${where}, ${side.name} — depth ${at.rung} off the line`
     : `${where}, depth ${at.rung}`;
 };
 
@@ -174,38 +175,8 @@ interface Station extends Spot {
  *  there. */
 const PLAIN: [number, number][] = [[7, 14], [93, 84]];
 
-/** A course walked by arc length: `at` is the point a fraction along it, `upTo`
- *  the run of it up to there. */
-function course(path?: [number, number][]) {
-  const way = path && path.length >= 2 ? path : PLAIN;
-  const legs = way.slice(1).map((to, i) => Math.hypot(to[0] - way[i][0], to[1] - way[i][1]));
-  const whole = legs.reduce((n, d) => n + d, 0) || 1;
-  const step = (t: number): { leg: number; k: number } => {
-    let left = t * whole;
-    for (let i = 0; i < legs.length; i++) {
-      if (left <= legs[i] || i === legs.length - 1) {
-        return { leg: i, k: legs[i] === 0 ? 0 : Math.min(1, left / legs[i]) };
-      }
-      left -= legs[i];
-    }
-    return { leg: legs.length - 1, k: 1 };
-  };
-  const at = (t: number): Spot => {
-    const { leg, k } = step(t);
-    return {
-      x: way[leg][0] + (way[leg + 1][0] - way[leg][0]) * k,
-      y: way[leg][1] + (way[leg + 1][1] - way[leg][1]) * k,
-    };
-  };
-  const upTo = (t: number): Spot[] => {
-    const { leg } = step(t);
-    return [...way.slice(0, leg + 1).map(([x, y]) => ({ x, y })), at(t)];
-  };
-  return { way: way.map(([x, y]) => ({ x, y })), at, upTo };
-}
-
 function stations(rungs: number, path?: [number, number][]): Station[] {
-  const line = course(path);
+  const line = courseOf(path);
   return Array.from({ length: rungs }, (_, i) => ({
     rung: i + 1,
     ...line.at(rungs === 1 ? 0 : i / (rungs - 1)),
@@ -515,13 +486,23 @@ export function renderClimb(host: HTMLElement, character: Character, onPick: () 
     viewBox: '0 0 100 100',
     preserveAspectRatio: 'none',
   });
-  const line = course(zone.path);
+  const line = courseOf(zone.path);
   svg.append(svgEl('path', { class: 'climbseam__rock', d: seamPath(line.way) }));
   if (cleared > 0) {
     const far = zone.rungs === 1 ? 0 : (cleared - 1) / (zone.rungs - 1);
     svg.append(svgEl('path', { class: 'climbseam__lit', d: seamPath(line.upTo(far)) }));
   }
   trail.append(svg);
+
+  // THE LINKS FIRST, so a pip sits on top of every line that reaches it. A
+  // link carries its own traced course where the picture joins two chambers,
+  // and is drawn straight where it does not — a hop through the rock.
+  for (const link of linksIn(z)) {
+    const from = nodeSpot(z, link.from), to = nodeSpot(z, link.to);
+    if (!from || !to) continue;
+    if (depthOfId(link.from) !== null && depthOfId(link.to) !== null) continue;
+    drawSpur(svg, seamPath(link.path ? link.path.map(([x, y]) => ({ x, y })) : [from, to]));
+  }
 
   for (const station of all) {
     const here = { zone: z, rung: station.rung };
@@ -536,7 +517,8 @@ export function renderClimb(host: HTMLElement, character: Character, onPick: () 
     pip.classList.toggle('pip--done', station.rung <= cleared);
     pip.classList.toggle('pip--next', can && station.rung > cleared);
     pip.classList.toggle('pip--shut', !can);
-    pip.classList.toggle('pip--here', !isProving(at) && at.zone === z && at.rung === station.rung);
+    pip.classList.toggle('pip--here',
+      !isProving(at) && at.zone === z && at.rung === station.rung && !at.side);
     pip.disabled = !can;
 
     const last = boss && z === LADDER.zones.length - 1;
@@ -546,45 +528,45 @@ export function renderClimb(host: HTMLElement, character: Character, onPick: () 
         (last ? ' It is the end of the climb, and the whole of what pays for it.' : '');
     attachTooltip(pip, () =>
       (!can
-        ? `${zone.name}, depth ${station.rung}. Clear depth ${cleared + 1} first.`
+        ? `${zone.name}, depth ${station.rung}. Reach it down the line, or round it.`
         : station.rung <= cleared
           ? `${zone.name}, depth ${station.rung}. Cleared. Go back and grind it any time.`
-          : `${zone.name}, depth ${station.rung}. The furthest you may go.`) + what
+          : `${zone.name}, depth ${station.rung}. Clearing it makes this your level.`) + what
     );
     pip.onclick = () => {
       if (pickRung(character, here)) onPick();
     };
     trail.append(pip);
+  }
 
-    // THE SIDE ROOMS OFF THIS DEPTH, each drawn down its own course from the
-    // station — off the line, at the line's own danger, for one bonus.
-    for (const side of branchesAt(z, station.rung)) {
-      const way: Spot[] = [station, ...side.path.map(([x, y]) => ({ x, y }))];
-      drawSpur(svg, seamPath(way));
-      const end = way[way.length - 1];
-      const label = branchLabel(side);
-      const pays = BRANCH_BONUS_BY_ID[side.bonus];
-      // WHAT IT PAYS IS THE NAME. `3A` said where it hung off and nothing about
-      // why you would go, and it is already said by the spur it sits on.
-      const spur = el('button', 'pip pip--side') as HTMLButtonElement;
-      spur.append(drawn(pays?.icon ?? '', 22) ?? document.createTextNode(label));
-      spur.id = `climb-side-${z}-${label}`;
-      spur.style.left = `${end.x}%`;
-      spur.style.top = `${end.y}%`;
-      spur.classList.toggle('pip--shut', !can);
-      spur.classList.toggle('pip--here', !isProving(at) && at.zone === z
-        && at.rung === station.rung && at.branch === side.letter);
-      spur.disabled = !can;
-      attachTooltip(spur, () =>
-        can
-          ? `${side.name}. Off depth ${station.rung}, at that depth's own danger. ` +
-            `${pays?.say ?? ''} Nothing here is climbed: a clear records no depth.`
-          : `${side.name}. Off depth ${station.rung}, which is shut.`);
-      spur.onclick = () => {
-        if (pickRung(character, { ...here, branch: side.letter })) onPick();
-      };
-      trail.append(spur);
-    }
+  // THE SIDE ROOMS. Each is a node on the map rather than a spur off a depth:
+  // clearing one opens whatever it touches, so a run of them arrives at a
+  // depth you never climbed to — and your LEVEL is still the deepest depth.
+  for (const room of sideRooms(z)) {
+    const depth = depthOfSide(z, room.id);
+    const here = { zone: z, rung: depth, side: room.id };
+    const can = canEnter(character, here);
+    const pays = BRANCH_BONUS_BY_ID[room.bonus];
+
+    const pip = el('button', 'pip pip--side') as HTMLButtonElement;
+    pip.append(drawn(pays?.icon ?? '', 22) ?? document.createTextNode(room.name[4] ?? '?'));
+    pip.id = `climb-side-${z}-${room.id}`;
+    pip.style.left = `${room.x}%`;
+    pip.style.top = `${room.y}%`;
+    pip.classList.toggle('pip--done', isCleared(character, z, room.id));
+    pip.classList.toggle('pip--shut', !can);
+    pip.classList.toggle('pip--here',
+      !isProving(at) && at.zone === z && at.side === room.id);
+    pip.disabled = !can;
+    attachTooltip(pip, () =>
+      can
+        ? `${room.name}. Off the line, at depth ${depth}'s own danger. ` +
+          `${pays?.say ?? ''} Clearing it opens what it touches and is never your level.`
+        : `${room.name}. Clear something it touches first.`);
+    pip.onclick = () => {
+      if (pickRung(character, here)) onPick();
+    };
+    trail.append(pip);
   }
 
   host.append(trail);

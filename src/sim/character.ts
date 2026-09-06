@@ -60,8 +60,9 @@ export interface Character {
   meal?: RolledMod;
   /** Rungs CLEARED per zone, keyed by theme. See `src/ladder.ts`. */
   climbed: Record<string, number>;
-  /** Nodes walked on the Reckoning. */
-  trialAllocated: string[];
+  /** SIDE ROOMS cleared, per zone. Never a level: what the map remembers. */
+  opened?: Record<string, string[]>;
+  trialAllocated: string[]; // nodes walked on the Reckoning
   /** Trials node id -> the option taken on it, for nodes that offer one. */
   trialChoices?: Record<string, string>;
 }

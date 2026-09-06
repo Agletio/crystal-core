@@ -143,7 +143,8 @@ import {
 import { variants } from './sim/appearance';
 import type { GearBase } from './types';
 import {
-  arenaAt, campaignDone, campaignLine, campaignPrize, canEnter, climbed, furthest, takeRung,
+  arenaAt, campaignDone, campaignLine, campaignPrize, canEnter, canEnterNode, climbed,
+  depthOfSide, furthest, isCleared, linksIn, mainId, nodeSpot, sideRooms, takeRung, touching,
   zoneOpen,
 } from './ladder';
 import { canDualWield, gatherableFamilies, toolIn, toolMore, toolRung } from './sim/character';
@@ -11584,71 +11585,131 @@ rule('THE CLIMB — does a rung open, stay open, and get harder?');
     `re-grinding rung 3 moved the count to ${climbed(walker, 0)}`
   );
 
-  // A BRANCH IS NEVER A STEP. A side room hangs off a depth and runs at that
-  // depth's own danger; if a clear there recorded a rung, the line would move
-  // while you were grinding beside it.
+  // A SIDE ROOM IS NEVER A STEP, AND THE MAP IS THE GATE. The rooms form a
+  // NETWORK: clearing one opens whatever it touches, so a run of them arrives
+  // at a depth you never climbed to — and your LEVEL is still the deepest
+  // DEPTH you have beaten. *"Otherwise you're still at your current main level
+  // even if you cleared higher difficulty side levels."*
   {
-    const sides = LADDER.zones.flatMap((zone, z) =>
-      (zone.branches ?? []).map((b) => ({ z, zone, b })));
-    check(sides.length > 0, `${sides.length} side rooms hang off the climb`, 'none authored');
-    const orphan = sides.filter(({ b }) => !BRANCH_BONUS_BY_ID[b.bonus]).map(({ b }) => b.name);
+    const rooms = LADDER.zones.flatMap((zone, z) =>
+      sideRooms(z).map((room) => ({ z, zone, room })));
+    check(rooms.length > 0, `${rooms.length} side rooms stand off the climb`, 'none authored');
+    const orphan = rooms.filter(({ room }) => !BRANCH_BONUS_BY_ID[room.bonus])
+      .map(({ room }) => room.name);
     check(orphan.length === 0, 'and each names a bonus that exists', orphan.join(', '));
-    const offMap = sides.filter(({ zone, b }) => b.at < 1 || b.at > zone.rungs)
-      .map(({ b }) => `${b.name}@${b.at}`);
-    check(offMap.length === 0, 'and hangs off a depth that zone actually has', offMap.join(', '));
-    const twice = sides.map(({ z, b }) => `${z}-${b.at}${b.letter}`)
+    const stray = rooms.filter(({ room }) =>
+      room.x < 0 || room.x > 100 || room.y < 0 || room.y > 100).map(({ room }) => room.name);
+    check(stray.length === 0, 'and every one stands inside its own picture', stray.join(', '));
+    const twice = rooms.map(({ z, room }) => `${z}-${room.id}`)
       .filter((id, i, all) => all.indexOf(id) !== i);
-    check(twice.length === 0, 'and no two share a label', twice.join(', '));
-    const stray = sides.flatMap(({ b }) =>
-      b.path.filter(([x, y]) => x < 0 || x > 100 || y < 0 || y > 100).map(() => b.name));
-    check(stray.length === 0, 'and every point of its course is inside the picture', stray.join(', '));
+    check(twice.length === 0, 'and no two share an id, which is what a save points at', twice.join(', '));
 
-    const side = who();
-    for (let rung = 1; rung <= LADDER.zones[0].rungs; rung++) takeRung(side, { zone: 0, rung });
-    const before = climbed(side, 0);
+    // A LINK MUST NAME TWO NODES THAT EXIST, or it is a way in from nowhere.
+    const broken = LADDER.zones.flatMap((zone, z) =>
+      linksIn(z).filter((link) => !nodeSpot(z, link.from) || !nodeSpot(z, link.to))
+        .map((link) => `${zone.id}:${link.from}-${link.to}`));
+    check(broken.length === 0, 'every link joins two nodes that exist', broken.join(', '));
+
+    // NOTHING IS STRANDED: every node is reachable from the first depth by
+    // clearing, or it is a room nobody may ever enter.
+    const cut = LADDER.zones.flatMap((zone, z) => {
+      const seen = new Set([mainId(1)]);
+      for (let pass = 0; pass < 200; pass++) {
+        let grew = false;
+        for (const id of [...seen]) {
+          for (const next of touching(z, id)) if (!seen.has(next)) { seen.add(next); grew = true; }
+        }
+        if (!grew) break;
+      }
+      return sideRooms(z).filter((room) => !seen.has(room.id))
+        .map((room) => `${zone.id}:${room.name}`);
+    });
+    check(cut.length === 0, 'and every side room is reachable from the first depth', cut.join(', '));
+
     const fresh3 = who();
-    takeRung(fresh3, { zone: 0, rung: 1, branch: 'A' });
+    const first = sideRooms(0)[0];
+    takeRung(fresh3, { zone: 0, rung: depthOfSide(0, first.id), side: first.id });
     check(
-      climbed(fresh3, 0) === 0 && climbed(side, 0) === before,
-      'and a clear in one records NO depth, so the line cannot move while you grind beside it',
-      `${climbed(fresh3, 0)} recorded off a branch`
+      climbed(fresh3, 0) === 0 && isCleared(fresh3, 0, first.id),
+      'a clear in one records NO depth and is remembered anyway',
+      `${climbed(fresh3, 0)} recorded off ${first.name}`
     );
     check(
-      arenaAt({ zone: 0, rung: LADDER.zones[0].rungs, branch: 'A' }) === null
+      arenaAt({ zone: 0, rung: LADDER.zones[0].rungs, side: first.id }) === null
         && arenaAt({ zone: 0, rung: LADDER.zones[0].rungs }) !== null,
-      'and a branch off the LAST depth is never the boss: a boss you could farm is not a gate',
-      String(arenaAt({ zone: 0, rung: LADDER.zones[0].rungs, branch: 'A' }))
+      'and a side room is never the boss: a boss you could farm is not a gate',
+      String(arenaAt({ zone: 0, rung: LADDER.zones[0].rungs, side: first.id }))
     );
 
-    // ITS DANGER IS THE DEPTH'S, and only what it adds to the floor is weighed.
-    // Asked of EVERY branch that adds no bodies rather than of one hand-picked
-    // letter: which bonus sits on 3A is a table edit, and the invariant is not.
-    const quiet = (LADDER.zones[0].branches ?? [])
-      .filter((b) => !BRANCH_BONUS_BY_ID[b.bonus]?.packSize)
-      .map((b) => ({
-        b,
-        off: runSet([], null, { zone: 0, rung: b.at, branch: b.letter }),
-        on: runSet([], null, { zone: 0, rung: b.at }),
-      }));
+    // THE SKIP. Walk the network from a brand new character, clearing only
+    // side rooms, and see how far past `climbed + 1` it can put you.
+    const hop = who();
+    let reach = 1;
+    for (let pass = 0; pass < 40; pass++) {
+      let grew = false;
+      for (const room of sideRooms(0)) {
+        if (isCleared(hop, 0, room.id) || !canEnterNode(hop, 0, room.id)) continue;
+        takeRung(hop, { zone: 0, rung: depthOfSide(0, room.id), side: room.id });
+        grew = true;
+      }
+      if (!grew) break;
+    }
+    for (let depth = LADDER.zones[0].rungs; depth >= 1; depth--) {
+      if (canEnter(hop, { zone: 0, rung: depth })) { reach = depth; break; }
+    }
+    check(
+      reach > climbed(hop, 0) + 1,
+      `side rooms alone carry a level-nothing character to depth ${reach}, ` +
+        `where the line alone reaches ${climbed(hop, 0) + 1}`,
+      `reached ${reach}`
+    );
+    // AND CLEARING IT IS WHAT MAKES IT YOUR LEVEL.
+    takeRung(hop, { zone: 0, rung: reach });
+    check(
+      climbed(hop, 0) === reach,
+      `and clearing that depth makes it your level: ${reach}`,
+      String(climbed(hop, 0))
+    );
+
+    // A DEPTH'S DANGER IS ITS OWN, and a side room's is where it STANDS, so
+    // only what a bonus adds to the floor may move it.
+    const quiet = sideRooms(0)
+      .filter((room) => !BRANCH_BONUS_BY_ID[room.bonus]?.packSize)
+      .map((room) => {
+        const depth = depthOfSide(0, room.id);
+        return {
+          room, depth,
+          off: runSet([], null, { zone: 0, rung: depth, side: room.id }),
+          on: runSet([], null, { zone: 0, rung: depth }),
+        };
+      });
     const moved = quiet.filter(({ off, on }) => off.rewards.danger !== on.rewards.danger);
-    const swarm = LADDER.zones[0].branches?.find((b) => b.bonus === 'swarm');
-    const rough = swarm ? runSet([], null, { zone: 0, rung: swarm.at, branch: swarm.letter }) : null;
-    const flat = swarm ? runSet([], null, { zone: 0, rung: swarm.at }) : null;
+    const swarm = sideRooms(0).find((room) => room.bonus === 'swarm');
+    const deep = swarm ? depthOfSide(0, swarm.id) : 1;
+    const rough = swarm ? runSet([], null, { zone: 0, rung: deep, side: swarm.id }) : null;
+    const flat = swarm ? runSet([], null, { zone: 0, rung: deep }) : null;
     check(
       moved.length === 0 && quiet.length > 0,
-      `all ${quiet.length} branches that add no bodies run at their depth's own danger`,
-      moved.map(({ b, off, on }) => `${b.name} ${on.rewards.danger}->${off.rewards.danger}`).join(', ')
+      `all ${quiet.length} rooms that add no bodies run at their own depth's danger`,
+      moved.map(({ room, off, on }) =>
+        `${room.name} ${on.rewards.danger}->${off.rewards.danger}`).join(', ')
     );
     check(
-      quiet.every(({ b, off }) => {
-        const pays = BRANCH_BONUS_BY_ID[b.bonus];
-        return off.bonus.gold > 1 || off.bonus.currency > 1 || off.bonus.gather > 1
-          || off.bonus.xp > 1 || off.bonus.rarity > 0 || !pays;
-      }),
+      quiet.every(({ off }) =>
+        off.bonus.gold > 1 || off.bonus.currency > 1 || off.bonus.gather > 1
+        || off.bonus.xp > 1 || off.bonus.rarity > 0),
       'and every one of them pays something a plain descent does not',
       quiet.filter(({ off }) => off.bonus.gold === 1 && off.bonus.currency === 1
         && off.bonus.gather === 1 && off.bonus.xp === 1 && off.bonus.rarity === 0)
-        .map(({ b }) => b.name).join(', ')
+        .map(({ room }) => room.name).join(', ')
+    );
+    // A ROOM LOW ON THE MAP IS A HARD FLOOR, with no depth written down.
+    const spread = sideRooms(0).map((room) => depthOfSide(0, room.id));
+    check(
+      Math.max(...spread) > Math.min(...spread),
+      `and where a room STANDS is its depth: ${Math.min(...spread)} to ${Math.max(...spread)} ` +
+        `across ${spread.length} rooms`,
+      spread.join(', ')
     );
     check(
       !!rough && !!flat && rough.rewards.danger > flat.rewards.danger,
@@ -11658,7 +11719,7 @@ rule('THE CLIMB — does a rung open, stay open, and get harder?');
     );
     check(
       runSet([], null, { zone: 0, rung: 3 }).bonus.gold === 1,
-      'and a depth with no branch on it pays exactly what it always did',
+      'and a depth on the line pays exactly what it always did',
       String(runSet([], null, { zone: 0, rung: 3 }).bonus.gold)
     );
 

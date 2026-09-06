@@ -20,7 +20,7 @@ import {
   tierForLevel,
 } from '../data';
 import { branchMod, dropBias, provingMod, rungMod } from './stats';
-import { branchAt, isProving } from '../ladder';
+import { isProving, sideAt } from '../ladder';
 import type { RunWhere } from '../ladder';
 import { dangerScore } from '../mods';
 import type { DropBand } from '../data';
@@ -197,7 +197,7 @@ export const NO_BONUS: RunBonus = { gold: 1, currency: 1, rarity: 0, gather: 1, 
 
 export function branchBonus(at?: RunWhere | null): RunBonus {
   const side = at && isProving(at) && at.branch ? PROVING_BRANCH_BY_ID[at.branch] : null;
-  const branch = at && !isProving(at) ? branchAt(at) : null;
+  const branch = at && !isProving(at) ? sideAt(at) : null;
   const pays = BRANCH_BONUS_BY_ID[(side ?? branch)?.bonus ?? ''];
   if (!pays) return NO_BONUS;
   return {
@@ -221,7 +221,7 @@ export function runSet(
   const zone = at && !isProving(at) ? LADDER.zones[at.zone] : null;
   // A BRANCH RUNS AT ITS DEPTH'S DANGER: only what it adds to the floor is a
   // mod, so `crystalRewards` weighs it the way it weighs everything else.
-  const off = at && !isProving(at) ? branchAt(at) : null;
+  const off = at && !isProving(at) ? sideAt(at) : null;
   const area = at && isProving(at) && at.branch ? PROVING_BRANCH_BY_ID[at.branch] : null;
   const branch = branchMod(BRANCH_BONUS_BY_ID[(off ?? area)?.bonus ?? ''] ?? null);
   const mods = [
