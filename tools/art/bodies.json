@@ -4333,6 +4333,12 @@
    "say": "A single socket cut into a sheer face of near-black cliff rock with a crystal seated in it, seen STRAIGHT ON from the front as if standing in front of the cliff. A round-cornered recess about a hand across chiselled back into the stone, a rough iron rim pinned around the opening with four short nails, and wedged inside it an angular faceted shard of glowing violet crystal, its light spilling out onto the rock around the rim and picking out the chisel marks. NOT a keyhole, NOT a door, NOT a window, NOT a face, NOT a lamp, NOT a torch, NOT a candle, NOT green, NOT blue. VERY DARK grey-black rock all around it, almost black, NOT pale, NOT brown, NOT sandy."
   },
   {
+   "id": "wall_soul_socket",
+   "tiles": 1,
+   "view": "side",
+   "say": "A single empty socket cut into a sheer face of near-black cliff rock, seen STRAIGHT ON from the front as if standing in front of the cliff. A TALL NARROW OVAL recess about a hand high chiselled back into the stone, its inner walls in shadow, the chisel marks around its rim catching a little light, and a rough iron rim pinned around the opening with six short nails. The hole is EMPTY and DARK inside. NOT a keyhole, NOT a door, NOT a window, NOT a face, NOT a gemstone, NOT a coin, NOT glowing. VERY DARK grey-black rock all around it, almost black, NOT pale, NOT brown, NOT sandy, NOT green."
+  },
+  {
    "id": "camp_crack",
    "tiles": 2,
    "size": 128,

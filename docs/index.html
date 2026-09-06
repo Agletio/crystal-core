@@ -1543,6 +1543,9 @@
   /* 1:1 WITH THE ART'S OWN 73-pixel grid, or the ring resamples and its edge
      softens. Doubling it matches the map's own blocks more nearly and reads as
      four boulders on a landscape, which is the worse of the two faults. */
+  /* THE STONE OVER ITS OWN RECESS: a filled soul socket has to show what is in
+     it, and the recess art is the same for both halves of the wall. */
+  .socket__stone { display: block; margin: -60px auto 16px; image-rendering: pixelated; }
   .socket__art { display: block; width: 73px; height: auto; margin: 0 auto 2px; image-rendering: pixelated; }
   .climbcard { text-align: left; margin: 0; padding: 0; position: relative; }
   .climbcard .panel__title { font-size: 12px; margin-bottom: 1px; text-align: center; }

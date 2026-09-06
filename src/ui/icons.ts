@@ -758,6 +758,10 @@ export function itemIcon(item: Item, size = 26): SVGSVGElement {
     return crystalIcon((item.meta.level as number) ?? 1, size, (item.meta.family as string) ?? 'normal');
   }
   if (item.kind === 'relic') return relicIcon(item.base, size);
+  if (item.kind === 'soul') {
+    const stone = drawn('soulstone', size);
+    if (stone) return stone;
+  }
   if (item.kind === 'material') {
     const own = drawn(MATERIAL_BY_ID[item.base]?.icon ?? '', size);
     if (own) return own;

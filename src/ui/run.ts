@@ -348,12 +348,18 @@ function renderSockets(grid: HTMLElement): void {
     const button = el('button', 'socket') as HTMLButtonElement;
     button.id = `run-socket-${slot.id}`;
     button.classList.toggle('socket--full', !!held);
-    // THE CRACK'S OWN SOCKET, lit once something is in it: the same clawed
-    // recess the camp picture has, so the wall and the tab are one object.
-    const art = makeProp(held ? 'camp_socket_lit' : 'camp_socket');
+    // THE RECESS IS ALWAYS THE EMPTY ONE, and what is IN it is that item's own
+    // picture laid over it — the lit recess has a violet crystal baked into
+    // the art, so every socketed crystal drew the same one whatever it was.
+    const art = makeProp(slot.accepts === 'soul' ? 'wall_soul_socket' : 'camp_socket');
     if (art) {
       art.className = 'socket__art';
       button.append(art);
+    }
+    if (held) {
+      const drawnItem = itemIcon(held, 46);
+      drawnItem.classList.add('socket__stone');
+      button.append(drawnItem);
     }
     // An empty socket is the question "what goes in here", and the answer is
     // a screen, not a bag: crystals are compared before one of them goes in.

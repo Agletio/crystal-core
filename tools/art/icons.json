@@ -697,6 +697,10 @@
   {
    "id": "portal_rot",
    "say": "a single round hoop of hot blood red fire seen face on and filling the frame, thick and glowing with paler ember orange flame swirling round it and a black empty hole in the middle, hard edged and chunky. NOT a door, NOT a frame, NOT an arch, NOT a gate, NOT stone, NOT a creature, NOT a face, NOT ground, NOT rubble, NOT blue, NOT green, NOT purple, NOT text."
+  },
+  {
+   "id": "soulstone",
+   "say": "a single smooth dark rounded stone centred and filling the frame, almost black, with one bright jagged crack of pale cold blue-white light running down the middle of it and glowing out, hard edged and chunky. NOT a gem, NOT a facet, NOT a skull, NOT a face, NOT a creature, NOT lava, NOT fire, NOT red, NOT orange, NOT text."
   }
  ]
 }
