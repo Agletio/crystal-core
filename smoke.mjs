@@ -281,6 +281,14 @@ assert($('dev-climb-0') !== null, 'and a button that clears a zone of the climb'
 $('dev-climb-0').click();
 $('camp-crack').click();
 assert($('climb-pip-0-12').classList.contains('pip--done'), 'clearing the Fissure marks every rung of it');
+// AND EVERY WAY ROUND IT WITH THEM: a side room opens off something CLEARED,
+// so a zone climbed whole opens the lot.
+assert(
+  all('[id^="climb-side-0-"]').length > 0
+    && all('[id^="climb-side-0-"]').every((b) => !b.disabled),
+  'and every side room off it, since the map is the gate',
+  all('[id^="climb-side-0-"]').filter((b) => b.disabled).map((b) => b.id).join(' ')
+);
 assert($('climb-tab-1').disabled === false, 'and opens the zone above');
 $('climb-tab-1').click();
 assert($('climb-pip-1-1').disabled === false, 'whose tab draws its own rungs');
@@ -3139,12 +3147,13 @@ $('dev-kit').click();
     'each drawn as the bonus it pays rather than numbered',
     sides[0]?.id
   );
-  // OPEN WHERE THE MAP REACHES. The kit has climbed this zone whole, so every
-  // room touches a clear; a fresh character above has none of them.
+  // THE KIT IS PAID FOR THE CAMPAIGN AND HAS WALKED NONE OF IT, by decision —
+  // so nothing on this line is cleared and the whole network is shut. Which is
+  // the rule, stated on the one character that separates paid from climbed.
   assert(
-    sides.every((b) => !b.disabled),
-    'and with the zone climbed whole every one of them is open',
-    sides.filter((b) => b.disabled).map((b) => b.id).join(' ')
+    sides.every((b) => b.disabled),
+    'and shut on a character who has climbed nothing, however much else it holds',
+    sides.filter((b) => !b.disabled).map((b) => b.id).join(' ')
   );
   // A LINK IS DRAWN for every way round the line, over its own dark casing.
   assert(
