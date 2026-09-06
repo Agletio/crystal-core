@@ -804,14 +804,12 @@ export function patchesAt(grid: Grid, x: number, y: number): number[] {
  * run to a fixed point, since opening one cell moves its neighbours.
  */
 /**
- * A ONE-TILE PLUG IS A DOOR THE PICTURE ALREADY DREW. A WALL cell with floor
- * both sides is stone drawing its own head as pale ground, so it reads as a
- * channel — *"a small gap in the rock and the character pathed all the way
- * around it."* He could not; the art said he could. Measured over 24 maps, all
- * 719 REAL channels are walked straight through — the pathfinder was never the
- * fault — against 1122 plugs that only look like one, of which 454 are
- * dimples, 86 short cuts worth a median 8 tiles, and NONE the only way between
- * two places.
+ * A ONE-TILE PLUG IS A DOOR THE PICTURE ALREADY DREW: a WALL cell with floor
+ * both sides, stone drawing its own head as pale ground — *"a small gap in the
+ * rock and the character pathed all the way around it."* Measured over 24
+ * maps, all 719 REAL channels are walked straight through, so the pathfinder
+ * was never the fault, against 1122 plugs that only look like one; of 540, 454
+ * are dimples, 86 short cuts worth a median 8 tiles, NONE the only way through.
  */
 function openPlugs(grid: Grid): number {
   let opened = 0;
