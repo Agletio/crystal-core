@@ -167,8 +167,17 @@ function freeId(): string {
   for (let n = 1; ; n++) if (!taken.has(`room${n}`)) return `room${n}`;
 }
 
-let dragging: { kind: 'node'; id: string } | { kind: 'way'; at: number }
-  | { kind: 'bend'; link: number; at: number } | null = null;
+/** WHAT IS UNDER THE POINTER, and whether it has MOVED yet. Rebuilding the
+ *  overlay on the first pixel of a drag detaches the very element that was
+ *  pressed, so its `click` never fires and Join could never take a second
+ *  node. A press is a PICK until it travels `SLOP`, and nothing re-renders
+ *  before that. */
+type Press =
+  | { kind: 'node'; id: string }
+  | { kind: 'way'; at: number }
+  | { kind: 'bend'; link: number; at: number };
+const SLOP = 0.7; // percent of the picture
+let press: { what: Press; from: { x: number; y: number }; moved: boolean } | null = null;
 
 function atPointer(e: PointerEvent): { x: number; y: number } {
   const box = $('survey-over').getBoundingClientRect();
@@ -203,12 +212,16 @@ function render(): void {
   p.links.forEach((link, i) => {
     const pts = linkPoints(link);
     if (pts.length < 2) return;
-    const line = svgEl('path', {
+    const d = linePath(pts);
+    // A HAIRLINE IS NOT A TARGET. The dash is drawn for the eye; a fat clear
+    // one under it is what a pointer actually has to hit.
+    const grab = svgEl('path', { class: 'survey__grab', d });
+    (grab as unknown as HTMLElement).onpointerdown = () => { held = { kind: 'link', at: i }; render(); };
+    svg.append(grab);
+    svg.append(svgEl('path', {
       class: `survey__link${held?.kind === 'link' && held.at === i ? ' survey__link--on' : ''}`,
-      d: linePath(pts),
-    });
-    (line as unknown as HTMLElement).onclick = () => { held = { kind: 'link', at: i }; render(); };
-    svg.append(line);
+      d,
+    }));
   });
 
   const put = (node: HTMLElement, x: number, y: number) => {
@@ -221,17 +234,37 @@ function render(): void {
   p.path.forEach(([x, y], i) => {
     const dot = el('button', 'survey__way') as HTMLButtonElement;
     dot.id = `survey-way-${i}`;
-    dot.onpointerdown = (e) => { dragging = { kind: 'way', at: i }; held = { kind: 'way', at: i }; e.preventDefault(); };
+    dot.onpointerdown = (e) => { press = { what: { kind: 'way', at: i }, from: atPointer(e), moved: false }; e.preventDefault(); };
     put(dot, x, y);
   });
+  // THE PICKED LINK'S OWN SHAPE: a handle on every point, and a + between each
+  // pair that puts another one there. A line is dragged into place rather than
+  // typed, so adding a bend is a press on the stretch that needs one.
   if (held?.kind === 'link') {
     const which = held.at;
     const link = p.links[which];
-    (link?.path ?? []).forEach(([x, y], i) => {
+    const own = link?.path ?? linkPoints(link).map((q) => [q.x, q.y] as [number, number]);
+    own.forEach(([x, y], i) => {
       const dot = el('button', 'survey__way survey__way--bend') as HTMLButtonElement;
       dot.id = `survey-bend-${i}`;
-      dot.onpointerdown = (e) => { dragging = { kind: 'bend', link: which, at: i }; e.preventDefault(); };
+      dot.onpointerdown = (e) => { press = { what: { kind: 'bend', link: which, at: i }, from: atPointer(e), moved: false }; e.preventDefault(); };
       put(dot, x, y);
+    });
+    own.slice(1).forEach(([x, y], i) => {
+      const add = el('button', 'survey__more', '+') as HTMLButtonElement;
+      add.id = `survey-more-${i}`;
+      add.onpointerdown = (e) => {
+        e.preventDefault();
+        const was = p.links[which].path ?? own;
+        const mid: [number, number] = [
+          Math.round((was[i][0] + was[i + 1][0]) / 2),
+          Math.round((was[i][1] + was[i + 1][1]) / 2),
+        ];
+        p.links[which] = { ...p.links[which], path: [...was.slice(0, i + 1), mid, ...was.slice(i + 1)] };
+        save();
+        render();
+      };
+      put(add, (own[i][0] + x) / 2, (own[i][1] + y) / 2);
     });
   }
 
@@ -240,7 +273,7 @@ function render(): void {
     if (!spot) continue;
     const pip = el('button', 'survey__pip survey__pip--depth', String(d)) as HTMLButtonElement;
     pip.id = `survey-node-${mainId(d)}`;
-    pip.onclick = () => pick(mainId(d));
+    pip.onpointerdown = (e) => { press = { what: { kind: 'node', id: mainId(d) }, from: atPointer(e), moved: false }; e.preventDefault(); };
     put(pip, spot.x, spot.y);
   }
   for (const room of p.sides) {
@@ -248,8 +281,7 @@ function render(): void {
     const pip = el('button', `survey__pip${on ? ' survey__pip--on' : ''}` +
       (joining === room.id ? ' survey__pip--from' : ''), room.id.replace('room', 'R')) as HTMLButtonElement;
     pip.id = `survey-node-${room.id}`;
-    pip.onpointerdown = (e) => { dragging = { kind: 'node', id: room.id }; e.preventDefault(); };
-    pip.onclick = () => pick(room.id);
+    pip.onpointerdown = (e) => { press = { what: { kind: 'node', id: room.id }, from: atPointer(e), moved: false }; e.preventDefault(); };
     put(pip, room.x, room.y);
   }
 
@@ -320,17 +352,6 @@ function tools(): void {
     const p = plan();
     if (held?.kind === 'link') delete p.links[held.at].path;
   });
-  add('survey-bend', 'Add bend', () => {
-    const p = plan();
-    if (held?.kind !== 'link') return;
-    const link = p.links[held.at];
-    const pts = linkPoints(link);
-    const mid = Math.max(1, Math.floor(pts.length / 2));
-    const a = pts[mid - 1], b = pts[mid] ?? pts[mid - 1];
-    const put: [number, number] = [Math.round((a.x + b.x) / 2), Math.round((a.y + b.y) / 2)];
-    const was = link.path ?? pts.map((q) => [q.x, q.y] as [number, number]);
-    link.path = [...was.slice(0, mid), put, ...was.slice(mid)];
-  });
   add('survey-reset', 'Back to shipped', () => { plans[zone] = shipped(zone); held = null; });
   add('survey-copy', 'Copy the blocks', () => {
     const box = $('survey-out') as HTMLTextAreaElement;
@@ -346,22 +367,32 @@ export function initSurvey(): void {
   // half a plan pasted back is a zone that will not parse.
   $('survey-out').onclick = () => ($('survey-out') as HTMLTextAreaElement).select();
   globalThis.addEventListener('pointermove', (e) => {
-    if (!dragging) return;
+    if (!press) return;
     const at = atPointer(e as PointerEvent);
+    if (!press.moved) {
+      if (Math.hypot(at.x - press.from.x, at.y - press.from.y) < SLOP) return;
+      press.moved = true;
+    }
     const p = plan();
-    if (dragging.kind === 'node') {
-      const room = p.sides.find((s) => s.id === (dragging as { id: string }).id);
+    const what = press.what;
+    if (what.kind === 'node') {
+      const room = p.sides.find((s) => s.id === what.id);
       if (room) { room.x = Math.round(at.x); room.y = Math.round(at.y); }
-    } else if (dragging.kind === 'way') {
-      p.path[dragging.at] = [Math.round(at.x), Math.round(at.y)];
+    } else if (what.kind === 'way') {
+      p.path[what.at] = [Math.round(at.x), Math.round(at.y)];
     } else {
-      const link = p.links[dragging.link];
-      if (link?.path) link.path[dragging.at] = [Math.round(at.x), Math.round(at.y)];
+      const link = p.links[what.link];
+      if (link?.path) link.path[what.at] = [Math.round(at.x), Math.round(at.y)];
     }
     render();
   });
   globalThis.addEventListener('pointerup', () => {
-    if (dragging) { dragging = null; save(); }
+    if (!press) return;
+    const { what, moved } = press;
+    press = null;
+    if (!moved && what.kind === 'node') pick(what.id);
+    else if (!moved && what.kind === 'way') { held = { kind: 'way', at: what.at }; render(); }
+    save();
   });
 }
 
