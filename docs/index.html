@@ -1505,42 +1505,45 @@
   .climbtab--room.climbtab--on { border-style: solid; }
   /* THE INFLUENCE: three worlds, one picked, and it decides both the picture
      and which pack joins whatever you socketed. */
-  .influences { display: flex; justify-content: center; gap: 6px; margin-bottom: 8px; }
-  /* The Seam has taken the pick off you, so no influence reads as chosen. */
-  .influence--over { opacity: .5; }
-  /* THE SOCKETS, over the map the way the camp's crack lays them out —
-     POSITIONED, never in flow: in flow the panel became the seam's content
-     height and squashed the picture it stands on. */
-  .groundsockets {
-    position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
-    display: grid; grid-template-columns: 1fr 1fr; gap: 8px; text-align: left;
-    width: min(560px, 88%); max-height: 90%; overflow-y: auto;
-    padding: 10px; border-radius: var(--r);
-    background: color-mix(in srgb, var(--ink) 74%, transparent);
-    border: 1px solid var(--edge);
+  /* THE WALL: a drawer off the map's right edge. The tab is always there and
+     the slots slide out over the picture, so no tab loses room to them. */
+  .wall {
+    position: absolute; right: 0; top: 50%; transform: translateY(-50%);
+    display: flex; align-items: stretch; z-index: 3; pointer-events: auto;
   }
+  .wall__tab {
+    align-self: center; writing-mode: vertical-rl; text-orientation: mixed;
+    padding: 14px 4px; font: inherit; font-size: 11px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--text-dim); cursor: pointer;
+    background: color-mix(in srgb, var(--ink) 82%, transparent);
+    border: 6px solid transparent; border-image: var(--fix-head) 6 16 / 6px 16px round;
+  }
+  .wall__tab:hover, .wall__tab[aria-expanded="true"] { color: var(--citrine); }
+  .wall__slots {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px; text-align: left;
+    width: min(500px, 50vw); max-height: 80vh; overflow-y: auto; padding: 4px 10px 10px;
+    background-color: color-mix(in srgb, var(--ink) 92%, transparent);
+    background-image: var(--grit); background-clip: padding-box;
+    border: 15px solid transparent; border-image: var(--fix-win) 30 / 15px round;
+    image-rendering: pixelated;
+  }
+  /* THE SOULS ARE NOT THE CRYSTALS: a rule and a heading say so, because one
+     resets the whole map and the other four only change the run. */
+  .wall__rule { grid-column: 1 / -1; margin: 2px 0 0; padding-top: 8px;
+    border-top: 1px solid var(--edge); color: var(--text-dim); font-size: 11px;
+    letter-spacing: .06em; text-transform: uppercase; }
+  /* THE SET'S OWN READOUT, under the six of them. */
   .groundset { grid-column: 1 / -1; text-align: center; }
-  /* ON THE PROVING GROUND the sockets are the crack's own clawed recesses; only
-     the readout takes a plate, and it is the window's own. */
-  /* NO PLATE AT ALL: the recess IS the socket, and its words take an outline
-     instead, since they lie straight on the picture. */
-  /* HIGHER here: the five side areas fan out UNDER it. */
-  .groundsockets { background: none; border: 0; padding: 0; gap: 10px; top: 38%; }
-  .groundsockets .socket {
+  .wall__slots .socket {
     background: none; border: 0; box-shadow: none; text-align: center; padding: 0;
-    color: var(--bone); text-shadow: 0 1px 0 var(--ink), 0 -1px 0 var(--ink), 1px 0 0 var(--ink), -1px 0 0 var(--ink);
+    color: var(--bone);
   }
-  .groundsockets .socket:hover { filter: brightness(1.1) drop-shadow(0 0 5px var(--citrine)); }
-  .groundsockets .socket:not(.socket--full) { opacity: .9; }
+  .wall__slots .socket:hover { filter: brightness(1.1) drop-shadow(0 0 5px var(--citrine)); }
+  .wall__slots .socket:not(.socket--full) { opacity: .9; }
   /* 1:1 WITH THE ART'S OWN 73-pixel grid, or the ring resamples and its edge
      softens. Doubling it matches the map's own blocks more nearly and reads as
      four boulders on a landscape, which is the worse of the two faults. */
   .socket__art { display: block; width: 73px; height: auto; margin: 0 auto 2px; image-rendering: pixelated; }
-  .groundsockets .groundset {
-    background-color: var(--panel); background-image: var(--grit); background-clip: padding-box;
-    border: 15px solid transparent; border-image: var(--fix-win) 30 / 15px round;
-    image-rendering: pixelated; padding: 2px 6px 6px;
-  }
   .climbcard { text-align: left; margin: 0; padding: 0; position: relative; }
   .climbcard .panel__title { font-size: 12px; margin-bottom: 1px; text-align: center; }
   .climb__prize { font-size: 10px; color: var(--text-dim); margin: 0 0 6px; text-align: center; }
@@ -2512,7 +2515,7 @@
            and nothing at the bench sees it, so an empty column every run would
            be a permanent reminder of a thing that happens rarely. -->
       <div class="dockcol" id="inv-relics-col" hidden>
-        <div class="dockcol__label">Carrying</div>
+        <div class="dockcol__label">Oddities</div>
         <div class="slots" id="inv-relics"></div>
       </div>
     </div>
@@ -2737,6 +2740,13 @@
       <div class="panel fissurecard">
         <div class="fissurecard__map">
           <div class="climbcard" id="run-climb"></div>
+          <!-- THE WALL: six sockets in a drawer off the right edge, shut by
+               default so the map keeps the whole window. Four crystals and,
+               under a rule, the two the soulstones go in. -->
+          <div class="wall" id="run-wall">
+            <button class="wall__tab" id="run-wall-tab" aria-expanded="false">The wall</button>
+            <div class="wall__slots" id="run-wall-slots" hidden></div>
+          </div>
           <!-- The way IN rests ON the map, like the tabs above it. -->
           <div class="fissurecard__over" id="run-go">
             <p class="runblocked" id="run-blocked"></p>

@@ -17,9 +17,10 @@ import {
   GROUP_OF_KIND,
   PERFECT,
   RECIPES,
-  RUN_SLOTS,
+  CRYSTAL_SLOTS,
   SHOP,
   crystalName,
+  SOULS,
 } from './data';
 import type {
   GearBase,
@@ -137,7 +138,7 @@ export const canBePerfect = (base: string): boolean =>
  *  last two sockets are for — and danger only ever lifts it. */
 export function perfectChance(sockets: number, danger: number): number {
   if (sockets < PERFECT.minSockets) return 0;
-  const at = sockets >= RUN_SLOTS.length ? PERFECT.atFull : PERFECT.atThree;
+  const at = sockets >= CRYSTAL_SLOTS.length ? PERFECT.atFull : PERFECT.atThree;
   const steep = Math.min(1, Math.max(0, danger) / PERFECT.dangerFull);
   return at * (1 + steep * PERFECT.dangerLift);
 }
@@ -290,6 +291,24 @@ export function makeUnique(def: UniqueDef, ilvl: number, rng: Rng): Item {
  * a thing you hand over. `canSell` refuses one and the bench's registries never
  * see it, which is what keeps it out of every other pipeline.
  */
+/** THE SOULSTONE'S one base id. It rolls nothing, so there is no table. */
+export const SOUL_BASE = 'soulstone';
+
+export function makeSoul(): Item {
+  return {
+    id: uid('soul'),
+    kind: 'soul',
+    base: SOUL_BASE,
+    name: SOULS.name,
+    tags: ['soul'],
+    ilvl: 1,
+    slots: {},
+    mods: [],
+    implicits: [],
+    meta: {},
+  };
+}
+
 export function makeRelic(def: RelicDef): Item {
   return {
     id: uid('relic'),
@@ -301,7 +320,7 @@ export function makeRelic(def: RelicDef): Item {
     slots: {},
     mods: [],
     implicits: [],
-    meta: {},
+    meta: { n: 1 }, // an oddity stacks: one is spent and the rest pile up
   };
 }
 

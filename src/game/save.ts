@@ -5,7 +5,9 @@
  * made it. `GameState` is plain data, so `version` is the entire compatibility
  * story — a save from another one is refused rather than half-read.
  */
-import { SAVE_VERSION, addItem, createGame, findAnywhere, giftWeapon, wornItems } from './state';
+import {
+  SAVE_VERSION, addItem, createGame, findAnywhere, giftWeapon, syncSouls, wornItems,
+} from './state';
 import { takeMet } from './scenes';
 import { ownedCrystals } from './crystals';
 import { healTrials } from './trials';
@@ -31,7 +33,6 @@ import {
   PLAYER_SKILLS,
   SKILL_SLOTS,
   POTION_BY_ID,
-  PROVING,
   RELIC_BY_ID,
   RUN_SLOTS,
   SKILL_BY_ID,
@@ -45,7 +46,7 @@ import {
 import { sideRoom } from '../ladder';
 import { nodeById, replayTreeNodes, treeFor, treePointsFor } from '../skills-tree';
 import { TRADE_BY_ID, replayTradeNodes, tradePointsFor } from '../trades';
-import { isPerfect, makeGear, reserveItemIds, stackKey } from '../economy';
+import { isPerfect, makeGear, SOUL_BASE, reserveItemIds, stackKey } from '../economy';
 import { canDualWield } from '../sim/character';
 import { attributePointsFor, weaponFits } from '../sim/character';
 import type { Character } from '../sim/character';
@@ -228,6 +229,7 @@ const baseExists = (item: Item): boolean => {
   if (item.kind === 'crystal') {
     return CRYSTAL_LEVELS.some((t) => item.base === `crystal_t${t.level}`);
   }
+  if (item.kind === 'soul') return item.base === SOUL_BASE;
   if (item.kind === 'relic') return RELIC_BY_ID[item.base] !== undefined;
   if (item.kind === 'material') return MATERIAL_BY_ID[item.base] !== undefined;
   if (item.meta.unique !== undefined && !UNIQUE_BY_ID[String(item.meta.unique)]) return false;
@@ -360,17 +362,23 @@ export function heal(game: GameState): Healed {
   game.crystals = keep(Array.isArray(game.crystals) ? game.crystals : []);
   game.relics = keep(Array.isArray(game.relics) ? game.relics : []);
   game.materials = keep(Array.isArray(game.materials) ? game.materials : []);
+  game.souls = keep(Array.isArray(game.souls) ? game.souls : []);
   // ONE ROW A STACK is the invariant the whole crafting arc reads, so a save
-  // that somehow holds two of one is merged rather than trusted.
-  const stacks = new Map<string, Item>();
-  for (const row of game.materials) {
-    const n = Math.max(1, Math.floor(Number(row.meta.n) || 1));
-    const key = stackKey(row);
-    const held = stacks.get(key);
-    if (held) held.meta.n += n;
-    else stacks.set(key, { ...row, meta: { ...row.meta, n } });
-  }
-  game.materials = [...stacks.values()];
+  // that somehow holds two of one is merged rather than trusted. An ODDITY is
+  // the same shape, and a save older than the stack has no `n` at all.
+  const heap = (rows: Item[]): Item[] => {
+    const stacks = new Map<string, Item>();
+    for (const row of rows) {
+      const n = Math.max(1, Math.floor(Number(row.meta.n) || 1));
+      const key = stackKey(row);
+      const held = stacks.get(key);
+      if (held) held.meta.n += n;
+      else stacks.set(key, { ...row, meta: { ...row.meta, n } });
+    }
+    return [...stacks.values()];
+  };
+  game.materials = heap(game.materials);
+  game.relics = heap(game.relics);
 
   // A MEAL POINTS AT A FISH. One whose row is gone, or whose descents have run
   // out on disk, is a buff that would never end.
@@ -595,13 +603,11 @@ export function heal(game: GameState): Healed {
   }
 
   // A COUNT that is not one would pay the ladder's first four at once.
-  const clears = Number(game.provingClears);
-  game.provingClears = Number.isFinite(clears) ? Math.max(0, Math.floor(clears)) : 0;
+  const clears = Number(game.souledClears);
+  game.souledClears = Number.isFinite(clears) ? Math.max(0, Math.floor(clears)) : 0;
 
-  // A PREFERENCE naming no world sends you somewhere that does not exist.
-  if (game.influence && !PROVING.influences.includes(game.influence)) {
-    game.influence = PROVING.influences[0];
-  }
+  // `climbed` reads the sheet that matches what is socketed right now.
+  syncSouls(game);
 
   out.points += replayAttributes(game.character);
   out.points += replayTrade(game.character);

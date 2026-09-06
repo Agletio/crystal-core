@@ -16,7 +16,7 @@ export interface Hotspot {
   opens:
     | 'fissure' | 'craft' | 'stash' | 'character'
     | 'socket' | 'trials' | 'room' | 'work' | 'forge';
-  slot?: number; // which of `RUN_SLOTS`, for a socket in the rock
+  slot?: number; // which of `CRYSTAL_SLOTS`, for a socket in the rock
   room?: string; // which `SceneDef`, for somebody standing about
   family?: string; // which `MATERIAL_FAMILIES` tab, for a station
   says: string;
@@ -24,7 +24,7 @@ export interface Hotspot {
 
 export const CAMP_ART = 'camp';
 
-/** THE FOUR SOCKETS in the rock ARE the four `RUN_SLOTS`: clicking one is
+/** THE FOUR SOCKETS in the rock ARE the four `CRYSTAL_SLOTS`: clicking one is
  *  clicking that socket, and what is in it is drawn over it. */
 export const CAMP_HOTSPOTS: Hotspot[] = [
   {

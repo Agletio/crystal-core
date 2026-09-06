@@ -5,22 +5,22 @@
  */
 import {
   BRANCH_BONUS_BY_ID,
-  PROVING_BRANCH_BY_ID,
   DANGER_STATS,
   DROP_GROUPS,
   FAMILY_BY_ID,
   FAMILY_YIELD,
   CRYSTAL_LEVELS,
   LADDER,
-  PROVING,
+  CRYSTAL_SLOTS,
+  SEAM_OF,
   MONSTER_FAMILIES,
   POWER,
   REWARD,
   bandFor,
   tierForLevel,
 } from '../data';
-import { branchMod, dropBias, provingMod, rungMod } from './stats';
-import { isProving, sideAt } from '../ladder';
+import { branchMod, dropBias, soulMod, rungMod } from './stats';
+import { sideAt } from '../ladder';
 import type { RunWhere } from '../ladder';
 import { dangerScore } from '../mods';
 import type { DropBand } from '../data';
@@ -111,9 +111,9 @@ export function seamSocketed(crystals: Item[]): boolean {
   const at = (family: MonsterFamily): number =>
     crystals.filter((c) => crystalFamily(c) === family && crystalLevel(c) >= top).length;
   return (
-    crystals.length === PROVING.seamOf * 2 &&
-    at('demonic') === PROVING.seamOf &&
-    at('prismatic') === PROVING.seamOf
+    crystals.length === SEAM_OF * 2 &&
+    at('demonic') === SEAM_OF &&
+    at('prismatic') === SEAM_OF
   );
 }
 
@@ -196,9 +196,7 @@ export interface RunBonus {
 export const NO_BONUS: RunBonus = { gold: 1, currency: 1, rarity: 0, gather: 1, xp: 1 };
 
 export function branchBonus(at?: RunWhere | null): RunBonus {
-  const side = at && isProving(at) && at.branch ? PROVING_BRANCH_BY_ID[at.branch] : null;
-  const branch = at && !isProving(at) ? sideAt(at) : null;
-  const pays = BRANCH_BONUS_BY_ID[(side ?? branch)?.bonus ?? ''];
+  const pays = BRANCH_BONUS_BY_ID[(at ? sideAt(at) : null)?.bonus ?? ''];
   if (!pays) return NO_BONUS;
   return {
     gold: pays.gold ?? 1,
@@ -212,23 +210,23 @@ export function branchBonus(at?: RunWhere | null): RunBonus {
 export function runSet(
   crystals: Item[],
   standing?: RolledMod | null,
-  at?: RunWhere | null
+  at?: RunWhere | null,
+  souls = 0
 ): RunSet {
-  // The Reckoning and WHERE THIS GOES, each as one mod. Both optional: a
-  // measured SET carries no walked web and sits at the bottom of the climb.
-  const ground = isProving(at) ? provingMod(crystals.length) : null;
-  const rung = at && !isProving(at) ? rungMod(at.zone, at.rung) : null;
-  const zone = at && !isProving(at) ? LADDER.zones[at.zone] : null;
+  // The Reckoning, WHERE THIS GOES and WHAT IS IN THE WALL, each as one mod.
+  // All optional: a measured SET carries no walked web, sits at the bottom of
+  // the climb and has nothing socketed.
+  const rung = at ? rungMod(at.zone, at.rung) : null;
+  const zone = at ? LADDER.zones[at.zone] : null;
+  const soul = soulMod(souls);
   // A BRANCH RUNS AT ITS DEPTH'S DANGER: only what it adds to the floor is a
   // mod, so `crystalRewards` weighs it the way it weighs everything else.
-  const off = at && !isProving(at) ? sideAt(at) : null;
-  const area = at && isProving(at) && at.branch ? PROVING_BRANCH_BY_ID[at.branch] : null;
-  const branch = branchMod(BRANCH_BONUS_BY_ID[(off ?? area)?.bonus ?? ''] ?? null);
+  const branch = branchMod(BRANCH_BONUS_BY_ID[(at ? sideAt(at) : null)?.bonus ?? ''] ?? null);
   const mods = [
     ...crystals.flatMap((c) => c.mods),
     ...(standing ? [standing] : []),
     ...(rung ? [rung] : []),
-    ...(ground ? [ground] : []),
+    ...(soul ? [soul] : []),
     ...(branch ? [branch] : []),
   ];
   const rewards = crystalRewards(mods);
@@ -248,20 +246,10 @@ export function runSet(
     // THE CAMPAIGN IS RUN WITH NOTHING SOCKETED, so its ZONE decides both the
     // world and the best base — off the sockets alone the whole 42-depth climb
     // would be tier 1 in one world. Past it the sockets answer again.
-    maxTier: isProving(at)
-      ? Math.max(PROVING.tier, tierForSet(crystals))
-      : zone
-        ? Math.max(zone.tier, tierForSet(crystals))
-        : tierForSet(crystals),
+    maxTier: zone ? Math.max(zone.tier, tierForSet(crystals)) : tierForSet(crystals),
     composition: share,
-    // THE INFLUENCE WINS in the Proving Ground: *"the zone will stay what your
-    // influence is."* What you mixed still decides the PACKS.
-    // THE SEAM OVERRIDES EVEN THE INFLUENCE, and it is the only thing that does.
-    theme: isProving(at)
-      ? (seamSocketed(crystals)
-          ? 'seam'
-          : (at.branch ? PROVING_BRANCH_BY_ID[at.branch]?.world ?? at.influence : at.influence))
-      : zone ? zone.world : mapTheme(crystals),
+    // THE ZONE IS THE WORLD, and THE SEAM is the one thing that overrides it.
+    theme: seamSocketed(crystals) ? 'seam' : zone ? zone.world : mapTheme(crystals),
     mix,
     yield: 1 + mix * REWARD.mixYield,
     pays: familyPays(share),
@@ -320,11 +308,12 @@ export function rewardRows(crystal: Item): Array<{ label: string; value: string 
 export function setRows(
   crystals: Item[],
   standing?: RolledMod | null,
-  at?: RunWhere | null
+  at?: RunWhere | null,
+  souls = 0
 ): Array<{ label: string; value: string }> {
-  const set = runSet(crystals, standing, at);
+  const set = runSet(crystals, standing, at, souls);
   return [
-    { label: 'sockets', value: `${set.filled}/4` },
+    { label: 'sockets', value: `${set.filled}/${CRYSTAL_SLOTS.length}` },
     { label: 'danger', value: Math.round(set.rewards.danger).toString() },
     { label: 'power', value: set.power.toFixed(1) },
     { label: 'item level', value: String(set.band.ilvl) },
@@ -336,9 +325,10 @@ export function setRows(
 export function farmingText(
   crystals: Item[],
   standing?: RolledMod | null,
-  at?: RunWhere | null
+  at?: RunWhere | null,
+  souls = 0
 ): string {
-  const set = runSet(crystals, standing, at);
+  const set = runSet(crystals, standing, at, souls);
   const said: string[] = [];
   if (set.pays.gold > 1.02) said.push(`+${Math.round((set.pays.gold - 1) * 100)}% gold`);
   if (set.pays.currency > 1.02) {

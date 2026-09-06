@@ -188,17 +188,24 @@ assert(all('#inv-gear .slot--empty').length > 0, 'the dock keeps empty slots');
 // One place, always open. An empty set is a real descent, not a missing
 // choice, and the only thing that ever shuts the Fissure is a full bag —
 // which selling always empties, so there is no state you cannot play out of.
-const socketButtons = () => all('.groundsockets .socket');
-// NOWHERE ON THE CLIMB. The sockets belong to the Proving Ground's own tab, so
-// while the campaign runs there is nothing on this screen to put one in.
-assert(socketButtons().length === 0, 'no sockets while the campaign runs', String(socketButtons().length));
+// THE WALL IS A DRAWER, shut until you pull it, so the map keeps the window.
+const socketButtons = () => all('#run-wall-slots .socket');
+assert(socketButtons().length === 0, 'the wall is shut to start with', String(socketButtons().length));
 assert($('run-selected') === null, 'and nothing describing a set either');
+$('run-wall-tab').click();
+assert(socketButtons().length >= 6, 'and pulling it opens six sockets', String(socketButtons().length));
+assert(all('#run-wall-slots .wall__rule').length === 1,
+  'with a rule between the crystals and the soulstones');
+assert($('run-socket-soul1') !== null && $('run-socket-soul2') !== null,
+  'and the two soul sockets are its own');
+$('run-wall-tab').click();
+assert(socketButtons().length === 0, 'and it shuts again');
 
 // THE CLIMB. ONE ZONE AT A TIME, on a tab, drawn as a seam down that zone's own
 // cross-section — and nothing ever taken away: a cleared rung stays clickable
 // so a wipe is answered by dropping back two and grinding.
-assert(all('#run-climb .climbtab').length === 4, 'a tab per zone, and the Proving Ground past them');
-assert($('climb-tab-3').disabled === true, 'which is shut until the campaign is paid for');
+assert(all('#run-climb .climbtab').length === 3, 'a tab per zone',
+  String(all('#run-climb .climbtab').length));
 assert($('climb-tab-0').disabled === false && $('climb-tab-1').disabled === true,
   'and only the ones you have opened');
 // A DEPTH, never a side room: `.pip--side` is a branch and is counted apart.
@@ -1040,12 +1047,12 @@ const socketFirst = [...all('#crystals-list .crystal .mini')].find((b) =>
   /^Socket/.test(b.textContent)
 );
 assert(!!socketFirst, 'a carried crystal offers the socket');
-// COUNTED ON THE PROVING GROUND'S TAB, which is the only place a socket is
-// drawn now: opening the crack and that tab is what renders them.
+// COUNTED IN THE WALL'S DRAWER, which is the only place a socket is drawn:
+// opening the crack and pulling the drawer is what renders them.
 const socketsFull = () => {
   $('camp-crack').click();
-  $('climb-tab-3').click();
-  const n = all('.groundsockets .socket--full').length;
+  if ($('run-wall-slots').hidden) $('run-wall-tab').click();
+  const n = all('#run-wall-slots .socket--full').length;
   $('run-menu-close').click();
   return n;
 };
@@ -1053,7 +1060,7 @@ const before = socketsFull();
 socketFirst.click();
 assert(
   socketsFull() === before + 1,
-  'clicking it fills a socket on the Proving Ground',
+  'clicking it fills a socket in the wall',
   `${before} → ${socketsFull()}`
 );
 const socketedCard = [...crystalCards()].find((c) => c.classList.contains('crystal--socket'));
@@ -1170,8 +1177,8 @@ $('camp-crack').click();
 assert($('run-menu').hidden === false, 'the crack opens over the camp');
 assert($('run-stats') === null, 'and the Fissure carries no character panel');
 assert($('run-launch') !== null, 'only the sockets and the way in');
-// The sockets are the Proving Ground's, so that is the tab they are on.
-$('climb-tab-3').click();
+// The sockets are the wall's drawer, so that is what has to be open.
+if ($('run-wall-slots').hidden) $('run-wall-tab').click();
 
 // --- socketing a crystal --------------------------------------------------
 // One screen holds every crystal you own, socketed or not, because four
@@ -3164,40 +3171,59 @@ $('dev-kit').click();
   assert($('survey').hidden === true, 'and it closes again');
 }
 
-// --- the Proving Ground: one area, past the whole climb --------------------
-// *"A 4th tab that only has one area and its where you can socket the
-// crystals… the crystal sockets laid out like the fissure entrance in the camp
-// on top of the map."* The dev kit has been paid for the campaign, so the tab
-// is open; the three campaign tabs above it have no sockets on them at all.
+// --- the wall, and the network off the line ---------------------------------
+// *"Have the socket menu be a tab you can open on the right side that just pops
+// out the 6 socket slots seperating the soul slots from the crystal slots."*
 {
   $('camp-crack').click();
   assert($('run-menu').hidden === false, 'the crack opens the Fissure');
-  assert($('climb-tab-3').disabled === false, 'the Proving Ground is a tab of its own');
+  assert(
+    all('#run-climb .climbtab').length >= 3,
+    'a tab per zone and nothing past them but a room',
+    String(all('#run-climb .climbtab').length)
+  );
   $('climb-tab-0').click();
+  if ($('run-wall-slots').hidden) $('run-wall-tab').click();
+  // The keyhole sits with them and is its own thing, so the six are named.
+  const wallSix = ['s1', 's2', 's3', 's4', 'soul1', 'soul2'].map((id) => $(`run-socket-${id}`));
   assert(
-    all('.groundsockets .socket').length === 0,
-    'and a campaign tab has no sockets on it at all',
-    String(all('.groundsockets .socket').length)
-  );
-  $('climb-tab-3').click();
-  assert(
-    all('.groundsockets .socket').length >= 4,
-    'while the Proving Ground lays all four over its own map',
-    String(all('.groundsockets .socket').length)
+    wallSix.every((b) => b !== null),
+    'the wall drawer holds all six sockets, on every tab',
+    String(wallSix.filter(Boolean).length)
   );
   assert(
-    all('.influences .climbtab').length === 3,
-    'and offers three influences, never the Seam, on the same tab every other row uses',
-    String(all('.influences .climbtab').length)
+    $('run-socket-soul1') !== null && $('run-socket-soul2') !== null
+      && all('#run-wall-slots .wall__rule').length === 1,
+    'with the two soul sockets under a rule of their own'
   );
+  // A SOULSTONE RESETS THE MAP AND KEEPS THE OLD ONE. The kit is PAID for the
+  // campaign and has climbed none of it by decision, so the climb is cleared
+  // here first — the reset has to have something to reset.
+  const cleared = () => (text('climb-tab-0').match(/(\d+)\/\d+/) ?? [])[1];
+  $('run-menu-close').click();
+  $('open-dev').click();
+  $('dev-climb-2').click();
+  $('camp-crack').click();
+  if ($('run-wall-slots').hidden) $('run-wall-tab').click();
+  const was = cleared();
+  assert(was !== '0', 'the climb is walked whole', was);
+  $('run-socket-soul1').click();
   assert(
-    $('climb-influence-fissure').classList.contains('climbtab--on'),
-    'one of which is picked, and lit the way every other selected tab is'
+    $('run-socket-soul1').classList.contains('socket--full'),
+    'clicking an empty one puts a soulstone in it'
   );
+  assert(cleared() === '0' && was !== '0', 'and every zone goes back to nothing', `${was} → ${cleared()}`);
+  $('run-socket-soul1').click();
+  assert(
+    !$('run-socket-soul1').classList.contains('socket--full') && cleared() === was,
+    'and taking it out puts the climb you had back — nothing is ever wiped',
+    `${was} → ${cleared()}`
+  );
+  $('run-wall-tab').click();
+
   // THE SIDE ROOMS ARE A NETWORK, not spurs: each is a node on the picture and
   // a run of them arrives at a depth you never climbed to. A clear in one is
   // never a level.
-  $('climb-tab-0').click();
   const sides = all('[id^="climb-side-0-"]');
   assert(sides.length > 0, `the first zone stands ${sides.length} side rooms off its line`);
   // WHAT IT PAYS IS THE NAME: a picture, never `3A`. The id carries the room,
@@ -3207,71 +3233,11 @@ $('dev-kit').click();
     'each drawn as the bonus it pays rather than numbered',
     sides[0]?.id
   );
-  // THE KIT IS PAID FOR THE CAMPAIGN AND HAS WALKED NONE OF IT, by decision —
-  // so nothing on this line is cleared and the whole network is shut. Which is
-  // the rule, stated on the one character that separates paid from climbed.
-  assert(
-    sides.every((b) => b.disabled),
-    'and shut on a character who has climbed nothing, however much else it holds',
-    sides.filter((b) => !b.disabled).map((b) => b.id).join(' ')
-  );
   // A LINK IS DRAWN for every way round the line, over its own dark casing.
   assert(
     all('#run-climb .climbseam__side').length >= sides.length,
     'and every way round the line is drawn',
     String(all('#run-climb .climbseam__side').length)
-  );
-
-  $('climb-tab-3').click();
-
-  // FIVE SIDE AREAS off the one area, each its own world and one bonus, all at
-  // the Proving Ground's own difficulty. Picking one twice goes back to plain.
-  const zones = all('[id^="climb-area-"]');
-  assert(zones.length >= 4, `${zones.length} side areas fan off the Proving Ground`);
-  assert(
-    zones.every((b) => !b.disabled && (b.textContent ?? '').length > 3),
-    'each named rather than numbered, and every one open',
-    zones.map((b) => `${b.textContent}:${b.disabled}`).join(' ')
-  );
-  zones[0].click();
-  assert(
-    $(zones[0].id).classList.contains('pip--here'),
-    'clicking one takes it, and the picture follows the world it names'
-  );
-  $(zones[0].id).click();
-  assert(
-    !$(zones[0].id).classList.contains('pip--here'),
-    'and clicking it again goes back to the plain area'
-  );
-
-  // THE TAB IS THE PICK, and it is the whole of what says where you are going:
-  // the map is the screen now, and nothing is written over it.
-  assert(
-    $('climb-tab-3').classList.contains('climbtab--on'),
-    'and looking at it IS choosing it, which is the only readout there is'
-  );
-  // THE PICTURE IS THE READOUT: the influence decides the world you walk into,
-  // so it has to decide the cross-section under the sockets.
-  const ground = () => document.querySelector('.climbseam--ground')?.style.backgroundImage ?? '';
-  const before = ground();
-  $('climb-influence-demonic').click();
-  assert(
-    $('climb-influence-demonic').classList.contains('climbtab--on')
-      && !$('climb-influence-fissure').classList.contains('climbtab--on'),
-    'clicking another moves the pick, and only one is ever on'
-  );
-  assert(
-    before.length > 0 && ground().length > 0 && ground() !== before,
-    'and the picture follows it, since the influence IS the world you walk into'
-  );
-  // BACK TO A DEPTH. The tab is the pick, so looking at a zone again is what
-  // stops the Proving Ground being where you are going.
-  $('climb-tab-0').click();
-  $('climb-pip-0-1').click();
-  assert(
-    $('climb-tab-0').classList.contains('climbtab--on')
-      && !$('climb-tab-3').classList.contains('climbtab--on'),
-    'and a depth takes it back'
   );
   $('run-menu-close').click();
 }
@@ -3346,9 +3312,9 @@ assert(
 // NOT clicked here: socketing consumes the key and arms the next entry, and a
 // smoke that armed it would fight a boss in every launch below.
 {
-  // It sits with the four, which is the Proving Ground's tab.
+  // It sits with the four, in the wall's own drawer.
   $('camp-crack').click();
-  $('climb-tab-3').click();
+  if ($('run-wall-slots').hidden) $('run-wall-tab').click();
   const socket = $('run-socket-key');
   assert(socket !== null, 'the Fissure offers a keyhole under the crystal sockets');
   assert(/^Set /.test(socket.textContent), 'it names the key it takes', socket.textContent);

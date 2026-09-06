@@ -33,15 +33,16 @@ import {
   POTIONS,
   BOSS_FIGHT,
   BOSS_SHOUTS,
-  PROVING,
   RUN_SLOTS,
+  SOULS,
+  LADDER,
   MAIN_SLOT,
   SKILL_BY_ID,
   SKILL_SLOTS,
   THEME_BY_ID,
 } from '../data';
 import { spend } from '../economy';
-import { bagsFull, crystalsIn, socketed, unsocket } from '../game/state';
+import { bagsFull, socketItem, socketed, syncSouls, unsocket } from '../game/state';
 import type { GameState } from '../game/state';
 import { crystalProgress } from '../game/crystals';
 import { bossBeaten, hasMet, owedTale, takeBoss, takeMet, whoIsDown } from '../game/scenes';
@@ -55,10 +56,10 @@ import { initCamp, openCamp, closeCamp, isCampOpen, renderCamp, setCampEmber } f
 import { greetAfterTale, openTalk } from './talk';
 import { playTale } from './tale';
 import {
-  advanceRung, climbLine, initClimb, provingWorld, renderClimb, roomNow, rungName, rungNow,
-  setsInClimb, socketsInClimb, whereNow,
+  advanceRung, climbLine, initClimb, renderClimb, roomNow, rungName, rungNow,
+  setsInClimb, whereNow,
 } from './climb';
-import { arenaAt, isProving, takeRung, zoneAt } from '../ladder';
+import { arenaAt, soulsIn, takeRung, zoneAt } from '../ladder';
 import type { RunWhere } from '../ladder';
 import type { Rung } from '../ladder';
 import type { SceneDef } from '../scenes';
@@ -333,14 +334,17 @@ function syncClimb(): void {
   );
 }
 
-/** THE FOUR SOCKETS, drawn wherever the Proving Ground's own tab puts them —
- *  *"the crystal sockets laid out like the fissure entrance in the camp on top
- *  of the map"* — and nowhere else, so the climb keeps the whole window. */
+/** THE WALL: six sockets in a drawer off the map's right edge, on every tab.
+ *  A RULE splits them — four crystals decide what a run holds, and under it the
+ *  two soulstones decide how hard every depth in the game is. */
 function renderSockets(grid: HTMLElement): void {
   grid.replaceChildren();
 
   for (const slot of RUN_SLOTS) {
     const held = game.sockets[slot.id];
+    if (slot.accepts === 'soul' && !grid.querySelector('.wall__rule')) {
+      grid.append(el('p', 'wall__rule', 'The soulstones'));
+    }
     const button = el('button', 'socket') as HTMLButtonElement;
     button.id = `run-socket-${slot.id}`;
     button.classList.toggle('socket--full', !!held);
@@ -353,14 +357,19 @@ function renderSockets(grid: HTMLElement): void {
     }
     // An empty socket is the question "what goes in here", and the answer is
     // a screen, not a bag: crystals are compared before one of them goes in.
+    // A SOULSTONE IS NEITHER COMPARED NOR ROLLED, so it goes straight in.
     button.onclick = () => {
+      if (slot.accepts === 'soul') return toggleSoul(slot.id);
       if (!held) return openCrystals();
       if (!unsocket(game, slot.id)) return;
       renderMenu();
       renderInventory();
     };
 
-    if (held) {
+    if (held && slot.accepts === 'soul') {
+      button.append(el('div', 'socket__name', held.name));
+      button.append(el('div', 'socket__mods', 'Every depth is a tier harder'));
+    } else if (held) {
       const family = FAMILY_BY_ID[crystalFamily(held)];
       button.append(el('div', 'socket__name', held.name));
       const world = el('div', `socket__family socket__family--${family.id}`, family.name);
@@ -386,12 +395,37 @@ function renderSockets(grid: HTMLElement): void {
       );
       for (const mod of held.mods) button.append(el('div', 'chosen__mod', describeMod(mod)));
     } else {
+      const spare = slot.accepts === 'soul' ? (game.souls ?? []).length : 0;
       button.append(el('div', 'socket__empty', slot.name));
+      if (slot.accepts === 'soul' && spare > 0) {
+        button.append(el('div', 'socket__mods', `${spare} held`));
+      }
     }
+    attachTooltip(button, () =>
+      slot.accepts === 'soul'
+        ? `${SOULS.name}. Every depth runs a tier harder and the map starts again ` +
+          `at ${LADDER.zones[0].name}, depth 1. Taking it out puts the old map back.`
+        : slot.name);
     grid.append(button);
   }
   renderKeySocket(grid);
   renderSelected(grid);
+}
+
+/** A SOULSTONE IN OR OUT. `syncSouls` derives the count off the wall, so nothing
+ *  here writes it — and the map each tier remembers is its own, which is what
+ *  makes taking one back out a step down rather than a wipe. */
+function toggleSoul(slotId: string): void {
+  const held = game.sockets[slotId];
+  if (held) {
+    if (!unsocket(game, slotId)) return;
+  } else {
+    const spare = (game.souls ?? [])[0];
+    if (!spare || !socketItem(game, spare, slotId)) return;
+  }
+  syncSouls(game);
+  renderMenu();
+  renderInventory();
 }
 
 /** WHAT THE SET COMES TO, under the sockets that made it. */
@@ -403,9 +437,10 @@ function renderSelected(grid: HTMLElement): void {
   const chips = el('div', 'setrows');
   const standing = trialMod(game.character);
   // Read WHERE YOU ARE GOING, or the danger printed is not the danger you
-  // walk into: the Proving Ground's floor is not a depth's.
+  // walk into.
   const at = whereNow(game.character);
-  for (const row of setRows(set, standing, at)) {
+  const souls = soulsIn(game.character);
+  for (const row of setRows(set, standing, at, souls)) {
     const chip = el('span', 'mult');
     chip.append(el('span', 'mult__k', row.label));
     chip.append(el('span', 'mult__v', row.value));
@@ -415,7 +450,7 @@ function renderSelected(grid: HTMLElement): void {
   // What you will be fighting, before you commit to fighting it — and where,
   // since half of one world takes the rock as well as the packs.
   host.append(el('p', 'setcomp', compositionText(set)));
-  const zone = THEME_BY_ID[runSet(set, standing, at).theme];
+  const zone = THEME_BY_ID[runSet(set, standing, at, souls).theme];
   const where = el('p', 'setzone', zone.name);
   where.title = zone.blurb;
   where.append(el('span', 'setzone__blurb', ` — ${zone.blurb}`));
@@ -423,26 +458,34 @@ function renderSelected(grid: HTMLElement): void {
 
   // What the set is FOR. Every world pays in its own currency and no two are
   // comparable, so this is the difference between choosing and guessing.
-  const farms = farmingText(set, standing, at);
+  const farms = farmingText(set, standing, at, souls);
   if (farms) host.append(el('p', 'setcomp', farms));
-  host.append(
-    el(
-      'p',
-      'socket__hint',
-      set.length > 0
-        ? 'Sockets are permanent. Click one to take its crystal back.'
-        : crystalsIn(game).length === 0
-          ? 'No crystals yet. An empty Fissure is still a real descent.'
-          : 'Click an empty socket to choose a crystal.'
-    )
-  );
-
   grid.append(host);
+}
+
+/** THE WALL'S DRAWER, shut by default so the map keeps the whole window. Its
+ *  state is this session's alone — a panel left open is not progress. */
+let wallOpen = false;
+
+function renderWall(): void {
+  const tab = $('run-wall-tab') as HTMLButtonElement;
+  const slots = $('run-wall-slots');
+  // IT GOES WITH THE WAY IN: a bonus room has no descent and no set to build.
+  $('run-wall').hidden = roomNow() !== null;
+  tab.setAttribute('aria-expanded', String(wallOpen));
+  slots.hidden = !wallOpen;
+  tab.onclick = () => {
+    wallOpen = !wallOpen;
+    renderWall();
+  };
+  if (wallOpen) renderSockets(slots);
+  else slots.replaceChildren();
 }
 
 function renderMenu(): void {
   syncClimb();
   renderClimb($('run-climb'), game.character, () => renderMenu());
+  renderWall();
 
   // A BONUS ZONE IS NOT A DESCENT: the way in goes while you stand in his room.
   $('run-go').hidden = roomNow() !== null;
@@ -530,7 +573,7 @@ function launch(): void {
 
   // WHERE: read at the launch, so a chained descent stays where it started.
   ran = whereNow(game.character);
-  const depth = isProving(ran) ? null : ran;
+  const depth = ran;
 
   // THE TOP OF A ZONE IS A FIGHT, and clearing it opens the zone above.
   const arena = depth ? SCENE_BY_ID[arenaAt(depth) ?? ''] : undefined;
@@ -541,19 +584,18 @@ function launch(): void {
   }
 
   seed = Math.floor(Math.random() * 1e9);
-  // WHO IS DOWN THERE, scheduled off the DEPTH: the Proving Ground is past
-  // everybody.
+  // WHO IS DOWN THERE, scheduled off the DEPTH.
   sim = new RunSim(set, game.character, new Rng(seed), {
     potionThresholds: game.potions,
     beaten: game.bosses ?? [],
     where: ran,
     meets: depth
-      ? meetsIn(runSet(set, trialMod(game.character), ran).theme, depth.rung)
+      ? meetsIn(runSet(set, trialMod(game.character), ran, soulsIn(game.character)).theme, depth.rung)
       : undefined,
   });
 
   note(
-    `${rungName(ran, sim.set.theme)} · ${set.length} socketed · power ${sim.set.power.toFixed(1)} · ` +
+    `${rungName(ran)} · ${set.length} socketed · power ${sim.set.power.toFixed(1)} · ` +
       `seed ${seed} · ${sim.state.totalMonsters} monsters`
   );
   accumulator = 0;
@@ -606,13 +648,13 @@ function finish(left = false): void {
   // THE CLIMB. A rung already cleared records nothing, and what FINISHING it
   // pays is the Lampwright's to hand over in the camp. CLIMBING: the rung just
   // recorded is behind you, so forgetting the pick is the whole of "go deeper".
-  if (report.cleared && !left && ran && !isProving(ran)) {
+  if (report.cleared && !left && ran) {
     takeRung(game.character, ran);
     if (climbing()) advanceRung();
-  }
-  // THE LADDER'S OWN COUNT. Never on a walk: a walk buys no progress anywhere.
-  if (report.cleared && !left && isProving(ran)) {
-    game.provingClears = (game.provingClears ?? 0) + 1;
+    // THE CRYSTAL LADDER'S OWN COUNT: the endless half is the SOULED climb, so
+    // a clear only counts once there is a soulstone in the wall. Never on a
+    // walk — a walk buys no progress anywhere.
+    if (soulsIn(game.character) > 0) game.souledClears = (game.souledClears ?? 0) + 1;
   }
   // A DEATH stops the descent AND the climb: walking straight back into what
   // killed you is not a loop anybody turned on.
@@ -705,7 +747,7 @@ function endEncounter(): void {
   // the trials are asked: the first rung is this boss being down.
   if (report.cleared && def?.encounter) takeBoss(game, def.encounter);
   // A zone's ARENA is a rung; the Proving Ground never is.
-  if (report.cleared && ran && !isProving(ran)) takeRung(game.character, ran);
+  if (report.cleared && ran) takeRung(game.character, ran);
   if (report.cleared) payTrials(state);
 
   const after = report.cleared && !revisit ? (def?.after ?? []) : [];
@@ -1303,8 +1345,8 @@ export function initRun(state: GameState): void {
   // The sockets belong to the Proving Ground's tab, which is `climb.ts`'s to
   // lay out. This is the only place they are ever drawn.
   initClimb(game);
-  socketsInClimb(renderSockets, () => seamSocketed(socketed(game)));
-  setsInClimb((at) => runSet(socketed(game), trialMod(game.character), at)); // a card's ilvl
+  setsInClimb((at) =>
+    runSet(socketed(game), trialMod(game.character), at, soulsIn(game.character)));
 
   // Drawn from the very first paint, so the room they take is not something
   // the canvas discovers when a descent starts — and so the threshold is set
@@ -1571,16 +1613,10 @@ function syncRung(): void {
   const at = ran;
   host.hidden = !at || (phase !== 'running' && phase !== 'scene');
   if (host.hidden || !at) return;
-  if (isProving(at)) {
-    $('run-rung-zone').textContent = PROVING.name;
-    // THE WORLD THE RUN GOT, never the influence: the Seam overrides the pick.
-    $('run-rung-n').textContent = provingWorld(at, sim?.set.theme);
-  } else {
-    $('run-rung-zone').textContent = zoneAt(at.zone)?.name ?? '';
-    $('run-rung-n').textContent = `Depth ${at.rung}`;
-  }
+  $('run-rung-zone').textContent = zoneAt(at.zone)?.name ?? '';
+  $('run-rung-n').textContent = `Depth ${at.rung}`;
   const what = $('run-rung-what');
-  what.textContent = !isProving(at) && arenaAt(at) ? 'Boss' : '';
+  what.textContent = arenaAt(at) ? 'Boss' : '';
   what.hidden = what.textContent === '';
 }
 

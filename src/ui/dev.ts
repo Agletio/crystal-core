@@ -8,14 +8,20 @@
  */
 import { Rng } from '../rng';
 import { SCENE_BY_ID, SCENES } from '../scenes';
-import { BOSS_BY_ID, CAMPAIGN_REWARD, GRINDS, INTRO, LADDER, TALES, THEME_BY_ID } from '../data';
+import {
+  BOSS_BY_ID, CAMPAIGN_REWARD, CRYSTAL_LEVELS, CRYSTAL_SLOTS, GRINDS, INTRO, LADDER,
+  SEAM_OF, SOUL_SLOTS, TALES, THEME_BY_ID,
+} from '../data';
+import { makeCrystal, makeSoul } from '../economy';
+import { socketItem, syncSouls, unsocket } from '../game/state';
+import type { MonsterFamily } from '../types';
 import { ladderCharacter } from '../sim/loadout';
 import { mainSkillId, skillProgress } from '../sim/character';
 import { heal } from '../game/save';
 import { ZONES } from '../render/generated-tiles';
 import { TEST_LEVEL, raiseShare, testLevel } from '../sim/grid';
 import { takeHeard, takeMet } from '../game/scenes';
-import { campaignDone } from '../ladder';
+import { campaignDone, progressKey } from '../ladder';
 import { pathToNotable } from '../skills-tree';
 import type { GameState } from '../game/state';
 import { ask } from './confirm';
@@ -215,8 +221,12 @@ function render(): void {
     button.append(el('span', 'devbtn__name', `Clear ${name}`));
     button.append(el('span', 'devbtn__what', `${zone.rungs} rungs, and everything above it`));
     button.onclick = () => {
+      // THROUGH `progressKey`, or a souled wall would record the bare climb's
+      // sheet and the button would look as if it had done nothing.
       const done: Record<string, number> = { ...game.character.climbed };
-      for (let i = 0; i <= z; i++) done[LADDER.zones[i].id] = LADDER.zones[i].rungs;
+      for (let i = 0; i <= z; i++) {
+        done[progressKey(game.character, i)] = LADDER.zones[i].rungs;
+      }
       game.character.climbed = done;
       // The kit skips the meeting as well: a web nobody can spend a point on
       // is a screen nobody tested.
@@ -227,6 +237,50 @@ function render(): void {
     };
     climb.append(button);
   });
+
+  // THE WALL. A soulstone is a whole climb's reward, and the Seam is four
+  // crystals arranged exactly — both are hours of play to reach otherwise.
+  const wall = group('The wall', 'What is socketed, without playing to it.');
+  const soul = el('button', 'mini devbtn') as HTMLButtonElement;
+  soul.id = 'dev-soul';
+  soul.append(el('span', 'devbtn__name', `Fill the ${SOUL_SLOTS.length} soul sockets`));
+  soul.append(el('span', 'devbtn__what', 'every depth a tier harder, and the map starts again'));
+  soul.onclick = () => {
+    for (const slot of SOUL_SLOTS) {
+      if (game.sockets[slot.id]) continue;
+      const spare = (game.souls ?? [])[0] ?? makeSoul();
+      if (!game.souls?.includes(spare)) game.souls = [...(game.souls ?? []), spare];
+      socketItem(game, spare, slot.id);
+    }
+    syncSouls(game);
+    hooks.refresh();
+    note('Dev: the wall holds both soulstones.');
+    close();
+  };
+  wall.append(soul);
+
+  const seam = el('button', 'mini devbtn') as HTMLButtonElement;
+  seam.id = 'dev-seam';
+  seam.append(el('span', 'devbtn__name', 'Open the Seam'));
+  seam.append(el('span', 'devbtn__what',
+    `${SEAM_OF} Prismatic and ${SEAM_OF} Demonic at the top level, and nothing else`));
+  seam.onclick = () => {
+    const top = CRYSTAL_LEVELS[CRYSTAL_LEVELS.length - 1].level;
+    const want: MonsterFamily[] = [
+      ...Array(SEAM_OF).fill('prismatic'), ...Array(SEAM_OF).fill('demonic'),
+    ];
+    CRYSTAL_SLOTS.forEach((slot, i) => {
+      const held = game.sockets[slot.id];
+      if (held) unsocket(game, slot.id);
+      const made = makeCrystal(top, want[i]);
+      game.crystals = [...(game.crystals ?? []), made];
+      socketItem(game, made, slot.id);
+    });
+    hooks.refresh();
+    note('Dev: the Seam is open.');
+    close();
+  };
+  wall.append(seam);
 
   // EVERY GENERATED TILESET, drawn. A set is judged on whether its terrains
   // read apart at tile size, which no list of names answers — and this reads

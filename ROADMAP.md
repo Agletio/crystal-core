@@ -943,6 +943,13 @@ is the strongest part of the idea. The feedback that shaped it:
       the long way round and the picture never joined those two chambers: 8 of
       22 draw straight. **THE NETWORK IS WALKED** — six of the fourteen touch
       no depth, so climbing the whole line still leaves them a clear away.
+- [ ] **WHEN DO CRYSTALS START ARRIVING?** *"Crystals can work the same by just
+      affecting the loot/monsters in the run but im not sure when we should
+      start giving your crystals."* Taken as: the FIRST is the campaign's, and
+      every one after it is bought by the SOULED climb — `CRYSTAL_LADDER`'s
+      25/50/75/100 now count `souledClears`. So a bare campaign is run with one
+      crystal and the endless half is where the wall fills. That is an
+      assumption, not his word; the lever is which counter `clears` reads.
 - [ ] **THE UI SAYS TOO MUCH, EVERYWHERE.** *"Really need to stop with the over
       describing everything… it literally says the ilvl already. You do this
       kinda dialogue all over the place. I really don't want to have to go back
@@ -957,15 +964,6 @@ is the strongest part of the idea. The feedback that shaped it:
       that is the shape he wants at 12 depths, 14 and 16, or whether the deep
       rooms should hang off deeper links. A NUMBER, so it never blocks: the
       lever is which depth each chain rejoins at.
-- [ ] **BRANCHES ON THE PROVING GROUND**, which is his stronger half: *"the
-      same main line system that's going down and the branches that come off
-      have these same bonuses AND they are different zones… 4-5 different areas
-      to select that are all the same difficulty generally but have a different
-      bonus."* The Proving Ground is ONE AREA today (`Proving` in `RunWhere`,
-      `isProving` the only read) with no line and no stations, so this is a
-      shape it does not have yet — a main line of its own, and branches off it
-      that set the WORLD as well as the bonus. `PROVING.influences` is what
-      picking a world means today; a branch would replace that pick.
 - [x] **ALL THREE NETWORKS ARE HIS OWN**, laid out in the Survey and pasted
       back: The Answering 28 rooms and 35 links, The Prism 19 and 20, The Rot
       22 and 22. Nothing is eyeballed any more — the designer writes the
@@ -1002,12 +1000,14 @@ is the strongest part of the idea. The feedback that shaped it:
       Flowering. **ZONE 1 IS UNNAMED** — waiting on his word, and on whether
       the WORLDS should be renamed off the collision (zone 3 and the demonic
       world are both The Rot, and the Proving Ground prints world names).
-- [ ] **THE PROVING GROUND'S SHAPE IS THE ONE LEFT.** Its five areas are
-      placed at fixed percent over whichever act the INFLUENCE picks, so one
-      set of coordinates has to land on floor in three different pictures.
-      Either it gets a cross-section of its own that never changes, or the
-      areas are placed along a course traced per influence. HIS CALL, and it is
-      the one he said he did not want to do ten times.
+- [x] **THE PROVING GROUND IS SCRATCHED.** *"Scratch the entire proving ground
+      idea."* The whole of it — the fourth tab, the five side areas, the
+      influence pick, `Proving` in `RunWhere`, `provingMod`, `GameState.influence`
+      and `provingClears` — is gone, and `RunWhere` is a `Rung`. THE SOULSTONE
+      replaces it: two more sockets, `soulMod` carrying the climb's own straight
+      ramp on, `progressKey` giving each tier its own map, and the crystal
+      ladder paid by `souledClears`. The wall is six sockets in a drawer off the
+      map's right edge.
 - [ ] **THE ROT'S CROSS-SECTION IS A TRAIN TRACK.** *"It should look like just
       a tunnel going down, there's no train tracks… the lower ones have no
       visible path connecting them."* The ask is REWRITTEN in `scenes.json` —

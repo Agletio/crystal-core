@@ -5,7 +5,7 @@
 
 export type StatForm = 'flat' | 'inc' | 'more';
 /** A MATERIAL stacks: `Item.meta.n` is how many, so a bag holds one row. */
-export type ItemKind = 'gear' | 'crystal' | 'relic' | 'material';
+export type ItemKind = 'gear' | 'crystal' | 'relic' | 'material' | 'soul';
 
 /** Declared per base, so a new base can invent its own layout. */
 export type ModSlot = string;
@@ -298,18 +298,6 @@ export interface BranchBonusDef {
   gather?: number;
   xp?: number;
   packSize?: number; // percent INCREASED, through the mod seam
-}
-
-/** A SIDE AREA OFF THE PROVING GROUND. Its world is its own, so it is the
- *  influence pick and the bonus in one press; its difficulty is the Proving
- *  Ground's, and nothing about it is climbed. */
-export interface ProvingBranchDef {
-  id: string;
-  name: string;
-  world: MapTheme;
-  bonus: string; // a `BRANCH_BONUSES` id
-  x: number; // percent of the picture
-  y: number;
 }
 
 /** A monster that makes its neighbours worse. One family adds a fixed amount,

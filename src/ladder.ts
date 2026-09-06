@@ -2,7 +2,7 @@
  * WHERE YOU ARE ON THE CLIMB, and where you may go. Nothing is ever taken away:
  * a depth you have beaten is open for the rest of that character's life.
  */
-import { CAMPAIGN_REWARD, LADDER, LAMPWRIGHT } from './data';
+import { CAMPAIGN_REWARD, LADDER, LAMPWRIGHT, SOULS } from './data';
 import type { Character } from './sim/character';
 import type { LinkDef, MapTheme, SideRoomDef } from './types';
 
@@ -15,28 +15,27 @@ export interface Rung {
   side?: string;
 }
 
-/** A place rather than a depth: one area past the whole climb, at `PROVING`'s
- *  own floor, in the world you PICKED. */
-export interface Proving {
-  proving: true;
-  influence: MapTheme;
-  branch?: string; // a `PROVING.branches` id: its own world, and one bonus
-}
-
 /** WHERE A DESCENT GOES. Nothing else picks a fight. */
-export type RunWhere = Rung | Proving;
-
-export const isProving = (at: RunWhere | null | undefined): at is Proving =>
-  !!at && 'proving' in at;
-
-/** OPEN once the Lampwright has paid for the climb: sockets with nothing to put
- *  in them are a screen with no verb. */
-export const provingOpen = (character: Character): boolean => !!character.paidCampaign;
+export type RunWhere = Rung;
 
 export const zoneAt = (zone: number) => LADDER.zones[zone];
 
+/** HOW MANY SOULSTONES ARE IN THE WALL, 0 to `SOULS.max`. Kept on the character
+ *  by `heal()` off the wall itself, so nothing has to carry the game around to
+ *  ask, and the two cannot disagree. */
+export const soulsIn = (character: Character): number =>
+  Math.max(0, Math.min(SOULS.max, Math.floor(character.souls ?? 0)));
+
+/** WHAT A ZONE IS RECORDED UNDER. A soulstone puts the map back to the first
+ *  depth, so each tier keeps its own sheet — taking one out is not a wipe. */
+export const progressKey = (character: Character, zone: number): string => {
+  const id = zoneAt(zone)?.id ?? '';
+  const souls = soulsIn(character);
+  return souls > 0 ? `${id}@${souls}` : id;
+};
+
 export const climbed = (character: Character, zone: number): number =>
-  character.climbed?.[zoneAt(zone)?.id ?? ''] ?? 0;
+  character.climbed?.[progressKey(character, zone)] ?? 0;
 
 /** OPEN once the one before it is climbed whole. The first always is. */
 export function zoneOpen(character: Character, zone: number): boolean {
@@ -210,8 +209,8 @@ function standsAt(zone: number, id: string): number {
 
 /** CLEARED: a depth is `climbed`, a side room is its own mark. */
 export function isCleared(character: Character, zone: number, id: string): boolean {
-  const key = zoneAt(zone)?.id;
-  if (!key) return false;
+  if (!zoneAt(zone)) return false;
+  const key = progressKey(character, zone);
   const depth = depthOfId(id);
   if (depth !== null) return climbed(character, zone) >= depth;
   return (character.opened?.[key] ?? []).includes(id);
@@ -295,8 +294,8 @@ export function campaignLine(character: Character): string {
  *  you're still at your current main level even if you cleared higher
  *  difficulty side levels."* */
 export function takeRung(character: Character, at: Rung): void {
-  const key = zoneAt(at.zone)?.id;
-  if (!key) return;
+  if (!zoneAt(at.zone)) return;
+  const key = progressKey(character, at.zone);
   if (at.side) {
     if (!sideRoom(at.zone, at.side)) return;
     const had = character.opened?.[key] ?? [];

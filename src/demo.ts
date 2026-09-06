@@ -117,7 +117,10 @@ import {
   TOOL_OF_BASE,
   toolBaseId,
   TOOL_SLOTS,
-  PROVING,
+  CRYSTAL_SLOTS,
+  SEAM_OF,
+  SOULS,
+  SOUL_SLOTS,
   RUN_SLOTS,
   armourBudget,
   implicitSpend,
@@ -144,7 +147,8 @@ import { variants } from './sim/appearance';
 import type { GearBase } from './types';
 import {
   arenaAt, campaignDone, campaignLine, campaignPrize, canEnter, canEnterNode, climbed,
-  depthOfId, depthOfSide, furthest, isCleared, linksIn, mainId, nodeSpot, sideRooms, takeRung,
+  depthOfId, depthOfSide, furthest, isCleared, linksIn, mainId, nodeSpot, sideRooms,
+  soulsIn, takeRung,
   touching, zoneOpen,
 } from './ladder';
 import { canDualWield, gatherableFamilies, toolIn, toolMore, toolRung } from './sim/character';
@@ -155,6 +159,7 @@ import {
   grant,
   canBePerfect,
   makeCrystal,
+  makeSoul,
   makeMaterial,
   pickGearBase,
   gamblePrice,
@@ -399,6 +404,8 @@ import {
   sellItem,
   socketFor,
   socketItem,
+  syncSouls,
+  unsocket,
   socketed,
   gearKindOf,
   sortGear,
@@ -415,6 +422,8 @@ import {
   crystalXp,
   giftWaiting,
   giftSchedule,
+  gaveSoul,
+  soulOwed,
   ladderOwed,
   ladderSchedule,
   ownedCrystals,
@@ -2557,13 +2566,14 @@ rule('SPRITES — is the pixel art well formed?');
       'every hotspot is ON the picture, and no two cover each other',
       astray.join(', ')
     );
-    // A SOCKET on the wall is one of the four the Fissure card holds; a fifth
-    // would be a hole nothing can ever go in.
+    // A SOCKET IN THE ROCK is one of the four CRYSTAL sockets; the soulstones'
+    // two are the wall's drawer alone, since the camp art holds four recesses.
     const sockets = CAMP_HOTSPOTS.filter((h) => h.opens === 'socket');
     const slots = sockets.map((h) => h.slot).sort();
     check(
-      sockets.length === RUN_SLOTS.length && slots.join() === RUN_SLOTS.map((_, i) => i).join(),
-      `and its ${sockets.length} sockets are the ${RUN_SLOTS.length} the set has, one each`,
+      sockets.length === CRYSTAL_SLOTS.length
+        && slots.join() === CRYSTAL_SLOTS.map((_, i) => i).join(),
+      `and its ${sockets.length} sockets are the ${CRYSTAL_SLOTS.length} crystal ones, one each`,
       slots.join(',')
     );
     // Everybody you can MEET has somewhere to stand, or the fifth one you meet
@@ -2821,7 +2831,7 @@ rule('THE OPENING — is the first hour walkable with nothing explaining it?');
   const game = createGame('fresh');
   grantFirstClear(game);
   bankLoot(game, [makeGear('ash_wand', 1), makeGear('bulwark_helmet_t1', 8)]);
-  takeHandover(game, { weapon: true, crystal: false, campaign: false, ladder: null });
+  takeHandover(game, { weapon: true, crystal: false, campaign: false, soul: 0, ladder: null });
   line(
     `  after the first clear: ${balance(game.wallet, 'gold')} gold, ` +
       `${game.inventory.length} items`
@@ -2833,7 +2843,7 @@ rule('THE OPENING — is the first hour walkable with nothing explaining it?');
   const making = RECIPES.find((r) => r.id === 'make_shard_of_making');
   const bill = making ? (recipeInputs(making, 1).gold ?? 0) : 0;
   const handed = createGame('fresh');
-  const owed = takeHandover(handed, { weapon: false, crystal: true, campaign: false, ladder: null });
+  const owed = takeHandover(handed, { weapon: false, crystal: true, campaign: false, soul: 0, ladder: null });
   check(
     (owed.currency[INTRO.scriptedCurrency] ?? 0) > 0,
     `the opening HANDS you the craft — the counter's own is ${bill} gold, several descents off`,
@@ -2876,7 +2886,7 @@ rule('THE OPENING — is the first hour walkable with nothing explaining it?');
     'the bench reaches a weapon you are wearing',
     'wearing the benched item lost it — the bench resolves to nothing'
   );
-  takeHandover(game, { weapon: false, crystal: true, campaign: false, ladder: null });
+  takeHandover(game, { weapon: false, crystal: true, campaign: false, soul: 0, ladder: null });
   const crystal = crystalsIn(game)[0];
   selectForCraft(game, crystal);
   socketItem(game, crystal, socketFor(game, crystal)!);
@@ -11788,54 +11798,41 @@ rule('THE CLIMB — does a rung open, stay open, and get harder?');
       String(runSet([], null, { zone: 0, rung: 3 }).bonus.gold)
     );
 
-    // THE PROVING GROUND'S OWN FIVE. Same difficulty, each its own WORLD and
-    // one bonus, so a side area is the influence pick and the bonus at once.
-    const plainGround = runSet([], null, { proving: true, influence: 'fissure' });
-    const areas = PROVING.branches.map((b) => ({
-      b, set: runSet([], null, { proving: true, influence: 'fissure', branch: b.id }),
-    }));
+    // A SOULSTONE RUNS THE SAME RAMP ON: `rungMod` is 0 to 1 across the whole
+    // 42, so one adds exactly 1 and the first depth of the first zone costs
+    // what the last depth of the last one did.
+    const bottom = runSet([], null, { zone: 0, rung: 1 });
+    const deepEnd = runSet([], null,
+      { zone: LADDER.zones.length - 1, rung: LADDER.zones[LADDER.zones.length - 1].rungs });
+    const souled = runSet([], null, { zone: 0, rung: 1 }, 1);
+    const both = runSet([], null, { zone: 0, rung: 1 }, 2);
     check(
-      areas.length >= 4 && areas.every(({ b, set }) => set.theme === b.world),
-      `${areas.length} side areas off the Proving Ground, each its own world`,
-      areas.map(({ b, set }) => `${b.name}=${set.theme}`).join(', ')
+      Math.abs(souled.rewards.danger - deepEnd.rewards.danger) < deepEnd.rewards.danger * 0.06,
+      `one soulstone makes depth 1 of ${LADDER.zones[0].name} the deep end: ` +
+        `${Math.round(bottom.rewards.danger)} bare, ${Math.round(souled.rewards.danger)} souled, ` +
+        `${Math.round(deepEnd.rewards.danger)} at the bottom of the climb`,
+      `${Math.round(souled.rewards.danger)} against ${Math.round(deepEnd.rewards.danger)}`
     );
     check(
-      areas.every(({ b, set }) =>
-        set.rewards.danger === plainGround.rewards.danger
-          || !!BRANCH_BONUS_BY_ID[b.bonus]?.packSize),
-      `and every one runs at the Proving Ground's own ${plainGround.rewards.danger} danger, ` +
-        'bar the one that adds bodies',
-      areas.map(({ b, set }) => `${b.name} ${set.rewards.danger}`).join(', ')
+      both.rewards.danger > souled.rewards.danger,
+      `and the second one goes on again: ${Math.round(both.rewards.danger)} danger`,
+      `${Math.round(both.rewards.danger)}`
     );
-    check(
-      areas.every(({ b, set }) => {
-        const pays = BRANCH_BONUS_BY_ID[b.bonus];
-        return !!pays && (set.bonus.gold > 1 || set.bonus.currency > 1
-          || set.bonus.rarity > 0 || set.bonus.gather > 1 || set.bonus.xp > 1);
-      }),
-      'and each pays something a plain run does not',
-      areas.map(({ b }) => `${b.name}:${b.bonus}`).join(', ')
-    );
-    // THE SEAM OVERRIDES EVEN A SIDE AREA, which is the only thing that does.
+    // THE SEAM IS THE ONE WORLD A LEVEL BUYS, and it beats the zone.
     const top = CRYSTAL_LEVELS[CRYSTAL_LEVELS.length - 1].level;
     const seamSet = [
-      ...Array.from({ length: PROVING.seamOf }, () => makeCrystal(top, 'demonic')),
-      ...Array.from({ length: PROVING.seamOf }, () => makeCrystal(top, 'prismatic')),
+      ...Array.from({ length: SEAM_OF }, () => makeCrystal(top, 'demonic')),
+      ...Array.from({ length: SEAM_OF }, () => makeCrystal(top, 'prismatic')),
     ];
-    const overridden = runSet(seamSet, null, {
-      proving: true, influence: 'fissure', branch: PROVING.branches[0].id,
-    });
     check(
-      overridden.theme === 'seam',
-      'and THE SEAM overrides a side area the way it overrides the influence',
-      overridden.theme
+      runSet(seamSet, null, { zone: 0, rung: 1 }).theme === 'seam',
+      'and THE SEAM overrides the zone it is walked in',
+      runSet(seamSet, null, { zone: 0, rung: 1 }).theme
     );
   }
 
-  // A CAMPAIGN DEPTH IS ITS ZONE'S WORLD, socketed or not: the campaign is run
-  // with nothing in the sockets at all, so there is no crystal left to name one.
-  // WHAT YOU SOCKETED IS STILL WHERE YOU GO everywhere else, which is the
-  // Proving Ground — where the sockets are the only thing there is.
+  // A DEPTH IS ITS ZONE'S WORLD, socketed or not. The Seam is the one thing
+  // that overrides it, and nothing else names a world any more.
   const rot = [makeCrystal(1, 'demonic'), makeCrystal(1, 'demonic')];
   const held = LADDER.zones.map((zone, z) => runSet(rot, null, { zone: z, rung: 1 }).theme === zone.world);
   check(
@@ -11845,7 +11842,7 @@ rule('THE CLIMB — does a rung open, stay open, and get harder?');
   );
   check(
     runSet(rot).theme === 'demonic' && runSet([]).theme === 'fissure',
-    'and off the climb it is what you SOCKETED, which is the whole of the Proving Ground',
+    'and with no depth at all it is what you SOCKETED, which is what a measured set reads',
     `${runSet(rot).theme} against ${runSet([]).theme}`
   );
 
@@ -11913,92 +11910,129 @@ rule('THE CLIMB — does a rung open, stay open, and get harder?');
     `one depth is ${worst.toFixed(1)} off, which is a spike rather than a step`
   );
 
-  // THE PROVING GROUND is one area PAST the whole climb, and its whole claim is
-  // that it is harder than the deep end however you got there. *"A set
-  // difficulty even harder than the final 'story mode' level which you can
-  // scale with more crystals."* So: harder empty than depth 42 is, and harder
-  // again for every socket filled.
+  // THE MAP STARTS AGAIN, AND IT IS NOT A WIPE. *"Your map starts over so
+  // basically its just a difficulty increase and map reset."* Each tier keeps
+  // its own sheet under `progressKey`, so taking the stone back out puts the
+  // climb you had back rather than handing it to you again.
+  {
+    const walked = createGame('fresh');
+    walked.character = ladderCharacter(1, new Rng(9));
+    for (let z = 0; z < LADDER.zones.length; z++) {
+      takeRung(walked.character, { zone: z, rung: LADDER.zones[z].rungs });
+    }
+    check(
+      campaignDone(walked.character),
+      'a character who walked the whole climb has finished the campaign',
+      String(campaignDone(walked.character))
+    );
+    const stone = makeSoul();
+    walked.souls = [stone];
+    socketItem(walked, stone, SOUL_SLOTS[0].id);
+    syncSouls(walked);
+    check(
+      soulsIn(walked.character) === 1 && climbed(walked.character, 0) === 0
+        && !campaignDone(walked.character),
+      'and socketing a soulstone puts every zone back to nothing',
+      `${soulsIn(walked.character)} souls, ${climbed(walked.character, 0)} cleared`
+    );
+    check(
+      canEnter(walked.character, { zone: 0, rung: 1 })
+        && !canEnter(walked.character, { zone: 1, rung: 1 }),
+      `and the only way in is depth 1 of ${LADDER.zones[0].name} again`,
+      String(canEnter(walked.character, { zone: 1, rung: 1 }))
+    );
+    takeRung(walked.character, { zone: 0, rung: 1 });
+    unsocket(walked, SOUL_SLOTS[0].id);
+    syncSouls(walked);
+    check(
+      soulsIn(walked.character) === 0 && campaignDone(walked.character),
+      'and taking it back out puts the climb you had back — nothing is ever wiped',
+      `${soulsIn(walked.character)} souls, campaign ${campaignDone(walked.character)}`
+    );
+    socketItem(walked, stone, SOUL_SLOTS[0].id);
+    syncSouls(walked);
+    check(
+      climbed(walked.character, 0) === 1,
+      'and the souled sheet is still where it was, which is what makes each tier its own map',
+      String(climbed(walked.character, 0))
+    );
+    // A SECOND SOULSTONE IS A SECOND WHOLE CLIMB, so the Lampwright owes the
+    // first only once the first tier is finished and the second only after that.
+    const owed = createGame('fresh');
+    owed.character = ladderCharacter(1, new Rng(10));
+    owed.given = ['weapon', 'crystal'];
+    owed.character.paidCampaign = true;
+    check(soulOwed(owed) === 0, 'no soulstone is owed before the climb is whole', String(soulOwed(owed)));
+    for (let z = 0; z < LADDER.zones.length; z++) {
+      takeRung(owed.character, { zone: z, rung: LADDER.zones[z].rungs });
+    }
+    check(soulOwed(owed) === 1, 'the first is owed the moment it is', String(soulOwed(owed)));
+    owed.given = [...owed.given, gaveSoul(1)];
+    check(soulOwed(owed) === 0, 'and taken, nothing is owed again at that tier', String(soulOwed(owed)));
+    owed.character.souls = 1;
+    check(
+      soulOwed(owed) === 0,
+      'and the second waits on the whole climb being walked AGAIN under the first',
+      String(soulOwed(owed))
+    );
+    for (let z = 0; z < LADDER.zones.length; z++) {
+      takeRung(owed.character, { zone: z, rung: LADDER.zones[z].rungs });
+    }
+    check(soulOwed(owed) === 2, `and then the second is owed, of ${SOULS.max}`, String(soulOwed(owed)));
+  }
+
+  // THE SOULED CLIMB is the endless half, and its whole claim is that the
+  // easiest depth in it is harder than the deepest depth without it.
   {
     const top = LADDER.zones.length - 1;
-    const deepest = { zone: top, rung: LADDER.zones[top].rungs };
-    const deep = runSet([], null, deepest).rewards.danger;
-    const bare = runSet([], null, { proving: true, influence: 'fissure' }).rewards.danger;
-    const filled = Array.from({ length: RUN_SLOTS.length }, () => makeCrystal(1));
-    const full = runSet(filled, null, { proving: true, influence: 'fissure' }).rewards.danger;
+    const deep = runSet([], null, { zone: top, rung: LADDER.zones[top].rungs }).rewards.danger;
+    const first = runSet([], null, { zone: 0, rung: 1 }, 1).rewards.danger;
+    const last = runSet([], null, { zone: top, rung: LADDER.zones[top].rungs }, 1).rewards.danger;
+    const both = runSet([], null, { zone: top, rung: LADDER.zones[top].rungs }, 2).rewards.danger;
     line(
-      `  the deep end is ${Math.round(deep)} danger; ${PROVING.name} is ` +
-        `${Math.round(bare)} empty and ${Math.round(full)} on ${filled.length} blank crystals`
+      `  the bare climb ends at ${Math.round(deep)} danger; one soulstone runs ` +
+        `${Math.round(first)} to ${Math.round(last)}, and two end at ${Math.round(both)}`
     );
     check(
-      bare > deep,
-      `${PROVING.name} is harder than the last depth of the climb with NOTHING socketed`,
-      `${Math.round(bare)} against ${Math.round(deep)}`
+      first >= deep * 0.94,
+      'the first depth under a soulstone is the deep end again',
+      `${Math.round(first)} against ${Math.round(deep)}`
     );
     check(
-      full > bare,
-      'and every socket filled makes it harder again, which is what a socket is FOR here',
-      `${Math.round(full)} against ${Math.round(bare)}`
+      last > first && both > last,
+      'and it keeps climbing from there, twice over',
+      `${Math.round(first)} / ${Math.round(last)} / ${Math.round(both)}`
     );
-    // THE INFLUENCE WINS. *"The zone will stay what your influence is."* So a
-    // set of one world does not drag the map into that world down here.
-    const rot = Array.from({ length: 2 }, () => makeCrystal(1, 'demonic'));
-    const themes = PROVING.influences.map(
-      (influence) => runSet(rot, null, { proving: true, influence }).theme
-    );
+    // THE SEAM IS SOCKETED FOR, never picked. *"With the exception of socketing
+    // 2 lvl 4 prismatic and 2 lvl 4 demonic gives you the seam."*
+    const best = CRYSTAL_LEVELS[CRYSTAL_LEVELS.length - 1].level;
+    const seamSet = [
+      ...Array.from({ length: SEAM_OF }, () => makeCrystal(best, 'demonic')),
+      ...Array.from({ length: SEAM_OF }, () => makeCrystal(best, 'prismatic')),
+    ];
+    const anywhere = LADDER.zones.map((_, z) => runSet(seamSet, null, { zone: z, rung: 1 }).theme);
     check(
-      themes.join(',') === PROVING.influences.join(','),
-      `and the INFLUENCE decides the world, not the crystals: ${themes.join(', ')}`,
-      themes.join(', ')
+      anywhere.every((t) => t === 'seam'),
+      `${SEAM_OF} Demonic and ${SEAM_OF} Prismatic at level ${best} is the Seam in every zone`,
+      anywhere.join(', ')
     );
-    // THE SEAM IS THE ONE THING THAT OVERRIDES THE INFLUENCE, and it is
-    // SOCKETED FOR rather than picked. *"With the exception of socketing 2 lvl
-    // 4 prismatic and 2 lvl 4 demonic gives you the seam."*
-    {
-      const top = CRYSTAL_LEVELS[CRYSTAL_LEVELS.length - 1].level;
-      const seamSet = [
-        ...Array.from({ length: PROVING.seamOf }, () => makeCrystal(top, 'demonic')),
-        ...Array.from({ length: PROVING.seamOf }, () => makeCrystal(top, 'prismatic')),
-      ];
-      const anywhere = PROVING.influences.map(
-        (influence) => runSet(seamSet, null, { proving: true, influence }).theme
-      );
-      check(
-        anywhere.every((t) => t === 'seam'),
-        `${PROVING.seamOf} Demonic and ${PROVING.seamOf} Prismatic at level ${top} is the Seam whatever the influence says`,
-        anywhere.join(', ')
-      );
-      // AND THE LEVEL IS THE PRICE. The same four one level down is not it.
-      const under = [
-        ...Array.from({ length: PROVING.seamOf }, () => makeCrystal(top - 1, 'demonic')),
-        ...Array.from({ length: PROVING.seamOf }, () => makeCrystal(top - 1, 'prismatic')),
-      ];
-      check(
-        runSet(under, null, { proving: true, influence: 'fissure' }).theme === 'fissure'
-          && seamSocketed(seamSet) && !seamSocketed(under),
-        `and level ${top} is the whole price of it — the same four at ${top - 1} is not the Seam`,
-        runSet(under, null, { proving: true, influence: 'fissure' }).theme
-      );
-      // AND THE WHOLE WALL. Three of the four is not a Seam either, so the
-      // last world costs every socket you have.
-      const partial = seamSet.slice(0, PROVING.seamOf * 2 - 1);
-      check(
-        !seamSocketed(partial) && !seamSocketed([...seamSet, makeCrystal(top, 'normal')]),
-        'and it takes the WHOLE wall: neither three of the four nor a fifth crystal opens it',
-        `${seamSocketed(partial)} / ${seamSocketed([...seamSet, makeCrystal(top, 'normal')])}`
-      );
-      // AND IT IS NEVER PICKABLE. The influence row offers three worlds.
-      check(
-        !PROVING.influences.includes('seam'),
-        'and it is never on the influence list: the last world is the only one you cannot pick',
-        PROVING.influences.join(', ')
-      );
-    }
-
-    // AND IT FLOORS THE GEAR TIER, the way a campaign zone does.
+    // AND THE LEVEL IS THE PRICE. The same four one level down is not it.
+    const under = [
+      ...Array.from({ length: SEAM_OF }, () => makeCrystal(best - 1, 'demonic')),
+      ...Array.from({ length: SEAM_OF }, () => makeCrystal(best - 1, 'prismatic')),
+    ];
     check(
-      runSet([], null, { proving: true, influence: 'fissure' }).maxTier >= PROVING.tier,
-      `and it floors the base tier at ${PROVING.tier} however little is socketed`,
-      String(runSet([], null, { proving: true, influence: 'fissure' }).maxTier)
+      runSet(under, null, { zone: 0, rung: 1 }).theme === LADDER.zones[0].world
+        && seamSocketed(seamSet) && !seamSocketed(under),
+      `and level ${best} is the whole price of it — the same four at ${best - 1} is not the Seam`,
+      runSet(under, null, { zone: 0, rung: 1 }).theme
+    );
+    // AND THE WHOLE WALL. Three of the four is not a Seam either.
+    const partial = seamSet.slice(0, SEAM_OF * 2 - 1);
+    check(
+      !seamSocketed(partial) && !seamSocketed([...seamSet, makeCrystal(best, 'normal')]),
+      'and it takes the WHOLE wall: neither three of the four nor a fifth crystal opens it',
+      `${seamSocketed(partial)} / ${seamSocketed([...seamSet, makeCrystal(best, 'normal')])}`
     );
   }
 
@@ -13057,10 +13091,24 @@ rule('THE COLLECTION — do crystals arrive, and do they grow?');
     'and the panel SAYS the points, which are the one thing in it you cannot hold',
     JSON.stringify(hand.says)
   );
-  // ONCE, and then he owes nothing at all — there is no second campaign.
+  // ONCE, and then the SOULSTONE, which is what finishing the climb really
+  // pays: the campaign's crystal and points land first and the stone after.
+  const owedNext = giftWaiting(game);
+  check(
+    owedNext?.soul === 1 && !owedNext.campaign,
+    'and what he owes next is the first soulstone, never the campaign a second time',
+    JSON.stringify(owedNext)
+  );
+  const stone = takeHandover(game, owedNext!);
+  check(
+    stone.items.length === 1 && stone.items[0].kind === 'soul'
+      && (game.souls ?? []).length === 1,
+    'taking it is one soulstone in your hands, and nothing else',
+    stone.items.map((i) => i.kind).join(', ')
+  );
   check(
     giftWaiting(game) === null && /The next crystal is/.test(giftSchedule(game)),
-    'and once it is handed over what he owes next is the LADDER, which the screen names',
+    'and after THAT what he owes is the LADDER, which the screen names',
     `${JSON.stringify(giftWaiting(game))} · ${giftSchedule(game)}`
   );
 
@@ -13072,8 +13120,9 @@ rule('THE COLLECTION — do crystals arrive, and do they grow?');
   // crystal nobody gets and no table check can see it.
   {
     const walk = createGame('fresh');
-    walk.given = ['weapon', 'crystal'];
+    walk.given = ['weapon', 'crystal', gaveSoul(1), gaveSoul(2)];
     walk.character.paidCampaign = true;
+    walk.character.souls = 1; // the endless half is the SOULED climb
     walk.crystals = [];
     check(
       ladderOwed(walk) === null && (ladderSchedule(walk) ?? '').includes(String(CRYSTAL_LADDER[0].clears)),
@@ -13082,12 +13131,12 @@ rule('THE COLLECTION — do crystals arrive, and do they grow?');
     );
 
     const took: string[] = [];
-    // At the Proving Ground's OWN per-clear rate, so the clear count printed
-    // below is a real one. Everything you hold is socketed and grinding, which
-    // is the only way a crystal ever levels.
-    const pays = xpForClear(runSet([], null, { proving: true, influence: 'fissure' }).rewards.danger);
+    // At a SOULED depth's own per-clear rate, so the clear count printed below
+    // is a real one. Everything you hold is socketed and grinding, which is the
+    // only way a crystal ever levels.
+    const pays = xpForClear(runSet([], null, { zone: 0, rung: 1 }, 1).rewards.danger);
     for (let round = 0; round < 4000 && took.length < CRYSTAL_LADDER.length; round++) {
-      walk.provingClears = (walk.provingClears ?? 0) + 1;
+      walk.souledClears = (walk.souledClears ?? 0) + 1;
       for (const crystal of ownedCrystals(walk)) addCrystalXp(crystal, pays);
       const owed = ladderOwed(walk);
       if (!owed) continue;
@@ -13112,7 +13161,7 @@ rule('THE COLLECTION — do crystals arrive, and do they grow?');
     const byFamily = MONSTER_FAMILIES.map(
       (f) => `${f.id} ${ownedCrystals(walk).filter((c) => crystalFamily(c) === f.id).length}`
     );
-    line(`  the ladder pays ${byFamily.join(', ')}, over ${walk.provingClears} clears`);
+    line(`  the ladder pays ${byFamily.join(', ')}, over ${walk.souledClears} souled clears`);
     // AND NEVER TWICE. Every step is marked, so re-running pays nothing more.
     check(
       ladderOwed(walk) === null && giftWaiting(walk) === null,
@@ -13122,10 +13171,10 @@ rule('THE COLLECTION — do crystals arrive, and do they grow?');
     // A STEP IS NEVER SKIPPED. Holding four level-4 Normals does not pay the
     // Prismatic before the four Normals themselves have been taken.
     const jumped = createGame('fresh');
-    jumped.given = ['weapon', 'crystal'];
+    jumped.given = ['weapon', 'crystal', gaveSoul(1), gaveSoul(2)];
     jumped.character.paidCampaign = true;
     jumped.crystals = Array.from({ length: 4 }, () => makeCrystal(4, 'normal'));
-    jumped.provingClears = 0;
+    jumped.souledClears = 0;
     check(
       ladderOwed(jumped) === null,
       'and a step further up the ladder cannot pay before the ones under it',

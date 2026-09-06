@@ -7,7 +7,7 @@
  * what separates two of them is danger, family and how far they have levelled,
  * and none of that is a silhouette.
  */
-import { CRYSTAL_LADDER, FAMILY_BY_ID, LADDER, PROVING, RUN_SLOTS } from '../data';
+import { CRYSTAL_LADDER, CRYSTAL_SLOTS, FAMILY_BY_ID, LADDER } from '../data';
 import { climbed } from '../ladder';
 import type { CrystalStep } from '../data';
 import type { LadderZoneDef } from '../types';
@@ -45,7 +45,7 @@ interface Row {
 
 function rows(): Row[] {
   const out: Row[] = [];
-  for (const slot of RUN_SLOTS) {
+  for (const slot of CRYSTAL_SLOTS) {
     const held = game.sockets[slot.id];
     if (held) out.push({ item: held, held: 'socket', slot: slot.id });
   }
@@ -76,7 +76,7 @@ function action(row: Row): { label: string; run: () => void } {
   }
 
   const slot = socketFor(game, item);
-  const into = RUN_SLOTS.find((s) => s.id === slot);
+  const into = CRYSTAL_SLOTS.find((s) => s.id === slot);
   return {
     label: game.sockets[slot ?? ''] ? `Socket (swaps ${into?.name})` : 'Socket it',
     run: () => {
@@ -174,7 +174,7 @@ function renderStep(step: CrystalStep, at: number, now: number): HTMLElement {
   const family = FAMILY_BY_ID[step.family];
   card.append(el('div', 'crystal__name', `${family?.name ?? step.family} crystal`));
   const said = step.clears !== undefined
-    ? `${Math.min(step.clears, game.provingClears ?? 0)} of ${step.clears} ${PROVING.name} clears.`
+    ? `${Math.min(step.clears, game.souledClears ?? 0)} of ${step.clears} souled clears.`
     : `${step.hold!.count} ${FAMILY_BY_ID[step.hold!.family]?.name ?? step.hold!.family} ` +
       `${step.hold!.count === 1 ? 'crystal' : 'crystals'} at level ${step.hold!.level}.`;
   card.append(el('div', 'quest__detail', done ? 'Taken.' : said));
@@ -205,7 +205,7 @@ export function render(): void {
 
   $('crystals-count').textContent = `${all.length} owned · ${
     all.filter((r) => r.held === 'socket').length
-  }/${RUN_SLOTS.length} socketed`;
+  }/${CRYSTAL_SLOTS.length} socketed`;
 
   $('crystals-npc').textContent = giftSchedule(game);
 }

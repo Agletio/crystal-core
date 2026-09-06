@@ -236,11 +236,8 @@ if (hold) {
 
 // A DEPTH RUNS IN ITS ZONE'S OWN WORLD, and the kit has cleared the whole
 // climb — so another world is a zone TAB and its first depth, at that ladder's
-// own difficulty. THE PROVING GROUND IS NOT THE ROUTE: it is a floor above the
-// whole climb, and at 1000+ danger nothing survives long enough to be
-// photographed. The Seam is the exception, being the one world only the
-// sockets open. KEYED BY ID: an influence button wears `climbtab` exactly as
-// the tabs do, so a selector on the class silently picks nothing.
+// own difficulty. The SEAM is the exception: it is the one world only the
+// sockets open, and the dev kit's own button arranges them.
 const ZONE_TAB = { cavern: 1, rot: 2 };
 // A ZONE IS SHUT UNTIL THE ONE BELOW IT IS WHOLE, and the kit does not clear
 // the climb on its own — the last `dev-climb-` opens every zone at once.
@@ -254,22 +251,19 @@ if (zone === 'seam' || zone in ZONE_TAB) {
   await page.waitForTimeout(400);
 }
 if (zone === 'seam') {
-  await page.evaluate(() => document.getElementById('camp-crack')?.click());
-  await page.waitForTimeout(300);
-  const found = await page.evaluate(() => {
-    // BY ITS OWN ID: the last `climb-tab-` is a bonus ROOM now.
-    const tab = [...document.querySelectorAll('[id^=climb-tab-]')]
-      .filter((t) => /^climb-tab-\d+$/.test(t.id))
-      .at(-1);
-    if (!tab || tab.disabled) return 'no Proving Ground tab';
-    tab.click();
+  await page.evaluate(() => document.getElementById('open-dev')?.click());
+  await page.waitForTimeout(200);
+  const armed = await page.evaluate(() => {
+    const button = document.getElementById('dev-seam');
+    if (!button) return 'no dev-seam button';
+    button.click();
     return true;
   });
-  if (found !== true) {
-    console.error(`descent-peek: ${found}`);
+  if (armed !== true) {
+    console.error(`descent-peek: ${armed}`);
     process.exit(1);
   }
-  await page.waitForTimeout(300);
+  await page.waitForTimeout(400);
 } else if (zone in ZONE_TAB) {
   await page.evaluate(() => document.getElementById('camp-crack')?.click());
   await page.waitForTimeout(300);

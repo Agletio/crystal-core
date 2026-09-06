@@ -50,6 +50,7 @@ export interface Character {
   /** The trade taken up, or null before one is. Survives every skill swap. */
   trade: string | null;
   paidCampaign?: boolean; // the Lampwright has handed the campaign over. Once
+  souls?: number; // SOULSTONES in the wall; `climbed` and `opened` are keyed by it
   /** Nodes walked on it, out of a budget character level funds. */
   tradeAllocated: string[];
   /** THE LEDGER'S COUNTS, per counter, and PER CHARACTER so a second one starts

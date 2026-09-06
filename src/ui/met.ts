@@ -39,9 +39,11 @@ export const lampwrightWords = (waiting: Waiting) =>
       ? LAMPWRIGHT.crystal
       : waiting.campaign
         ? LAMPWRIGHT.campaign
-        : waiting.ladder
-          ? LAMPWRIGHT.deeper
-          : LAMPWRIGHT.again;
+        : waiting.soul
+          ? LAMPWRIGHT.soul
+          : waiting.ladder
+            ? LAMPWRIGHT.deeper
+            : LAMPWRIGHT.again;
 
 function row(icon: SVGElement, name: string, card: () => HTMLElement | string): HTMLElement {
   const line = el('div', 'met__row');

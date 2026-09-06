@@ -187,7 +187,7 @@ const STATES = [
   'toast', 'itemmenu', 'confirm', 'professions',
   'handover', 'descent', 'results',
   'scene', 'speech', 'lampwright', 'tale', 'bonus',
-  'skills', 'skill-list', 'skill-web', 'move-web', 'trade', 'trials', 'proving',
+  'skills', 'skill-list', 'skill-web', 'move-web', 'trade', 'trials', 'wall',
   'bench', 'tooltip', 'glossary', 'graft', 'works', 'anvil', 'jewellery', 'tools',
   'builder',
 ];
@@ -707,29 +707,25 @@ for (const vp of VIEWPORTS) {
   await shoot('trials');
   await page.evaluate(() => document.getElementById('trials-close')?.click());
 
-  // THE PROVING GROUND, which the climb above has just opened: one area, the
-  // influence picked over it, and the four sockets laid over the map the way
-  // the camp's crack lays them out. The only screen where a control sits ON
-  // the picture, so it is the one that can bury the map under its own verbs.
-  // The dock's own window takes the lower half of the screen, and the Fissure
-  // is sized off the room LEFT — so this is shot with it shut, the way the
-  // climb's own screen is.
+  // THE WALL, which is a drawer off the map's right edge and is shut until you
+  // pull it: six sockets, four crystals and the two soulstones under a rule.
+  // The dock's own window takes the lower half of the screen and the Fissure is
+  // sized off the room LEFT, so this is shot with it shut.
   await page.evaluate(() => document.getElementById('inv-close')?.click());
   await page.evaluate(() => document.getElementById('camp-crack')?.click());
   await page.waitForTimeout(350);
-  await page.evaluate(() => document.getElementById('climb-tab-3')?.click());
+  await page.evaluate(() => document.getElementById('run-wall-tab')?.click());
   await page.waitForTimeout(350);
   const ground = await page.evaluate(() => ({
-    sockets: document.querySelectorAll('.groundsockets .socket').length,
-    influences: document.querySelectorAll('.influences .climbtab').length,
+    sockets: document.querySelectorAll('#run-wall-slots .socket').length,
+    rules: document.querySelectorAll('#run-wall-slots .wall__rule').length,
   }));
-  if (ground.sockets < 4 || ground.influences !== 3) {
+  if (ground.sockets < 6 || ground.rules !== 1) {
     problems.push(
-      `${vp.name}: the Proving Ground drew ${ground.sockets} sockets and ` +
-        `${ground.influences} influences`
+      `${vp.name}: the wall drew ${ground.sockets} sockets and ${ground.rules} rules`
     );
   }
-  await shoot('proving');
+  await shoot('wall');
   await page.evaluate(() => document.getElementById('run-menu-close')?.click());
   await page.waitForTimeout(250);
 

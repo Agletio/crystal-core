@@ -1,7 +1,6 @@
 import type {
   AttributeDef,
   BranchBonusDef,
-  ProvingBranchDef,
   SkillSlotDef,
   CurrencyClass,
   CurrencyDef,
@@ -261,7 +260,27 @@ export const RUN_SLOTS: RunSlotDef[] = [
   { id: 's2', name: 'Second socket', accepts: 'crystal' },
   { id: 's3', name: 'Third socket', accepts: 'crystal' },
   { id: 's4', name: 'Fourth socket', accepts: 'crystal' },
+  { id: 'soul1', name: 'First soul socket', accepts: 'soul' },
+  { id: 'soul2', name: 'Second soul socket', accepts: 'soul' },
 ];
+
+/** The two halves of the wall. A crystal decides what a run HOLDS; a soulstone
+ *  decides how hard every depth in the game is. */
+export const CRYSTAL_SLOTS = RUN_SLOTS.filter((s) => s.accepts === 'crystal');
+export const SOUL_SLOTS = RUN_SLOTS.filter((s) => s.accepts === 'soul');
+
+/**
+ * THE SOULSTONE: what the top of the climb pays, and the whole of what the
+ * endless half is. It rolls NOTHING. Socketing one puts the whole map back to
+ * the first depth of the first zone and runs the climb's own straight ramp on
+ * from where it ended — so depth 1 of The Shallows costs what depth 16 of The
+ * Rot did. Two of them, and the second does it again.
+ */
+export const SOULS = {
+  max: 2,
+  name: 'Soulstone',
+  flavour: 'The Rot kept something of everyone who got this far. This is a piece of it.',
+};
 
 // --- what a base holds -----------------------------------------------------
 
@@ -2117,6 +2136,22 @@ export const LAMPWRIGHT = {
     ] as SceneBeat[],
     button: 'Take them',
   },
+  /** THE SOULSTONE. The climb is whole and there is nothing under it, so what
+   *  he hands over is the way to walk it all again against something worse. */
+  soul: {
+    title: 'The Lampwright',
+    beats: [
+      {
+        said: 'The Rot gave up something when you finished it. It was in the wall this morning and it was not there last night.',
+        act: 'work',
+      },
+      {
+        said: 'Put it in the rock beside the crystals. Everything down there starts again, and none of it will be as easy as it was.',
+        act: 'face',
+      },
+    ] as SceneBeat[],
+    button: 'Take it',
+  },
   /** EVERY CRYSTAL AFTER THE CAMPAIGN'S. Said each time, so it is short and it
    *  does not pretend to be an occasion the way the first two were. */
   deeper: {
@@ -2943,37 +2978,10 @@ export const WEAPON_PROFESSIONS: Record<string, string[]> = {
   shield: ['blacksmithing'],
 };
 
-/** THE PROVING GROUND: one area past the climb, at a set floor. *"A set
- *  difficulty even harder than the final 'story mode' level which you can scale
- *  with more crystals and more trial points."* `rungMod` is 1 at depth 42, so
- *  `overTop` is a MULTIPLE of it; points scale it through the Reckoning. */
-export const PROVING = {
-  name: 'The Proving Ground',
-  blurb: 'Past the last of the climb, and it does not end. What you socket is where you go.',
-  overTop: 1.25,
-  perSocket: 0.15,
-  tier: 3, // the best gear BASE it drops, floored as a campaign zone floors it
-  influences: ['fissure', 'prismatic', 'demonic'] as MapTheme[], // never the Seam
-  seamOf: 2, // of EACH aura world, at the top level, and nothing else socketed
-  /**
-   * FIVE AREAS OFF THE ONE AREA, all at its own difficulty. *"It could branch
-   * off and be a rot area with maybe 4-5 different areas to select that are
-   * all the same difficulty generally but have a different bonus."* A branch
-   * SETS THE WORLD as well as the bonus, so it is the influence pick and the
-   * bonus in one press; the plain area is still your influence with nothing on
-   * it. Placed in PERCENT of the picture, like the sockets over it.
-   */
-  branches: [
-    { id: 'sink', name: 'The Sink', world: 'fissure', bonus: 'coinfall', x: 11, y: 74 },
-    { id: 'orchard', name: 'The Orchard', world: 'demonic', bonus: 'richseam', x: 27, y: 86 },
-    { id: 'sanctum', name: 'The Sanctum', world: 'prismatic', bonus: 'trove', x: 50, y: 75 },
-    { id: 'exchange', name: 'The Exchange', world: 'fissure', bonus: 'sluice', x: 73, y: 86 },
-    { id: 'kennel', name: 'The Kennel', world: 'demonic', bonus: 'swarm', x: 89, y: 74 },
-  ] as ProvingBranchDef[],
-};
-
-export const PROVING_BRANCH_BY_ID: Record<string, ProvingBranchDef> =
-  Object.fromEntries(PROVING.branches.map((b) => [b.id, b]));
+/** THE SEAM IS THE ONE WORLD A LEVEL BUYS OUTRIGHT: two of EACH aura world at
+ *  the top level and nothing else in the wall. *"Socketing 2 lvl 4 prismatic
+ *  and 2 lvl 4 demonic gives you the seam which will be the final zone."* */
+export const SEAM_OF = 2;
 
 /** Rungs below this one across the WHOLE ladder. */
 export function rungsBelow(zone: number, rung: number): number {
@@ -4512,6 +4520,7 @@ export interface StartPreset {
   uniques?: string[];
   relics?: string[];
   materials?: number; // raw of EVERY one, so a station can be loaded without mining
+  souls?: number; // soulstones held, unsocketed
   /** Whether that gear starts worn, or has to be earned first. */
   equipped: boolean;
 }
@@ -4529,7 +4538,7 @@ export const START_PRESETS: Record<'fresh' | 'dev', StartPreset> = {
     currency: {},
     // Off both tables, so a new rung or a new world arrives in the kit without
     // a second edit — every level in every family, which is the whole grid.
-    // TWO OF EACH: `PROVING.seamOf` is 2 of each aura world at the top level,
+    // TWO OF EACH: `SEAM_OF` is 2 of each aura world at the top level,
     // so with one apiece the kit could not open the SEAM at all, and the only
     // world with a set nobody had photographed stayed unreachable.
     crystals: CRYSTAL_LEVELS.flatMap((t) =>
@@ -4545,6 +4554,7 @@ export const START_PRESETS: Record<'fresh' | 'dev', StartPreset> = {
     relics: RELICS.map((r) => r.id),
     // Enough raw of every one to load a station three times over.
     materials: 24,
+    souls: SOULS.max, // both, so the souled climb is one socket away
     equipped: true,
   },
 };

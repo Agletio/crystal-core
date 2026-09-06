@@ -42,6 +42,7 @@ import { equippedSkill, gatherableFamilies, mainSkillId, monsterXp, toolMore } f
 import type { Character } from './character';
 import { dominantFamily, familyPlan, runSet } from './crystal';
 import type { RunSet } from './crystal';
+import { soulsIn } from '../ladder';
 import type { RunWhere } from '../ladder';
 import {
   AURA,
@@ -683,7 +684,7 @@ export class RunSim {
     // the sim has to fight with the same skill the stat sheet described, or a
     // converted Fireball scales off cold and is resisted as fire.
     this.skill = effectiveSkill(SKILL_BY_ID[mainSkillId(character)] ?? SKILLS[0], this.grants);
-    this.set = runSet(crystals, trialMod(character), options.where);
+    this.set = runSet(crystals, trialMod(character), options.where, soulsIn(character));
     this.wellChance = percentStat(this.set.mods, 'wellChance');
     this.splitChance = percentStat(this.set.mods, 'splitChance');
     this.giltChance = percentStat(this.set.mods, 'giltChance');

@@ -12,19 +12,19 @@ import {
   CRYSTAL_STEP_BY_ID,
   FAMILY_BY_ID,
   LADDER,
-  PROVING,
   CRYSTAL_LEVELS,
   CRYSTAL_XP,
   INTRO,
   LAMPWRIGHT,
   RUN_SLOTS,
   SKILL_BY_ID,
+  SOULS,
   crystalName,
 } from '../data';
 import { mainSkillId, pointsAvailable } from '../sim/character';
 import { armForSkill, giveGift } from './state';
 import type { GameState } from './state';
-import { grant, makeCrystal } from '../economy';
+import { grant, makeCrystal, makeSoul } from '../economy';
 import { crystalFamily, crystalLevel, crystalXp, levelForXp } from '../sim/crystal';
 import { campaignDone, campaignPrize, climbed } from '../ladder';
 import type { RunSet } from '../sim/crystal';
@@ -50,10 +50,22 @@ export interface Waiting {
   campaign: boolean;
   /** A `CRYSTAL_LADDER` step id, once its one condition is true. */
   ladder: string | null;
+  /** WHICH SOULSTONE, 1 or 2, once the climb has been finished at that tier. */
+  soul: number;
 }
 
 /** A step already handed over, as a `given` entry. */
 const gaveStep = (id: string): string => `crystal:${id}`;
+
+export const gaveSoul = (n: number): string => `soul:${n}`;
+
+/** WHICH SOULSTONE IS OWED, or 0. The climb has to be whole at the tier you
+ *  are standing on, so the second one is a whole second climb. */
+export function soulOwed(game: GameState): number {
+  if (!campaignDone(game.character)) return 0;
+  const want = Math.min(SOULS.max, (game.character.souls ?? 0) + 1);
+  return (game.given ?? []).includes(gaveSoul(want)) ? 0 : want;
+}
 
 /** HOW MANY YOU HOLD of a family at or past a level. Socketed counts: a crystal
  *  in the wall is one you own, and it is the only one that levels. */
@@ -62,10 +74,10 @@ const holding = (game: GameState, family: MonsterFamily, level: number): number 
     (c) => crystalFamily(c) === family && crystalLevel(c) >= level
   ).length;
 
-/** WHETHER A STEP IS DUE. `clears` is the Proving Ground's own count; `hold` is
- *  what the crystals you already have must have grown into. */
+/** WHETHER A STEP IS DUE. `clears` is descents cleared with a SOULSTONE in the
+ *  wall; `hold` is what the crystals you already have must have grown into. */
 export function stepMet(game: GameState, step: CrystalStep): boolean {
-  if (step.clears !== undefined) return (game.provingClears ?? 0) >= step.clears;
+  if (step.clears !== undefined) return (game.souledClears ?? 0) >= step.clears;
   if (step.hold) return holding(game, step.hold.family, step.hold.level) >= step.hold.count;
   return false;
 }
@@ -85,10 +97,8 @@ export function ladderSchedule(game: GameState): string | null {
   if (!next) return null;
   const word = FAMILY_BY_ID[next.family]?.name ?? next.family;
   if (next.clears !== undefined) {
-    return (
-      `The next crystal is ${word}, out of the wall at ${next.clears} clears of ` +
-      `${PROVING.name}. You have ${game.provingClears ?? 0}.`
-    );
+    return `The next crystal is ${word}, at ${next.clears} souled clears. ` +
+      `You have ${game.souledClears ?? 0}.`;
   }
   const hold = next.hold!;
   const held = FAMILY_BY_ID[hold.family]?.name ?? hold.family;
@@ -118,14 +128,15 @@ export function giftWaiting(game: GameState): Waiting | null {
   const crystal = !weapon && !given.includes('crystal') && crystalEarned(game);
   const campaign =
     !weapon && !crystal && !game.character.paidCampaign && campaignDone(game.character);
+  const soul = !weapon && !crystal && !campaign ? soulOwed(game) : 0;
   // THE LADDER IS LAST: everything the campaign owes lands before the endless
   // half of the game starts paying.
   const ladder =
-    !weapon && !crystal && !campaign && game.character.paidCampaign
+    !weapon && !crystal && !campaign && !soul && game.character.paidCampaign
       ? (ladderOwed(game)?.id ?? null)
       : null;
-  if (!weapon && !crystal && !campaign && !ladder) return null;
-  return { weapon, crystal, campaign, ladder };
+  if (!weapon && !crystal && !campaign && !soul && !ladder) return null;
+  return { weapon, crystal, campaign, soul, ladder };
 }
 
 /** What the collection screen says about the next meeting. */
@@ -203,6 +214,12 @@ export function takeHandover(game: GameState, waiting: Waiting): Handover {
       items.push(crystal);
     }
     says.push(`${CAMPAIGN_REWARD.points} points`);
+  }
+  if (waiting.soul) {
+    game.given = [...(game.given ?? []), gaveSoul(waiting.soul)];
+    const stone = makeSoul();
+    giveGift(game, stone);
+    items.push(stone);
   }
   if (waiting.ladder) {
     const step = CRYSTAL_STEP_BY_ID[waiting.ladder];

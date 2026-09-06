@@ -80,7 +80,9 @@ export function spendRelic(game: GameState, relic: Item, item: Item, forgedId: s
   const at = game.relics.indexOf(relic);
   if (at < 0) return null;
   if (!replaceGraft(game, item, made)) return null;
-  game.relics.splice(at, 1);
+  const left = (relic.meta.n ?? 1) - 1;
+  if (left > 0) relic.meta.n = left;
+  else game.relics.splice(at, 1);
   return made;
 }
 

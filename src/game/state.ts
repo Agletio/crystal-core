@@ -12,7 +12,9 @@ import {
   FISSURE,
   GEAR_BASE_BY_ID,
   RELIC_BY_ID,
+  CRYSTAL_SLOTS,
   RUN_SLOTS,
+  SOULS,
   SKILL_BY_ID,
   WEAPON_SLOT,
   START_PRESETS,
@@ -21,7 +23,6 @@ import {
   TOOLS,
   WORKERS,
   workerMark,
-  PROVING,
   CRYSTAL_ILVL,
   UNIQUE_BY_ID,
   starterWeapon,
@@ -36,6 +37,7 @@ import {
   makeGear,
   makeMaterial,
   makeRelic,
+  makeSoul,
   makeUnique,
   sellPrice,
   stackKey,
@@ -136,8 +138,10 @@ export interface GameState {
   /** Panels away, map alone. A preference like `keys`, so a wipe keeps it. */
   parked: boolean;
   climbing: boolean; // a CLEAR takes the next RUNG down; absent is off, and dying clears it
-  influence?: MapTheme; // WHICH WORLD the Proving Ground runs in; a preference
-  provingClears?: number; // what the crystal ladder's first four are bought with
+  /** Descents cleared with a SOULSTONE in the wall — the endless half, and
+   *  what the crystal ladder's first four steps are bought with. */
+  souledClears?: number;
+  souls: Item[]; // soulstones held but not socketed
 
   bosses: string[]; // put down: stops one being scheduled twice, opens its key
   called: string | null; // a fight a socketed key has paid for: the next entry is it
@@ -158,6 +162,7 @@ export function createGame(mode: StartMode = 'dev'): GameState {
     stash: [],
     crystals: [],
     relics: [],
+    souls: [],
     materials: [],
     jobs: [],
     stashSlots: STASH_START,
@@ -176,7 +181,6 @@ export function createGame(mode: StartMode = 'dev'): GameState {
     potions: {},
     parked: false,
     climbing: false,
-    influence: PROVING.influences[0],
     bosses: [],
     called: null,
   };
@@ -216,6 +220,7 @@ export function resetGame(game: GameState, mode: StartMode): void {
   game.inventory = stocked;
   game.crystals = preset.crystals.map((c) => makeCrystal(c.level, c.family));
   game.relics = (preset.relics ?? []).map((id) => makeRelic(RELIC_BY_ID[id]!));
+  game.souls = Array.from({ length: preset.souls ?? 0 }, () => makeSoul());
   // RAW and WORKED both: a kit that could not reach the anvil is one that can
   // look at half the arc.
   game.materials = preset.materials
@@ -234,6 +239,7 @@ export function resetGame(game: GameState, mode: StartMode): void {
     'strike'
   );
   game.sockets = {};
+  game.character.souls = 0;
   game.craftId = null;
 
   // A fresh game asks which skill you want; the dev kit assumes you know.
@@ -299,14 +305,18 @@ export function armForSkill(game: GameState): { item: Item; where: GiftPlace } |
   return { item, where };
 }
 
-export const carried = (game: GameState, kind: ItemKind): Item[] =>
-  kind === 'crystal'
-    ? (game.crystals ?? [])
-    : kind === 'relic'
-      ? (game.relics ?? [])
-      : kind === 'material'
-        ? (game.materials ?? [])
-        : game.inventory.filter((i) => i.kind === kind);
+const HEAPS: Partial<Record<ItemKind, keyof GameState>> = {
+  crystal: 'crystals', relic: 'relics', material: 'materials', soul: 'souls',
+};
+
+/** A kind with its own heap is never in the bag: nothing sells one and nothing
+ *  at the bench sees one, so the dock is gear alone. */
+export const carried = (game: GameState, kind: ItemKind): Item[] => {
+  const heap = HEAPS[kind];
+  return heap
+    ? ((game[heap] as Item[] | undefined) ?? [])
+    : game.inventory.filter((i) => i.kind === kind);
+};
 
 /** Only gear is capped. A crystal is never carried and a relic is never sold,
  *  so a limit on either could only throw loot away. */
@@ -322,22 +332,25 @@ export type Placement = 'carried' | 'stashed' | 'lost';
 /** Bags, then the stash, then nowhere. Every caller must report what this
  *  returned: loot that silently fails to arrive reads as a bug. */
 export function addItem(game: GameState, item: Item): Placement {
-  if (item.kind === 'crystal') {
-    game.crystals.push(item);
-    return 'carried';
-  }
-  if (item.kind === 'relic') {
-    game.relics.push(item);
+  if (item.kind === 'crystal' || item.kind === 'soul') {
+    const heap = item.kind === 'crystal'
+      ? (game.crystals = game.crystals ?? [])
+      : (game.souls = game.souls ?? []);
+    heap.push(item);
     return 'carried';
   }
   // A STACK, so the bag holds one row however many descents fed it — and RAW
   // and PROCESSED are two stacks of the same row, which is what `stackKey` is.
-  if (item.kind === 'material') {
-    game.materials = game.materials ?? [];
+  // An ODDITY stacks for the same reason: the Rot pays one every few descents
+  // and the ossuary wants one, so the rest are a column of identical corpses.
+  if (item.kind === 'relic' || item.kind === 'material') {
+    const heap = item.kind === 'relic'
+      ? (game.relics = game.relics ?? [])
+      : (game.materials = game.materials ?? []);
     const key = stackKey(item);
-    const held = game.materials.find((i) => stackKey(i) === key);
-    if (held) held.meta.n = (held.meta.n ?? 0) + (item.meta.n ?? 0);
-    else game.materials.push(item);
+    const held = heap.find((i) => stackKey(i) === key);
+    if (held) held.meta.n = (held.meta.n ?? 0) + (item.meta.n ?? 1);
+    else heap.push({ ...item, meta: { ...item.meta, n: item.meta.n ?? 1 } });
     return 'carried';
   }
   if (carryRoom(game, item.kind) > 0) {
@@ -373,7 +386,8 @@ function takeFrom(list: Item[], item: Item): boolean {
 export { isTwoHanded };
 
 export function removeItem(game: GameState, item: Item): boolean {
-  if (item.kind === 'crystal') return takeFrom(game.crystals, item);
+  const heap = HEAPS[item.kind];
+  if (heap) return takeFrom((game[heap] as Item[] | undefined) ?? [], item);
   return takeFrom(game.inventory, item);
 }
 
@@ -577,7 +591,17 @@ export const relicsIn = (game: GameState): Item[] => game.relics ?? [];
 
 /** In slot order, so the set reads the same way it is drawn. */
 export const socketed = (game: GameState): Item[] =>
-  RUN_SLOTS.map((s) => game.sockets[s.id]).filter((i): i is Item => !!i);
+  CRYSTAL_SLOTS.map((s) => game.sockets[s.id]).filter((i): i is Item => !!i);
+
+/** WHAT IS IN THE WALL IS THE ONLY SOURCE: `character.souls` is derived here
+ *  and nowhere else, so the count and the sockets cannot disagree. Called by
+ *  `heal()` on every load and by the one button that moves a soulstone. */
+export function syncSouls(game: GameState): void {
+  game.character.souls = Math.min(
+    SOULS.max,
+    RUN_SLOTS.filter((s) => s.accepts === 'soul' && game.sockets?.[s.id]).length
+  );
+}
 
 export function fitsSocket(item: Item, slot: RunSlotDef): boolean {
   return item.kind === slot.accepts;

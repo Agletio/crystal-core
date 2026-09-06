@@ -33,7 +33,7 @@ import {
   UNIQUE_BY_ID,
   LADDER,
   LADDER_RUNGS,
-  PROVING,
+  SOULS,
   rungsBelow,
 } from '../data';
 import { attributeSteps, equippedItems, equippedSkill, mainSkillId } from './character';
@@ -551,11 +551,12 @@ export function branchMod(bonus: BranchBonusDef | null): RolledMod | null {
   };
 }
 
-/** THE PROVING GROUND as one synthetic mod, on the same three stats a DEPTH
- *  scales and by the same arithmetic — so its floor is readable as "so many
- *  times the deep end" rather than as a table of its own. */
-export function provingMod(sockets: number): RolledMod | null {
-  const up = PROVING.overTop + Math.max(0, sockets) * PROVING.perSocket;
+/** A SOULSTONE as one synthetic mod, on the same three stats a DEPTH scales and
+ *  by the same arithmetic: `rungMod` runs 0 to 1 across the whole 42, so one
+ *  soulstone adds exactly 1 and the ramp carries straight on — depth 1 of the
+ *  first zone costs what the last depth of the last one did. */
+export function soulMod(souls: number): RolledMod | null {
+  const up = Math.max(0, souls);
   const stats: RolledMod['stats'] = (
     [
       ['monsterLife', LADDER.lifeAtTop],
@@ -567,11 +568,11 @@ export function provingMod(sockets: number): RolledMod | null {
     .filter((line) => line.value > 0);
   if (stats.length === 0) return null;
   return {
-    entryId: 'proving',
-    defId: 'proving',
+    entryId: 'soul',
+    defId: 'soul',
     group: 'rung', // the same seam a depth rides: one place, one difficulty
     slot: 'rung',
-    name: PROVING.name,
+    name: souls > 1 ? `${souls} Soulstones` : SOULS.name,
     tier: 1,
     tags: [],
     stats,

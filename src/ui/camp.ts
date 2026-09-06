@@ -26,7 +26,7 @@ import { SCENE_ART } from '../render/generated-scene';
 import { GENERATED } from '../render/generated-art';
 import { drawBody } from './bodydraw';
 import { heroSpriteFor } from '../sim/appearance';
-import { MATERIAL_BY_ID, RUN_SLOTS } from '../data';
+import { CRYSTAL_SLOTS, MATERIAL_BY_ID } from '../data';
 import { folkMet } from '../game/scenes';
 import { jobOf, saysJob, workersFound } from '../game/work';
 import { CAMP_STATION_FOOT, CAMP_WORKER_SPOTS } from '../scenes/camp';
@@ -175,7 +175,7 @@ function mountFolk(): void {
 /** What a socket says is what is IN it, which the table cannot know. */
 function says(spot: Hotspot): string {
   if (spot.opens !== 'socket') return spot.says;
-  const held = game.sockets[RUN_SLOTS[spot.slot ?? 0]?.id ?? ''];
+  const held = game.sockets[CRYSTAL_SLOTS[spot.slot ?? 0]?.id ?? ''];
   return held ? `${held.name}. Click to take it back.` : 'An empty socket. Click to choose a crystal.';
 }
 
@@ -186,7 +186,7 @@ export function renderCamp(): void {
   host.replaceChildren();
   for (const spot of CAMP_HOTSPOTS) {
     if (spot.opens !== 'socket') continue;
-    const held = game.sockets[RUN_SLOTS[spot.slot ?? 0]?.id ?? ''];
+    const held = game.sockets[CRYSTAL_SLOTS[spot.slot ?? 0]?.id ?? ''];
     if (!held) continue;
     const cell = document.createElement('div');
     cell.className = 'camp__crystal';

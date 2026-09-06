@@ -511,9 +511,10 @@ function drop(event: PointerEvent): void {
   renderInventory();
 }
 
-/** What you are carrying to a PERSON. Its own column because a corpse that
- *  sorted into the dock beside a pair of boots is a corpse you sell by
- *  accident — and nothing here has a click at all. */
+/** ODDITIES: what you are carrying to a PERSON. Its own column because a
+ *  corpse that sorted into the dock beside a pair of boots is a corpse you sell
+ *  by accident — and nothing here has a click at all. One row a kind, since
+ *  only one is ever spent and the rest would be a column of identical corpses. */
 function renderRelics(): void {
   if (!game) return;
   const held = relicsIn(game);
@@ -527,6 +528,8 @@ function renderRelics(): void {
     const btn = el('button', 'slot slot--gear slot--off') as HTMLButtonElement;
     btn.disabled = true;
     btn.append(itemIcon(item, 30));
+    const n = (item.meta.n as number) ?? 1;
+    if (n > 1) btn.append(el('span', 'slot__n', String(n)));
     attachTooltip(btn, () => itemCard(item, ['somebody down here wants this']));
     host.append(btn);
   }

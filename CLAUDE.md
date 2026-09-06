@@ -332,6 +332,12 @@ LOT; what you do not want is dismantled at the anvil or sold across the counter.
 `KIND_VARIETY` is what weights a drop's KIND now, AUTHORED and never counted —
 counted off content volume, ten ring implicits took rings to 39% of every drop.
 
+**AN ODDITY STACKS.** *"Change the 'Carrying' part of the inventory to
+'Oddities' and make them stackable so your inventory doesn't fill with a million
+corpses and dust."* The relic column is ODDITIES and `addItem` merges one into
+its own row by `stackKey`, the way a material does; `spendRelic` takes one off
+the stack rather than the list, and `heal()` merges a save written before it.
+
 **THE DOCK IS THREE TABS, and only ONE of them is a grid.** Gear is SLOTS
 because the slot count IS the carry limit — 48, twelve columns of four, and
 running out is something you watch approaching. Currency and material are
@@ -438,27 +444,43 @@ round, which means the picture never joined those two chambers, so it draws as
 a straight dashed hop. Every spur is drawn TWICE, a dark casing under the dash,
 because a hairline on a lit cave floor is the same value as the floor.
 
-**THE PROVING GROUND IS THE FOURTH TAB, and the sockets are ITS.** *"Once you
-finish the first three runs of each zone you end in a 4th tab that only has one
-area and its where you can socket the crystals. The other menu can just remove
-the crystal sockets and take up more screen with the map and the 4th screen can
-have the crystal sockets laid out like the fissure entrance in the camp on top
-of the map."* So the socket column is gone from every other tab and the four
-lie OVER this one's picture, positioned rather than in flow. It is one AREA and
-not a depth — `Proving` beside `Rung` in `RunWhere`, and `isProving` is the only
-read — so nothing about it is climbed, recorded or advanced. **THE INFLUENCE IS
-PICKED HERE AND IT WINS**: it decides the world and the picture (that world's
-own act art), while what you SOCKETED still decides the packs — *"as you mix and
-match crystals you can still get the other types to join by that method but the
-zone will stay what your influence is."* `GameState.influence` is a preference,
-healed against `PROVING.influences`, which are three and never the Seam.
-**Its difficulty is a FLOOR above the whole climb**: `provingMod` scales the same
-`LADDER.*AtTop` a depth does, by `PROVING.overTop` plus `perSocket` a filled
-socket — measured, 1028 danger empty against the deep end's 822, and 1520 on
-four blanks. **points scale it through the Reckoning's own lines**, which
-already merge into the seam; counting them again here would pay for one web
-twice. It opens on `paidCampaign`, so the tab and the first crystal arrive
-together.
+**THE SOULSTONE IS THE WHOLE OF THE ENDLESS HALF, AND THE PROVING GROUND IS
+GONE.** *"Scratch the entire proving ground idea. Once you clear the last level
+of the rot you get a new item called a soulstone… all it does is increase the
+difficulty of all the levels starting to be the same difficulty as the last
+level of the rot but on the first level of the shallows. And your map starts
+over so basically its just a difficulty increase and map reset."* So `RunWhere`
+is a `Rung` and nothing else — there is no second kind of place, no influence
+pick and no world you choose. **IT ROLLS NOTHING**: `makeSoul` is one base with
+no mods, no level and no family.
+
+**THE RAMP JUST CARRIES ON.** `rungMod` runs 0 to 1 across the whole 42, so
+`soulMod` adds exactly `souls` on the same three stats and depth 1 of The
+Shallows costs what depth 42 did. Measured: 822 danger at the bottom of the bare
+climb, 833 at the top of the first zone with one socketed, and 1637 at the end
+of the second pass. **TWO OF THEM** (`SOULS.max`), and the second is a whole
+second climb — `soulOwed` asks for the campaign to be finished AT THE TIER YOU
+STAND ON, so it is 84 depths for the pair.
+
+**THE MAP STARTS AGAIN AND NOTHING IS EVER WIPED.** `progressKey` keys `climbed`
+and `opened` by the soul count, so each tier keeps its own sheet and taking a
+stone back out puts the climb you had back rather than handing it to you twice.
+`Character.souls` is DERIVED by `syncSouls` off the wall itself and written
+nowhere else, so the count and the sockets cannot disagree.
+
+**THE WALL IS SIX SOCKETS IN A DRAWER, and the rule between them is the point.**
+*"Have the socket menu be a tab you can open on the right side that just pops out
+the 6 socket slots seperating the soul slots from the crystal slots."* A tab on
+the map's right edge, shut by default so the picture keeps the window; four
+crystal sockets, a rule, then the two soul ones. `RUN_SLOTS` holds all six and
+`CRYSTAL_SLOTS` / `SOUL_SLOTS` are what everything else reads — `socketed()` is
+the crystals alone, or a soulstone would arrive in `runSet` as a crystal.
+
+**THE CRYSTAL LADDER IS PAID BY THE SOULED CLIMB.** `CRYSTAL_LADDER`'s first
+four steps are 25/50/75/100 clears and `GameState.souledClears` is what counts
+them: a clear only counts with a soulstone in the wall. So the first crystal
+arrives with the campaign, and every one after it is bought by walking the climb
+again against something worse.
 
 **A CRYSTAL ROLL BURNS DOWN.** *"You roll a mod and it lasts for a certain
 amount runs and then it's gone."* `RolledMod.uses` is descents left, set at the
@@ -486,14 +508,14 @@ swinging at a body taking nothing.
 
 Four sockets hold crystals permanently. Their COUNT is how long a run is, their
 MODIFIERS how hard it is; a crystal's LEVEL buys capacity and tier, and its
-FAMILY (Normal / Demonic / Prismatic) picks which monsters spawn and which
-world you walk into. **THE SEAM IS THE ONE WORLD A LEVEL BUYS OUTRIGHT**:
-`seamSocketed` is `PROVING.seamOf` of each aura world at the TOP level and
-NOTHING else in the wall — *"socketing 2 lvl 4 prismatic and 2 lvl 4 demonic
-gives you the seam which will be the final zone."* It is the only thing that
-overrides the Proving Ground's influence, and the only world you cannot pick. Danger and socket
-count fold into one **run power**, and every reward reads that and nothing else.
-A fifth socket takes a **boss key**.
+FAMILY (Normal / Demonic / Prismatic) picks which monsters spawn. **THE ZONE IS
+THE WORLD** — every depth walks into `LadderZoneDef.world` — and **THE SEAM IS
+THE ONE THING THAT OVERRIDES IT**: `seamSocketed` is `SEAM_OF` of each aura
+world at the TOP level and NOTHING else in the wall — *"socketing 2 lvl 4
+prismatic and 2 lvl 4 demonic gives you the seam which will be the final
+zone."* It is the only world you cannot pick. Danger and socket count fold into
+one **run power**, and every reward reads that and nothing else. A fifth socket
+takes a **boss key**.
 
 **NOTHING IS PAID UNTIL THE CAMPAIGN IS WHOLE, AND THE LAMPWRIGHT IS WHO PAYS
 IT.** *"You shouldn't see any trial stuff or even receive any crystals until
@@ -516,11 +538,11 @@ of this new zone. Prismatic crystal pays out and full lvl 4 normal crystals,
 then another at level 2 prismatic, another at level 3, another at lvl 4, and
 then the same thing for demonic."* `CRYSTAL_LADDER` is those twelve steps IN
 ORDER — a step further up can never pay before the ones under it — each holding
-either a count of `GameState.provingClears` or a number of crystals you already
+either a count of `GameState.souledClears` or a number of crystals you already
 hold at a level. Levelling one is the only way past the fourth, so the ladder is
-the Proving Ground and the sockets pulling on each other. Measured, the twelve
-come to 184 Proving Ground clears. Taken in person like every other crystal,
-with `gaveStep` in `given` as the one cursor.
+the souled climb and the sockets pulling on each other. Measured, the twelve
+come to 184 souled clears. Taken in person like every other crystal, with
+`gaveStep` in `given` as the one cursor.
 
 **A CRYSTAL'S LEVEL IS THE WHOLE OF GEAR PROGRESSION.** *"Make it where tiers
 are just based on crystal level and make it take longer to level them."*
@@ -837,7 +859,7 @@ revolving around doing grinds… open 100 hordes, swell 1000 enemies, kill 2500
 wardens stuff like that."* `POINTS.max` is what the web is sized for, and the
 campaign's 10 plus **THE LEDGER** come to exactly it — 18 lines in `GRINDS`,
 four families of ladders: descents cleared, Hoards and Veins opened, Welled
-bodies and Wardens and Bearers put down, and descents run under each influence.
+bodies and Wardens and Bearers put down, and descents run in each world.
 A line is one row and one `GRIND_COUNTERS` entry saying what a clear ADDS to it,
 counted through the one `descentFacts`; the demo plays a real descent for every
 counter, because a counter nothing ticks is a grind nobody can finish. The
@@ -902,7 +924,7 @@ really make sense to have him come back to your camp — instead once you find h
 it should be a separate disconnected area you can enter and its his room… use
 the same process that we did for the camp."* `SceneDef.room` is a drawn picture
 like the camp's, measured in its own pixels, and it is a TAB on the Fissure
-screen past the Proving Ground, appearing only once you have found him — a zone
+screen past the three zones, appearing only once you have found him — a zone
 off the line, with no depth and no way in, so the Enter button goes while you
 stand in it. His body is the hotspot and clicking him is the same parley the
 camp runs; the Osteomancer's and the Astral-Geometer's benches are reached
