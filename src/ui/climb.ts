@@ -28,7 +28,7 @@ import { openTalk, closeParley, syncTalk } from './talk';
 import { isTaleUp, playTale } from './tale';
 import {
   canEnter, climbed, courseOf, depthOfId, depthOfSide, furthest, isCleared, isProving,
-  linksIn, nodeSpot, provingOpen, sideAt, sideRoom, sideRooms, zoneAt, zoneOpen,
+  linksIn, nodeSpot, provingOpen, sideAt, sideRooms, zoneAt, zoneOpen,
 } from '../ladder';
 import type { Proving, Rung, RunWhere } from '../ladder';
 import type { RunSet } from '../sim/crystal';
@@ -298,9 +298,7 @@ function tabs(host: HTMLElement, character: Character, at: number, redraw: () =>
     tab.disabled = !open;
     tab.append(el('span', 'climbtab__done', ` ${done}/${zone.rungs}`));
     attachTooltip(tab, () =>
-      open
-        ? `${zone.name}. ${done} of ${zone.rungs} depths cleared. ${zone.blurb}`
-        : `${zone.name}. Shut until ${shutBy(z)} is cleared whole.`);
+      open ? `${zone.name}. ${zone.blurb}` : `Shut until ${shutBy(z)} is cleared whole.`);
     tab.onclick = () => {
       shown = z;
       closeParley();
@@ -545,10 +543,13 @@ export function renderClimb(host: HTMLElement, character: Character, onPick: () 
     const from = nodeSpot(z, link.from), to = nodeSpot(z, link.to);
     if (!from || !to) continue;
     if (depthOfId(link.from) !== null && depthOfId(link.to) !== null) continue;
-    // A PORTAL DRAWS NO LINE: the two mouths ARE the joint, and hovering one
-    // lights the other, which is the only thing that says where it goes.
+    // NOTHING IS DRAWN BETWEEN TWO MOUTHS — the hover lights the pair, and a
+    // line across the picture would claim the two chambers touch. Each mouth
+    // gets a STUB to its own room instead, so which room it belongs to reads.
     if (link.portal) {
       link.portal.forEach(([x, y], end) => {
+        const at = end === 0 ? from : to;
+        drawSpur(svg, seamPath([at, { x, y }]));
         const mouth = el('div', 'portal');
         mouth.id = `climb-portal-${z}-${link.from}-${link.to}-${end}`;
         mouth.dataset.pair = `${z}-${link.from}-${link.to}`;
@@ -558,10 +559,7 @@ export function renderClimb(host: HTMLElement, character: Character, onPick: () 
         if (art) mouth.append(art);
         mouth.onpointerenter = () => litPortal(mouth.dataset.pair!, true);
         mouth.onpointerleave = () => litPortal(mouth.dataset.pair!, false);
-        const far = sideRoom(z, end === 0 ? link.to : link.from)?.name ?? 'the other side';
-        attachTooltip(mouth, () =>
-          `A way through to ${far}.\nNothing on the map joins them: what is past ` +
-          `one is as hard as the chain you cleared to reach it.`);
+        attachTooltip(mouth, () => `A way through ${zone.name}.`);
         trail.append(mouth);
       });
       continue;
@@ -586,12 +584,8 @@ export function renderClimb(host: HTMLElement, character: Character, onPick: () 
       !isProving(at) && at.zone === z && at.rung === station.rung && !at.side);
     pip.disabled = !can;
 
-    const last = boss && z === LADDER.zones.length - 1;
-    const what = !boss
-      ? ''
-      : ` The top of ${zone.name}: a fight in an arena of its own.` +
-        (last ? ' It is the end of the climb, and the whole of what pays for it.' : '');
-    attachTooltip(pip, () => nodeCard(`Depth ${station.rung}`, here, can) + what);
+    attachTooltip(pip, () =>
+      nodeCard(`Depth ${station.rung}`, here, can) + (boss ? '\nThe boss.' : ''));
     pip.onclick = () => {
       if (pickRung(character, here)) onPick();
     };

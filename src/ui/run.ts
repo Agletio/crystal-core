@@ -328,8 +328,8 @@ function syncClimb(): void {
   btn.setAttribute('aria-pressed', String(on));
   attachTooltip(btn, () =>
     on
-      ? 'Deeper — on.\nEvery clear takes the next depth instead of this one again. Dying turns it off and leaves you where you are.'
-      : 'Deeper — off.\nEvery clear goes back into the depth you picked, so one can be ground until the gear is there.'
+      ? 'Deeper — on.\nEvery clear takes the next depth. A death turns it off.'
+      : 'Deeper — off.\nEvery clear repeats the depth you picked.'
   );
 }
 

@@ -943,6 +943,14 @@ is the strongest part of the idea. The feedback that shaped it:
       the long way round and the picture never joined those two chambers: 8 of
       22 draw straight. **THE NETWORK IS WALKED** — six of the fourteen touch
       no depth, so climbing the whole line still leaves them a clear away.
+- [ ] **THE UI SAYS TOO MUCH, EVERYWHERE.** *"Really need to stop with the over
+      describing everything… it literally says the ilvl already. You do this
+      kinda dialogue all over the place. I really don't want to have to go back
+      and one by one point it out."* The rule is written down in `CLAUDE.md` —
+      a card says what is true and never why. The Fissure screen is cut (the
+      portal's card, the boss depth, the zone tabs, Deeper); every other screen
+      is not, and it is a copy pass over `src/ui/` with `shots` re-judged
+      after, not a side effect of the next change.
 - [ ] **HOW BIG SHOULD THE SKIP BE?** Two depths on the line buys a route to
       depth 10 of 12, which is his rule working as written — a build that can
       survive the rooms on the way has earned it. What is NOT known is whether

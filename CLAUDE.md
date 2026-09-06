@@ -97,6 +97,14 @@ table is in the `harness` skill, along with every quirk and flake. Build before 
   never "an extra cloud". The test is whether a player could act differently
   knowing the figure. FLAVOUR is exempt and must not be "fixed": a character's
   lines, a unique's line about a dead man.
+- **A CARD SAYS WHAT IS TRUE, AND NEVER WHY.** *"Really need to stop with the
+  over describing everything… it literally says the ilvl already. You do this
+  kinda dialogue all over the place."* A tooltip, a card, a button, a heading:
+  the facts a player ACTS on and nothing else. Not the mechanism behind a
+  number, not a second sentence restating something already on the screen, not
+  an explanation of what a thing is for. "A way through The Prism." is the
+  whole of a portal's card. FLAVOUR authored as flavour is exempt — a zone's
+  blurb, a character's lines, a unique's line about a dead man.
 - **One word per mechanism, and it is the ONLY word.** `KEYWORDS` in
   `src/keywords.ts`; `BANNED` is every retired phrasing. The demo sweeps every
   tree node, trade node, skill, currency, quest, modifier line and
@@ -352,10 +360,11 @@ difficulty rides the crystal seam as ONE synthetic mod (`rungMod`, beside
 nothing written twice. **A DEPTH is what a player calls a rung** — the identifiers stay `rung`,
 because `climbed` is a save key. **A CAMPAIGN ZONE IS A WORLD AND A GEAR TIER**,
 because the campaign is run with NOTHING SOCKETED: `LadderZoneDef.world` and
-`.tier`, read by `runSet` whenever a descent names a depth. The Answering is the
-Fissure at tier 1, The Refraction the Cavern at tier 2, The Flowering the Rot at
-tier 3 — *"T2 in the second area t3 in the third."* `LadderZoneDef.id` is the
-save key under `character.climbed`, still spelt the way the worlds were.
+`.tier`, read by `runSet` whenever a descent names a depth. **A ZONE IS NAMED
+FOR THE PLACE, never for the boss on top of it**: The Shallows is the Fissure at
+tier 1, The Prism the Cavern at tier 2, The Rot the Rot at tier 3 — *"T2 in the
+second area t3 in the third."* `LadderZoneDef.id` is the save key under
+`character.climbed`, still spelt the way the worlds were.
 **THE RAMP IS A STRAIGHT LINE**: `rungMod` reads how far up the 42 you are and
 scales `LADDER.*AtTop` by exactly that, so every depth costs the same 20 danger
 as the one before it. There is no exponent and no spike — a challenge floor
@@ -406,7 +415,9 @@ depth at all, so climbing the whole line still leaves them a clear away.
 how these are connected rather than the line. When you hover it should
 highlight the other portal."* `LinkDef.portal` is the two mouths and nothing is
 drawn between them — a line across half the picture said the two chambers touch,
-which the art does not. `chainDepths` is the other half: what the line reaches
+which the art does not. Each mouth carries a STUB to its OWN room, so which
+room a hole belongs to reads without hovering; the hover is what says where it
+goes. `chainDepths` is the other half: what the line reaches
 WITHOUT crossing a portal keeps `depthOfSide`, and everything past one ramps
 from the near mouth's own depth to the zone's LAST, by steps walked — so the
 room at the end of the chain is worth the grind and no room past a portal is

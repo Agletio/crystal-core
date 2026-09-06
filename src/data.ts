@@ -2469,7 +2469,7 @@ export const LADDER = {
   // three bosses keep The Answering, The Refraction and The Flowering.
   zones: [
     {
-      id: 'fissure', name: 'The Answering', art: 'climb_act1',
+      id: 'fissure', name: 'The Shallows', art: 'climb_act1',
       path: [[15,19],[22,29],[27,28],[32,38],[38,38],[44,52],[53,51],[63,69],[70,68],[77,81],[82,81],[90,96],[92,95]],
       sides: [
         { id: 'spoil', name: 'The Spoil Heap', bonus: 'coinfall', x: 40, y: 12 },
