@@ -56,7 +56,7 @@ import { greetAfterTale, openTalk } from './talk';
 import { playTale } from './tale';
 import {
   advanceRung, climbLine, initClimb, provingWorld, renderClimb, roomNow, rungName, rungNow,
-  socketsInClimb, whereNow,
+  setsInClimb, socketsInClimb, whereNow,
 } from './climb';
 import { arenaAt, isProving, takeRung, zoneAt } from '../ladder';
 import type { RunWhere } from '../ladder';
@@ -1304,6 +1304,7 @@ export function initRun(state: GameState): void {
   // lay out. This is the only place they are ever drawn.
   initClimb(game);
   socketsInClimb(renderSockets, () => seamSocketed(socketed(game)));
+  setsInClimb((at) => runSet(socketed(game), trialMod(game.character), at)); // a card's ilvl
 
   // Drawn from the very first paint, so the room they take is not something
   // the canvas discovers when a descent starts — and so the threshold is set

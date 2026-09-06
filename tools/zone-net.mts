@@ -175,6 +175,40 @@ for (let mend = 0; mend < nodes.length; mend++) {
 }
 const home = reaches(kept);
 
+// A NODE STANDS WHERE ITS LINES MEET. Two routes into one room that share
+// their last stretch draw one line over another all the way in — *"avoid where
+// two lines pathing to the same point have to travel down an area overlapping
+// to get to the point. Rather just move the point to where they first meet."*
+// So the room is walked back up its own common tail to the fork.
+const SHARED = 1.4; // percent of the picture worth moving for
+const moved = new Map<string, { x: number; y: number }>();
+for (const room of sideRooms(z)) {
+  const ends = kept
+    .filter((c) => c.from === room.id || c.to === room.id)
+    .map((c) => (c.to === room.id ? c.route : [...c.route].reverse()));
+  if (ends.length < 2) continue;
+  let back = 0;
+  for (;;) {
+    const step = ends.map((r) => r[r.length - 1 - back]);
+    if (step.some((p) => !p)) break;
+    if (step.some((p) => Math.hypot(p[0] - step[0][0], p[1] - step[0][1]) > 0.6)) break;
+    back++;
+  }
+  const fork = ends[0][ends[0].length - back];
+  if (!fork || walked(ends[0].slice(ends[0].length - back)) < SHARED) continue;
+  moved.set(room.id, { x: Math.round(fork[0]), y: Math.round(fork[1]) });
+}
+if (moved.size) {
+  console.log(`      sides: [`);
+  for (const room of sideRooms(z)) {
+    const put = moved.get(room.id) ?? { x: room.x, y: room.y };
+    console.log(`        { id: '${room.id}', name: '${room.name}', ` +
+      `bonus: '${room.bonus}', x: ${put.x}, y: ${put.y} },`);
+  }
+  console.log(`      ],`);
+  console.error(`MOVED to the fork: ${[...moved.keys()].join(', ')} — re-run to settle`);
+}
+
 console.log(`      links: [`);
 for (const c of kept) {
   const pts = thin(c.route, TOL).map(([x, y]) => [Math.round(x), Math.round(y)]);

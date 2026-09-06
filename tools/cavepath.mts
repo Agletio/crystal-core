@@ -93,7 +93,16 @@ class Heap {
  *  you came into it, or a turn cannot be priced. */
 export function walkFrom(cave: Cave, from: [number, number]) {
   const { cw, ch, cell } = cave;
-  const price = (i: number) => (cell[i] > 80 ? 1 : cell[i] > 55 ? 6 : cell[i] > 40 ? 90 : 4000);
+  // THE MARGIN IS NOT A CORRIDOR. Left open, a route walks out to the picture's
+  // own edge and back rather than climbing the ladder between two chambers.
+  const EDGE = 3; // percent of the picture that is never walked
+  const mx = Math.max(1, Math.round(cw * EDGE / 100));
+  const my = Math.max(1, Math.round(ch * EDGE / 100));
+  const price = (i: number) => {
+    const x = i % cw, y = (i / cw) | 0;
+    if (x < mx || y < my || x >= cw - mx || y >= ch - my) return 4000;
+    return cell[i] > 80 ? 1 : cell[i] > 55 ? 6 : cell[i] > 40 ? 90 : 4000;
+  };
   const spot = ([px, py]: [number, number]) =>
     Math.round(py / 100 * (ch - 1)) * cw + Math.round(px / 100 * (cw - 1));
   const start = spot(from);

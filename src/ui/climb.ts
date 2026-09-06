@@ -31,6 +31,7 @@ import {
   linksIn, nodeSpot, provingOpen, sideAt, sideRooms, zoneAt, zoneOpen,
 } from '../ladder';
 import type { Proving, Rung, RunWhere } from '../ladder';
+import type { RunSet } from '../sim/crystal';
 import { SCENE_ART } from '../render/generated-scene';
 import type { MapTheme } from '../types';
 import type { GameState } from '../game/state';
@@ -183,17 +184,28 @@ function stations(rungs: number, path?: [number, number][]): Station[] {
   }));
 }
 
-/** A smooth line through them: each pair meets at their midpoint, which is the
- *  cheapest curve that never overshoots a station. */
+/** A LINE, ROUNDED ONLY AT ITS CORNERS. A quadratic through every leg's
+ *  midpoint bows a two-leg path into one arc; a fixed radius keeps each leg
+ *  straight and turns only where the cave does — *"more straight through the
+ *  cavern and arching at the entrances only."* The radius is clamped to half
+ *  the shorter leg, so a short jog rounds off rather than overshooting. */
+const BEND = 2.4; // percent of the picture
+
 function seamPath(from: Spot[]): string {
   if (from.length === 0) return '';
-  let d = `M ${from[0].x.toFixed(1)} ${from[0].y.toFixed(1)}`;
-  for (let i = 1; i < from.length; i++) {
-    const mid = { x: (from[i - 1].x + from[i].x) / 2, y: (from[i - 1].y + from[i].y) / 2 };
-    d += ` Q ${from[i - 1].x.toFixed(1)} ${from[i - 1].y.toFixed(1)} ${mid.x.toFixed(1)} ${mid.y.toFixed(1)}`;
+  const at = (a: Spot, b: Spot, far: number): Spot => {
+    const run = Math.hypot(b.x - a.x, b.y - a.y) || 1;
+    const k = Math.min(far, run / 2) / run;
+    return { x: a.x + (b.x - a.x) * k, y: a.y + (b.y - a.y) * k };
+  };
+  const say = (p: Spot) => `${p.x.toFixed(1)} ${p.y.toFixed(1)}`;
+  let d = `M ${say(from[0])}`;
+  for (let i = 1; i < from.length - 1; i++) {
+    const into = at(from[i], from[i - 1], BEND);
+    const out = at(from[i], from[i + 1], BEND);
+    d += ` L ${say(into)} Q ${say(from[i])} ${say(out)}`;
   }
-  const last = from[from.length - 1];
-  d += ` L ${last.x.toFixed(1)} ${last.y.toFixed(1)}`;
+  d += ` L ${say(from[from.length - 1])}`;
   return d;
 }
 
@@ -226,6 +238,26 @@ export const influenceNow = (): MapTheme => {
 
 export function setInfluence(theme: MapTheme): void {
   if (game && PROVING.influences.includes(theme)) game.influence = theme;
+}
+
+/** WHAT A NODE IS, IN THREE LINES: what it is called, what it drops, and what
+ *  it pays. A shut one says the one thing you can do about it. */
+function nodeCard(name: string, at: Rung, open: boolean): string {
+  const set = runOf ? runOf(at) : null;
+  const pays = BRANCH_BONUS_BY_ID[sideAt(at)?.bonus ?? ''];
+  return [
+    open ? name : `${name} — Locked, clear a connected area first`,
+    set ? `ilvl: ${set.band.ilvl}` : '',
+    pays?.say ?? '',
+  ].filter(Boolean).join('\n');
+}
+
+/** WHAT A DESCENT THERE WOULD BE. `run.ts` knows what is socketed; this only
+ *  asks, so the item level a card prints is the one the floor would drop. */
+let runOf: ((at: RunWhere) => RunSet) | null = null;
+
+export function setsInClimb(of: (at: RunWhere) => RunSet): void {
+  runOf = of;
 }
 
 /** Where the sockets are drawn, which is over the Proving Ground's own map and
@@ -487,6 +519,10 @@ export function renderClimb(host: HTMLElement, character: Character, onPick: () 
     preserveAspectRatio: 'none',
   });
   const line = courseOf(zone.path);
+  // THE TRUNK IS THE STRONGEST LINE ON THE SCREEN. It carries the branches'
+  // own dark casing so it reads off a lit floor, and it is SOLID where they
+  // are dashed — the main way down against the ways round it.
+  svg.append(svgEl('path', { class: 'climbseam__casing', d: seamPath(line.way) }));
   svg.append(svgEl('path', { class: 'climbseam__rock', d: seamPath(line.way) }));
   if (cleared > 0) {
     const far = zone.rungs === 1 ? 0 : (cleared - 1) / (zone.rungs - 1);
@@ -526,13 +562,7 @@ export function renderClimb(host: HTMLElement, character: Character, onPick: () 
       ? ''
       : ` The top of ${zone.name}: a fight in an arena of its own.` +
         (last ? ' It is the end of the climb, and the whole of what pays for it.' : '');
-    attachTooltip(pip, () =>
-      (!can
-        ? `${zone.name}, depth ${station.rung}. Reach it down the line, or round it.`
-        : station.rung <= cleared
-          ? `${zone.name}, depth ${station.rung}. Cleared. Go back and grind it any time.`
-          : `${zone.name}, depth ${station.rung}. Clearing it makes this your level.`) + what
-    );
+    attachTooltip(pip, () => nodeCard(`Depth ${station.rung}`, here, can) + what);
     pip.onclick = () => {
       if (pickRung(character, here)) onPick();
     };
@@ -558,11 +588,7 @@ export function renderClimb(host: HTMLElement, character: Character, onPick: () 
     pip.classList.toggle('pip--here',
       !isProving(at) && at.zone === z && at.side === room.id);
     pip.disabled = !can;
-    attachTooltip(pip, () =>
-      can
-        ? `${room.name}. Off the line, at depth ${depth}'s own danger. ` +
-          `${pays?.say ?? ''} Clearing it opens what it touches and is never your level.`
-        : `${room.name}. Clear something it touches first.`);
+    attachTooltip(pip, () => nodeCard(room.name, here, can));
     pip.onclick = () => {
       if (pickRung(character, here)) onPick();
     };
