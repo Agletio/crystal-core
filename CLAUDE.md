@@ -402,6 +402,17 @@ from there the line alone reaches depth 3 where the rooms reach depth 10.
 **THE NETWORK IS WALKED, NEVER HANDED OVER** — six of the fourteen touch no
 depth at all, so climbing the whole line still leaves them a clear away.
 
+**A PORTAL IS A HOLE, AND WHAT IS PAST ONE IS AS DEEP AS THE WALK.** *"that's
+how these are connected rather than the line. When you hover it should
+highlight the other portal."* `LinkDef.portal` is the two mouths and nothing is
+drawn between them — a line across half the picture said the two chambers touch,
+which the art does not. `chainDepths` is the other half: what the line reaches
+WITHOUT crossing a portal keeps `depthOfSide`, and everything past one ramps
+from the near mouth's own depth to the zone's LAST, by steps walked — so the
+room at the end of the chain is worth the grind and no room past a portal is
+priced by where it happens to sit. `LadderZoneDef.portalArt` is the ring a zone
+draws, cold blue in The Prism and a hoop of fire in The Rot.
+
 **A SIDE ROOM'S DIFFICULTY IS WHERE IT STANDS.** `depthOfSide` puts it on the
 zone's own course and reads the arc length as a depth, so a room low on the map
 is a hard floor and no depth is written down twice. Its bonus lands in TWO

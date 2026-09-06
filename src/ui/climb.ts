@@ -28,7 +28,7 @@ import { openTalk, closeParley, syncTalk } from './talk';
 import { isTaleUp, playTale } from './tale';
 import {
   canEnter, climbed, courseOf, depthOfId, depthOfSide, furthest, isCleared, isProving,
-  linksIn, nodeSpot, provingOpen, sideAt, sideRooms, zoneAt, zoneOpen,
+  linksIn, nodeSpot, provingOpen, sideAt, sideRoom, sideRooms, zoneAt, zoneOpen,
 } from '../ladder';
 import type { Proving, Rung, RunWhere } from '../ladder';
 import type { RunSet } from '../sim/crystal';
@@ -207,6 +207,14 @@ function seamPath(from: Spot[]): string {
   }
   d += ` L ${say(from[from.length - 1])}`;
   return d;
+}
+
+/** BOTH MOUTHS AT ONCE: a portal's other end is the only thing a player needs
+ *  told, and it is not near enough to point at. */
+function litPortal(pair: string, on: boolean): void {
+  for (const mouth of document.querySelectorAll(`[data-pair="${pair}"]`)) {
+    mouth.classList.toggle('portal--on', on);
+  }
 }
 
 /** A spur is drawn TWICE: a dark casing, then the dash over it. One hairline
@@ -537,6 +545,27 @@ export function renderClimb(host: HTMLElement, character: Character, onPick: () 
     const from = nodeSpot(z, link.from), to = nodeSpot(z, link.to);
     if (!from || !to) continue;
     if (depthOfId(link.from) !== null && depthOfId(link.to) !== null) continue;
+    // A PORTAL DRAWS NO LINE: the two mouths ARE the joint, and hovering one
+    // lights the other, which is the only thing that says where it goes.
+    if (link.portal) {
+      link.portal.forEach(([x, y], end) => {
+        const mouth = el('div', 'portal');
+        mouth.id = `climb-portal-${z}-${link.from}-${link.to}-${end}`;
+        mouth.dataset.pair = `${z}-${link.from}-${link.to}`;
+        mouth.style.left = `${x}%`;
+        mouth.style.top = `${y}%`;
+        const art = drawn(zone.portalArt ?? 'portal_ring', 26);
+        if (art) mouth.append(art);
+        mouth.onpointerenter = () => litPortal(mouth.dataset.pair!, true);
+        mouth.onpointerleave = () => litPortal(mouth.dataset.pair!, false);
+        const far = sideRoom(z, end === 0 ? link.to : link.from)?.name ?? 'the other side';
+        attachTooltip(mouth, () =>
+          `A way through to ${far}.\nNothing on the map joins them: what is past ` +
+          `one is as hard as the chain you cleared to reach it.`);
+        trail.append(mouth);
+      });
+      continue;
+    }
     drawSpur(svg, seamPath(link.path ? link.path.map(([x, y]) => ({ x, y })) : [from, to]));
   }
 

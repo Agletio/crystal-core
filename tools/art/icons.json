@@ -689,6 +689,14 @@
   {
    "id": "bonus_swarm",
    "say": "a tight cluster of three small dark horned skulls packed together and filling the frame, one in front and two behind it, pale bone with deep black sockets. NOT one skull alone, NOT a helmet, NOT a body, NOT a scene."
+  },
+  {
+   "id": "portal_ring",
+   "say": "a single round swirling portal seen face on and filling the frame, a thick ring of cold pale blue light with a spiral of paler light turning inside it and a dark hollow centre, hard edged and chunky. NOT a door, NOT a frame, NOT an arch, NOT a gate, NOT a mirror, NOT stone, NOT a creature, NOT a face, NOT text."
+  },
+  {
+   "id": "portal_rot",
+   "say": "a single round hoop of hot blood red fire seen face on and filling the frame, thick and glowing with paler ember orange flame swirling round it and a black empty hole in the middle, hard edged and chunky. NOT a door, NOT a frame, NOT an arch, NOT a gate, NOT stone, NOT a creature, NOT a face, NOT ground, NOT rubble, NOT blue, NOT green, NOT purple, NOT text."
   }
  ]
 }

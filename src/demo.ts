@@ -11645,6 +11645,32 @@ rule('THE CLIMB — does a rung open, stay open, and get harder?');
         .map((link) => `${zone.id}:${link.from}-${link.to}`));
     check(broken.length === 0, 'every link joins two nodes that exist', broken.join(', '));
 
+    // A PORTAL IS A HOLE, NOT A LINE: two mouths inside the picture, drawn
+    // with the zone's own ring, and what is past one takes its danger from the
+    // CHAIN cleared to reach it rather than from where it sits. The ramp is
+    // rounded to whole depths, so two steps of a long chain may read the same;
+    // what may never happen is a step reading shallower than the one before.
+    const portals = LADDER.zones.flatMap((zone, z) =>
+      linksIn(z).filter((link) => link.portal).map((link) => ({ z, zone, link })));
+    check(portals.length > 0, `${portals.length} portals join rooms no line joins`, 'none authored');
+    const offmap = portals.filter(({ link }) => link.portal!
+      .some(([x, y]) => x < 0 || x > 100 || y < 0 || y > 100))
+      .map(({ zone, link }) => `${zone.id}:${link.from}-${link.to}`);
+    check(offmap.length === 0, 'and both mouths stand inside their own picture', offmap.join(', '));
+    const noart = LADDER.zones.filter((zone) => zone.portalArt && !GENERATED_ICONS[zone.portalArt])
+      .map((zone) => `${zone.id}→${zone.portalArt}`);
+    check(noart.length === 0, 'and a zone drawing its own ring names one that exists', noart.join(', '));
+    const uphill = portals.filter(({ z, link }) =>
+      depthOfSide(z, link.to) < depthOfSide(z, link.from))
+      .map(({ zone, link }) => `${zone.id}:${link.from}-${link.to}`);
+    check(uphill.length === 0, 'and stepping through one never reads shallower', uphill.join(', '));
+    for (const { z, zone, link } of portals) {
+      const foot = depthOfSide(z, link.from);
+      gauge(`${zone.name}: through ${link.from} at depth ${foot}, the chain runs ` +
+        sideRooms(z).filter((room) => depthOfSide(z, room.id) > foot)
+          .map((room) => `${room.name} ${depthOfSide(z, room.id)}`).join(', '));
+    }
+
     // NOTHING IS STRANDED: every node is reachable from the first depth by
     // clearing, or it is a room nobody may ever enter.
     const cut = LADDER.zones.flatMap((zone, z) => {

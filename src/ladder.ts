@@ -123,10 +123,77 @@ export function nodeSpot(zone: number, id: string): { x: number; y: number } | n
   return courseOf(def.path).at(def.rungs === 1 ? 0 : (depth - 1) / (def.rungs - 1));
 }
 
+/** WHAT A PORTAL CHANGES: past one, a room's danger is not where it STANDS —
+ *  the two mouths are the same hole, so position says nothing. *"The ones you
+ *  have to portal to don't consider their actual depth, just consider the
+ *  chain that you have to clear to get to them, having it progressively get
+ *  harder until r19 where it's equivalent to level 14."* So a room beyond a
+ *  portal ramps from the depth on the NEAR side up to the zone's LAST depth at
+ *  the end of the chain, and every clear on the way is a step of that ramp.
+ *  Cached per zone: the walk is the same every time and a card asks per pip. */
+const chains: Record<number, Record<string, number>> = {};
+
+function chainDepths(zone: number): Record<string, number> {
+  if (chains[zone]) return chains[zone];
+  const def = zoneAt(zone);
+  const out: Record<string, number> = {};
+  chains[zone] = out;
+  if (!def) return out;
+  const plain = linksIn(zone).filter((l) => !l.portal);
+  // WHAT THE LINE REACHES WITHOUT A PORTAL keeps its own position.
+  const near = new Set(Array.from({ length: def.rungs }, (_, i) => mainId(i + 1)));
+  for (let pass = 0; pass < def.rungs + sideRooms(zone).length; pass++) {
+    let grew = false;
+    for (const link of plain) {
+      if (near.has(link.from) !== near.has(link.to)) {
+        near.add(link.from); near.add(link.to); grew = true;
+      }
+    }
+    if (!grew) break;
+  }
+  // EVERYTHING ELSE is walked to, counting clears and remembering where it
+  // left the near side — that room's own depth is the foot of the ramp.
+  const step: Record<string, { steps: number; base: number }> = {};
+  let edge = [...near];
+  const seen = new Set(near);
+  for (let n = 1; edge.length; n++) {
+    const next: string[] = [];
+    for (const id of edge) {
+      for (const to of touching(zone, id)) {
+        if (seen.has(to)) continue;
+        seen.add(to);
+        const from = step[id];
+        step[to] = { steps: (from?.steps ?? 0) + 1, base: from?.base ?? depthWhere(zone, id) };
+        next.push(to);
+      }
+    }
+    edge = next;
+  }
+  const far = Object.keys(step);
+  const deepest = far.reduce((n, id) => Math.max(n, step[id].steps), 0) || 1;
+  for (const id of far) {
+    const { steps, base } = step[id];
+    out[id] = Math.max(1, Math.min(def.rungs,
+      Math.round(base + (def.rungs - base) * (steps / deepest))));
+  }
+  return out;
+}
+
+/** Where a node STANDS, as a depth: a main one is its own, a room the nearest
+ *  point of the course to it. */
+function depthWhere(zone: number, id: string): number {
+  const depth = depthOfId(id);
+  return depth ?? standsAt(zone, id);
+}
+
 /** A SIDE ROOM'S DEPTH is where it stands: the nearest point of the course,
  *  read as a depth. So a room low on the map is a hard floor without one
- *  number being written down anywhere. */
+ *  number being written down anywhere — unless a PORTAL is what reaches it. */
 export function depthOfSide(zone: number, id: string): number {
+  return chainDepths(zone)[id] ?? standsAt(zone, id);
+}
+
+function standsAt(zone: number, id: string): number {
   const def = zoneAt(zone);
   const room = def && sideRoom(zone, id);
   if (!def || !room) return 1;

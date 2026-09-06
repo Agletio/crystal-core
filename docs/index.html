@@ -1573,6 +1573,18 @@
   .climbseam__line { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
   .climbseam__rock { /* THE TRUNK: the spurs' casing, SOLID where they dash */ fill: none; stroke: var(--bone); stroke-width: 2.6; stroke-linecap: round; opacity: .55; vector-effect: non-scaling-stroke; }
   .climbseam__lit { fill: none; stroke: var(--citrine); stroke-width: 2.6; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+  /* A PORTAL: no line joins the two mouths, so the SPIN is what says it is a
+     way through and the hover is what says where. Turned in STEPS, since a
+     smooth rotation resamples a 26px pixel ring into mush. */
+  .portal {
+    position: absolute; transform: translate(-50%, -50%); width: 26px; height: 26px;
+    pointer-events: auto; cursor: help; filter: drop-shadow(0 0 3px var(--ink));
+  }
+  .portal svg { display: block; animation: portalspin 2.4s steps(8) infinite; }
+  .portal--on svg { animation-duration: .9s; }
+  .portal--on { filter: drop-shadow(0 0 5px var(--quartz)) drop-shadow(0 0 2px var(--bone)); }
+  @media (prefers-reduced-motion: reduce) { .portal svg { animation: none; } }
+  @keyframes portalspin { to { transform: rotate(360deg); } }
   /* A SIDE ROOM'S SPUR: dashed, over its own casing — a hairline on a lit cave
      floor is the same value as the floor. */
   .climbseam__casing {

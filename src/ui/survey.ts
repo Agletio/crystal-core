@@ -138,7 +138,9 @@ function linePath(pts: { x: number; y: number }[]): string {
 
 const linkPoints = (link: LinkDef): { x: number; y: number }[] => {
   const a = spotOf(link.from), b = spotOf(link.to);
-  if (!a || !b) return [];
+  // A PORTAL IS NOT A LINE, here either: drawing one would invite a drag that
+  // the blocks cannot carry back.
+  if (!a || !b || link.portal) return [];
   return link.path ? link.path.map(([x, y]) => ({ x, y })) : [a, b];
 };
 
@@ -152,6 +154,7 @@ function blocks(): string {
   const ways = p.links.map((l) =>
     `        { from: '${l.from}', to: '${l.to}'` +
     (l.path ? `, path: ${JSON.stringify(l.path.map(([x, y]) => [say(x), say(y)]))}` : '') +
+    (l.portal ? `, portal: ${JSON.stringify(l.portal.map(([x, y]) => [say(x), say(y)]))}` : '') +
     ` },`).join('\n');
   return [
     `      path: ${JSON.stringify(p.path.map(([x, y]) => [say(x), say(y)]))},`,

@@ -258,13 +258,13 @@ export interface LadderZoneDef {
   path?: [number, number][]; // its COURSE through that picture, in percent of it
   sides?: SideRoomDef[]; // the rooms off the line
   links?: LinkDef[]; // the ways round it
+  portalArt?: string; // the `GENERATED_ICONS` row a portal mouth draws here
   world: MapTheme; // the rock you walk into for every depth of it
   tier: number; // the best base TIER its depths may drop
 }
 
-/** A SIDE ROOM: a node OFF the main line. Its DIFFICULTY is where it sits —
- *  the nearest point of that zone's course — so no depth is written down
- *  twice. Clearing one opens what it touches and records no depth. */
+/** A SIDE ROOM: a node OFF the main line. Its DIFFICULTY is where it sits, so
+ *  no depth is written down twice; clearing one records none. */
 export interface SideRoomDef {
   id: string; // unique within the zone; a save points at it
   name: string;
@@ -273,12 +273,15 @@ export interface SideRoomDef {
   y: number; // percent down it
 }
 
-/** WHAT TOUCHES WHAT. `d<N>` is that zone's Nth depth, anything else a side
- *  room's id. The chain d1…dN is implicit; a link is a way ROUND it. */
+/** WHAT TOUCHES WHAT: `d<N>` is a depth, anything else a room. The chain is
+ *  implicit; a link is a way ROUND it. */
 export interface LinkDef {
   from: string;
   to: string;
   path?: [number, number][]; // traced off the picture's floors; absent is straight
+  /** A PORTAL and its two mouths: no line joins them, they are one hole, and a
+   *  room past one takes its danger from the CHAIN rather than its position. */
+  portal?: [[number, number], [number, number]];
 }
 
 /** WHAT A BRANCH PAYS: a PAYOUT and never a rule — the rules are the crystals'

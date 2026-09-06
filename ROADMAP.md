@@ -958,9 +958,21 @@ is the strongest part of the idea. The feedback that shaped it:
       shape it does not have yet — a main line of its own, and branches off it
       that set the WORLD as well as the bonus. `PROVING.influences` is what
       picking a world means today; a branch would replace that pick.
-- [ ] **THE ROT'S NETWORK.** None authored: its cross-section is being
-      regenerated, and a room is placed by reading the picture's own floors.
-      `npx tsx tools/act-floors.mts climb_act3` prints them.
+- [x] **ALL THREE NETWORKS ARE HIS OWN**, laid out in the Survey and pasted
+      back: The Answering 28 rooms and 35 links, The Prism 19 and 20, The Rot
+      22 and 22. Nothing is eyeballed any more — the designer writes the
+      blocks, and a room's danger is still `depthOfSide`.
+- [x] **A PORTAL IS A HOLE, NOT A LINE.** *"overlay a small swirling portal…
+      that's how these are connected rather than the line. When you hover it
+      should highlight the other portal."* `LinkDef.portal` is the two mouths
+      and no line is drawn between them; `chainDepths` is the other half —
+      what the line reaches without crossing one keeps its position, and what
+      is past one ramps from the near mouth's depth to the zone's last, so a
+      long grind lands on the best room in the zone. Measured: The Prism runs
+      threshold 11 → farthreshold 12 → silence 13 → deepfacet 13 → The Heart
+      14, and The Rot throat 10 → farthroat 11 → weeping 12 → marrow 13 → sac
+      14 → cyst 15 → The Rotting Heart 16. `LadderZoneDef.portalArt` is the
+      ring a zone draws: cold blue in The Prism, a hoop of fire in The Rot.
 - [x] **THE LINE FOLLOWS THE MAP.** DONE, and READ OFF THE PICTURE rather than
       by eye — *"the main line should be down the main path of the cave"*.
       `npx tsx tools/act-floors.mts <scene> path <x> <y> <x> <y> [tol]` walks
@@ -982,17 +994,12 @@ is the strongest part of the idea. The feedback that shaped it:
       Flowering. **ZONE 1 IS UNNAMED** — waiting on his word, and on whether
       the WORLDS should be renamed off the collision (zone 3 and the demonic
       world are both The Rot, and the Proving Ground prints world names).
-- [ ] **THE OTHER TWO ZONES WAIT ON ZONE 1.** *"Lets just iterate on the first
-      zone until its good so we have a blueprint for the rest. Especially the
-      proving ground since it will be much larger, don't wanna have to do that
-      one 10 times."* The Prism still carries the hand-read path and its five
-      branches; re-trace both only once The Answering is signed off. **The
-      Proving Ground's five areas are the real trap**: they are placed at fixed
-      percent over whichever act the INFLUENCE picks, so one set of coordinates
-      has to land on floor in three different pictures. Either it gets a
-      cross-section of its own that never changes, or the areas are placed
-      along a course traced per influence. HIS CALL, and it is the one he said
-      he did not want to do ten times.
+- [ ] **THE PROVING GROUND'S SHAPE IS THE ONE LEFT.** Its five areas are
+      placed at fixed percent over whichever act the INFLUENCE picks, so one
+      set of coordinates has to land on floor in three different pictures.
+      Either it gets a cross-section of its own that never changes, or the
+      areas are placed along a course traced per influence. HIS CALL, and it is
+      the one he said he did not want to do ten times.
 - [ ] **THE ROT'S CROSS-SECTION IS A TRAIN TRACK.** *"It should look like just
       a tunnel going down, there's no train tracks… the lower ones have no
       visible path connecting them."* The ask is REWRITTEN in `scenes.json` —
