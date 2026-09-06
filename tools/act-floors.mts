@@ -84,32 +84,47 @@ function trace(from: [number, number], to: [number, number], tol: number): void 
       for (let x = c * C; x < (c + 1) * C; x++) sum += luma((y * width + x) * 4);
     cell.push(sum / (C * C));
   }
-  const cost = (i: number) => (cell[i] > 80 ? 1 : cell[i] > 60 ? 20 : 4000);
+  const cost = (i: number) => (cell[i] > 80 ? 1 : cell[i] > 55 ? 6 : cell[i] > 40 ? 90 : 4000);
   const spot = ([px, py]: [number, number]) =>
     Math.round(py / 100 * (ch - 1)) * cw + Math.round(px / 100 * (cw - 1));
   const start = spot(from), goal = spot(to);
-  const dist = new Float64Array(cw * ch).fill(Infinity);
-  const back = new Int32Array(cw * ch).fill(-1);
-  dist[start] = 0;
-  const open = new Set<number>([start]);
+  // FOUR-CONNECTED, AND A TURN COSTS. A mine is walked along a level and
+  // climbed up a ladder — *"have the lines go through as if you were someone
+  // walking the cave"* — so a diagonal is not a move at all and a long
+  // straight run is cheaper than a staircase of little ones. State is the cell
+  // AND the way you came into it, or a turn cannot be priced.
+  const WAYS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+  const TURN = 26;
+  const width2 = cw * ch;
+  const dist = new Float64Array(width2 * 4).fill(Infinity);
+  const back = new Int32Array(width2 * 4).fill(-1);
+  for (let w = 0; w < 4; w++) dist[start * 4 + w] = 0;
+  const open = new Set<number>();
+  for (let w = 0; w < 4; w++) open.add(start * 4 + w);
+  let end = -1;
   while (open.size) {
     let cur = -1;
     for (const i of open) if (cur < 0 || dist[i] < dist[cur]) cur = i;
     open.delete(cur);
-    if (cur === goal) break;
-    const cx = cur % cw, cy = (cur / cw) | 0;
-    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
-      if (!dx && !dy) continue;
-      const nx = cx + dx, ny = cy + dy;
+    const at = cur >> 2, came = cur & 3;
+    if (at === goal) { end = cur; break; }
+    const cx = at % cw, cy = (at / cw) | 0;
+    for (let w = 0; w < 4; w++) {
+      const nx = cx + WAYS[w][0], ny = cy + WAYS[w][1];
       if (nx < 0 || ny < 0 || nx >= cw || ny >= ch) continue;
       const ni = ny * cw + nx;
-      const d = dist[cur] + cost(ni) * (dx && dy ? 1.414 : 1);
-      if (d < dist[ni]) { dist[ni] = d; back[ni] = cur; open.add(ni); }
+      const step = cost(ni) + (w === came ? 0 : TURN);
+      if (dist[cur] + step < dist[ni * 4 + w]) {
+        dist[ni * 4 + w] = dist[cur] + step;
+        back[ni * 4 + w] = cur;
+        open.add(ni * 4 + w);
+      }
     }
   }
   const walk: [number, number][] = [];
-  for (let i = goal; i !== -1; i = back[i]) {
-    walk.unshift([(i % cw) / (cw - 1) * 100, ((i / cw) | 0) / (ch - 1) * 100]);
+  for (let i = end; i !== -1; i = back[i]) {
+    const at = i >> 2;
+    walk.unshift([(at % cw) / (cw - 1) * 100, ((at / cw) | 0) / (ch - 1) * 100]);
   }
   const thin = (p: [number, number][]): [number, number][] => {
     if (p.length < 3) return p;
