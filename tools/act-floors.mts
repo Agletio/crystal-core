@@ -1,22 +1,17 @@
 /**
  * WHERE THE FLOORS ARE in a drawn cross-section, as a chart you can read
- * coordinates off, and THE COURSE BETWEEN TWO OF THEM. A depth and a branch are
- * both placed in PERCENT of the picture, and placing one by eye puts it in
- * solid rock:
+ * coordinates off, and the COURSE between two of them:
  *
  *   npx tsx tools/act-floors.mts climb_act1 [share]
- *   npx tsx tools/act-floors.mts some.png   [share]
  *   npx tsx tools/act-floors.mts climb_act1 path 36 12 92 95 [tol]
  *
- * `share` is how much of the picture counts as floor, 0.16 by default — a
- * PERCENTILE, since a few lamp pixels set the top of the range. `path` walks
- * the drawn floors from one point to another and prints the polyline to paste
- * into `LadderZoneDef.path`: rock is dear and floor is cheap, so the cheapest
- * route IS the mine's own main passage. `tol` is how far the simplified line
- * may sit off it, in percent — 1.2 keeps a zigzag and drops the stair treads.
+ * `share` is how much counts as floor — a PERCENTILE, since a few lamp pixels
+ * set the top of the range. `path` walks it with the SURVEY's own routing:
+ * four-connected, so it returns along levels and up ladders.
  */
 import { existsSync, readFileSync } from 'node:fs';
 import { decodePng } from './art/png.mts';
+import { readCave, thin, walkFrom } from './cavepath.mts';
 
 const asked = process.argv[2] ?? '';
 const scenes = new URL('../src/render/generated-scene.ts', import.meta.url).pathname;
@@ -71,73 +66,10 @@ console.log('    ' + Array.from({ length: cols }, (_, c) => {
   return p % 10 === 0 ? String(p / 10) : ' ';
 }).join(''));
 
-/** THE COURSE between two points, in the picture's own floors. Cells are the
- *  MEAN luma of an 8px block: the max reads a bright vein in the rock as floor
- *  and the route then goes straight through the stone. */
+/** THE COURSE between two points, walked by the Survey's own routing. */
 function trace(from: [number, number], to: [number, number], tol: number): void {
-  const C = 4;
-  const cw = Math.floor(width / C), ch = Math.floor(height / C);
-  const cell: number[] = [];
-  for (let r = 0; r < ch; r++) for (let c = 0; c < cw; c++) {
-    let sum = 0;
-    for (let y = r * C; y < (r + 1) * C; y++)
-      for (let x = c * C; x < (c + 1) * C; x++) sum += luma((y * width + x) * 4);
-    cell.push(sum / (C * C));
-  }
-  const cost = (i: number) => (cell[i] > 80 ? 1 : cell[i] > 55 ? 6 : cell[i] > 40 ? 90 : 4000);
-  const spot = ([px, py]: [number, number]) =>
-    Math.round(py / 100 * (ch - 1)) * cw + Math.round(px / 100 * (cw - 1));
-  const start = spot(from), goal = spot(to);
-  // FOUR-CONNECTED, AND A TURN COSTS. A mine is walked along a level and
-  // climbed up a ladder — *"have the lines go through as if you were someone
-  // walking the cave"* — so a diagonal is not a move at all and a long
-  // straight run is cheaper than a staircase of little ones. State is the cell
-  // AND the way you came into it, or a turn cannot be priced.
-  const WAYS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
-  const TURN = 26;
-  const width2 = cw * ch;
-  const dist = new Float64Array(width2 * 4).fill(Infinity);
-  const back = new Int32Array(width2 * 4).fill(-1);
-  for (let w = 0; w < 4; w++) dist[start * 4 + w] = 0;
-  const open = new Set<number>();
-  for (let w = 0; w < 4; w++) open.add(start * 4 + w);
-  let end = -1;
-  while (open.size) {
-    let cur = -1;
-    for (const i of open) if (cur < 0 || dist[i] < dist[cur]) cur = i;
-    open.delete(cur);
-    const at = cur >> 2, came = cur & 3;
-    if (at === goal) { end = cur; break; }
-    const cx = at % cw, cy = (at / cw) | 0;
-    for (let w = 0; w < 4; w++) {
-      const nx = cx + WAYS[w][0], ny = cy + WAYS[w][1];
-      if (nx < 0 || ny < 0 || nx >= cw || ny >= ch) continue;
-      const ni = ny * cw + nx;
-      const step = cost(ni) + (w === came ? 0 : TURN);
-      if (dist[cur] + step < dist[ni * 4 + w]) {
-        dist[ni * 4 + w] = dist[cur] + step;
-        back[ni * 4 + w] = cur;
-        open.add(ni * 4 + w);
-      }
-    }
-  }
-  const walk: [number, number][] = [];
-  for (let i = end; i !== -1; i = back[i]) {
-    const at = i >> 2;
-    walk.unshift([(at % cw) / (cw - 1) * 100, ((at / cw) | 0) / (ch - 1) * 100]);
-  }
-  const thin = (p: [number, number][]): [number, number][] => {
-    if (p.length < 3) return p;
-    const [a, b] = [p[0], p[p.length - 1]];
-    const span = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
-    let worst = 0, wi = 0;
-    for (let i = 1; i < p.length - 1; i++) {
-      const off = Math.abs((b[0] - a[0]) * (a[1] - p[i][1]) - (a[0] - p[i][0]) * (b[1] - a[1])) / span;
-      if (off > worst) { worst = off; wi = i; }
-    }
-    return worst <= tol ? [a, b] : [...thin(p.slice(0, wi + 1)).slice(0, -1), ...thin(p.slice(wi))];
-  };
-  const line = thin(walk).map(([x, y]) => [Math.round(x), Math.round(y)]);
-  console.log(`${walk.length} cells -> ${line.length} points`);
+  const walk = walkFrom(readCave(png!), from).routeTo(to);
+  const line = thin(walk.route, tol).map(([x, y]) => [Math.round(x), Math.round(y)]);
+  console.log(`${walk.route.length} cells -> ${line.length} points`);
   console.log(JSON.stringify(line));
 }

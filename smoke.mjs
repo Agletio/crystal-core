@@ -3108,6 +3108,46 @@ $('dev-kit').click();
   assert($('trials').hidden === true, 'and it closes again');
 }
 
+// --- THE SURVEY: a zone laid out by hand ----------------------------------
+// The dev menu's own screen. Every node is draggable on the picture, every
+// link is drawn, and what comes out is the block that goes back into
+// `src/data.ts` — so a zone is DRAWN rather than read off a screenshot.
+{
+  $('open-dev').click();
+  assert($('dev-survey') !== null, 'the dev menu opens the Survey');
+  $('dev-survey').click();
+  assert($('survey').hidden === false, 'and it is a window of its own');
+  const depths = () => all('#survey-over .survey__pip--depth').length;
+  const rooms = () => all('#survey-over .survey__pip').length - depths();
+  assert(depths() === 12, 'which draws a node for all twelve depths', String(depths()));
+  assert(rooms() > 0, 'and one for every side room', String(rooms()));
+  assert(all('#survey-over .survey__link').length > 0, 'and a line for every link');
+  // THE MAIN LINE IS DRAGGED BY ITS OWN WAYPOINTS, which move every depth on it.
+  assert(all('#survey-over .survey__way').length > 1, 'and a handle on every point of the course');
+  const out = $('survey-out').value;
+  assert(
+    out.includes('path:') && out.includes('sides:') && out.includes('links:'),
+    'and prints the three blocks that go back into the table',
+    out.slice(0, 60)
+  );
+  assert($('survey-zone-1') !== null && $('survey-zone-2') !== null,
+    'with a tab for every zone, so each map is laid out on its own');
+  const wasRooms = rooms();
+  $('survey-zone-1').click();
+  assert(depths() === 14, 'and switching zone draws that one instead', String(depths()));
+  assert(rooms() !== wasRooms || rooms() === 0, 'with its own rooms', String(rooms()));
+  $('survey-zone-0').click();
+  // ADDING A ROOM is what a new map is laid out with, and it lands on the plan.
+  const before = rooms();
+  $('survey-add').click();
+  assert(rooms() === before + 1, 'Add room puts one on the picture', String(rooms()));
+  assert($('survey-out').value.includes("id: 'room1'"), 'and into the block that comes out');
+  $('survey-reset').click();
+  assert(rooms() === before, 'and Back to shipped puts the zone back as it ships', String(rooms()));
+  $('survey-close').click();
+  assert($('survey').hidden === true, 'and it closes again');
+}
+
 // --- the Proving Ground: one area, past the whole climb --------------------
 // *"A 4th tab that only has one area and its where you can socket the
 // crystals… the crystal sockets laid out like the fissure entrance in the camp

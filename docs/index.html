@@ -1585,6 +1585,44 @@
   }
   /* A STATION IS READ AT SHIP SIZE OR IT IS DECORATION: bone numerals on a
      near-opaque plate, on a disc big enough to hold them. */
+  /* THE SURVEY: a zone laid out by hand over its own picture. The picture
+     takes the room and the blocks sit under it, since a plan is read on the
+     map and only ever copied out of the box. */
+  /* The card is given a HEIGHT, or a column of `flex: 1` inside it is zero. */
+  #survey .modal__card { height: calc(100dvh - var(--dock-h, 0px) - 40px); }
+  .survey__body { display: flex; flex-direction: column; gap: 10px; overflow: hidden; flex: 1 1 auto; min-height: 0; }
+  /* Sized off the HEIGHT left, so the tools and the blocks under it are never
+     pushed off the card by a picture claiming the full width. */
+  .survey__fit { flex: 1 1 auto; min-height: 0; display: flex; justify-content: center; }
+  .survey__stage { position: relative; height: 100%; aspect-ratio: 688 / 384; max-width: 100%; }
+  .survey__foot { display: flex; flex-direction: column; gap: 6px; flex: 0 0 auto; }
+  .survey__foot textarea {
+    flex: 1 1 auto; min-height: 90px; resize: vertical;
+    background-color: var(--ink); color: var(--text); border: 1px solid var(--edge);
+    font-family: ui-monospace, monospace; font-size: 10px; padding: 6px;
+  }
+  .survey__art { position: absolute; inset: 0; width: 100%; height: 100%; image-rendering: pixelated; }
+  .survey__over { position: absolute; inset: 0; }
+  .survey__lines { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .survey__trunk { fill: none; stroke: var(--citrine); stroke-width: 2.6; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+  .survey__link { fill: none; stroke: var(--bone); stroke-width: 1.8; stroke-dasharray: 4 3; cursor: pointer; vector-effect: non-scaling-stroke; }
+  .survey__link--on { stroke: var(--gore); stroke-width: 3; stroke-dasharray: none; }
+  .survey__pip {
+    position: absolute; transform: translate(-50%, -50%); cursor: grab;
+    width: 22px; height: 22px; padding: 0; font: inherit; font-size: 10px; line-height: 20px;
+    background-color: color-mix(in srgb, var(--ink) 88%, transparent); color: var(--bone);
+    border: 1px solid var(--edge-lit); border-radius: 50%;
+  }
+  .survey__pip--depth { border-color: var(--citrine); color: var(--citrine); cursor: default; }
+  .survey__pip--on { border-color: var(--gore); box-shadow: 0 0 0 2px var(--gore); }
+  .survey__pip--from { border-style: dashed; border-color: var(--gore); }
+  .survey__way {
+    position: absolute; transform: translate(-50%, -50%); cursor: grab;
+    width: 9px; height: 9px; padding: 0; border-radius: 50%;
+    background-color: var(--citrine); border: 1px solid var(--ink);
+  }
+  .survey__way--bend { background-color: var(--gore); }
+  .survey__said { margin: 6px 0 0; color: var(--text-dim); font-size: 11px; }
   .pip {
     position: absolute; transform: translate(-50%, -50%);
     width: 24px; height: 24px; padding: 0; font: inherit; font-size: 12px; line-height: 22px;
@@ -2985,6 +3023,31 @@
       <div class="bldr__plan">
         <label class="dockcol__label" for="builder-plan">The plan</label>
         <textarea id="builder-plan" spellcheck="false"></textarea>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="survey" hidden>
+  <div class="modal__card modal__card--builder">
+    <div class="modal__head">
+      <h2 class="modal__title">The Survey</h2>
+      <div class="seedbar" id="survey-bar"></div>
+      <div class="seedbar">
+        <button class="mini" id="survey-close">Close</button>
+      </div>
+    </div>
+    <div class="modal__body survey__body">
+      <div class="survey__fit">
+        <div class="survey__stage" id="survey-stage">
+          <img class="survey__art" id="survey-art" alt="">
+          <div class="survey__over" id="survey-over"></div>
+        </div>
+      </div>
+      <div class="survey__foot">
+        <div class="seedbar" id="survey-tools"></div>
+        <p class="survey__said" id="survey-said"></p>
+        <textarea id="survey-out" spellcheck="false"></textarea>
       </div>
     </div>
   </div>

@@ -45,6 +45,8 @@ export interface DevHooks {
   refresh: () => void;
   /** Opens the level builder, which is a window of its own. */
   build: () => void;
+  /** Opens the Survey: a zone's own map, laid out by hand. */
+  survey: () => void;
 }
 
 /**
@@ -251,6 +253,18 @@ function render(): void {
     hooks.build();
   };
   sets.append(lay);
+
+  // A ZONE'S OWN MAP, laid out by hand: nodes dragged onto the chambers the
+  // picture drew, joined, and the line between them shaped.
+  const chart = el('button', 'mini devbtn') as HTMLButtonElement;
+  chart.id = 'dev-survey';
+  chart.append(el('span', 'devbtn__name', 'The Survey'));
+  chart.append(el('span', 'devbtn__what', 'lay a zone out: drag the nodes, join them, shape the lines'));
+  chart.onclick = () => {
+    close();
+    hooks.survey();
+  };
+  sets.append(chart);
 
   // A LEVEL UP, forced: `RAISE` ships at zero until a world has a shelf set
   // and a stair picture, and this is how a descent is shot with one anyway.
