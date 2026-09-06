@@ -950,15 +950,17 @@ export const GEAR_BASE_BY_ID: Record<string, GearBase> = Object.fromEntries(
  * piece IS, which is the honest version of the same wish.
  */
 export const BRANCH_BONUSES: BranchBonusDef[] = [
-  { id: 'coinfall', name: 'Coinfall', say: '150% more gold', gold: 2.5 },
-  { id: 'sluice', name: 'The Sluice', say: '120% more currency', currency: 2.2 },
-  { id: 'trove', name: 'The Trove', say: '+60% Rarity', rarity: 60 },
-  { id: 'richseam', name: 'The Rich Seam', say: '150% more material gathered', gather: 2.5 },
-  { id: 'schooling', name: 'The Schooling', say: '80% more experience', xp: 1.8 },
+  { id: 'coinfall', name: 'Coinfall', icon: 'bonus_gold', say: '150% more gold', gold: 2.5 },
+  { id: 'sluice', name: 'The Sluice', icon: 'bonus_currency', say: '120% more currency', currency: 2.2 },
+  { id: 'trove', name: 'The Trove', icon: 'bonus_rarity', say: '+60% Rarity', rarity: 60 },
+  { id: 'richseam', name: 'The Rich Seam', icon: 'bonus_material',
+    say: '150% more material gathered', gather: 2.5 },
+  { id: 'schooling', name: 'The Schooling', icon: 'bonus_xp', say: '80% more experience', xp: 1.8 },
   // THE ONE THAT COSTS SOMETHING: more bodies is more danger, and danger is
   // weighed, so this pays across the board rather than in one currency.
   {
-    id: 'swarm', name: 'The Swarm', say: '+60% pack size, and 60% more of everything it drops',
+    id: 'swarm', name: 'The Swarm', icon: 'bonus_swarm',
+    say: '+60% pack size, and 60% more of everything it drops',
     packSize: 60, gold: 1.6, currency: 1.6, gather: 1.6, xp: 1.6,
   },
 ];
@@ -2468,17 +2470,17 @@ export const LADDER = {
   zones: [
     {
       id: 'fissure', name: 'The Answering', art: 'climb_act1',
-      path: [[36, 12], [44, 22], [48, 39], [52, 49], [60, 61], [65, 69], [76, 78], [84, 86], [94, 92]],
+      path: [[36, 12], [29, 24], [31, 34], [35, 38], [38, 38], [46, 51], [53, 51],
+        [63, 68], [70, 68], [77, 81], [82, 81], [90, 96], [92, 95]],
       branches: [
-        { at: 3, letter: 'A', name: 'The Spoil Heap', bonus: 'coinfall', path: [[40, 29], [32, 30], [27, 30]] },
-        { at: 3, letter: 'B', name: 'The Old Stope', bonus: 'richseam', path: [[40, 29], [32, 30], [27, 33], [17, 42]] },
-        { at: 3, letter: 'C', name: 'The Crosscut', bonus: 'sluice', path: [[52, 29], [62, 27], [70, 27]] },
-        { at: 3, letter: 'D', name: 'The Long Drift', bonus: 'schooling', path: [[52, 29], [62, 27], [84, 27]] },
-        { at: 5, letter: 'A', name: 'The Winze', bonus: 'trove', path: [[45, 50], [36, 53], [30, 53]] },
-        { at: 5, letter: 'B', name: 'The Sump', bonus: 'swarm', path: [[45, 50], [36, 53], [24, 54], [12, 54]] },
-        { at: 7, letter: 'A', name: 'The Stull', bonus: 'coinfall', path: [[52, 64], [42, 67], [30, 67]] },
-        { at: 7, letter: 'B', name: 'The Upper Gallery', bonus: 'richseam', path: [[68, 62], [78, 62], [86, 62]] },
-        { at: 9, letter: 'A', name: 'The Dead End', bonus: 'trove', path: [[66, 78], [54, 80], [44, 80]] },
+        { at: 2, letter: 'A', name: 'The Spoil Heap', bonus: 'coinfall', path: [[36, 20], [48, 22]] },
+        { at: 3, letter: 'A', name: 'The Old Stope', bonus: 'richseam', path: [[24, 35], [16, 40], [13, 41]] },
+        { at: 3, letter: 'B', name: 'The Crosscut', bonus: 'sluice', path: [[38, 30], [45, 31]] },
+        { at: 5, letter: 'A', name: 'The Long Drift', bonus: 'schooling', path: [[34, 52], [22, 53], [14, 53]] },
+        { at: 5, letter: 'B', name: 'The Upper Gallery', bonus: 'trove', path: [[50, 44], [56, 41], [60, 40]] },
+        { at: 7, letter: 'A', name: 'The Winze', bonus: 'coinfall', path: [[46, 63], [34, 66], [26, 67]] },
+        { at: 7, letter: 'B', name: 'The Sump', bonus: 'swarm', path: [[56, 66], [48, 73]] },
+        { at: 9, letter: 'A', name: 'The Stull', bonus: 'richseam', path: [[76, 68], [77, 62]] },
       ],
       rungs: 12, arena: 'answering_hall', world: 'fissure', tier: 1,
     },

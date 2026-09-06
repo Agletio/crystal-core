@@ -3124,21 +3124,23 @@ $('dev-kit').click();
   $('climb-tab-0').click();
   const sides = all('[id^="climb-side-0-"]');
   assert(sides.length > 0, `the first zone draws ${sides.length} side rooms off its depths`);
+  // WHAT IT PAYS IS THE NAME: a picture, never `3A`. The id still carries the
+  // depth and the letter, which is what every harness names one by.
   assert(
-    sides.every((b) => /^\d+[A-Z]$/.test(b.textContent ?? '')),
-    'each labelled off the depth it hangs from and its own letter',
-    sides[0]?.textContent
+    sides.every((b) => /^climb-side-0-\d+[A-Z]$/.test(b.id) && b.querySelector('svg')),
+    'each drawn as the bonus it pays rather than numbered',
+    sides[0]?.id
   );
   // OPEN EXACTLY WHEN ITS DEPTH IS, in both directions: on a fresh character
   // every depth past the first is shut, so "some are open" would be a check
   // that only ever passed on a save it was never run against.
   assert(
     sides.every((b) => {
-      const depth = $(`climb-pip-0-${(b.textContent ?? '').match(/^\d+/)?.[0]}`);
+      const depth = $(`climb-pip-0-${b.id.match(/-(\d+)[A-Z]$/)?.[1]}`);
       return depth && b.disabled === depth.disabled;
     }),
     'and a branch is open exactly when its depth is',
-    sides.map((b) => `${b.textContent}:${b.disabled}`).join(' ')
+    sides.map((b) => `${b.id}:${b.disabled}`).join(' ')
   );
   $('climb-tab-3').click();
 

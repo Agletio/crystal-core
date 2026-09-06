@@ -377,6 +377,29 @@ the window already says THE FISSURE, and they said it three more times. Every
 station is placed in PERCENT of the picture, so a rung cannot drift off the
 chamber it sits in.
 
+**THE LINE IS THE CAVE'S OWN MAIN PATH, AND IT IS TRACED, NEVER EYEBALLED.**
+`LadderZoneDef.path` is the course through that cross-section, and
+`tools/act-floors.mts <scene> path <x> <y> <x> <y>` is what finds it: the drawn
+floors are cheap and the rock is dear, so the cheapest route from the top of
+the mine to the fire at the bottom IS the main passage. Depths are spread along
+it at even ARC LENGTH, and **THE DRAWN SEAM IS THAT COURSE** rather than a
+curve through the pips — twelve points across a zigzag cut every corner and ran
+the line through solid rock.
+
+**A BRANCH IS A SIDE ROOM OFF A DEPTH, AND IT IS NEVER A STEP.** *"Offshoot
+levels of the main line that branch in these separate rooms. Each has a special
+bonus."* `LadderZoneDef.branches` hangs one off a depth and it runs at THAT
+DEPTH'S OWN DANGER, so what you pick is the payout and never the difficulty;
+`takeRung` records nothing for one and `arenaAt` refuses one off the last
+depth. The bonus lands in TWO places because they are two different things:
+what makes the floor HARDER is one synthetic mod on the same seam `rungMod`
+rides, so `crystalRewards` weighs it, and what it PAYS is `RunSet.bonus`.
+**WHAT IT PAYS IS ITS NAME**: `BranchBonusDef.icon` is a generated row and the
+spur's pip draws that picture — *"the 3a/b looks kinda weird no? should we even
+just have little icons that look cool?"* — while the id keeps the depth and the
+letter for the harnesses. A spur is drawn TWICE, a dark casing under the dash,
+because a hairline on a lit cave floor is the same value as the floor.
+
 **THE PROVING GROUND IS THE FOURTH TAB, and the sockets are ITS.** *"Once you
 finish the first three runs of each zone you end in a 4th tab that only has one
 area and its where you can socket the crystals. The other menu can just remove

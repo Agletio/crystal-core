@@ -665,6 +665,30 @@
   {
    "id": "tool_rod",
    "say": "a single plain fishing rod standing upright and filling the frame, a long thin dark cane pole with a pale cord tied at its tip hanging straight down one side to a small round cork float. NOT a staff, NOT a spear, NOT a whip, NOT a wand, NOT a net."
+  },
+  {
+   "id": "bonus_gold",
+   "say": "a single heaped pile of round flat coins filling the frame, warm pale metal discs stacked and spilling forward, the top ones catching the light. NOT a chest, NOT a bag, NOT a purse, NOT a hand, NOT a face."
+  },
+  {
+   "id": "bonus_currency",
+   "say": "a single tall narrow splinter of pale blue crystal standing upright and filling the frame, a sharp pointed spike with flat facets and a hard dark outline, glowing faintly from within. NOT round, NOT a stone, NOT a cloth, NOT a shield, NOT a skull, NOT a face, NOT a creature."
+  },
+  {
+   "id": "bonus_rarity",
+   "say": "a single open low box filling the frame, dark timber with heavy metal corners and its lid tipped back, bright treasure heaped over its rim. NOT a barrel, NOT a crate stack, NOT a door, NOT a book, NOT a face."
+  },
+  {
+   "id": "bonus_material",
+   "say": "a single rough broken lump of dark ore filling the frame, cracked stone with thick bright metal veins running through the break. NOT a pickaxe, NOT a mountain, NOT a gem, NOT a coin, NOT a face."
+  },
+  {
+   "id": "bonus_xp",
+   "say": "a single upright four pointed star filling the frame, bright and hard edged with long thin rays and a small dense core. NOT a snowflake, NOT a sun, NOT a flower, NOT a sparkle cluster, NOT text, NOT a face."
+  },
+  {
+   "id": "bonus_swarm",
+   "say": "a tight cluster of three small dark horned skulls packed together and filling the frame, one in front and two behind it, pale bone with deep black sockets. NOT one skull alone, NOT a helmet, NOT a body, NOT a scene."
   }
  ]
 }

@@ -23,6 +23,7 @@ import { FOLK_SCALE_DEFAULT, scaleFor } from '../scenes';
 import { GENERATED } from '../render/generated-art';
 import { heroSpriteFor } from '../sim/appearance';
 import { drawBody } from './bodydraw';
+import { drawn } from './icons';
 import { openTalk, closeParley, syncTalk } from './talk';
 import { isTaleUp, playTale } from './tale';
 import {
@@ -155,48 +156,65 @@ const shutBy = (zone: number): string => {
   return before?.name ?? 'the zone below';
 };
 
-interface Station {
-  rung: number;
+interface Spot {
   x: number; // percent across the picture
   y: number; // percent down it
 }
 
+interface Station extends Spot {
+  rung: number;
+}
+
 /** THE DESCENT FOLLOWS THE PICTURE. `LadderZoneDef.path` is that zone's own
- *  course through its cross-section, read off the art by hand; the depths are
- *  spread along it at even ARC LENGTH, so every one lands in a chamber and the
- *  line between them runs down passages that are drawn. A zone with no path
- *  falls back to the diagonal, which crosses whatever the picture put there. */
+ *  course through its cross-section, traced off the art's own floors; the
+ *  depths are spread along it at even ARC LENGTH and THE DRAWN LINE IS THE
+ *  COURSE ITSELF, not a curve through the pips — twelve points across a
+ *  zigzag cut every corner and ran the seam through solid rock. A zone with no
+ *  path falls back to the diagonal, which crosses whatever the picture put
+ *  there. */
 const PLAIN: [number, number][] = [[7, 14], [93, 84]];
 
-function stations(rungs: number, path?: [number, number][]): Station[] {
+/** A course walked by arc length: `at` is the point a fraction along it, `upTo`
+ *  the run of it up to there. */
+function course(path?: [number, number][]) {
   const way = path && path.length >= 2 ? path : PLAIN;
   const legs = way.slice(1).map((to, i) => Math.hypot(to[0] - way[i][0], to[1] - way[i][1]));
-  const whole = legs.reduce((n, d) => n + d, 0);
-  const at = (t: number): { x: number; y: number } => {
+  const whole = legs.reduce((n, d) => n + d, 0) || 1;
+  const step = (t: number): { leg: number; k: number } => {
     let left = t * whole;
     for (let i = 0; i < legs.length; i++) {
       if (left <= legs[i] || i === legs.length - 1) {
-        const k = legs[i] === 0 ? 0 : Math.min(1, left / legs[i]);
-        return {
-          x: way[i][0] + (way[i + 1][0] - way[i][0]) * k,
-          y: way[i][1] + (way[i + 1][1] - way[i][1]) * k,
-        };
+        return { leg: i, k: legs[i] === 0 ? 0 : Math.min(1, left / legs[i]) };
       }
       left -= legs[i];
     }
-    return { x: way[way.length - 1][0], y: way[way.length - 1][1] };
+    return { leg: legs.length - 1, k: 1 };
   };
-  const out: Station[] = [];
-  for (let i = 0; i < rungs; i++) {
-    const spot = at(rungs === 1 ? 0 : i / (rungs - 1));
-    out.push({ rung: i + 1, x: spot.x, y: spot.y });
-  }
-  return out;
+  const at = (t: number): Spot => {
+    const { leg, k } = step(t);
+    return {
+      x: way[leg][0] + (way[leg + 1][0] - way[leg][0]) * k,
+      y: way[leg][1] + (way[leg + 1][1] - way[leg][1]) * k,
+    };
+  };
+  const upTo = (t: number): Spot[] => {
+    const { leg } = step(t);
+    return [...way.slice(0, leg + 1).map(([x, y]) => ({ x, y })), at(t)];
+  };
+  return { way: way.map(([x, y]) => ({ x, y })), at, upTo };
+}
+
+function stations(rungs: number, path?: [number, number][]): Station[] {
+  const line = course(path);
+  return Array.from({ length: rungs }, (_, i) => ({
+    rung: i + 1,
+    ...line.at(rungs === 1 ? 0 : i / (rungs - 1)),
+  }));
 }
 
 /** A smooth line through them: each pair meets at their midpoint, which is the
  *  cheapest curve that never overshoots a station. */
-function seamPath(from: Station[]): string {
+function seamPath(from: Spot[]): string {
   if (from.length === 0) return '';
   let d = `M ${from[0].x.toFixed(1)} ${from[0].y.toFixed(1)}`;
   for (let i = 1; i < from.length; i++) {
@@ -206,6 +224,13 @@ function seamPath(from: Station[]): string {
   const last = from[from.length - 1];
   d += ` L ${last.x.toFixed(1)} ${last.y.toFixed(1)}`;
   return d;
+}
+
+/** A spur is drawn TWICE: a dark casing, then the dash over it. One hairline
+ *  on a lit cave floor is the same value as the floor. */
+function drawSpur(svg: SVGElement, d: string): void {
+  svg.append(svgEl('path', { class: 'climbseam__casing', d }));
+  svg.append(svgEl('path', { class: 'climbseam__side', d }));
 }
 
 const svgEl = (tag: string, attrs: Record<string, string>): SVGElement => {
@@ -403,18 +428,18 @@ function renderProving(host: HTMLElement, character: Character, onPick: () => vo
   const svg = svgEl('svg', {
     class: 'climbseam__line', viewBox: '0 0 100 100', preserveAspectRatio: 'none',
   });
-  const root = { rung: 0, x: 50, y: 62 };
+  const root = { x: 50, y: 62 };
   for (const side of PROVING.branches) {
-    svg.append(svgEl('path', {
-      class: 'climbseam__side',
-      d: seamPath([root, { rung: 0, x: side.x, y: side.y }]),
-    }));
+    drawSpur(svg, seamPath([root, { x: side.x, y: side.y }]));
   }
   trail.append(svg);
   for (const side of PROVING.branches) {
     const pays = BRANCH_BONUS_BY_ID[side.bonus];
     const world = THEME_BY_ID[side.world];
-    const pip = el('button', 'pip pip--side pip--area', side.name) as HTMLButtonElement;
+    const pip = el('button', 'pip pip--side pip--area') as HTMLButtonElement;
+    const mark = drawn(BRANCH_BONUS_BY_ID[side.bonus]?.icon ?? '', 18);
+    if (mark) pip.append(mark);
+    pip.append(el('span', undefined, side.name));
     pip.id = `climb-area-${side.id}`;
     pip.style.left = `${side.x}%`;
     pip.style.top = `${side.y}%`;
@@ -490,10 +515,11 @@ export function renderClimb(host: HTMLElement, character: Character, onPick: () 
     viewBox: '0 0 100 100',
     preserveAspectRatio: 'none',
   });
-  svg.append(svgEl('path', { class: 'climbseam__rock', d: seamPath(all) }));
-  const done = all.filter((s) => s.rung <= cleared);
-  if (done.length > 0) {
-    svg.append(svgEl('path', { class: 'climbseam__lit', d: seamPath(done) }));
+  const line = course(zone.path);
+  svg.append(svgEl('path', { class: 'climbseam__rock', d: seamPath(line.way) }));
+  if (cleared > 0) {
+    const far = zone.rungs === 1 ? 0 : (cleared - 1) / (zone.rungs - 1);
+    svg.append(svgEl('path', { class: 'climbseam__lit', d: seamPath(line.upTo(far)) }));
   }
   trail.append(svg);
 
@@ -533,14 +559,15 @@ export function renderClimb(host: HTMLElement, character: Character, onPick: () 
     // THE SIDE ROOMS OFF THIS DEPTH, each drawn down its own course from the
     // station — off the line, at the line's own danger, for one bonus.
     for (const side of branchesAt(z, station.rung)) {
-      const way: Station[] = [
-        station,
-        ...side.path.map(([x, y]) => ({ rung: station.rung, x, y })),
-      ];
-      svg.append(svgEl('path', { class: 'climbseam__side', d: seamPath(way) }));
+      const way: Spot[] = [station, ...side.path.map(([x, y]) => ({ x, y }))];
+      drawSpur(svg, seamPath(way));
       const end = way[way.length - 1];
       const label = branchLabel(side);
-      const spur = el('button', 'pip pip--side', label) as HTMLButtonElement;
+      const pays = BRANCH_BONUS_BY_ID[side.bonus];
+      // WHAT IT PAYS IS THE NAME. `3A` said where it hung off and nothing about
+      // why you would go, and it is already said by the spur it sits on.
+      const spur = el('button', 'pip pip--side') as HTMLButtonElement;
+      spur.append(drawn(pays?.icon ?? '', 22) ?? document.createTextNode(label));
       spur.id = `climb-side-${z}-${label}`;
       spur.style.left = `${end.x}%`;
       spur.style.top = `${end.y}%`;
@@ -548,7 +575,6 @@ export function renderClimb(host: HTMLElement, character: Character, onPick: () 
       spur.classList.toggle('pip--here', !isProving(at) && at.zone === z
         && at.rung === station.rung && at.branch === side.letter);
       spur.disabled = !can;
-      const pays = BRANCH_BONUS_BY_ID[side.bonus];
       attachTooltip(spur, () =>
         can
           ? `${side.name}. Off depth ${station.rung}, at that depth's own danger. ` +

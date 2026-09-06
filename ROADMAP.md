@@ -890,9 +890,9 @@ is the strongest part of the idea. The feedback that shaped it:
       already reads each. Measured: The Spoil Heap runs at depth 3's own 40
       danger and pays 2.5x gold; The Sump takes depth 5 from 80 to 110 danger
       and pays 1.6x across the board. `takeRung` records NOTHING for a branch
-      and `arenaAt` refuses one off the last depth. Nine on The Answering, five
-      on The Prism, each placed on a chamber the picture actually drew — found
-      by reading the cross-section's own floors rather than by eye.
+      and `arenaAt` refuses one off the last depth. EIGHT on The Answering off
+      four depths, five on The Prism, each placed on a chamber the picture
+      actually drew — found by reading the cross-section's own floors.
 - [ ] **BRANCHES ON THE PROVING GROUND**, which is his stronger half: *"the
       same main line system that's going down and the branches that come off
       have these same bonuses AND they are different zones… 4-5 different areas
@@ -905,15 +905,35 @@ is the strongest part of the idea. The feedback that shaped it:
 - [ ] **THE ROT'S BRANCHES.** None authored: its cross-section is being
       regenerated, and a branch is placed by reading the picture's own floors.
       `npx tsx tools/act-floors.mts climb_act3` prints them.
-- [x] **THE LINE FOLLOWS THE MAP.** DONE: `LadderZoneDef.path` is that zone's
-      own course through its cross-section, read off the art by hand, and the
-      depths are spread along it at even ARC LENGTH. The straight diagonal with
-      a sine wobble crossed solid rock. It is also what a branch will hang off.
+- [x] **THE LINE FOLLOWS THE MAP.** DONE, and READ OFF THE PICTURE rather than
+      by eye — *"the main line should be down the main path of the cave"*.
+      `npx tsx tools/act-floors.mts <scene> path <x> <y> <x> <y> [tol]` walks
+      the drawn floors from the top of the mine to the fire at the bottom,
+      pricing rock dear and floor cheap, and prints the polyline that is now
+      `LADDER.zones[0].path` — 13 points down the act's own ramp and staircase.
+      **THE DRAWN SEAM IS THE COURSE, not a curve through the pips**: twelve
+      points across a zigzag cut every corner, which is what was crossing rock.
+      Waypoints picked by hand are what put it there; do not go back to that.
+- [x] **A BRANCH IS A PICTURE, NEVER `3A`.** *"the 3a/b looks kinda weird no?
+      should we even just have little icons that look cool?"* —
+      `BranchBonusDef.icon` is a generated row and the spur's pip draws it, so
+      what a side room PAYS is its whole name; the id still carries the depth
+      and the letter, which is what a harness names one by. The spur is drawn
+      TWICE, a dark casing under the dash, because a hairline on a lit cave
+      floor is the same value as the floor.
 - [x] **THE ZONE NAMES.** The Prism and The Rot; a zone is named for the PLACE
       now and the three bosses keep The Answering, The Refraction and The
       Flowering. **ZONE 1 IS UNNAMED** — waiting on his word, and on whether
       the WORLDS should be renamed off the collision (zone 3 and the demonic
       world are both The Rot, and the Proving Ground prints world names).
+- [ ] **THE OTHER TWO ZONES WAIT ON ZONE 1.** *"Lets just iterate on the first
+      zone until its good so we have a blueprint for the rest. Especially the
+      proving ground since it will be much larger, don't wanna have to do that
+      one 10 times."* The Prism still carries the hand-read path and its five
+      branches; re-trace both only once The Answering is signed off. **The
+      Proving Ground's five areas are the real trap**: they are placed at fixed
+      percent over whichever act the INFLUENCE picks, so one set of coordinates
+      has to land on floor in three different pictures.
 - [ ] **THE ROT'S CROSS-SECTION IS A TRAIN TRACK.** *"It should look like just
       a tunnel going down, there's no train tracks… the lower ones have no
       visible path connecting them."* The ask is REWRITTEN in `scenes.json` —

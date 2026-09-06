@@ -279,6 +279,7 @@ export interface BranchBonusDef {
   id: string;
   name: string;
   say: string; // the line, with its own figure in it
+  icon: string; // its `GENERATED_ICONS` row — the PICTURE is what names a branch
   gold?: number; // multiplier on what a clear banks
   currency?: number;
   rarity?: number; // percent, ADDED like every other rarity
