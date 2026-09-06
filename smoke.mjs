@@ -3122,8 +3122,24 @@ $('dev-kit').click();
   assert(depths() === 12, 'which draws a node for all twelve depths', String(depths()));
   assert(rooms() > 0, 'and one for every side room', String(rooms()));
   assert(all('#survey-over .survey__link').length > 0, 'and a line for every link');
-  // THE MAIN LINE IS DRAGGED BY ITS OWN WAYPOINTS, which move every depth on it.
-  assert(all('#survey-over .survey__way').length > 1, 'and a handle on every point of the course');
+  // THE MAIN LINE IS PICKED LIKE A LINK, and only then shows its handles: at
+  // rest they sit under the depth pips, which are twice their size.
+  assert(all('#survey-over .survey__way').length === 0, 'with the handles of the course out of the way until it is picked');
+  $('survey-over').querySelector('.survey__grab')
+    .dispatchEvent(new window.PointerEvent('pointerdown', { bubbles: true }));
+  const ways = all('#survey-over .survey__way').length;
+  assert(ways > 1, 'and a handle on every point of it once it is', String(ways));
+  assert(
+    all('#survey-over .survey__more').length === ways - 1,
+    'with a + between each pair that puts another there',
+    String(all('#survey-over .survey__more').length)
+  );
+  $('survey-waymore-0').dispatchEvent(new window.PointerEvent('pointerdown', { bubbles: true }));
+  assert(
+    all('#survey-over .survey__way').length === ways + 1,
+    'and pressing one does', String(all('#survey-over .survey__way').length)
+  );
+  $('survey-reset').click();
   const out = $('survey-out').value;
   assert(
     out.includes('path:') && out.includes('sides:') && out.includes('links:'),

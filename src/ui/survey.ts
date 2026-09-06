@@ -44,7 +44,7 @@ let zone = 0;
 let plans: Record<number, Plan> = {};
 /** What is picked: a node id, a link, or the main line's own waypoint. */
 let held: { kind: 'node'; id: string } | { kind: 'link'; at: number }
-  | { kind: 'way'; at: number } | null = null;
+  | { kind: 'way'; at: number } | { kind: 'trunk' } | null = null;
 /** The node a link is being drawn FROM, if any. */
 let joining: string | null = null;
 let caves: Record<string, Cave> = {};
@@ -205,9 +205,15 @@ function render(): void {
   const svg = svgEl('svg', { class: 'survey__lines', viewBox: '0 0 100 100', preserveAspectRatio: 'none' });
   stage.append(svg);
 
-  // THE MAIN LINE, and its own waypoints: dragging one moves every depth.
+  // THE MAIN LINE IS PICKED LIKE A LINK, and shows its handles only then: at
+  // rest they sit under the depth pips, which are twice their size.
+  const trunk = linePath(p.path.map(([x, y]) => ({ x, y })));
+  const hold = svgEl('path', { class: 'survey__grab', d: trunk });
+  (hold as unknown as HTMLElement).onpointerdown = () => { held = { kind: 'trunk' }; render(); };
+  svg.append(hold);
   svg.append(svgEl('path', {
-    class: 'survey__trunk', d: linePath(p.path.map(([x, y]) => ({ x, y }))),
+    class: `survey__trunk${held?.kind === 'trunk' || held?.kind === 'way' ? ' survey__trunk--on' : ''}`,
+    d: trunk,
   }));
   p.links.forEach((link, i) => {
     const pts = linkPoints(link);
@@ -230,13 +236,32 @@ function render(): void {
     stage.append(node);
   };
 
-  // A WAYPOINT of the main line, and of whichever link is picked.
-  p.path.forEach(([x, y], i) => {
-    const dot = el('button', 'survey__way') as HTMLButtonElement;
-    dot.id = `survey-way-${i}`;
-    dot.onpointerdown = (e) => { press = { what: { kind: 'way', at: i }, from: atPointer(e), moved: false }; e.preventDefault(); };
-    put(dot, x, y);
-  });
+  // THE MAIN LINE'S OWN SHAPE, once it is picked: a handle on every point and
+  // a + between each pair, the same as a link's.
+  if (held?.kind === 'trunk' || held?.kind === 'way') {
+    p.path.forEach(([x, y], i) => {
+      const on = held?.kind === 'way' && held.at === i;
+      const dot = el('button', `survey__way${on ? ' survey__way--on' : ''}`) as HTMLButtonElement;
+      dot.id = `survey-way-${i}`;
+      dot.onpointerdown = (e) => { press = { what: { kind: 'way', at: i }, from: atPointer(e), moved: false }; e.preventDefault(); };
+      put(dot, x, y);
+    });
+    p.path.slice(1).forEach(([x, y], i) => {
+      const add = el('button', 'survey__more', '+') as HTMLButtonElement;
+      add.id = `survey-waymore-${i}`;
+      add.onpointerdown = (e) => {
+        e.preventDefault();
+        const mid: [number, number] = [
+          Math.round((p.path[i][0] + p.path[i + 1][0]) / 2),
+          Math.round((p.path[i][1] + p.path[i + 1][1]) / 2),
+        ];
+        p.path = [...p.path.slice(0, i + 1), mid, ...p.path.slice(i + 1)];
+        save();
+        render();
+      };
+      put(add, (p.path[i][0] + x) / 2, (p.path[i][1] + y) / 2);
+    });
+  }
   // THE PICKED LINK'S OWN SHAPE: a handle on every point, and a + between each
   // pair that puts another one there. A line is dragged into place rather than
   // typed, so adding a bend is a press on the stretch that needs one.
@@ -290,7 +315,10 @@ function render(): void {
     ? `Joining from ${joining} — click the other end, or Join again to stop.`
     : held?.kind === 'link'
       ? `${p.links[held.at]?.from} to ${p.links[held.at]?.to}`
-      : held?.kind === 'node' ? held.id : `${p.sides.length} rooms, ${p.links.length} links`;
+      : held?.kind === 'node' ? held.id
+        : held?.kind === 'trunk' ? `The main line — ${p.path.length} points`
+          : held?.kind === 'way' ? `The main line, point ${held.at + 1} of ${p.path.length}`
+            : `${p.sides.length} rooms, ${p.links.length} links`;
 }
 
 function pick(id: string): void {
@@ -335,6 +363,12 @@ function tools(): void {
   add('survey-drop', 'Delete', () => {
     const p = plan();
     if (held?.kind === 'link') { p.links.splice(held.at, 1); held = null; return; }
+    // A COURSE NEEDS TWO POINTS: the last pair is what a line is.
+    if (held?.kind === 'way' && p.path.length > 2) {
+      p.path.splice(held.at, 1);
+      held = { kind: 'trunk' };
+      return;
+    }
     if (held?.kind === 'node' && depthOfId(held.id) === null) {
       const gone = held.id;
       p.sides = p.sides.filter((s) => s.id !== gone);
