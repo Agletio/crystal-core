@@ -11621,15 +11621,34 @@ rule('THE CLIMB — does a rung open, stay open, and get harder?');
     );
 
     // ITS DANGER IS THE DEPTH'S, and only what it adds to the floor is weighed.
-    const plain = runSet([], null, { zone: 0, rung: 3 });
-    const paid = runSet([], null, { zone: 0, rung: 3, branch: 'A' });
+    // Asked of EVERY branch that adds no bodies rather than of one hand-picked
+    // letter: which bonus sits on 3A is a table edit, and the invariant is not.
+    const quiet = (LADDER.zones[0].branches ?? [])
+      .filter((b) => !BRANCH_BONUS_BY_ID[b.bonus]?.packSize)
+      .map((b) => ({
+        b,
+        off: runSet([], null, { zone: 0, rung: b.at, branch: b.letter }),
+        on: runSet([], null, { zone: 0, rung: b.at }),
+      }));
+    const moved = quiet.filter(({ off, on }) => off.rewards.danger !== on.rewards.danger);
     const swarm = LADDER.zones[0].branches?.find((b) => b.bonus === 'swarm');
     const rough = swarm ? runSet([], null, { zone: 0, rung: swarm.at, branch: swarm.letter }) : null;
     const flat = swarm ? runSet([], null, { zone: 0, rung: swarm.at }) : null;
     check(
-      paid.rewards.danger === plain.rewards.danger && paid.bonus.gold > 1,
-      `a branch runs at its depth's own danger (${paid.rewards.danger}) and pays ${paid.bonus.gold}x gold`,
-      `${plain.rewards.danger} against ${paid.rewards.danger}`
+      moved.length === 0 && quiet.length > 0,
+      `all ${quiet.length} branches that add no bodies run at their depth's own danger`,
+      moved.map(({ b, off, on }) => `${b.name} ${on.rewards.danger}->${off.rewards.danger}`).join(', ')
+    );
+    check(
+      quiet.every(({ b, off }) => {
+        const pays = BRANCH_BONUS_BY_ID[b.bonus];
+        return off.bonus.gold > 1 || off.bonus.currency > 1 || off.bonus.gather > 1
+          || off.bonus.xp > 1 || off.bonus.rarity > 0 || !pays;
+      }),
+      'and every one of them pays something a plain descent does not',
+      quiet.filter(({ off }) => off.bonus.gold === 1 && off.bonus.currency === 1
+        && off.bonus.gather === 1 && off.bonus.xp === 1 && off.bonus.rarity === 0)
+        .map(({ b }) => b.name).join(', ')
     );
     check(
       !!rough && !!flat && rough.rewards.danger > flat.rewards.danger,
