@@ -857,6 +857,36 @@ ours** — verify each against the code before spending anything.
       second. Either the kit needs a build that can stand there, or the peek
       needs to shoot its first running frame.
 
+## Phase 14 — WHERE THE HERO MAY WALK, against where the floor is DRAWN
+
+*"This screenshot shows a small gap in the rock that happened in a layout and
+the character pathed all the way around it. I feel like he should have fit
+through here no? I mean maybe not but maybe he should — im open to
+disagreements on this."* (`gap-walked-around.png`)
+
+**THE PATHFINDER IS PROBABLY RIGHT AND THE PICTURE IS PROBABLY LYING**, and
+that is the thing to settle first. `BODY_MAX` is 0.45 — under half a tile,
+written down as *"so a rank-scaled body can still walk a one-tile gap"* — so
+`fits` already admits a one-tile channel and a real gap is not what is being
+refused. What DOES read as floor without being floor is the rock's own head: a
+WALL tile draws its top `FACE_HEAD` (0.38 of a tile) as ground, so every run of
+rock wears a pale band that looks like standable floor, and two rock runs
+meeting can put a pale channel on screen where the grid holds solid stone. The
+demo already prints the south side of that discrepancy — 0.33 tiles of drawn
+ground out of reach.
+
+- [ ] **SETTLE IT BY LOOKING, not by arguing.** A dev overlay that paints
+      `Grid.walkable` over the rendered floor, and a peek that shoots it: if
+      the gap is unwalkable rock wearing its drawn head, the pathfinder is
+      right and the fault is that the art promises a way through. If the gap
+      IS walkable and the hero still went round, it is `findPath` or the
+      separation push, and that is a different repair.
+- [ ] **THEN DECIDE WHICH SIDE MOVES.** Either the drawn head stops promising
+      floor at a place two rock runs nearly meet, or the carve stops making
+      near-gaps at all (`fitCorners` already opens rock to what the set can
+      draw, and this would be one more rule for it). **A change here moves
+      every map in the game**, so it wants the measurement first.
+
 ## Phase 13 — BRANCHES OFF THE MAIN LINE, his own design
 
 *"These side areas are just for grinding… offshoot levels of the main line that
