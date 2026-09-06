@@ -14,7 +14,7 @@
  * `means` carries its own numbers, out of the same tables the sim reads. A
  * glossary quoting a figure by hand is a glossary that goes stale silently.
  */
-import { AILMENT_BY_ID, BURST, DAMAGE_TYPE_BY_ID, DEFENCE, MANA, MELEE, PASSIVE_DAMAGE, POTIONS, PROJECTILE, WARRIOR, stunChanceFor } from './data';
+import { AILMENT_BY_ID, BURST, DAMAGE_TYPE_BY_ID, DEFENCE, MANA, MELEE, PASSIVE_DAMAGE, POTIONS, PROJECTILE, SPLASH, WARRIOR, stunChanceFor } from './data';
 
 export interface KeywordDef {
   id: string;
@@ -143,6 +143,17 @@ export const KEYWORDS: KeywordDef[] = [
       `by a DEATH is a share of the hit that killed it, and sets off the Bursts ` +
       `of whatever IT kills, ${BURST.chainDepth} deep. Bursts overlap freely.`,
     grants: ['burstOnHit', 'explodeOnKill'],
+  },
+  {
+    id: 'splash',
+    name: 'Splash',
+    says: ['Splash', 'Splashes'],
+    means:
+      `Damage in a circle around the body a hit landed on, ${SPLASH.radius} tiles ` +
+      `across, for ${pct(SPLASH.share)} of that hit. Every skill that hits ONE ` +
+      `enemy carries it without being asked, and increased Area of Effect from ` +
+      `anywhere widens it.`,
+    grants: ['splashShare', 'splashRadius'],
   },
   {
     id: 'convert',
@@ -425,8 +436,6 @@ export const BANNED: Record<string, string> = {
   explodes: 'Burst',
   explosion: 'Burst',
   'blows up': 'Burst',
-  splash: 'Burst',
-  splashes: 'Burst',
   'knocks out': 'Stun',
   stagger: 'Stun',
   staggers: 'Stun',

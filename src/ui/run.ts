@@ -42,7 +42,9 @@ import {
   THEME_BY_ID,
 } from '../data';
 import { spend } from '../economy';
-import { bagsFull, socketItem, socketed, syncSouls, unsocket } from '../game/state';
+import {
+  bagsFull, bankSoulClear, socketItem, socketed, syncSouls, unsocket,
+} from '../game/state';
 import type { GameState } from '../game/state';
 import { crystalProgress } from '../game/crystals';
 import { bossBeaten, hasMet, owedTale, takeBoss, takeMet, whoIsDown } from '../game/scenes';
@@ -660,7 +662,7 @@ function finish(left = false): void {
     // THE CRYSTAL LADDER'S OWN COUNT: the endless half is the SOULED climb, so
     // a clear only counts once there is a soulstone in the wall. Never on a
     // walk — a walk buys no progress anywhere.
-    if (soulsIn(game.character) > 0) game.souledClears = (game.souledClears ?? 0) + 1;
+    bankSoulClear(game, soulsIn(game.character));
   }
   // A DEATH stops the descent AND the climb: walking straight back into what
   // killed you is not a loop anybody turned on.

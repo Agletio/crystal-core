@@ -476,9 +476,15 @@ crystal sockets, a rule, then the two soul ones. `RUN_SLOTS` holds all six and
 `CRYSTAL_SLOTS` / `SOUL_SLOTS` are what everything else reads — `socketed()` is
 the crystals alone, or a soulstone would arrive in `runSet` as a crystal.
 
-**THE CRYSTAL LADDER IS PAID BY THE SOULED CLIMB.** `CRYSTAL_LADDER`'s first
-four steps are 25/50/75/100 clears and `GameState.souledClears` is what counts
-them: a clear only counts with a soulstone in the wall. So the first crystal
+**THE CRYSTAL LADDER IS PAID BY THE SOULED CLIMB, AND IT IS TWO LADDERS.**
+*"Make some of the crystals unlock for 1 soulstone and some 2 soulstones… 100
+with 1 soulstone in and then 100 with 2 in."* The Normal four are 25/50/75/100
+clears at ONE stone and the Demonic four the same at TWO, with the Prismatic
+four between them bought by LEVELLING what you already hold. `CrystalStep.souls`
+is which tier a step's clears are counted at and `GameState.soulClears` is one
+row a tier: **a clear at two counts for one as well** — *"if you just skip to 2
+without finishing the 1 it should count both"* — so `bankSoulClear` walks down
+from the tier you ran at and the rows can never rise. So the first crystal
 arrives with the campaign, and every one after it is bought by walking the climb
 again against something worse.
 
@@ -538,7 +544,7 @@ of this new zone. Prismatic crystal pays out and full lvl 4 normal crystals,
 then another at level 2 prismatic, another at level 3, another at lvl 4, and
 then the same thing for demonic."* `CRYSTAL_LADDER` is those twelve steps IN
 ORDER — a step further up can never pay before the ones under it — each holding
-either a count of `GameState.souledClears` or a number of crystals you already
+either a count of `GameState.soulClears` at a soul tier or a number you already
 hold at a level. Levelling one is the only way past the fourth, so the ladder is
 the souled climb and the sockets pulling on each other. Measured, the twelve
 come to 184 souled clears. Taken in person like every other crystal, with
@@ -954,6 +960,31 @@ whose mind has changed. The crafting people are never RESCUED: they live down th
 `greets` says so. The WORKERS are — that is his word for them — and they are
 their own table, not scenes. **The one `plan` left is the ANSWERING HALL**, because a boss fight
 needs a floor with nothing on it.
+
+**EVERY SINGLE-TARGET SKILL SPLASHES, AND IT IS BAKED IN.** *"The game revolves
+so much around aoe clearing and single target only being one small part of it,
+every skill should have at least a little AOE baked in. If we don't then
+literally every single person playing Strike is going to click Echoes and
+Repeats until you have good clear and then maybe have 5-10 points to get
+damage."* `SPLASH` is `share` of a hit onto everything else within `radius` of
+the body it landed on — 30% and 1.1 tiles — and `SkillDef.splash` is on every
+hero skill with a single-target delivery and on nothing else. **A MONSTER NEVER
+SPLASHES**: a second unweighed source of damage is one no danger number
+accounts for. `splashShare` ADDS and `splashRadius` MULTIPLIES, both ordinary
+grants a tree, a trade or gear can hand over, and the radius goes through
+`areaRadius` so increased Area of Effect from anywhere widens it.
+
+**A SKILL'S OWN TREE BUYS WHAT THE SKILL DOES.** *"Remove all the flat stats
+that aren't related to the skill. So like health, armour and stuff like that —
+attack and cast speed, crit etc is all fine."* A web may sell `damage`,
+`attackSpeed`, `castSpeed`, `critChance`, `critMultiplier`, `attackRange`,
+`areaOfEffect`, `ailmentChance` and `manaCost` and NOTHING else; a MOVEMENT web
+adds `moveSpeed`, which is its own subject. Life, armour, resistances,
+regeneration and the mana pool are gear's and the character's own web — a branch
+of them inside Strike is six points that change nothing about striking. The
+three defensive branches are gone: Strike's and Ambush's and Rimespike's are
+SPILL, Shockwave's is SPREAD. **Every node id is kept**, because a save points
+at them.
 
 **CRIT CHANCE IS THE SKILL'S, and gear only SCALES it.** `SkillDef.critChance`
 is what a skill crits at bare — 4% for Arc Lightning, 25% for Ambush — and every

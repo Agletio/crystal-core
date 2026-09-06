@@ -167,6 +167,32 @@ export function blastAround(
   return killed;
 }
 
+/**
+ * SPLASH: the share of a single-target hit that lands on everything else near
+ * the body it hit. Baked into the skill rather than bought, so no build spends
+ * its first ten points buying its way out of hitting one body at a time.
+ * `splashShare` is ADDED and `splashRadius` a multiplier, and the radius goes
+ * through `areaRadius` so increased Area of Effect from anywhere widens it.
+ */
+export function splashFrom(
+  use: SkillUse,
+  at: Entity,
+  scale: (target: Entity) => number
+): void {
+  const baked = use.skill.splash;
+  if (!baked) return;
+  const g = use.grants;
+  const share = baked.share + num(g.splashShare, 0);
+  const radius = use.areaRadius(baked.radius * num(g.splashRadius, 1));
+  if (share <= 0 || radius <= 0) return;
+  for (const enemy of use.enemies) {
+    if (enemy === at || enemy.dead) continue;
+    if (!within(at, enemy, radius)) continue;
+    use.hit(enemy, share * scale(enemy));
+  }
+  use.vfx('burst', [{ x: at.x, y: at.y }, { x: at.x + radius, y: at.y }], 0.22);
+}
+
 /** The chain a DEATH sets off. No tree grants this — it is a unique's whole
  *  reason to exist — and `dealsHits` keeps it off Blight's circle, which deals
  *  no hit damage for it to be a share of. */
@@ -218,6 +244,7 @@ export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
     const castMultiplier = castScale(use.grants, use.castIndex);
     const scale = (e: Entity) => castMultiplier * targetScale(use, e);
     use.hit(use.primary, scale(use.primary));
+    splashFrom(use, use.primary, scale);
 
     leaveClouds(use);
 
@@ -226,6 +253,7 @@ export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
       const others = spreadTargets(use, use.enemies.filter((e) => e !== use.primary), extra);
       for (const other of others) {
         use.hit(other, scale(other));
+        splashFrom(use, other, scale);
         use.vfx(use.skill.vfxKind ?? 'swing', [
           { x: use.primary.x, y: use.primary.y },
           { x: other.x, y: other.y },
@@ -247,6 +275,7 @@ export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
     const scale = (e: Entity) => castMultiplier * targetScale(use, e);
     use.blink(use.primary);
     use.hit(use.primary, scale(use.primary));
+    splashFrom(use, use.primary, scale);
     burstFrom(use, use.primary, scale, true);
     use.vfx(use.skill.vfxKind ?? 'slash', [
       { x: use.user.x, y: use.user.y },
@@ -282,6 +311,7 @@ export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
       if (target.dead || struck.has(target)) return false;
       struck.add(target);
       use.hit(target, falloff * scale(target));
+      splashFrom(use, target, (e) => falloff * scale(e));
       // A cloud over the thing it hit, for a skill that leaves one.
       if (impact) use.vfx(impact, [{ x: target.x, y: target.y }], IMPACT_TTL, after);
       burstFrom(use, target, scale, true);
@@ -405,6 +435,7 @@ export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
     const swing = (target: Entity, falloff: number): void => {
       if (target.dead) return;
       use.hit(target, falloff * scale(target));
+      splashFrom(use, target, (e) => falloff * scale(e));
       burstFrom(use, target, scale, true);
     };
 

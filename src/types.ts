@@ -390,6 +390,7 @@ export interface SkillDef {
   vfxKind?: string; // a name, not a shape. Unset draws a generic line
   impact?: string; // a second kind, drawn where each of its hits LANDS
   params?: Record<string, any>; // behaviour-specific knobs
+  splash?: { share: number; radius: number }; // SPLASH; every single-target hero skill has one
   grants?: Record<string, unknown>; // switches an EQUIPPED skill hands the sim
 }
 

@@ -22,7 +22,7 @@ const COMMON: Minor[] = [
   { text: '+3% increased Cast Speed', stats: [stat('castSpeed', 'inc', 3)] },
   { text: '+1% Critical Chance', stats: [stat('critChance', 'flat', 1)] },
   { text: '+8% Critical Damage', stats: [stat('critMultiplier', 'flat', 8)] },
-  { text: '+4% maximum Life', stats: [stat('life', 'inc', 4)] },
+  { text: '+6% increased Area of Effect', stats: [stat('areaOfEffect', 'inc', 6)] },
 ];
 
 const BRANCHES: Branch[] = [
@@ -158,33 +158,34 @@ const BRANCHES: Branch[] = [
     minors: [COMMON[1], COMMON[0], COMMON[2], COMMON[1]],
   },
   {
+    // THE IDS ARE THE OLD WARD BRANCH'S: a save points at them. Life, armour
+    // and a resistance are gear's and the character's own web — a SKILL's tree
+    // buys what the skill does, and what Rimespike does is Splash.
     id: 'ward',
-    theme: 'Ward',
+    theme: 'Spill',
     enabler: {
       id: 'rs_ward',
-      name: 'Cold Ward',
-      description:
-        'Standing still to cast is standing in it: +20% maximum Life and +25% ' +
-        'Cold Resistance.',
-      stats: [stat('life', 'inc', 20), stat('coldRes', 'flat', 25)],
+      name: 'Shatterfront',
+      description: 'Splash lands for 15% more of the hit.',
+      grants: { splashShare: 0.15 },
     },
     twigs: [
       {
         minors: 3,
         notable: {
           id: 'rs_frostplate',
-          name: 'Frostplate',
-          description: '45% increased Armour.',
-          stats: [stat('armour', 'inc', 45)],
+          name: 'Rimefield',
+          description: 'Splash is 40% wider.',
+          grants: { splashRadius: 1.4 },
         },
       },
       {
         minors: 4,
         notable: {
           id: 'rs_stillness',
-          name: 'Stillness',
-          description: '20% maximum Life, and 130% increased Life Regeneration.',
-          stats: [stat('life', 'inc', 20), stat('lifeRegen', 'inc', 130)],
+          name: 'Deep Frost',
+          description: 'Splash lands for 25% more of the hit.',
+          grants: { splashShare: 0.25 },
         },
       },
       {
@@ -193,16 +194,16 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'rs_wellspring',
           name: 'Wellspring',
-          description: '35% maximum Mana, and 60% increased Mana Regeneration.',
-          stats: [stat('mana', 'inc', 35), stat('manaRegen', 'inc', 60)],
+          description: 'Splash lands for 20% more of the hit and is 25% wider.',
+          grants: { splashShare: 0.2, splashRadius: 1.25, manaMultiplier: 1.08 },
         },
       },
     ],
     minors: [
       COMMON[5],
-      { text: '+6% increased Armour', stats: [stat('armour', 'inc', 6)] },
+      { text: '+5% increased Cold Damage', stats: [stat('damage', 'inc', 5, ['cold'])] },
       COMMON[5],
-      { text: '+8% Cold Resistance', stats: [stat('coldRes', 'flat', 8)] },
+      { text: '+8% increased Area of Effect', stats: [stat('areaOfEffect', 'inc', 8)] },
     ],
   },
   {
@@ -318,20 +319,20 @@ const TRUNK_NOTABLES: Notable[] = [
   {
     id: 'rs_vein',
     name: 'Deep Vein',
-    description: '+30% maximum Mana, and 45% increased Mana Regeneration.',
-    stats: [stat('mana', 'inc', 30), stat('manaRegen', 'inc', 45)],
+    description: 'Rimespike costs 30% less mana.',
+    grants: { manaMultiplier: 0.7 },
   },
   {
     id: 'rs_footwork',
     name: 'Sure Footing',
-    description: 'You move 18% faster, and Rimespike is cast 8% faster.',
-    stats: [stat('moveSpeed', 'inc', 18), stat('castSpeed', 'inc', 8)],
+    description: 'Rimespike is cast 18% faster and reaches 12% further.',
+    stats: [stat('castSpeed', 'inc', 18), stat('attackRange', 'inc', 12)],
   },
   {
     id: 'rs_hardy',
     name: 'Hardy',
-    description: '+18% maximum Life and +20% Cold Resistance.',
-    stats: [stat('life', 'inc', 18), stat('coldRes', 'flat', 20)],
+    description: 'Rimespike has +25% increased Area of Effect.',
+    stats: [stat('areaOfEffect', 'inc', 25)],
   },
   {
     id: 'rs_bite',

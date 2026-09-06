@@ -17,7 +17,7 @@ const COMMON: Minor[] = [
   { text: '+3% increased Attack Speed', stats: [stat('attackSpeed', 'inc', 3)] },
   { text: '+2% Critical Chance', stats: [stat('critChance', 'flat', 2)] },
   { text: '+10% Critical Damage', stats: [stat('critMultiplier', 'flat', 10)] },
-  { text: '+4% increased Movement Speed', stats: [stat('moveSpeed', 'inc', 4)] },
+  { text: '+6% increased Area of Effect', stats: [stat('areaOfEffect', 'inc', 6)] },
 ];
 
 const BRANCHES: Branch[] = [
@@ -194,31 +194,34 @@ const BRANCHES: Branch[] = [
     ],
   },
   {
+    // THE IDS ARE THE OLD FOOTING BRANCH'S: a save points at them, and what
+    // changed is what the branch DOES. Armour, life and move speed are gear's
+    // and the character's own web — a SKILL's tree buys what the skill does.
     id: 'footing',
-    theme: 'Footing',
+    theme: 'Spill',
     enabler: {
       id: 'am_footing',
-      name: 'Sure Footing',
-      description: '+20% increased maximum Life and +12% increased Movement Speed.',
-      stats: [stat('life', 'inc', 20), stat('moveSpeed', 'inc', 12)],
+      name: 'Opening Cut',
+      description: 'Splash lands for 15% more of the hit.',
+      grants: { splashShare: 0.15 },
     },
     twigs: [
       {
         minors: 3,
         notable: {
           id: 'am_hide',
-          name: 'Thin Hide',
-          description: '+35% increased Armour and +12% increased maximum Life.',
-          stats: [stat('armour', 'inc', 35), stat('life', 'inc', 12)],
+          name: 'Spray',
+          description: 'Splash is 40% wider.',
+          grants: { splashRadius: 1.4 },
         },
       },
       {
         minors: 4,
         notable: {
           id: 'am_wind',
-          name: 'Second Wind',
-          description: '+18% increased maximum Life and +130% increased Life Regeneration.',
-          stats: [stat('life', 'inc', 18), stat('lifeRegen', 'inc', 130)],
+          name: 'Arterial',
+          description: 'Splash lands for 25% more of the hit.',
+          grants: { splashShare: 0.25 },
         },
       },
       {
@@ -227,16 +230,16 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'am_ghosting',
           name: 'Ghosting',
-          description: 'You move 22% faster, and Ambush swings 8% faster.',
-          stats: [stat('moveSpeed', 'inc', 22), stat('attackSpeed', 'inc', 8)],
+          description: 'Splash lands for 20% more of the hit and is 30% wider.',
+          grants: { splashShare: 0.2, splashRadius: 1.3, manaMultiplier: 1.08 },
         },
       },
     ],
     minors: [
       COMMON[5],
-      { text: '+5% increased maximum Life', stats: [stat('life', 'inc', 5)] },
+      { text: '+5% increased Physical Damage', stats: [stat('damage', 'inc', 5, ['physical'])] },
       COMMON[5],
-      { text: '+6% increased Armour', stats: [stat('armour', 'inc', 6)] },
+      { text: '+8% increased Area of Effect', stats: [stat('areaOfEffect', 'inc', 8)] },
     ],
   },
   {

@@ -77,6 +77,8 @@ const SCALED = ['projectile', 'melee', 'ailment_burst', 'cone', 'single_target',
 /** And the ones that call `blastAround`, which is a narrower list. */
 const SHARED = ['projectile', 'melee', 'ailment_burst', 'cone', 'ambush'];
 const HITTERS = ['projectile', 'melee', 'cone', 'ambush'];
+/** The single-target deliveries, which are the ones that SPLASH. */
+const SPLASHERS = ['projectile', 'melee', 'ambush', 'single_target'];
 /** The two movers. Their own behaviour names, so `reads` can tell a jump's
  *  landing from a step that never lands anywhere. */
 const MOVERS = ['step', 'leap'];
@@ -1022,6 +1024,25 @@ export const GRANTS: GrantDef[] = [
     reads: [STATS],
     say: (v) =>
       v === true ? 'Momentum carries to a new enemy whole instead of being halved' : null,
+  },
+
+  // --- SPLASH, which every single-target skill already has ------------------
+  {
+    id: 'splashShare',
+    changes: 'burst',
+    merge: 'sum',
+    what: 'Splash lands for more of the hit',
+    reads: SPLASHERS,
+    say: (v) => (typeof v === 'number' ? `Splash lands for ${pct(v)} more of the hit` : null),
+  },
+  {
+    id: 'splashRadius',
+    changes: 'burst',
+    merge: 'product',
+    what: 'Splash reaches further from what it hit',
+    reads: SPLASHERS,
+    say: (v) =>
+      typeof v === 'number' ? `Splash is ${pct(v - 1)} wider` : null,
   },
 
   {

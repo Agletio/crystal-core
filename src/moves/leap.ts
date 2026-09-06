@@ -18,8 +18,8 @@ export const LEAP_MOVES: MoveSpec = {
       id: 'tremor',
       theme: 'Tremor',
       minors: [
-        { text: '+22 to maximum Life', stats: [stat('life', 'flat', 22)] },
-        { text: '+10% increased Armour', stats: [stat('armour', 'inc', 10)] },
+        { text: '+5% increased Movement Speed', stats: [stat('moveSpeed', 'inc', 5)] },
+        { text: '+8% increased Area of Effect', stats: [stat('areaOfEffect', 'inc', 8)] },
       ],
       notable: {
         id: 'lp_tremor',
@@ -46,8 +46,8 @@ export const LEAP_MOVES: MoveSpec = {
       id: 'fall',
       theme: 'Fall',
       minors: [
-        { text: '+8% increased Armour', stats: [stat('armour', 'inc', 8)] },
-        { text: '+18 to maximum Life', stats: [stat('life', 'flat', 18)] },
+        { text: '+5% increased Movement Speed', stats: [stat('moveSpeed', 'inc', 5)] },
+        { text: '+6% increased Area of Effect', stats: [stat('areaOfEffect', 'inc', 6)] },
       ],
       notable: {
         id: 'lp_longfall',

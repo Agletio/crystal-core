@@ -2022,24 +2022,31 @@ export const tierForLevel = (level: number): number =>
 export interface CrystalStep {
   id: string;
   family: MonsterFamily;
-  clears?: number; // PROVING GROUND clears, which is what buys the Normal four
+  clears?: number; // souled clears at `souls`, which is what buys the counted ones
+  /** How many soulstones must have been in the wall for a clear to COUNT. A
+   *  clear at a deeper tier counts for every shallower one, so skipping to two
+   *  never costs you the first ladder. */
+  souls?: number;
   hold?: { family: MonsterFamily; count: number; level: number };
 }
 
-/** IN ORDER: nothing is skipped, so the step you are on is the only one owed. */
+/** IN ORDER: nothing is skipped, so the step you are on is the only one owed.
+ *  TWO CLEAR LADDERS, one a soulstone: the Normal four are the first stone's
+ *  and the Demonic four the second's, with the Prismatic four between them
+ *  bought by LEVELLING what you already hold rather than by clearing. */
 export const CRYSTAL_LADDER: CrystalStep[] = [
-  { id: 'normal_1', family: 'normal', clears: 25 },
-  { id: 'normal_2', family: 'normal', clears: 50 },
-  { id: 'normal_3', family: 'normal', clears: 75 },
-  { id: 'normal_4', family: 'normal', clears: 100 },
+  { id: 'normal_1', family: 'normal', clears: 25, souls: 1 },
+  { id: 'normal_2', family: 'normal', clears: 50, souls: 1 },
+  { id: 'normal_3', family: 'normal', clears: 75, souls: 1 },
+  { id: 'normal_4', family: 'normal', clears: 100, souls: 1 },
   { id: 'prismatic_1', family: 'prismatic', hold: { family: 'normal', count: 4, level: 4 } },
   { id: 'prismatic_2', family: 'prismatic', hold: { family: 'prismatic', count: 1, level: 2 } },
   { id: 'prismatic_3', family: 'prismatic', hold: { family: 'prismatic', count: 1, level: 3 } },
   { id: 'prismatic_4', family: 'prismatic', hold: { family: 'prismatic', count: 1, level: 4 } },
-  { id: 'demonic_1', family: 'demonic', hold: { family: 'prismatic', count: 4, level: 4 } },
-  { id: 'demonic_2', family: 'demonic', hold: { family: 'demonic', count: 1, level: 2 } },
-  { id: 'demonic_3', family: 'demonic', hold: { family: 'demonic', count: 1, level: 3 } },
-  { id: 'demonic_4', family: 'demonic', hold: { family: 'demonic', count: 1, level: 4 } },
+  { id: 'demonic_1', family: 'demonic', clears: 25, souls: 2 },
+  { id: 'demonic_2', family: 'demonic', clears: 50, souls: 2 },
+  { id: 'demonic_3', family: 'demonic', clears: 75, souls: 2 },
+  { id: 'demonic_4', family: 'demonic', clears: 100, souls: 2 },
 ];
 
 export const CRYSTAL_STEP_BY_ID: Record<string, CrystalStep> = Object.fromEntries(
@@ -2351,6 +2358,19 @@ export const INTRO = {
 /** WHAT CLEARING THE CAMPAIGN PAYS: *"1 crystal and 10 trial points"* — one
  *  crystal and the first 10 POINTS. */
 export const CAMPAIGN_REWARD = { crystals: 1, points: 10 };
+
+/**
+ * SPLASH: what a single-target hit spills onto everything else standing near
+ * what it hit. Every hero skill with a single-target delivery carries it, so
+ * no build has to buy its way out of hitting one body at a time — the game is
+ * cleared in packs and a skill with no answer to one is a skill nobody takes.
+ * The radius goes through `areaRadius`, so increased Area of Effect from
+ * anywhere at all widens it.
+ */
+export const SPLASH = {
+  share: 0.3, // of the hit, to every other body inside it
+  radius: 1.1, // tiles from the body that was hit
+};
 
 export const CRYSTAL_ILVL = 70;
 
@@ -4661,6 +4681,7 @@ export const SKILLS: SkillDef[] = [
     rateMultiplier: 1,
     manaCost: 7.5,
     range: HERO_BASE.attackRange,
+    splash: SPLASH,
     vfxKind: 'slash',
   },
   {
@@ -4685,6 +4706,7 @@ export const SKILLS: SkillDef[] = [
     rateMultiplier: 1,
     manaCost: 7.5,
     range: 5.5,
+    splash: SPLASH,
     vfxKind: 'slash',
   },
   {
@@ -4735,6 +4757,7 @@ export const SKILLS: SkillDef[] = [
     rateMultiplier: 0.75,
     manaCost: 10,
     range: 5,
+    splash: SPLASH,
     vfxKind: 'spikes',
   },
   {
@@ -4757,6 +4780,7 @@ export const SKILLS: SkillDef[] = [
     rateMultiplier: 1,
     manaCost: 7.5,
     range: 6.5,
+    splash: SPLASH,
     vfxKind: 'flame',
   },
   {
@@ -4829,6 +4853,7 @@ export const SKILLS: SkillDef[] = [
     rateMultiplier: 1,
     manaCost: 7.5,
     range: 6,
+    splash: SPLASH,
     vfxKind: 'arc',
     params: { chains: 3, chainDamage: 0.7 },
   },
@@ -4856,6 +4881,7 @@ export const SKILLS: SkillDef[] = [
     rateMultiplier: 1,
     manaCost: 7.5,
     range: 7,
+    splash: SPLASH,
     vfxKind: 'arrow',
     impact: 'storm',
     params: { forks: 2, forkDamage: 0.45 },

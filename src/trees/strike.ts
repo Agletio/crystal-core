@@ -190,31 +190,35 @@ const BRANCHES: Branch[] = [
     minors: [COMMON[0], { text: '+2% Momentum per use', grants: { momentumPer: 2 } }, COMMON[1], COMMON[2]],
   },
   {
+    // THE IDS ARE THE OLD BULWARK BRANCH'S and are kept exactly: a save points
+    // at them, and what changed is what the branch DOES. Flat armour and life
+    // belong to gear and the character's own web — a SKILL's tree buys what the
+    // skill DOES, and what Strike does that is worth walking to is its Splash.
     id: 'bulwark',
-    theme: 'Bulwark',
+    theme: 'Spill',
     enabler: {
       id: 'st_bulwark',
-      name: 'Bulwark',
-      description: '+25% increased Armour and +15% increased maximum Life.',
-      stats: [stat('armour', 'inc', 25), stat('life', 'inc', 15)],
+      name: 'Spill',
+      description: 'Splash lands for 15% more of the hit.',
+      grants: { splashShare: 0.15 },
     },
     twigs: [
       {
         minors: 3,
         notable: {
           id: 'st_ironhide',
-          name: 'Iron Hide',
-          description: '40% increased Armour.',
-          stats: [stat('armour', 'inc', 40)],
+          name: 'Wide Swing',
+          description: 'Splash is 40% wider.',
+          grants: { splashRadius: 1.4 },
         },
       },
       {
         minors: 4,
         notable: {
           id: 'st_secondwind',
-          name: 'Second Wind',
-          description: '+20% increased maximum Life and +120% increased Life Regeneration.',
-          stats: [stat('life', 'inc', 20), stat('lifeRegen', 'inc', 120)],
+          name: 'Overspill',
+          description: 'Splash lands for 25% more of the hit.',
+          grants: { splashShare: 0.25 },
         },
       },
       {
@@ -222,17 +226,17 @@ const BRANCHES: Branch[] = [
         forkFrom: { twig: 1, at: 2 },
         notable: {
           id: 'st_immovable',
-          name: 'Immovable',
-          description: 'Strike deals 30% more damage while nothing has hit you for 3s.',
-          grants: { untouchedMore: { after: 3, more: 0.3 } },
+          name: 'Shockfront',
+          description: 'Splash lands for 20% more of the hit and is 25% wider.',
+          grants: { splashShare: 0.2, splashRadius: 1.25, manaMultiplier: 1.08 },
         },
       },
     ],
     minors: [
-      { text: '+6% increased Armour', stats: [stat('armour', 'inc', 6)] },
-      { text: '+4% maximum Life', stats: [stat('life', 'inc', 4)] },
+      { text: '+8% increased Area of Effect', stats: [stat('areaOfEffect', 'inc', 8)] },
+      { text: '+5% increased Physical Damage', stats: [stat('damage', 'inc', 5, ['physical'])] },
+      { text: '+6% increased Area of Effect', stats: [stat('areaOfEffect', 'inc', 6)] },
       COMMON[1],
-      { text: '+5% increased Armour', stats: [stat('armour', 'inc', 5)] },
     ],
   },
   {
@@ -319,8 +323,8 @@ const TRUNK_NOTABLES: Notable[] = [
   {
     id: 'st_footwork',
     name: 'Footwork',
-    description: 'You move 18% faster, and Strike swings 8% faster.',
-    stats: [stat('moveSpeed', 'inc', 18), stat('attackSpeed', 'inc', 8)],
+    description: 'Strike swings 18% faster and reaches 10% further.',
+    stats: [stat('attackSpeed', 'inc', 18), stat('attackRange', 'inc', 10)],
   },
   {
     id: 'st_focus',

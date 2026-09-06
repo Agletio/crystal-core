@@ -943,13 +943,16 @@ is the strongest part of the idea. The feedback that shaped it:
       the long way round and the picture never joined those two chambers: 8 of
       22 draw straight. **THE NETWORK IS WALKED** — six of the fourteen touch
       no depth, so climbing the whole line still leaves them a clear away.
-- [ ] **WHEN DO CRYSTALS START ARRIVING?** *"Crystals can work the same by just
-      affecting the loot/monsters in the run but im not sure when we should
-      start giving your crystals."* Taken as: the FIRST is the campaign's, and
-      every one after it is bought by the SOULED climb — `CRYSTAL_LADDER`'s
-      25/50/75/100 now count `souledClears`. So a bare campaign is run with one
-      crystal and the endless half is where the wall fills. That is an
-      assumption, not his word; the lever is which counter `clears` reads.
+- [x] **WHEN DO CRYSTALS START ARRIVING?** ANSWERED and built: two clear
+      ladders, one a soulstone. The Normal four are 25/50/75/100 at one stone,
+      the Demonic four the same at two, and the Prismatic four between them are
+      bought by levelling. A clear at two counts for one as well.
+- [ ] **THE FIRST CRYSTAL IS STILL HANDED OVER EARLY.** `crystalEarned` is the
+      main skill at level 4 with every point spent — the first hour, in The
+      Shallows — and it is a level-1 crystal holding NO modifiers, which is how
+      the socket screen was introduced with nothing teaching. Whether the
+      campaign should be run with an empty wall instead is HIS CALL; it is one
+      branch of `giftWaiting`.
 - [ ] **THE UI SAYS TOO MUCH, EVERYWHERE.** *"Really need to stop with the over
       describing everything… it literally says the ilvl already. You do this
       kinda dialogue all over the place. I really don't want to have to go back
@@ -1006,7 +1009,7 @@ is the strongest part of the idea. The feedback that shaped it:
       and `provingClears` — is gone, and `RunWhere` is a `Rung`. THE SOULSTONE
       replaces it: two more sockets, `soulMod` carrying the climb's own straight
       ramp on, `progressKey` giving each tier its own map, and the crystal
-      ladder paid by `souledClears`. The wall is six sockets in a drawer off the
+      ladder paid by `soulClears`. The wall is six sockets in a drawer off the
       map's right edge.
 - [ ] **THE ROT'S CROSS-SECTION IS A TRAIN TRACK.** *"It should look like just
       a tunnel going down, there's no train tracks… the lower ones have no
@@ -1017,6 +1020,38 @@ is the strongest part of the idea. The feedback that shaped it:
       allowance is spent** — 8,989 of 8,710 used, refilling **2026-09-13**. One
       command when it does: `npx tsx tools/art/scene.mts ask climb_act3 21 22
       23 24`.
+
+## Phase 2 — SKILLS AND TRADES, one at a time
+
+**His own pass, and he is playing WARRIOR / STRIKE first.** *"I think a lot of
+the nodes are boring honestly and the build diversity is limited so what I want
+is to start with one trade and one skill. I'm going to play it and find what
+sucks and what I like."* So this phase is driven by what he reports after
+playing, not by a sweep taken in advance.
+
+- [x] **SPLASH IS BAKED INTO EVERY SINGLE-TARGET SKILL.** 30% of the hit,
+      1.1 tiles round the body it landed on, on Strike, Ambush, Rimespike,
+      Fireball, Arc Lightning and Lightning Arrow. `splashShare` adds and
+      `splashRadius` widens; increased Area of Effect from anywhere widens it
+      too. Never on a monster's skill.
+- [x] **STRIKE'S BULWARK BRANCH IS ITS SPILL BRANCH.** Armour, life and
+      regeneration out; Splash share and radius in, keeping every node id.
+- [x] **A SKILL TREE ONLY SELLS WHAT THE SKILL OWNS.** *"Remove all the flat
+      stats that aren't related to the skill. So like health, armour and stuff
+      like that — attack and cast speed, crit etc is all fine."* Life, armour,
+      resistances, life and mana regeneration, the mana pool and move speed are
+      out of all eight webs; Ambush's Footing and Rimespike's Ward became SPILL
+      branches like Strike's, Shockwave's became SPREAD (its Cone reaching
+      further and opening wider), and every off-skill trunk notable was rewritten
+      into one about its own skill. A movement web keeps move speed, which is its
+      own subject. The demo holds every node in every web to the allowed set.
+- [ ] **A NOTABLE THAT IS STILL ONLY NUMBERS.** The stats are on-skill now, but
+      several notables are a pile of them rather than a rule — Heft, Tempo,
+      Killer Instinct and their equivalents in every tree. The trade webs are
+      already held to changing a RULE; whether a SKILL notable should be is his
+      call, and it is a bigger job than the stat sweep was.
+
+---
 
 ## Phase 3 — A quest log instead of a pointing finger
 

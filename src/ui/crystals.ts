@@ -11,7 +11,7 @@ import { CRYSTAL_LADDER, CRYSTAL_SLOTS, FAMILY_BY_ID, LADDER } from '../data';
 import { climbed } from '../ladder';
 import type { CrystalStep } from '../data';
 import type { LadderZoneDef } from '../types';
-import { crystalsIn, socketFor, socketItem, unsocket } from '../game/state';
+import { crystalsIn, socketFor, socketItem, soulClearsAt, unsocket } from '../game/state';
 import type { GameState } from '../game/state';
 import { crystalProgress, giftSchedule } from '../game/crystals';
 import { crystalFamily, crystalRewards } from '../sim/crystal';
@@ -174,7 +174,8 @@ function renderStep(step: CrystalStep, at: number, now: number): HTMLElement {
   const family = FAMILY_BY_ID[step.family];
   card.append(el('div', 'crystal__name', `${family?.name ?? step.family} crystal`));
   const said = step.clears !== undefined
-    ? `${Math.min(step.clears, game.souledClears ?? 0)} of ${step.clears} souled clears.`
+    ? `${Math.min(step.clears, soulClearsAt(game, step.souls ?? 1))} of ${step.clears} clears ` +
+      `with ${step.souls ?? 1} socketed.`
     : `${step.hold!.count} ${FAMILY_BY_ID[step.hold!.family]?.name ?? step.hold!.family} ` +
       `${step.hold!.count === 1 ? 'crystal' : 'crystals'} at level ${step.hold!.level}.`;
   card.append(el('div', 'quest__detail', done ? 'Taken.' : said));

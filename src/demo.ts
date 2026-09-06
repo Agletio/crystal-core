@@ -119,6 +119,7 @@ import {
   TOOL_SLOTS,
   CRYSTAL_SLOTS,
   SEAM_OF,
+  SPLASH,
   SOULS,
   SOUL_SLOTS,
   RUN_SLOTS,
@@ -403,7 +404,9 @@ import {
   sellAll,
   sellItem,
   socketFor,
+  bankSoulClear,
   socketItem,
+  soulClearsAt,
   syncSouls,
   unsocket,
   socketed,
@@ -5191,6 +5194,128 @@ rule('THE RECKONING — is a harder descent actually harder, and paid for?');
 }
 
 // ===========================================================================
+rule('A SKILL TREE BUYS WHAT THE SKILL DOES');
+
+// *"Remove all the flat stats that aren't related to the skill. So like health,
+// armour and stuff like that — attack and cast speed, crit etc is all fine."*
+// Life, armour, a resistance and a mana pool are gear's and the character's own
+// web; six points of them inside Strike change nothing about striking.
+{
+  // WHAT A SKILL DOES: its damage, how fast and how far it swings, what it
+  // crits at, how wide it lands and what it leaves behind. Everything else is
+  // the character, and a skill tree may not sell it.
+  const ITS_OWN = new Set([
+    'damage', 'attackSpeed', 'castSpeed', 'critChance', 'critMultiplier',
+    'attackRange', 'areaOfEffect', 'ailmentChance', 'manaCost',
+  ]);
+  // A MOVER'S subject is the move itself, so move speed is its own too.
+  const MOVER_OWN = new Set([...ITS_OWN, 'moveSpeed']);
+
+  const strayed: string[] = [];
+  for (const skill of MAIN_SKILLS) {
+    for (const node of treeFor(skill.id)) {
+      for (const line of node.stats ?? []) {
+        if (!ITS_OWN.has(line.stat)) strayed.push(`${skill.id}/${node.id}: ${line.stat}`);
+      }
+    }
+  }
+  check(
+    strayed.length === 0,
+    `no node in the ${MAIN_SKILLS.length} skill trees sells a stat the skill does not own`,
+    strayed.join(', ')
+  );
+
+  const movers: string[] = [];
+  for (const move of SKILLS.filter((sk) => sk.category === 'movement')) {
+    for (const node of treeFor(move.id)) {
+      for (const line of node.stats ?? []) {
+        if (!MOVER_OWN.has(line.stat)) movers.push(`${move.id}/${node.id}: ${line.stat}`);
+      }
+    }
+  }
+  check(
+    movers.length === 0,
+    'nor does a movement web, whose own subject is the move',
+    movers.join(', ')
+  );
+}
+
+// ===========================================================================
+rule('SPLASH — every skill that hits ONE thing spills onto what stands by it');
+
+// *"The game revolves so much around aoe clearing and single target only being
+// one small part of it, every skill should have at least a little AOE baked
+// in."* So it is BAKED, never bought: a build that spends its first ten points
+// buying its way out of hitting one body at a time is a build nobody varies.
+{
+  const dummy = (x: number, y: number) =>
+    ({
+      x, y, life: 1e6, radius: 0, dead: false, ailments: [] as unknown[],
+      stats: { maxLife: 1e6, attacksPerSecond: 1 },
+    }) as any;
+
+  // A HERO SKILL THAT HITS ONE THING CARRIES ONE, and a monster's never does:
+  // a second unweighed source of damage is one no danger number accounts for.
+  const single = ['melee', 'ambush', 'single_target', 'projectile'];
+  const mine = SKILLS.filter((sk) => sk.category && single.includes(sk.behaviour));
+  const dry = mine.filter((sk) => !sk.splash).map((sk) => sk.name);
+  check(
+    mine.length > 0 && dry.length === 0,
+    `all ${mine.length} single-target skills Splash without being asked`,
+    dry.join(', ')
+  );
+  const theirs = SKILLS.filter((sk) => !sk.category && sk.splash).map((sk) => sk.id);
+  check(theirs.length === 0, 'and no monster skill does', theirs.join(', '));
+
+  // AND IT LANDS. Fired through the real behaviour at a body with a neighbour
+  // inside the radius and one outside it.
+  const hit = dummy(3, 0);
+  const near = dummy(3 + SPLASH.radius * 0.7, 0);
+  const far = dummy(3 + SPLASH.radius * 2.5, 0);
+  const swing = (grants: Record<string, unknown>) => {
+    const out: Array<{ who: any; multiplier: number }> = [];
+    SKILL_BEHAVIOURS.melee({
+      skill: SKILL_BY_ID.strike,
+      user: dummy(0, 0), primary: hit, enemies: [hit, near, far],
+      rng: new Rng(3), grants, crit: false, castIndex: 0, momentum: 1,
+      hit: (who: any, multiplier: number) => out.push({ who, multiplier }),
+      ailment: () => {}, leave: () => {},
+      areaRadius: (base: number) => base,
+      vfx: () => {},
+    } as any);
+    return out;
+  };
+  const bare = swing({});
+  const onNear = bare.find((h) => h.who === near);
+  check(
+    !!onNear && Math.abs(onNear.multiplier - SPLASH.share) < 1e-9,
+    `a bare Strike lands ${Math.round(SPLASH.share * 100)}% of the hit on what stands beside it`,
+    String(onNear?.multiplier)
+  );
+  check(
+    !bare.some((h) => h.who === far),
+    `and nothing ${SPLASH.radius} tiles further out is touched`,
+    String(bare.filter((h) => h.who === far).length)
+  );
+
+  // THE TWO SWITCHES: one adds to the share, one widens the circle. Both are
+  // ordinary grants, so gear, a trade and a tree all reach them.
+  const wider = swing({ splashShare: 0.25 });
+  const grew = wider.find((h) => h.who === near);
+  check(
+    !!grew && grew.multiplier > (onNear?.multiplier ?? 0),
+    `and a node adding to it lands ${Math.round((grew?.multiplier ?? 0) * 100)}% instead`,
+    String(grew?.multiplier)
+  );
+  const reach = swing({ splashRadius: 3 });
+  check(
+    reach.some((h) => h.who === far),
+    'and one widening it reaches what the bare circle could not',
+    String(reach.length)
+  );
+}
+
+// ===========================================================================
 rule('FIREBALL — do the notables actually change the cast?');
 
 // The tree's whole claim is that it changes how the skill WORKS, which no
@@ -6082,7 +6207,10 @@ rule('COMBINATIONS — is every pair of changing nodes a decided thing?');
 
     // A line running away from the enemy you struck, a stride apart, so how
     // many are taken IS how far the allowance has grown.
-    const swing = (grants: Record<string, unknown>) => {
+    // SPLASH IS OFF for this one: the bodies stand a stride apart to measure how
+    // far an ECHO is allowed, which is closer together than Splash's own circle.
+    const swing = (has: Record<string, unknown>) => {
+      const grants = { splashRadius: 0, ...has };
       const user = dummy(0, 0);
       const primary = dummy(1, 0);
       const line1 = dummy(2.2, 0); // 1.2 out, inside the first Echo's 1.5
@@ -13136,7 +13264,12 @@ rule('THE COLLECTION — do crystals arrive, and do they grow?');
     // only way a crystal ever levels.
     const pays = xpForClear(runSet([], null, { zone: 0, rung: 1 }, 1).rewards.danger);
     for (let round = 0; round < 4000 && took.length < CRYSTAL_LADDER.length; round++) {
-      walk.souledClears = (walk.souledClears ?? 0) + 1;
+      // THE SECOND STONE GOES IN once the first ladder is paid, which is the
+      // shape a player walks: four Normals, then the Prismatic four off
+      // levelling, then a second stone and the Demonic four.
+      const stones = took.length >= 4 ? 2 : 1;
+      walk.character.souls = stones;
+      bankSoulClear(walk, stones);
       for (const crystal of ownedCrystals(walk)) addCrystalXp(crystal, pays);
       const owed = ladderOwed(walk);
       if (!owed) continue;
@@ -13161,7 +13294,10 @@ rule('THE COLLECTION — do crystals arrive, and do they grow?');
     const byFamily = MONSTER_FAMILIES.map(
       (f) => `${f.id} ${ownedCrystals(walk).filter((c) => crystalFamily(c) === f.id).length}`
     );
-    line(`  the ladder pays ${byFamily.join(', ')}, over ${walk.souledClears} souled clears`);
+    line(
+      `  the ladder pays ${byFamily.join(', ')}, over ` +
+        `${soulClearsAt(walk, 1)} clears at one soulstone and ${soulClearsAt(walk, 2)} at two`
+    );
     // AND NEVER TWICE. Every step is marked, so re-running pays nothing more.
     check(
       ladderOwed(walk) === null && giftWaiting(walk) === null,
@@ -13174,11 +13310,37 @@ rule('THE COLLECTION — do crystals arrive, and do they grow?');
     jumped.given = ['weapon', 'crystal', gaveSoul(1), gaveSoul(2)];
     jumped.character.paidCampaign = true;
     jumped.crystals = Array.from({ length: 4 }, () => makeCrystal(4, 'normal'));
-    jumped.souledClears = 0;
     check(
       ladderOwed(jumped) === null,
       'and a step further up the ladder cannot pay before the ones under it',
       String(ladderOwed(jumped)?.id)
+    );
+
+    // SKIPPING TO TWO COUNTS BOTH. A clear under two stones is a clear under
+    // one as well, so a player who never stopped at the first ladder still
+    // walks it — the deeper run is strictly the harder one.
+    const deep = createGame('fresh');
+    deep.given = ['weapon', 'crystal', gaveSoul(1), gaveSoul(2)];
+    deep.character.paidCampaign = true;
+    deep.character.souls = 2;
+    for (let i = 0; i < CRYSTAL_LADDER[3].clears!; i++) bankSoulClear(deep, 2);
+    check(
+      soulClearsAt(deep, 1) === soulClearsAt(deep, 2)
+        && soulClearsAt(deep, 1) === CRYSTAL_LADDER[3].clears,
+      `${CRYSTAL_LADDER[3].clears} clears at two soulstones count as ${CRYSTAL_LADDER[3].clears} at one`,
+      `${soulClearsAt(deep, 1)} / ${soulClearsAt(deep, 2)}`
+    );
+    const paid: string[] = [];
+    for (let round = 0; round < 40; round++) {
+      const owed = ladderOwed(deep);
+      if (!owed) break;
+      takeHandover(deep, giftWaiting(deep)!);
+      paid.push(owed.id);
+    }
+    check(
+      paid.join(',') === CRYSTAL_LADDER.slice(0, 4).map((c) => c.id).join(','),
+      'so the whole first ladder pays out without ever having stood at one stone',
+      paid.join(', ')
     );
   }
 

@@ -138,9 +138,10 @@ export interface GameState {
   /** Panels away, map alone. A preference like `keys`, so a wipe keeps it. */
   parked: boolean;
   climbing: boolean; // a CLEAR takes the next RUNG down; absent is off, and dying clears it
-  /** Descents cleared with a SOULSTONE in the wall — the endless half, and
-   *  what the crystal ladder's first four steps are bought with. */
-  souledClears?: number;
+  /** CLEARS PER SOUL TIER, indexed by how many soulstones were in the wall:
+   *  a clear at two counts for one as well, so skipping to the second stone
+   *  never costs you the first ladder. Index 0 is unused. */
+  soulClears?: number[];
   souls: Item[]; // soulstones held but not socketed
 
   bosses: string[]; // put down: stops one being scheduled twice, opens its key
@@ -592,6 +593,17 @@ export const relicsIn = (game: GameState): Item[] => game.relics ?? [];
 /** In slot order, so the set reads the same way it is drawn. */
 export const socketed = (game: GameState): Item[] =>
   CRYSTAL_SLOTS.map((s) => game.sockets[s.id]).filter((i): i is Item => !!i);
+
+/** A CLEAR AT `souls` STONES, counted for every tier at or under it. */
+export function bankSoulClear(game: GameState, souls: number): void {
+  if (souls < 1) return;
+  const rows = (game.soulClears = [...(game.soulClears ?? [])]);
+  for (let tier = 1; tier <= souls; tier++) rows[tier] = (rows[tier] ?? 0) + 1;
+}
+
+/** Clears done with at least this many soulstones in the wall. */
+export const soulClearsAt = (game: GameState, souls: number): number =>
+  game.soulClears?.[Math.max(1, souls)] ?? 0;
 
 /** WHAT IS IN THE WALL IS THE ONLY SOURCE: `character.souls` is derived here
  *  and nowhere else, so the count and the sockets cannot disagree. Called by

@@ -19,8 +19,8 @@ export const BLINK_MOVES: MoveSpec = {
       id: 'current',
       theme: 'Current',
       minors: [
-        { text: '+8% increased Mana Regeneration', stats: [stat('manaRegen', 'inc', 8)] },
-        { text: '+10% increased maximum Mana', stats: [stat('mana', 'inc', 10)] },
+        { text: '+5% increased Movement Speed', stats: [stat('moveSpeed', 'inc', 5)] },
+        { text: '+4% increased Cast Speed', stats: [stat('castSpeed', 'inc', 4)] },
       ],
       notable: {
         id: 'bk_aftercurrent',
@@ -47,8 +47,8 @@ export const BLINK_MOVES: MoveSpec = {
       id: 'reach',
       theme: 'Reach',
       minors: [
-        { text: '+18 to maximum Life', stats: [stat('life', 'flat', 18)] },
-        { text: '+8% increased Armour', stats: [stat('armour', 'inc', 8)] },
+        { text: '+5% increased Movement Speed', stats: [stat('moveSpeed', 'inc', 5)] },
+        { text: '+4% increased Attack Speed', stats: [stat('attackSpeed', 'inc', 4)] },
       ],
       notable: {
         id: 'bk_longstep',

@@ -22,7 +22,7 @@ import {
   crystalName,
 } from '../data';
 import { mainSkillId, pointsAvailable } from '../sim/character';
-import { armForSkill, giveGift } from './state';
+import { armForSkill, giveGift, soulClearsAt } from './state';
 import type { GameState } from './state';
 import { grant, makeCrystal, makeSoul } from '../economy';
 import { crystalFamily, crystalLevel, crystalXp, levelForXp } from '../sim/crystal';
@@ -74,10 +74,10 @@ const holding = (game: GameState, family: MonsterFamily, level: number): number 
     (c) => crystalFamily(c) === family && crystalLevel(c) >= level
   ).length;
 
-/** WHETHER A STEP IS DUE. `clears` is descents cleared with a SOULSTONE in the
- *  wall; `hold` is what the crystals you already have must have grown into. */
+/** WHETHER A STEP IS DUE. `clears` is descents cleared with `souls` stones in
+ *  the wall; `hold` is what the crystals you have must have grown into. */
 export function stepMet(game: GameState, step: CrystalStep): boolean {
-  if (step.clears !== undefined) return (game.souledClears ?? 0) >= step.clears;
+  if (step.clears !== undefined) return soulClearsAt(game, step.souls ?? 1) >= step.clears;
   if (step.hold) return holding(game, step.hold.family, step.hold.level) >= step.hold.count;
   return false;
 }
@@ -97,8 +97,10 @@ export function ladderSchedule(game: GameState): string | null {
   if (!next) return null;
   const word = FAMILY_BY_ID[next.family]?.name ?? next.family;
   if (next.clears !== undefined) {
-    return `The next crystal is ${word}, at ${next.clears} souled clears. ` +
-      `You have ${game.souledClears ?? 0}.`;
+    const stones = next.souls ?? 1;
+    return `The next crystal is ${word}, at ${next.clears} clears with ` +
+      `${stones} ${stones === 1 ? 'soulstone' : 'soulstones'}. ` +
+      `You have ${soulClearsAt(game, stones)}.`;
   }
   const hold = next.hold!;
   const held = FAMILY_BY_ID[hold.family]?.name ?? hold.family;

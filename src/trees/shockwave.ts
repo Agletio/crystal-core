@@ -155,13 +155,16 @@ const BRANCHES: Branch[] = [
     ],
   },
   {
+    // THE IDS ARE THE OLD FOOTING BRANCH'S: a save points at them. Armour and
+    // life are gear's and the character's own web — a SKILL's tree buys what
+    // the skill does, and what Shockwave does is the WEDGE.
     id: 'footing',
-    theme: 'Footing',
+    theme: 'Spread',
     enabler: {
       id: 'sw_footing',
       name: 'Braced',
-      description: '+25% increased Armour and +15% increased maximum Life.',
-      stats: [stat('armour', 'inc', 25), stat('life', 'inc', 15)],
+      description: 'Shockwave has +20% increased Area of Effect.',
+      stats: [stat('areaOfEffect', 'inc', 20)],
     },
     twigs: [
       {
@@ -169,17 +172,17 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'sw_bedrock',
           name: 'Bedrock',
-          description: '40% increased Armour.',
-          stats: [stat('armour', 'inc', 40)],
+          description: 'The Cone reaches 30% further.',
+          grants: { coneReach: 1.3 },
         },
       },
       {
         minors: 4,
         notable: {
           id: 'sw_endurance',
-          name: 'Endurance',
-          description: '20% maximum Life, and 120% increased Life Regeneration.',
-          stats: [stat('life', 'inc', 20), stat('lifeRegen', 'inc', 120)],
+          name: 'Broadside',
+          description: 'The Cone opens 40 degrees wider.',
+          grants: { coneArc: 40 },
         },
       },
       {
@@ -194,10 +197,10 @@ const BRANCHES: Branch[] = [
       },
     ],
     minors: [
-      { text: '+6% increased Armour', stats: [stat('armour', 'inc', 6)] },
-      { text: '+4% maximum Life', stats: [stat('life', 'inc', 4)] },
+      { text: '+6% increased Area of Effect', stats: [stat('areaOfEffect', 'inc', 6)] },
+      { text: '+5% increased Physical Damage', stats: [stat('damage', 'inc', 5, ['physical'])] },
       COMMON[1],
-      { text: '+5% increased Armour', stats: [stat('armour', 'inc', 5)] },
+      { text: '+5% increased Area of Effect', stats: [stat('areaOfEffect', 'inc', 5)] },
     ],
   },
   {
@@ -325,8 +328,8 @@ const TRUNK_NOTABLES: Notable[] = [
   {
     id: 'sw_bracing',
     name: 'Bracing',
-    description: 'You move 18% faster, and Shockwave swings 8% faster.',
-    stats: [stat('moveSpeed', 'inc', 18), stat('attackSpeed', 'inc', 8)],
+    description: 'Shockwave swings 18% faster and reaches 10% further.',
+    stats: [stat('attackSpeed', 'inc', 18), stat('attackRange', 'inc', 10)],
   },
   {
     id: 'sw_keenedge',

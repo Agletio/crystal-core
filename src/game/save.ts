@@ -35,6 +35,7 @@ import {
   POTION_BY_ID,
   RELIC_BY_ID,
   RUN_SLOTS,
+  SOULS,
   SKILL_BY_ID,
   UNIQUE_BY_ID,
   crystalName,
@@ -602,9 +603,20 @@ export function heal(game: GameState): Healed {
     out.points += replayTree(game.character, skillId);
   }
 
-  // A COUNT that is not one would pay the ladder's first four at once.
-  const clears = Number(game.souledClears);
-  game.souledClears = Number.isFinite(clears) ? Math.max(0, Math.floor(clears)) : 0;
+  // A COUNT that is not one would pay a whole ladder at once, and a save older
+  // than the per-tier rows holds its clears as one number.
+  const older = Number((game as unknown as { souledClears?: number }).souledClears);
+  const rows = Array.isArray(game.soulClears) ? game.soulClears : [];
+  if (!rows.length && Number.isFinite(older)) rows[1] = Math.max(0, Math.floor(older));
+  delete (game as unknown as { souledClears?: number }).souledClears;
+  game.soulClears = Array.from({ length: SOULS.max + 1 }, (_, tier) => {
+    const n = Number(rows[tier]);
+    return tier === 0 || !Number.isFinite(n) ? 0 : Math.max(0, Math.floor(n));
+  });
+  // A DEEPER CLEAR COUNTS FOR EVERY SHALLOWER TIER, so the rows never rise.
+  for (let tier = SOULS.max; tier > 1; tier--) {
+    game.soulClears[tier - 1] = Math.max(game.soulClears[tier - 1], game.soulClears[tier]);
+  }
 
   // `climbed` reads the sheet that matches what is socketed right now.
   syncSouls(game);
