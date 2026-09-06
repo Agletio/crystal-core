@@ -803,6 +803,35 @@ export function patchesAt(grid: Grid, x: number, y: number): number[] {
  * belongs, so it is GEOMETRY exactly as `thinRock` is: only ever OPEN rock, and
  * run to a fixed point, since opening one cell moves its neighbours.
  */
+/**
+ * A ONE-TILE PLUG IS A DOOR THE PICTURE ALREADY DREW. A WALL cell with floor
+ * both sides is stone drawing its own head as pale ground, so it reads as a
+ * channel — *"a small gap in the rock and the character pathed all the way
+ * around it."* He could not; the art said he could. Measured over 24 maps, all
+ * 719 REAL channels are walked straight through — the pathfinder was never the
+ * fault — against 1122 plugs that only look like one, of which 454 are
+ * dimples, 86 short cuts worth a median 8 tiles, and NONE the only way between
+ * two places.
+ */
+function openPlugs(grid: Grid): number {
+  let opened = 0;
+  // Opening one makes its neighbours' sides floor, so it runs to a fixed point.
+  for (let pass = 0; pass < 12; pass++) {
+    let cut = 0;
+    for (let y = 1; y < grid.height - 1; y++) {
+      for (let x = 1; x < grid.width - 1; x++) {
+        if (grid.at(x, y) !== WALL) continue;
+        const lr = grid.walkable(x - 1, y) && grid.walkable(x + 1, y);
+        const ud = grid.walkable(x, y - 1) && grid.walkable(x, y + 1);
+        if (lr || ud) { grid.set(x, y, FLOOR); cut++; }
+      }
+    }
+    opened += cut;
+    if (cut === 0) break;
+  }
+  return opened;
+}
+
 function fitCorners(grid: Grid, zone: string): void {
   const set = ZONES[zone];
   if (!set) return;
@@ -1439,6 +1468,12 @@ export function generateMap(
   }
 
   const zone = design ? design.zone : ZONE[theme];
+  // The two chase each other, and both only ever open rock.
+  for (let pass = 0; pass < 4; pass++) {
+    const opened = openPlugs(grid);
+    if (zone) fitCorners(grid, zone);
+    if (opened === 0) break;
+  }
   // Fitted BEFORE the shelves and the landmarks: a cell opened beside a rim is
   // a pocket nothing reaches, and one opened beside the hole moves it.
   if (zone) fitCorners(grid, zone);
