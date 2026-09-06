@@ -281,14 +281,18 @@ assert($('dev-climb-0') !== null, 'and a button that clears a zone of the climb'
 $('dev-climb-0').click();
 $('camp-crack').click();
 assert($('climb-pip-0-12').classList.contains('pip--done'), 'clearing the Fissure marks every rung of it');
-// AND EVERY WAY ROUND IT WITH THEM: a side room opens off something CLEARED,
-// so a zone climbed whole opens the lot.
-assert(
-  all('[id^="climb-side-0-"]').length > 0
-    && all('[id^="climb-side-0-"]').every((b) => !b.disabled),
-  'and every side room off it, since the map is the gate',
-  all('[id^="climb-side-0-"]').filter((b) => b.disabled).map((b) => b.id).join(' ')
-);
+// THE NETWORK IS WALKED, NOT HANDED OVER. A room opens off something CLEARED,
+// so climbing the whole line opens the rooms that TOUCH it — and the ones
+// behind those are still a clear away. A map you get whole is not a map.
+{
+  const rooms = all('[id^="climb-side-0-"]');
+  const open = rooms.filter((b) => !b.disabled);
+  assert(open.length > 0, 'and the side rooms that touch the line open with it',
+    rooms.map((b) => b.id).join(' '));
+  assert(open.length < rooms.length,
+    'while the ones behind those are still a clear away: the network is walked',
+    `${open.length} of ${rooms.length} open`);
+}
 assert($('climb-tab-1').disabled === false, 'and opens the zone above');
 $('climb-tab-1').click();
 assert($('climb-pip-1-1').disabled === false, 'whose tab draws its own rungs');

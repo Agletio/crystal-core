@@ -144,8 +144,8 @@ import { variants } from './sim/appearance';
 import type { GearBase } from './types';
 import {
   arenaAt, campaignDone, campaignLine, campaignPrize, canEnter, canEnterNode, climbed,
-  depthOfSide, furthest, isCleared, linksIn, mainId, nodeSpot, sideRooms, takeRung, touching,
-  zoneOpen,
+  depthOfId, depthOfSide, furthest, isCleared, linksIn, mainId, nodeSpot, sideRooms, takeRung,
+  touching, zoneOpen,
 } from './ladder';
 import { canDualWield, gatherableFamilies, toolIn, toolMore, toolRung } from './sim/character';
 import { unlocksFor } from './professions';
@@ -11641,10 +11641,14 @@ rule('THE CLIMB — does a rung open, stay open, and get harder?');
       String(arenaAt({ zone: 0, rung: LADDER.zones[0].rungs, side: first.id }))
     );
 
-    // THE SKIP. Walk the network from a brand new character, clearing only
-    // side rooms, and see how far past `climbed + 1` it can put you.
+    // THE SKIP. The network is JOINED from the line — the first room hangs off
+    // depth 2 — so clear the line up to there and then walk side rooms ONLY,
+    // and see how far past `climbed + 1` that puts you.
     const hop = who();
-    let reach = 1;
+    const joins = Math.min(...sideRooms(0).flatMap((room) =>
+      touching(0, room.id).map((id) => depthOfId(id)).filter((d): d is number => d !== null)));
+    for (let depth = 1; depth <= joins; depth++) takeRung(hop, { zone: 0, rung: depth });
+    let reach = joins;
     for (let pass = 0; pass < 40; pass++) {
       let grew = false;
       for (const room of sideRooms(0)) {
@@ -11659,9 +11663,9 @@ rule('THE CLIMB — does a rung open, stay open, and get harder?');
     }
     check(
       reach > climbed(hop, 0) + 1,
-      `side rooms alone carry a level-nothing character to depth ${reach}, ` +
+      `side rooms alone carry a depth-${climbed(hop, 0)} character to depth ${reach}, ` +
         `where the line alone reaches ${climbed(hop, 0) + 1}`,
-      `reached ${reach}`
+      `reached ${reach} on ${climbed(hop, 0)} climbed`
     );
     // AND CLEARING IT IS WHAT MAKES IT YOUR LEVEL.
     takeRung(hop, { zone: 0, rung: reach });

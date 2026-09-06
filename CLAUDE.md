@@ -386,18 +386,34 @@ it at even ARC LENGTH, and **THE DRAWN SEAM IS THAT COURSE** rather than a
 curve through the pips — twelve points across a zigzag cut every corner and ran
 the line through solid rock.
 
-**A BRANCH IS A SIDE ROOM OFF A DEPTH, AND IT IS NEVER A STEP.** *"Offshoot
-levels of the main line that branch in these separate rooms. Each has a special
-bonus."* `LadderZoneDef.branches` hangs one off a depth and it runs at THAT
-DEPTH'S OWN DANGER, so what you pick is the payout and never the difficulty;
-`takeRung` records nothing for one and `arenaAt` refuses one off the last
-depth. The bonus lands in TWO places because they are two different things:
-what makes the floor HARDER is one synthetic mod on the same seam `rungMod`
-rides, so `crystalRewards` weighs it, and what it PAYS is `RunSet.bonus`.
-**WHAT IT PAYS IS ITS NAME**: `BranchBonusDef.icon` is a generated row and the
-spur's pip draws that picture — *"the 3a/b looks kinda weird no? should we even
-just have little icons that look cool?"* — while the id keeps the depth and the
-letter for the harnesses. A spur is drawn TWICE, a dark casing under the dash,
+**THE SIDE ROOMS ARE A NETWORK, AND THE MAP IS THE GATE.** *"Offshoot levels
+of the main line that branch in these separate rooms. Each has a special
+bonus… I want you to be able to skip zones by going in between others."*
+`LadderZoneDef.sides` are the rooms and `.links` the ways ROUND the line; a
+node is `d<N>` for a depth or a room's own id and the main chain is implicit,
+so only the ways round it are authored. `canEnter` is REACHABILITY — a node
+opens when something touching it is cleared — so a run of side rooms arrives at
+a depth you never climbed to. **CLEARING THAT DEPTH IS WHAT MAKES IT YOUR
+LEVEL**; a side room moves nothing but the map: *"otherwise you're still at
+your current main level even if you cleared higher difficulty side levels."*
+`Character.opened` is what the map remembers, per zone, and it is never a
+level. Measured on The Answering: the network joins the line at depth 2, and
+from there the line alone reaches depth 3 where the rooms reach depth 10.
+**THE NETWORK IS WALKED, NEVER HANDED OVER** — six of the fourteen touch no
+depth at all, so climbing the whole line still leaves them a clear away.
+
+**A SIDE ROOM'S DIFFICULTY IS WHERE IT STANDS.** `depthOfSide` puts it on the
+zone's own course and reads the arc length as a depth, so a room low on the map
+is a hard floor and no depth is written down twice. Its bonus lands in TWO
+places because they are two things: what makes the floor HARDER is one
+synthetic mod on the seam `rungMod` rides, so `crystalRewards` weighs it, and
+what it PAYS is `RunSet.bonus`. **WHAT IT PAYS IS ITS NAME** —
+`BranchBonusDef.icon` is a generated row and the pip draws that picture,
+*"the 3a/b looks kinda weird no? should we even just have little icons that
+look cool?"* **A LINK IS TRACED LIKE THE LINE**, and kept only where the traced
+route is within 1.6x the straight hop: past that the tracer went the long way
+round, which means the picture never joined those two chambers, so it draws as
+a straight dashed hop. Every spur is drawn TWICE, a dark casing under the dash,
 because a hairline on a lit cave floor is the same value as the floor.
 
 **THE PROVING GROUND IS THE FOURTH TAB, and the sockets are ITS.** *"Once you

@@ -890,19 +890,29 @@ is the strongest part of the idea. The feedback that shaped it:
   version, since picking The Rot's bonus against The Prism's is a real decision
   where the campaign fixes the world per zone.
 
-- [x] **BRANCHES OFF THE CLIMB.** DONE: `LadderZoneDef.branches` beside the
-      path, and a `Rung` carries an optional branch LETTER — so every
-      zone/depth read still works and `isProving` is untouched. The bonus lands
-      in TWO places and they are not the same place: what makes the floor
-      HARDER (pack size) is one synthetic mod on the seam `rungMod` and
-      `provingMod` ride, so `crystalRewards` weighs it; what it PAYS is
-      `RunSet.bonus` beside `pays`, multiplying at the one call site that
-      already reads each. Measured: The Spoil Heap runs at depth 3's own 40
-      danger and pays 2.5x gold; The Sump takes depth 5 from 80 to 110 danger
-      and pays 1.6x across the board. `takeRung` records NOTHING for a branch
-      and `arenaAt` refuses one off the last depth. EIGHT on The Answering off
-      four depths, five on The Prism, each placed on a chamber the picture
-      actually drew — found by reading the cross-section's own floors.
+- [x] **THE SIDE ROOMS ARE A NETWORK, AND THE MAP IS THE GATE.** DONE, his own
+      drawing: a red main line down the cave's own passage and yellow rooms
+      joined to each other and back to the line further down.
+      `LadderZoneDef.sides` and `.links` replace `branches`; a node is `d<N>`
+      or a room's id, the chain is implicit, and `canEnter` is reachability.
+      **THE SKIP SHIPS** — *"if you come out on a level higher and then
+      successfully clear it then the game considers you at that level"*:
+      measured on The Answering, the network joins the line at depth 2 and from
+      there the line alone reaches depth 3 where the rooms reach depth 10, and
+      only clearing a DEPTH writes `climbed`. `Character.opened` is what the
+      map remembers. A room's danger is `depthOfSide` — where it STANDS on the
+      course — so a room low on the map is a hard floor with no depth written
+      twice; measured, the fourteen spread from depth 2 to depth 9. Every link
+      is traced and kept only within 1.6x the straight hop, or the tracer went
+      the long way round and the picture never joined those two chambers: 8 of
+      22 draw straight. **THE NETWORK IS WALKED** — six of the fourteen touch
+      no depth, so climbing the whole line still leaves them a clear away.
+- [ ] **HOW BIG SHOULD THE SKIP BE?** Two depths on the line buys a route to
+      depth 10 of 12, which is his rule working as written — a build that can
+      survive the rooms on the way has earned it. What is NOT known is whether
+      that is the shape he wants at 12 depths, 14 and 16, or whether the deep
+      rooms should hang off deeper links. A NUMBER, so it never blocks: the
+      lever is which depth each chain rejoins at.
 - [ ] **BRANCHES ON THE PROVING GROUND**, which is his stronger half: *"the
       same main line system that's going down and the branches that come off
       have these same bonuses AND they are different zones… 4-5 different areas
@@ -912,8 +922,8 @@ is the strongest part of the idea. The feedback that shaped it:
       shape it does not have yet — a main line of its own, and branches off it
       that set the WORLD as well as the bonus. `PROVING.influences` is what
       picking a world means today; a branch would replace that pick.
-- [ ] **THE ROT'S BRANCHES.** None authored: its cross-section is being
-      regenerated, and a branch is placed by reading the picture's own floors.
+- [ ] **THE ROT'S NETWORK.** None authored: its cross-section is being
+      regenerated, and a room is placed by reading the picture's own floors.
       `npx tsx tools/act-floors.mts climb_act3` prints them.
 - [x] **THE LINE FOLLOWS THE MAP.** DONE, and READ OFF THE PICTURE rather than
       by eye — *"the main line should be down the main path of the cave"*.
@@ -943,7 +953,10 @@ is the strongest part of the idea. The feedback that shaped it:
       branches; re-trace both only once The Answering is signed off. **The
       Proving Ground's five areas are the real trap**: they are placed at fixed
       percent over whichever act the INFLUENCE picks, so one set of coordinates
-      has to land on floor in three different pictures.
+      has to land on floor in three different pictures. Either it gets a
+      cross-section of its own that never changes, or the areas are placed
+      along a course traced per influence. HIS CALL, and it is the one he said
+      he did not want to do ten times.
 - [ ] **THE ROT'S CROSS-SECTION IS A TRAIN TRACK.** *"It should look like just
       a tunnel going down, there's no train tracks… the lower ones have no
       visible path connecting them."* The ask is REWRITTEN in `scenes.json` —
