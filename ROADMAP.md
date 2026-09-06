@@ -799,6 +799,16 @@ ours** — verify each against the code before spending anything.
       same shapes make *"'Ash Wand' and 'Grey Staff' tally marks on the anvil
       and 'Bent Rod' one on the sheet."* A silhouette budget per slot, not per
       weapon. (`crop-dock-weapons-x3.png`, `kit-anvil.png`, `kit-sheet-tools.png`)
+      **MEASURED, and it is worse than the complaint**: ink width in a 40px
+      slot is staff 3, rod 4, wand 5, sword 9, greatsword 9, bow 9, dagger 15,
+      mace 18. **THE STAFF AND THE GREATSWORD ARE THE ONES ALREADY RE-ASKED**
+      with VERY BROAD / THICK / *as thick as a man's wrist* in their rows, and
+      they came back 3px and 9px — so WORDS HAVE FAILED TWICE HERE and a third
+      re-roll is not the fix. Height is already 44–46 of 48, so scaling at
+      import cannot buy width either. What is left is a decision: draw a thin
+      weapon at an ANGLE in its icon (`HELD` reads the same picture and wants
+      it upright, though `HeldSpec.turn` already rotates a mace), or accept
+      that a sword is thin and give the SLOT the mass instead. Ask first.
 - [x] **THE SHOP HAD NO PICTURE ON IT.** DONE: a gamble sells a KIND, so each
       row carries that kind's own face — the plainest base it has, DERIVED off
       `GEAR_BASES`. Two rows went with it: `KIND_VARIETY` is 0 for the rod and
