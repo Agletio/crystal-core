@@ -137,7 +137,7 @@ function renderRow(row: Row): HTMLElement {
       'div',
       'crystal__grow',
       grown.need === null
-        ? `Level ${grown.level} — as far as it goes`
+        ? `Level ${grown.level} — max`
         : `${Math.floor(grown.xp)} / ${grown.need} to level ${grown.level + 1}` +
             (row.held === 'socket' ? '' : ' — only levels while socketed')
     )

@@ -1066,7 +1066,7 @@ assert(
 const socketedCard = [...crystalCards()].find((c) => c.classList.contains('crystal--socket'));
 assert(!!socketedCard, 'and the row moves to the top marked as socketed');
 assert(
-  /to level \d|as far as it goes/.test(socketedCard.textContent),
+  /to level \d|— max/.test(socketedCard.textContent),
   'showing how far it has levelled',
   socketedCard.textContent
 );

@@ -395,7 +395,7 @@ function renderSockets(grid: HTMLElement): void {
           'div',
           'socket__grow',
           grown.need === null
-            ? `Level ${grown.level} — as far as it goes`
+            ? `Level ${grown.level} — max`
             : `${Math.floor(grown.xp)} / ${grown.need} to level ${grown.level + 1}`
         )
       );
