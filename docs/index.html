@@ -1524,7 +1524,8 @@
      the readout takes a plate, and it is the window's own. */
   /* NO PLATE AT ALL: the recess IS the socket, and its words take an outline
      instead, since they lie straight on the picture. */
-  .groundsockets { background: none; border: 0; padding: 0; gap: 10px; }
+  /* HIGHER here: the five side areas fan out UNDER it. */
+  .groundsockets { background: none; border: 0; padding: 0; gap: 10px; top: 38%; }
   .groundsockets .socket {
     background: none; border: 0; box-shadow: none; text-align: center; padding: 0;
     color: var(--bone); text-shadow: 0 1px 0 var(--ink), 0 -1px 0 var(--ink), 1px 0 0 var(--ink), -1px 0 0 var(--ink);
@@ -1600,6 +1601,13 @@
     border-style: dashed; border-color: var(--edge-lit);
   }
   .pip--side.pip--here { border-style: solid; }
+  /* A SIDE AREA IS NAMED, never numbered: five of them, and a number would
+     read as a depth on a screen where nothing is climbed. */
+  .pip--area {
+    width: auto; height: auto; border-radius: var(--r);
+    padding: 4px 9px; font-size: 11px; line-height: 1.1; white-space: nowrap;
+    font-family: var(--display); letter-spacing: .06em; text-transform: uppercase;
+  }
   /* A CHALLENGE FLOOR, marked before you walk into it. */
   .pip--next { border-color: var(--citrine); color: var(--citrine); }
   /* SHUT IS STILL READ: it loses the lit rim, never its numeral. */

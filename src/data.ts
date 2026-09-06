@@ -1,6 +1,7 @@
 import type {
   AttributeDef,
   BranchBonusDef,
+  ProvingBranchDef,
   SkillSlotDef,
   CurrencyClass,
   CurrencyDef,
@@ -2811,7 +2812,25 @@ export const PROVING = {
   tier: 3, // the best gear BASE it drops, floored as a campaign zone floors it
   influences: ['fissure', 'prismatic', 'demonic'] as MapTheme[], // never the Seam
   seamOf: 2, // of EACH aura world, at the top level, and nothing else socketed
+  /**
+   * FIVE AREAS OFF THE ONE AREA, all at its own difficulty. *"It could branch
+   * off and be a rot area with maybe 4-5 different areas to select that are
+   * all the same difficulty generally but have a different bonus."* A branch
+   * SETS THE WORLD as well as the bonus, so it is the influence pick and the
+   * bonus in one press; the plain area is still your influence with nothing on
+   * it. Placed in PERCENT of the picture, like the sockets over it.
+   */
+  branches: [
+    { id: 'sink', name: 'The Sink', world: 'fissure', bonus: 'coinfall', x: 11, y: 74 },
+    { id: 'orchard', name: 'The Orchard', world: 'demonic', bonus: 'richseam', x: 27, y: 86 },
+    { id: 'sanctum', name: 'The Sanctum', world: 'prismatic', bonus: 'trove', x: 50, y: 75 },
+    { id: 'exchange', name: 'The Exchange', world: 'fissure', bonus: 'sluice', x: 73, y: 86 },
+    { id: 'kennel', name: 'The Kennel', world: 'demonic', bonus: 'swarm', x: 89, y: 74 },
+  ] as ProvingBranchDef[],
 };
+
+export const PROVING_BRANCH_BY_ID: Record<string, ProvingBranchDef> =
+  Object.fromEntries(PROVING.branches.map((b) => [b.id, b]));
 
 /** Rungs below this one across the WHOLE ladder. */
 export function rungsBelow(zone: number, rung: number): number {

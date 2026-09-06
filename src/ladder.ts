@@ -17,6 +17,7 @@ export interface Rung {
 export interface Proving {
   proving: true;
   influence: MapTheme;
+  branch?: string; // a `PROVING.branches` id: its own world, and one bonus
 }
 
 /** WHERE A DESCENT GOES. Nothing else picks a fight. */

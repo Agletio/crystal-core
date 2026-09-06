@@ -5,6 +5,7 @@
  */
 import {
   BRANCH_BONUS_BY_ID,
+  PROVING_BRANCH_BY_ID,
   DANGER_STATS,
   DROP_GROUPS,
   FAMILY_BY_ID,
@@ -195,8 +196,9 @@ export interface RunBonus {
 export const NO_BONUS: RunBonus = { gold: 1, currency: 1, rarity: 0, gather: 1, xp: 1 };
 
 export function branchBonus(at?: RunWhere | null): RunBonus {
+  const side = at && isProving(at) && at.branch ? PROVING_BRANCH_BY_ID[at.branch] : null;
   const branch = at && !isProving(at) ? branchAt(at) : null;
-  const pays = branch ? BRANCH_BONUS_BY_ID[branch.bonus] : undefined;
+  const pays = BRANCH_BONUS_BY_ID[(side ?? branch)?.bonus ?? ''];
   if (!pays) return NO_BONUS;
   return {
     gold: pays.gold ?? 1,
@@ -219,8 +221,9 @@ export function runSet(
   const zone = at && !isProving(at) ? LADDER.zones[at.zone] : null;
   // A BRANCH RUNS AT ITS DEPTH'S DANGER: only what it adds to the floor is a
   // mod, so `crystalRewards` weighs it the way it weighs everything else.
-  const side = at && !isProving(at) ? branchAt(at) : null;
-  const branch = side ? branchMod(BRANCH_BONUS_BY_ID[side.bonus] ?? null) : null;
+  const off = at && !isProving(at) ? branchAt(at) : null;
+  const area = at && isProving(at) && at.branch ? PROVING_BRANCH_BY_ID[at.branch] : null;
+  const branch = branchMod(BRANCH_BONUS_BY_ID[(off ?? area)?.bonus ?? ''] ?? null);
   const mods = [
     ...crystals.flatMap((c) => c.mods),
     ...(standing ? [standing] : []),
@@ -255,7 +258,9 @@ export function runSet(
     // influence is."* What you mixed still decides the PACKS.
     // THE SEAM OVERRIDES EVEN THE INFLUENCE, and it is the only thing that does.
     theme: isProving(at)
-      ? (seamSocketed(crystals) ? 'seam' : at.influence)
+      ? (seamSocketed(crystals)
+          ? 'seam'
+          : (at.branch ? PROVING_BRANCH_BY_ID[at.branch]?.world ?? at.influence : at.influence))
       : zone ? zone.world : mapTheme(crystals),
     mix,
     yield: 1 + mix * REWARD.mixYield,

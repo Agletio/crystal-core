@@ -3129,12 +3129,38 @@ $('dev-kit').click();
     'each labelled off the depth it hangs from and its own letter',
     sides[0]?.textContent
   );
+  // OPEN EXACTLY WHEN ITS DEPTH IS, in both directions: on a fresh character
+  // every depth past the first is shut, so "some are open" would be a check
+  // that only ever passed on a save it was never run against.
   assert(
-    sides.some((b) => !b.disabled) && sides.some((b) => b.disabled),
+    sides.every((b) => {
+      const depth = $(`climb-pip-0-${(b.textContent ?? '').match(/^\d+/)?.[0]}`);
+      return depth && b.disabled === depth.disabled;
+    }),
     'and a branch is open exactly when its depth is',
     sides.map((b) => `${b.textContent}:${b.disabled}`).join(' ')
   );
   $('climb-tab-3').click();
+
+  // FIVE SIDE AREAS off the one area, each its own world and one bonus, all at
+  // the Proving Ground's own difficulty. Picking one twice goes back to plain.
+  const zones = all('[id^="climb-area-"]');
+  assert(zones.length >= 4, `${zones.length} side areas fan off the Proving Ground`);
+  assert(
+    zones.every((b) => !b.disabled && (b.textContent ?? '').length > 3),
+    'each named rather than numbered, and every one open',
+    zones.map((b) => `${b.textContent}:${b.disabled}`).join(' ')
+  );
+  zones[0].click();
+  assert(
+    $(zones[0].id).classList.contains('pip--here'),
+    'clicking one takes it, and the picture follows the world it names'
+  );
+  $(zones[0].id).click();
+  assert(
+    !$(zones[0].id).classList.contains('pip--here'),
+    'and clicking it again goes back to the plain area'
+  );
 
   // THE TAB IS THE PICK, and it is the whole of what says where you are going:
   // the map is the screen now, and nothing is written over it.

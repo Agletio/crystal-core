@@ -11642,6 +11642,49 @@ rule('THE CLIMB — does a rung open, stay open, and get harder?');
       'and a depth with no branch on it pays exactly what it always did',
       String(runSet([], null, { zone: 0, rung: 3 }).bonus.gold)
     );
+
+    // THE PROVING GROUND'S OWN FIVE. Same difficulty, each its own WORLD and
+    // one bonus, so a side area is the influence pick and the bonus at once.
+    const plainGround = runSet([], null, { proving: true, influence: 'fissure' });
+    const areas = PROVING.branches.map((b) => ({
+      b, set: runSet([], null, { proving: true, influence: 'fissure', branch: b.id }),
+    }));
+    check(
+      areas.length >= 4 && areas.every(({ b, set }) => set.theme === b.world),
+      `${areas.length} side areas off the Proving Ground, each its own world`,
+      areas.map(({ b, set }) => `${b.name}=${set.theme}`).join(', ')
+    );
+    check(
+      areas.every(({ b, set }) =>
+        set.rewards.danger === plainGround.rewards.danger
+          || !!BRANCH_BONUS_BY_ID[b.bonus]?.packSize),
+      `and every one runs at the Proving Ground's own ${plainGround.rewards.danger} danger, ` +
+        'bar the one that adds bodies',
+      areas.map(({ b, set }) => `${b.name} ${set.rewards.danger}`).join(', ')
+    );
+    check(
+      areas.every(({ b, set }) => {
+        const pays = BRANCH_BONUS_BY_ID[b.bonus];
+        return !!pays && (set.bonus.gold > 1 || set.bonus.currency > 1
+          || set.bonus.rarity > 0 || set.bonus.gather > 1 || set.bonus.xp > 1);
+      }),
+      'and each pays something a plain run does not',
+      areas.map(({ b }) => `${b.name}:${b.bonus}`).join(', ')
+    );
+    // THE SEAM OVERRIDES EVEN A SIDE AREA, which is the only thing that does.
+    const top = CRYSTAL_LEVELS[CRYSTAL_LEVELS.length - 1].level;
+    const seamSet = [
+      ...Array.from({ length: PROVING.seamOf }, () => makeCrystal(top, 'demonic')),
+      ...Array.from({ length: PROVING.seamOf }, () => makeCrystal(top, 'prismatic')),
+    ];
+    const overridden = runSet(seamSet, null, {
+      proving: true, influence: 'fissure', branch: PROVING.branches[0].id,
+    });
+    check(
+      overridden.theme === 'seam',
+      'and THE SEAM overrides a side area the way it overrides the influence',
+      overridden.theme
+    );
   }
 
   // A CAMPAIGN DEPTH IS ITS ZONE'S WORLD, socketed or not: the campaign is run

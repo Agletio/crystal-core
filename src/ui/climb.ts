@@ -14,7 +14,9 @@
  * every read, so swapping character or reloading points you at the deepest
  * thing you may enter rather than at somebody else's rung.
  */
-import { BRANCH_BONUS_BY_ID, CRYSTAL_LEVELS, LADDER, PROVING, THEME_BY_ID } from '../data';
+import {
+  BRANCH_BONUS_BY_ID, CRYSTAL_LEVELS, LADDER, PROVING, PROVING_BRANCH_BY_ID, THEME_BY_ID,
+} from '../data';
 import { folkRooms, hasHeard } from '../game/scenes';
 import type { SceneDef } from '../scenes';
 import { FOLK_SCALE_DEFAULT, scaleFor } from '../scenes';
@@ -26,7 +28,7 @@ import { isTaleUp, playTale } from './tale';
 import {
   branchAt, branchLabel, branchesAt, canEnter, climbed, furthest, isProving, provingOpen, zoneAt, zoneOpen,
 } from '../ladder';
-import type { Rung, RunWhere } from '../ladder';
+import type { Proving, Rung, RunWhere } from '../ladder';
 import { SCENE_ART } from '../render/generated-scene';
 import type { MapTheme } from '../types';
 import type { GameState } from '../game/state';
@@ -51,8 +53,10 @@ function el(tag: string, cls?: string, text?: string): HTMLElement {
 
 let chosen: Rung | null = null;
 /** THE PROVING GROUND is picked instead of a depth, so it is its own flag: a
- *  place is not a rung and could never be one. */
+ *  place is not a rung and could never be one. `area` is which SIDE AREA off
+ *  it, if any — its own world and one bonus, at the same difficulty. */
 let ground = false;
+let area: string | null = null;
 /** The tab you are looking at, null until you click one: left alone it follows
  *  the rung you are pointed at, so a clear opens the zone above and shows it.
  *  `PROVING_TAB` is the fourth, past every zone. */
@@ -71,7 +75,9 @@ export function roomNow(): SceneDef | null {
 
 /** WHERE THE NEXT DESCENT GOES: a depth on the climb, or the Proving Ground. */
 export function whereNow(character: Character): RunWhere {
-  if (ground && provingOpen(character)) return { proving: true, influence: influenceNow() };
+  if (ground && provingOpen(character)) {
+    return { proving: true, influence: influenceNow(), ...(area ? { branch: area } : {}) };
+  }
   if (chosen && canEnter(character, chosen)) return chosen;
   return furthest(character);
 }
@@ -93,6 +99,7 @@ export function pickRung(character: Character, at: Rung): boolean {
   if (!canEnter(character, at)) return false;
   chosen = at;
   ground = false;
+  area = null;
   return true;
 }
 
@@ -110,9 +117,11 @@ export const rungName = (at: RunWhere, theme?: MapTheme): string => {
     : `${where}, depth ${at.rung}`;
 };
 
-export const provingWorld = (at: { influence: MapTheme }, theme?: MapTheme): string => {
-  const world = theme ?? at.influence;
-  return THEME_BY_ID[world]?.name ?? world;
+export const provingWorld = (at: Proving, theme?: MapTheme): string => {
+  const world = theme ?? PROVING_BRANCH_BY_ID[at.branch ?? '']?.world ?? at.influence;
+  const said = THEME_BY_ID[world]?.name ?? world;
+  const side = PROVING_BRANCH_BY_ID[at.branch ?? ''];
+  return side ? `${side.name} — ${said}` : said;
 };
 
 /** The report's line about the climb: what a clear opened, or where a death
@@ -379,11 +388,46 @@ function renderProving(host: HTMLElement, character: Character, onPick: () => vo
   }
 
   const trail = el('div', 'climbseam climbseam--ground');
-  const art = SCENE_ART[GROUND_ART[seam ? 'seam' : influenceNow()] ?? ''];
+  // THE PICTURE IS THE WORLD YOU WILL WALK INTO: a side area's own, since it
+  // sets the world; otherwise the influence's, and the Seam beats both.
+  const world = seam ? 'seam' : (PROVING_BRANCH_BY_ID[area ?? '']?.world ?? influenceNow());
+  const art = SCENE_ART[GROUND_ART[world] ?? ''];
   if (art) trail.style.backgroundImage = `url(${art.png})`;
   const wall = el('div', 'groundsockets');
   sockets?.(wall);
   trail.append(wall);
+
+  // THE SIDE AREAS, all at the Proving Ground's own difficulty and each its
+  // own world. The plain area is the one in the middle: no branch, no bonus,
+  // the influence you picked. Nothing here is climbed either.
+  const svg = svgEl('svg', {
+    class: 'climbseam__line', viewBox: '0 0 100 100', preserveAspectRatio: 'none',
+  });
+  const root = { rung: 0, x: 50, y: 62 };
+  for (const side of PROVING.branches) {
+    svg.append(svgEl('path', {
+      class: 'climbseam__side',
+      d: seamPath([root, { rung: 0, x: side.x, y: side.y }]),
+    }));
+  }
+  trail.append(svg);
+  for (const side of PROVING.branches) {
+    const pays = BRANCH_BONUS_BY_ID[side.bonus];
+    const world = THEME_BY_ID[side.world];
+    const pip = el('button', 'pip pip--side pip--area', side.name) as HTMLButtonElement;
+    pip.id = `climb-area-${side.id}`;
+    pip.style.left = `${side.x}%`;
+    pip.style.top = `${side.y}%`;
+    pip.classList.toggle('pip--here', area === side.id);
+    attachTooltip(pip, () =>
+      `${side.name}. ${world?.name ?? side.world}, at the Proving Ground's own ` +
+      `difficulty. ${pays?.say ?? ''} Click it again to go back to the plain area.`);
+    pip.onclick = () => {
+      area = area === side.id ? null : side.id;
+      onPick();
+    };
+    trail.append(pip);
+  }
   host.append(trail);
 }
 
