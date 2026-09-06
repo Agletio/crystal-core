@@ -342,6 +342,9 @@ function tools(): void {
 export function initSurvey(): void {
   load();
   $('survey-close').onclick = closeSurvey;
+  // The blocks are only ever copied WHOLE, so clicking the box takes the lot:
+  // half a plan pasted back is a zone that will not parse.
+  $('survey-out').onclick = () => ($('survey-out') as HTMLTextAreaElement).select();
   globalThis.addEventListener('pointermove', (e) => {
     if (!dragging) return;
     const at = atPointer(e as PointerEvent);
