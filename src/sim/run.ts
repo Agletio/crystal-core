@@ -950,13 +950,15 @@ export class RunSim {
     // for, so it stays worth something once the crystals scale the room.
     this.auraDamage = computeStat(MONSTER_BASE.damage, this.set.mods, 'monsterDamage');
     // Run power pays here: it is the one number a reward reads.
-    this.xpPerKill = monsterXp(this.set.power);
+    // A BRANCH'S BONUS lands on every payout and on nothing else.
+    this.xpPerKill = Math.round(monsterXp(this.set.power) * this.set.bonus.xp);
     // Power is the whole of it, times what the worlds in the set pay.
     this.goldPerKill =
       LOOT.goldPerKill *
       Math.pow(LOOT.powerScale, this.set.power) *
       this.set.yield *
-      this.set.pays.gold;
+      this.set.pays.gold *
+      this.set.bonus.gold;
   }
 
   /** One kind at one rank. A rank scales life and EVERY damage type together:
@@ -1163,7 +1165,10 @@ export class RunSim {
     if (this.options.scene) return; // an authored room has no packs to guard one
     const world = MATERIALS.filter((m) => m.world === this.set.theme);
     const unique = world.find((m) => m.family === null);
-    const wanted = Math.min(packCount, this.whole(GATHER.perRun * this.set.yield));
+    const wanted = Math.min(
+      packCount,
+      this.whole(GATHER.perRun * this.set.yield * this.set.bonus.gather)
+    );
     if (wanted <= 0) return;
 
     // DEALT ROUND rather than rolled, and only among what your TOOLS can work:
@@ -3904,7 +3909,8 @@ export class RunSim {
     // In the count it paid the deep end 17× its band. `yield` is run LENGTH.
     this.gearLeft = this.whole(this.set.band.gearPerRun * this.set.yield);
     this.currencyLeft = this.whole(
-      CURRENCY_DROP.perRun * (1 + hero.currencyFind / 100) * this.set.pays.currency
+      CURRENCY_DROP.perRun * (1 + hero.currencyFind / 100) * this.set.pays.currency *
+      this.set.bonus.currency
     );
     // Off `yield` for the reason gear is: the budget rides run LENGTH.
     this.materialLeft = this.whole(BODY_DROP.perRun * this.set.yield);
@@ -3943,7 +3949,8 @@ export class RunSim {
   private dropGear(lift = 0): void {
     const drops = this.set.band;
     const hero = this.state.hero.stats;
-    const rarity = this.set.rewards.rarity + hero.rarity + this.set.pays.rarity + lift;
+    const rarity =
+      this.set.rewards.rarity + hero.rarity + this.set.pays.rarity + this.set.bonus.rarity + lift;
 
     // A named piece instead of a rolled one. A gate is a wall, so the pool is
     // filtered before the pick and no amount of rarity argues with it.
@@ -4319,7 +4326,8 @@ export class RunSim {
     // Rarity decides how often you reach the ceiling; the crystal decides where
     // it IS. Uncapped, a T1 map with enough rarity skips the whole ladder.
     const ceiling = CURRENCY_CLASSES.indexOf(this.set.band.currency);
-    const rarity = this.set.rewards.rarity + hero.rarity + this.set.pays.rarity + lift;
+    const rarity =
+      this.set.rewards.rarity + hero.rarity + this.set.pays.rarity + this.set.bonus.rarity + lift;
     const climb = CURRENCY_DROP.upgradeChance * (1 + rarity / 100);
     let rank = 0;
     while (rank < ceiling && this.rng.chance(climb)) rank++;

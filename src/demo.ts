@@ -137,6 +137,7 @@ import {
   TRADE_BASE,
   stunChanceFor,
   WEAPON_SLOT,
+  BRANCH_BONUS_BY_ID,
   workerMark,
 } from './data';
 import { variants } from './sim/appearance';
@@ -11582,6 +11583,66 @@ rule('THE CLIMB — does a rung open, stay open, and get harder?');
     're-grinding an old rung records nothing',
     `re-grinding rung 3 moved the count to ${climbed(walker, 0)}`
   );
+
+  // A BRANCH IS NEVER A STEP. A side room hangs off a depth and runs at that
+  // depth's own danger; if a clear there recorded a rung, the line would move
+  // while you were grinding beside it.
+  {
+    const sides = LADDER.zones.flatMap((zone, z) =>
+      (zone.branches ?? []).map((b) => ({ z, zone, b })));
+    check(sides.length > 0, `${sides.length} side rooms hang off the climb`, 'none authored');
+    const orphan = sides.filter(({ b }) => !BRANCH_BONUS_BY_ID[b.bonus]).map(({ b }) => b.name);
+    check(orphan.length === 0, 'and each names a bonus that exists', orphan.join(', '));
+    const offMap = sides.filter(({ zone, b }) => b.at < 1 || b.at > zone.rungs)
+      .map(({ b }) => `${b.name}@${b.at}`);
+    check(offMap.length === 0, 'and hangs off a depth that zone actually has', offMap.join(', '));
+    const twice = sides.map(({ z, b }) => `${z}-${b.at}${b.letter}`)
+      .filter((id, i, all) => all.indexOf(id) !== i);
+    check(twice.length === 0, 'and no two share a label', twice.join(', '));
+    const stray = sides.flatMap(({ b }) =>
+      b.path.filter(([x, y]) => x < 0 || x > 100 || y < 0 || y > 100).map(() => b.name));
+    check(stray.length === 0, 'and every point of its course is inside the picture', stray.join(', '));
+
+    const side = who();
+    for (let rung = 1; rung <= LADDER.zones[0].rungs; rung++) takeRung(side, { zone: 0, rung });
+    const before = climbed(side, 0);
+    const fresh3 = who();
+    takeRung(fresh3, { zone: 0, rung: 1, branch: 'A' });
+    check(
+      climbed(fresh3, 0) === 0 && climbed(side, 0) === before,
+      'and a clear in one records NO depth, so the line cannot move while you grind beside it',
+      `${climbed(fresh3, 0)} recorded off a branch`
+    );
+    check(
+      arenaAt({ zone: 0, rung: LADDER.zones[0].rungs, branch: 'A' }) === null
+        && arenaAt({ zone: 0, rung: LADDER.zones[0].rungs }) !== null,
+      'and a branch off the LAST depth is never the boss: a boss you could farm is not a gate',
+      String(arenaAt({ zone: 0, rung: LADDER.zones[0].rungs, branch: 'A' }))
+    );
+
+    // ITS DANGER IS THE DEPTH'S, and only what it adds to the floor is weighed.
+    const plain = runSet([], null, { zone: 0, rung: 3 });
+    const paid = runSet([], null, { zone: 0, rung: 3, branch: 'A' });
+    const swarm = LADDER.zones[0].branches?.find((b) => b.bonus === 'swarm');
+    const rough = swarm ? runSet([], null, { zone: 0, rung: swarm.at, branch: swarm.letter }) : null;
+    const flat = swarm ? runSet([], null, { zone: 0, rung: swarm.at }) : null;
+    check(
+      paid.rewards.danger === plain.rewards.danger && paid.bonus.gold > 1,
+      `a branch runs at its depth's own danger (${paid.rewards.danger}) and pays ${paid.bonus.gold}x gold`,
+      `${plain.rewards.danger} against ${paid.rewards.danger}`
+    );
+    check(
+      !!rough && !!flat && rough.rewards.danger > flat.rewards.danger,
+      `and the one that adds bodies is weighed for it: ` +
+        `${flat?.rewards.danger} to ${rough?.rewards.danger} danger`,
+      `${flat?.rewards.danger} against ${rough?.rewards.danger}`
+    );
+    check(
+      runSet([], null, { zone: 0, rung: 3 }).bonus.gold === 1,
+      'and a depth with no branch on it pays exactly what it always did',
+      String(runSet([], null, { zone: 0, rung: 3 }).bonus.gold)
+    );
+  }
 
   // A CAMPAIGN DEPTH IS ITS ZONE'S WORLD, socketed or not: the campaign is run
   // with nothing in the sockets at all, so there is no crystal left to name one.

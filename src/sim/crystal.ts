@@ -4,6 +4,7 @@
  * taking.
  */
 import {
+  BRANCH_BONUS_BY_ID,
   DANGER_STATS,
   DROP_GROUPS,
   FAMILY_BY_ID,
@@ -17,8 +18,8 @@ import {
   bandFor,
   tierForLevel,
 } from '../data';
-import { dropBias, provingMod, rungMod } from './stats';
-import { isProving } from '../ladder';
+import { branchMod, dropBias, provingMod, rungMod } from './stats';
+import { branchAt, isProving } from '../ladder';
 import type { RunWhere } from '../ladder';
 import { dangerScore } from '../mods';
 import type { DropBand } from '../data';
@@ -175,6 +176,35 @@ export interface RunSet {
   yield: number;
   /** What the worlds in this set pay in, each in its own currency. */
   pays: { gold: number; currency: number; rarity: number };
+  /** A BRANCH'S OWN PAYOUT, beside `pays` and never inside it: what the side
+   *  room is FOR. Multipliers are 1 and rarity 0 anywhere else. */
+  bonus: RunBonus;
+}
+
+/** Every way a branch can pay. Kept apart from `pays` so a bonus on gathering
+ *  cannot quietly raise gold — `yield` feeds both, which is why neither is
+ *  where this goes. */
+export interface RunBonus {
+  gold: number;
+  currency: number;
+  rarity: number; // percent, ADDED
+  gather: number;
+  xp: number;
+}
+
+export const NO_BONUS: RunBonus = { gold: 1, currency: 1, rarity: 0, gather: 1, xp: 1 };
+
+export function branchBonus(at?: RunWhere | null): RunBonus {
+  const branch = at && !isProving(at) ? branchAt(at) : null;
+  const pays = branch ? BRANCH_BONUS_BY_ID[branch.bonus] : undefined;
+  if (!pays) return NO_BONUS;
+  return {
+    gold: pays.gold ?? 1,
+    currency: pays.currency ?? 1,
+    rarity: pays.rarity ?? 0,
+    gather: pays.gather ?? 1,
+    xp: pays.xp ?? 1,
+  };
 }
 
 export function runSet(
@@ -187,11 +217,16 @@ export function runSet(
   const ground = isProving(at) ? provingMod(crystals.length) : null;
   const rung = at && !isProving(at) ? rungMod(at.zone, at.rung) : null;
   const zone = at && !isProving(at) ? LADDER.zones[at.zone] : null;
+  // A BRANCH RUNS AT ITS DEPTH'S DANGER: only what it adds to the floor is a
+  // mod, so `crystalRewards` weighs it the way it weighs everything else.
+  const side = at && !isProving(at) ? branchAt(at) : null;
+  const branch = side ? branchMod(BRANCH_BONUS_BY_ID[side.bonus] ?? null) : null;
   const mods = [
     ...crystals.flatMap((c) => c.mods),
     ...(standing ? [standing] : []),
     ...(rung ? [rung] : []),
     ...(ground ? [ground] : []),
+    ...(branch ? [branch] : []),
   ];
   const rewards = crystalRewards(mods);
   const power = Math.min(
@@ -225,6 +260,7 @@ export function runSet(
     mix,
     yield: 1 + mix * REWARD.mixYield,
     pays: familyPays(share),
+    bonus: branchBonus(at),
   };
 }
 

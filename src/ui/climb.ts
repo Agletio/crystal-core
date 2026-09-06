@@ -14,7 +14,7 @@
  * every read, so swapping character or reloading points you at the deepest
  * thing you may enter rather than at somebody else's rung.
  */
-import { CRYSTAL_LEVELS, LADDER, PROVING, THEME_BY_ID } from '../data';
+import { BRANCH_BONUS_BY_ID, CRYSTAL_LEVELS, LADDER, PROVING, THEME_BY_ID } from '../data';
 import { folkRooms, hasHeard } from '../game/scenes';
 import type { SceneDef } from '../scenes';
 import { FOLK_SCALE_DEFAULT, scaleFor } from '../scenes';
@@ -24,7 +24,7 @@ import { drawBody } from './bodydraw';
 import { openTalk, closeParley, syncTalk } from './talk';
 import { isTaleUp, playTale } from './tale';
 import {
-  canEnter, climbed, furthest, isProving, provingOpen, zoneAt, zoneOpen,
+  branchAt, branchLabel, branchesAt, canEnter, climbed, furthest, isProving, provingOpen, zoneAt, zoneOpen,
 } from '../ladder';
 import type { Rung, RunWhere } from '../ladder';
 import { SCENE_ART } from '../render/generated-scene';
@@ -99,10 +99,16 @@ export function pickRung(character: Character, at: Rung): boolean {
 /** WHERE A DESCENT WENT, named: what it IS rather than what is picked. `theme`
  *  is the world the RUN got, which is not always the influence — THE SEAM
  *  overrides it, and naming the preference there was a heading that lied. */
-export const rungName = (at: RunWhere, theme?: MapTheme): string =>
-  isProving(at)
-    ? `${PROVING.name}, ${provingWorld(at, theme)}`
-    : `${zoneAt(at.zone)?.name ?? '?'}, depth ${at.rung}`;
+export const rungName = (at: RunWhere, theme?: MapTheme): string => {
+  if (isProving(at)) return `${PROVING.name}, ${provingWorld(at, theme)}`;
+  const where = zoneAt(at.zone)?.name ?? '?';
+  const side = branchAt(at);
+  // A BRANCH IS NAMED FOR ITSELF and says which depth it hangs off, since its
+  // danger is that depth's and a report has to say what it ran at.
+  return side
+    ? `${where}, ${side.name} — off depth ${at.rung}`
+    : `${where}, depth ${at.rung}`;
+};
 
 export const provingWorld = (at: { influence: MapTheme }, theme?: MapTheme): string => {
   const world = theme ?? at.influence;
@@ -479,6 +485,36 @@ export function renderClimb(host: HTMLElement, character: Character, onPick: () 
       if (pickRung(character, here)) onPick();
     };
     trail.append(pip);
+
+    // THE SIDE ROOMS OFF THIS DEPTH, each drawn down its own course from the
+    // station — off the line, at the line's own danger, for one bonus.
+    for (const side of branchesAt(z, station.rung)) {
+      const way: Station[] = [
+        station,
+        ...side.path.map(([x, y]) => ({ rung: station.rung, x, y })),
+      ];
+      svg.append(svgEl('path', { class: 'climbseam__side', d: seamPath(way) }));
+      const end = way[way.length - 1];
+      const label = branchLabel(side);
+      const spur = el('button', 'pip pip--side', label) as HTMLButtonElement;
+      spur.id = `climb-side-${z}-${label}`;
+      spur.style.left = `${end.x}%`;
+      spur.style.top = `${end.y}%`;
+      spur.classList.toggle('pip--shut', !can);
+      spur.classList.toggle('pip--here', !isProving(at) && at.zone === z
+        && at.rung === station.rung && at.branch === side.letter);
+      spur.disabled = !can;
+      const pays = BRANCH_BONUS_BY_ID[side.bonus];
+      attachTooltip(spur, () =>
+        can
+          ? `${side.name}. Off depth ${station.rung}, at that depth's own danger. ` +
+            `${pays?.say ?? ''} Nothing here is climbed: a clear records no depth.`
+          : `${side.name}. Off depth ${station.rung}, which is shut.`);
+      spur.onclick = () => {
+        if (pickRung(character, { ...here, branch: side.letter })) onPick();
+      };
+      trail.append(spur);
+    }
   }
 
   host.append(trail);

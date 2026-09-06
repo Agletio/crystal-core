@@ -43,7 +43,9 @@ import { TRADE_BY_ID, tradeGrants } from '../trades';
 import { trialNodeById } from '../trials';
 import { critBuff, mergeGrants } from './grants';
 import { isTwoHanded } from '../economy';
-import type { Item, MonsterAbilityDef, MonsterDef, RolledMod, SkillDef, StatRoll } from '../types';
+import type {
+  BranchBonusDef, Item, MonsterAbilityDef, MonsterDef, RolledMod, SkillDef, StatRoll,
+} from '../types';
 
 export interface CombatStats {
   maxLife: number;
@@ -528,6 +530,24 @@ export function rungMod(zone: number, rung: number): RolledMod | null {
     tier: 1,
     tags: [],
     stats,
+  };
+}
+
+/** A BRANCH'S OWN DIFFICULTY, as one synthetic mod on the seam every other
+ *  place rides. Only `packSize` is here: more bodies is more danger, and
+ *  danger has to be WEIGHED or a branch would pay for something free. What a
+ *  branch pays is `RunSet.bonus`, which is not difficulty at all. */
+export function branchMod(bonus: BranchBonusDef | null): RolledMod | null {
+  if (!bonus?.packSize) return null;
+  return {
+    entryId: `branch_${bonus.id}`,
+    defId: 'branch',
+    group: 'branch',
+    slot: 'rung',
+    name: bonus.name,
+    tier: 1,
+    tags: [],
+    stats: [{ stat: 'packSize', form: 'inc', value: bonus.packSize, tags: [] }],
   };
 }
 

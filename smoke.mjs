@@ -3117,6 +3117,23 @@ $('dev-kit').click();
     $('climb-influence-fissure').classList.contains('climbtab--on'),
     'one of which is picked, and lit the way every other selected tab is'
   );
+  // BRANCHES OFF THE MAIN LINE: a side room hangs off a depth, at that depth's
+  // own danger, for one bonus. It is drawn on the picture and it is NOT a step.
+  $('climb-tab-0').click();
+  const sides = all('[id^="climb-side-0-"]');
+  assert(sides.length > 0, `the first zone draws ${sides.length} side rooms off its depths`);
+  assert(
+    sides.every((b) => /^\d+[A-Z]$/.test(b.textContent ?? '')),
+    'each labelled off the depth it hangs from and its own letter',
+    sides[0]?.textContent
+  );
+  assert(
+    sides.some((b) => !b.disabled) && sides.some((b) => b.disabled),
+    'and a branch is open exactly when its depth is',
+    sides.map((b) => `${b.textContent}:${b.disabled}`).join(' ')
+  );
+  $('climb-tab-3').click();
+
   // THE TAB IS THE PICK, and it is the whole of what says where you are going:
   // the map is the screen now, and nothing is written over it.
   assert(

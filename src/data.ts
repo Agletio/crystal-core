@@ -1,5 +1,6 @@
 import type {
   AttributeDef,
+  BranchBonusDef,
   SkillSlotDef,
   CurrencyClass,
   CurrencyDef,
@@ -940,6 +941,30 @@ export const GEAR_BASE_BY_ID: Record<string, GearBase> = Object.fromEntries(
  * that tracks content volume is a bug waiting for the next table to grow, so
  * this is a decision and the demo holds every kind to being in it.
  */
+/**
+ * WHAT A BRANCH PAYS, six ways. *"Maybe it's increased resources gathered or
+ * gold dropped, increased monsters, more likely to drop certain items or maybe
+ * even stuff like more skills/character xp."* NOT "more likely to drop certain
+ * items": that is the FILTER, and the filter was deleted — rarity buys what a
+ * piece IS, which is the honest version of the same wish.
+ */
+export const BRANCH_BONUSES: BranchBonusDef[] = [
+  { id: 'coinfall', name: 'Coinfall', say: '150% more gold', gold: 2.5 },
+  { id: 'sluice', name: 'The Sluice', say: '120% more currency', currency: 2.2 },
+  { id: 'trove', name: 'The Trove', say: '+60% Rarity', rarity: 60 },
+  { id: 'richseam', name: 'The Rich Seam', say: '150% more material gathered', gather: 2.5 },
+  { id: 'schooling', name: 'The Schooling', say: '80% more experience', xp: 1.8 },
+  // THE ONE THAT COSTS SOMETHING: more bodies is more danger, and danger is
+  // weighed, so this pays across the board rather than in one currency.
+  {
+    id: 'swarm', name: 'The Swarm', say: '+60% pack size, and 60% more of everything it drops',
+    packSize: 60, gold: 1.6, currency: 1.6, gather: 1.6, xp: 1.6,
+  },
+];
+
+export const BRANCH_BONUS_BY_ID: Record<string, BranchBonusDef> =
+  Object.fromEntries(BRANCH_BONUSES.map((b) => [b.id, b]));
+
 export const KIND_VARIETY: Record<string, number> = {
   weapon: 8,
   shield: 1,
@@ -2443,13 +2468,29 @@ export const LADDER = {
     {
       id: 'fissure', name: 'The Answering', art: 'climb_act1',
       path: [[36, 12], [44, 22], [48, 39], [52, 49], [60, 61], [65, 69], [76, 78], [84, 86], [94, 92]],
-      blurb: 'Shallow workings, shored and square. Somebody came back out of these.',
+      branches: [
+        { at: 3, letter: 'A', name: 'The Spoil Heap', bonus: 'coinfall', path: [[40, 29], [32, 30], [27, 30]] },
+        { at: 3, letter: 'B', name: 'The Old Stope', bonus: 'richseam', path: [[40, 29], [32, 30], [27, 33], [17, 42]] },
+        { at: 3, letter: 'C', name: 'The Crosscut', bonus: 'sluice', path: [[52, 29], [62, 27], [70, 27]] },
+        { at: 3, letter: 'D', name: 'The Long Drift', bonus: 'schooling', path: [[52, 29], [62, 27], [84, 27]] },
+        { at: 5, letter: 'A', name: 'The Winze', bonus: 'trove', path: [[45, 50], [36, 53], [30, 53]] },
+        { at: 5, letter: 'B', name: 'The Sump', bonus: 'swarm', path: [[45, 50], [36, 53], [24, 54], [12, 54]] },
+        { at: 7, letter: 'A', name: 'The Stull', bonus: 'coinfall', path: [[52, 64], [42, 67], [30, 67]] },
+        { at: 7, letter: 'B', name: 'The Upper Gallery', bonus: 'richseam', path: [[68, 62], [78, 62], [86, 62]] },
+        { at: 9, letter: 'A', name: 'The Dead End', bonus: 'trove', path: [[66, 78], [54, 80], [44, 80]] },
+      ],
       rungs: 12, arena: 'answering_hall', world: 'fissure', tier: 1,
     },
     {
       id: 'prismatic', name: 'The Prism', art: 'climb_act2',
       path: [[22, 17], [29, 27], [37, 39], [46, 48], [57, 60], [66, 70], [76, 79], [86, 87], [94, 92]],
-      blurb: 'Below daylight, where the rock has started closing what was cut.',
+      branches: [
+        { at: 3, letter: 'A', name: 'The Facet', bonus: 'trove', path: [[26, 24], [18, 18], [12, 14]] },
+        { at: 3, letter: 'B', name: 'The Cold Gallery', bonus: 'schooling', path: [[36, 25], [46, 18], [55, 17]] },
+        { at: 6, letter: 'A', name: 'The Growth', bonus: 'richseam', path: [[38, 54], [24, 60], [10, 63]] },
+        { at: 6, letter: 'B', name: 'The Lit Shelf', bonus: 'coinfall', path: [[60, 47], [76, 45], [89, 45]] },
+        { at: 9, letter: 'A', name: 'The Cut Face', bonus: 'sluice', path: [[54, 78], [40, 88], [25, 92]] },
+      ],
       rungs: 14, arena: 'refraction_hall', world: 'prismatic', tier: 2,
     },
     {
