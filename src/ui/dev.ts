@@ -255,7 +255,12 @@ function render(): void {
   sets.append(lay);
 
   // A ZONE'S OWN MAP, laid out by hand: nodes dragged onto the chambers the
-  // picture drew, joined, and the line between them shaped.
+  // picture drew, joined, and the line between them shaped. Its own shelf —
+  // it is not a tileset, and a screen nobody can find is a screen nobody uses.
+  const maps = group(
+    'The Survey',
+    'A zone laid out over its own cross-section. What comes out is the block that goes back into the table.'
+  );
   const chart = el('button', 'mini devbtn') as HTMLButtonElement;
   chart.id = 'dev-survey';
   chart.append(el('span', 'devbtn__name', 'The Survey'));
@@ -264,7 +269,7 @@ function render(): void {
     close();
     hooks.survey();
   };
-  sets.append(chart);
+  maps.append(chart);
 
   // A LEVEL UP, forced: `RAISE` ships at zero until a world has a shelf set
   // and a stair picture, and this is how a descent is shot with one anyway.
