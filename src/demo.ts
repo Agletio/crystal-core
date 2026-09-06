@@ -2133,6 +2133,41 @@ rule('SPRITES — is the pixel art well formed?');
     // than failed — nothing is placed in one, since `placeIn` falls back to a
     // room's middle and every room centre is reachable.
     gauge(`the carve itself leaves a pocket somewhere on ${pockets} of 56 maps`);
+
+    // NO DRAWN GAP IS A LIE. A WALL cell with floor either side is stone that
+    // draws its own head as pale ground, so it reads as a channel you could
+    // walk and the hero goes the long way round something that looks open.
+    // `openPlugs` takes them out; this is what stops them coming back.
+    let plugs = 0, channels = 0, walkedThrough = 0;
+    for (const theme of MAP_THEMES) {
+      for (let i = 0; i < 8; i++) {
+        const grid = generateMap([], new Rng(41000 + i * 13), 1, 1, theme.id).grid;
+        for (let y = 1; y < grid.height - 1; y++) for (let x = 1; x < grid.width - 1; x++) {
+          const lr = grid.walkable(x - 1, y) && grid.walkable(x + 1, y);
+          const ud = grid.walkable(x, y - 1) && grid.walkable(x, y + 1);
+          if (grid.at(x, y) === WALL) { if (lr || ud) plugs++; continue; }
+          if (!grid.walkable(x, y)) continue;
+          const gapLR = !grid.walkable(x - 1, y) && !grid.walkable(x + 1, y) && ud;
+          const gapUD = !grid.walkable(x, y - 1) && !grid.walkable(x, y + 1) && lr;
+          if (!gapLR && !gapUD) continue;
+          channels++;
+          const a = gapLR ? { x, y: y - 1 } : { x: x - 1, y };
+          const b = gapLR ? { x, y: y + 1 } : { x: x + 1, y };
+          const way = findPath(grid, a, b);
+          if (way.length > 0 && way.length <= 3) walkedThrough++;
+        }
+      }
+    }
+    check(
+      plugs === 0,
+      `no gap the picture draws is solid rock, across ${MAP_THEMES.length * 8} maps`,
+      `${plugs} one-tile plugs left`
+    );
+    check(
+      channels > 0 && walkedThrough === channels,
+      `and all ${channels} one-tile gaps are walked straight through rather than round`,
+      `${walkedThrough} of ${channels}`
+    );
     check(
       stranded === 0,
       'water takes exactly the tiles it covers and cuts nothing off behind it',

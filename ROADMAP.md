@@ -875,17 +875,23 @@ meeting can put a pale channel on screen where the grid holds solid stone. The
 demo already prints the south side of that discrepancy — 0.33 tiles of drawn
 ground out of reach.
 
-- [ ] **SETTLE IT BY LOOKING, not by arguing.** A dev overlay that paints
-      `Grid.walkable` over the rendered floor, and a peek that shoots it: if
-      the gap is unwalkable rock wearing its drawn head, the pathfinder is
-      right and the fault is that the art promises a way through. If the gap
-      IS walkable and the hero still went round, it is `findPath` or the
-      separation push, and that is a different repair.
-- [ ] **THEN DECIDE WHICH SIDE MOVES.** Either the drawn head stops promising
-      floor at a place two rock runs nearly meet, or the carve stops making
-      near-gaps at all (`fitCorners` already opens rock to what the set can
-      draw, and this would be one more rule for it). **A change here moves
-      every map in the game**, so it wants the measurement first.
+- [x] **SETTLED BY MEASURING, and the picture was the liar.** Over 24 Fissure
+      maps: all **719** REAL one-tile channels are walked STRAIGHT THROUGH, so
+      the pathfinder was never the fault, against **1122** PLUGS — single WALL
+      cells with floor either side, solid stone drawing its own head as pale
+      ground, 1.56 fakes for every real gap and 47 a map.
+- [x] **THE CARVE MOVED, and it was the safe side.** `openPlugs` turns a plug
+      into floor, run to a fixed point and paired with `fitCorners` since each
+      leaves work for the other: plugs **1122 → 0**, and the 513 real channels
+      left are still walked straight through. Measured BEFORE it was written —
+      of 540 plugs on 12 maps, 454 are dimples you step round in four tiles, 86
+      are short cuts worth a median 8 tiles the way round, and **NOT ONE** is
+      the only thing joining two places, so no map reaches anywhere it could
+      not before. The demo holds plugs at zero across every world.
+- [ ] **THE OVERLAY IS STILL WORTH BUILDING.** `Grid.walkable` painted over
+      the rendered floor, in the dev kit, and a peek that shoots it. Nothing
+      needs it today — the count answered this one — but the next argument
+      about where a body may stand will want a picture rather than a number.
 
 ## Phase 13 — BRANCHES OFF THE MAIN LINE, his own design
 
