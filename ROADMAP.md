@@ -858,7 +858,9 @@ have these same bonuses AND they are different zones."* He drew it on
 passages, depths 1–12 on the line and branches lettered off the depth they hang
 from — 3A, 3B, 3C, 3D, 5A, 5B, 6A, 6B, 7A, 7B, 8A, 8B.
 
-**AWAITING HIS ANSWER on the shape**; the feedback given was:
+**HE SAID BUILD IT**, and the campaign half is DONE. The Proving Ground half —
+branches that are different WORLDS at one difficulty — is what is left, and it
+is the strongest part of the idea. The feedback that shaped it:
 
 - **A branch is one more synthetic mod.** `rungMod`, `trialMod` and
   `provingMod` already merge into the crystal seam and `crystalRewards` weighs
@@ -878,6 +880,31 @@ from — 3A, 3B, 3C, 3D, 5A, 5B, 6A, 6B, 7A, 7B, 8A, 8B.
   version, since picking The Rot's bonus against The Prism's is a real decision
   where the campaign fixes the world per zone.
 
+- [x] **BRANCHES OFF THE CLIMB.** DONE: `LadderZoneDef.branches` beside the
+      path, and a `Rung` carries an optional branch LETTER — so every
+      zone/depth read still works and `isProving` is untouched. The bonus lands
+      in TWO places and they are not the same place: what makes the floor
+      HARDER (pack size) is one synthetic mod on the seam `rungMod` and
+      `provingMod` ride, so `crystalRewards` weighs it; what it PAYS is
+      `RunSet.bonus` beside `pays`, multiplying at the one call site that
+      already reads each. Measured: The Spoil Heap runs at depth 3's own 40
+      danger and pays 2.5x gold; The Sump takes depth 5 from 80 to 110 danger
+      and pays 1.6x across the board. `takeRung` records NOTHING for a branch
+      and `arenaAt` refuses one off the last depth. Nine on The Answering, five
+      on The Prism, each placed on a chamber the picture actually drew — found
+      by reading the cross-section's own floors rather than by eye.
+- [ ] **BRANCHES ON THE PROVING GROUND**, which is his stronger half: *"the
+      same main line system that's going down and the branches that come off
+      have these same bonuses AND they are different zones… 4-5 different areas
+      to select that are all the same difficulty generally but have a different
+      bonus."* The Proving Ground is ONE AREA today (`Proving` in `RunWhere`,
+      `isProving` the only read) with no line and no stations, so this is a
+      shape it does not have yet — a main line of its own, and branches off it
+      that set the WORLD as well as the bonus. `PROVING.influences` is what
+      picking a world means today; a branch would replace that pick.
+- [ ] **THE ROT'S BRANCHES.** None authored: its cross-section is being
+      regenerated, and a branch is placed by reading the picture's own floors.
+      `npx tsx tools/act-floors.mts climb_act3` prints them.
 - [x] **THE LINE FOLLOWS THE MAP.** DONE: `LadderZoneDef.path` is that zone's
       own course through its cross-section, read off the art by hand, and the
       depths are spread along it at even ARC LENGTH. The straight diagonal with

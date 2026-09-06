@@ -1,20 +1,39 @@
-/** Where the FLOORS are in an act's cross-section: the pale, roughly flat runs
- *  a station can stand on, found by luma so a branch is placed on the picture
- *  rather than beside it. */
-import { readFileSync } from 'node:fs';
-import { decodePng } from './tools/art/png.mts';
+/**
+ * WHERE THE FLOORS ARE in a drawn cross-section, as a chart you can read
+ * coordinates off. A depth and a branch are both placed in PERCENT of the
+ * picture, and placing one by eye puts it in solid rock:
+ *
+ *   npx tsx tools/act-floors.mts climb_act1 [share]
+ *   npx tsx tools/act-floors.mts some.png   [share]
+ *
+ * `share` is how much of the picture counts as floor, 0.16 by default — a
+ * PERCENTILE, since a few lamp pixels set the top of the range.
+ */
+import { existsSync, readFileSync } from 'node:fs';
+import { decodePng } from './art/png.mts';
 
-const file = process.argv[2];
-const { width, height, rgba } = decodePng(readFileSync(file));
+const asked = process.argv[2] ?? '';
+const scenes = new URL('../src/render/generated-scene.ts', import.meta.url).pathname;
+/** A SCENE ID reads the shipped picture out of the emitted table. */
+function shipped(id: string): Buffer | null {
+  if (!existsSync(scenes)) return null;
+  const row = new RegExp(`^  ${id}: \\{ w: \\d+, h: \\d+, png: '([^']+)' \\},$`, 'm')
+    .exec(readFileSync(scenes, 'utf8'));
+  return row ? Buffer.from(row[1].split(',', 2)[1], 'base64') : null;
+}
+const png = asked.endsWith('.png') ? readFileSync(asked) : shipped(asked);
+if (!png) {
+  console.error(`act-floors: no scene or file called ${asked || '<nothing>'}`);
+  process.exit(1);
+}
+const file = asked;
+const { width, height, rgba } = decodePng(png);
 const luma = (i: number) => 0.2126 * rgba[i] + 0.7152 * rgba[i + 1] + 0.0722 * rgba[i + 2];
-// A PERCENTILE, never a fraction of the range: a few lamp pixels set the top
-// and every floor in the picture then reads as rock.
 const all: number[] = [];
 for (let i = 0; i < rgba.length; i += 4) all.push(luma(i));
 all.sort((a, b) => a - b);
 const mean = all.reduce((n, v) => n + v, 0) / all.length;
 const bright = all[Math.floor(all.length * (1 - Number(process.argv[3] ?? 0.16)))];
-// A CELL is 16x16 of the picture; a cell is "floor" when most of it is pale.
 const CW = 16, CH = 12;
 const cols = Math.floor(width / CW), rows = Math.floor(height / CH);
 const grid: number[][] = [];

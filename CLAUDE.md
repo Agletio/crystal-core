@@ -1032,6 +1032,7 @@ src/ui/            one module per screen; talk.ts is a person in the camp
 src/ui/builder.ts  THE LEVEL BUILDER: paint a floor with the real sets and props
 tools/art/         the generator, over MCP: bodies.json asks, generated.json answers
 tools/*-peek.mjs   screenshots off the committed bundle; plan-peek draws a builder plan
+tools/act-floors.mts  where the FLOORS are in a cross-section, to place a depth on one
 tools/terrain-proto.mts  the standalone reference for the terraced generator
 src/demo.ts        the checks; src/mods-check.ts the modifier sweep
 ```

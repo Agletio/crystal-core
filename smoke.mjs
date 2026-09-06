@@ -201,8 +201,10 @@ assert(all('#run-climb .climbtab').length === 4, 'a tab per zone, and the Provin
 assert($('climb-tab-3').disabled === true, 'which is shut until the campaign is paid for');
 assert($('climb-tab-0').disabled === false && $('climb-tab-1').disabled === true,
   'and only the ones you have opened');
-assert(all('#run-climb .pip').length === 12, 'the Fissure alone is drawn, a station per rung',
-  String(all('#run-climb .pip').length));
+// A DEPTH, never a side room: `.pip--side` is a branch and is counted apart.
+assert(all('#run-climb .pip:not(.pip--side)').length === 12,
+  'the Fissure alone is drawn, a station per rung',
+  String(all('#run-climb .pip:not(.pip--side)').length));
 assert(all('#run-climb .climbseam__rock').length === 1, 'as one winding stretch',
   String(all('#run-climb .climbseam__rock').length));
 assert($('climb-pip-0-1').classList.contains('pip--here'), 'a new character stands on the first');
