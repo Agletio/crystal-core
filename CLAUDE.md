@@ -1154,7 +1154,7 @@ src/data.ts        every table: mods, currencies, bases, skills, monsters, bosse
 src/types.ts       the shapes
 src/keywords.ts    the vocabulary, and what is BANNED
 src/mods.ts        capacity, allocation, rolling
-src/crafting.ts    CONDITIONS / EFFECTS registries — currencies are data
+src/crafting.ts    THE BENCH: what may be chosen, what it costs, what a dismantle pays
 src/economy.ts     prices
 src/webgraph.ts    how ANY web is walked: reach, refund, replay
 src/skills-tree.ts per-skill webs; src/trees/* is the content, layout.ts the shape
