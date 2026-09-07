@@ -39,9 +39,12 @@ Talk, Shop, Upgrade, and the anvil back to one tab a slot.
 **PHASE 10 IS DONE AND DELETED** — `git log` from `45c9106` to the anvil
 commit: wood gone, gathering seen, the creative director and the critics, the
 clock, the workers, the anvil read. Its end-of-phase review is the
-2026-09-03 run in `ART_REVIEW.md`, taken on the same art. **PHASE 11 IS THE
-LOWEST THING TO TAKE** — the art review's work, three critics at 5/10, every
-line a critic's own. Phase 8 and 9 hold only what waits on the user's
+2026-09-03 run in `ART_REVIEW.md`, taken on the same art. **PHASE 11 AND 12
+ARE WAITING ON THE GENERATOR**, whose allowance is spent until 2026-09-13:
+every line left in either is a GENERATION, a decision the user has to make,
+or the two-body overhaul he ruled out. What was CODE in them is taken — the
+peek shoots all four worlds now, so the review can be run the day the
+allowance returns. Phase 8 and 9 hold only what waits on the user's
 judgement. Phase 3 is PARKED and is not the
 lowest-numbered thing to take. Everything after them is a parked phase, the
 traps, and questions only the user can answer.
@@ -840,29 +843,34 @@ ours** — verify each against the code before spending anything.
 - [x] **THE TWELVE RUNG DISCS.** DONE: bone numerals at 12px on a near-opaque
       `--ink` plate, on a 24px disc big enough to hold them, and a SHUT depth
       keeps its numeral and loses the lit rim instead of fading to nothing.
-- [ ] **SEAM_PRO HAS NEVER BEEN PHOTOGRAPHED.** THE WORLD WAS WRONG, and it
-      is FIXED: `RunSim` was handed `options.rung`, which is null for a PLACE
-      rather than a depth, so `runSet` saw no `RunWhere` — no `provingMod`, the
-      influence ignored, the theme falling through to whatever the crystals
-      composed to. Measured: 2 Demonic + 2 Prismatic at level 4 ran as The Rot;
-      it is `seam` at danger 1520 now, and the heading names the world the run
-      GOT rather than the influence. The dev kit holds TWO crystals of each
-      family per level, or `PROVING.seamOf` could not be met at all.
-      LEFT, and it is a BALANCE question rather than a harness one: nothing
-      survives 1520 danger long enough to be photographed — a level-80 kit
-      character dies inside a second and a half. `LEVELS=` and `WAIT=` are on
-      `descent-peek` for whoever takes it.
+- [x] **THE SEAM IS PHOTOGRAPHED**, for the first time (`seam_z4.png`). The
+      Proving Ground it was written against is scratched, so the Seam is what
+      the WALL overrides a depth's world with — which means it still needs a
+      DEPTH, and the peek never picked one: with the whole climb cleared the
+      current rung was a zone's last, so Enter opened a boss ARENA and the
+      phase was `scene`. It takes zone 0 depth 1 now and the sockets supply the
+      world. Verified by NAME rather than by eye — `descent-peek` prints
+      `document.body.dataset.runTheme`, and the four read fissure, demonic,
+      prismatic and seam.
 - [x] **A BURST, NOT A HOLD.** DONE: `holdAt` is a SIM time, so the peek pushes
       it on and clears the hold between frames — `BURST=<sim seconds>`, 0.06 by
       default. Four frames, four instants, measured.
-- [ ] **A ZONE PEEK CANNOT SURVIVE ITS OWN FLOOR.** Ours, and new: fixing the
-      Proving Ground's `where` means every non-Fissure peek runs at that
-      ladder's real danger, and a level-1 kit character dies before the camera
-      settles. `descent-peek <zone>` takes the zone TAB and its first depth now
-      rather than the Proving Ground, and `LEVELS=` and `WAIT=` are the knobs —
-      but at depth 1 of The Prism a level-45 character still dies inside a
-      second. Either the kit needs a build that can stand there, or the peek
-      needs to shoot its first running frame.
+- [x] **A ZONE PEEK CANNOT SURVIVE ITS OWN FLOOR.** DONE, and the diagnosis
+      written here was wrong: measured headlessly, `ladderCharacter(5)` CLEARS
+      depth 1 of both The Prism and The Rot, and a run there lasts 13 to 50
+      sim seconds. Three faults, none of them difficulty:
+      **THE PEEK SOCKETED CRYSTALS TO PICK THE WORLD**, which the zone already
+      decides — so a Rot peek ran the zone's danger with two level-4 Demonic
+      crystals stacked on top. `SOCKETS` is empty for every zone now and the
+      SEAM keeps its four, being the one world the wall overrides one with.
+      **IT WORE NO GEAR**: `LEVELS=` hands levels with nothing in your hands,
+      so `GEAR=<band>` presses the kit's own `dev-gear-` button — a whole
+      loadout, level, attributes and tree — and a zone peek wears band 6 by
+      default. **AND `WAIT=` WAS A SLEEP**: it is the sim instant the page
+      holds ITSELF at (`holdAt`), so a floor that ends inside eight seconds is
+      still shot running rather than at its report, and a SCENE met on the way
+      down is dismissed rather than read as the end.
+      (`rot_z4.png`, `cavern_z4.png`, `seam_z4.png`)
 
 ## Phase 14 — WHERE THE HERO MAY WALK, against where the floor is DRAWN
 

@@ -38,12 +38,14 @@ const [
   skill = '', shots = 1,
 ] = process.argv.slice(2);
 
-/** Which crystals to socket for each zone. Half of one world takes the rock,
- *  and two halves with no Normal is the Seam. */
+/** THE ZONE IS THE WORLD, so a depth needs nothing socketed to reach one — and
+ *  socketing anyway stacks a crystal's danger on the zone's, which is what
+ *  killed every hero before the camera settled. The SEAM is the one world the
+ *  wall still overrides: two halves at the top level, with no Normal. */
 const SOCKETS = {
   fissure: [],
-  rot: ['Demonic', 'Demonic'],
-  cavern: ['Prismatic', 'Prismatic'],
+  rot: [],
+  cavern: [],
   seam: ['Demonic', 'Demonic', 'Prismatic', 'Prismatic'],
 };
 if (zone && !SOCKETS[zone]) {
@@ -157,8 +159,7 @@ await page.waitForTimeout(400);
 await page.evaluate(() => document.getElementById('confirm-yes')?.click());
 await page.waitForTimeout(700);
 await makeCharacter();
-// The zone is the composition, so it is chosen by socketing rather than by a
-// setting: the kit is handed every crystal and the collection is where they go.
+// The kit is handed every crystal and the collection is where they go.
 for (const want of SOCKETS[zone] ?? []) {
   await page.evaluate(() => document.getElementById('camp-socket0')?.click());
   await page.waitForTimeout(250);
@@ -179,6 +180,30 @@ for (const want of SOCKETS[zone] ?? []) {
   }
   await page.waitForTimeout(200);
   await page.evaluate(() => document.getElementById('crystals-close')?.click());
+  await page.waitForTimeout(200);
+}
+
+// GEAR=<band> WEARS THE LADDER at that band, through the kit's own button —
+// a whole loadout, level, attributes and tree, where LEVELS= hands levels with
+// nothing in your hands. A ZONE runs at its ladder's real danger, so one is
+// worn there by default; GEAR=0 opts out, and the Fissure never needs one.
+// It REPLACES the character, so it goes before LEVELS= adds to one.
+const WEARS = process.env.GEAR ?? (zone ? '6' : '0');
+if (WEARS !== '0') {
+  await page.evaluate(() => document.getElementById('open-dev')?.click());
+  await page.waitForTimeout(200);
+  const wore = await page.evaluate((band) => {
+    const button = document.getElementById(`dev-gear-${band}`);
+    if (!button) return `no dev-gear-${band} button`;
+    button.click();
+    return true;
+  }, WEARS);
+  if (wore !== true) {
+    console.error(`descent-peek: ${wore}`);
+    process.exit(1);
+  }
+  await page.waitForTimeout(400);
+  await page.evaluate(() => document.getElementById('dev-close')?.click());
   await page.waitForTimeout(200);
 }
 
@@ -238,7 +263,9 @@ if (hold) {
 // climb — so another world is a zone TAB and its first depth, at that ladder's
 // own difficulty. The SEAM is the exception: it is the one world only the
 // sockets open, and the dev kit's own button arranges them.
-const ZONE_TAB = { cavern: 1, rot: 2 };
+// THE SEAM IS NOT A ZONE, it is the world the WALL overrides one with — so it
+// still needs a depth, and the shallowest is the one whose floor is legible.
+const ZONE_TAB = { cavern: 1, rot: 2, seam: 0 };
 // A ZONE IS SHUT UNTIL THE ONE BELOW IT IS WHOLE, and the kit does not clear
 // the climb on its own — the last `dev-climb-` opens every zone at once.
 if (zone === 'seam' || zone in ZONE_TAB) {
@@ -264,7 +291,8 @@ if (zone === 'seam') {
     process.exit(1);
   }
   await page.waitForTimeout(400);
-} else if (zone in ZONE_TAB) {
+}
+if (zone in ZONE_TAB) {
   await page.evaluate(() => document.getElementById('camp-crack')?.click());
   await page.waitForTimeout(300);
   const found = await page.evaluate((z) => {
@@ -283,6 +311,7 @@ if (zone === 'seam') {
   await page.waitForTimeout(300);
 }
 
+
 await page.evaluate(() => document.getElementById('run-launch')?.click());
 // GATHER=1 shoots the first GATHER instead of the eighth second: the page says
 // what tool the hero is holding, and the burst starts the moment it is one.
@@ -292,9 +321,29 @@ if (process.env.GATHER) {
     await page.waitForTimeout(100);
   }
 } else if (!process.env.CAST) {
-  // WAIT=<ms> shoots EARLIER: a world above the whole climb kills a bare
-  // character inside eight seconds, so the Seam is shot at a second or two.
-  await page.waitForTimeout(Number(process.env.WAIT ?? 8000));
+  // WAIT=<ms> IS AN INSTANT THE PAGE HOLDS ITSELF AT, not a sleep. Slept
+  // through, a deep floor is over — cleared or died — long before the camera
+  // settles, and the shot is the report. `holdAt` is a SIM time, so the run
+  // cannot pass it and every pan and zoom after this is one frozen frame.
+  const wait = Number(process.env.WAIT ?? 8000);
+  await page.evaluate((at) => { document.body.dataset.holdAt = at; }, String(wait / 1000));
+  for (let i = 0; i < wait / 100 + 40; i++) {
+    const at = await page.evaluate(() =>
+      document.body.dataset.hold ? 'held' : document.body.dataset.runPhase);
+    // A SCENE is somebody met on the way down, and the descent is still on:
+    // Escape says the line and hands over whatever he was holding.
+    if (at === 'scene') {
+      await page.keyboard.press('Escape');
+      await page.waitForTimeout(200);
+      continue;
+    }
+    if (at !== 'running') {
+      // A floor that ended first is one no camera could have caught.
+      if (at !== 'held') console.error(`descent-peek: the descent was over before ${wait}ms — ${at}`);
+      break;
+    }
+    await page.waitForTimeout(100);
+  }
 }
 // The kit leaves a screen open and the point is the floor. Escape shuts
 // whatever is on top, and space puts the camera back on the hero.
@@ -328,6 +377,9 @@ if ((await page.evaluate(() => document.body.dataset.runPhase)) !== 'running') {
   console.error(`descent-peek: nothing launched a descent — ${why}`);
   process.exit(1);
 }
+// THE WORLD THE RUN GOT, said out loud: a zone's own world and the SEAM the
+// wall overrides it with are the same picture until one of them is named.
+console.log(`descent-peek: world ${await page.evaluate(() => document.body.dataset.runTheme)}`);
 
 /** One frame, magnified if a crop was asked for: a fault half a tile across is
  *  invisible at the size it ships at. */
