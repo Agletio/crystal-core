@@ -717,6 +717,72 @@ const ZONE_ASK: Record<string, Record<string, unknown>> = {
     detail: 'highly detailed',
     view: 'high top-down',
   },
+  // ROUND THREE, and the correction is MINE: round two asked the floor MID-TONE
+  // and that fights this file's own measured tone rule — a LIGHT floor under
+  // near-black rock, or the map reads inside out. The critic's complaint was
+  // NEAR-WHITE and RULED, not light: so light stays and the brightness and the
+  // hatch go. The ragged face of `rot2_ragged` is the one that worked.
+  rot3_dun: {
+    lower_description:
+      'a floor of dry dun membrane, MUTED mid-light greyed clay-pink, matte and '
+      + 'chalky, evenly mottled with no repeating mark, NOT near-white, NOT cream, '
+      + 'NOT bright, NOT glossy, NOT striped, NOT lined, NOT hatched, '
+      + 'NOT cross-hatched, NOT diagonal lines, NOT ruled, NOT woven, NOT fabric',
+    upper_description: `a mass of dark clotted meat grown solid, ${ROT_DARK}`,
+    transition_description:
+      'a torn irregular edge of dark muscle dropping away, ragged and uneven, every '
+      + 'stretch of it different, NOT columns, NOT pillars, NOT rounded lumps, '
+      + 'NOT battlements, NOT a repeating scallop',
+    transition_size: 1,
+    mode: 'pro',
+    raggedness: 0.8,
+    spread_x: 0.5,
+    tile_size: { width: 32, height: 32 },
+    outline: 'lineless',
+    shading: 'detailed shading',
+    detail: 'highly detailed',
+    view: 'high top-down',
+  },
+  rot3_liver: {
+    lower_description:
+      'a floor of pale liver-coloured membrane, MUTED mid-light dusty mauve-pink, '
+      + 'matte, faintly pitted all over with no pattern, NOT near-white, NOT cream, '
+      + 'NOT bright, NOT glossy, NOT striped, NOT lined, NOT hatched, '
+      + 'NOT diagonal lines, NOT ruled, NOT scaled',
+    upper_description: `a mass of dark clotted meat grown solid, ${ROT_DARK}`,
+    transition_description:
+      'a torn irregular edge of dark muscle dropping away, ragged and uneven, every '
+      + 'stretch of it different, NOT columns, NOT pillars, NOT rounded lumps, '
+      + 'NOT battlements, NOT a repeating scallop',
+    transition_size: 1,
+    mode: 'pro',
+    raggedness: 0.8,
+    spread_x: 0.5,
+    tile_size: { width: 32, height: 32 },
+    outline: 'lineless',
+    shading: 'detailed shading',
+    detail: 'highly detailed',
+    view: 'high top-down',
+  },
+  rot3_round: {
+    lower_description:
+      'a floor of dry dun membrane, MUTED mid-light greyed clay-pink, matte and '
+      + 'chalky, evenly mottled with no repeating mark, NOT near-white, NOT cream, '
+      + 'NOT bright, NOT striped, NOT lined, NOT hatched, NOT diagonal lines, NOT ruled',
+    upper_description: `a mass of dark clotted meat grown solid, ${ROT_DARK}`,
+    transition_description:
+      'a torn irregular edge of dark muscle dropping away, ragged and uneven, every '
+      + 'stretch of it different, NOT columns, NOT pillars, NOT rounded lumps, '
+      + 'NOT battlements, NOT a repeating scallop',
+    shape_style: 'round',
+    transition_size: 1,
+    enhance: false,
+    tile_size: { width: 32, height: 32 },
+    outline: 'lineless',
+    shading: 'detailed shading',
+    detail: 'highly detailed',
+    view: 'high top-down',
+  },
   rot_pro: {
     lower_description: `a floor of pale dry membrane and shed skin, ${ROT_LIGHT}`,
     upper_description: `a mass of dark clotted meat grown solid, ${ROT_DARK}`,

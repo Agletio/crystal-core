@@ -5412,7 +5412,7 @@ rule('SPLASH — every skill that hits ONE thing spills onto what stands by it')
     twins.map(({ sk }) => sk.name).join(', ')
   );
   for (const { sk, at } of [...rows].sort((a, b) => b.at.share - a.at.share)) {
-    line(`  ${sk.name.padEnd(17)} ${Math.round(at.share * 100)}% within ${at.radius} tiles`);
+    line(`  ${sk.name.padEnd(17)} ${Math.round(at.share * 100)}% within ${at.radius.toFixed(1)} tiles`);
   }
   // A WIDER ONE IS WORTH LESS PER BODY, or the table is a free lunch with a
   // row nobody would refuse.
@@ -5421,15 +5421,17 @@ rule('SPLASH — every skill that hits ONE thing spills onto what stands by it')
   check(
     widest.at.share < hardest.at.share && hardest.at.radius < widest.at.radius,
     `and the widest (${widest.sk.name}) pays for it: the hardest (${hardest.sk.name}) ` +
-      `reaches ${widest.at.radius - hardest.at.radius} tiles less`,
+      `reaches ${(widest.at.radius - hardest.at.radius).toFixed(1)} tiles less`,
     `${widest.sk.name} ${widest.at.share}/${widest.at.radius}, ` +
       `${hardest.sk.name} ${hardest.at.share}/${hardest.at.radius}`
   );
   // AND EVERY CARD SAYS ITS OWN: a figure a player cannot read is one nobody
   // balances a build around.
+  // Compared the way a CARD writes it: every one says one decimal, so a radius
+  // of 1 reads "1.0 tiles" and a bare `1` would match nothing.
   const mute = rows.filter(({ sk, at }) =>
     !sk.description.includes(`${Math.round(at.share * 100)}%`)
-    || !new RegExp(`${at.radius}\\s*tiles`).test(sk.description)
+    || !sk.description.includes(`${at.radius.toFixed(1)} tiles`)
     || !/Splash/.test(sk.description)
   );
   check(
