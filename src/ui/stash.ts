@@ -103,7 +103,7 @@ export function render(): void {
   }
 
   // The rule the slot counts cannot show: nothing acts on a stashed item.
-  $('stash-hint').textContent = 'Stored, not carried. Take one out to use it.';
+  $('stash-hint').textContent = 'Stored, not carried.';
 }
 
 /**

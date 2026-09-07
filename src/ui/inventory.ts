@@ -275,7 +275,7 @@ function renderCurrencies(): void {
     }
   }
   if (owned === 0) {
-    host.append(el('p', 'empty', 'No currency. It comes up out of a descent.'));
+    host.append(el('p', 'empty', 'No currency.'));
   }
 }
 
@@ -590,7 +590,7 @@ function renderMaterials(): void {
     }
   }
   if (owned === 0) {
-    host.append(el('p', 'empty', 'Nothing gathered. It comes up out of a descent.'));
+    host.append(el('p', 'empty', 'Nothing gathered.'));
   }
 }
 

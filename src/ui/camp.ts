@@ -176,7 +176,7 @@ function mountFolk(): void {
 function says(spot: Hotspot): string {
   if (spot.opens !== 'socket') return spot.says;
   const held = game.sockets[CRYSTAL_SLOTS[spot.slot ?? 0]?.id ?? ''];
-  return held ? `${held.name}. Click to take it back.` : 'An empty socket. Click to choose a crystal.';
+  return held ? `${held.name} — click to take it back.` : 'Click to choose a crystal.';
 }
 
 /** THE SOCKETS SHOW WHAT IS IN THEM, over the hollow the art drew. */

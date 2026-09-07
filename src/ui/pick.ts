@@ -194,8 +194,7 @@ function look(tradeId: string): void {
       'p',
       'picksay__cost',
       `${TRADE.maxPoints} points, ${TRADE.pointsPerGrant} at a time from level ` +
-        `${TRADE.firstAt} — a notable is always ${TRADE.pointsPerGrant} away, so ` +
-        'every pair finishes one and the last pair finishes a branch.'
+        `${TRADE.firstAt}. A notable is always ${TRADE.pointsPerGrant} away.`
     )
   );
 

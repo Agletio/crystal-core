@@ -318,7 +318,7 @@ found. Measured over 12 descents: metal 17, cloth 20, wood 15, fish 17.
 - [x] **THE ORE ART IS RE-ASKED.** *"I dont like how the ores and the fish
       look."* Landed in Phase 8: three base ores for every world, a unique
       node a world, and the fish is a drawn ripple.
-- [ ] **`node_carcass` AND `geode_amber` NO LONGER RETIRE.** They were dead
+- [x] **`node_carcass` AND `geode_amber` NO LONGER RETIRE.** They were dead
       data when hide and gem left the floor; the level builder offers every
       `PROP_ART` id as a placeable object, so they are a palette entry now.
       `geode_amber` is also a `style` image in `node.mts` and `chest.mts`, and a
@@ -959,14 +959,18 @@ is the strongest part of the idea. The feedback that shaped it:
       the socket screen was introduced with nothing teaching. Whether the
       campaign should be run with an empty wall instead is HIS CALL; it is one
       branch of `giftWaiting`.
-- [ ] **THE UI SAYS TOO MUCH, EVERYWHERE.** *"Really need to stop with the over
-      describing everything… it literally says the ilvl already. You do this
-      kinda dialogue all over the place. I really don't want to have to go back
-      and one by one point it out."* The rule is written down in `CLAUDE.md` —
-      a card says what is true and never why. The Fissure screen is cut (the
-      portal's card, the boss depth, the zone tabs, Deeper); every other screen
-      is not, and it is a copy pass over `src/ui/` with `shots` re-judged
-      after, not a side effect of the next change.
+- [x] **THE UI SAYS TOO MUCH, EVERYWHERE.** *"Really need to stop with the over
+      describing everything… it literally says the ilvl already."* The pass is
+      made over every screen in `src/ui/` and the two long lines in
+      `docs/index.html`: a second sentence saying where a thing comes from, an
+      explanation of how the screen works, and the mechanism behind a number are
+      all cut, and what is left on each is the facts a player acts on and the
+      click. The sheet keeps the ones that change a decision — a Block's cap, a
+      Dodge being traded for Armour, cast speed doing nothing for an attack —
+      and loses the ones that only restated the figure beside them. Two DEAD
+      lines went with it: the report's "you left holding it", which `keeps` has
+      made unreachable, and the bench's "until then a crystal is a tier". The
+      DEV menu is left alone; it is not a screen a player reads.
 - [ ] **HOW BIG SHOULD THE SKIP BE?** Two depths on the line buys a route to
       depth 10 of 12, which is his rule working as written — a build that can
       survive the rooms on the way has earned it. What is NOT known is whether

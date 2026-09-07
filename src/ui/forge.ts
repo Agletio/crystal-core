@@ -260,14 +260,13 @@ export function render(): void {
   if (rows.length === 0) {
     host.append(el('p', 'empty', all.length === 0
       ? 'Nothing here is made at an anvil.'
-      : makeableOnly ? 'Nothing here you can make yet. The ledger on each card says what is short.' : 'Nothing at that tier here.'));
+      : makeableOnly ? 'Nothing here you can make yet.' : 'Nothing at that tier here.'));
   }
 
   const made = all.filter((row) => whyNotCraft(game, row.recipe) === null).length;
   $('forge-count').textContent = `${made} of ${all.length} you can make`;
   $('forge-note').textContent =
-    'Materials decide what a piece IS. Every modifier on it is still the bench\'s, ' +
-    'and the level you work at decides how well it comes out.';
+    'A piece comes out of the anvil bare. Every modifier on it is the bench\'s.';
 }
 
 export function openForge(): void {

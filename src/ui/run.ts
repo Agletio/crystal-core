@@ -500,7 +500,7 @@ function renderMenu(): void {
 
   // The two things that shut the Fissure, and neither is a dead end.
   const why = bagsFull(game)
-    ? 'Your bags are full. Sell or stash some of it before you go back down.'
+    ? 'Your bags are full — sell or stash before you go down.'
     : weaponRefusal(game.character);
   const launcher = $('run-launch') as HTMLButtonElement;
   // Just ENTER: the rung is picked on the climb beside it and the crack is the
@@ -1125,9 +1125,7 @@ function renderResults(report: RunReport, run: RunState): void {
       el(
         'p',
         'resultcard__warn',
-        report.status === 'left'
-          ? 'You left holding it. A descent only pays if you finish it.'
-          : 'You died holding it. Nothing was banked.'
+        'You died holding it. Nothing was banked.'
       )
     );
   }
@@ -1642,7 +1640,7 @@ function syncDebuffs(): void {
         id: 'stun',
         icon: 'dbf_stun',
         name: 'Stunned',
-        says: 'Held where you stand. You cannot walk, and nothing you turn to will move you until it passes.',
+        says: 'Held where you stand — you cannot walk, and nothing moves you until it passes.',
         left: stun,
       });
     }

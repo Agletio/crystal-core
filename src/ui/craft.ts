@@ -265,7 +265,7 @@ function renderItem(): void {
         'empty',
         modCapacity(item) > 0
           ? 'No modifiers.'
-          : 'A level 1 crystal has no room. Levelling is the only thing that grants it.'
+          : 'No room until it levels.'
       )
     );
   }
@@ -409,9 +409,7 @@ function pickRow(item: Item, entry: ModEntry, level: number): HTMLButtonElement 
 export const crystalSlotId = (itemId: string): string => `bench-${itemId}`;
 
 /** Said in one place, because it is said twice: on a crystal, and under them. */
-const WHY_SHUT =
-  `The bench cannot reach a crystal until you hold all ${CRYSTAL_SLOTS.length}. ` +
-  'Until then a crystal is a tier and nothing else.';
+const WHY_SHUT = `The bench reaches a crystal once you hold all ${CRYSTAL_SLOTS.length}.`;
 
 /**
  * Every crystal you own, beside the bench. They are never carried, so the dock
@@ -455,7 +453,7 @@ function renderCrystals(): void {
   }
 
   if (all.length === 0) {
-    grid.append(el('p', 'worn__hint', 'None yet. The Lampwright brings the first.'));
+    grid.append(el('p', 'worn__hint', 'None yet.'));
   }
   host.append(grid);
 }

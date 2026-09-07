@@ -313,7 +313,7 @@ function render(): void {
 
   // Who you ARE is chosen once, so this screen is where one is WALKED.
   $('trade-placeholder').textContent = chosen
-    ? 'You chose this when you came down here, and it does not change.'
+    ? 'Chosen once, and it does not change.'
     : '';
 
   const open = picking || !chosen;

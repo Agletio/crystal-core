@@ -156,7 +156,7 @@ function renderSlots(): void {
 
   const takes = toolsOn(game.character).map((t) => MATERIAL_FAMILY_BY_ID[t.family]?.raw ?? t.family);
   $('sheet-toolnote').textContent = takes.length === 0
-    ? 'Nothing on you takes anything off the floor. The smith has one for you.'
+    ? 'No tool: nothing comes off the floor.'
     : `This lets you take ${takes.join(' and ')} — and nothing else.`;
 }
 
@@ -429,16 +429,15 @@ function renderStats(): void {
       key: 'block',
       value: `${Math.round(s.blockChance)}%`,
       why:
-        `A Blocked hit deals nothing at all, capped at ${DEFENCE.blockCap}%. It ` +
-        'comes off a shield in your off hand and does nothing against damage over time.',
+        `Stops the hit outright, capped at ${DEFENCE.blockCap}%. A shield's alone, ` +
+        'and never against damage over time.',
     },
     {
       key: 'dodge',
       value: `${Math.round(s.dodgeChance)}%`,
       why:
-        `A Dodged hit deals nothing at all, capped at ${DEFENCE.dodgeCap}%. It is ` +
-        'TRADED for your Armour rather than worn beside it, and does nothing ' +
-        'against damage over time.',
+        `Stops the hit outright, capped at ${DEFENCE.dodgeCap}%. Traded for your ` +
+        'Armour rather than worn beside it, and never against damage over time.',
     },
     { key: 'regen/sec', value: s.lifeRegen.toFixed(1) },
     { key: 'mana', value: round(s.maxMana) },
@@ -519,20 +518,16 @@ function mainRows(): StatRow[] {
       value: round(detail.perSecond),
       why:
         detail.seconds > 0
-          ? 'Sustained on one enemy, stacks included. Worth more against a pack.'
-          : 'Damage times rate, before resistance, armour and crit.',
+          ? 'Sustained on one enemy, stacks included.'
+          : 'Before resistance, armour and crit.',
     },
     { key: 'crit chance', value: `${Math.round(s.critChance)}%` },
     {
       key: 'crit damage',
       value: `×${(2 + s.critMultiplier / 100).toFixed(2)}`,
-      why: 'A crit doubles, plus this. Damage over time rolls it per tick.',
+      why: 'Damage over time rolls it per tick.',
     },
-    {
-      key: 'mana per use',
-      value: s.manaCost.toFixed(1),
-      why: 'The skill’s own cost, times what every node that changes what it does multiplies it by.',
-    },
+    { key: 'mana per use', value: s.manaCost.toFixed(1) },
     { key: 'reach', value: s.attackRange.toFixed(1), unit: 'tiles' },
   ];
 }

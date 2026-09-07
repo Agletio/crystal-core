@@ -161,7 +161,7 @@ export function render(): void {
     jobs.append(card);
   }
   if (found.length === 0) {
-    jobs.append(el('p', 'empty', 'Nobody to work them yet. Workers are found down the Fissure and come back with you.'));
+    jobs.append(el('p', 'empty', 'No workers yet. They are found down the Fissure.'));
   }
   $('work-slots').textContent = `${jobsIn(game).length}/${found.length} workers busy`;
 }

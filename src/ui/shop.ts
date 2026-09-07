@@ -257,7 +257,7 @@ function renderSell(): void {
   btn.classList.toggle('buy--armed', selling);
 
   $('shop-sell-hint').textContent = selling
-    ? 'Every piece you click is sold. It stays on the counter below until twelve more are.'
+    ? 'Every piece you click is sold, and waits on the counter until twelve more are.'
     : 'Any one piece: hold or right-click it in the dock.';
 }
 
@@ -300,7 +300,7 @@ function renderSold(): void {
 
   const sold = game.sold ?? [];
   if (sold.length === 0) {
-    host.append(el('p', 'empty', 'Nothing sold yet. What you sell waits here.'));
+    host.append(el('p', 'empty', 'Nothing sold yet.'));
     return;
   }
 
@@ -362,8 +362,7 @@ function gambleHost(): void {
   const ilvl = shopIlvl(game.character.level);
   const cost = gamblePrice(ilvl);
   $('shop-gamble-hint').textContent =
-    `${cost} gold apiece, at item level ${ilvl}. Whatever it is, it is worth ` +
-    'less than it cost — that is what makes it a gamble.';
+    `${cost} gold apiece, at item level ${ilvl}. Worth less than it cost, however it rolls.`;
 
   // NEVER A TOOL: `KIND_VARIETY` is 0 for the two the SMITH is the only source
   // of, and a counter offering one would be a second source.
@@ -427,8 +426,7 @@ function rawHost(): void {
   host.replaceChildren();
   const level = game.character.level;
   const stock = MATERIALS.filter((def) => soldHere(def, level));
-  $('shop-raw-hint').textContent =
-    'A descent gathers about 21 of these for nothing. This is for the two you are short of.';
+  $('shop-raw-hint').textContent = 'A descent gathers about 21 of these for nothing.';
 
   for (const def of stock) {
     const cost = materialPrice(def);

@@ -188,7 +188,7 @@ export function render(): void {
   const all = rows();
   for (const row of all) host.append(renderRow(row));
   if (all.length === 0) {
-    host.append(el('p', 'empty', 'None yet. Clear a descent and the Lampwright will find you.'));
+    host.append(el('p', 'empty', 'None yet. The Lampwright brings the first.'));
   }
 
   // THE CAMPAIGN'S three zones until it is paid for, and the LADDER after —

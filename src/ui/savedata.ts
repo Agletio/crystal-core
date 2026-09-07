@@ -58,7 +58,7 @@ async function loadSlot(slot: Slot): Promise<void> {
   if (!who) return;
   const yes = await ask({
     title: `Play ${who.name}?`,
-    text: 'The game you are in keeps playing where it is. You come back to it by selecting it here.',
+    text: 'The game you are in keeps playing where it is.',
     confirm: 'Play',
   });
   if (!yes) return;
@@ -180,8 +180,8 @@ function render(): void {
       el(
         'p',
         'ask__text',
-        'Nothing is being saved — this browser blocks storage, usually a ' +
-          'private window. Download a backup before you close the tab.'
+        'Nothing is being saved — this browser blocks storage. Download a ' +
+          'backup before you close the tab.'
       )
     );
     return;
@@ -192,8 +192,7 @@ function render(): void {
       'p',
       'ask__text',
       'Three games, saved to this browser and nowhere else. The one you are ' +
-        'playing writes itself every few seconds; select a slot, then Play ' +
-        'now, Save here or Delete act on it.'
+        'playing writes itself every few seconds.'
     )
   );
 

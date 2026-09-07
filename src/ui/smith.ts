@@ -132,7 +132,7 @@ function render(): void {
     ? 'One of them. The other three he will sell you.'
     : doing === 'shop'
       ? `Every tool is ${TOOL_PRICE} gold. What separates them is which family they open.`
-      : 'He works the tool you are carrying, and a level is what opens the next one.';
+      : 'He works the tool you are carrying. A level opens the next rung.';
   const host = $('smith-list');
   host.replaceChildren();
   for (const tool of TOOLS) host.append(card(tool));

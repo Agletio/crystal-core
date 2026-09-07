@@ -320,7 +320,7 @@ function render(): void {
     `${spent}/${earned} points spent · ${TRIAL_POINTS_MAX} to earn · ${trialNodes().length} nodes`;
   $('trials-note').textContent =
     `${CAMPAIGN_REWARD.points} points for finishing the climb; every one after that ` +
-    'is ground out of the Ledger. Most nodes make a descent worse, and worse is what pays.';
+    'is ground out of the Ledger.';
 
   $('trials-webwrap').hidden = false;
   renderLadder();
