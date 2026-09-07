@@ -67,6 +67,13 @@ for (const name of [
 /** Which zone floor a patch set is laid on, for the gain measured at emit. */
 const SITS_ON: Record<string, string> = {
   fissure_pool: 'lit_round',
+  // A SHELF IS TONED TO ITS FLOOR TOO, and for the same reason a pool is:
+  // toned only by RECIPE it is the same numbers over a DIFFERENT raw sheet,
+  // which came out grey against warm sand and read as another material. Only
+  // the zones that step DOWN belong here — their key-40 upper IS the map's
+  // floor, which is what the gain is measured against.
+  fissure_shelf: 'lit_round',
+  cavern_shelf: 'cavern_round',
   rot_blood: 'rot2_ragged',
   cavern_pool: 'cavern_round',
   seam_lava: 'seam_pro',
