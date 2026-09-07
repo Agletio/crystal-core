@@ -138,7 +138,13 @@ chamber up over 24 seeds and 6 descents and proves reachability, determinism
 and termination. **`RAISE` STILL SHIPS AT ZERO** — the user has not judged the
 shelf on a floor yet.
 
-- [ ] **THE USER JUDGES THE SHELF.** `SHELVES=1 npm run peek -- out.png 4` or
+- [ ] **THE USER JUDGES THE SHELF.** SHOWN, at last: he could not find one
+      because `RAISE` ships at 0, so it has to be forced. `SHELVES=1 node
+      tools/descent-peek.mjs out.png 4` and the same at zoom 9 are in his hands
+      (`shelf_a.png`, `shelf_close.png`) — the shelf works, and what there is to
+      judge is that it draws as a PALER, GREYER slab than the sand rather than
+      the same sand a step up, with ladder-like stair tiles.
+      ~~THE ASK:~~ `SHELVES=1 npm run peek -- out.png 4` or
       the dev kit's toggle. What to look at: the south face reads as a cliff;
       the north, east and west edges are a THIN DARK LINE only, which is the set
       as generated — if that is too little, the answer is a runtime shadow band
@@ -761,6 +767,10 @@ ours** — verify each against the code before spending anything.
       body's own span (a beetle and a Gaunt wore the same 0.7 tiles), and a
       dark plate always at full strength with the fill inset inside it.
 - [ ] **THE ROCK FACE IS A ROW OF IDENTICAL MERLONS, AND PAST IT IS A VOID.**
+      For THE ROT this is the same job as its floor below and the candidates
+      fix it — the face is asked as one torn irregular edge. The other three
+      worlds still wear it.
+      ~~THE COMPLAINT:~~
       *"One rounded column per cell, so every straight wall is a row of
       battlements and every chamber is a fort seen from above"*; *"past the
       two-row lip there is flat black, so the map is an island in a void rather
@@ -777,6 +787,27 @@ ours** — verify each against the code before spending anything.
       *"A 45 degree hatch at identical pitch and identical phase on every cell
       over near-white cream, so a forty-tile chamber is ruled notepaper and the
       floor is brighter than any hero or monster standing on it."* (`rot-z4.png`)
+      **TAKEN, at the user's word** — *"lets redo the rots floor and walls using
+      the art critics to fine tune"* — and the merlon fault above is the same
+      job, since one set draws both. **THE ALLOWANCE IS BACK**: the note saying
+      it refills 2026-09-13 was stale and the asks went through.
+      SEVEN CANDIDATES ASKED, in two rounds. Round two asked the floor MID-TONE
+      and that was MY error: this file's own measured rule is a LIGHT floor
+      under near-black rock, or the map reads inside out. `rot2_ash` came back
+      as brown STONE MASONRY (the noun pulled it, and the Rot may not say
+      stone); `rot2_sinew` put the columns back as vertical striations;
+      `rot2_damp` lost floor/rock separation. Round three keeps the floor LIGHT
+      and takes the BRIGHTNESS and the HATCH out instead, which is what the
+      critic actually complained of. `rot3_round` reintroduced the hatch.
+      **THE THREE THAT WORK are `rot3_dun`, `rot3_liver` and `rot2_ragged`**,
+      shown to the user beside what ships. **WAITING ON HIS PICK.**
+      **AND THE PICK COSTS FIVE MORE ASKS**: `rot_blood`, `rot_flesh`,
+      `rot_bone`, `rot_floor_veined` and `rot_shelf` all chain off
+      `FLOOR.rot.tile`, so a new floor leaves every pool, bone bed and shelf
+      edge drawn to meet the OLD pale one. The chosen set's own floor tile is
+      in its metadata at `base_tile_ids.lower` (`rot3_dun` is
+      `fcecf1c8-69f3-477f-8f7f-13236e7d203b`), so re-chaining is that id into
+      `FLOOR.rot.tile` and asking the five again.
 - [ ] **THE GEOMETER IS A DIFFERENT ARTIST IN THE SAME COLUMN.** All three.
       *"Pastel lavender hair, an airbrushed cheek and glossy pink lips beside
       four weathered, low-value, hard-cluster-shaded heads"*, and *"his tale
