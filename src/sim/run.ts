@@ -561,6 +561,9 @@ export class RunSim {
   /** MATERIALS OFF A BODY draw here: on the run's own stream they took a draw
    *  per kill and reshuffled every gear roll after it. */
   private readonly bodyRng = new Rng(104729);
+  /** PLANS draw here for the same reason: a budget of 0.05 spent a draw on the
+   *  run's own stream every kill, which moved every seed in the game. */
+  private readonly planRng = new Rng(15485863);
   private readonly queued: string[] = []; // presses waiting for the next tick
   private readonly options: RunOptions;
   private readonly skill: SkillDef;
@@ -3891,17 +3894,17 @@ export class RunSim {
     if (def) this.bankMaterial(def.id, this.bodyRng.int(GEM_DROP.each[0], GEM_DROP.each[1]));
   }
 
-  /** A CRAFTING PLAN, out of what this run's gates open and what you do not
-   *  hold. Nothing to carry: a full bag may not cost you one. */
+  /** A CRAFTING PLAN, out of what this run's gates open and what you lack. */
   private rollPlanDrop(): void {
     this.budgets();
-    if (!this.rng.chance(this.planLeft / this.bodiesLeft())) return;
+    if (this.planLeft <= 0) return; // a run with none spends no draw at all
+    if (!this.planRng.chance(this.planLeft / this.bodiesLeft())) return;
     const pool = PLANS.filter(
       (p) => opensHere(p.gate, this.set.power, this.set.theme)
         && !this.known.includes(p.id)
         && !this.state.loot.plans.includes(p.id)
     );
-    const found = this.rng.pick(pool);
+    const found = this.planRng.pick(pool);
     if (!found) return;
     this.planLeft--;
     this.state.loot.plans.push(found.id);
@@ -3940,15 +3943,14 @@ export class RunSim {
     // Off `yield` for the reason gear is: the budget rides run LENGTH.
     this.materialLeft = this.whole(BODY_DROP.perRun * this.set.yield);
     this.gemLeft = this.whole(GEM_DROP.perRun * this.set.yield);
-    // A PLAN rides the run rather than its length: a longer descent does not
-    // print more of them.
-    this.planLeft = this.whole(PLAN_DROP.perRun * this.set.bonus.plans);
+    // A PLAN rides the RUN, never its length: a longer descent pays no more.
+    this.planLeft = this.whole(PLAN_DROP.perRun * this.set.bonus.plans, this.planRng);
   }
 
-  private whole(budget: number): number {
+  private whole(budget: number, rng: Rng = this.rng): number {
     const floor = Math.floor(budget);
     const rest = budget - floor; // a WHOLE budget draws nothing: chance(0) spends one
-    return floor + (rest > 0 && this.rng.chance(rest) ? 1 : 0);
+    return floor + (rest > 0 && rng.chance(rest) ? 1 : 0);
   }
 
   private bodiesLeft(): number {

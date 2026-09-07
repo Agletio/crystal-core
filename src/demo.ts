@@ -12007,10 +12007,11 @@ rule('THE CLIMB — does a rung open, stay open, and get harder?');
     check(
       quiet.every(({ off }) =>
         off.bonus.gold > 1 || off.bonus.currency > 1 || off.bonus.gather > 1
-        || off.bonus.xp > 1 || off.bonus.rarity > 0),
+        || off.bonus.xp > 1 || off.bonus.rarity > 0 || off.bonus.plans > 1),
       'and every one of them pays something a plain descent does not',
       quiet.filter(({ off }) => off.bonus.gold === 1 && off.bonus.currency === 1
-        && off.bonus.gather === 1 && off.bonus.xp === 1 && off.bonus.rarity === 0)
+        && off.bonus.gather === 1 && off.bonus.xp === 1 && off.bonus.rarity === 0
+        && off.bonus.plans === 1)
         .map(({ room }) => room.name).join(', ')
     );
     // A ROOM LOW ON THE MAP IS A HARD FLOOR, with no depth written down.
