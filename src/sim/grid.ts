@@ -244,7 +244,7 @@ const CUT: Record<MapTheme, Cut> = {
  *  stamped over it is two floors at once. */
 export const ZONE: Partial<Record<MapTheme, string>> = {
   fissure: 'lit_round',
-  demonic: 'rot_round',
+  demonic: 'rot2_ragged', // the user's pick; the name records the ask it came from
   prismatic: 'cavern_round',
   seam: 'seam_pro',
 };
