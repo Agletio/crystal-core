@@ -13,7 +13,7 @@ import {
   SEAM_OF, SOUL_SLOTS, TALES, THEME_BY_ID,
 } from '../data';
 import { makeCrystal, makeSoul } from '../economy';
-import { socketItem, syncSouls, unsocket } from '../game/state';
+import { giveGift, socketItem, syncSouls, unsocket } from '../game/state';
 import type { MonsterFamily } from '../types';
 import { ladderCharacter } from '../sim/loadout';
 import { mainSkillId, skillProgress } from '../sim/character';
@@ -150,13 +150,15 @@ function render(): void {
   }
 
   // The HANDOVER panel is a schedule away and the schedule is real play: he
-  // owes a crystal once the skill you chose is at the level the opening names
-  // with every point spent. This walks the game there rather than opening it.
+  // owes a crystal on the SECOND PASS, with a soulstone in the wall and the
+  // skill you chose at the level the opening names with every point spent.
+  // This walks the game there rather than opening it.
   const owe = el('button', 'mini devbtn') as HTMLButtonElement;
   owe.id = 'dev-owe';
   owe.append(el('span', 'devbtn__name', 'Owe a crystal'));
   owe.append(
-    el('span', 'devbtn__what', `main skill to level ${INTRO.crystalSkillLevel}, every point spent`)
+    el('span', 'devbtn__what',
+      `a soulstone in, main skill to level ${INTRO.crystalSkillLevel}, every point spent`)
   );
   owe.onclick = () => {
     game.given = (game.given ?? []).filter((mark) => mark !== 'crystal');
@@ -164,9 +166,18 @@ function render(): void {
     const progress = skillProgress(game.character, id);
     progress.level = Math.max(progress.level, INTRO.crystalSkillLevel);
     for (const node of pathToNotable(id, progress.allocated)) progress.allocated.push(node.id);
+    // THE WALL IS THE SOURCE, so a stone is GIVEN and SOCKETED through the two
+    // seams the game itself uses; `syncSouls` derives the count back off it.
+    const slot = SOUL_SLOTS.find((s) => !game.sockets?.[s.id]);
+    if (slot) {
+      const stone = makeSoul();
+      giveGift(game, stone);
+      socketItem(game, stone, slot.id);
+      syncSouls(game);
+    }
     heal(game);
     hooks.refresh();
-    note('Dev: a crystal is owed at the next meeting.');
+    note('Dev: a soulstone is in the wall and a crystal is owed at the next meeting.');
     close();
   };
   rooms.append(owe);
