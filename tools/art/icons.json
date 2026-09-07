@@ -711,6 +711,26 @@
    "say": "a tight cluster of three small dark horned skulls packed together and filling the frame, one in front and two behind it, pale bone with deep black sockets. NOT one skull alone, NOT a helmet, NOT a body, NOT a scene."
   },
   {
+   "id": "bonus_plans",
+   "say": "a single fat bundle of rolled parchment tied round the middle with dark twine, lying at a slant and filling the frame, pale cream paper with hard dark edges. NOT a book, NOT a banner, NOT a torch, NOT a bone, NOT text, NOT a face."
+  },
+  {
+   "id": "plan_blacksmithing",
+   "say": "a single thick rolled scroll of grey oiled parchment lying at a slant and filling the frame, bound with a leather cord and a heavy iron seal on the cord. NOT a book, NOT a hammer, NOT a sword, NOT text, NOT a face."
+  },
+  {
+   "id": "plan_weaving",
+   "say": "a single flat square of cream cloth lying face on and filling the frame, a large threaded bone needle laid diagonally across it, a coil of dark thread in one corner. NOT hanging, NOT a flag, NOT a banner, NOT a rod, NOT a shirt, NOT text, NOT a face."
+  },
+  {
+   "id": "plan_leatherworking",
+   "say": "a single stiff sheet of dark tan hide filling the frame, its top edge curled tightly over on itself, deep scored cut lines fanning across the face. NOT a frame, NOT a border, NOT rods, NOT a scroll, NOT an animal, NOT text, NOT a face."
+  },
+  {
+   "id": "plan_jewelling",
+   "say": "a single flat dark slate tablet filling the frame, one corner chipped away, fine pale engraved circles cut into its face. NOT a gem, NOT a ring, NOT a coin, NOT a book, NOT text, NOT a face."
+  },
+  {
    "id": "portal_ring",
    "say": "a single round swirling portal seen face on and filling the frame, a thick ring of cold pale blue light with a spiral of paler light turning inside it and a dark hollow centre, hard edged and chunky. NOT a door, NOT a frame, NOT an arch, NOT a gate, NOT a mirror, NOT stone, NOT a creature, NOT a face, NOT text."
   },

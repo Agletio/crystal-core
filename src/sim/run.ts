@@ -47,6 +47,9 @@ import type { RunWhere } from '../ladder';
 import {
   AURA,
   AURA_BY_ID,
+  MOVE,
+  PLANS,
+  PLAN_DROP,
   BOSS_BY_ID,
   BOSS_FIGHT,
   BOSS_KEYS,
@@ -466,6 +469,7 @@ export interface RunLoot {
   /** Currency id → amount. Fractional; rounds when banked. */
   currency: Record<string, number>;
   items: Item[];
+  plans: string[]; // CRAFTING PLANS found; learned on the way up, never carried
 }
 
 export interface RunState {
@@ -621,6 +625,7 @@ export class RunSim {
   private readonly grip: Grip;
   /** WHAT HE IS CARRYING TO GATHER WITH, read once: nothing swaps mid-run. */
   private readonly tools: string[];
+  private readonly known: string[]; // plans held: one nobody may find twice
   private readonly toolMore: (family: string) => number;
   /** Fixed at spawn: what a passive's own damage is scaled by, per type. */
   private readonly passiveScale: Record<string, number>;
@@ -653,6 +658,7 @@ export class RunSim {
   private gearLeft = 0;
   private materialLeft = 0;
   private gemLeft = 0;
+  private planLeft = 0;
   private nextDropped = 0; // which dropped family is next, so the two alternate
   private currencyLeft = 0;
   private budgeted = false;
@@ -674,6 +680,7 @@ export class RunSim {
     this.grants = treeGrants(character);
     this.grip = gripOf(character);
     this.tools = gatherableFamilies(character);
+    this.known = character.plans ?? [];
     this.toolMore = (family) => toolMore(character, family);
     this.level = character.level;
     this.mover = SKILL_BY_ID[equippedSkill(character, 'movement') ?? ''] ?? null;
@@ -767,7 +774,7 @@ export class RunSim {
       totalMonsters: monsters.length,
       xpGained: 0,
       finale: null,
-      loot: { currency: {}, items: [] },
+      loot: { currency: {}, items: [], plans: [] },
       set: this.set,
       dryCasts: 0,
       blinks: 0,
@@ -2553,7 +2560,10 @@ export class RunSim {
     hero.y = landing.y;
     hero.path = hero.path.slice(steps);
     this.state.blinks++;
-    const sooner = (this.grants.moveCooldown as number) ?? 1;
+    // The grant and the worn line multiply: one is a notable, the other a
+    // rolled stat, and neither may quietly replace the other.
+    const sooner = ((this.grants.moveCooldown as number) ?? 1)
+      * Math.max(MOVE.leastCooldown, 1 - hero.stats.cooldown / 100);
     this.moveIn = ((skill.params?.cooldown as number) ?? 1) * sooner;
 
     if (jumps) this.land(hero); // a step arrives; only a jump LANDS
@@ -3837,6 +3847,7 @@ export class RunSim {
     this.rollGearDrop();
     this.rollMaterialDrop();
     this.rollGemDrop();
+    this.rollPlanDrop();
     this.rollRelicDrop();
     this.rollKeyDrop();
     this.burstCurse(victim);
@@ -3880,6 +3891,22 @@ export class RunSim {
     if (def) this.bankMaterial(def.id, this.bodyRng.int(GEM_DROP.each[0], GEM_DROP.each[1]));
   }
 
+  /** A CRAFTING PLAN, out of what this run's gates open and what you do not
+   *  hold. Nothing to carry: a full bag may not cost you one. */
+  private rollPlanDrop(): void {
+    this.budgets();
+    if (!this.rng.chance(this.planLeft / this.bodiesLeft())) return;
+    const pool = PLANS.filter(
+      (p) => opensHere(p.gate, this.set.power, this.set.theme)
+        && !this.known.includes(p.id)
+        && !this.state.loot.plans.includes(p.id)
+    );
+    const found = this.rng.pick(pool);
+    if (!found) return;
+    this.planLeft--;
+    this.state.loot.plans.push(found.id);
+  }
+
   /** Item level comes off the power band and the base's tier off that, so a
    *  weak set cannot hand you a six-modifier base however lucky you get. */
   private rollGearDrop(): void {
@@ -3913,6 +3940,9 @@ export class RunSim {
     // Off `yield` for the reason gear is: the budget rides run LENGTH.
     this.materialLeft = this.whole(BODY_DROP.perRun * this.set.yield);
     this.gemLeft = this.whole(GEM_DROP.perRun * this.set.yield);
+    // A PLAN rides the run rather than its length: a longer descent does not
+    // print more of them.
+    this.planLeft = this.whole(PLAN_DROP.perRun * this.set.bonus.plans);
   }
 
   private whole(budget: number): number {

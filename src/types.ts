@@ -105,13 +105,9 @@ export type CurrencyClass = 'basic' | 'uncommon' | 'rare' | 'exotic';
 
 /** A wall, never a weight: below it the thing does not exist. */
 export interface DropGate {
-  /** Run power below which this never drops. */
-  minPower?: number;
-  /** The one world it comes out of. */
-  zone?: MapTheme;
-  /** WHERE it can come from; absent means both. Nothing is authored behind it
-   *  yet: the seam is here so a counter-only piece is a table row. */
-  source?: 'floor' | 'gamble';
+  minPower?: number; // run power below which this never drops
+  zone?: MapTheme; // the one world it comes out of
+  source?: 'floor' | 'gamble'; // absent means both; nothing is authored behind it
 }
 
 /** A fixed identity: lines nothing can touch and a switch out of `GRANTS`.
@@ -282,7 +278,22 @@ export interface BranchBonusDef {
   rarity?: number; // percent, ADDED like every other rarity
   gather?: number;
   xp?: number;
+  plans?: number; // on the CRAFTING PLAN budget
   packSize?: number; // percent INCREASED, through the mod seam
+}
+
+/**
+ * A CRAFTING PLAN: the third gate at the bench, on the lines a shard and a
+ * level alone must not buy. *"The cool or really powerful stats should be
+ * locked behind crafting plans… you have to find these in higher level zones
+ * and they can be locked in the side areas."*
+ */
+export interface PlanDef {
+  id: string;
+  name: string; // the SUBJECT; the profession supplies the word in front of it
+  mods: string[]; // `ModDef` ids it opens at the bench
+  profession: string; // whose word it is said in, and whose page it sits under
+  gate: DropGate; // a wall, never a weight
 }
 
 /** A monster that makes its neighbours worse. One family adds a fixed amount,

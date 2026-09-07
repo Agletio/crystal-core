@@ -191,9 +191,11 @@ export interface RunBonus {
   rarity: number; // percent, ADDED
   gather: number;
   xp: number;
+  plans: number;
 }
 
-export const NO_BONUS: RunBonus = { gold: 1, currency: 1, rarity: 0, gather: 1, xp: 1 };
+export const NO_BONUS: RunBonus =
+  { gold: 1, currency: 1, rarity: 0, gather: 1, xp: 1, plans: 1 };
 
 export function branchBonus(at?: RunWhere | null): RunBonus {
   const pays = BRANCH_BONUS_BY_ID[(at ? sideAt(at) : null)?.bonus ?? ''];
@@ -204,6 +206,7 @@ export function branchBonus(at?: RunWhere | null): RunBonus {
     rarity: pays.rarity ?? 0,
     gather: pays.gather ?? 1,
     xp: pays.xp ?? 1,
+    plans: pays.plans ?? 1,
   };
 }
 

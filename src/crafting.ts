@@ -9,6 +9,8 @@ import { Rng } from './rng';
 import {
   GEAR_BASE_BY_ID,
   MOD_BY_ID,
+  planFor,
+  planName,
   SELECT,
   SHARDS,
   SHARD_BY_ID,
@@ -89,7 +91,8 @@ export function whyNotChoose(
   item: Item,
   entry: ModEntry,
   level: number,
-  held: (shard: string) => number
+  held: (shard: string) => number,
+  plans: string[] = []
 ): string | null {
   if (item.kind !== 'gear') return 'Only gear takes a chosen line.';
   if (!hasOpenSlot(item, entry.slot)) return `No open ${entry.slot} slot.`;
@@ -105,6 +108,9 @@ export function whyNotChoose(
       ? `${allowed} chosen lines is the most any piece holds.`
       : `Level ${next} needed for chosen line ${allowed + 1}, you are ${level}.`;
   }
+  // THE THIRD GATE, and the only one nothing you own can buy: a plan is found.
+  const plan = planFor(entry.defId);
+  if (plan && !plans.includes(plan.id)) return `${planName(plan)} needed.`;
   const want = levelFor(entry);
   if (level < want) return `Level ${want} needed for tier ${entry.tier}, you are ${level}.`;
   const { shard, n } = costOf(entry);

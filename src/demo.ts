@@ -50,8 +50,14 @@ import {
   AURA_BY_ID,
   CURRENCIES,
   CURRENCY_BY_ID,
+  BRANCH_BONUSES,
   GEAR_MODS,
   MOD_BY_ID,
+  PLANS,
+  PLAN_BY_ID,
+  PLAN_DROP,
+  planFor,
+  planName,
   PROFESSION_BY_ID,
   SELECT,
   SHARDS,
@@ -175,6 +181,7 @@ import {
   soulsIn, takeRung,
   touching, zoneOpen,
 } from './ladder';
+import type { RunWhere } from './ladder';
 import { canDualWield, gatherableFamilies, toolIn, toolMore, toolRung } from './sim/character';
 import { unlocksFor } from './professions';
 import { seamSocketed } from './sim/crystal';
@@ -596,7 +603,7 @@ function pick(item: Item, defId: string, tier: number, level: number, purse: Rec
     line(`  ✗ no ${defId} tier ${tier}`);
     return item;
   }
-  const why = whyNotChoose(item, entry, level, (id) => purse[id] ?? Infinity);
+  const why = whyNotChoose(item, entry, level, (id) => purse[id] ?? Infinity, PLANS.map((p) => p.id));
   if (why) {
     line(`  ✗ ${entry.name} T${tier}: ${why}`);
     return item;
@@ -744,11 +751,12 @@ rule('A LEVEL BUYS LINES AND TIERS, AND NOTHING ELSE');
   const rich: Record<string, number> = Object.fromEntries(
     SHARD_FAMILIES.map((f) => [f.id, 10000])
   );
+  const allPlans = PLANS.map((p) => p.id);
   const piece = () => makeGear('bulwark_body_t3', 70);
   const offer = choices(piece(), pool);
 
   // UNDER the first level nothing may be chosen however many shards you hold.
-  const early = offer.filter((e) => whyNotChoose(piece(), e, SELECT.linesAt[0] - 1, (id) => rich[id]) === null);
+  const early = offer.filter((e) => whyNotChoose(piece(), e, SELECT.linesAt[0] - 1, (id) => rich[id], allPlans) === null);
   check(
     early.length === 0,
     `at level ${SELECT.linesAt[0] - 1} no line can be chosen, at any price`,
@@ -757,7 +765,7 @@ rule('A LEVEL BUYS LINES AND TIERS, AND NOTHING ELSE');
 
   // And at the top, every tier is reachable — a level that buys nothing at 99
   // is a ladder with a rung nobody can stand on.
-  const top = offer.filter((e) => whyNotChoose(piece(), e, 99, (id) => rich[id]) === null);
+  const top = offer.filter((e) => whyNotChoose(piece(), e, 99, (id) => rich[id], allPlans) === null);
   const ranks = new Set(top.map((e) => tierRank(e)));
   check(
     ranks.size === Math.min(SHARDS.perTier.length, new Set(offer.map(tierRank)).size),
@@ -780,6 +788,110 @@ rule('A LEVEL BUYS LINES AND TIERS, AND NOTHING ELSE');
     lo99 > lo1 && hi99 >= hi1 && hi99 - lo99 <= hi1 - lo1,
     'a level slides the window up and narrows it',
     `${lo1}-${hi1} at 1 against ${lo99}-${hi99} at 99`
+  );
+}
+
+// ===========================================================================
+rule('CRAFTING PLANS — is the third gate one no level and no shard can open?');
+
+// *"The cool or really powerful stats should be locked behind crafting plans.
+// You have to find these in higher level zones and they can be locked in the
+// side areas."* A plan is FOUND, and it gates the BENCH alone.
+{
+  const orphan = PLANS.flatMap((p) => p.mods.filter((m) => !MOD_BY_ID[m]));
+  check(orphan.length === 0, `all ${PLANS.length} plans name modifiers that exist`, orphan.join(', '));
+
+  const twice = PLANS.flatMap((p) => p.mods).filter((m, i, all) => all.indexOf(m) !== i);
+  check(twice.length === 0, 'and no modifier is gated by two of them', twice.join(', '));
+
+  for (const plan of PLANS) {
+    gauge(
+      `${planName(plan).padEnd(30)} opens ${plan.mods.map((m) => MOD_BY_ID[m]?.name ?? m).join(', ')}` +
+        ` · ${plan.gate.zone ?? 'any world'} at power ${plan.gate.minPower ?? 0}`
+    );
+  }
+
+  // NOTHING YOU OWN OPENS ONE. Level 99 with ten thousand of every shard still
+  // refuses, and says the plan's own name rather than a number.
+  const rich: Record<string, number> = Object.fromEntries(
+    SHARD_FAMILIES.map((f) => [f.id, 10000])
+  );
+  const piece = makeGear('bulwark_body_t3', 70);
+  const gated = choices(piece, pool).filter((e) => planFor(e.defId));
+  check(gated.length > 0, 'the bench offers a plan-gated line at all', String(gated.length));
+  const bought = gated.filter((e) => whyNotChoose(piece, e, 99, (id) => rich[id], []) === null);
+  check(
+    bought.length === 0,
+    'and at level 99 with every shard there is, not one of them can be taken',
+    bought.map((e) => e.name).join(', ')
+  );
+  const says = whyNotChoose(piece, gated[0], 99, (id) => rich[id], []);
+  check(
+    says !== null && says.includes(planName(planFor(gated[0].defId)!)),
+    `and the refusal names the plan — ${says}`,
+    String(says)
+  );
+  const opened = gated.filter(
+    (e) => whyNotChoose(piece, e, 99, (id) => rich[id], PLANS.map((p) => p.id)) === null
+  );
+  check(
+    opened.length === gated.length,
+    'and holding it opens every one of them',
+    `${opened.length} of ${gated.length}`
+  );
+
+  // A PLAN GATES THE BENCH AND NEVER THE FLOOR — nothing is ever prevented, so
+  // a piece can still DROP wearing the line you have no plan for.
+  let dropped = 0;
+  for (let i = 0; i < 600 && dropped === 0; i++) {
+    const rolled = rollGear('bulwark_body_t3', 80, 6, pool, new Rng(9000 + i));
+    if (rolled.mods.some((m) => planFor(m.defId))) dropped++;
+  }
+  check(dropped > 0, 'and the FLOOR still rolls one, plan or no plan', 'no drop ever carried one');
+
+  // FOUND, and only where its gate opens. Played out over real descents,
+  // because a table read cannot see the pool being filtered before the pick.
+  {
+    const learn = (
+      crystals: Item[], seeds: number, held: string[] = [], where?: RunWhere
+    ): string[] => {
+      const out = new Set<string>();
+      const hero = { ...ceiling(DROP_BANDS.length - 1), plans: held };
+      for (let i = 0; i < seeds; i++) {
+        const sim = new RunSim(crystals, hero, new Rng(6100 + i), { where });
+        for (const id of runToCompletion(sim, 900).loot.plans) out.add(id);
+      }
+      return [...out];
+    };
+    const shallow = learn([makeCrystal(1), makeCrystal(1), makeCrystal(1), makeCrystal(1)], 20);
+    const early = shallow.filter((id) => (PLAN_BY_ID[id]?.gate.minPower ?? 0) > 1);
+    check(
+      early.length === 0,
+      'a bare Fissure descent never turns up a plan gated above it',
+      early.join(', ')
+    );
+    // A DRAFTING ROOM at the bottom of the Rot: the one place a plan is likely
+    // rather than rare, which is the whole of what the pip on the map promises.
+    const drafting: RunWhere = { zone: 2, rung: LADDER.zones[2].rungs - 1, side: 'drain' };
+    // TEN SEEDS, not forty: at 0.30 a run this is three finds expected, and a
+    // descent at the deep end is 850 bodies — the seed count is the whole cost
+    // of this section.
+    const deep = learn(deepestSet(new Rng(4242), pool), 10, [], drafting);
+    gauge(`${deep.length} of the ${PLANS.length} plans turned up over 10 Drafting Room descents`);
+    check(deep.length > 0, 'and a Drafting Room does turn one up', 'none in 10 descents');
+    // NEVER TWICE: what you hold is out of the pool before the pick.
+    const again = learn(deepestSet(new Rng(4242), pool), 10, PLANS.map((p) => p.id), drafting);
+    check(again.length === 0, 'and never one you already hold', again.join(', '));
+  }
+
+  // THE DRAFTING ROOM is what a side room CONTAINS, said on its own pip.
+  const room = BRANCH_BONUSES.find((b) => (b.plans ?? 1) > 1);
+  check(!!room, 'a branch bonus pays in plans at all', 'nothing carries one');
+  const rooms = LADDER.zones.flatMap((z) => (z.sides ?? []).filter((r) => r.bonus === room?.id));
+  check(
+    rooms.length > 0 && LADDER.zones.every((z) => (z.sides ?? []).some((r) => r.bonus === room?.id)),
+    `and ${rooms.length} rooms across every zone are one`,
+    rooms.map((r) => r.name).join(', ')
   );
 }
 

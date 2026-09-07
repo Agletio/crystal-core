@@ -137,7 +137,7 @@ function choose(entry: ModEntry): void {
   const item = craftItem(game);
   if (!item) return;
   const level = benchProfession(item)?.level ?? 0;
-  const why = whyNotChoose(item, entry, level, (id) => balance(game.wallet, id));
+  const why = whyNotChoose(item, entry, level, (id) => balance(game.wallet, id), game.character.plans ?? []);
   if (why) {
     note(why, 'fail');
     return;
@@ -359,7 +359,7 @@ function renderPicks(item: Item): void {
 }
 
 function pickRow(item: Item, entry: ModEntry, level: number): HTMLButtonElement {
-  const why = whyNotChoose(item, entry, level, (id) => balance(game.wallet, id));
+  const why = whyNotChoose(item, entry, level, (id) => balance(game.wallet, id), game.character.plans ?? []);
   const { shard, n } = costOf(entry);
   const held = shard ? balance(game.wallet, shard) : 0;
 

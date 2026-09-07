@@ -4,6 +4,7 @@ import type {
   SkillSlotDef,
   CurrencyClass,
   CurrencyDef,
+  PlanDef,
   EquipSlotDef,
   GearBase,
   ModDef,
@@ -975,6 +976,10 @@ export const BRANCH_BONUSES: BranchBonusDef[] = [
   { id: 'richseam', name: 'The Rich Seam', icon: 'bonus_material',
     say: '150% more material gathered', gather: 2.5 },
   { id: 'schooling', name: 'The Schooling', icon: 'bonus_xp', say: '80% more experience', xp: 1.8 },
+  // WHAT A ROOM CONTAINS, said on the pip — *"you can mark what the side area
+  // contains so you can say contains x plans."*
+  { id: 'blueprint', name: 'The Drafting Room', icon: 'bonus_plans',
+    say: '500% more crafting plans', plans: 6 },
   // THE ONE THAT COSTS SOMETHING: more bodies is more danger, and danger is
   // weighed, so this pays across the board rather than in one currency.
   {
@@ -1391,6 +1396,42 @@ export const GEAR_SECONDARY_MODS: ModDef[] = [
 // Only boots and amulets have these slots — three on the whole character —
 // which is what stops universally-useful mods from being free power.
 export const GEAR_UTILITY_MODS: ModDef[] = [
+  // THE THREE A PLAN GATES, and the only lines a shard and a level alone do
+  // not buy. Every one of them is a whole build's worth on its own: a mover
+  // off cooldown, a Burst that reaches a second pack, a level on the skill.
+  {
+    id: 'cooldown',
+    slot: 'utility',
+    name: 'of Recovery',
+    appliesTo: ['gear'],
+    tags: ['speed', 'clear'],
+    tiers: [
+      { ilvl: 60, weight: 90, stats: [{ stat: 'cooldown', form: 'inc', range: [-26, -18] }] },
+      { ilvl: 30, weight: 200, stats: [{ stat: 'cooldown', form: 'inc', range: [-16, -9] }] },
+    ],
+  },
+  {
+    id: 'attack_level',
+    slot: 'offence',
+    name: 'of the Duellist',
+    appliesTo: ['gear'],
+    tags: ['damage'],
+    tiers: [
+      { ilvl: 70, weight: 30, stats: [{ stat: 'skillLevel', form: 'flat', range: [2, 2], tags: ['attack'] }] },
+      { ilvl: 40, weight: 90, stats: [{ stat: 'skillLevel', form: 'flat', range: [1, 1], tags: ['attack'] }] },
+    ],
+  },
+  {
+    id: 'spell_level',
+    slot: 'offence',
+    name: 'of the Adept',
+    appliesTo: ['gear'],
+    tags: ['damage'],
+    tiers: [
+      { ilvl: 70, weight: 30, stats: [{ stat: 'skillLevel', form: 'flat', range: [2, 2], tags: ['spell'] }] },
+      { ilvl: 40, weight: 90, stats: [{ stat: 'skillLevel', form: 'flat', range: [1, 1], tags: ['spell'] }] },
+    ],
+  },
   {
     id: 'move_speed',
     slot: 'utility',
@@ -1739,6 +1780,9 @@ export const STAT_POWER: Record<string, number> = {
   'blockChance:flat': 1.2,
   'rarity:inc': 0.2,
   'currencyFind:inc': 0.2,
+  // THE PLAN-GATED THREE, and a level on the skill is the dearest line there is.
+  'skillLevel:flat': 18,
+  'cooldown:inc': -0.6, // it rolls NEGATIVE, so the weight is too
   ...Object.fromEntries(DAMAGE_TYPES.map((t) => [`${t.id}Res:flat`, 0.5])),
   ...Object.fromEntries(DAMAGE_GROUPS.map((g) => [`${g}Res:flat`, 0.5])),
   ...Object.fromEntries(ATTRIBUTES.map((a) => [`${a.id}:flat`, 0.9])),
@@ -1951,6 +1995,83 @@ export const SHARDS = {
   /** What DISMANTLING a modifier hands back, as a share of what it cost. Under
    *  1 by law: craft, dismantle and craft again may never print shards. */
   refund: 0.4,
+};
+
+/**
+ * CRAFTING PLANS. A shard and a level buy every ordinary line; these three are
+ * the ones they do not, and a plan is the whole of what opens them — *"the cool
+ * or really powerful stats should be locked behind crafting plans."*
+ *
+ * A plan is FOUND, never bought, and learned the moment it drops. `gate` is the
+ * same wall a unique's is, so a plan does not exist in a run that cannot reach
+ * it, and `PLAN_DROP` is what a clear pays.
+ */
+export const PLAN_WORD: Record<string, string> = {
+  blacksmithing: "Blacksmith's Plan",
+  weaving: 'Weaving Pattern',
+  leatherworking: "Tanner's Cut",
+  jewelling: "Jeweller's Design",
+  cooking: 'Recipe',
+};
+
+export const PLANS: PlanDef[] = [
+  {
+    id: 'plan_reach',
+    name: 'Reach',
+    mods: ['aoe'],
+    profession: 'weaving',
+    gate: { minPower: 3 },
+  },
+  {
+    id: 'plan_recovery',
+    name: 'Recovery',
+    mods: ['cooldown'],
+    profession: 'leatherworking',
+    gate: { minPower: 4 },
+  },
+  {
+    id: 'plan_duellist',
+    name: 'The Duellist',
+    mods: ['attack_level'],
+    profession: 'blacksmithing',
+    gate: { minPower: 5, zone: 'demonic' },
+  },
+  {
+    id: 'plan_adept',
+    name: 'The Adept',
+    mods: ['spell_level'],
+    profession: 'jewelling',
+    gate: { minPower: 5, zone: 'prismatic' },
+  },
+];
+
+export const PLAN_BY_ID: Record<string, PlanDef> = Object.fromEntries(
+  PLANS.map((p) => [p.id, p])
+);
+
+/** Said the way its profession says it, so "weaving patterns" is true of the
+ *  screen as well as of the design. */
+export const planName = (plan: PlanDef): string =>
+  `${PLAN_WORD[plan.profession] ?? 'Plan'}: ${plan.name}`;
+
+/** Its picture is the PROFESSION's: every plan of one trade is one paper. */
+export const planIcon = (plan: PlanDef): string => `plan_${plan.profession}`;
+
+/** Which plan opens this modifier, or null for the ordinary ones. */
+export const PLAN_BY_MOD: Record<string, PlanDef> = Object.fromEntries(
+  PLANS.flatMap((p) => p.mods.map((m) => [m, p]))
+);
+
+export const planFor = (defId: string): PlanDef | null => PLAN_BY_MOD[defId] ?? null;
+
+/** The one COOLDOWN is the movement skill's, and the floor under what a build
+ *  may take off it: a mover with none is a second walk speed. */
+export const MOVE = { leastCooldown: 0.35 };
+
+export const PLAN_DROP = {
+  /** Plans a CLEAR pays, before a branch's own multiplier and only ever out of
+   *  what this run's gates open and you do not already hold. */
+  perRun: 0.05,
 };
 
 /**
@@ -2562,9 +2683,9 @@ export const LADDER = {
         { id: 'gullet', name: 'The Gullet', bonus: 'richseam', x: 44, y: 66 },
         { id: 'deeplevel', name: 'The Deep Level', bonus: 'schooling', x: 21, y: 74 },
         { id: 'deadend', name: 'The Dead End', bonus: 'swarm', x: 44, y: 78 },
-        { id: 'bottom', name: 'The Bottom', bonus: 'coinfall', x: 10, y: 87 },
+        { id: 'bottom', name: 'The Bottom', bonus: 'blueprint', x: 10, y: 87 },
         { id: 'footwall', name: 'The Footwall', bonus: 'sluice', x: 21, y: 87 },
-        { id: 'lastlevel', name: 'The Last Level', bonus: 'trove', x: 44, y: 88 },
+        { id: 'lastlevel', name: 'The Last Level', bonus: 'blueprint', x: 44, y: 88 },
       ],
       links: [
         { from: 'level', to: 'oldworks' },
@@ -2622,8 +2743,8 @@ export const LADDER = {
         { id: 'prismseam', name: 'The Prism Seam', bonus: 'schooling', x: 89, y: 43 },
         { id: 'splinter', name: 'The Splinter', bonus: 'swarm', x: 89, y: 64 },
         { id: 'threshold', name: 'The Threshold', bonus: 'coinfall', x: 93, y: 64 },
-        { id: 'sink', name: 'The Sink', bonus: 'sluice', x: 70, y: 92 },
-        { id: 'vault', name: 'The Vault', bonus: 'trove', x: 49, y: 91 },
+        { id: 'sink', name: 'The Sink', bonus: 'blueprint', x: 70, y: 92 },
+        { id: 'vault', name: 'The Vault', bonus: 'blueprint', x: 49, y: 91 },
         { id: 'silence', name: 'The Silence', bonus: 'richseam', x: 10, y: 67 },
         { id: 'farthreshold', name: 'The Far Threshold', bonus: 'schooling', x: 33, y: 73 },
         { id: 'deepfacet', name: 'The Deep Facet', bonus: 'coinfall', x: 9, y: 90 },
@@ -2679,8 +2800,8 @@ export const LADDER = {
         { id: 'cyst', name: 'The Cyst', bonus: 'coinfall', x: 8, y: 92 },
         { id: 'meatfold', name: 'The Meat Fold', bonus: 'sluice', x: 43, y: 75 },
         { id: 'heartrot', name: 'The Rotting Heart', bonus: 'swarm', x: 56, y: 78 },
-        { id: 'offal', name: 'The Offal Pit', bonus: 'richseam', x: 42, y: 93 },
-        { id: 'drain', name: 'The Drain', bonus: 'schooling', x: 58, y: 94 },
+        { id: 'offal', name: 'The Offal Pit', bonus: 'blueprint', x: 42, y: 93 },
+        { id: 'drain', name: 'The Drain', bonus: 'blueprint', x: 58, y: 94 },
       ],
       links: [
         { from: 'd3', to: 'nursery', path: [[20,22],[23,20],[26,16],[30,15]] },
@@ -4550,6 +4671,7 @@ export interface StartPreset {
   relics?: string[];
   materials?: number; // raw of EVERY one, so a station can be loaded without mining
   souls?: number; // soulstones held, unsocketed
+  plans?: boolean; // every CRAFTING PLAN learned
   /** Level every profession starts at. Mid-ladder in the kit, so the bench
    *  shows both the lines a level buys and the ones it does not. */
   professions?: number;
@@ -4588,6 +4710,7 @@ export const START_PRESETS: Record<'fresh' | 'dev', StartPreset> = {
     materials: 24,
     souls: SOULS.max, // both, so the souled climb is one socket away
     professions: 55,
+    plans: true, // every one, so the bench's third gate is one the kit can see past
     equipped: true,
   },
 };
@@ -4644,6 +4767,9 @@ export const LEVELLING = {
   lifePerLevel: 14,
   /** PERCENT of the skill's own base per level, so skills stay in proportion. */
   damagePerLevel: 2.2,
+  /** PERCENT more of the skill's base per BOUGHT level, which multiplies
+   *  before every increase — the rarest line there is. */
+  perSkillLevel: 12,
   /** Points a level hands you to put into ATTRIBUTES, spent on the sheet. */
   attributePointsPerLevel: 3,
   /** XP from one COMMON monster in the bare Fissure. */

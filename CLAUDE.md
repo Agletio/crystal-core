@@ -870,6 +870,31 @@ shards at the bare Fissure and 38.0 at the deep end, which for the family
 everybody wants is a worst-tier line in 3 clears at the bottom and 1 at the top,
 a middle one in 27 against 5, and the best in 261 against 50.
 
+**A PLAN IS THE THIRD GATE, AND NOTHING YOU OWN OPENS ONE.** *"The cool or
+really powerful stats should be locked behind crafting plans. Blacksmithing
+plans, weaving patterns etc. You have to find these in higher level zones and
+they can be locked in the side areas."* `PLANS` in `src/data.ts` and
+`planFor(defId)`: three lines are behind one — **Area of Effect**, **reduced
+Movement Skill Cooldown** and **+Level of Attack or Spell Skills** — and a
+level 99 bench holding ten thousand of every shard still refuses each of them
+by name. `Character.plans` is what is held, per character, and a plan is never
+unlearned. **IT GATES THE BENCH AND NEVER THE FLOOR**: the same lines still
+roll on a drop, because nothing is ever prevented — what a plan buys is
+CHOOSING one. **FOUND, NEVER BOUGHT, AND LEARNED WHERE IT FALLS**: no item, no
+click, so a full bag can never cost you the rarest thing on the floor.
+`PLAN_DROP.perRun` is 0.05, out of what this run's gates open and what you do
+not already hold. **WHAT A SIDE ROOM CONTAINS IS SAID ON ITS PIP** — the
+Drafting Room (`blueprint`, `RunBonus.plans` of 6), two rooms at the bottom of
+every zone. **A PLAN'S WORD IS ITS PROFESSION'S** (`PLAN_WORD`, `planName`) and
+so is its picture (`planIcon`), so a new plan is one row and no art.
+
+**THE ONE COOLDOWN IS THE MOVER'S, AND TWO THINGS CUT IT.** `MOVE.leastCooldown`
+is the floor — a mover with none is a second walk speed — and the grant and the
+worn `cooldown` stat MULTIPLY, so a notable and a rolled line cannot replace
+each other. **A LEVEL ON A SKILL LANDS INSIDE `skillBase`**, tagged like every
+other line, so `+1 to Level of Attack Skills` reaches a swing and not a cast and
+the sheet and the sim read one number.
+
 **A DISMANTLE PAYS SHARDS TOO.** *"If it has +strength and +attack speed you can
 get a +attribute and +speed currency, and more of them based on the tier of the
 mods."* `dismantleShards` is `SHARDS.refund` of what each line cost, floored, so

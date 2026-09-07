@@ -20,11 +20,12 @@ All three are done:
    the hybrid power rule, cooking, and a counter that gambles instead of
    selling. The filter is gone with the heap it existed to sort.
 
-**THE CRAFTING REWORK IS DONE** — his own design again, taken ahead of the
-numbered order: the PoE bench is gone, a line is SELECTED and paid for in its
-family's shard, a crafting level buys how many lines and how good a tier, and a
-dismantle hands shards back. What is left of it is Phase 4 below, which is
-blocked on a question.
+**THE CRAFTING REWORK IS DONE, PLANS AND ALL** — his own design again, taken
+ahead of the numbered order: the PoE bench is gone, a line is SELECTED and paid
+for in its family's shard, a crafting level buys how many lines and how good a
+tier, a dismantle hands shards back, and the three strongest lines are behind a
+PLAN you find. *"Yes crafting plans exist, make them gate stats like cooldown
+reduction, area of effect, level of a certain skill."*
 
 **PHASE 12 IS DONE AND DELETED** — his own design, taken ahead of the numbered
 order: a tool you equip decides what the floor holds, gem is the universal
@@ -1063,32 +1064,6 @@ playing, not by a sweep taken in advance.
 
 ---
 
-## Phase 4 — CRAFTING PLANS, if they are still wanted
-
-*"The cool or really powerful stats should be locked behind crafting plans.
-Blacksmithing plans, weaving patterns etc. You have to find these in higher
-level zones and they can be locked in the side areas. And you can mark what the
-side area contains so you can say contains x plans."*
-
-**BLOCKED ON A QUESTION, and the question is whether they still exist.** The
-answer that landed after it — *"if you want strength at any tier all you need is
-the attribute currency AND the appropriate crafting level to add it, so you
-gotta grind out both"* — gives the currency-plus-level pair exactly the job
-plans were going to do. A plan would be a THIRD gate on top of two that already
-work. Ask before building it.
-
-If it IS wanted, the shape that fits what is already there:
-
-- A `PLAN` table, one row a modifier FAMILY, naming the zone and the depth it
-  is found at; `whyNotChoose` grows one more refusal and the pick row one more
-  dim reason.
-- `Character.plans` in the save, `given`-style, and the demo sweeps every
-  plan-gated family for being reachable at all.
-- `BranchBonusDef` already carries an icon and a name, so *"contains x plans"*
-  is a side room whose bonus IS a plan rather than a number.
-
----
-
 ## Phase 3 — A quest log instead of a pointing finger
 
 **Not next, and deliberately.** The tutorial was deleted outright so the opening
@@ -1248,15 +1223,6 @@ is kept.
 
 **Do not guess at these.** None ever blocked a phase and none is work waiting to
 be picked up — they are decisions the user has not made. Ask before acting.
-
-**FROM THE CRAFTING REWORK.**
-
-- **Do CRAFTING PLANS still exist?** *"The cool or really powerful stats should
-  be locked behind crafting plans."* The answer that landed after it —
-  *"if you want strength at any tier all you need is the attribute currency AND
-  the appropriate crafting level"* — gives the currency-plus-level pair exactly
-  the job a plan was going to do, so a plan is now a THIRD gate on two that
-  already work. Phase 4 is the shape it would take; **do not build it unasked.**
 
 **LEFT OVER FROM PHASE 6, which is otherwise whole.**
 

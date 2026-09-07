@@ -11,6 +11,8 @@ import type { Finished, GatherGain } from './work';
 import type { ModBurn } from './crystals';
 import type { CrystalGain } from './crystals';
 import { grant } from '../economy';
+import { PLAN_BY_ID, planName } from '../data';
+import type { PlanDef } from '../types';
 import { DAMAGE_TYPE_BY_ID, MAIN_SLOT, PROFESSION_BY_ID, SKILL_SLOTS } from '../data';
 import { addXp, addSkillXp, equippedSkill } from '../sim/character';
 import type { RunState } from '../sim/run';
@@ -43,6 +45,8 @@ export interface RunReport {
   /** The meal that ran out on this descent, if one did. Ends an Enter-chain? No
    *  — a meal is a buff you replace, never a thing you cannot descend without. */
   eaten: RolledMod | null;
+  /** CRAFTING PLANS learned on this descent. */
+  plans: PlanDef[];
   /** True when there was loot and the hero died holding it. */
   lostLoot: boolean;
   /** Whether the bag is at or over its limit now this run has banked. */
@@ -73,6 +77,8 @@ export function buildReport(game: GameState, run: RunState, left = false): RunRe
   let gathered: GatherGain[] = [];
   let eaten: RolledMod | null = null;
   let kept: Item[] = [];
+  const learned = [...(game.character.plans ?? [])];
+  const plans: PlanDef[] = [];
 
   if (keeps) {
     for (const [id, amount] of Object.entries(run.loot.currency)) {
@@ -86,6 +92,14 @@ export function buildReport(game: GameState, run: RunState, left = false): RunRe
     // descent that overfills the bag by three is a bag reading 35/32.
     kept = bankLoot(game, run.loot.items).kept;
     gathered = payGathering(game, run.loot.items);
+    // A PLAN IS LEARNED WHERE IT FALLS. Nothing to carry and nothing to click:
+    // a bag with no room in it may not cost you the rarest thing on the floor.
+    for (const id of run.loot.plans) {
+      if (!PLAN_BY_ID[id] || learned.includes(id)) continue;
+      learned.push(id);
+      plans.push(PLAN_BY_ID[id]);
+    }
+    game.character.plans = learned;
   }
 
   if (cleared) {
@@ -144,6 +158,9 @@ export function buildReport(game: GameState, run: RunState, left = false): RunRe
   if (keeps && kept.length > 0) {
     rows.push({ label: 'into your bags', value: String(kept.length) });
   }
+  // THE RAREST THING THE FLOOR PAYS gets its own line, named in full: a plan
+  // is a row on the bench that was not there before.
+  for (const plan of plans) rows.push({ label: 'plan learned', value: planName(plan) });
   for (const gain of levelled) {
     rows.push({ label: gain.crystal.name, value: `+${gain.levels} level` });
   }
@@ -207,6 +224,7 @@ export function buildReport(game: GameState, run: RunState, left = false): RunRe
     worked,
     gathered,
     eaten,
+    plans,
     lostLoot: !keeps && hadLoot,
     bagsFull: bagsFull(game),
     xp: Math.round(run.xpGained),

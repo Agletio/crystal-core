@@ -36,6 +36,7 @@ const NAMED: Record<string, string> = {
   blockChance: 'Block Chance',
   areaOfEffect: 'Area of Effect',
   moveSpeed: 'Movement Speed',
+  cooldown: 'Movement Skill Cooldown',
   attackRange: 'Attack Range',
   rarity: 'Rarity',
   currencyFind: 'Currency Find',
@@ -122,6 +123,13 @@ export function qualify(stat: string, tags: string[] = []): string {
   const base = statLabel(stat);
   // A resistance already names its type; tagging it again would stutter.
   if (resistancePrefix(stat)) return base;
+
+  // A LEVEL reads as the thing it is a level OF, so the tag lands inside the
+  // phrase rather than in front of it: "Level of Attack Skills".
+  if (stat === 'skillLevel') {
+    const words = tags.map((t) => TAG_WORDS[t]).filter(Boolean);
+    return `to Level of ${words.length ? `${words.join(' ')} ` : ''}Skills`;
+  }
 
   // The one stat whose tag reads AFTER it: "Chance to Bleed", not "Bleed Chance".
   if (stat === 'ailmentChance') {

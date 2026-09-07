@@ -20,6 +20,7 @@ import {
   START_PRESETS,
   GRINDS,
   MATERIALS,
+  PLANS,
   PROFESSIONS,
   TOOLS,
   WORKERS,
@@ -245,6 +246,7 @@ export function resetGame(game: GameState, mode: StartMode): void {
   game.character.professions = preset.professions
     ? Object.fromEntries(PROFESSIONS.map((p) => [p.id, { level: preset.professions!, xp: 0 }]))
     : {};
+  game.character.plans = preset.plans ? PLANS.map((p) => p.id) : [];
   game.character.souls = 0;
   game.craftId = null;
 

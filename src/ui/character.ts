@@ -20,8 +20,12 @@ import {
   DUAL,
   MATERIAL_FAMILY_BY_ID,
   PROFESSION,
+  MOD_BY_ID,
+  PLANS,
   PROFESSIONS,
   PROFESSION_BY_ID,
+  planIcon,
+  planName,
   TOOL_SLOTS,
 } from '../data';
 import {
@@ -679,6 +683,27 @@ function renderProfessions(): void {
     row.append(el('span', 'forgeneed__what', step.what));
     row.append(el('span', 'forgeneed__n', `level ${step.at}`));
     steps.append(row);
+  }
+
+  // ITS PLANS, in the same two states. A plan is not a level, so it is listed
+  // under the ladder rather than in it, and one you have not found still shows:
+  // what the bench cannot do yet is the reason to go and look.
+  const owned = game.character.plans ?? [];
+  const mine = PLANS.filter((p) => p.profession === profShown);
+  if (mine.length > 0) {
+    steps.append(el('div', 'dockcol__label', 'Plans'));
+    for (const plan of mine) {
+      const has = owned.includes(plan.id);
+      const row = el('div', `forgeneed ${has ? 'forgeneed--ok' : 'forgeneed--short'}`);
+      const art = drawn(planIcon(plan), 18);
+      if (art) row.append(art);
+      row.append(el('span', 'forgeneed__what', planName(plan)));
+      row.append(el('span', 'forgeneed__n', has ? 'found' : 'not found'));
+      attachTooltip(row, () =>
+        `${planName(plan)}\nOpens ${plan.mods.map((m) => MOD_BY_ID[m]?.name ?? m).join(', ')} at the bench.`
+      );
+      steps.append(row);
+    }
   }
 }
 

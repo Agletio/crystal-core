@@ -57,6 +57,7 @@ export interface Character {
    *  the Reckoning at nothing. What they PAID for is derived, never stored. */
   grinds: Record<string, number>;
   professions?: Record<string, { level: number; xp: number }>; // absent is level 1
+  plans?: string[]; // CRAFTING PLANS learned, by id. Never unlearned
   /** WHAT YOU ATE: `uses` is descents left, spent one per CLEAR. One at a time. */
   meal?: RolledMod;
   /** Rungs CLEARED per zone, keyed by theme. See `src/ladder.ts`. */

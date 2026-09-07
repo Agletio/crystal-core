@@ -41,6 +41,7 @@ import {
   crystalName,
   MATERIAL_BY_ID,
   MEAL_BY_FISH,
+  PLAN_BY_ID,
   PROFESSION_BY_ID,
   WORK,
 } from '../data';
@@ -219,10 +220,11 @@ export interface Healed {
   currencies: number;
   points: number;
   skill: boolean;
+  plans: boolean;
 }
 
 export const healedAnything = (h: Healed): boolean =>
-  h.items > 0 || h.currencies > 0 || h.points > 0 || h.skill;
+  h.items > 0 || h.currencies > 0 || h.points > 0 || h.skill || h.plans;
 
 /** Crystals name their level; gear names a base that has to still exist, and a
  *  named piece names a unique — its lines are the def, so a cut one is gone. */
@@ -345,7 +347,7 @@ function healSkillSlots(character: Character): boolean {
 
 /** IN PLACE. Everything the current build cannot resolve, gone. */
 export function heal(game: GameState): Healed {
-  const out: Healed = { items: 0, currencies: 0, points: 0, skill: false };
+  const out: Healed = { items: 0, currencies: 0, points: 0, skill: false, plans: false };
 
   const keep = (list: Item[]): Item[] => {
     const ok = list.filter(baseExists);
@@ -421,6 +423,11 @@ export function heal(game: GameState): Healed {
   }
   for (const id of Object.keys(game.character.professions ?? {})) { // a cut profession takes its level
     if (!PROFESSION_BY_ID[id]) delete game.character.professions![id];
+  }
+  if (game.character.plans) { // a plan whose row is gone opens nothing
+    const kept = game.character.plans.filter((id) => PLAN_BY_ID[id]);
+    if (kept.length !== game.character.plans.length) out.plans = true;
+    game.character.plans = kept;
   }
   // Same rule as every other container: a base that is gone takes its entry.
   game.sold = (Array.isArray(game.sold) ? game.sold : []).filter((e) => {

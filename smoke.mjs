@@ -2868,6 +2868,21 @@ $('dev-kit').click();
     'and clicking one says what its levels buy, in figures',
     steps.slice(0, 90)
   );
+  // A PROFESSION'S PLANS sit under its ladder, in the same two states — what
+  // the bench cannot do yet is the reason to go and look for one.
+  $('sheet-prof-weaving').click();
+  const woven = $('sheet-profsteps').textContent ?? '';
+  assert(
+    /Plans/.test(woven) && /Weaving Pattern/.test(woven),
+    'a profession lists its crafting plans, said in its own word',
+    woven.slice(-120)
+  );
+  assert(
+    all('#sheet-profsteps .forgeneed--ok').length > 0,
+    'and the dev kit has found them, so one reads as found',
+    String(all('#sheet-profsteps .forgeneed--ok').length)
+  );
+
   $('sheet-tab-gear').click();
   assert(
     $('slot-gather') !== null && $('slot-rod') !== null

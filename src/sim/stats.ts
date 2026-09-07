@@ -83,6 +83,8 @@ export interface CombatStats {
   critMultiplier: number;
   /** AREA, not radius. Behaviours must go through `areaRadius`, never this. */
   areaOfEffect: number;
+  /** PERCENT reduced on the one cooldown there is, the movement skill's. */
+  cooldown: number;
   /** Gear-side reward stats. Added to whatever the crystal already grants. */
   rarity: number;
   currencyFind: number;
@@ -169,10 +171,12 @@ export interface DamageBreakdown {
   byType: Record<string, number>;
 }
 
-/** The skill's own damage at a level; nothing worn. */
-export function skillBase(skill: SkillDef, level: number): number {
+/** The skill's own damage at a level; nothing worn. `bought` is levels off
+ *  GEAR, worth more than a free one and landing as their own factor. */
+export function skillBase(skill: SkillDef, level: number, bought = 0): number {
   const steps = Math.max(0, level - 1);
-  return skill.baseDamage * (1 + (steps * LEVELLING.damagePerLevel) / 100);
+  const own = skill.baseDamage * (1 + (steps * LEVELLING.damagePerLevel) / 100);
+  return own * (1 + (bought * LEVELLING.perSkillLevel) / 100);
 }
 
 /**
@@ -193,7 +197,9 @@ export function damageBreakdown(
   // the wedge you walked through is not stranded — see treeMod.
   const converted = convertedType(skill, grants);
   const active = converted ? [converted] : skill.damageTypes;
-  const base = skillBase(skill, level);
+  // A LEVEL ON THE SKILL, tagged like every other line, and here rather than at
+  // a call site so the sheet and the sim read one number.
+  const base = skillBase(skill, level, aggregate(mods, 'skillLevel', skill.tags).flat);
   const added = skill.addedEffectiveness / 100;
 
   const passes = [...DAMAGE_TYPES.map((t) => t.id)];
@@ -394,7 +400,9 @@ export function heroStats(
     critMultiplier: critBuff(grants)
       ? 0
       : computeStat(HERO_BASE.critMultiplier, mods, 'critMultiplier'),
-    // Percentages with no base to scale — see percentStat.
+    // Percentages with no base to scale — see percentStat. `cooldown` rolls
+    // NEGATIVE, like Mana Cost, so a reduction is what a bigger roll is.
+    cooldown: -percentStat(mods, 'cooldown'),
     rarity: percentStat(mods, 'rarity'),
     currencyFind: percentStat(mods, 'currencyFind'),
     ailmentDps: ailmentDamage(mods, skill),
@@ -949,6 +957,7 @@ export function monsterStats(
     critMultiplier: 0,
     // No monster has an area skill yet; its crystal mod would land here.
     areaOfEffect: 0,
+    cooldown: 0,
     rarity: 0,
     currencyFind: 0,
     ailmentDps: {},
