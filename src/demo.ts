@@ -13685,10 +13685,18 @@ rule('THE ROCK\'S OWN RULES — does a crystal DO something, or just add up?');
       'a Vein and a Hoard are the same lock and pay different things',
       `${vein.sim.state.hoards.length} veins, ${hoard.sim.state.hoards.length} hoards`
     );
+    // OVER SEEDS, never one. A single descent's pile is noise: the two tie on
+    // roughly one seed in eight, and what is being asserted is the rule.
+    let veined = 0;
+    let hoarded = 0;
+    for (const seed of [4242, 11, 77, 313, 909]) {
+      veined += coin(play(carrying('veinChance', 100), seed));
+      hoarded += coin(play(carrying('hoardChance', 100), seed));
+    }
     check(
-      coin(vein) > coin(hoard),
-      'and the Vein is the one that pays in currency',
-      `${coin(vein)} against ${coin(hoard)}`
+      veined > hoarded,
+      `and the Vein is the one that pays in currency: ${veined} against ${hoarded} over 5 descents`,
+      `${veined} against ${hoarded}`
     );
   }
 
