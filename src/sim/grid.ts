@@ -86,10 +86,7 @@ export class Grid {
    *  world's lake blocks only its deep and its wreath walks. */
   wholeLakes = false;
 
-  /** Whether any chamber stands a level up. The WASH reads it: a shelf is the
-   *  same floor lit a step above the ground, and a map with none is left
-   *  exactly as bright as it was. Set by `raiseRooms`, the one thing that
-   *  stands a chamber up. */
+  /** Any chamber a level up: the WASH lights those a step above the ground. */
   shelved = false;
 
   constructor(width: number, height: number) {
@@ -1489,9 +1486,7 @@ export function generateMap(
   const lifted = raiseRooms(grid, rooms, roomOf, rng, share, new Set([0, rooms.indexOf(exitRoom)]));
   smoothShelves(grid, new Set([entrance, exit, ...rooms.map(roomCenter)].map((v) => v.y * grid.width + v.x)));
   fitShelf(grid, SHELF_SET[theme]);
-  // DERIVED off the cells that survived the fitting, never off `lifted`: a
-  // chamber that was stood up and then came down whole leaves no shelf.
-  grid.shelved = grid.tiles.some((t) => raised(t));
+  grid.shelved = grid.tiles.some((t) => raised(t)); // what SURVIVED the fitting
   for (const i of lifted) {
     const c = roomCenter(rooms[i]);
     if (grid.at(c.x, c.y) !== SHELF) {

@@ -880,12 +880,10 @@ function openness(grid: Grid, x: number, y: number): number { // the slope to th
  */
 export function groundWash(grid: Grid, fx: number, fy: number): number {
   const drift = LIGHT.low + (1 - LIGHT.low) * patchNoise(fx, fy, LIGHT.scale, 71);
-  // A SHELF IS THE SAME FLOOR LIT A STEP UP, and the LIGHT is what says so —
-  // measured, three asks running gave the Fissure's 193-luma sand a step of
-  // 0.1, -4.9 and 0.1, because a floor already near white has no room to be
-  // lit further. So the LOW ground is what moves, and only on a map that has
-  // a shelf at all: a flat map is untouched. Bilinear like the foot, so the
-  // step ramps across the rim rather than drawing a line at every cell.
+  // A SHELF IS THE SAME FLOOR LIT A STEP UP. Three asks gave the Fissure's
+  // 193-luma sand a step of 0.1, -4.9 and 0.1 — a floor near white has no room
+  // to be lit further — so the LOW ground is what moves, and only where there
+  // IS a shelf. Bilinear like the foot, or the step is a line at every cell.
   const step = grid.shelved ? LIGHT.ground + (1 - LIGHT.ground) * upness(grid, fx, fy) : 1;
   const x0 = Math.floor(fx);
   const y0 = Math.floor(fy);
@@ -899,8 +897,7 @@ export function groundWash(grid: Grid, fx: number, fy: number): number {
   return drift * (LIGHT.foot + (1 - LIGHT.foot) * foot) * step;
 }
 
-/** 1 over a raised cell, 0 over the ground, bilinear between — so the step is
- *  a ramp across the rim and never an edge at a cell boundary. */
+/** 1 over a raised cell, 0 over the ground, bilinear between. */
 function upness(grid: Grid, fx: number, fy: number): number {
   const x0 = Math.floor(fx);
   const y0 = Math.floor(fy);
