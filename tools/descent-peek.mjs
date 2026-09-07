@@ -142,13 +142,6 @@ await makeCharacter();
 // bare Fissure's, and then down the hole. The wait covers the handover.
 await page.evaluate(() => document.getElementById('open-dev')?.click());
 await page.waitForTimeout(150);
-// SHELVES=1 forces half the chambers a level up, through the kit's own toggle,
-// so a floor can be judged before its world ships them. Before the handover,
-// since the kit's own opening descent is the one shot.
-if (process.env.SHELVES) {
-  await page.evaluate(() => document.getElementById('dev-shelves')?.click());
-  await page.waitForTimeout(150);
-}
 // TEST=1 shoots the TEST LEVEL — the dev menu's own family and rules.
 if (process.env.TEST) {
   await page.evaluate(() => document.getElementById('dev-test')?.click());

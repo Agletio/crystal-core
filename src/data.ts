@@ -4996,7 +4996,10 @@ export const SKILLS: SkillDef[] = [
     behaviour: 'projectile',
     damageTypes: ['lightning'],
     weapon: 'crude_bow', // a bow, not the attack shelf's sword
-    baseDamage: 58,
+    // The one holding a TWO-HANDER, so the arrow is worth less than a sword's
+    // blow: at 58 it cleared depth 4 bare 11 times in 16, where nothing else
+    // cleared it twice.
+    baseDamage: 48,
     critChance: 7,
     addedEffectiveness: 100,
     rateMultiplier: 1,
@@ -5017,7 +5020,7 @@ export const SKILLS: SkillDef[] = [
     name: 'Creeping Blight',
     category: 'spell',
     description:
-      'Drops a Cloud of Poison on the target for 10s. No target limit — ' +
+      'Drops a Cloud of Poison on the target for 5s. No target limit — ' +
       'Area of Effect is what makes it hit more.',
     // 'occult' is a damage GROUP and must not appear here. Skill tags ride
     // along in every damage pass, so a stat line tagged 'occult' would scale
@@ -5025,21 +5028,20 @@ export const SKILLS: SkillDef[] = [
     tags: ['spell', 'area'],
     behaviour: 'ailment_burst',
     damageTypes: ['poison'],
-    // Both high because a cast is spread over 10s and caps at 9 stacks at the
-    // base cast rate — 0.9 applications a second against a hit skill's 1.2.
-    baseDamage: 115,
+    // Both high because a cast is spread over its duration — 0.9 applications a
+    // second against a hit skill's 1.2 — and the cap is `AILMENT.maxStacks`.
+    baseDamage: 155,
     critChance: 4,
     addedEffectiveness: 160,
     rateMultiplier: 0.75,
     manaCost: 10,
     range: 6.5,
     vfxKind: 'blight_field',
-    /**
-     * Tuned against PACKS, not against the average cast — most casts have one
-     * or two enemies near and drag the mean down. At 0.9 a packed cast catches
-     * a median of 2; 3.2 is where a heavily invested character ends up.
-     */
-    params: { radius: 0.9, duration: 10 },
+    /** A CROWD SKILL HAS TO CATCH A CROWD BARE and the ramp has to finish while
+     *  the fight is on: at 0.9 over 10s it killed 0.20 a second where the other
+     *  seven ran 0.33–0.44. **THE RADIUS IS THE LEVER THAT MULTIPLIES**, so it is
+     *  barely touched — at 1.6 an invested build ran 5.93/s against 3.5–4.3. */
+    params: { radius: 1.1, duration: 5 },
   },
 
   // The passive, and a TRADE — which is what makes it worth a slot. It never

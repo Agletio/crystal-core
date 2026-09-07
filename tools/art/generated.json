@@ -5008,36 +5008,6 @@
    "with": "node_ripple"
   },
   {
-   "id": "stair_s",
-   "object": "3b577356-84d2-46ac-a4d4-a317476f0dc2",
-   "tiles": 1,
-   "tone": 0,
-   "dull": 0
-  },
-  {
-   "id": "stair_n",
-   "object": "3b577356-84d2-46ac-a4d4-a317476f0dc2",
-   "tiles": 1,
-   "tone": 0,
-   "dull": 0
-  },
-  {
-   "id": "stair_e",
-   "object": "3b577356-84d2-46ac-a4d4-a317476f0dc2",
-   "tiles": 2,
-   "tone": 0,
-   "dull": 0,
-   "turn": 1
-  },
-  {
-   "id": "stair_w",
-   "object": "3b577356-84d2-46ac-a4d4-a317476f0dc2",
-   "tiles": 2,
-   "tone": 0,
-   "dull": 0,
-   "turn": 1
-  },
-  {
    "id": "wall_soul_socket",
    "object": "09de0b78-662d-4966-a030-8c6332fe7428",
    "tiles": 1

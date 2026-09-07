@@ -1,24 +1,15 @@
-/**
- * WebGL renderer, built on PixiJS.
- *
- * Same Renderer interface as canvas2d, and the only one that draws sprites.
- *
- * Everything geometric lives inside a `world` container measured in TILE
- * units, and the camera is that container's transform: the map is built once
- * and then moved, rather than 2,000 rectangles being redrawn every frame. Text
- * is the exception — it sits in screen space so it stays crisp.
- *
- * Construction is async (Pixi 8 initialises the GPU device asynchronously) and
- * can fail — no WebGL, headless, a hostile driver. It returns null then, and
- * the caller falls back to canvas2d.
- */
+/** WebGL renderer, the only one that draws sprites. Everything geometric sits
+ *  in a `world` container measured in TILE units and the camera is that
+ *  container's transform, so the map is built once and then moved; text sits in
+ *  screen space so it stays crisp. Construction is async and returns null on
+ *  failure, and the caller falls back to canvas2d. */
 import { Application, Container, Graphics, Sprite, Text, Texture, TilingSprite } from 'pixi.js';
 import { AURA, AURA_BY_ID,
   AILMENTS,
   AILMENT_BY_ID,
   GEAR_BASE_BY_ID,
 } from '../data';
-import { ENTRANCE, EXIT, SHELF_SET, WALL, high, patchesAt, wangKey } from '../sim/grid';
+import { ENTRANCE, EXIT, WALL, patchesAt, wangKey } from '../sim/grid';
 import { tileNoise } from '../noise';
 import { gearCanvas } from '../ui/webicons';
 import { ATTACK_POSE, DEATH_FADE } from '../sim/run';
@@ -618,27 +609,6 @@ export async function createPixiRenderer(
             grain.scale.set(1.002 / GRAIN_SHEETS[map.theme].grid);
             grain.alpha = GRAIN.alpha;
             groundLayer.addChild(grain);
-          }
-        }
-      }
-
-      // A SHELF, over the floor: the zone's own floor as both terrains, keyed
-      // exactly as the rock is, and ROCK WINS AT A CORNER — where the two
-      // meet the wall's own tile draws, since its layer sits above anyway.
-      const shelfName = SHELF_SET[map.theme];
-      const shelfSet = shelfName ? ZONES[shelfName] : undefined;
-      const shelfArt = shelfName ? zones.get(shelfName) : undefined;
-      if (shelfSet && shelfArt) {
-        for (let y = 0; y < grid.height; y++) {
-          for (let x = 0; x < grid.width; x++) {
-            if (rock(x, y) || wangKey(grid, x, y, high) === 0 || wangKey(grid, x, y) !== 0) continue;
-            const found = zoneTileAt(shelfSet, grid, x, y, high);
-            if (found < 0) continue;
-            const sprite = new Sprite(shelfArt[found]);
-            sprite.x = x;
-            sprite.y = y;
-            sprite.scale.set(1.002 / shelfSet.grid);
-            groundLayer.addChild(sprite);
           }
         }
       }

@@ -119,48 +119,16 @@ stacked on top of eacher."* The research (Brogue's `Architect.c`, Amit Patel's
 map generator, Wolverson's builders, Stardew's mine tables, Valheim's placement
 rules, the generator's live tool list) came to: keep the room skeleton, replace
 the carve, add ONE height layer, replace the dressing.
-**`tools/terrain-proto.mts` is the standalone reference** for the whole
-pipeline and `tools/plan-peek.mjs` draws a builder plan off the bundle.
+**`tools/plan-peek.mjs`** draws a builder plan off the bundle.
 
-**LANDED — the mechanism, and the Fissure's look.** `SHELF` / `RIM` / `STAIR`
-in `src/sim/grid.ts`, rooms raised whole off the room graph, the rim nobody
-walks, stairs at the mouths joined by union-find, lakes as a deep core in a
-walkable wreath (`OPEN_SEED` is gone), blob chambers with one erosion pass and
-a loop or two, `fitShelf` mending steps by filling notches, rock counting as
-high. The Fissure's shelf set is `fissure_shelf` — the account's own earlier
-"raised" attempt, never a failure, imported for nothing and retoned like the
-floor. The stair is ONE picture, `create_map_object` inpainted into a rendered
-crop of a real south face for a cent, turned at import for the east and west
-rims; the flat-ground stair was asked three ways and came back bare floor every
-time, so the north rim wears the same treads. The builder paints shelf and
-stair (`^`, `S`; `=` is derived), `shots` lays one, the demo forces every
-chamber up over 24 seeds and 6 descents and proves reachability, determinism
-and termination. **`RAISE` STILL SHIPS AT ZERO** — the user has not judged the
-shelf on a floor yet.
+**THE HEIGHT LAYER IS GONE.** *"Lets just get rid of the raised areas they look
+bad and its too hard to make it work."* `SHELF`, `RIM`, `STAIR`, `raiseRooms`,
+`fitShelf`, `placeStairs`, `SHELF_SET`, `RAISE`, the four shelf tilesets, the
+four stair props and the builder's `^`/`S` are all deleted; a floor is one level
+throughout. What LANDED and stays: lakes as a deep core in a walkable wreath,
+blob chambers with one erosion pass and a loop or two, `fitCorners` opening rock
+until every cell is a key the set holds.
 
-- [ ] **THE USER JUDGES THE SHELF.** SHOWN, at last: he could not find one
-      because `RAISE` ships at 0, so it has to be forced. `SHELVES=1 node
-      tools/descent-peek.mjs out.png 4` and the same at zoom 9 are in his hands
-      (`shelf_a.png`, `shelf_close.png`) — the shelf works, and what there is to
-      judge is that it draws as a PALER, GREYER slab than the sand rather than
-      the same sand a step up, with ladder-like stair tiles.
-      ~~THE ASK:~~ `SHELVES=1 npm run peek -- out.png 4` or
-      the dev kit's toggle. What to look at: the south face reads as a cliff;
-      the north, east and west edges are a THIN DARK LINE only, which is the set
-      as generated — if that is too little, the answer is a runtime shadow band
-      on the floor cells beside a rim (a tint, no art), not a re-ask. Then set
-      `RAISE.fissure` (the prototype ran at 0.3–0.55) and ship it.
-- [x] **THE OTHER THREE SHELF SETS** are asked, imported and wired
-      (`rot_shelf`, `cavern_shelf`, `seam_shelf` in `SHELF_SET`); the Rot's
-      first job died of server memory and was re-asked for nothing. The
-      Cavern's top matches its ground; the Rot's and the Seam's came back a
-      flatter, smoother texture than their floors — a different stone up top,
-      which may be right or may want a re-ask off the same tile. Shown to the
-      user as laid plans; `RAISE` waits on his word for all four.
-- [ ] **STAIRS PER WORLD.** The one stair picture is the Fissure's pale stone
-      and would sit wrong on the Rot's meat and the Seam's membrane. One
-      `create_map_object` inpaint per world into a crop of its own face, a cent
-      each, once the shelves are approved.
 - [x] **WHERE A FAMILY GROWS** — `openSpots` and `dampSpots` in `grid.ts`,
       asked by `nodeSpot` before any tile: ore ON OPEN FLOOR clear of the rock
       (*"have it not placed inside walls"* — a node at a wall's foot drew
@@ -247,7 +215,7 @@ shelf on a floor yet.
       off that floor tile IN THE SAME MODE (measured: the pool's floor tile
       has the rock set's floor mean exactly, 44% of pixels identical) — with
       chambers of 8–14 by 6–10 and WHOLE lakes: every cell blocks, a cell of
-      plain floor all round (`shoreClear`: no face, no shelf), `encloses`
+      plain floor all round (`shoreClear`: no face), `encloses`
       refusing a cell that would cut the dry ground in two, grown ROUND off
       its seed and `fatten`ed to cells inside a full three-by-three
       (`LAKE_FAT`: A LAKE IS DRAWN AT ITS CORNERS, so a run of cells draws a
@@ -274,9 +242,9 @@ shelf on a floor yet.
       the same packs in half the rooms took Rimespike's first descent to 7 of
       10; scaled, 7.0 rooms and every skill clears it 10 of 10. The other
       three worlds are untouched until judged.
-      Left over from the swap: the Fissure's cover props (rubble, stones) and
-      `fissure_shelf` were toned to `lit_round`'s floor; `lit_round` and its
-      grain are emitted but nothing draws them.
+      Left over from the swap: the Fissure's cover props (rubble, stones) are
+      toned to `lit_round`'s floor; `lit_round` and its grain are emitted but
+      nothing draws them.
 - [x] **MATERIALS ARE SCARCE.** *"Not every floor should have ore veins but
       when it does have it just have it give 1 most of the time, same concept
       with all the floor spawn stuff."* `GATHER.perRun` 1.5 nodes a bare
@@ -286,11 +254,9 @@ shelf on a floor yet.
       descents: metal 23, wood 18, cloth 18, fish 37 (26 wet maps), 3.4 units
       a descent, 72% of nodes handing over one. Recipes were costed against
       the old rates — the balance pass reads `CRAFT`'s costs against these.
-- [ ] **WORK THE DESIGN ON.** Next on the test level, in order: the face
-      (warm brown, not the Fissure's near-black), then shelves and stairs on
-      the same family (`test_shelf` chained off the same floor tile, one
-      ask). A world takes a design through `DESIGN`, never through an edited
-      set.
+- [ ] **WORK THE DESIGN ON.** Next on the test level: the face (warm brown,
+      not the Fissure's near-black). A world takes a design through `DESIGN`,
+      never through an edited set.
 
 ## Phase 9 — WHERE MATERIALS COME FROM: gathered, or off a body
 
@@ -399,17 +365,12 @@ first. When the phase is whole, `/critique` runs again; done is all three at 8.
       fall-off, and check every skill's geometry at ship size.
       (`fault-ground-ring.png`, `fault-rot-disc.png`, `fireball-02.png`,
       `arc-00.png`)
-- [ ] **THE ARENA AND THE SHELF ARE OTHER SETS.** ARENA DONE: `sceneMap`
-      read `ZONE[theme]`, the set the Fissure had moved off, so The Answering
-      stood on `lit_round`; it takes the world's `designFor` now, zone and
-      `plain` both, and stands on the same sand as the descent
-      (`desktop-scene.png`). The room stays 39×31 wide by design — the Fall
-      needs somewhere to go — so no face is in view at the default zoom.
-      SHELF LEFT, and it is Phase 8's: a `test_shelf` chained off the test
-      floor tile is one ask, made once the user has judged the shelf at all. The raised shelf
-      is a paler speckled slab with a course of black bricks and ladder-tile
-      stairs — it must be the sand tile lit a step up. (`fault-arena-floor.png`,
-      `fault-shelf-floor.png`)
+- [x] **THE ARENA IS ANOTHER SET.** `sceneMap` read `ZONE[theme]`, the set the
+      Fissure had moved off, so The Answering stood on `lit_round`; it takes
+      the world's `designFor` now, zone and `plain` both, and stands on the
+      same sand as the descent (`desktop-scene.png`). The room stays 39×31 wide
+      by design — the Fall needs somewhere to go — so no face is in view at the
+      default zoom. (`fault-arena-floor.png`)
 - [x] **THE HERO IS A SMUDGE AT SHIP SIZE, THE CORPSE STANDS, THE CAST HALL
       IS MUSH.** DONE, all three: `rimLit` in `src/render/sprites.ts` pulls
       the hero's own top-edge pixels `RIM.top` toward lamplight and the two
@@ -802,9 +763,8 @@ ours** — verify each against the code before spending anything.
       **THE THREE THAT WORK are `rot3_dun`, `rot3_liver` and `rot2_ragged`**,
       shown to the user beside what ships. **WAITING ON HIS PICK.**
       **AND THE PICK COSTS FIVE MORE ASKS**: `rot_blood`, `rot_flesh`,
-      `rot_bone`, `rot_floor_veined` and `rot_shelf` all chain off
-      `FLOOR.rot.tile`, so a new floor leaves every pool, bone bed and shelf
-      edge drawn to meet the OLD pale one. The chosen set's own floor tile is
+      `rot_bone` and `rot_floor_veined` all chain off `FLOOR.rot.tile`, so a
+      new floor leaves every pool and bone bed drawn to meet the OLD pale one. The chosen set's own floor tile is
       in its metadata at `base_tile_ids.lower` (`rot3_dun` is
       `fcecf1c8-69f3-477f-8f7f-13236e7d203b`), so re-chaining is that id into
       `FLOOR.rot.tile` and asking the five again.
@@ -1455,3 +1415,35 @@ without being asked.**
   grid each and hold it for the whole swing; the fix is 21 more grids in
   `src/render/bestiary.ts`. Four-frame walks the same way, if they ever grow
   legs worth animating.
+
+---
+
+## Phase 15 — THE EIGHT START ROUGHLY LEVEL
+
+*"Lets work on getting all the skills to be similar power… if they have similar
+starting power it doesn't need to be exact but roughly similar then they should
+scale roughly the same since they should have access to all the same stuff. Lets
+test it by kills per second as well as how far into the map they can get by
+selecting the skill and no talents, no gear nothing but the starting skill."*
+
+**LANDED.** The yardstick is a level 1 character with no trade, no points and no
+gear but the weapon the skill comes down holding, at DEPTH 4 of The Shallows —
+the shallowest floor that separates them. It is a gauge in `src/demo.ts` beside
+the trade one. Measured, 2.79x between the best and the worst became **1.44x**:
+Lightning Arrow 58 damage to 48 (it is the only one holding a two-hander, and it
+was the only skill clearing that depth at all), Blight 115 to 155 over a 1.1-tile
+cloud lasting 5s instead of 0.9 over 10s. Blight's RADIUS was the first fix and
+was wrong: at 1.6 the bare end read right and an invested build ran 5.93 kills/s
+against everybody else's 3.5–4.3, because area is what its tree already sells.
+
+- [ ] **AMBUSH PUTS DOWN 39% OF THE FLOOR** where the other seven put down
+      64–84%, on a kill rate inside the band. It is the DELIVERY: `stepBehind`
+      teleports him past whatever he swings at, every swing, so he fights every
+      pack from inside one. Neither more damage (+33% took it to 52%) nor a
+      shorter step (3.5 tiles took it to 41%) is the answer, and it is the one
+      skill the user excluded from Splash by name — *"it can be an exception
+      since it can scale its speed so much."* Ask him before touching either.
+- [ ] **A FEW MORE THINGS AROUND THE LEVELS**, deferred by the user after the
+      raised areas came out: *"we can just add a few more things around the
+      levels to make it feel just a little more alive but we can worry about
+      that later."*

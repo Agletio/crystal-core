@@ -19,7 +19,7 @@ import { ladderCharacter } from '../sim/loadout';
 import { mainSkillId, skillProgress } from '../sim/character';
 import { heal } from '../game/save';
 import { ZONES } from '../render/generated-tiles';
-import { TEST_LEVEL, raiseShare, testLevel } from '../sim/grid';
+import { TEST_LEVEL, testLevel } from '../sim/grid';
 import { takeHeard, takeMet } from '../game/scenes';
 import { campaignDone, progressKey } from '../ladder';
 import { pathToNotable } from '../skills-tree';
@@ -39,7 +39,6 @@ function el(tag: string, cls?: string, text?: string): HTMLElement {
 
 let game: GameState;
 let hooks: DevHooks;
-let shelves = false;
 let testing = false;
 
 export interface DevHooks {
@@ -335,19 +334,6 @@ function render(): void {
     hooks.survey();
   };
   maps.append(chart);
-
-  // A LEVEL UP, forced: `RAISE` ships at zero until a world has a shelf set
-  // and a stair picture, and this is how a descent is shot with one anyway.
-  const up = el('button', 'mini devbtn') as HTMLButtonElement;
-  up.id = 'dev-shelves';
-  up.append(el('span', 'devbtn__name', shelves ? 'Shelves: forced on' : 'Shelves: as shipped'));
-  up.append(el('span', 'devbtn__what', 'every chamber that can stand a level up, from the next descent'));
-  up.onclick = () => {
-    shelves = !shelves;
-    raiseShare(shelves ? 1 : null);
-    render();
-  };
-  sets.append(up);
 
   // THE TEST LEVEL: the next descent is generated on the test family with the
   // test rules, whatever is socketed. The only door to it.

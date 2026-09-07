@@ -272,7 +272,7 @@ import {
   slotUsed,
   statPower,
 } from './mods';
-import { DESIGN, ENTRANCE, EXIT, FLOOR, LAKE_SHORE, RIM, SHELF_SET, STAIR, TEST_LEVEL, TUNNEL, WALL, dist, generateMap, patchesFor, raiseShare, reachable, roomCenter, sceneMap, shoreClear, testLevel } from './sim/grid';
+import { DESIGN, ENTRANCE, EXIT, FLOOR, LAKE_SHORE, TEST_LEVEL, TUNNEL, WALL, dist, generateMap, patchesFor, reachable, roomCenter, sceneMap, shoreClear, testLevel } from './sim/grid';
 import type { Grid } from './sim/grid';
 import { CREATURE_FRAMES, GLOW, IDLE_CYCLE, STRIDE_CYCLE, framesOf, wellFormed } from './render/sprites';
 import { PORTRAITS } from './render/portraits';
@@ -2420,84 +2420,6 @@ rule('SPRITES — is the pixel art well formed?');
       `the ripple stays inside its cell and its ${RIPPLE.rings} rings fade cleanly`,
       `${out} rings past the cell, ${dark} with an alpha off the scale`
     );
-  }
-
-  // A LEVEL UP. A chamber stands a level up with a RIM nobody walks, and the
-  // stairs are the proof: every walkable cell is reached from the hole, every
-  // shelf that stands is reached, the same seed lays the same floor, and a
-  // descent over shelves still ENDS. Forced to every chamber that can, since
-  // `RAISE` ships at zero until a world has its stair pictures.
-  {
-    raiseShare(1);
-    let stranded = 0;
-    let unreached = 0;
-    let loose = 0;
-    let rimCells = 0;
-    let differ = 0;
-    let shelves = 0;
-    let stairs = 0;
-    const worlds = MAP_THEMES.map((t) => t.id as MapTheme).filter((t) => SHELF_SET[t]);
-    const maps = 8 * worlds.length;
-    for (let i = 0; i < maps; i++) {
-      const theme = worlds[i % worlds.length];
-      const map = generateMap([], new Rng(7100 + i * 3), 1, 1, theme);
-      const again = generateMap([], new Rng(7100 + i * 3), 1, 1, theme);
-      if (map.grid.tiles.some((t, k) => t !== again.grid.tiles[k])) differ++;
-      const { grid } = map;
-      const seen = reachable(grid, map.entrance);
-      for (let y = 0; y < grid.height; y++) {
-        for (let x = 0; x < grid.width; x++) if (grid.walkable(x, y) && !seen.has(y * grid.width + x)) stranded++;
-      }
-      shelves += map.raised.length;
-      stairs += map.props.filter((p) => p.id.startsWith('stair_')).length;
-      // A CLIFF EDGE NEVER STOPS IN OPEN FLOOR — *"the rock doesnt reach flush
-      // with a wall it just abruptly ends."* The rim is the boundary LAYER of
-      // the raised region, so it closes into a ring unless the region is one
-      // cell wide; rock and a STAIR are the two things allowed to carry it on.
-      for (let y = 1; y < grid.height - 1; y++) {
-        for (let x = 1; x < grid.width - 1; x++) {
-          if (grid.at(x, y) !== RIM) continue;
-          rimCells++;
-          let on = 0;
-          for (let dy = -1; dy <= 1; dy++) {
-            for (let dx = -1; dx <= 1; dx++) {
-              if (!dx && !dy) continue;
-              const t = grid.at(x + dx, y + dy);
-              if (t === RIM || t === STAIR || t === WALL) on++;
-            }
-          }
-          if (on <= 1) loose++;
-        }
-      }
-      for (const r of map.raised) {
-        const c = roomCenter(map.rooms[r]);
-        if (!seen.has(c.y * grid.width + c.x)) unreached++;
-      }
-    }
-    let ended = 0;
-    for (let i = 0; i < 6; i++) {
-      const sim = new RunSim([], ladderCharacter(0, new Rng(4)), new Rng(7300 + i));
-      runToCompletion(sim, 400);
-      if (sim.state.status !== 'running') ended++;
-    }
-    raiseShare(null);
-    gauge(
-      `${(shelves / maps).toFixed(2)} chambers a level up a map over ${worlds.length} worlds with every one that can, ${(stairs / maps).toFixed(2)} stair cells`
-    );
-    check(
-      shelves > 0 && stranded === 0 && unreached === 0 && differ === 0,
-      'a shelf is reached by its stairs and cuts nothing off, and the same seed lays the same floor',
-      `${shelves} shelves, ${stranded} stranded cells, ${unreached} shelves unreached, ${differ} seeds differ`
-    );
-    // A stair with no picture is a line the hero crosses for no reason.
-    const stairArt = ['stair_s', 'stair_n', 'stair_e', 'stair_w'].filter((id) => !PROP_ART[id]);
-    check(stairs > 0 && stairArt.length === 0, 'and every side a stair climbs has its picture', `undrawn ${stairArt.join(', ')}`);
-    check(
-      rimCells > 0 && loose === 0,
-      `and not one of ${rimCells} cliff cells dead-ends in open floor: every edge runs to rock, a stair, or round`,
-      `${loose} loose ends`
-    );
-    check(ended === 6, 'and a descent over shelves still ends', `${6 - ended} of 6 ran on`);
   }
 
   // THE LOCKS. Three a world, and BOTH frames of each — a shut one whose open
@@ -9367,6 +9289,60 @@ rule('TRADE RULES — does each one actually change what the sim does?');
     gauge(
       `at the deep end a trade moves the kill rate between ${Math.min(...spread).toFixed(2)} and ` +
         `${Math.max(...spread).toFixed(2)}/s, and no pairing is meant to be the only one that works`
+    );
+  }
+
+  // WHAT A SKILL IS WORTH ON ITS OWN, which the gauge above cannot say: a
+  // ladder character walks a tree at random, so what it measures is the tree as
+  // much as the skill. Here it is the skill and NOTHING else — level 1, no
+  // trade, no points, no gear but the weapon the skill itself comes down
+  // holding. *"Selecting the skill and no talents, no gear nothing but the
+  // starting skill, and see how far they can get."*
+  {
+    // The FOURTH depth, because the first is cleared by all eight and says
+    // nothing, and past the sixth none of them lives long enough to differ.
+    const depth = 4;
+    const runs = 16;
+    const bare = (skillId: string): Character => {
+      const game = createGame('fresh');
+      game.character = makeCharacter({}, skillId);
+      armForSkill(game);
+      return game.character;
+    };
+
+    const rates: number[] = [];
+    const shares: number[] = [];
+    for (const skill of MAIN_SKILLS) {
+      let killed = 0;
+      let seconds = 0;
+      let share = 0;
+      for (let i = 0; i < runs; i++) {
+        const final = runToCompletion(
+          new RunSim([], bare(skill.id), new Rng(7000 + i * 13), { where: { zone: 0, rung: depth } }),
+          400
+        );
+        killed += final.killed;
+        seconds += final.elapsed;
+        share += final.killed / Math.max(1, final.totalMonsters);
+      }
+      const rate = killed / Math.max(1, seconds);
+      rates.push(rate);
+      shares.push(share / runs);
+      line(
+        `  ${skill.id.padEnd(16)} ${rate.toFixed(2)} kills/s, ` +
+          `${((share / runs) * 100).toFixed(0)}% of the floor put down`
+      );
+    }
+    const spread = Math.max(...rates) / Math.max(0.01, Math.min(...rates));
+    gauge(
+      `bare at depth ${depth}, the eight main skills kill between ` +
+        `${Math.min(...rates).toFixed(2)} and ${Math.max(...rates).toFixed(2)} a second — ${spread.toFixed(2)}x ` +
+        `between the best and the worst, and they are meant to start ROUGHLY level`
+    );
+    gauge(
+      `and put down between ${(Math.min(...shares) * 100).toFixed(0)}% and ` +
+        `${(Math.max(...shares) * 100).toFixed(0)}% of that floor before they die — Ambush is the low ` +
+        `one and it is its DELIVERY: it steps behind what it hits, so it fights every pack from inside`
     );
   }
 

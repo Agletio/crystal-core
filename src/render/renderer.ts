@@ -3,7 +3,7 @@
  * (a WebGL and a 2D context cannot share a canvas), and works in TILE UNITS —
  * scale and camera are its own business.
  */
-import { ENTRANCE, EXIT, TUNNEL, WALL, cornerOf, isRock, patchKey, raised, wangKey } from '../sim/grid';
+import { ENTRANCE, EXIT, TUNNEL, WALL, cornerOf, isRock, patchKey, wangKey } from '../sim/grid';
 import type { RunState } from '../sim/run';
 import type { Grid, Vec2 } from '../sim/grid';
 import type { ZoneSet } from './generated-tiles';
@@ -859,7 +859,7 @@ export function grainAt(count: number, x: number, y: number): number {
 }
 
 /** How lit a GROUND cell is, 0..1: a slow drift, darker at the rock's foot. */
-export const LIGHT = { low: 0.62, foot: 0.78, scale: 5, ground: 0.72 };
+export const LIGHT = { low: 0.62, foot: 0.78, scale: 5 };
 export const WASH_PER_TILE = 4; // samples a TILE each way; ONE is the per-cell mosaic this replaces
 
 function openness(grid: Grid, x: number, y: number): number { // the slope to the rock's foot
@@ -879,11 +879,6 @@ function openness(grid: Grid, x: number, y: number): number { // the slope to th
  */
 export function groundWash(grid: Grid, fx: number, fy: number): number {
   const drift = LIGHT.low + (1 - LIGHT.low) * patchNoise(fx, fy, LIGHT.scale, 71);
-  // A SHELF IS THE SAME FLOOR LIT A STEP UP. Three asks gave the Fissure's
-  // 193-luma sand a step of 0.1, -4.9 and 0.1 — a floor near white has no room
-  // to be lit further — so the LOW ground is what moves, and only where there
-  // IS a shelf. Bilinear like the foot, or the step is a line at every cell.
-  const step = grid.shelved ? LIGHT.ground + (1 - LIGHT.ground) * upness(grid, fx, fy) : 1;
   const x0 = Math.floor(fx);
   const y0 = Math.floor(fy);
   const tx = fx - x0;
@@ -893,19 +888,7 @@ export function groundWash(grid: Grid, fx: number, fy: number): number {
     openness(grid, x0, y0 + 1)
     + (openness(grid, x0 + 1, y0 + 1) - openness(grid, x0, y0 + 1)) * tx;
   const foot = top + (low - top) * ty;
-  return drift * (LIGHT.foot + (1 - LIGHT.foot) * foot) * step;
-}
-
-/** 1 over a raised cell, 0 over the ground, bilinear between. */
-function upness(grid: Grid, fx: number, fy: number): number {
-  const x0 = Math.floor(fx);
-  const y0 = Math.floor(fy);
-  const tx = fx - x0;
-  const ty = fy - y0;
-  const up = (x: number, y: number) => (raised(grid.at(x, y)) ? 1 : 0);
-  const top = up(x0, y0) + (up(x0 + 1, y0) - up(x0, y0)) * tx;
-  const low = up(x0, y0 + 1) + (up(x0 + 1, y0 + 1) - up(x0, y0 + 1)) * tx;
-  return top + (low - top) * ty;
+  return drift * (LIGHT.foot + (1 - LIGHT.foot) * foot);
 }
 
 /** Snaps a 0..1 roll onto the sub-tile grid. */

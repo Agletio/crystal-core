@@ -59,7 +59,7 @@ const RETONE: Record<string, Retone> = {
 // TONED WITH THE FLOOR IT SITS ON: chaining buys the SHAPE, not the tone.
 for (const name of [
   'fissure_pool', 'fissure_moss2', 'fissure_rubble', 'fissure_floor_cracked',
-  'fissure_floor_grit', 'fissure_floor_swept', 'fissure_shelf',
+  'fissure_floor_grit', 'fissure_floor_swept',
 ]) {
   RETONE[name] = RETONE.lit_round;
 }
@@ -67,13 +67,6 @@ for (const name of [
 /** Which zone floor a patch set is laid on, for the gain measured at emit. */
 const SITS_ON: Record<string, string> = {
   fissure_pool: 'lit_round',
-  // A SHELF IS TONED TO ITS FLOOR TOO, and for the same reason a pool is:
-  // toned only by RECIPE it is the same numbers over a DIFFERENT raw sheet,
-  // which came out grey against warm sand and read as another material. Only
-  // the zones that step DOWN belong here — their key-40 upper IS the map's
-  // floor, which is what the gain is measured against.
-  fissure_shelf: 'lit_round',
-  cavern_shelf: 'cavern_round',
   rot_blood: 'rot2_ragged',
   cavern_pool: 'cavern_round',
   seam_lava: 'seam_pro',
@@ -191,56 +184,6 @@ const patch = (zone: string, said: string, edge: string, ragged = 0.85) => ({
 
 const WET = 'wet dark stone at the waterline, the floor darkening as it goes under';
 
-/**
- * A RAISED SHELF OF THE SAME FLOOR. It is the ROCK WALL'S OWN SHAPE —
- * `transition_size: 1` is the full-tile cliff every zone set is built on, so a
- * plateau lands in the SAME 21 Wang keys. What separates it from a wall is the
- * GRID: a wall is unwalkable, a shelf is floor reachable only by a stair.
- */
-/**
- * A SHELF, and WHICH WAY THE STEP GOES IS THE FLOOR'S BRIGHTNESS. Height is
- * read off LIGHT in an overhead view, so one terrain has to be lit and the
- * other shaded — but a floor already near white has no room to be lit further.
- * MEASURED: the same words gave the Rot's dark floor a 32.2 luma step and the
- * Fissure's 193-luma sand a step of MINUS 4.9. So a dark floor steps UP (the
- * shelf is lit, the ground is the map's own tile) and a pale floor steps DOWN
- * (the shelf IS the map's own tile and the ground below it is in its shadow).
- * The PINNED terrain is whichever one must match the map exactly.
- */
-const raised = (zone: string, step: 'up' | 'down' = 'up') => ({
-  lower_description: FLOOR[zone].said
-    + (step === 'up'
-      ? ', lying LOWER and DEEP IN SHADOW, CLEARLY DARKER than the floor above it, '
-        + 'cool and unlit, NOT black, NOT a hole, NOT a pit'
-      : ', lying LOWER in the shelf\'s shadow, a clear step DARKER and cooler than '
-        + 'the floor above it, NOT black, NOT a hole, NOT a pit, NOT rock'),
-  ...(step === 'up'
-    ? { lower_base_tile_id: FLOOR[zone].tile }
-    : { upper_base_tile_id: FLOOR[zone].tile }),
-  upper_description: FLOOR[zone].said
-    + (step === 'up'
-      ? ', standing HIGHER on a raised shelf, MUCH BRIGHTER and warmer, full lamplight '
-        + 'straight down onto it, CLEARLY LIGHTER than the floor below, NOT the same '
-        + 'brightness, NOT dim, NOT shadowed'
-      : ', standing HIGHER on a raised shelf, exactly the floor the map already '
-        + 'draws, fully lit, NOT darker, NOT shadowed'),
-  // HEIGHT IS THE FACE, not the tint. Measured, the first reworded floors came
-  // back 4.8 luma apart and the edge drew as a HAIRLINE, so nothing said "a
-  // step up". The rock reads as raised because it draws a two-row cut face.
-  transition_description:
-    'a sheer cliff wall dropping a full step down from the upper floor to the lower, '
-    + 'a band of dark vertical rock face in shadow with a lit lip along its top edge, '
-    + 'NOT a thin line, NOT a hairline, NOT a crack, NOT flat',
-  shape_style: 'round',
-  transition_size: 1,
-  enhance: false,
-  tile_size: { width: 32, height: 32 },
-  outline: 'lineless',
-  shading: 'detailed shading',
-  detail: 'highly detailed',
-  view: 'high top-down',
-});
-
 /** A LEVEL 2 VARIANT: the same floor, differently grained, meeting the real one
  *  with NO boundary. `transition_size: 0` is what makes it a blend rather than
  *  a shore — a drawn edge is what made the first round read as holes. */
@@ -285,13 +228,6 @@ const ASK: Record<string, Record<string, unknown>> = {
   // do this later."* One ask per patch, all chained off their own zone's floor.
   // WATER IS FUNCTIONAL — a fishing pool stands on it — and the rest is what
   // the rock does on its own.
-  fissure_raised2: raised('fissure', 'down'),
-  // THE OTHER THREE SHELVES, asked as the Fissure's was: the one that shipped
-  // as `fissure_shelf` is `fissure_raised2` — never a failure, imported for
-  // nothing once the rim rule counted rock as high.
-  rot_shelf: raised('rot'),
-  cavern_shelf: raised('cavern', 'down'),
-  seam_shelf: raised('seam'),
   // FLOOR VARIATION is a patch whose other terrain is ANOTHER FLOOR. Every set
   // holds exactly ONE pure-floor tile — measured, 1 of 25 in all four — so the
   // open ground is one 32px square repeated, which is the blandness itself.

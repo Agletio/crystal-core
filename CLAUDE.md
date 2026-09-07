@@ -247,40 +247,20 @@ counter stands in the camp above it. **GOLD ALSO BUYS RAW, at a bad rate** —
 recipe you are two short of rather than a supply: a bare clear's gold buys 0.80
 raw against the 21 it gathers, so descending is 26x the rate.
 
-**A CHAMBER MAY STAND A LEVEL UP, and nothing is ever stacked.** *"Raised only,
-no levels stacked on top of each other."* `SHELF` is a chamber's floor a level
-up, walkable; `RIM` is its edge band and NOBODY WALKS IT — with a per-cell
-`walkable` that one rule keeps the two levels apart for every mover, the
-pathfinder, line of sight and the separation push at once, where an edge rule
-would have to be taught to each and a knockback would still shove a body off a
-cliff; `STAIR` is a rim cell you climb through, its foot the ground cell beside
-it. A room is raised WHOLE (`raiseRooms`, off the room graph and never off
-noise contours, which give rings nobody can reach), never the hole's room and
-never the way out's, only one with room for an interior inside its rim. **ROCK
-COUNTS AS HIGH**: a shelf against the wall has no rim there and its set draws on
-under the rock, which wins at any corner the two share. The shelf is drawn by
-`SHELF_SET`, the zone's floor as both terrains with the cliff tool's full-tile
-face, keyed by the SAME 21 corners the rock is (`wangKey(grid, x, y, high)`), so
-`fitShelf` mends a step the set cannot draw by FILLING the notch rather than
-shrinking the shelf — demoting alone ate a chamber's south half row by row.
-**The stairs are the proof of reachability**: at the corridor MOUTHS first, then
-south faces, then any straight rim, joined by union-find until every walkable
-cell is reached from the hole; what is still cut off is dug to through rock and
-a shelf nothing reaches comes down. A south stair carries the tall face, the
-other three a flat run of the same treads (`stair_e`/`stair_w` are the south
-picture turned at import — a TILE is never turned, a flat prop may be). `RAISE`
-is the share of a world's chambers that stand up and **IT SHIPS AT ZERO until
-the user has judged the shelf on a floor** (all four worlds have a set); `raiseShare` is the
-dev kit's override (`#dev-shelves`, `SHELVES=1` on `descent-peek`) and what the
-demo forces to prove every seed. Measured with every eligible chamber up: 2.8
-of 7 rooms a Fissure map stand, and a descent over them still ends.
+**THERE ARE NO RAISED CHAMBERS, and nothing is ever stacked.** *"Lets just get
+rid of the raised areas they look bad and its too hard to make it work."* A
+floor is ONE level throughout: no shelf, no rim, no stairs. `wangKey` still
+reads a cell's four corners in base three off the ROCK alone, which is the whole
+of what a set is keyed by. Do not build it back — the shelf sets, the stair
+props and `RAISE` are deleted, and what a floor gains instead is what stands ON
+it.
 
 **A FLOOR IS ONE TILE AND THE WASH IS WHAT VARIES IT — AND THE WASH IS NEVER
 PER CELL.** A set holds one pure floor tile, and two thousand of it read as
 wallpaper; measured, three of the four ship almost perfectly flat (a spread of
 2.3 to 5.6 luma, a wrap seam of 1 to 4), so the tiles were never the problem.
-**NOTHING IS TINTED PER CELL any more** — not the floor, not the shelf, not a
-pool. Every tile is drawn at full strength and `groundWash` is multiplied over
+**NOTHING IS TINTED PER CELL any more** — not the floor, not a pool. Every
+tile is drawn at full strength and `groundWash` is multiplied over
 the whole floor as ONE field: *"once the floor is generated… generate a gradient
 ON TOP of those tiles… make sure it's not just giving a recolor to entire tiles
 or you're going to get sharp lines."*
@@ -325,7 +305,7 @@ DEEP is every cell of it with the patch on all four sides (`Grid.deep`), and its
 ring walks, drawn as the shore. So water lies against a wall and still leaves a
 way round, and `placePatches` refuses a lake WHOLE if its deep strands one dry
 cell. A landmark keeps a dry ring — the way out standing in a pond is a hole in
-the water — and nothing wet takes a stair's foot or a face cell.
+the water — and nothing wet takes a face cell.
 
 **THERE IS NO FILTER, because there is nothing to filter.** A clear banks the
 LOT; what you do not want is dismantled at the anvil or sold across the counter.
@@ -1046,6 +1026,27 @@ accounts for. `splashShare` ADDS and `splashRadius` MULTIPLIES, both ordinary
 grants a tree, a trade or gear can hand over, and the radius goes through
 `areaRadius` so increased Area of Effect from anywhere widens it.
 
+**THE EIGHT START ROUGHLY LEVEL, AND IT IS MEASURED BARE.** *"If they have
+similar starting power it doesn't need to be exact but roughly similar, then
+they should scale roughly the same since they should have access to all the same
+stuff."* The yardstick is a character with NOTHING — level 1, no trade, no
+points, no gear but the weapon the skill itself comes down holding — at DEPTH 4
+of The Shallows, which is the shallowest floor that separates them: the first is
+cleared by all eight and past the sixth none of them lives. Measured, they kill
+0.31 to 0.44 a second, **1.44x between the best and the worst** against 2.79x
+before, and put down 64% to 84% of that floor. **THE SHEET DOES NOT PREDICT
+IT**: single-target DPS runs 58 to 153 in a different ORDER, because what a
+skill reaches for free is half of what it is worth. Two were levelled to get
+there — Lightning Arrow, the only one holding a two-hander, from 58 damage to
+48, and Blight, the slowest by 1.7x, to a 1.1-tile cloud over 5 seconds at 155.
+**A LEVER THAT MULTIPLIES IS THE WRONG ONE**: Blight's radius fixed the bare end
+at 1.6 and took an INVESTED build to 5.93 kills/s against everybody else's
+3.5–4.3, because area is what a tree already sells. Every bare-end change is
+checked at the deep end too. **AMBUSH IS THE ONE THAT STILL SITS APART**, at 39%
+of the floor on a kill rate inside the band: it steps BEHIND
+what it hits, so it fights every pack from inside one. That is its delivery, and
+the number is printed rather than tuned away.
+
 **A SKILL'S OWN TREE BUYS WHAT THE SKILL DOES.** *"Remove all the flat stats
 that aren't related to the skill. So like health, armour and stuff like that —
 attack and cast speed, crit etc is all fine."* A web may sell `damage`,
@@ -1219,6 +1220,5 @@ src/ui/builder.ts  THE LEVEL BUILDER: paint a floor with the real sets and props
 tools/art/         the generator, over MCP: bodies.json asks, generated.json answers
 tools/*-peek.mjs   screenshots off the committed bundle; plan-peek draws a builder plan
 tools/act-floors.mts  where the FLOORS are in a cross-section, to place a depth on one
-tools/terrain-proto.mts  the standalone reference for the terraced generator
 src/demo.ts        the checks; src/mods-check.ts the modifier sweep
 ```
