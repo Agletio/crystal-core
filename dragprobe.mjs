@@ -3,8 +3,8 @@
  * stocks, reorders one dock slot onto another, then drags a window by its head
  * and checks the stack it landed in.
  *
- * Exists because `npm run guide` answers this in minutes by playing real
- * descents, and a question this small should cost seconds — 20 of them. Run it
+ * A question this small should cost seconds — 20 of them — where the suites
+ * that would also catch it cost minutes of real descents. Run it
  * for any change that moves the dock, a window's position or a z-index; on a
  * failure it prints what `elementFromPoint` actually hits at the drop, which is
  * the question every guess about stacking is really asking.

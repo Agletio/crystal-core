@@ -1,7 +1,5 @@
-/**
- * The trials web: the fourth thing walked through `webgraph.ts`, and the only
- * one whose points are not bought by a level.
- */
+/** The trials web: the fourth thing walked through `webgraph.ts`, and the only
+ *  one whose points are not bought by a level. */
 import { CAMPAIGN_REWARD, GRINDS, POINTS } from './data';
 import { buildTrials } from './trials/layout';
 import { TRIAL_WEB } from './trials/web';
@@ -17,8 +15,6 @@ export const trialNodes = (): SkillNodeDef[] => TRIALS_WEB.nodes;
 
 export const trialNodeById = (nodeId: string): SkillNodeDef | undefined =>
   TRIALS_WEB.nodes.find((n) => n.id === nodeId);
-
-export const trialRegionOf = (nodeId: string): string | undefined => TRIALS_WEB.regionOf[nodeId];
 
 /** NOTHING UNTIL THE LAMPWRIGHT HANDS THE CAMPAIGN'S REWARD OVER. Gated on the
  *  HANDOVER and not on the climb, so the points arrive in his hands beside the

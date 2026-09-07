@@ -104,8 +104,8 @@ export const crystalLevel = (crystal: Item): number =>
   Number(crystal.meta.level) || levelForXp(crystalXp(crystal));
 
 /** THE SEAM IS SOCKETED FOR, never picked. *"Socketing 2 lvl 4 prismatic and 2
- *  lvl 4 demonic gives you the seam."* `PROVING.seamOf` of each aura world at
- *  the TOP level and nothing else: the last world is the whole wall spent. */
+ *  lvl 4 demonic gives you the seam."* `SEAM_OF` of each aura world at the TOP
+ *  level and nothing else: the last world is the whole wall spent. */
 export function seamSocketed(crystals: Item[]): boolean {
   const top = CRYSTAL_LEVELS[CRYSTAL_LEVELS.length - 1].level;
   const at = (family: MonsterFamily): number =>

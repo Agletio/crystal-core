@@ -6,7 +6,7 @@
  * and skill webs are. It opens FRAMED, because the shape of the web is the
  * decision: which four regions of twelve you can afford to walk.
  */
-import { CAMPAIGN_REWARD, GRINDS, LADDER, THEME_BY_ID } from '../data';
+import { CAMPAIGN_REWARD, GRINDS } from '../data';
 import {
   TRIALS_WEB,
   TRIAL_POINTS_MAX,

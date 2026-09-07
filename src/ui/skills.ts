@@ -55,7 +55,7 @@ import {
 import { AILMENT_BY_ID, DAMAGE_TYPE_BY_ID } from '../data';
 import { WebFind } from './websearch';
 import type { GameState } from '../game/state';
-import type { SkillCategory, SkillDef } from '../types';
+import type { SkillDef } from '../types';
 
 const $ = (id: string) => document.getElementById(id)!;
 

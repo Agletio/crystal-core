@@ -1,20 +1,20 @@
 /**
  * THE LEDGER: what one descent adds to each counter, and which lines of it that
- * count has paid for. A new grind is one registry entry and one `GRINDS` row —
- * the shape `TRIAL_CONDITIONS` had, asking how MANY rather than whether.
- * Counted at the CLEAR, never at the door, exactly as a boss is marked.
+ * count has paid for. A new grind is one registry entry and one `GRINDS` row,
+ * asking how MANY rather than whether. Counted at the CLEAR, never at the door,
+ * exactly as a boss is marked.
  */
 import { GRINDS, GRIND_BY_ID } from '../data';
 import { replayTrialNodes, trialNodeById, trialPointsFor } from '../trials';
 import type { GrindDef } from '../data';
-import type { QuestFacts } from './crystals';
+import type { DescentFacts } from './crystals';
 import type { Character } from '../sim/character';
 import type { RunState } from '../sim/run';
 import type { Item } from '../types';
 import type { GameState } from './state';
 
 /** What one cleared descent adds. A counter nothing adds to never pays. */
-export type GrindCount = (facts: QuestFacts) => number;
+export type GrindCount = (facts: DescentFacts) => number;
 
 export const GRIND_COUNTERS: Record<string, GrindCount> = {
   descents: () => 1,
@@ -29,8 +29,8 @@ export const GRIND_COUNTERS: Record<string, GrindCount> = {
 
   bearers: (f) => f.bearers ?? 0,
 
-  // INFLUENCE is the world the descent was actually run in, which is what a
-  // crystal's family buys. The Fissure has no line: it is where you start.
+  // The world the descent was actually RUN in, which is what a crystal's family
+  // buys. The Fissure has no line: it is where you start.
   demonic: (f) => (f.set.theme === 'demonic' ? 1 : 0),
 
   prismatic: (f) => (f.set.theme === 'prismatic' ? 1 : 0),
@@ -40,7 +40,7 @@ export const GRIND_COUNTERS: Record<string, GrindCount> = {
 
 /** WHAT ONE CLEARED DESCENT ADDS, read off the run's own state and NOWHERE
  *  ELSE, so what a harness counts is what a clear counts. */
-export function descentFacts(state: RunState, socketed: Item[] = []): QuestFacts {
+export function descentFacts(state: RunState, socketed: Item[] = []): DescentFacts {
   const opened = state.hoards.filter((h) => h.opened);
   return {
     set: state.set,
@@ -66,7 +66,7 @@ export const grindsDone = (character: Character): GrindDef[] =>
 
 /** IN PLACE, at the end of a clear; returns what the count just finished, since
  *  a point earned in silence is a point nobody spends. */
-export function takeGrinds(game: GameState, facts: QuestFacts): GrindDef[] {
+export function takeGrinds(game: GameState, facts: DescentFacts): GrindDef[] {
   const character = game.character;
   const before = new Set(grindsDone(character).map((g) => g.id));
   const counts = { ...(character.grinds ?? {}) };

@@ -343,7 +343,7 @@ export function advanceSocketed(game: GameState, set: RunSet): CrystalGain[] {
 // --- what a descent WAS -----------------------------------------------------
 
 /** What one cleared descent WAS, for the Ledger to be counted off it. */
-export interface QuestFacts {
+export interface DescentFacts {
   set: RunSet;
   /** Seconds it took. */
   elapsed: number;

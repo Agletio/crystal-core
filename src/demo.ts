@@ -463,7 +463,6 @@ import {
   takeHandover,
   xpForClear,
 } from './game/crystals';
-import type { QuestFacts } from './game/crystals';
 import {
   clearSave,
   copySlot,

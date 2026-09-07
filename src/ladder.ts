@@ -4,7 +4,7 @@
  */
 import { CAMPAIGN_REWARD, LADDER, LAMPWRIGHT, SOULS } from './data';
 import type { Character } from './sim/character';
-import type { LinkDef, MapTheme, SideRoomDef } from './types';
+import type { LinkDef, SideRoomDef } from './types';
 
 export interface Rung {
   zone: number; // index into LADDER.zones; `rung` is 1-based within it

@@ -916,7 +916,6 @@ export const TOOLS: ToolDef[] = [
 ];
 
 export const TOOL_BY_ID: Record<string, ToolDef> = Object.fromEntries(TOOLS.map((t) => [t.id, t]));
-export const toolsForSlot = (slot: string): ToolDef[] => TOOLS.filter((t) => t.slot === slot);
 
 /** EVERY RUNG IS A BASE, derived so the two cannot drift. A tool holds no
  *  modifier slots and never rolls — what it is worth is `more`, off the rung —
@@ -1011,16 +1010,6 @@ export const KIND_VARIETY: Record<string, number> = {
 // oversubscribed: more candidates than slots is what makes a roll a roll.
 
 /** A crystal's ward names the thing it turns aside, not the type by id. */
-/** WARDS BY FAMILY: a ward has to be one NO BUILD CAN IGNORE, and one per type
- *  failed that seven times in eight. Prismatic rides with Elemental. */
-/** A ward's rungs, PER TYPE — scaled down from a single-type ward's by the
- *  average family size, so what a build actually FACES did not move. */
-export const WARD_TIERS: ReadonlyArray<readonly [number, number, number, number]> = [
-  [60, 120, 15, 19],
-  [40, 260, 10, 13],
-  [1, 620, 4, 7],
-];
-
 export const WARD_GROUPS = [
   { id: 'elemental', name: 'of Cinders and Frost', types: ['fire', 'cold', 'lightning', 'prismatic'] },
   { id: 'occult', name: 'of Clean Blood', types: ['poison', 'dark', 'light'] },
@@ -3023,10 +3012,8 @@ export const PROFESSION_BY_ID: Record<string, ProfessionDef> = Object.fromEntrie
 export const PROCESSING = PROFESSIONS.filter((p) => p.kind === 'process');
 export const GATHERING = PROFESSIONS.filter((p) => p.kind === 'gather');
 
-/** Who WORKS a family at a station, and who GATHERS it. A family has exactly
- *  one of each, except gem, which nothing gathers. */
-export const processorOf = (family: string): ProfessionDef | undefined =>
-  PROCESSING.find((p) => p.family === family);
+/** Who GATHERS a family. Every family has exactly one, except gem — universal,
+ *  and nothing gathers it. */
 export const gathererOf = (family: string): ProfessionDef | undefined =>
   GATHERING.find((p) => p.family === family);
 
@@ -3851,10 +3838,10 @@ export const GRINDS: GrindDef[] = [
   { id: 'bearer_50', name: 'Carried Out', detail: 'Put down 50 Bearers and take what they carried.', counter: 'bearers', need: 50, pays: 2 },
   { id: 'bearer_250', name: 'Everything They Held', detail: 'Put down 250 Bearers.', counter: 'bearers', need: 250, pays: 4 },
 
-  { id: 'demonic_50', name: 'A Taste for Rot', detail: 'Clear 50 descents under Demonic influence.', counter: 'demonic', need: 50, pays: 2 },
-  { id: 'demonic_200', name: 'At Home in It', detail: 'Clear 200 descents under Demonic influence.', counter: 'demonic', need: 200, pays: 3 },
-  { id: 'prismatic_50', name: 'Reading the Light', detail: 'Clear 50 descents under Prismatic influence.', counter: 'prismatic', need: 50, pays: 2 },
-  { id: 'prismatic_200', name: 'Every Angle of It', detail: 'Clear 200 descents under Prismatic influence.', counter: 'prismatic', need: 200, pays: 3 },
+  { id: 'demonic_50', name: 'A Taste for Rot', detail: 'Clear 50 descents in the Demonic world.', counter: 'demonic', need: 50, pays: 2 },
+  { id: 'demonic_200', name: 'At Home in It', detail: 'Clear 200 descents in the Demonic world.', counter: 'demonic', need: 200, pays: 3 },
+  { id: 'prismatic_50', name: 'Reading the Light', detail: 'Clear 50 descents in the Prismatic world.', counter: 'prismatic', need: 50, pays: 2 },
+  { id: 'prismatic_200', name: 'Every Angle of It', detail: 'Clear 200 descents in the Prismatic world.', counter: 'prismatic', need: 200, pays: 3 },
   { id: 'seam_25', name: 'Where It Meets', detail: 'Clear 25 descents in the Seam.', counter: 'seam', need: 25, pays: 4 },
 ];
 

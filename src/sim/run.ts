@@ -442,8 +442,8 @@ export interface RunOptions {
   /** SOMEBODY TO FIND: a `SceneDef` id and the sprite. Placed in the room
    *  FURTHEST from the way in, never rolled — a draw moves every roll after it. */
   meets?: { id: string; sprite: string };
-  /** WHERE THIS GOES, and where difficulty comes from. Handed a Proving Ground
-   *  as `undefined` the sim ran in whatever the crystals composed to. */
+  /** WHERE THIS GOES, and where difficulty comes from: without one the sim
+   *  runs in whatever the crystals compose to. */
   where?: RunWhere;
   /** Props the GAME decides on top of the scene's own: full or empty sockets. */
   dressing?: { id: string; x: number; y: number }[];

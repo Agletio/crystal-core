@@ -24,7 +24,7 @@ import { GENERATED } from '../render/generated-art';
 import { heroSpriteFor } from '../sim/appearance';
 import { drawBody } from './bodydraw';
 import { drawn } from './icons';
-import { openTalk, closeParley, syncTalk } from './talk';
+import { openTalk, closeParley } from './talk';
 import { isTaleUp, playTale } from './tale';
 import {
   canEnter, climbed, courseOf, depthOfId, depthOfSide, furthest, isCleared,
@@ -33,7 +33,6 @@ import {
 import type { Rung, RunWhere } from '../ladder';
 import type { RunSet } from '../sim/crystal';
 import { SCENE_ART } from '../render/generated-scene';
-import type { MapTheme } from '../types';
 import type { GameState } from '../game/state';
 
 import type { Character } from '../sim/character';

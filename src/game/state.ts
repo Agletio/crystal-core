@@ -29,7 +29,7 @@ import {
   UNIQUE_BY_ID,
   starterWeapon,
 } from '../data';
-import type { EquipSlotDef, MapTheme, RunSlotDef } from '../types';
+import type { EquipSlotDef, RunSlotDef } from '../types';
 import {
   canSell,
   grant,
@@ -45,7 +45,7 @@ import {
   stackKey,
 } from '../economy';
 import { baseTier } from '../mods';
-import { canDualWield, equippedSkill, mainSkillId, makeCharacter } from '../sim/character';
+import { canDualWield, mainSkillId, makeCharacter } from '../sim/character';
 import { starterLoadout } from '../sim/loadout';
 import { SCENES } from '../scenes';
 import { heardMark, metMark } from './scenes';

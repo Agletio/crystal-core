@@ -834,7 +834,6 @@ export function patchTileAt(kit: ZoneSet, grid: Grid, x: number, y: number, inde
   return kit.tiles.findIndex((t) => t.key === key);
 }
 
-export const ROCK_DEPTH = 2; // tiles of rock drawn past the floor they wall in
 
 /** A FISHING SPOT IS ONE RIPPLE THAT MOVES — *"an actual moving ripple even
  *  if it's contained to that size"* — rings spreading from the cell's middle
@@ -907,22 +906,6 @@ function upness(grid: Grid, fx: number, fy: number): number {
   const top = up(x0, y0) + (up(x0 + 1, y0) - up(x0, y0)) * tx;
   const low = up(x0, y0 + 1) + (up(x0 + 1, y0 + 1) - up(x0, y0 + 1)) * tx;
   return top + (low - top) * ty;
-}
-
-/** How lit a rock tile is, by how far it sits from the nearest thing that is
- *  not rock: 1 at the cut face, 0 past `ROCK_DEPTH`. A generated tileset covers
- *  the whole padded grid, and two thousand rock tiles read as wallpaper. */
-export function wallFade(at: (x: number, y: number) => number, x: number, y: number): number {
-  if (at(x, y) !== WALL) return 1;
-  for (let r = 1; r <= ROCK_DEPTH; r++) {
-    for (let dy = -r; dy <= r; dy++) {
-      for (let dx = -r; dx <= r; dx++) {
-        if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
-        if (at(x + dx, y + dy) !== WALL) return 1 - (r - 1) / ROCK_DEPTH;
-      }
-    }
-  }
-  return 0;
 }
 
 /** Snaps a 0..1 roll onto the sub-tile grid. */

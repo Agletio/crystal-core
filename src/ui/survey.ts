@@ -9,7 +9,7 @@
  * picture out of a canvas instead of a PNG, so a line here and a line there
  * cannot come apart.
  */
-import { LADDER, THEME_BY_ID } from '../data';
+import { LADDER } from '../data';
 import { courseOf, mainId, depthOfId } from '../ladder';
 import { SCENE_ART } from '../render/generated-scene';
 import { readCave, thin, walkFrom } from '../cavepath';

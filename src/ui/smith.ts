@@ -34,7 +34,6 @@ export function initSmith(state: GameState, changed?: () => void): void {
   $('smith-close').onclick = closeSmith;
 }
 
-export const smithButtonId = (toolId: string): string => `smith-${doing}-${toolId}`;
 
 /** One row of the ledger, drawn exactly as the anvil's is. */
 function needRow(icon: Element | null, what: string, held: number, wanted: number): HTMLElement {

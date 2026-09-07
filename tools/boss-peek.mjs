@@ -62,13 +62,11 @@ for (let i = 0; i < 3; i++) {
   await page.keyboard.press('Escape');
   await page.waitForTimeout(120);
 }
-// The keyhole: socketing consumes the key and arms the next entry. The
-// sockets are the Proving Ground's alone, so its tab comes first.
+// The keyhole: socketing consumes the key and arms the next entry. The wall is
+// a DRAWER off the map's right edge, shut by default, so it is opened first.
 await page.evaluate(() => document.getElementById('camp-crack')?.click());
 await page.waitForTimeout(300);
-await page.evaluate(() => {
-  [...document.querySelectorAll('.climbtab')].find((t) => t.textContent?.startsWith('The Proving Ground'))?.click();
-});
+await page.evaluate(() => document.getElementById('run-wall-tab')?.click());
 await page.waitForTimeout(300);
 const armed = await page.evaluate(() => {
   const b = document.getElementById('run-socket-key');

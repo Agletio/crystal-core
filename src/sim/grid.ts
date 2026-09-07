@@ -323,7 +323,6 @@ let forcedTest = false;
 export function testLevel(on: boolean): void {
   forcedTest = on;
 }
-export const isTestLevel = (): boolean => forcedTest;
 const designFor = (theme: MapTheme): LevelDesign | undefined => (forcedTest ? TEST_LEVEL : DESIGN[theme]);
 
 /** The smallest interior a shelf keeps; under it the chamber comes back down. */
@@ -545,9 +544,8 @@ export function rimShelves(grid: Grid): void {
 
 /** A CLIFF EDGE NEVER STOPS IN OPEN FLOOR — *"it either needs to reach the wall
  *  or turn the other direction."* The rim is the raised region's boundary
- *  LAYER, so it rings unless that region is one cell wide: 74 of 863 rim cells
- *  dead-ended over 12 maps, none at rock. Demoting the spur is the safe
- *  direction — a rim does not walk and floor does. */
+ *  LAYER, so it rings unless that region is one cell wide: 74 of 863 dead-ended
+ *  over 12 maps, none at rock. Demoting is safe — a rim does not walk. */
 function closeRim(grid: Grid): void {
   for (let pass = 0; pass < 16; pass++) {
     rimShelves(grid);

@@ -41,10 +41,6 @@ export const folkMet = (game: GameState): SceneDef[] =>
 export const folkRooms = (game: GameState): SceneDef[] =>
   SCENES.filter((s) => !s.encounter && s.room && hasMet(game, s.id));
 
-/** Who LIVES in a world, in the order a campaign meets them. */
-export const folkOf = (theme: MapTheme): SceneDef[] =>
-  SCENES.filter((s) => !s.encounter && s.theme === theme);
-
 /** HEARD IN TOWN, which is not the same as walked past: the queue moves on
  *  this and never on the meeting. */
 export const heardMark = (id: string): string => `heard:${id}`;

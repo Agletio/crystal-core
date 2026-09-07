@@ -121,7 +121,6 @@ export function syncTalk(): void {
   }
 }
 
-export const isTalking = (): boolean => !$('speech').hidden;
 
 /** WHETHER THEY WANT YOU. What the mark over their head is for: something to
  *  hand over, a key owed, or a bench you are carrying the relic for. A counter

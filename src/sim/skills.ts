@@ -1,7 +1,7 @@
 /**
- * Skill delivery registry — the extension point for combat, same pattern as
- * EFFECTS in crafting.ts. A skill is a data entry in SKILLS naming a behaviour
- * here; new code is only needed for a genuinely new KIND of delivery.
+ * Skill delivery registry — the extension point for combat. A skill is a data
+ * entry in SKILLS naming a behaviour here; new code is only needed for a
+ * genuinely new KIND of delivery.
  *
  * A behaviour never touches the sim. It gets candidate targets and a `hit`
  * callback and decides who is hit and for how much; damage numbers, crit,

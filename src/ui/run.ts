@@ -90,7 +90,7 @@ import { openCharacter } from './character';
 import { openCraft } from './craft';
 import { openStash } from './stash';
 import { openTrials } from './trials';
-import { drawn, portraitIcon, skillIcon } from './icons';
+import { drawn, skillIcon } from './icons';
 import { itemIcon } from './icons';
 import { itemCard } from './itemcard';
 import { attachTooltip, hideTooltip } from './tooltip';
@@ -754,7 +754,6 @@ function endEncounter(): void {
   // Marked at the clear, so a room you died in is one you meet again. BEFORE
   // the trials are asked: the first rung is this boss being down.
   if (report.cleared && def?.encounter) takeBoss(game, def.encounter);
-  // A zone's ARENA is a rung; the Proving Ground never is.
   if (report.cleared && ran) takeRung(game.character, ran);
   if (report.cleared) payTrials(state);
 
@@ -1348,8 +1347,6 @@ async function upgradeRenderer(host: HTMLElement, palette: Palette): Promise<voi
 
 export function initRun(state: GameState): void {
   game = state;
-  // The sockets belong to the Proving Ground's tab, which is `climb.ts`'s to
-  // lay out. This is the only place they are ever drawn.
   initClimb(game);
   setsInClimb((at) =>
     runSet(socketed(game), trialMod(game.character), at, soulsIn(game.character)));

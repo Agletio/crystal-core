@@ -25,11 +25,11 @@ import {
   versionsFor,
   whyNotCraft,
 } from '../game/forge';
-import type { CraftPart, CraftRecipe } from '../game/forge';
+import type { CraftRecipe } from '../game/forge';
 import { collectWork, professionAt } from '../game/work';
 import type { GameState } from '../game/state';
 import { Rng } from '../rng';
-import { drawn, itemIcon } from './icons';
+import { itemIcon } from './icons';
 import { itemCard } from './itemcard';
 import { attachTooltip } from './tooltip';
 import { note } from './history';
@@ -105,16 +105,6 @@ function tabs(): void {
     };
     host.append(tab);
   }
-}
-
-/** WHAT ONE PART ASKS FOR, in numbers. A TIER is how many different world
- *  versions it demands, so the count of worlds is the whole of what a tier is
- *  and it has to be on the card. */
-export function saysPart(part: CraftPart): string {
-  const family = MATERIAL_FAMILY_BY_ID[PROFESSION_BY_ID[part.profession]?.family ?? ''];
-  const one = family?.one ?? 'unit';
-  const many = `${part.wants} ${one}${part.wants === 1 ? '' : 's'}`;
-  return part.versions === 1 ? many : `${many} from each of ${part.versions} worlds`;
 }
 
 /** THE WINDOW YOUR LEVEL BUYS, said as the two ends of it — the whole reason
