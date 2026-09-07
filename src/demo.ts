@@ -272,7 +272,7 @@ import {
   slotUsed,
   statPower,
 } from './mods';
-import { DESIGN, ENTRANCE, EXIT, FLOOR, LAKE_SHORE, SHELF_SET, TEST_LEVEL, TUNNEL, WALL, dist, generateMap, patchesFor, raiseShare, reachable, roomCenter, sceneMap, shoreClear, testLevel } from './sim/grid';
+import { DESIGN, ENTRANCE, EXIT, FLOOR, LAKE_SHORE, RIM, SHELF_SET, STAIR, TEST_LEVEL, TUNNEL, WALL, dist, generateMap, patchesFor, raiseShare, reachable, roomCenter, sceneMap, shoreClear, testLevel } from './sim/grid';
 import type { Grid } from './sim/grid';
 import { CREATURE_FRAMES, GLOW, IDLE_CYCLE, STRIDE_CYCLE, framesOf, wellFormed } from './render/sprites';
 import { PORTRAITS } from './render/portraits';
@@ -2432,6 +2432,8 @@ rule('SPRITES — is the pixel art well formed?');
     raiseShare(1);
     let stranded = 0;
     let unreached = 0;
+    let loose = 0;
+    let rimCells = 0;
     let differ = 0;
     let shelves = 0;
     let stairs = 0;
@@ -2449,6 +2451,25 @@ rule('SPRITES — is the pixel art well formed?');
       }
       shelves += map.raised.length;
       stairs += map.props.filter((p) => p.id.startsWith('stair_')).length;
+      // A CLIFF EDGE NEVER STOPS IN OPEN FLOOR — *"the rock doesnt reach flush
+      // with a wall it just abruptly ends."* The rim is the boundary LAYER of
+      // the raised region, so it closes into a ring unless the region is one
+      // cell wide; rock and a STAIR are the two things allowed to carry it on.
+      for (let y = 1; y < grid.height - 1; y++) {
+        for (let x = 1; x < grid.width - 1; x++) {
+          if (grid.at(x, y) !== RIM) continue;
+          rimCells++;
+          let on = 0;
+          for (let dy = -1; dy <= 1; dy++) {
+            for (let dx = -1; dx <= 1; dx++) {
+              if (!dx && !dy) continue;
+              const t = grid.at(x + dx, y + dy);
+              if (t === RIM || t === STAIR || t === WALL) on++;
+            }
+          }
+          if (on <= 1) loose++;
+        }
+      }
       for (const r of map.raised) {
         const c = roomCenter(map.rooms[r]);
         if (!seen.has(c.y * grid.width + c.x)) unreached++;
@@ -2472,6 +2493,11 @@ rule('SPRITES — is the pixel art well formed?');
     // A stair with no picture is a line the hero crosses for no reason.
     const stairArt = ['stair_s', 'stair_n', 'stair_e', 'stair_w'].filter((id) => !PROP_ART[id]);
     check(stairs > 0 && stairArt.length === 0, 'and every side a stair climbs has its picture', `undrawn ${stairArt.join(', ')}`);
+    check(
+      rimCells > 0 && loose === 0,
+      `and not one of ${rimCells} cliff cells dead-ends in open floor: every edge runs to rock, a stair, or round`,
+      `${loose} loose ends`
+    );
     check(ended === 6, 'and a descent over shelves still ends', `${6 - ended} of 6 ran on`);
   }
 

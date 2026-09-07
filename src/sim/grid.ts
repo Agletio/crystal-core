@@ -163,6 +163,9 @@ export class Grid {
 }
 
 const N4 = [[1, 0], [-1, 0], [0, 1], [0, -1]] as const;
+const N8 = [
+  [1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1],
+] as const;
 
 /** Under half a tile, so a rank-scaled body can still walk a one-tile gap. */
 const BODY_MAX = 0.45;
@@ -540,6 +543,32 @@ export function rimShelves(grid: Grid): void {
   for (const k of rim) grid.tiles[k] = RIM;
 }
 
+/** A CLIFF EDGE NEVER STOPS IN OPEN FLOOR — *"it either needs to reach the wall
+ *  or turn the other direction."* The rim is the raised region's boundary
+ *  LAYER, so it rings unless that region is one cell wide: 74 of 863 rim cells
+ *  dead-ended over 12 maps, none at rock. Demoting the spur is the safe
+ *  direction — a rim does not walk and floor does. */
+function closeRim(grid: Grid): void {
+  for (let pass = 0; pass < 16; pass++) {
+    rimShelves(grid);
+    const loose: number[] = [];
+    for (let y = 0; y < grid.height; y++) {
+      for (let x = 0; x < grid.width; x++) {
+        if (grid.at(x, y) !== RIM) continue;
+        let on = 0;
+        // A STAIR carries the edge on; rock is where one may die.
+        for (const [dx, dy] of N8) {
+          const t = grid.at(x + dx, y + dy);
+          if (t === RIM || t === STAIR || t === WALL) on++;
+        }
+        if (on <= 1) loose.push(y * grid.width + x); // nothing carries the edge on
+      }
+    }
+    if (loose.length === 0) return;
+    for (const k of loose) grid.tiles[k] = FLOOR;
+  }
+}
+
 /** Every raised cell joined to this one, diagonals included, back to ground. */
 function lowerShelf(grid: Grid, from: number): void {
   const queue = [from];
@@ -590,6 +619,7 @@ function fitShelf(grid: Grid, set: string | undefined): void {
     }
     if (mended === 0) break;
   }
+  closeRim(grid);
   for (let k = 0; k < grid.tiles.length; k++) {
     if (grid.tiles[k] !== SHELF) continue;
     let interior = 0;
@@ -1486,15 +1516,15 @@ export function generateMap(
   const lifted = raiseRooms(grid, rooms, roomOf, rng, share, new Set([0, rooms.indexOf(exitRoom)]));
   smoothShelves(grid, new Set([entrance, exit, ...rooms.map(roomCenter)].map((v) => v.y * grid.width + v.x)));
   fitShelf(grid, SHELF_SET[theme]);
-  grid.shelved = grid.tiles.some((t) => raised(t)); // what SURVIVED the fitting
   for (const i of lifted) {
     const c = roomCenter(rooms[i]);
     if (grid.at(c.x, c.y) !== SHELF) {
       for (let k = 0; k < roomOf.length; k++) if (roomOf[k] === i + 1 && raised(grid.tiles[k])) lowerShelf(grid, k);
     }
   }
-  rimShelves(grid);
+  grid.shelved = grid.tiles.some((t) => raised(t)); // what SURVIVED the fitting
   const stairs = placeStairs(grid, rng, entrance);
+  closeRim(grid); // after the STAIRS: one is cut into the rim and splits its run
   const standing = lifted.filter((i) => {
     const c = roomCenter(rooms[i]);
     return grid.at(c.x, c.y) === SHELF;
