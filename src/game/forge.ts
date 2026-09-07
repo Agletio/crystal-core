@@ -24,6 +24,9 @@ import {
 } from '../data';
 import type { MaterialDef, ToolDef, ToolRungDef } from '../data';
 import { canBePerfect, makeGear, makeMaterial, stackKey } from '../economy';
+import { qualityWindow } from '../mods';
+import { dismantleShards } from '../crafting';
+import { grant } from '../economy';
 import { addItem } from './state';
 import { payXp, professionAt } from './work';
 import { toolIn, toolRung } from '../sim/character';
@@ -244,20 +247,10 @@ export function whyNotCraft(game: GameState, recipe: CraftRecipe): string | null
   return null;
 }
 
-/**
- * WHERE INSIDE THE BASE'S OWN RANGE THE LEVEL LANDS YOU, as a share of the
- * whole span. *"At 1 blacksmithing it's always 100–105 and at 99 it's always
- * 145–150."* The window NARROWS as it climbs, and the roll inside it is the
- * only luck in a craft — the rest is what you spent.
- */
+/** The draw inside `qualityWindow` — the only luck in a craft. */
 export function qualityRoll(level: number, rng: Rng): number {
-  const share = Math.max(
-    0,
-    Math.min(1, (level - 1) / Math.max(1, PROFESSION.maxLevel - 1))
-  );
-  const width = CRAFT.widthAt1 + (CRAFT.widthAtTop - CRAFT.widthAt1) * share;
-  const start = share * (1 - width);
-  return start + rng.next() * width;
+  const [low, high] = qualityWindow(level);
+  return low + rng.next() * (high - low);
 }
 
 /** A craft's lift on the base's own numbers: 1 is exactly the row, which is
@@ -364,10 +357,18 @@ export function dismantleYield(game: GameState, item: Item): Spent[] {
   return out;
 }
 
-/** Take the piece apart. Returns what it paid, or null if it refuses. */
-export function dismantle(game: GameState, item: Item): Spent[] | null {
+/**
+ * Take the piece apart. Returns the materials AND the shards it paid, or null
+ * if it refuses. A piece with no recipe behind it and no modifier on it is the
+ * only thing that pays nothing at all.
+ */
+export function dismantle(
+  game: GameState,
+  item: Item
+): { materials: Spent[]; shards: Record<string, number> } | null {
   const paid = dismantleYield(game, item);
-  if (paid.length === 0) return null;
+  const shards = dismantleShards(item);
+  if (paid.length === 0 && Object.keys(shards).length === 0) return null;
   const at = game.inventory.indexOf(item);
   if (at < 0) return null;
   game.inventory.splice(at, 1);
@@ -375,5 +376,6 @@ export function dismantle(game: GameState, item: Item): Spent[] | null {
     const def = MATERIAL_BY_ID[row.material];
     if (def) addItem(game, makeMaterial(def, row.n, true));
   }
-  return paid;
+  for (const [shard, n] of Object.entries(shards)) grant(game.wallet, shard, n);
+  return { materials: paid, shards };
 }

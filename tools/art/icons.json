@@ -367,32 +367,52 @@
    "say": "a jagged shard of raw amber crystal held point-up, a bright seed of new light welling up inside it."
   },
   {
-   "id": "cur_shard_of_change",
-   "say": "a jagged shard of pale blue crystal with thin threads of light coiling around it in a spiral, mid-transformation."
+   "id": "cur_attribute",
+   "say": "a thick blunt shard of dull grey stone crystal with four small bright facets cut into one flat face, heavy and square."
   },
   {
-   "id": "cur_shard_of_chaos",
-   "say": "a jagged shard of violet crystal split into three drifting slivers that no longer line up, unstable and wrong."
+   "id": "cur_resistance",
+   "say": "a small round crystal disc shaped like a shield boss, one raised ring around its rim, pale steel blue."
   },
   {
-   "id": "cur_shard_of_unmaking",
-   "say": "a jagged shard of near-black crystal crumbling to grey ash at its tip, cold and hungry."
+   "id": "cur_ailment",
+   "say": "a thin curved crystal fang, point down, one fat bead of glowing green liquid hanging off its tip."
   },
   {
-   "id": "cur_essence_of_the_swarm",
-   "say": "a small stoppered glass phial crowded with many tiny glowing green motes swarming inside, corked with wax."
+   "id": "cur_crit",
+   "say": "a stout four-sided crystal spike standing point up, broad at the base and tapering to a hard needle point, one bright white glint at the very tip."
   },
   {
-   "id": "cur_essence_of_greed",
-   "say": "a small stoppered glass phial of heavy molten gold liquid with one bright coin-glint in it, corked with wax."
+   "id": "cur_speed",
+   "say": "a long crystal bar leaning steeply to the right as if thrown, bright poison green with a pale white edge, two short streak lines trailing off its back."
   },
   {
-   "id": "cur_sigil_of_finality",
-   "say": "a heavy cast-iron seal stamped with a closed eye rune, ringed in dull brass, absolute and final."
+   "id": "cur_life",
+   "say": "a rounded thick lump of deep red crystal, warm light welling in the middle of it."
   },
   {
-   "id": "cur_sigil_of_upheaval",
-   "say": "a heavy cast-iron seal cracked clean through the middle, the two halves shifted out of line, dull brass ring broken."
+   "id": "cur_mana",
+   "say": "a tall slender shard of deep blue crystal, cold pale light rising up from its base."
+  },
+  {
+   "id": "cur_area",
+   "say": "a wide flat crystal ring, a broad open hoop of pale violet stone, hollow through the middle."
+  },
+  {
+   "id": "cur_reward",
+   "say": "a fat lump of gold-veined crystal, three small coin-bright glints across its face."
+  },
+  {
+   "id": "cur_damage",
+   "say": "a broad jagged wedge of dark red crystal broken off to a chisel edge, hot orange light in the crack."
+  },
+  {
+   "id": "cur_defence",
+   "say": "a thick blocky slab of grey crystal with one bevelled face, squat and solid."
+  },
+  {
+   "id": "cur_utility",
+   "say": "a flat triangular chip of dull grey-green crystal standing point up, thin and plain, one corner chipped away."
   },
   {
    "id": "flask_life",

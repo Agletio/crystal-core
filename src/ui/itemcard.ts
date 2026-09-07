@@ -92,13 +92,10 @@ function group(label: string): HTMLElement {
  *  card and the menu opened off the same item cannot name it two ways. It
  *  carries the card's own tier class, since that is what colours the name. */
 export function itemHead(item: Item, size = 36): HTMLElement {
-  const locked = item.meta.corrupted === true;
   const unique = UNIQUE_BY_ID[String(item.meta.unique)];
   const head = el(
     'div',
-    `tip__head tip__card--t${baseTier(item)}` +
-      (locked ? ' tip__card--locked' : '') +
-      (unique ? ' tip__card--unique' : '')
+    `tip__head tip__card--t${baseTier(item)}` + (unique ? ' tip__card--unique' : '')
   );
   head.append(itemIcon(item, size));
   const name = el('div', 'tip__name', item.name);
@@ -114,13 +111,10 @@ export function itemHead(item: Item, size = 36): HTMLElement {
  * each screen appending to a string it built itself.
  */
 export function itemCard(item: Item, notes: string[] = []): HTMLElement {
-  const locked = item.meta.corrupted === true;
   const unique = UNIQUE_BY_ID[String(item.meta.unique)];
   const card = el(
     'div',
-    `tip__card tip__card--t${baseTier(item)}` +
-      (locked ? ' tip__card--locked' : '') +
-      (unique ? ' tip__card--unique' : '')
+    `tip__card tip__card--t${baseTier(item)}` + (unique ? ' tip__card--unique' : '')
   );
   card.append(itemHead(item));
 
@@ -171,11 +165,6 @@ export function itemCard(item: Item, notes: string[] = []): HTMLElement {
       el('div', 'tip__perfect', `Perfect — ${Math.round(PERFECT.lift * 100)}% more from the base`)
     );
   }
-
-  // Locked is the one state worth saying twice: the border carries it across
-  // the screen, and the word carries it for anyone who has not learnt the
-  // border yet.
-  if (locked) card.append(el('div', 'tip__locked', 'Locked — nothing can change it'));
 
   // What a crystal is worth, in the same chips the Fissure and the bench draw.
   if (item.kind === 'crystal') {

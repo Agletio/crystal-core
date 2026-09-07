@@ -295,8 +295,8 @@ the ZONE (`mapTheme`, `MAP_THEMES`).
 
 - **Capacity comes from the BASE's tier and nothing else.** `BASE_TIER_MODS` is
   `[2,4,6]`; `GearBase.slots` says only WHERE a modifier may go. A bigger item
-  is a better base, FOUND. The one exception is `sigil_of_upheaval`, which adds
-  past the cap and locks the item; the demo holds every other currency to it.
+  is a better base, FOUND. Nothing adds past it: the demo holds a full piece to
+  offering no chosen line at all.
 - **A PERFECT base is 25% more of what the BASE hands over** — the armour
   rating, the swing and every implicit line, all three written ONTO the item at
   `makeGear` so nothing recomputes them off the table row. `PERFECT` in
@@ -307,17 +307,24 @@ the ZONE (`mapTheme`, `MAP_THEMES`).
   the same rule Block is under, or a thing that cannot happen re-seeds every
   measurement in the game. Never junked and never in the bulk heap: like a
   unique, it is only ever a decision.
-- **Currencies are DATA.** `CurrencyDef` is `targets` / `requires` / `effects`,
-  and the named behaviours live in two registries in `src/crafting.ts` —
-  `CONDITIONS` and `EFFECTS`. Effects apply in order and roll back whole if one
-  fails. Eight currencies in six kinds; **only the adding currency is sold**,
-  because a shop stocking the whole bench replaces the map.
-- **`meta.corrupted` is the lock.** Anything that "locks an item" sets that
-  flag rather than inventing a second one.
+- **THE BENCH SELECTS.** `choices` / `whyNotChoose` / `chooseMod` in
+  `src/crafting.ts`: a line is CHOSEN off the item's own list, paid for in its
+  family's shard, and rolls only its value inside `qualityWindow(level)`. The
+  level buys how many lines a piece may have chosen and how good a tier one may
+  reach — `SELECT.linesAt` and `SELECT.tierAt` — and nothing else.
+- **A SHARD IS A COST.** Twelve families DERIVED off `GEAR_MODS`'s own tags
+  (`SHARD_FAMILIES`, `shardFor`, first match wins); `SHARDS.perTier` is what a
+  tier costs by rank from the worst, and `SHARDS.refund` what a dismantle hands
+  back, always under it. No run gates a family out; `DropBand.shards` is the
+  pile one drop pays, so depth buys VOLUME.
+- **The crystal's is the one ROLL left**, and `shard_of_making` is the only
+  thing the counter sells, because a shop stocking the whole bench replaces the
+  map — and choosing a crystal's rule would buy the cheapest danger for the
+  richest payment.
 - **Uniques are gear that GRANTS.** Fixed lines rolled once by `makeUnique`
   into `implicits`, a `grants` bag out of the same `GRANTS` table, a `gate`, and
-  **no modifier slots at all** — capacity is zero and every currency refuses
-  one. Every unique is a TRADE, paid for by a downside on the item, and the
+  **no modifier slots at all** — capacity is zero, so the bench offers nothing
+  on one. Every unique is a TRADE, paid for by a downside on the item, and the
   demo holds that. Every world drops something of its own; the Fissure two.
 - **A relic is carried to a PERSON, never to a bench.** Its own `ItemKind`;
   `canSell` refuses one, no bulk button sees one, the crafting registries never

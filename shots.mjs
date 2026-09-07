@@ -182,6 +182,7 @@ const bubbleProbe = () => {
  *  end fails the run, so one nobody opened cannot quietly keep the old look. */
 const STATES = [
   'title', 'slots', 'pick', 'welcome', 'camp', 'camp-hover', 'camp-lit', 'fissure',
+  'bench-pick',
   'dock', 'dock-currency', 'dock-materials',
   'crystals', 'sheet', 'shop', 'stash', 'settings', 'history',
   'toast', 'itemmenu', 'confirm', 'professions',
@@ -794,20 +795,27 @@ for (const vp of VIEWPORTS) {
   // An item tooltip, on a piece with something rolled on it — the densest
   // thing the game draws, and the one most likely to run off the edge. A blank
   // piece would show none of the grouping this shot exists to check.
+  // THE SELECT LIST, which only a piece of GEAR draws: the level the bench
+  // reads, then every line it could still take under it. The dock is SHUT for
+  // it — every window stops above the dock, and the list is the tall half.
   await page.evaluate(() => {
     const piece = document.querySelector('#inv-gear .slot:not(.slot--empty)');
     piece?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-    // Currency is a TAB now, and the bench does not switch it for you: gear is
-    // what the next item comes off, so it stays on top while you craft.
-    document.getElementById('inv-tab-currency')?.click();
+    document.getElementById('open-inventory')?.click();
+  });
+  await page.waitForTimeout(300);
+  await shoot('bench-pick');
+  await page.evaluate(() => document.getElementById('open-inventory')?.click());
+  await page.waitForTimeout(200);
+
+  await page.evaluate(() => {
+    // Lines go on from the bench's own list now, so the shot fills the piece
+    // by choosing rather than by clicking a currency.
     for (let i = 0; i < 6; i++) {
-      const making = [...document.querySelectorAll('#inv-currency .ledgerrow')].find((b) =>
-        /Making/.test(b.getAttribute('aria-label') ?? '')
-      );
-      if (!making || making.disabled) break;
-      making.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      const row = [...document.querySelectorAll('#craft-pick .craftpick')].find((b) => !b.disabled);
+      if (!row) break;
+      row.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     }
-    document.getElementById('inv-tab-gear')?.click();
   });
   await page.waitForTimeout(200);
   const modded = await page.$('#inv-gear .slot--modded');

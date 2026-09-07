@@ -20,6 +20,7 @@ import {
   START_PRESETS,
   GRINDS,
   MATERIALS,
+  PROFESSIONS,
   TOOLS,
   WORKERS,
   workerMark,
@@ -240,6 +241,10 @@ export function resetGame(game: GameState, mode: StartMode): void {
     'strike'
   );
   game.sockets = {};
+  // After `makeCharacter`, which builds a fresh one and would wipe them.
+  game.character.professions = preset.professions
+    ? Object.fromEntries(PROFESSIONS.map((p) => [p.id, { level: preset.professions!, xp: 0 }]))
+    : {};
   game.character.souls = 0;
   game.craftId = null;
 

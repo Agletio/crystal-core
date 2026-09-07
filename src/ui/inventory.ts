@@ -8,7 +8,7 @@
  */
 import { currencyIcon, itemIcon } from './icons';
 import { baseTier } from '../mods';
-import { itemMatches, locksItem } from '../crafting';
+import { itemMatches } from '../crafting';
 import { itemCard, itemHead } from './itemcard';
 import { attachTooltip, hideTooltip } from './tooltip';
 import { closeMenu, openMenu } from './menu';
@@ -211,9 +211,6 @@ function currencyTooltip(currency: CurrencyDef, stock: number): string {
     `${currency.class} · ${stock} held`,
     currency.description,
   ];
-  // On its own line as well as inside the sentence. A one-way door nobody saw
-  // is a bug report, and this is the only one in the game.
-  if (locksItem(currency)) lines.push('LOCKS THE ITEM — nothing can change it afterwards');
   const why = currencyHandler?.blocked?.(currency);
   if (why) lines.push(`— ${why}`);
   const action = currencyHandler?.actionFor(currency);
@@ -631,7 +628,6 @@ function fill(host: HTMLElement, items: Item[]): void {
     const btn = el(
       'button',
       `slot slot--gear slot--t${baseTier(item)}` +
-        (item.meta.corrupted ? ' slot--locked' : '') +
         (item.meta.unique !== undefined ? ' slot--unique' : '') +
         (isPerfect(item) ? ' slot--perfect' : '')
     ) as HTMLButtonElement;

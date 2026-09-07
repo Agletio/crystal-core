@@ -37,6 +37,13 @@ mouse-up and redraws the dock under the drag.
 **Build before `smoke`, `shots`, `drag` or `peek`** — they load the bundle, not
 the source.
 
+**THE TABLE IS THE MACHINE'S AS WELL AS THE GAME'S.** Measured in one session
+against these numbers: `smoke` 15m43s and `shots` 2m33s, both about twice what
+is written above, on a container doing nothing else. **Time the run before
+believing a harness has got slower** — the same code ran at half that when the
+row was written, so a `timeout` set from this table is the thing that breaks
+first, and it looks exactly like a hang.
+
 ## Reading the demo
 
 **`npm run demo` is NINETEEN MINUTES**, measured, against the two the table used

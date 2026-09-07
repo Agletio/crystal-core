@@ -81,6 +81,7 @@ export interface RolledMod {
   stats: StatRoll[];
   /** Descents left, on a CRYSTAL alone: a clear spends one, zero drops it. */
   uses?: number;
+  chosen?: boolean; // put here at the bench: `SELECT` caps how many
 }
 
 export interface Item {
@@ -100,30 +101,20 @@ export interface Item {
   meta: Record<string, any>; // one-off state: bonus slots, corruption, …
 }
 
-export interface Condition {
-  kind: string;
-  [param: string]: any;
-}
-
-export interface Effect {
-  kind: string;
-  [param: string]: any;
-}
-
 export type CurrencyClass = 'basic' | 'uncommon' | 'rare' | 'exotic';
 
-/** A wall, never a weight: below it the thing does not exist at all. */
+/** A wall, never a weight: below it the thing does not exist. */
 export interface DropGate {
   /** Run power below which this never drops. */
   minPower?: number;
   /** The one world it comes out of. */
   zone?: MapTheme;
-  /** WHERE it can come from. Absent means both, and nothing is authored
-   *  behind it yet: the seam is here so a counter-only piece is a table row. */
+  /** WHERE it can come from; absent means both. Nothing is authored behind it
+   *  yet: the seam is here so a counter-only piece is a table row. */
   source?: 'floor' | 'gamble';
 }
 
-/** A fixed identity: lines no currency can touch and a switch out of `GRANTS`.
+/** A fixed identity: lines nothing can touch and a switch out of `GRANTS`.
  *  A version of a BASE, so slot, art and armour come from there. */
 export interface UniqueDef {
   id: string;
@@ -135,8 +126,8 @@ export interface UniqueDef {
   gate?: DropGate;
 }
 
-/** Carried to a PERSON rather than to a bench: never spent at a currency's
- *  registries and never sold. `wants` is the room whose occupant takes it. */
+/** Carried to a PERSON rather than to a bench, and never sold. `wants` is the
+ *  room whose occupant takes it. */
 export interface RelicDef {
   id: string;
   name: string;
@@ -149,21 +140,17 @@ export interface RelicDef {
 export interface CurrencyDef {
   id: string;
   name: string;
+  /** Groups the ledger and says how scarce it reads; no run gates a family out. */
   class: CurrencyClass;
-  /** Where this can drop. Absent means anywhere the class is reachable. */
-  gate?: DropGate;
+  gate?: DropGate; // absent means it drops anywhere
   description: string;
-  targets: {
-    kinds?: ItemKind[];
-    tags?: string[]; // item must have ALL of these
-    slots?: ModSlot[]; // base must declare at least one of these slot types
-  };
-  requires?: Condition[]; // all must pass
-  /** Applied in order. If one fails, the whole craft is rolled back. */
-  effects: Effect[];
+  icon?: string; // its generated picture, where that is not `cur_<id>`
+  weight: number; // share of shard drops this one takes
+  /** Spent on a CRYSTAL, for one random rule. A shard is a cost the bench
+   *  spends and is never applied to anything. */
+  crystal?: boolean;
 }
 
-/** What slot a base occupies. Rings fit either ring slot. */
 export type GearKind =
   | 'weapon'
   | 'shield'
@@ -182,20 +169,18 @@ export interface GearBase {
   name: string;
   kind: GearKind;
   art: string; // icon family — a name, not an asset
-  /** Which slot types it can roll, and the ceiling on each. The TOTAL a piece
-   *  may hold comes off `tier` — this only says where those go. */
+  /** Which slot types it can roll and the ceiling on each; `tier` says how
+   *  many the piece holds in all. */
   slots: Record<string, number>;
   tier: number; // 1-3, holding BASE_TIER_MODS[tier - 1]; nothing raises it
-  /** Never rolled, never removable — what makes a wand worth more than a stick. */
-  implicit?: StatSpec[];
+  implicit?: StatSpec[]; // never rolled, never removable
   /** Bare PHYSICAL added to an ATTACK; increases rolled ON it scale this alone. */
   damage?: number;
   attackSpeed?: number; // swings a second, its OWN: a maul is slow, a dagger is not
   hands?: number; // two is a bow, and its off hand stays empty
   family?: string;
   ilvl?: number; // lowest item level that may drop it; absent means from the start
-  /** Armour rating the piece carries before any modifier. */
-  armour?: number;
+  armour?: number; // before any modifier
 }
 
 export interface EquipSlotDef {

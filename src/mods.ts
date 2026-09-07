@@ -1,9 +1,11 @@
 import { Rng } from './rng';
 import {
+  CRAFT,
   DANGER_STATS,
   GEAR_BASE_BY_ID,
   MOD_BY_ID,
   MOD_TIER_LIFT,
+  PROFESSION,
   STAT_POWER,
   USES,
   baseMods,
@@ -19,7 +21,6 @@ import type {
   StatRoll,
 } from './types';
 
-/** No tag filter, and NOT computeStat: these are design metrics, not combat. */
 function totalOf(mods: RolledMod[], stat: string): number {
   let total = 0;
   for (const mod of mods) {
@@ -46,7 +47,6 @@ export function dangerScore(mods: RolledMod[]): { danger: number; paying: number
   return { danger, paying };
 }
 
-/** Slot types this item actually has. */
 export function slotTypes(item: Item): ModSlot[] {
   return Object.keys(item.slots);
 }
@@ -110,14 +110,12 @@ export function modCapacity(item: Item): number {
 }
 
 /**
- * Where the item's modifier budget sits, slot type by slot type. DEALT OUT: as
- * many openings as the item can hold, spread over the types the base has, one
- * at a time, richest type first — so a body armour's first opening is defensive
- * and a glove's is offensive, but a two-modifier item never puts both on the
- * same side.
- *
- * From the base alone, never from what is rolled: an allocation that shifted as
- * you crafted would move slots around under your hands.
+ * Where the item's modifier budget sits, slot type by slot type. DEALT OUT:
+ * as many openings as the item can hold, spread over the types the base has,
+ * one at a time, richest type first — so a body armour's first opening is
+ * defensive and a glove's offensive, and a two-modifier item never puts both
+ * on one side. From the base alone: an allocation that shifted as you crafted
+ * would move slots around under your hands.
  */
 export function slotAllocation(item: Item): Record<ModSlot, number> {
   const types = slotTypes(item);
@@ -159,7 +157,6 @@ export function hasOpenSlot(item: Item, slot?: ModSlot): boolean {
   return types.some((t) => slotUsed(item, t) < slotCapacity(item, t));
 }
 
-/** Derived, never stored. Drives loot colouring and nothing else. */
 export function fillState(item: Item): FillState {
   if (item.mods.length === 0) return 'blank';
   return item.mods.length >= modCapacity(item) ? 'full' : 'partial';
@@ -192,7 +189,6 @@ export class ModPool {
     });
   }
 
-  /** Filters on item tags, item level, slot space and group exclusivity. */
   eligible(
     item: Item,
     opts: { slot?: ModSlot; tag?: string; excludeGroups?: string[] } = {}
@@ -222,20 +218,36 @@ export class ModPool {
   }
 }
 
-export function rollValues(entry: ModEntry, rng: Rng): StatRoll[] {
+/**
+ * WHERE INSIDE A RANGE A CRAFTING LEVEL LANDS YOU, as [low, high] shares of the
+ * whole span. *"At 1 blacksmithing it's always 100-105 and at 99 it's always
+ * 145-150."* It slides toward the top AND narrows. One answer, read by the
+ * craft, the bench and every card that prints a range.
+ */
+export function qualityWindow(level: number): [number, number] {
+  const share = Math.max(0, Math.min(1, (level - 1) / Math.max(1, PROFESSION.maxLevel - 1)));
+  const width = CRAFT.widthAt1 + (CRAFT.widthAtTop - CRAFT.widthAt1) * share;
+  const low = share * (1 - width);
+  return [low, low + width];
+}
+
+/** `at` is a SHARE of each range rather than a draw, which is what a chosen
+ *  line uses: the level's window is the whole of where its value lands. */
+export function rollValues(entry: ModEntry, rng: Rng, at?: number): StatRoll[] {
   return entry.stats.map((s) => {
     const [lo, hi] = s.range;
     const isInt = Number.isInteger(lo) && Number.isInteger(hi);
+    const raw = at === undefined ? rng.float(lo, hi) : lo + (hi - lo) * at;
     return {
       stat: s.stat,
       form: s.form,
-      value: isInt ? rng.int(lo, hi) : Number(rng.float(lo, hi).toFixed(2)),
+      value: isInt ? Math.round(raw) : Number(raw.toFixed(2)),
       tags: s.tags ?? [],
     };
   });
 }
 
-export function instantiate(entry: ModEntry, rng: Rng): RolledMod {
+export function instantiate(entry: ModEntry, rng: Rng, at?: number): RolledMod {
   const rolled: RolledMod = {
     entryId: entry.id,
     defId: entry.defId,
@@ -244,7 +256,7 @@ export function instantiate(entry: ModEntry, rng: Rng): RolledMod {
     name: entry.name,
     tier: entry.tier,
     tags: entry.tags,
-    stats: rollValues(entry, rng),
+    stats: rollValues(entry, rng, at),
   };
   // A CRYSTAL ROLL BURNS DOWN, and only a crystal roll: gear is kept.
   if (entry.appliesTo.includes('crystal')) rolled.uses = usesFor(entry.weight);

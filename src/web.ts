@@ -10,7 +10,9 @@ import { armForSkill, createGame, resetGame, sellItem, slotFor, stashRoom, toSta
 import { canSell, sellPrice } from './economy';
 import { onWearChanged, wear } from './ui/wear';
 import { dismissToast } from './ui/toast';
+import { dismantleShards } from './crafting';
 import {
+  CURRENCY_BY_ID,
   EQUIP_SLOTS,
   MATERIAL_BY_ID,
   MATERIAL_FAMILY_BY_ID,
@@ -393,9 +395,14 @@ setItemActions({
     // one thing that would make craft → dismantle → craft a printer. Menu
     // only, beside the sale: both are one-way.
     const back = dismantleYield(game, item);
-    if (back.length > 0) {
+    const shards = dismantleShards(item);
+    const says = [
+      ...back.map((r) => `${r.n} ${workedName(r.material)}`),
+      ...Object.entries(shards).map(([id, n]) => `${n} ${CURRENCY_BY_ID[id]?.name ?? id}`),
+    ];
+    if (says.length > 0) {
       out.push({
-        label: `Dismantle for ${back.map((r) => `${r.n} ${workedName(r.material)}`).join(', ')}`,
+        label: `Dismantle for ${says.join(', ')}`,
         menuOnly: true,
         run: () => {
           const paid = dismantle(game, item);

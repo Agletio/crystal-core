@@ -28,8 +28,10 @@ descent.png
 # the image it came from is disposable and a cloud VM is reclaimed anyway.
 tools/art/cache/
 
-# Session scratch: anything named *.tmp.* is a throwaway probe.
+# Session scratch: anything named *.tmp.* is a throwaway probe, and `.scratch/`
+# is where a session's logs and one-off probes go.
 *.tmp.*
+.scratch/
 
 # The creative director's pictures (`/critique`). The report, ART_REVIEW.md, is committed.
 art-review/

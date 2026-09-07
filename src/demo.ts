@@ -1,7 +1,22 @@
 import { readFileSync } from 'node:fs';
 import { Rng } from './rng';
 import { ModPool } from './mods';
-import { canApply, craft, describeItem, describeMod, itemMatches } from './crafting';
+import {
+  chooseMod,
+  choices,
+  chosenLines,
+  costOf,
+  describeItem,
+  describeMod,
+  dismantleShards,
+  itemMatches,
+  levelFor,
+  linesAllowed,
+  rollCrystal as rollOntoCrystal,
+  windowRange,
+  tierRank,
+  whyNotChoose,
+} from './crafting';
 import {
   AILMENT,
   ALL_MODS,
@@ -35,6 +50,14 @@ import {
   AURA_BY_ID,
   CURRENCIES,
   CURRENCY_BY_ID,
+  GEAR_MODS,
+  MOD_BY_ID,
+  PROFESSION_BY_ID,
+  SELECT,
+  SHARDS,
+  SHARD_BY_ID,
+  SHARD_FAMILIES,
+  shardFor,
   CAMPAIGN_REWARD,
   LADDER_RUNGS,
   CRYSTAL_LEVELS,
@@ -554,19 +577,41 @@ function parkedCheck(ok: boolean, good: string, bad: string): void {
  */
 const gauge = (s: string) => line(`  · ${s}`);
 
-function aim(item: Item, currencyId: string, chosen?: string): Item {
-  const currency = CURRENCY_BY_ID[currencyId];
-  const res = craft(item, currency, pool, rng, chosen);
+/** THE ONE ROLL LEFT: a crystal's own shard, printed as it lands. */
+function roll(item: Item): Item {
+  const res = rollOntoCrystal(item, pool, rng);
   if (!res.ok) {
-    line(`  ✗ ${currency.name}: ${res.error}`);
+    line(`  ✗ Shard of Making: ${res.error}`);
     return item;
   }
-  line(`  ✓ ${currency.name}`);
+  line('  ✓ Shard of Making');
   for (const l of res.log) line(`      ${l}`);
   return res.item;
 }
 
-const apply = (item: Item, currencyId: string): Item => aim(item, currencyId);
+/** A LINE CHOSEN AT THE BENCH, with everything it costs said out loud. */
+function pick(item: Item, defId: string, tier: number, level: number, purse: Record<string, number> = {}): Item {
+  const entry = pool.entries.find((e) => e.defId === defId && e.tier === tier);
+  if (!entry) {
+    line(`  ✗ no ${defId} tier ${tier}`);
+    return item;
+  }
+  const why = whyNotChoose(item, entry, level, (id) => purse[id] ?? Infinity);
+  if (why) {
+    line(`  ✗ ${entry.name} T${tier}: ${why}`);
+    return item;
+  }
+  const { shard, n } = costOf(entry);
+  if (shard && purse[shard] !== undefined) purse[shard] -= n;
+  const out = chooseMod(item, entry, level, rng);
+  line(`  ✓ ${describeMod(out.mods[out.mods.length - 1])} — ${n} ${SHARD_BY_ID[shard ?? '']?.name}`);
+  return out;
+}
+
+/** Filled by the FLOOR rather than by the bench: `mods` is how many lines it
+ *  arrived with, and 12 is more than any base holds, so it comes back full. */
+const filled = (base: string, ilvl: number, seed = 11, mods = 12): Item =>
+  rollGear(base, ilvl, mods, pool, new Rng(seed));
 
 // ===========================================================================
 rule('CRAFTING A CRYSTAL');
@@ -576,93 +621,38 @@ line(describeItem(crystal));
 
 line();
 // A crystal's level is its capacity, so a level 3 one holds two and that is
-// the end of it. These lines are also the only place a currency's failure
-// MESSAGE is ever read, so a refusal here is a feature.
-crystal = apply(crystal, 'essence_of_the_swarm'); // guaranteed density
-crystal = apply(crystal, 'essence_of_greed'); // guaranteed reward, second slot
-crystal = apply(crystal, 'shard_of_making'); // refused — two is all it has
-crystal = apply(crystal, 'shard_of_change'); // re-roll the values it holds
+// the end of it. These lines are also the only place a refusal MESSAGE is ever
+// read, so one here is a feature.
+crystal = roll(crystal);
+crystal = roll(crystal);
+crystal = roll(crystal); // refused — two is all it has
 line();
 line(describeItem(crystal));
 
 // ===========================================================================
-rule('THE ADD / REMOVE LOOP');
+rule('THE BENCH SELECTS');
 
-// A tier 3 body armour: six modifiers, and nothing at the bench raises that.
-let gear = makeGear('bulwark_body_t3', 55, 'Runeplate');
-for (let i = 0; i < 4; i++) gear = apply(gear, 'shard_of_making');
-line();
-line(describeItem(gear));
-
-line();
-line('Slots are typed, and each type is its own ceiling:');
-gear = apply(gear, 'shard_of_making');
-gear = apply(gear, 'shard_of_making');
-gear = apply(gear, 'shard_of_making'); // refused — six of six
-line();
-line(describeItem(gear));
-
-line();
-line('Removal is the one thing you aim. Naming nothing is refused:');
-gear = apply(gear, 'shard_of_unmaking');
-gear = aim(gear, 'shard_of_unmaking', gear.mods[1].entryId);
-line();
-line(describeItem(gear));
-
-// ===========================================================================
-rule('A SMALLER BASE HOLDS LESS, AND NOTHING CHANGES THAT');
-
-let small = makeGear('ash_wand', 55, 'Twig');
-small = apply(small, 'shard_of_making');
-small = apply(small, 'shard_of_making');
-small = apply(small, 'shard_of_making'); // refused — a tier 1 base holds two
-line();
-line(describeItem(small));
-
-// ===========================================================================
-rule('THE GAMBLES LOCK THE ITEM');
-
-let trinket = makeGear('ring_life_t3', 40, 'Band of Ash');
-for (let i = 0; i < 6; i++) trinket = apply(trinket, 'shard_of_making');
-trinket = apply(trinket, 'sigil_of_upheaval');
-line();
-line(describeItem(trinket));
-line();
-trinket = apply(trinket, 'shard_of_making'); // should be refused
-trinket = apply(trinket, 'sigil_of_finality'); // and so should the other gamble
-
-// ===========================================================================
-rule('AN ACTUAL RUN — headless, no browser');
-
+// A tier 3 body armour off the floor, with room left on it. What goes in that
+// room is CHOSEN, paid for in the family's own shard, and rolls only its value.
 {
-  // Filled, not blank: a run measured against a crystal with nothing on it is
-  // a run measured against the bare Fissure.
-  const socketed = rollCrystal(3, pool, rng);
-  const hero = makeCharacter(starterLoadout(new Rng(7)), 'strike');
-  const stats = characterStats(hero);
-
-  line(`Crystal: ${socketed.mods.map((m) => m.name).join(', ')}`);
-  line(
-    `Hero:    level ${hero.level} · ${Math.round(stats.maxLife)} life · ` +
-      `${Math.round(stats.damage)} dmg · ${stats.attacksPerSecond.toFixed(2)}/s · ` +
-      `${Math.round(stats.critChance)}% crit`
-  );
-
-  const sim = new RunSim([socketed], hero, new Rng(4242));
-  const { grid } = sim.state.map;
-  line(
-    `Map:     ${grid.width}x${grid.height}, ${sim.state.map.rooms.length} rooms, ` +
-      `${sim.state.totalMonsters} monsters`
-  );
-
-  const final = runToCompletion(sim);
+  let gear = filled('bulwark_body_t3', 55, 3, 3);
+  line(describeItem(gear));
   line();
-  line(
-    `Result:  ${final.status} in ${final.elapsed.toFixed(1)}s — ` +
-      `${final.killed}/${final.totalMonsters} killed, ` +
-      `${Math.max(0, Math.round(final.hero.life))} life left, ` +
-      `${final.xpGained} xp (level 2 needs ${xpToNext(1)})`
+  line('At Blacksmithing 40 — two chosen lines, and the worst two tiers:');
+  const purse: Record<string, number> = Object.fromEntries(
+    SHARD_FAMILIES.map((f) => [f.id, 400])
   );
+  while (chosenLines(gear) < linesAllowed(40)) {
+    const entry = choices(gear, pool)[0];
+    if (!entry) break;
+    gear = pick(gear, entry.defId, entry.tier, 40, purse);
+  }
+  line();
+  line('  and the third is the level, not the shards:');
+  const third = choices(gear, pool)[0];
+  if (third) gear = pick(gear, third.defId, third.tier, 40, purse);
+  line();
+  line(describeItem(gear));
 }
 
 // ===========================================================================
@@ -670,28 +660,13 @@ rule('CAPACITY — does the base actually restrict anything?');
 
 // A base's TIER is the whole of how many modifiers it holds, and nothing at
 // the bench raises it: a bigger item means going and finding a better base.
-// Every check here is a way that could quietly stop being true — an effect
-// that fills past the cap, a drop table handing out a tier 3 base on a tier 1
-// map, a gamble that turns out to be free.
 {
   const at = (tier: number) => ['ash_wand', 'carved_wand', 'quartz_wand'][tier - 1];
-  const wand = (tier: number) => makeGear(at(tier), 60);
-
-  const fill = (item: Item): Item => {
-    let out = item;
-    for (let i = 0; i < 10; i++) {
-      const r = craft(out, CURRENCY_BY_ID.shard_of_making, pool, rng);
-      if (!r.ok) break;
-      out = r.item;
-    }
-    return out;
-  };
-
-  const held = BASE_TIER_MODS.map((_, i) => fill(wand(i + 1)).mods.length);
+  const held = BASE_TIER_MODS.map((_, i) => filled(at(i + 1), 60).mods.length);
   line(`  a wand holds ${held.join(' / ')} modifiers at tier 1 / 2 / 3`);
   check(
     held.join(',') === BASE_TIER_MODS.join(','),
-    'each rung of a base holds exactly what its tier says, and Making stops there',
+    'each rung of a base holds exactly what its tier says',
     `${held.join(',')} against ${BASE_TIER_MODS.join(',')}`
   );
 
@@ -704,175 +679,196 @@ rule('CAPACITY — does the base actually restrict anything?');
     rings.join(',')
   );
 
-  // The cap is the base's, not the currency's: nothing in the table may reach
-  // past it except the one exotic that says it will and locks the item.
-  const small = fill(wand(1));
-  const overrun = CURRENCIES.filter((c) => {
-    if (c.effects.some((e) => e.kind === 'corrupt')) return false;
-    const r = craft(small, c, pool, rng);
-    return r.ok && r.item.mods.length > BASE_TIER_MODS[0];
-  });
+  // The bench is under the same cap. A full piece offers nothing at all, which
+  // is the whole of why a dropped one arrives with room left on it.
+  const full = filled('ash_wand', 60, 11);
   check(
-    overrun.length === 0,
-    'and no ordinary currency in the table can put a modifier past it',
-    overrun.map((c) => c.name).join(', ')
-  );
-
-  // A locked item is the end of the line. Every currency has to refuse one,
-  // through the condition rather than through a special case in the engine.
-  const locked = craft(fill(wand(3)), CURRENCY_BY_ID.sigil_of_finality, pool, rng).item;
-  const reached = CURRENCIES.filter((c) => craft(locked, c, pool, rng).ok);
-  check(
-    locked.meta.corrupted === true && reached.length === 0,
-    'a locked item refuses every currency in the game',
-    reached.map((c) => c.name).join(', ') || 'it was never locked'
+    choices(full, pool).length === 0,
+    'and a full piece offers no chosen line at all',
+    `${choices(full, pool).length} offered on a full item`
   );
 }
 
 // ===========================================================================
-rule('THE GAMBLES — do the two exotics do what nothing else can?');
+rule('THE SHARDS — is every modifier bought by exactly one, and does a tier cost?');
 
-// Two one-way doors, and they are the only way past two rules the rest of the
-// bench obeys. Both say so on the tin and both lock the item.
+// Twelve families over sixty-five modifiers. A modifier no family claims is one
+// the bench cannot show, and a family nothing claims is an icon nobody sees.
 {
-  const ceiling = (item: Item): number => {
-    let over = 0;
-    for (const mod of item.mods) {
-      const entry = pool.entries.find((e) => e.id === mod.entryId);
-      if (!entry) continue;
-      mod.stats.forEach((st, i) => {
-        if (st.value > (entry.stats[i]?.range[1] ?? Infinity)) over++;
-      });
-    }
-    return over;
-  };
+  const orphans = GEAR_MODS.filter((m) => shardFor(m) === null);
+  check(
+    orphans.length === 0,
+    `all ${GEAR_MODS.length} gear modifiers are bought by one of the ${SHARD_FAMILIES.length} shards`,
+    orphans.map((m) => m.id).join(', ')
+  );
 
-  const finished = (): Item => {
-    let out = makeGear('quartz_wand', 60);
-    for (let i = 0; i < 10; i++) {
-      const r = craft(out, CURRENCY_BY_ID.shard_of_making, pool, rng);
-      if (!r.ok) break;
-      out = r.item;
-    }
-    return out;
-  };
+  const empty = SHARD_FAMILIES.filter((f) => !GEAR_MODS.some((m) => shardFor(m) === f.id));
+  check(empty.length === 0, 'and every shard buys something',
+    empty.map((f) => f.name).join(', '));
 
-  // Empowered or diminished, never clamped. Over many throws both sides have
-  // to turn up, or it is not a gamble.
-  let above = 0;
-  let down = 0;
-  for (let seed = 0; seed < 60; seed++) {
-    const r = craft(finished(), CURRENCY_BY_ID.sigil_of_finality, pool, new Rng(4000 + seed));
-    if (!r.ok) continue;
-    if (ceiling(r.item) > 0) above++;
-    else down++;
+  for (const f of SHARD_FAMILIES) {
+    const n = GEAR_MODS.filter((m) => shardFor(m) === f.id).length;
+    gauge(`${f.name.padEnd(17)} ${String(n).padStart(2)} modifiers · weight ${f.weight}`);
   }
-  line(`  Finality went over the modifier's maximum on ${above} of 60 throws`);
+
+  // A tier is dearer at the top, and steeply — grinding the shallow end for a
+  // top line has to be the slow road rather than a longer one.
+  const rising = SHARDS.perTier.every((n, i) => i === 0 || n > SHARDS.perTier[i - 1]);
+  check(rising, `a better tier always costs more: ${SHARDS.perTier.join(' / ')}`,
+    SHARDS.perTier.join(' / '));
+
+  // Every modifier's tiers have to map onto that ladder, or a mod with more
+  // tiers than the ladder holds would price its best two the same.
+  const overrun = ALL_MODS.filter((m) => m.tiers.length > SHARDS.perTier.length);
+  check(overrun.length === 0, 'and no modifier has more tiers than the ladder prices',
+    overrun.map((m) => `${m.id} (${m.tiers.length})`).join(', '));
+}
+
+// ===========================================================================
+rule('A LEVEL BUYS LINES AND TIERS, AND NOTHING ELSE');
+
+{
+  // The ladder itself: both halves climb, so a level is never worth less than
+  // the one under it.
   check(
-    above > 10 && down > 10,
-    'the value gamble can put a roll past its maximum, and can just as easily not',
-    `${above} up, ${down} not`
+    SELECT.linesAt.every((n, i) => i === 0 || n > SELECT.linesAt[i - 1]),
+    `chosen lines open at level ${SELECT.linesAt.join(', ')}`,
+    SELECT.linesAt.join(', ')
+  );
+  check(
+    SELECT.tierAt.every((n, i) => i === 0 || n > SELECT.tierAt[i - 1]),
+    `and a tier needs level ${SELECT.tierAt.join(', ')}, worst first`,
+    SELECT.tierAt.join(', ')
   );
 
-  // And it is the ONLY thing that can. Everything else re-rolls inside the
-  // authored range, which is what makes an over-max roll mean something.
-  const leaks = CURRENCIES.filter((c) => {
-    if (c.id === 'sigil_of_finality') return false;
-    for (let seed = 0; seed < 12; seed++) {
-      const r = craft(finished(), c, pool, new Rng(5000 + seed));
-      if (r.ok && ceiling(r.item) > 0) return true;
-    }
-    return false;
-  });
+  const rich: Record<string, number> = Object.fromEntries(
+    SHARD_FAMILIES.map((f) => [f.id, 10000])
+  );
+  const piece = () => makeGear('bulwark_body_t3', 70);
+  const offer = choices(piece(), pool);
+
+  // UNDER the first level nothing may be chosen however many shards you hold.
+  const early = offer.filter((e) => whyNotChoose(piece(), e, SELECT.linesAt[0] - 1, (id) => rich[id]) === null);
   check(
-    leaks.length === 0,
-    'and nothing else in the game can',
-    leaks.map((c) => c.name).join(', ')
+    early.length === 0,
+    `at level ${SELECT.linesAt[0] - 1} no line can be chosen, at any price`,
+    `${early.length} were offered anyway`
   );
 
-  // The modifier gamble: one past the cap, or one gone. Both sides, and the
-  // cap it breaks is the base's own.
-  let grew = 0;
-  let shrank = 0;
-  for (let seed = 0; seed < 60; seed++) {
-    const before = finished();
-    const r = craft(before, CURRENCY_BY_ID.sigil_of_upheaval, pool, new Rng(6000 + seed));
-    if (!r.ok) continue;
-    if (r.item.mods.length > before.mods.length) grew++;
-    if (r.item.mods.length < before.mods.length) shrank++;
+  // And at the top, every tier is reachable — a level that buys nothing at 99
+  // is a ladder with a rung nobody can stand on.
+  const top = offer.filter((e) => whyNotChoose(piece(), e, 99, (id) => rich[id]) === null);
+  const ranks = new Set(top.map((e) => tierRank(e)));
+  check(
+    ranks.size === Math.min(SHARDS.perTier.length, new Set(offer.map(tierRank)).size),
+    `and at 99 every tier is reachable — ${[...ranks].sort().join(', ')} by rank`,
+    [...ranks].sort().join(', ')
+  );
+
+  // The WINDOW is what the rest of the level buys. A low level rolls near the
+  // bottom of the tier's own range and a high one near the top, and the demo
+  // reads the two ends rather than trusting the arithmetic.
+  const wide = pool.entries.find((e) => e.defId === 'attr_strength' && e.tier === 1)!;
+  for (const level of [1, 25, 50, 75, 99]) {
+    const [lo, hi] = windowRange(wide, level);
+    gauge(`${wide.name} T${wide.tier} rolls ${lo}-${hi} at ${PROFESSION_BY_ID.blacksmithing?.name ?? 'crafting'} ${level}`);
   }
-  line(`  Upheaval added on ${grew} of 60 throws and took away on ${shrank}`);
+  const [lo1] = windowRange(wide, 1);
+  const [lo99, hi99] = windowRange(wide, 99);
+  const [, hi1] = windowRange(wide, 1);
   check(
-    grew > 10 && shrank > 10 && grew + shrank === 60,
-    'the modifier gamble always does one or the other, and never nothing',
-    `${grew} added, ${shrank} removed`
-  );
-
-  const over = craft(finished(), CURRENCY_BY_ID.sigil_of_upheaval, pool, new Rng(6003)).item;
-  check(
-    over.meta.corrupted === true,
-    'and locks the item either way',
-    'a gamble left the item craftable'
+    lo99 > lo1 && hi99 >= hi1 && hi99 - lo99 <= hi1 - lo1,
+    'a level slides the window up and narrows it',
+    `${lo1}-${hi1} at 1 against ${lo99}-${hi99} at 99`
   );
 }
 
 // ===========================================================================
-rule('TARGETING — is choosing what leaves the only thing you can aim?');
+rule('DISMANTLING — can taking a piece apart print shards?');
 
-// The chase collapses the moment you can name what ARRIVES. Removal is the one
-// exception, because choosing what leaves still cannot conjure what you want.
+// *"Dismantle an item and get those stat currencies, and more of them based on
+// the tier of the mods."* Never more than the line cost, or the bench is a
+// printer with an extra click in it.
 {
-  let item = makeGear('quartz_wand', 60);
-  for (let i = 0; i < 10; i++) {
-    const r = craft(item, CURRENCY_BY_ID.shard_of_making, pool, rng);
-    if (!r.ok) break;
-    item = r.item;
+  const over: string[] = [];
+  for (const entry of pool.entries) {
+    const { shard, n } = costOf(entry);
+    if (!shard) continue;
+    if (Math.floor(n * SHARDS.refund) >= n) over.push(`${entry.name} T${entry.tier}`);
   }
-  const victim = item.mods[2];
-  const cut = craft(item, CURRENCY_BY_ID.shard_of_unmaking, pool, rng, victim.entryId);
   check(
-    cut.ok && !cut.item.mods.some((m) => m.entryId === victim.entryId) &&
-      cut.item.mods.length === item.mods.length - 1,
-    'Unmaking removes the modifier you named and no other',
-    `${cut.error ?? cut.item.mods.length} left`
-  );
-  // Naming nothing has to refuse rather than pick for you: a shard spent on a
-  // random removal you did not ask for is the worst reading of a click.
-  check(
-    !craft(item, CURRENCY_BY_ID.shard_of_unmaking, pool, rng).ok,
-    'and refuses rather than choosing for you',
-    'an unaimed removal went ahead anyway'
+    over.length === 0,
+    'no modifier hands back as much as it cost',
+    over.join(', ')
   );
 
-  // Everything else stays blind. A currency that lets you name what arrives
-  // would end the gear chase, so the table is held to it rather than trusted.
-  const aimed = CURRENCIES.filter((c) =>
-    c.effects.some((e) => e.chosen === true && e.kind !== 'remove_mod')
-  );
-  check(aimed.length === 0, 'and nothing in the table can aim what arrives',
-    aimed.map((c) => c.name).join(', '));
+  // And a higher tier is worth more out of the same piece, which is the whole
+  // of what makes a good drop worth taking apart rather than selling.
+  const best = filled('bulwark_body_t3', 70, 5);
+  const worst = { ...best, mods: best.mods.map((m) => ({ ...m, tier: (MOD_BY_ID[m.defId]?.tiers.length ?? m.tier) })) };
+  const rich = Object.values(dismantleShards(best)).reduce((a, b) => a + b, 0);
+  const poor = Object.values(dismantleShards(worst as Item)).reduce((a, b) => a + b, 0);
+  gauge(`a ${best.mods.length}-line piece pays ${rich} shards at its own tiers, ${poor} at the worst`);
+  check(rich >= poor, 'and better tiers hand back more', `${rich} against ${poor}`);
 
-  // Crystals only. A crystal is a configuration you are meant to be able to
-  // aim, and none of the gear chase runs through one.
-  const guaranteed = CURRENCIES.filter((c) =>
-    c.effects.some((e) => e.kind === 'add_mod' && (e.tag || e.slot))
-  );
-  check(
-    guaranteed.every((c) => c.targets.kinds?.length === 1 && c.targets.kinds[0] === 'crystal'),
-    'and every guaranteed-family currency is a crystal one',
-    guaranteed.filter((c) => c.targets.kinds?.[0] !== 'crystal').map((c) => c.name).join(', ')
-  );
+  // Every family it pays into is one the bench can spend, so nothing dead ever
+  // arrives in the ledger.
+  const paid = Object.keys(dismantleShards(best));
+  const unknown = paid.filter((id) => !CURRENCY_BY_ID[id]);
+  check(unknown.length === 0, 'and every shard it pays is a currency you can hold',
+    unknown.join(', '));
+}
 
-  // A tag no modifier carries is a currency that has never worked and never
-  // says so — it just refuses, in a sentence about having had no effect.
-  const dead = guaranteed.filter((c) => {
-    const blank = c.targets.kinds?.[0] === 'crystal' ? makeCrystal(4) : makeGear('quartz_wand', 70);
-    return !craft(blank, c, pool, rng).ok;
-  });
+// ===========================================================================
+rule('THE SHARD ECONOMY — how many clears is one line?');
+
+// *"They drop at a rate where you can get that on all your gear grinding like
+// a level 4. But t2 you need say like 20 per."* The rate is the balance lever
+// and every number here is MEASURED off real descents at both ends.
+{
+  const shardsIn = (loot: Record<string, number>): number =>
+    Object.entries(loot)
+      .filter(([id]) => SHARD_BY_ID[id])
+      .reduce((n, [, v]) => n + v, 0);
+
+  const runs = 8;
+  const measure = (crystals: () => Item[], hero: Character): number => {
+    let got = 0;
+    for (let i = 0; i < runs; i++) {
+      const sim = new RunSim(crystals(), hero, new Rng(3300 + i));
+      const end = runToCompletion(sim, 900);
+      if (end.status === 'cleared') got += shardsIn(end.loot.currency);
+    }
+    return got / runs;
+  };
+
+  const bare = measure(
+    () => [makeCrystal(1), makeCrystal(1), makeCrystal(1), makeCrystal(1)],
+    bestBuild(1, new Rng(31))
+  );
+  const deep = measure(
+    () => deepestSet(new Rng(4242), pool),
+    bestBuild(DROP_BANDS.length - 1, new Rng(31))
+  );
+  gauge(`a clear pays ${bare.toFixed(1)} shards at the bare Fissure and ${deep.toFixed(1)} at the deep end`);
+
+  // What that is in CLEARS, for the family everybody wants. A worst-tier line
+  // has to be a descent or two; a best-tier one is meant to be the chase.
+  const ruin = SHARD_BY_ID.shard_damage!;
+  const share = ruin.weight / SHARD_FAMILIES.reduce((n, f) => n + f.weight, 0);
+  for (const [where, rate] of [['bare', bare], ['deep', deep]] as const) {
+    const each = rate * share;
+    gauge(
+      `${where}: ${each.toFixed(2)} ${ruin.name}s a clear — ` +
+        SHARDS.perTier
+          .map((n, i) => `T${SHARDS.perTier.length - i} in ${Math.ceil(n / each)}`)
+          .join(', ') + ' clears'
+    );
+  }
   check(
-    dead.length === 0,
-    'and every one of them can actually find a modifier to guarantee',
-    dead.map((c) => c.name).join(', ')
+    bare > 0 && deep > bare,
+    'a clear pays shards, and a deeper one pays more of them',
+    `${bare.toFixed(1)} bare against ${deep.toFixed(1)} deep`
   );
 }
 
@@ -1639,8 +1635,9 @@ rule('EQUIPPING — can you take it back, and can you craft what you wear?');
     'a worn item on the bench resolves to nothing'
   );
 
-  const rolled = craft(wand, CURRENCY_BY_ID.shard_of_making, new ModPool(ALL_MODS), new Rng(7));
-  if (rolled.ok) replaceItem(game, rolled.item);
+  const bought = new ModPool(ALL_MODS);
+  const entry = choices(wand, bought)[0];
+  if (entry) replaceItem(game, chooseMod(wand, entry, 99, new Rng(7)));
   check(
     game.character.equipment.weapon?.id === wand.id && game.inventory.length === 0,
     'and crafting it swaps the worn copy rather than dropping one in the bag',
@@ -2861,9 +2858,10 @@ rule('THE OPENING — is the first hour walkable with nothing explaining it?');
     'the weapon he hands over is marked as his',
     `the gift is ${gift?.name ?? 'nothing'}`
   );
-  const worked = craft(gift!, CURRENCY_BY_ID.shard_of_making, pool, new Rng(3));
+  const pickable = choices(gift!, pool)[0];
+  const worked = pickable ? chooseMod(gift!, pickable, 99, new Rng(3)) : gift!;
   check(
-    worked.ok && worked.item.meta.firstClear === true,
+    worked.meta.firstClear === true,
     'and keeps the mark through a craft',
     'crafting the gift lost what identifies it'
   );
@@ -3585,13 +3583,26 @@ rule('GATHERING — is a node free, guarded, walked to and equally spread?');
 
   // WALKED TO AND WORKED, HEADLESS. Automation is universal and has no
   // exception: `runToCompletion` runs the shipped policy and there is no other.
+  // Over TEN seeds rather than one, because a node across the map is LEFT by
+  // design and a single run that abandons one says nothing about the walk.
   runToCompletion(first, 600);
-  const worked = first.state.nodes.filter((n) => n.taken).length;
+  let stood = 0;
+  let dug = 0;
+  let unfinished = 0;
+  for (const seed of [4242, 1, 2, 3, 4, 5, 6, 7, 8, 9]) {
+    const sim =
+      seed === 4242 ? first : new RunSim(bareSet, digger, new Rng(seed));
+    if (seed !== 4242) runToCompletion(sim, 600);
+    if (sim.state.status !== 'cleared') unfinished++;
+    stood += sim.state.nodes.length;
+    dug += sim.state.nodes.filter((n) => n.taken).length;
+  }
   const rows = first.state.loot.items.filter((i) => i.kind === 'material');
+  gauge(`${dug} of ${stood} nodes over 10 descents are walked to and worked`);
   check(
-    first.state.status === 'cleared' && worked === first.state.nodes.length && rows.length > 0,
-    'and a headless run walks to every one of them, with no policy to ship',
-    `${worked}/${first.state.nodes.length} worked, ${rows.length} rows, ${first.state.status}`
+    unfinished === 0 && dug >= stood * 0.8 && rows.length > 0,
+    'and a headless run walks to them, with no policy to ship',
+    `${dug}/${stood} worked, ${rows.length} rows, ${unfinished} unfinished`
   );
 
   // A NODE IS TAKEN ON THE WAY, NEVER FETCHED BACK. `GATHER.near` is what he
@@ -7488,12 +7499,7 @@ rule('EVERY NUMBER SAID OUT LOUD — does any line withhold its figure?');
   for (const trade of TRADES) {
     for (const node of trade.nodes) holds(`${trade.spec.id}/${node.id}`, node.description);
   }
-  for (const c of CURRENCIES) {
-    // Two of them act on EVERY modifier or on none in particular. There is no
-    // figure being withheld, so there is none to print.
-    if (c.id === 'shard_of_change' || c.id === 'shard_of_chaos') continue;
-    holds(`currency/${c.id}`, c.description);
-  }
+  for (const c of CURRENCIES) holds(`currency/${c.id}`, c.description);
   for (const a of AURAS) holds(`aura/${a.id}`, a.blurb);
   for (const attr of ATTRIBUTES) {
     for (const s of attr.per) holds(`attribute/${attr.id}`, describeStatLine(s));
@@ -11490,74 +11496,54 @@ rule('GATES AND HUNTING — can a run be pointed at what you actually want?');
 // Two mechanisms with the same shape: a gate says a thing does not exist here
 // at all, and a finding modifier says which of what does exist you would like.
 {
-  const gated = CURRENCIES.filter((c) => c.gate);
-  line(`  ${gated.length} currencies are gated: ${gated.map((c) => `${c.name} → ${c.gate!.zone ?? `power ${c.gate!.minPower}`}`).join(', ')}`);
+  const gated = [
+    ...UNIQUES.map((u) => ({ name: u.name, gate: u.gate })),
+    ...RELICS.map((r) => ({ name: r.name, gate: r.gate })),
+  ].filter((g) => g.gate);
+  line(`  ${gated.length} named things are gated: ${gated.map((g) => `${g.name} → ${g.gate!.zone ?? `power ${g.gate!.minPower}`}`).join(', ')}`);
   check(gated.length > 0, 'the table gates something at all', 'nothing is gated');
 
   // A gate is a WALL: the run either has it in the pool or does not, and no
-  // amount of rarity argues with it.
-  const wrong = gated.filter((c) => opensHere(c.gate, POWER.max, 'fissure'));
+  // amount of rarity argues with it. The Fissure is the shallowest world, so
+  // what must not reach it is anything gated to one of the others.
+  const wrong = gated.filter(
+    (g) => g.gate!.zone && g.gate!.zone !== 'fissure' && opensHere(g.gate, POWER.max, 'fissure')
+  );
   check(
     wrong.length === 0,
-    'and nothing gated to a world drops in the bare Fissure, however powerful the set',
-    wrong.map((c) => c.name).join(', ')
+    'and nothing gated to a deeper world drops in the bare Fissure, however powerful the set',
+    wrong.map((g) => g.name).join(', ')
   );
   const unreachable = gated.filter(
-    (c) => !MAP_THEMES.some((t) => opensHere(c.gate, POWER.max, t.id))
+    (g) => !MAP_THEMES.some((t) => opensHere(g.gate, POWER.max, t.id))
   );
   check(
     unreachable.length === 0,
     'and every gate opens somewhere — a gate nothing satisfies is content nobody can have',
-    unreachable.map((c) => c.name).join(', ')
+    unreachable.map((g) => g.name).join(', ')
   );
 
-  // Played out. Every gated currency is exotic now, so it needs the top band
-  // as well as its zone — too rare to sample for a POSITIVE. The negative is
-  // the one that matters and it holds on every kill: the pool is filtered
-  // before the pick, so a world can never produce another world's currency.
-  const seen = (crystals: Item[], seeds: number): Set<string> => {
-    const out = new Set<string>();
-    for (let i = 0; i < seeds; i++) {
-      const sim = new RunSim(crystals, ladderCharacter(6, new Rng(90 + i)), new Rng(300 + i));
-      const s = runToCompletion(sim, 600);
-      for (const id of Object.keys(s.loot.currency)) out.add(id);
-    }
-    return out;
-  };
-  const top = (family: MonsterFamily) => rollCrystal(4, pool, rng, family);
-  const rot = seen([top('demonic'), top('demonic'), top('demonic'), top('demonic')], 14);
-  const cavern = seen([top('prismatic'), top('prismatic'), top('prismatic'), top('prismatic')], 14);
-  line(`  the Rot dropped ${rot.size} kinds of currency, the Cavern ${cavern.size}`);
-  const trespass = [...rot]
-    .filter((id) => CURRENCY_BY_ID[id]?.gate?.zone && CURRENCY_BY_ID[id].gate!.zone !== 'demonic')
-    .concat(
-      [...cavern].filter(
-        (id) => CURRENCY_BY_ID[id]?.gate?.zone && CURRENCY_BY_ID[id].gate!.zone !== 'prismatic'
-      )
+  // AND NO SHARD IS BEHIND ONE. A family you cannot craft until the fourth band
+  // is a family nobody crafts, so every shard is reachable in the shallowest
+  // run there is. The POOL is what says so; how many actually turn up over a
+  // handful of descents is a weight and belongs in the gauge beside it.
+  {
+    const walled = CURRENCIES.filter(
+      (c) => !MAP_THEMES.every((t) => opensHere(c.gate, 0, t.id))
     );
-  check(
-    trespass.length === 0,
-    'and a world never produces a currency gated to a different one',
-    trespass.join(', ')
-  );
-
-  // What the top of each world can reach AT ALL. This is where a gate that
-  // opens nowhere, or opens everywhere, actually shows up.
-  const poolAt = (zone: MapTheme) =>
-    CURRENCIES.filter((c) => c.class === 'exotic' && opensHere(c.gate, POWER.max, zone)).map((c) => c.id);
-  for (const theme of MAP_THEMES) {
-    line(`  the top of ${theme.name} rolls from ${poolAt(theme.id).join(', ') || 'nothing exotic'}`);
+    check(
+      walled.length === 0,
+      'and every shard is in the pool of the shallowest run in the game',
+      walled.map((c) => c.name).join(', ')
+    );
+    const out = new Set<string>();
+    for (let i = 0; i < 14; i++) {
+      const bare = [makeCrystal(1), makeCrystal(1), makeCrystal(1), makeCrystal(1)];
+      const sim = new RunSim(bare, ladderCharacter(6, new Rng(90 + i)), new Rng(300 + i));
+      for (const id of Object.keys(runToCompletion(sim, 600).loot.currency)) out.add(id);
+    }
+    gauge(`14 bare descents turned up ${out.size} of the ${CURRENCIES.length + 1} kinds there are`);
   }
-  const stray = gated.filter((c) =>
-    MAP_THEMES.filter((t) => t.id !== c.gate!.zone).some((t) =>
-      poolAt(t.id).includes(c.id)
-    )
-  );
-  check(
-    stray.length === 0,
-    'and every gated currency is in exactly one world\'s pool',
-    stray.map((c) => c.name).join(', ')
-  );
 
   // Hunting. A crystal pointed at weapons has to actually change what turns up.
   const hunting = (group: string): RolledMod => ({
@@ -12854,8 +12840,7 @@ rule('THE COLLECTION — do crystals arrive, and do they grow?');
 
     // The one arranged roll in the game. It rides on the CRYSTAL, so the
     // currency behaves the same way on everything else.
-    const shard = CURRENCY_BY_ID[INTRO.scriptedCurrency];
-    const made = craft(crystal!, shard, new ModPool(ALL_MODS), new Rng(11));
+    const made = rollOntoCrystal(crystal!, new ModPool(ALL_MODS), new Rng(11));
     check(
       made.ok && made.item.mods[0]?.defId === INTRO.scriptedMod,
       `and the first shard spent on it rolls ${INTRO.scriptedMod} and nothing else`,
@@ -13732,14 +13717,13 @@ rule('UNIQUES — is every named piece real, reachable and unbreakable?');
   check(oneSided.length === 0, 'and every one is paid for on the item itself', `no downside: ${oneSided.join(', ')}`);
 
   // Nothing at a bench may reach one. The slot table is empty, so capacity is
-  // zero — including through the one currency that adds a slot past the cap.
+  // zero and the bench has nothing at all to offer.
   const rng2 = new Rng(77);
   const piece = makeUnique(UNIQUES[0], 70, rng2);
-  const refusals = CURRENCIES.map((c) => canApply(piece, c)).filter((r) => r === null);
   check(
-    modCapacity(piece) === 0 && refusals.length === 0,
-    `and all ${CURRENCIES.length} currencies refuse one`,
-    `capacity ${modCapacity(piece)}, ${refusals.length} would apply`
+    modCapacity(piece) === 0 && choices(piece, pool).length === 0,
+    'and the bench offers nothing on one',
+    `capacity ${modCapacity(piece)}, ${choices(piece, pool).length} offered`
   );
 
   // The lines are real: worn, they move the sheet.

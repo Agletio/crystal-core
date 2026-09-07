@@ -537,7 +537,7 @@ assert(
   multRows().join(' ')
 );
 
-// --- crafting spends currency ---------------------------------------------
+// --- the crystal is the one thing that still rolls ------------------------
 // Currency is spent from the dock onto whatever is on the bench, so finding
 // one means searching the dock — by aria-label, same as any other item.
 const currencyButton = (name) =>
@@ -546,31 +546,33 @@ const currencyButton = (name) =>
 const heldCount = (name) =>
   Number(currencyButton(name)?.querySelector('.ledgerrow__n')?.textContent ?? 0) || 0;
 
-// A crystal's room comes from its LEVEL, so nothing opens a level 1 one.
-// The shard still CLICKS — it arms, and lights whatever else would take it —
-// but the crystal it is standing on refuses, and says so.
+/** Every shard you hold, in one number: what a chosen line is paid out of. */
+const shardTotal = () =>
+  currencySlots().reduce(
+    (n, b) => n + (Number(b.querySelector('.ledgerrow__n')?.textContent) || 0),
+    0
+  );
+
+// A crystal's room comes from its LEVEL, so nothing opens a level 1 one, and
+// the shard that would roll it says why before it is clicked.
 {
   const making = currencyButton('Shard of Making');
-  assert(!!making, 'the dock stocks the adding currency');
+  assert(!!making, 'the dock stocks the crystal shard');
   making.dispatchEvent(new window.MouseEvent('mouseenter', { bubbles: true }));
   assert(
     /no open slot/i.test(text('tooltip')),
-    'nothing can put a modifier on a level 1 crystal, and the shard says why',
+    'nothing can put a rule on a level 1 crystal, and the shard says why',
     text('tooltip')
   );
   making.dispatchEvent(new window.MouseEvent('mouseleave', { bubbles: true }));
   making.click();
   assert(facets() === 0, 'and clicking it opens no room either', String(facets()));
-  assert($('craft-armed').hidden === false, 'it arms instead, to be pointed somewhere else');
-  making.click();
-  assert($('craft-armed').hidden === true, 'and clicking it again puts it away');
 }
 $('craft-return').click();
 
 // --- the base's tier is the whole of what an item can hold ----------------
 // Two modifiers on a tier 1 base, and nothing at the bench raises that: a
-// bigger item is something you go and find. This is what stops a fresh drop
-// being filled and re-rolled to perfection.
+// bigger item is something you go and find.
 const smallGear = filled('#inv-gear').find((b) => /slot--t1\b/.test(b.className));
 assert(!!smallGear, 'a tier 1 piece of gear is in the dock');
 smallGear.click();
@@ -582,46 +584,90 @@ assert(
 );
 assert(facets() === 2, 'a tier 1 base opens exactly two facets', String(facets()));
 
-const making = currencyButton('Shard of Making');
-assert(!!making && !making.disabled, 'Making is what fills them');
-assert(heldCount('Shard of Making') > 0, 'currency count shown on the stack');
-
+// --- the bench SELECTS ----------------------------------------------------
+// No currency is pointed at anything any more: under the item is every line it
+// could still take, and taking one is a click on the line you want.
+const picks = () => all('#craft-pick .craftpick');
+const takeable = () => picks().filter((b) => !b.disabled);
 const rolled = () => all('#modlist .mod').filter((m) => !m.classList.contains('mod--implicit'));
-const stockBefore = heldCount('Shard of Making');
-making.click();
-assert(rolled().length === 1, 'Making lands one modifier', String(rolled().length));
+
+assert($('craft-level').hidden === false, 'the bench says which level it reads');
 assert(
-  heldCount('Shard of Making') === stockBefore - 1,
-  'Making was spent',
-  `${heldCount('Shard of Making')} vs ${stockBefore}`
+  /\d/.test(text('craft-level')) && /chosen line/.test(text('craft-level')),
+  'and how many chosen lines that level buys',
+  text('craft-level')
+);
+assert(picks().length > 0, 'and lists what may still go on it', String(picks().length));
+assert(
+  picks().every(
+    (b) =>
+      b.querySelector('.craftpick__tier') &&
+      (b.querySelector('.craftpick__what')?.textContent ?? '').length > 2 &&
+      b.querySelector('.craftpick__cost')
+  ),
+  'every row is a tier, a line and what it costs'
 );
 
-currencyButton('Shard of Making').click();
-assert(rolled().length === 2, 'a second modifier was added', String(rolled().length));
+// A row's line is the number the WINDOW would roll, so a range reads as one.
+assert(
+  picks().some((b) => /\d/.test(b.querySelector('.craftpick__what')?.textContent ?? '')),
+  'and the line carries the figure it would land on'
+);
 
-// Two is all a tier 1 base has. A third has nowhere to go, whatever else you
-// own — there is no currency in the game that opens one.
 {
-  const third = currencyButton('Shard of Making');
-  third.dispatchEvent(new window.MouseEvent('mouseenter', { bubbles: true }));
-  assert(/no open slot/i.test(text('tooltip')), 'and a tier 1 base stops at two', text('tooltip'));
-  third.dispatchEvent(new window.MouseEvent('mouseleave', { bubbles: true }));
-  const held = heldCount('Shard of Making');
-  third.click();
-  assert(rolled().length === 2, 'a third does not go on', String(rolled().length));
-  assert(heldCount('Shard of Making') === held, 'and nothing is spent trying');
-  third.click();
+  const before = rolled().length;
+  const stock = shardTotal();
+  const row = takeable()[0];
+  assert(!!row, 'at least one line is affordable', `${picks().length} rows, none takeable`);
+  row.click();
+  assert(rolled().length === before + 1, 'choosing one puts it on', String(rolled().length));
+  assert(shardTotal() < stock, 'and spends shards', `${shardTotal()} vs ${stock}`);
+  assert(
+    all('#modlist .mod--chosen').length === 1,
+    'and the line says it was chosen rather than found',
+    String(all('#modlist .mod--chosen').length)
+  );
+}
+
+// A row you cannot take is DIMMED rather than hidden, and says the number that
+// is short — a list that shrank would never say what levelling is for. The cap
+// is the level's, so a big piece with room left over is what shows it.
+{
+  const big = filled('#inv-gear').find((b) => /slot--t3\b/.test(b.className));
+  assert(!!big, 'a tier 3 piece is in the dock');
+  $('craft-return').click();
+  big.click();
+
+  let guard = 10;
+  while (takeable().length > 0 && guard-- > 0) takeable()[0].click();
+
+  const nums = (text('craft-level').match(/\d+/g) ?? []).map(Number);
+  assert(
+    nums.length === 3 && nums[1] === nums[2],
+    'chosen lines stop at what the level buys',
+    text('craft-level')
+  );
+  const off = picks().find((b) => b.disabled);
+  assert(!!off, 'and the lines left over are out of reach', String(picks().length));
+  off.dispatchEvent(new window.MouseEvent('mouseenter', { bubbles: true }));
+  assert(
+    /level \d+ needed/i.test(text('tooltip')),
+    'and one of them says the level that would buy the next',
+    text('tooltip')
+  );
+  off.dispatchEvent(new window.MouseEvent('mouseleave', { bubbles: true }));
+  $('craft-return').click();
+  smallGear.click();
 }
 
 // --- no identifier ever reaches the screen --------------------------------
 // `npm run mods` checks the TEXT LAYER. This checks the DOM, which is a
 // different question and the one that actually bit: the crafting screen was
 // formatting stat lines itself out of the raw stat key, so the one place you
-// look hardest at an item was the one place printing "+14 coldRes". A check
-// that only tests the helper cannot see a screen that skipped the helper.
+// look hardest at an item was the one place printing "+14 coldRes".
 {
-  const camelCase = (text) => text.match(/\b[a-z]+[A-Z][a-zA-Z]*\b/g) ?? [];
-  const shown = all('#modlist .mod__stats');
+  const camelCase = (t) => t.match(/\b[a-z]+[A-Z][a-zA-Z]*\b/g) ?? [];
+  const shown = [...all('#modlist .mod__stats'), ...all('#craft-pick .craftpick__what')];
   assert(shown.length >= 2, 'the crafting screen is showing modifiers to check', String(shown.length));
 
   const leaks = new Set();
@@ -631,24 +677,30 @@ assert(rolled().length === 2, 'a second modifier was added', String(rolled().len
   assert(leaks.size === 0, 'and none of them is a raw identifier', [...leaks].join(', '));
 }
 
-// Adding a modifier has to CHANGE the crystal's header. Most raise danger; the
-// finding ones carry none at all and state what the run is pointed at instead.
-// A level 4 has room for it — levelling is the only thing that grants any.
+// Rolling a crystal has to CHANGE its header. Most rules raise danger; the
+// finding ones carry none and state what the run is pointed at instead.
 {
   const roomy = benchCrystals().find((b) => /Level 4/.test(named(b)));
   assert(!!roomy, 'a level 4 crystal is in the bench column');
   $('craft-return').click();
   roomy.click();
   assert(facets() === 3, 'and it has three facets to fill', String(facets()));
+  assert(picks().length === 0, 'a crystal is not selected, it is rolled', String(picks().length));
   const danger = () =>
     Number(multRows().find((r) => r.startsWith('danger='))?.split('=')[1]);
   assert(danger() === 0, 'a blank one is worth exactly base', String(danger()));
   const headerBefore = multRows().join(' ');
+  const stock = heldCount('Shard of Making');
   currencyButton('Shard of Making')?.click();
   assert(
     multRows().join(' ') !== headerBefore,
-    'crafting a mod changes what the crystal says it does',
+    'rolling a rule changes what the crystal says it does',
     `${headerBefore} → ${multRows().join(' ')}`
+  );
+  assert(
+    heldCount('Shard of Making') === stock - 1,
+    'and the shard was spent',
+    `${heldCount('Shard of Making')} vs ${stock}`
   );
   // Danger, density, a drop group, or what it PAYS — a crystal roll that
   // changes none of those is one the panel cannot report.
@@ -692,86 +744,9 @@ assert(
   `${invItems().length} vs ${inventoryBefore}`
 );
 
-// --- arming the one currency you aim --------------------------------------
-// Everything else at the bench fires on the click. Removal asks which one,
-// because choosing what LEAVES is the only targeting that does not collapse
-// the chase — and a bench that silently changed what a click means would be a
-// bug report, so arming has to say so on screen.
-{
-  const unmaking = currencyButton('Shard of Unmaking');
-  assert(!!unmaking, 'the dev kit stocks the removal currency');
-  assert(
-    /pick what it goes on/i.test(named(unmaking)),
-    'which asks you to point it rather than firing',
-    named(unmaking)
-  );
-  const before = rolled().length;
-  assert(before > 0, 'the benched item has something to remove', String(before));
-  unmaking.click();
-  assert($('craft-armed').hidden === false, 'arming it says so on the bench');
-
-  const facet = all('#sockets .facet--set')[0];
-  assert(!!facet, 'the item draws its filled facets');
-  assert(facet.classList.contains('facet--armed'), 'and every one becomes a target');
-  facet.click();
-  assert(rolled().length === before - 1, 'clicking one removes it', `${rolled().length} vs ${before}`);
-  assert($('craft-armed').hidden === true, 'and puts the shard away afterwards');
-}
-
-// --- an armed shard lights what it can go on ------------------------------
-// The dock answers "which of these would take this" without a click each. A
-// dimmed slot is not hidden, because the whole point is that hovering it says
-// why — the refusal belongs on the item you were about to click.
-{
-  const unmaking = currencyButton('Shard of Unmaking');
-  unmaking.click();
-  const lit = filled('#inv-gear').filter((b) => b.classList.contains('slot--on'));
-  const dim = filled('#inv-gear').filter((b) => b.classList.contains('slot--dim'));
-  assert(lit.length > 0, 'arming lights what the shard would take', String(lit.length));
-  assert(dim.length > 0, 'and dims what it would not', String(dim.length));
-  assert(
-    lit.every((b) => !b.classList.contains('slot--dim')),
-    'and never both at once'
-  );
-
-  dim[0].dispatchEvent(new window.MouseEvent('mouseenter', { bubbles: true }));
-  assert(
-    /modifier|corrupt|slot/i.test(text('tooltip')),
-    'a dimmed item says why it is dimmed',
-    text('tooltip')
-  );
-  dim[0].dispatchEvent(new window.MouseEvent('mouseleave', { bubbles: true }));
-
-  // A lit one takes it, which is the point of lighting it. Unmaking is the
-  // targeted one, so it benches the piece and waits for a modifier rather
-  // than firing at whichever one the engine felt like.
-  assert(/pick a modifier/i.test(named(lit[0])), 'and a lit one offers to take it', named(lit[0]));
-  unmaking.click();
-  assert(
-    filled('#inv-gear').every((b) => !b.classList.contains('slot--dim')),
-    'putting the shard away clears the dock again'
-  );
-}
-
-// --- a one-way door says so before you open it ----------------------------
-// The two gambles lock the item permanently. Nothing else in the game does,
-// and a lock nobody saw coming is the worst thing on the bench.
-{
-  const gamble = currencySlots().find((b) => /Sigil of/.test(named(b)));
-  assert(!!gamble, 'the dev kit stocks a gamble', named(currencySlots()[0]));
-  gamble.dispatchEvent(new window.MouseEvent('mouseenter', { bubbles: true }));
-  assert(
-    /LOCKS THE ITEM/.test(text('tooltip')),
-    'and it says it locks the item before you spend it',
-    text('tooltip')
-  );
-  gamble.dispatchEvent(new window.MouseEvent('mouseleave', { bubbles: true }));
-}
-
 // --- implicits survive everything ----------------------------------------
-// A weapon's implicit is its identity. Every effect in the registry operates
-// on `mods`, so nothing — including Shard of Ruin, which strips the lot —
-// should be able to reach it.
+// A weapon's implicit is its identity, and nothing at the bench touches
+// anything but `mods`.
 $('craft-return').click();
 const weaponChip = filled('#inv-gear').find((b) =>
   /Wand|Sword|Shiv|Stiletto|Fang|Cudgel|Maul/.test(named(b))
@@ -783,17 +758,22 @@ const implicitRows = () => all('#modlist .mod--implicit');
 assert(implicitRows().length === 1, 'the weapon shows its implicit');
 const implicitText = implicitRows()[0].textContent;
 
-// Fill it, re-roll every modifier, then re-roll every value. Nothing in that
-// sequence may reach the implicit — it is the base's identity, not a modifier.
-for (const name of ['Shard of Making', 'Shard of Making', 'Shard of Chaos', 'Shard of Change']) {
-  const btn = currencyButton(name);
-  if (btn && !btn.disabled) btn.click();
-}
+for (let i = 0; i < 2; i++) takeable()[0]?.click();
 
 assert(
   implicitRows().length === 1 && implicitRows()[0].textContent === implicitText,
   'crafting cannot reach an implicit'
 );
+
+// A piece with no room offers nothing, which is what makes headroom on a drop
+// the thing you save shards for.
+{
+  let guard = 8;
+  while (takeable().length > 0 && guard-- > 0) takeable()[0].click();
+  if (rolled().length >= facets()) {
+    assert(picks().length === 0, 'a full piece offers no line at all', String(picks().length));
+  }
+}
 
 $('craft-return').click();
 crystalChip.click();
@@ -2903,8 +2883,8 @@ $('dev-kit').click();
     $('work-tabs').textContent?.slice(0, 40)
   );
   assert(
-    /Level 1/.test($('work-xp').textContent ?? ''),
-    'every profession starts at level 1, and the screen says so in numbers',
+    /Level \d+ — \d+ \/ \d+ to the next/.test($('work-xp').textContent ?? ''),
+    'and the level a profession stands at is said in numbers, with the next one beside it',
     $('work-xp').textContent
   );
   $('work-close').click();

@@ -1,25 +1,42 @@
 /**
- * Crafting. The window is the item and nothing else — currency lives in the
- * dock, and this screen is what gives clicking a stack a meaning.
+ * THE BENCH, and it SELECTS. Under the item is every line it could still take:
+ * the tier, what the level's window would roll, and the shards it costs against
+ * the shards you hold. The bench holds exactly one item; putting a second down
+ * returns the first.
  *
- * The bench holds exactly one item; putting a second down returns the first.
+ * A CRYSTAL is the one thing here that still rolls, and a Shard of Making is
+ * what rolls it.
  */
 import { Rng } from '../rng';
 import {
   ModPool,
+  hasOpenSlot,
   modCapacity,
   tierName,
   slotCapacity,
   slotTypes,
   slotUsed,
 } from '../mods';
-import { canApply, craft, describeMod, isTargeted } from '../crafting';
-import { ALL_MODS } from '../data';
+import {
+  chooseMod,
+  chosenLines,
+  choices,
+  costOf,
+  describeMod,
+  linesAllowed,
+  rollCrystal,
+  whyNotChoose,
+  windowRange,
+} from '../crafting';
+import { ALL_MODS, CURRENCY_BY_ID, PROFESSION_BY_ID, SELECT, SHARD_BY_ID } from '../data';
+import { craftLevel, recipeFor } from '../game/forge';
+import { professionAt } from '../game/work';
+import { statParts } from '../mod-text';
 import { balance, spend } from '../economy';
 import { craftItem, clearCraft, replaceItem, selectForCraft } from '../game/state';
 import type { GameState } from '../game/state';
 import { EQUIP_SLOTS } from '../data';
-import { gearIcon, itemIcon } from './icons';
+import { currencyIcon, gearIcon, itemIcon } from './icons';
 import {
   consumeDrag,
   pressItem,
@@ -34,19 +51,13 @@ import { grantLines, itemCard, statLines } from './itemcard';
 import { crystalProgress } from '../game/crystals';
 import { crystalsIn, socketed } from '../game/state';
 import { CRYSTAL_SLOTS, FAMILY_BY_ID } from '../data';
-import type { CurrencyDef, Item, RolledMod } from '../types';
+import type { CurrencyDef, Item, ModEntry, RolledMod } from '../types';
 
 const pool = new ModPool(ALL_MODS);
 let seed = Math.floor(Math.random() * 1e9);
 let rng = new Rng(seed);
 let game: GameState;
 let focused: string | null = null;
-/**
- * A targeted currency, waiting for you to say which modifier. UI state, never
- * saved: a reload that came back still pointing a Shard of Unmaking at an item
- * would be a click you did not make.
- */
-let armed: CurrencyDef | null = null;
 
 /** Facet colour by what the mod actually does. */
 const TAG_COLOURS: Array<[string, string]> = [
@@ -78,7 +89,11 @@ function el(tag: string, cls?: string, text?: string): HTMLElement {
   return node;
 }
 
-function use(currency: CurrencyDef, chosen?: string): void {
+/**
+ * THE ONE ROLL LEFT. A crystal's rules are its difficulty, so choosing them
+ * would let a build take the cheapest danger for the richest payment.
+ */
+function roll(currency: CurrencyDef): void {
   const item = craftItem(game);
   if (!item) return;
 
@@ -88,23 +103,50 @@ function use(currency: CurrencyDef, chosen?: string): void {
     return;
   }
 
-  const result = craft(item, currency, pool, rng, chosen);
+  const result = rollCrystal(item, pool, rng);
   if (!result.ok) {
-    // A refused craft costs nothing — the currency is only spent on a change.
+    // A refused roll costs nothing — the shard is only spent on a change.
     note(`${currency.name} — ${result.error}`, 'fail');
     render();
     return;
   }
 
   spend(game.wallet, { [currency.id]: 1 });
-  armed = null;
   note(currency.name, 'note');
-  for (const entry of result.log) {
-    note(entry, entry.startsWith('-') ? 'remove' : 'add');
-  }
-  // The crafted item keeps its id, so it swaps back into the same inventory
-  // slot — or the same equip slot — and stays selected.
+  for (const entry of result.log) note(entry, 'add');
+  // The item keeps its id, so it swaps back into the same socket and stays
+  // selected.
   replaceItem(game, result.item);
+  render();
+  onChanged?.();
+}
+
+/** The profession the bench reads, which is the LOWEST the recipe names: a
+ *  hybrid is no better than the profession you neglected. */
+function benchProfession(item: Item): { id: string; level: number } | null {
+  const recipe = recipeFor(item.base);
+  if (!recipe || recipe.parts.length === 0) return null;
+  const worst = recipe.parts.reduce((a, b) =>
+    professionAt(game, a.profession).level <= professionAt(game, b.profession).level ? a : b
+  );
+  return { id: worst.profession, level: craftLevel(game, recipe) };
+}
+
+/** PUT A CHOSEN LINE ON. Refuses before it spends, and says the number. */
+function choose(entry: ModEntry): void {
+  const item = craftItem(game);
+  if (!item) return;
+  const level = benchProfession(item)?.level ?? 0;
+  const why = whyNotChoose(item, entry, level, (id) => balance(game.wallet, id));
+  if (why) {
+    note(why, 'fail');
+    return;
+  }
+  const { shard, n } = costOf(entry);
+  spend(game.wallet, { [shard!]: n });
+  const out = chooseMod(item, entry, level, rng);
+  note(`+ ${describeMod(out.mods[out.mods.length - 1])}`, 'add');
+  replaceItem(game, out);
   render();
   onChanged?.();
 }
@@ -123,19 +165,8 @@ function renderItem(): void {
   const body = $('craft-item');
   empty.hidden = !!item;
   body.hidden = !item;
+  $('craft-picks').hidden = !item || item.kind !== 'gear';
   ($('craft-return') as HTMLButtonElement).disabled = !item;
-
-  // Before the early return: an armed shard with nothing benched is exactly
-  // the state that most needs a line saying what it is waiting for.
-  const banner = $('craft-armed');
-  const waiting =
-    armed && item && isTargeted(armed) && !canApply(item, armed)
-      ? 'click the modifier you want gone'
-      : 'click something lit in the dock';
-  banner.textContent = armed
-    ? `${armed.name} — ${waiting}. Click the shard again to put it away.`
-    : '';
-  banner.hidden = !armed;
 
   if (!item) return;
 
@@ -146,11 +177,9 @@ function renderItem(): void {
   $('item-meta').textContent =
     `${tierName(item)} · ilvl ${item.ilvl} · ` +
     `${item.mods.length}/${modCapacity(item)} modifiers` +
-    (item.meta.corrupted ? ' · locked' : '') +
-    // Every currency here is live against something you are wearing, and a
-    // Shard of Ruin does not care that you are standing in it.
+    // A chosen line is live against something you are wearing, and the sheet
+    // moves under you when it lands.
     (worn ? ` · worn, ${worn.name.toLowerCase()}` : '');
-  $('item-name').classList.toggle('locked', !!item.meta.corrupted);
 
   // What this crystal is worth, right under its name — the mods below say
   // what makes it dangerous, this says what the danger buys.
@@ -187,17 +216,12 @@ function renderItem(): void {
       const facet = el('button', 'facet') as HTMLButtonElement;
       if (mod) {
         facet.classList.add('facet--set', `facet--${facetOf(mod)}`);
-        const aim = armed;
-        attachTooltip(facet, () =>
-          aim ? `${describeMod(mod)}\n— ${aim.name}: click to remove this one` : describeMod(mod)
-        );
+        attachTooltip(facet, () => describeMod(mod));
         facet.setAttribute('aria-label', describeMod(mod));
         facet.onclick = () => {
-          if (aim) return use(aim, mod.entryId);
           focused = focused === mod.entryId ? null : mod.entryId;
           render();
         };
-        if (aim) facet.classList.add('facet--armed');
         if (focused === mod.entryId) facet.classList.add('facet--focus');
         facet.append(el('span', 'facet__tier', `T${mod.tier}`));
       } else {
@@ -235,29 +259,19 @@ function renderItem(): void {
   }
 
   if (item.mods.length === 0) {
-    // With no facets drawn at all, "click a currency to fill a slot" points at
-    // nothing. A Rough item's problem is that it has no slots yet, and the
-    // answer is a different currency than the one that fills them.
     list.append(
       el(
         'p',
         'empty',
         modCapacity(item) > 0
-          ? 'No modifiers. Click a currency below.'
-          : item.kind === 'crystal'
-            ? 'A level 1 crystal has no room. Levelling is the only thing that grants it.'
-            : 'No slots yet. A Shard of Seaming opens the first.'
+          ? 'No modifiers.'
+          : 'A level 1 crystal has no room. Levelling is the only thing that grants it.'
       )
     );
   }
   for (const mod of item.mods) {
-    const aim = armed;
-    const row = el(aim ? 'button' : 'div', 'mod');
-    if (aim) {
-      row.classList.add('mod--armed');
-      row.setAttribute('aria-label', `${aim.name}: remove ${describeMod(mod)}`);
-      (row as HTMLButtonElement).onclick = () => use(aim, mod.entryId);
-    }
+    const row = el('div', 'mod');
+    if (mod.chosen) row.classList.add('mod--chosen');
     if (focused === mod.entryId) row.classList.add('mod--focus');
     row.append(el('span', `dot dot--${facetOf(mod)}`));
     const b = el('div', 'mod__body');
@@ -268,10 +282,127 @@ function renderItem(): void {
     const stats = el('div', 'mod__stats');
     stats.append(...statLines(mod), ...grantLines(mod));
     b.append(stats);
-    b.append(el('div', 'mod__name', `T${mod.tier} ${mod.name} · ${mod.slot}`));
+    b.append(
+      el('div', 'mod__name', `T${mod.tier} ${mod.name} · ${mod.slot}${mod.chosen ? ' · chosen' : ''}`)
+    );
     row.append(b);
     list.append(row);
   }
+
+  renderPicks(item);
+}
+
+/**
+ * WHAT MAY STILL GO ON IT. One row a line: the tier, what this level's window
+ * would roll, and the shards it costs against the shards you hold. A row you
+ * cannot take is DIMMED rather than hidden, and carries the number that is
+ * short — a list that shrank as you levelled would never say what levelling is
+ * for.
+ */
+function renderPicks(item: Item): void {
+  const host = $('craft-pick');
+  host.replaceChildren();
+  const line = $('craft-level');
+
+  if (item.kind !== 'gear') {
+    line.hidden = true;
+    return;
+  }
+
+
+  const at = benchProfession(item);
+  const level = at?.level ?? 0;
+  const allowed = linesAllowed(level);
+  const taken = chosenLines(item);
+  const who = PROFESSION_BY_ID[at?.id ?? '']?.name ?? 'Crafting';
+  line.hidden = false;
+  line.textContent =
+    allowed === 0
+      ? `${who} ${level} · level ${SELECT.linesAt[0]} chooses the first line`
+      : `${who} ${level} · ${taken} of ${allowed} chosen lines`;
+
+  // Grouped by the SHARD as well as by the slot, because what you are short of
+  // is a shard: the icon and the count belong to the group, and a row is then
+  // three spans rather than a whole sprite apiece.
+  const entries = [...choices(item, pool)].sort(
+    (a, b) =>
+      a.slot.localeCompare(b.slot) ||
+      (costOf(a).shard ?? '').localeCompare(costOf(b).shard ?? '') ||
+      a.defId.localeCompare(b.defId) ||
+      a.tier - b.tier
+  );
+  if (entries.length === 0) {
+    host.append(el('p', 'empty', 'No open slot.'));
+    return;
+  }
+
+  let slot = '';
+  let shard = '';
+  for (const entry of entries) {
+    if (entry.slot !== slot) {
+      slot = entry.slot;
+      shard = '';
+      host.append(el('div', 'slotgroup__label', slot));
+    }
+    const buys = costOf(entry).shard ?? '';
+    if (buys !== shard) {
+      shard = buys;
+      const head = el('div', 'picklist__shard');
+      const def = CURRENCY_BY_ID[shard];
+      if (def) head.append(currencyIcon(def, 16));
+      head.append(el('span', 'picklist__name', def?.name ?? shard));
+      head.append(el('span', 'picklist__held', String(balance(game.wallet, shard))));
+      host.append(head);
+    }
+    host.append(pickRow(item, entry, level));
+  }
+}
+
+function pickRow(item: Item, entry: ModEntry, level: number): HTMLButtonElement {
+  const why = whyNotChoose(item, entry, level, (id) => balance(game.wallet, id));
+  const { shard, n } = costOf(entry);
+  const held = shard ? balance(game.wallet, shard) : 0;
+
+  const row = el('button', 'craftpick') as HTMLButtonElement;
+  row.append(el('span', 'craftpick__tier', `T${entry.tier}`));
+
+  // The stat line as the WINDOW would roll it, not the tier's whole range: the
+  // number a player acts on is the one they will get. Split rather than
+  // string-replaced, or a range whose figure appears twice comes out mangled.
+  const [lo, hi] = windowRange(entry, level);
+  const top = statParts({ ...entry.stats[0], value: hi, tags: entry.stats[0]?.tags ?? [] });
+  const bottom = statParts({ ...entry.stats[0], value: lo, tags: entry.stats[0]?.tags ?? [] });
+  const span = lo === hi ? top.value : `${bottom.value}–${top.value.replace(/^\+/, '')}`;
+  row.append(el('span', 'craftpick__what', `${span} ${top.label}`));
+
+  const cost = el('span', 'craftpick__cost');
+  cost.append(el('span', 'craftpick__n', `${n}`));
+  row.append(cost);
+
+  const name = SHARD_BY_ID[shard ?? '']?.name ?? 'shard';
+  attachTooltip(row, () =>
+    [
+      `${entry.name} · tier ${entry.tier}`,
+      ...entry.stats.map((st, i) => {
+        const [a, b] = windowRange(entry, level, i);
+        const one = statParts({ ...st, value: b, tags: st.tags ?? [] });
+        const low = statParts({ ...st, value: a, tags: st.tags ?? [] });
+        return `${a === b ? one.value : `${low.value}–${one.value.replace(/^\+/, '')}`} ${one.label}`;
+      }),
+      `${n} ${name}, you hold ${held}`,
+      why ? `— ${why}` : '— click to put it on',
+    ].join('\n')
+  );
+
+  if (why) {
+    row.disabled = true;
+    row.classList.add('craftpick--off');
+    row.setAttribute('aria-label', `${entry.name} tier ${entry.tier} — ${why}`);
+  } else {
+    row.onclick = () => choose(entry);
+    row.setAttribute('aria-label', `Add ${entry.name} tier ${entry.tier} for ${n} ${name}`);
+  }
+  return row;
 }
 
 /** Id of one crystal's button beside the bench, so the guide can ring it. */
@@ -333,7 +464,6 @@ function renderCrystals(): void {
 function bench(item: Item): void {
   selectForCraft(game, item);
   focused = null;
-  armed = null;
   note(`Bench: ${item.name}`);
   render();
 }
@@ -394,90 +524,54 @@ export function render(): void {
   renderWorn();
   renderItem();
   $('seed').textContent = String(seed);
-  // Currency counts and the "can this apply" test both live on dock slots
-  // now, so the dock has to redraw whenever the bench item changes.
+  // A shard's count is what the pick list is read against, so the dock redraws
+  // whenever the bench does.
   renderInventory();
 }
 
 /**
  * Clicking an inventory item opens it on the bench. It stays in the list,
  * highlighted — the selection is a reference, not a move.
- *
- * With a currency armed the dock answers a different question: which of these
- * would this shard accept. Lit ones take it on the click; the rest dim and
- * carry the refusal in their own tooltip, which is the point of dimming them
- * rather than hiding them.
  */
 function itemHandler() {
   return {
-    actionFor: (item: Item) => {
-      const aim = armed;
-      if (!aim) return { label: 'Open on bench', run: () => bench(item) };
-      if (canApply(item, aim)) return null;
-      return {
-        // A targeted shard still needs a modifier named, so it benches the
-        // item and stays armed rather than firing at something unchosen.
-        label: isTargeted(aim) ? `pick a modifier on ${item.name}` : `use ${aim.name}`,
-        run: () => {
-          selectForCraft(game, item);
-          focused = null;
-          if (isTargeted(aim)) {
-            note(`Bench: ${item.name}`);
-            render();
-          } else {
-            use(aim);
-          }
-        },
-      };
-    },
-    highlighted: (item: Item) =>
-      armed ? canApply(item, armed) === null : item.id === game.craftId,
-    dimmed: (item: Item) => (armed ? canApply(item, armed) : null),
+    actionFor: (item: Item) => ({ label: 'Open on bench', run: () => bench(item) }),
+    highlighted: (item: Item) => item.id === game.craftId,
   };
 }
 
 /**
- * What a currency in the dock does when you click it.
- *
- * Registered once and never swapped, because the answer never depends on
- * which screen is open — it depends on whether there is something to apply it
- * TO. With the bench closed the click opens the bench, which is the only
- * useful reading of "use this on nothing"; a dead click there would just be a
- * currency you own that appears broken.
+ * What a shard in the dock does when you click it. A shard is a COST rather
+ * than a thing you apply, so the click opens the bench where it is spent; the
+ * crystal's own shard is the exception, and rolls a benched crystal outright.
  */
 function currencyHandler() {
-  const arm = (currency: CurrencyDef) => ({
-    label: armed?.id === currency.id ? 'put it away' : 'pick what it goes on',
-    run: () => {
-      openCraft();
-      armed = armed?.id === currency.id ? null : currency;
-      render();
-    },
-  });
-
   return {
     actionFor: (currency: CurrencyDef) => {
       const item = craftItem(game);
-      // An item on the bench that this shard accepts is the whole of the old
-      // flow, and the click keeps meaning what it meant. Everything else —
-      // nothing benched, a shard the benched item refuses, a targeted one
-      // still waiting for a modifier — arms it instead of dying.
-      if (item && !canApply(item, currency) && !isTargeted(currency)) {
+      if (currency.crystal && item?.kind === 'crystal' && hasOpenSlot(item)) {
         return {
           label: `use on ${item.name}`,
           run: () => {
             openCraft();
-            use(currency);
+            roll(currency);
           },
         };
       }
-      return arm(currency);
+      return {
+        label: 'open the bench',
+        run: () => {
+          openCraft();
+          render();
+        },
+      };
     },
-    // Still asked even when a click has something to do: the click arms the
-    // shard, and why the BENCHED item refuses it is a different question.
     blocked: (currency: CurrencyDef) => {
+      if (!currency.crystal) return null;
       const item = craftItem(game);
-      return item ? canApply(item, currency) : null;
+      if (!item) return null;
+      if (item.kind !== 'crystal') return 'A Shard of Making only reaches a crystal.';
+      return hasOpenSlot(item) ? null : 'No open slot.';
     },
   };
 }
@@ -501,7 +595,6 @@ export function openCraft(): void {
 }
 
 export function closeCraft(): void {
-  armed = null;
   $('craft').hidden = true;
   hideTooltip();
   onClosed?.();
@@ -525,7 +618,6 @@ export function initCraft(state: GameState, closed: () => void, changed?: () => 
     const item = craftItem(game);
     if (!item) return;
     note(`Closed ${item.name}`);
-    armed = null;
     clearCraft(game);
     render();
   };

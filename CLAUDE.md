@@ -579,15 +579,11 @@ piece nobody reads.
 
 **A DROPPED PIECE NEVER ARRIVES FULL.** `DropBand.fill` is a SHARE of the
 BASE's own capacity, clamped to leave at least one slot open. Written as a
-COUNT it clamped to full on every smaller base — 80% of deep drops arrived with
-no room, and a Shard of Making needs `has_open_slot`, so the one currency the
-shelf sells was refused by almost everything the floor dropped. **The item you
-save currency for is one with good lines and room to add**, which is the whole
-of what makes scarce currency a decision rather than a tax — *"the currency
-needs to be rare enough you need to wait to find an item that's good enough to
-start using it on."* **A SHARD IS A DECISION ABOUT ONE PIECE**: measured, the
-bare Fissure pays 0.21 a clear, and the counter's first one is several descents
-of saving.
+COUNT it clamped to full on every smaller base, and a piece with no room is a
+piece the bench cannot reach at all. **The item you save shards for is one with
+good lines and room to add**, which is the whole of what makes a scarce shard a
+decision rather than a tax — *"the currency needs to be rare enough you need to
+wait to find an item that's good enough to start using it on."*
 
 **A BUDGET IS SETTLED TO A WHOLE NUMBER BEFORE IT IS SPREAD.**
 `left / bodiesLeft` places exactly `left` items only when `left` is an INTEGER;
@@ -810,7 +806,7 @@ what YOU do — and `statPower()` reads a finished ITEM, so both halves are
 asserted about what a player wears rather than about a mix. An UNPRICED stat is
 worth NOTHING in that total, so every base implicit is held to being priced.
 
-**MATERIALS DECIDE WHAT AN ITEM IS; CURRENCY DECIDES WHAT IS ON IT.** A craft
+**MATERIALS DECIDE WHAT AN ITEM IS; SHARDS DECIDE WHAT IS ON IT.** A craft
 picks the BASE and its IMPLICIT and every modifier is still the bench's — two
 economies, two decisions, neither a slot machine. **A RECIPE IS DERIVED, NEVER
 AUTHORED**: `ARCHETYPE_PROFESSION` turns `ARMOUR_FAMILIES.archetypes` into one
@@ -842,14 +838,49 @@ always landing on the first. The demo asks this of EVERY base, not a sample.
 of drops, which is why the count had to be flattened first — at 84 a clear the
 same odds paid 3.79 Perfect bases a descent and the rare tier was wallpaper.
 
-**THE BENCH IS AN ANTI-BRICK, NOT A SUPPLY.** A Shard of Making at 5 flat gold
-was 6,072 a clear at the deep end, so a found piece's rolled lines were worth
-five gold apiece and the floor could never beat the bench — *"an item with no
-mods could be better than one with 3, you just need to click the currency."*
-`Recipe.goldPerIlvl` rides the counter's own item level instead. **A CONSTANT
-PRICE CANNOT THROTTLE ANYTHING**: a clear banks 54 gold at the bare Fissure
-against 30,359 at the deep end, so one number tuned to cost a clear at the top
-is 560 clears at the bottom and a new character could never buy one.
+**THE BENCH SELECTS, AND THE PoE ONE IS GONE.** *"I want to drop the entire POE
+style crafting system and switch to a select style crafting system. As your
+associated crafting level increases you can select more and more stats to be
+guaranteed."* `src/crafting.ts` is `choices` / `whyNotChoose` / `chooseMod`:
+under the benched item is every line it could still take, and taking one is a
+click on the line you want. There is no random add, no re-roll, no targeted
+removal and no gamble — `CONDITIONS`, `EFFECTS`, both Sigils and the two
+Essences are DELETED, and with them the only thing that ever set
+`meta.corrupted`.
+
+**A LEVEL BUYS TWO THINGS AND `SELECT` IS BOTH.** `linesAt` is the level the
+Nth CHOSEN line on one piece opens at — 10, 30, 55, 80, so under 10 a profession
+makes bases and nothing else — and `tierAt` is the level a TIER needs, by rank
+from the worst. Everything else about the level is the WINDOW: `qualityWindow`
+in `src/mods.ts` is the one answer, read by the craft, the bench and every card
+that prints a range, and a chosen line rolls its value inside it. Measured on
+a +14–26 Strength line: 14–16 at level 1 and 25–26 at 99.
+
+**A SHARD IS A COST, NEVER A THING YOU APPLY.** Twelve of them, one per family
+of modifier, DERIVED off the tags `GEAR_MODS` already carries — `SHARD_FAMILIES`
+and `shardFor`, first matching tag wins, and the demo fails a modifier no family
+claims. `SHARDS.perTier` is 3 / 30 / 300 by tier RANK from the worst, ten times
+a step, so grinding the shallow end for a top line is the slow road and the
+answer is the next zone — *"you need 1 for tier 1… but t2 you need say like 20
+per."* **NO RUN GATES A FAMILY OUT**: damage you cannot craft until the fourth
+band is damage nobody crafts, so the CLASS only groups the ledger and
+`DropBand.shards` is the pile one drop hands over. Depth buys VOLUME here, and
+volume is the whole of what a better tier costs. Measured: a clear pays 7.3
+shards at the bare Fissure and 38.0 at the deep end, which for the family
+everybody wants is a worst-tier line in 3 clears at the bottom and 1 at the top,
+a middle one in 27 against 5, and the best in 261 against 50.
+
+**A DISMANTLE PAYS SHARDS TOO.** *"If it has +strength and +attack speed you can
+get a +attribute and +speed currency, and more of them based on the tier of the
+mods."* `dismantleShards` is `SHARDS.refund` of what each line cost, floored, so
+it is never the whole cost and the bench cannot be a printer with an extra click
+in it.
+
+**THE COUNTER SELLS ONE THING AND IT IS THE CRYSTAL'S.** `shard_of_making` is
+the one roll left in the game — a crystal rolls a RULE, and choosing which rule
+would buy the cheapest danger for the richest payment. **A CONSTANT PRICE CANNOT
+THROTTLE ANYTHING**: a clear banks 54 gold at the bare Fissure against 30,359 at
+the deep end, so `Recipe.goldPerIlvl` rides the counter's own item level.
 
 **Twelve modifiers was the whole ceiling, and THE RECKONING is how it rises.**
 Four sockets of three is all the difficulty a crystal can ever hold, so the web

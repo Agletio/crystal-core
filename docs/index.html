@@ -630,7 +630,6 @@
   .panel__sub { font-family: var(--display); font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--text-dim); margin: 14px 0 6px; border-top: 1px solid var(--edge); padding-top: 12px; }
 
   #item-name { font-family: var(--display); font-size: 16px; margin: 0; }
-  #item-name.locked { color: var(--ember); }
   #item-meta { font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 16px; }
 
   /* --- the signature: slots as cut facets --------------------------- */
@@ -1276,7 +1275,6 @@
      highlighted highlights nothing. */
   .slot--t2     { border-color: var(--tier2); }
   .slot--t3     { border-color: var(--tier3); box-shadow: inset 0 0 0 1px rgba(217,164,65,.3); }
-  .slot--locked { border-color: var(--locked); box-shadow: inset 0 0 0 1px rgba(196,99,30,.35); }
   .slot--unique { border-color: var(--ember); box-shadow: inset 0 0 0 1px rgba(196,72,58,.45); }
   .slot--perfect { border-color: var(--gem-hi); box-shadow: inset 0 0 0 1px rgba(251,237,198,.45); }
 
@@ -2032,22 +2030,35 @@
   .savenote--bad { color: var(--ember); }
 
   /* --- the worn column, beside the bench --------------------------------- */
-  .craftcols { display: grid; grid-template-columns: 190px 208px 1fr; gap: 12px; align-items: start; }
+  .craftcols { display: grid; grid-template-columns: 172px 190px minmax(0,1fr) minmax(0,1fr); gap: 10px; align-items: start; }
+  #craft .modal__card { width: min(1180px, 100%); }
   /* Stacked, the column would push the bench off the fold — and the bench is
      what you opened the window for. It goes under it instead. */
   @media (max-width: 720px) {
     .craftcols { grid-template-columns: 1fr; }
-    .craftcols > .worn { order: 2; }
-    .craftcols > .worn--crystals { order: 3; }
+    .craftcols > .worn { order: 3; }
+    .craftcols > .worn--crystals { order: 4; }
+    .craftcols > #craft-picks { order: 2; }
   }
 
-  /* A currency waiting for you to point at something. Only ever up while a
-     click on the bench means something other than what it usually means. */
-  .armed { font-size: 11px; color: var(--citrine); margin: 6px 0 10px; line-height: 1.5; }
-  .facet--armed, .mod--armed { cursor: pointer; }
-  .facet--armed:hover { border-color: var(--ember); }
-  .mod--armed { width: 100%; text-align: left; border: 0; background: none; padding: 0; }
-  .mod--armed:hover { background: var(--edge); }
+  /* The level the bench is reading, over the list it buys. */
+  .armed { font-size: 11px; color: var(--citrine); margin: 0 0 8px; line-height: 1.5; }
+
+  /* WHAT MAY STILL GO ON IT. Its own scroll: the list is every line the base
+     can take, and it is longer than the window on any tier 3 piece. */
+  .picklist { display: grid; gap: 2px; max-height: min(56vh, 520px); overflow-y: auto; align-content: start; }
+  .picklist .slotgroup__label { margin: 8px 0 2px; }
+  .picklist .slotgroup__label:first-child { margin-top: 0; }
+  .picklist__shard { display: flex; align-items: center; gap: 6px; margin: 4px 0 1px; font-size: 11px; color: var(--citrine); }
+  .picklist__name { flex: 1; min-width: 0; }
+  .picklist__held { font-variant-numeric: tabular-nums; color: var(--text-dim); }
+  .craftpick { display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; padding: 3px 7px; min-height: 26px; border-left-width: 3px; border-left-color: var(--edge-lit); }
+  .craftpick:hover:not(:disabled) { background: var(--edge); }
+  .craftpick__tier { font-family: var(--display); font-size: 10px; color: var(--text-dim); min-width: 18px; }
+  .craftpick__what { flex: 1; min-width: 0; font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .craftpick__cost { display: flex; align-items: center; gap: 4px; font-variant-numeric: tabular-nums; font-size: 11px; color: var(--citrine); }
+  .craftpick--off { opacity: .42; border-left-color: var(--edge); }
+  .mod--chosen .mod__name { color: var(--citrine); }
 
   .worn { padding: 10px; }
   /* The collection only ever grows, so it gets its own scroll rather than
@@ -2250,14 +2261,11 @@
   .tip__head .icon { flex: none; image-rendering: pixelated; }
   .tip__card--t2 { border-left-color: var(--tier2); }
   .tip__card--t3 { border-left-color: var(--tier3); }
-  .tip__card--locked { border-left-color: var(--locked); }
 
   .tip__name { font-size: 13px; letter-spacing: .02em; margin-bottom: 1px; }
   .tip__card--t2 > .tip__name { color: var(--tier2); }
   .tip__card--t3 > .tip__name { color: var(--tier3); }
-  .tip__card--locked > .tip__name { color: var(--locked); }
   .tip__sub { font-size: 10px; color: var(--text-dim); letter-spacing: .04em; text-transform: uppercase; }
-  .tip__locked { font-size: 10px; color: var(--locked); letter-spacing: .04em; margin-top: 3px; }
   /* A base 25% above its own row. Rarer than a rare and worth reading first. */
   .tip__perfect { font-size: 10px; color: var(--gem-hi); letter-spacing: .04em; margin-top: 3px; }
   .tip__chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
@@ -2561,8 +2569,6 @@
           <p class="worn__hint">Stays equipped while you work on it.</p>
         </div>
         <div class="panel">
-          <!-- Outside the item: an armed shard with nothing benched still says so. -->
-          <p class="armed" id="craft-armed" hidden></p>
           <p class="empty" id="craft-empty">
             Click or drag something from your dock.
           </p>
@@ -2573,6 +2579,13 @@
             <div id="sockets"></div>
             <div id="modlist"></div>
           </div>
+        </div>
+        <!-- WHAT MAY STILL GO ON IT, beside the piece rather than under it:
+             every window stops above the dock, and a list under the item is a
+             list you have to scroll the window to reach. -->
+        <div class="panel" id="craft-picks" hidden>
+          <p class="armed" id="craft-level" hidden></p>
+          <div class="picklist" id="craft-pick"></div>
         </div>
       </div>
     </div>

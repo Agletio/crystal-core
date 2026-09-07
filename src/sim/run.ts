@@ -195,9 +195,6 @@ export interface Buff {
   left: number;
 }
 
-/** Ordered worst-to-best, so rarity climbs the list. */
-const CURRENCY_CLASSES = ['basic', 'uncommon', 'rare', 'exotic'] as const;
-
 export type EntityKind = 'hero' | 'monster';
 
 /** A damage-over-time stack. Resisted, but NOT armoured, which is what makes
@@ -4321,29 +4318,19 @@ export class RunSim {
     this.dropCurrency();
   }
 
-  /** ONE piece, unconditionally — what the Vein pays in, off the budget. */
+  /** ONE pile, unconditionally — what the Vein pays in, off the budget. The
+   *  FAMILY is a weighted pick and no run gates one out; how many come is the
+   *  BAND's, and volume is the whole of what a better tier costs. */
   private dropCurrency(lift = 0): void {
-    const hero = this.state.hero.stats;
-    // Rarity decides how often you reach the ceiling; the crystal decides where
-    // it IS. Uncapped, a T1 map with enough rarity skips the whole ladder.
-    const ceiling = CURRENCY_CLASSES.indexOf(this.set.band.currency);
-    const rarity =
-      this.set.rewards.rarity + hero.rarity + this.set.pays.rarity + this.set.bonus.rarity + lift;
-    const climb = CURRENCY_DROP.upgradeChance * (1 + rarity / 100);
-    let rank = 0;
-    while (rank < ceiling && this.rng.chance(climb)) rank++;
-
-    // A gate is a wall: what this run cannot reach does not exist here, so the
-    // pool is filtered before the pick rather than the pick being rerolled.
-    const cls = CURRENCY_CLASSES[rank];
-    const pool = CURRENCIES.filter(
-      (c) => c.class === cls && opensHere(c.gate, this.set.power, this.set.theme)
-    );
-    const dropped = this.rng.pick(pool);
+    // A gate is a wall, so the pool is filtered before the pick.
+    const pool = CURRENCIES.filter((c) => opensHere(c.gate, this.set.power, this.set.theme));
+    const dropped = this.rng.weighted(pool, (c) => c.weight);
     if (!dropped) return;
 
+    const [least, most] = this.set.band.shards;
+    const n = dropped.crystal ? 1 : this.rng.int(least, most);
     const loot = this.state.loot.currency;
-    loot[dropped.id] = (loot[dropped.id] ?? 0) + 1;
+    loot[dropped.id] = (loot[dropped.id] ?? 0) + n;
   }
 }
 

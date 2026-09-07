@@ -1881,108 +1881,118 @@ export const MOD_BY_ID: Record<string, ModDef> = Object.fromEntries(
 );
 
 /**
- * The crafting currencies. Adding one is an entry here; new code is only for a
- * new KIND of mutation. Six: add one, remove one you choose, re-roll which,
- * re-roll the values, and the two gambles.
+ * SHARD FAMILIES: one currency per family of modifier, and it is what BUYS
+ * that modifier onto a piece. *"Convert them to where there is a shard currency
+ * per stat type… all the attributes can be a single currency, % increased
+ * damage of any kind can be one currency type."*
+ *
+ * DERIVED, never authored twice: a modifier belongs to the FIRST family whose
+ * `tag` it carries, off the tags `GEAR_MODS` already declares. Order is the
+ * whole of the grouping — `speed` stands before `damage` so Alacrity is a
+ * speed shard rather than a damage one, and `area` before it so Reach and
+ * Sweeping are the same shard.
+ *
+ * `buys` is the line it pays for, said the way the card says it.
+ *
+ * `weight` is the share of shard drops this family takes and is AUTHORED, never
+ * counted off how many modifiers it holds — Ruin is 25 of the 65 and would
+ * swamp the table. `class` only groups the ledger, and says how scarce a family
+ * reads; no run gates a family out, because damage you cannot craft until the
+ * fourth band is damage nobody crafts.
+ */
+export const SHARD_FAMILIES = [
+  { id: 'shard_attribute', tag: 'attribute', name: 'Attribute Shard', icon: 'cur_attribute',
+    class: 'basic' as CurrencyClass, weight: 10, buys: 'an Attribute line' },
+  { id: 'shard_resistance', tag: 'resistance', name: 'Warding Shard', icon: 'cur_resistance',
+    class: 'basic' as CurrencyClass, weight: 10, buys: 'a Resistance line' },
+  { id: 'shard_ailment', tag: 'ailment', name: 'Affliction Shard', icon: 'cur_ailment',
+    class: 'uncommon' as CurrencyClass, weight: 6, buys: 'an Ailment line' },
+  { id: 'shard_crit', tag: 'crit', name: 'Precision Shard', icon: 'cur_crit',
+    class: 'rare' as CurrencyClass, weight: 6, buys: 'a Critical line' },
+  { id: 'shard_speed', tag: 'speed', name: 'Alacrity Shard', icon: 'cur_speed',
+    class: 'rare' as CurrencyClass, weight: 7, buys: 'an Attack, Cast or Movement Speed line' },
+  { id: 'shard_life', tag: 'life', name: 'Vitality Shard', icon: 'cur_life',
+    class: 'uncommon' as CurrencyClass, weight: 8, buys: 'a Life line' },
+  { id: 'shard_mana', tag: 'mana', name: 'Aether Shard', icon: 'cur_mana',
+    class: 'basic' as CurrencyClass, weight: 6, buys: 'a Mana line' },
+  { id: 'shard_area', tag: 'area', name: 'Expanse Shard', icon: 'cur_area',
+    class: 'uncommon' as CurrencyClass, weight: 5, buys: 'an Area of Effect line' },
+  { id: 'shard_reward', tag: 'reward', name: 'Fortune Shard', icon: 'cur_reward',
+    class: 'exotic' as CurrencyClass, weight: 3, buys: 'a Rarity or Currency Find line' },
+  { id: 'shard_damage', tag: 'damage', name: 'Ruin Shard', icon: 'cur_damage',
+    class: 'rare' as CurrencyClass, weight: 14, buys: 'a Damage line' },
+  { id: 'shard_defence', tag: 'defence', name: 'Bulwark Shard', icon: 'cur_defence',
+    class: 'basic' as CurrencyClass, weight: 8, buys: 'an Armour or Block line' },
+  { id: 'shard_utility', tag: 'utility', name: 'Sundry Shard', icon: 'cur_utility',
+    class: 'basic' as CurrencyClass, weight: 5, buys: 'a line no other shard buys' },
+] as const;
+
+export const SHARD_BY_ID: Record<string, (typeof SHARD_FAMILIES)[number]> =
+  Object.fromEntries(SHARD_FAMILIES.map((f) => [f.id, f]));
+
+/** Which shard buys this modifier, or null for one no family claims — which
+ *  the demo fails, since a mod nobody can craft is one the screen cannot show. */
+export function shardFor(mod: { tags?: string[] }): string | null {
+  for (const family of SHARD_FAMILIES) {
+    if ((mod.tags ?? []).includes(family.tag)) return family.id;
+  }
+  return null;
+}
+
+/**
+ * WHAT A TIER COSTS, counted from the WORST tier up. *"You need 1 for tier 1…
+ * but t2 you need say like 20 per, so maybe you grind it out and get one piece
+ * but definitely not all your pieces."* Ten times a step, so grinding the
+ * shallow end for a top line is the slow road and the answer is the next zone.
+ */
+export const SHARDS = {
+  /** Indexed by tier RANK from the worst. */
+  perTier: [3, 30, 300],
+  /** What DISMANTLING a modifier hands back, as a share of what it cost. Under
+   *  1 by law: craft, dismantle and craft again may never print shards. */
+  refund: 0.4,
+};
+
+/**
+ * WHAT A CRAFTING LEVEL BUYS AT THE BENCH, and it buys nothing else.
+ * *"As your associated crafting level increases you can select more and more
+ * stats to be guaranteed. Say level 1 I can just craft my white items, level 10
+ * I can select 1 stat."*
+ */
+export const SELECT = {
+  /** Level the Nth chosen line on one piece opens at. Under the first, a
+   *  profession makes BASES and nothing else. */
+  linesAt: [10, 30, 55, 80],
+  /** Level a modifier TIER needs, by RANK from the worst. The worst is open
+   *  from the first line you may choose at all. */
+  tierAt: [1, 25, 60],
+};
+
+export const shardCost = (rank: number): number =>
+  SHARDS.perTier[Math.max(0, Math.min(SHARDS.perTier.length - 1, rank))];
+
+/**
+ * EVERY CURRENCY. Twelve are the shard FAMILIES — a cost the bench spends, never
+ * a thing you apply — and the thirteenth is the crystal's, which is the one
+ * roll left in the game: a crystal rolls a RULE, and choosing which rule would
+ * let a build pick the cheapest danger for the richest payment.
  */
 export const CURRENCIES: CurrencyDef[] = [
-  // --- basic: the one thing the shop sells --------------------------------
+  ...SHARD_FAMILIES.map((f) => ({
+    id: f.id,
+    name: f.name,
+    class: f.class,
+    description: `Buys ${f.buys}, for ${SHARDS.perTier.join(', ')} by tier.`,
+    icon: f.icon,
+    weight: f.weight,
+  })),
   {
     id: 'shard_of_making',
     name: 'Shard of Making',
-    class: 'basic',
-    description: 'Adds 1 random modifier, in an empty slot.',
-    targets: {},
-    requires: [{ kind: 'not_corrupted' }, { kind: 'has_open_slot' }],
-    effects: [{ kind: 'add_mod', count: 1 }],
-  },
-
-  // --- uncommon: reshaping something you already have ---------------------
-  {
-    id: 'shard_of_change',
-    name: 'Shard of Change',
     class: 'uncommon',
-    description: 'Re-rolls the numeric values of all modifiers.',
-    targets: {},
-    requires: [{ kind: 'not_corrupted' }, { kind: 'mod_count', min: 1 }],
-    effects: [{ kind: 'reroll_values' }],
-  },
-  {
-    id: 'shard_of_chaos',
-    name: 'Shard of Chaos',
-    class: 'uncommon',
-    description: 'Re-rolls which modifiers an item has, keeping the same number.',
-    targets: {},
-    requires: [{ kind: 'not_corrupted' }, { kind: 'mod_count', min: 1 }],
-    effects: [{ kind: 'reroll_mods' }],
-  },
-  {
-    id: 'essence_of_the_swarm',
-    name: 'Essence of the Swarm',
-    class: 'uncommon',
-    description: 'Adds 1 modifier, in an empty slot, guaranteed to be a Density one.',
-    // Targeting, on purpose, and only here: a crystal is a configuration you
-    // are meant to be able to aim, and none of the gear chase runs through it.
-    targets: { kinds: ['crystal'] },
-    requires: [{ kind: 'not_corrupted' }, { kind: 'has_open_slot' }],
-    effects: [{ kind: 'add_mod', tag: 'density' }],
-  },
-  {
-    id: 'essence_of_greed',
-    name: 'Essence of Greed',
-    class: 'uncommon',
-    description: 'Adds 1 modifier, in an empty slot, guaranteed to be a Hunting one — which KIND of gear the run turns up, never which piece.',
-    targets: { kinds: ['crystal'] },
-    requires: [{ kind: 'not_corrupted' }, { kind: 'has_open_slot' }],
-    effects: [{ kind: 'add_mod', tag: 'finding' }],
-  },
-
-  // --- rare: the one currency you aim ------------------------------------
-  {
-    id: 'shard_of_unmaking',
-    name: 'Shard of Unmaking',
-    class: 'rare',
-    // The whole bench is random except this. Choosing what LEAVES is the one
-    // targeting that does not collapse the chase — you still cannot choose
-    // what arrives.
-    description: 'Removes 1 modifier: the one you point at.',
-    targets: {},
-    requires: [{ kind: 'not_corrupted' }, { kind: 'mod_count', min: 1 }],
-    effects: [{ kind: 'remove_mod', count: 1, chosen: true }],
-  },
-
-  // --- exotic: the last thing you do to an item --------------------------
-  //
-  // Both gambles lock the item, and both say so before you spend one. A
-  // one-way door nobody saw is a bug report.
-  {
-    id: 'sigil_of_finality',
-    name: 'Sigil of Finality',
-    class: 'exotic',
-    // The last thing you do to an item comes from the one place that takes
-    // two of each crystal to open: the top of both axes at once.
-    gate: { zone: 'seam' },
-    description:
-      'Empowers or diminishes every modifier by 25% at random, past its normal ' +
-      'maximum, then locks the item permanently.',
-    targets: {},
-    requires: [{ kind: 'not_corrupted' }, { kind: 'mod_count', min: 1 }],
-    // Scaling what is already rolled, rather than adding, means the better the
-    // item the more the gamble costs you. It is also the only thing in the game
-    // that can put a roll above its modifier's ceiling.
-    effects: [{ kind: 'scale_values', magnitude: 0.25 }, { kind: 'corrupt' }],
-  },
-  {
-    id: 'sigil_of_upheaval',
-    name: 'Sigil of Upheaval',
-    class: 'exotic',
-    gate: { zone: 'demonic' },
-    description:
-      'Adds 1 modifier beyond the item\'s limit, or takes 1 away at random, ' +
-      'then locks the item permanently.',
-    targets: {},
-    requires: [{ kind: 'not_corrupted' }, { kind: 'mod_count', min: 1 }],
-    effects: [{ kind: 'gamble_mod' }, { kind: 'corrupt' }],
+    description: 'Adds 1 rule to a crystal, in an empty slot.',
+    crystal: true,
+    weight: 8,
   },
 ];
 
@@ -4194,11 +4204,9 @@ export const BODY_DROP = {
 };
 
 export const CURRENCY_DROP = {
-  /** Currency a CLEAR pays, before Currency Find. **A SHARD IS A DECISION
-   *  ABOUT ONE PIECE**: at 0.18 it is one shard per ten clears. */
-  perRun: 0.18,
-  /** Per-step chance to climb one class, before rarity is applied. */
-  upgradeChance: 0.17,
+  /** Shard DROPS a clear pays, before Currency Find. What one drop hands over
+   *  is the band's `shards` — depth buys the pile, never the number of piles. */
+  perRun: 2,
 };
 
 // --- what a run drops ------------------------------------------------------
@@ -4213,8 +4221,9 @@ export interface DropBand {
   /** Mods a dropped piece arrives with, as [min, max] SHARES of its own cap.
    *  Never all of them: headroom is what a Shard of Making is spent on. */
   fill: [number, number];
-  /** Best currency class this band can produce. */
-  currency: CurrencyClass;
+  /** Shards ONE drop hands over. A higher modifier tier costs VOLUME and
+   *  nothing else, so this is where depth buys the reach of a craft. */
+  shards: [number, number];
   /** Pieces of gear a CLEAR pays, before the crystals' own yield and rarity. */
   gearPerRun: number;
   /** Item level dropped gear rolls at. */
@@ -4225,14 +4234,14 @@ export const DROP_BANDS: DropBand[] = [
   // ONE PIECE EVERY FOUR CLEARS, AND IT MAY BE ANY BASE — *"it'll be very
   // unlikely it's what your character wants, so when you do finally get a piece
   // it'll feel good."* The gear you WEAR is gear you MADE.
-  { fill: [0.4, 0.5], currency: 'basic', gearPerRun: 0.25, ilvl: 10 },
-  { fill: [0.4, 0.55], currency: 'basic', gearPerRun: 0.26, ilvl: 10 },
-  { fill: [0.45, 0.6], currency: 'uncommon', gearPerRun: 0.27, ilvl: 22 },
-  { fill: [0.5, 0.65], currency: 'uncommon', gearPerRun: 0.28, ilvl: 34 },
+  { fill: [0.4, 0.5], shards: [2, 4], gearPerRun: 0.25, ilvl: 10 },
+  { fill: [0.4, 0.55], shards: [2, 5], gearPerRun: 0.26, ilvl: 10 },
+  { fill: [0.45, 0.6], shards: [3, 6], gearPerRun: 0.27, ilvl: 22 },
+  { fill: [0.5, 0.65], shards: [4, 8], gearPerRun: 0.28, ilvl: 34 },
   // Where a build becomes possible: tier 3 bases, six modifiers apiece.
-  { fill: [0.5, 0.7], currency: 'rare', gearPerRun: 0.29, ilvl: 46 },
-  { fill: [0.55, 0.75], currency: 'rare', gearPerRun: 0.3, ilvl: 58 },
-  { fill: [0.6, 0.85], currency: 'exotic', gearPerRun: 0.3, ilvl: 70 },
+  { fill: [0.5, 0.7], shards: [5, 11], gearPerRun: 0.29, ilvl: 46 },
+  { fill: [0.55, 0.75], shards: [7, 14], gearPerRun: 0.3, ilvl: 58 },
+  { fill: [0.6, 0.85], shards: [9, 18], gearPerRun: 0.3, ilvl: 70 },
 ];
 
 
@@ -4541,6 +4550,9 @@ export interface StartPreset {
   relics?: string[];
   materials?: number; // raw of EVERY one, so a station can be loaded without mining
   souls?: number; // soulstones held, unsocketed
+  /** Level every profession starts at. Mid-ladder in the kit, so the bench
+   *  shows both the lines a level buys and the ones it does not. */
+  professions?: number;
   /** Whether that gear starts worn, or has to be earned first. */
   equipped: boolean;
 }
@@ -4575,6 +4587,7 @@ export const START_PRESETS: Record<'fresh' | 'dev', StartPreset> = {
     // Enough raw of every one to load a station three times over.
     materials: 24,
     souls: SOULS.max, // both, so the souled climb is one socket away
+    professions: 55,
     equipped: true,
   },
 };
@@ -4582,17 +4595,9 @@ export const START_PRESETS: Record<'fresh' | 'dev', StartPreset> = {
 /** Dev kit only — nobody is handed these by playing. */
 export const DEV_CURRENCY: Record<string, number> = {
   shard_of_making: 8,
-  shard_of_unmaking: 4,
-  shard_of_change: 4,
-  shard_of_chaos: 4,
-  essence_of_the_swarm: 2,
-  essence_of_greed: 2,
-  // Drop-only, and only out of one world each. Seeded here so the whole bench
-  // can be exercised rather than a third of it being permanently greyed out —
-  // the dock draws only what you hold, so a missing kind is an icon nobody can
-  // ever look at.
-  sigil_of_finality: 2,
-  sigil_of_upheaval: 2,
+  // Enough of every shard for one top-tier line, so the bench can be exercised
+  // whole rather than a third of it standing greyed out.
+  ...Object.fromEntries(SHARD_FAMILIES.map((f) => [f.id, 400])),
   // Every key, so the way back to a room can be pressed without farming.
   ...Object.fromEntries(BOSS_KEYS.map((k) => [k.id, 2])),
 };
@@ -5250,8 +5255,10 @@ export const skillsInCategory = (category: SkillCategory): SkillDef[] =>
   SKILLS.filter((s) => s.category === category);
 
 export const RECIPES: Recipe[] = [
-  // An ANTI-BRICK, not a supply. At 22 a level-1 character banked 42 gold a
-  // clear and bought one and a half. TEN TIMES that, at the user's word.
+  // THE ONE THING THE COUNTER SELLS, and it is the crystal man's own: a roll
+  // for a socket a burnt-out one left empty. Priced off the counter's item
+  // level, so a constant price cannot be a clear at the top and 560 at the
+  // bottom.
   {
     id: 'make_shard_of_making',
     name: 'Shard of Making',
