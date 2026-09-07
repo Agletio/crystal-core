@@ -17,7 +17,7 @@ const COMMON: Minor[] = [
   { text: '+3% increased Attack Speed', stats: [stat('attackSpeed', 'inc', 3)] },
   { text: '+2% Critical Chance', stats: [stat('critChance', 'flat', 2)] },
   { text: '+10% Critical Damage', stats: [stat('critMultiplier', 'flat', 10)] },
-  { text: '+6% increased Area of Effect', stats: [stat('areaOfEffect', 'inc', 6)] },
+  { text: '+4% increased Attack Speed', stats: [stat('attackSpeed', 'inc', 4)] },
 ];
 
 const BRANCHES: Branch[] = [
@@ -194,34 +194,35 @@ const BRANCHES: Branch[] = [
     ],
   },
   {
-    // THE IDS ARE THE OLD FOOTING BRANCH'S: a save points at them, and what
-    // changed is what the branch DOES. Armour, life and move speed are gear's
-    // and the character's own web — a SKILL's tree buys what the skill does.
+    // THE IDS ARE THE OLD FOOTING BRANCH'S: a save points at them. AMBUSH DOES
+    // NOT SPLASH — it is the one single-target skill that does not, because it
+    // scales its own rate so hard that a share of every hit compounds — so this
+    // branch is the rate itself and what a kill or a clean stretch is worth.
     id: 'footing',
-    theme: 'Spill',
+    theme: 'Pace',
     enabler: {
       id: 'am_footing',
-      name: 'Opening Cut',
-      description: 'Splash lands for 15% more of the hit.',
-      grants: { splashShare: 0.15 },
+      name: 'Quick Hands',
+      description: 'Ambush swings 15% faster.',
+      stats: [stat('attackSpeed', 'inc', 15)],
     },
     twigs: [
       {
         minors: 3,
         notable: {
           id: 'am_hide',
-          name: 'Spray',
-          description: 'Splash is 40% wider.',
-          grants: { splashRadius: 1.4 },
+          name: 'Bloodrush',
+          description: 'Ambush swings 25% faster.',
+          stats: [stat('attackSpeed', 'inc', 25)],
         },
       },
       {
         minors: 4,
         notable: {
           id: 'am_wind',
-          name: 'Arterial',
-          description: 'Splash lands for 25% more of the hit.',
-          grants: { splashShare: 0.25 },
+          name: 'Poise',
+          description: 'Ambush deals 30% more damage while nothing has hit you for 3s.',
+          grants: { untouchedMore: { after: 3, more: 0.3 } },
         },
       },
       {
@@ -230,16 +231,17 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'am_ghosting',
           name: 'Ghosting',
-          description: 'Splash lands for 20% more of the hit and is 30% wider.',
-          grants: { splashShare: 0.2, splashRadius: 1.3, manaMultiplier: 1.08 },
+          description: 'Ambush swings 20% faster and costs 25% less mana.',
+          stats: [stat('attackSpeed', 'inc', 20)],
+          grants: { manaMultiplier: 0.75 },
         },
       },
     ],
     minors: [
-      COMMON[5],
+      COMMON[2],
       { text: '+5% increased Physical Damage', stats: [stat('damage', 'inc', 5, ['physical'])] },
-      COMMON[5],
-      { text: '+8% increased Area of Effect', stats: [stat('areaOfEffect', 'inc', 8)] },
+      COMMON[2],
+      { text: '+4% increased Attack Speed', stats: [stat('attackSpeed', 'inc', 4)] },
     ],
   },
   {

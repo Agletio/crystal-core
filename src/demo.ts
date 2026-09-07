@@ -5256,13 +5256,22 @@ rule('SPLASH — every skill that hits ONE thing spills onto what stands by it')
 
   // A HERO SKILL THAT HITS ONE THING CARRIES ONE, and a monster's never does:
   // a second unweighed source of damage is one no danger number accounts for.
+  // AMBUSH IS THE ONE EXCEPTION, and it is written down: *"drop splash from
+  // ambush, it can be an exception since it can scale its speed so much."*
   const single = ['melee', 'ambush', 'single_target', 'projectile'];
-  const mine = SKILLS.filter((sk) => sk.category && single.includes(sk.behaviour));
+  const mine = SKILLS.filter(
+    (sk) => sk.category && single.includes(sk.behaviour) && sk.id !== 'ambush'
+  );
   const dry = mine.filter((sk) => !sk.splash).map((sk) => sk.name);
   check(
     mine.length > 0 && dry.length === 0,
-    `all ${mine.length} single-target skills Splash without being asked`,
+    `all ${mine.length} single-target skills but Ambush Splash without being asked`,
     dry.join(', ')
+  );
+  check(
+    !SKILL_BY_ID.ambush.splash,
+    'and Ambush is the exception, because its own rate is what it scales',
+    JSON.stringify(SKILL_BY_ID.ambush.splash)
   );
   const theirs = SKILLS.filter((sk) => !sk.category && sk.splash).map((sk) => sk.id);
   check(theirs.length === 0, 'and no monster skill does', theirs.join(', '));

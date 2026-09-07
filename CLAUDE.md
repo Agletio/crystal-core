@@ -968,7 +968,9 @@ literally every single person playing Strike is going to click Echoes and
 Repeats until you have good clear and then maybe have 5-10 points to get
 damage."* `SPLASH` is `share` of a hit onto everything else within `radius` of
 the body it landed on — 30% and 1.1 tiles — and `SkillDef.splash` is on every
-hero skill with a single-target delivery and on nothing else. **A MONSTER NEVER
+hero skill with a single-target delivery and on nothing else. **AMBUSH IS THE
+ONE EXCEPTION** — *"it can be an exception since it can scale its speed so
+much"* — so its Pace branch is the rate itself and what a kill is worth. **A MONSTER NEVER
 SPLASHES**: a second unweighed source of damage is one no danger number
 accounts for. `splashShare` ADDS and `splashRadius` MULTIPLIES, both ordinary
 grants a tree, a trade or gear can hand over, and the radius goes through

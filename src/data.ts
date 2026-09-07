@@ -4706,7 +4706,6 @@ export const SKILLS: SkillDef[] = [
     rateMultiplier: 1,
     manaCost: 7.5,
     range: 5.5,
-    splash: SPLASH,
     vfxKind: 'slash',
   },
   {
