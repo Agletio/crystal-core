@@ -804,7 +804,11 @@ ours** — verify each against the code before spending anything.
       there, on the flask threshold and on the XP bar. The floating damage
       numerals already carry `floaterInk`'s edge and are sized off the TILE by
       decision, so they are left alone.
-- [ ] **THE PLAIN SWORD AND DAGGER ICONS ARE 3px SLIVERS IN A 40px SLOT.**
+- [x] **THE PLAIN SWORD AND DAGGER ICONS** — CLOSED by the user, who was asked
+      and looked: *"they seem fine to me but maybe im missing some whats wrong
+      with them?"* The critic's complaint stands unactioned by decision, and
+      the measurement below is kept because a later pass will want it.
+      ~~THE COMPLAINT:~~
       *"They read as empty, beside a bow and a mace that fill theirs"*, and the
       same shapes make *"'Ash Wand' and 'Grey Staff' tally marks on the anvil
       and 'Bent Rod' one on the sheet."* A silhouette budget per slot, not per
@@ -962,12 +966,14 @@ is the strongest part of the idea. The feedback that shaped it:
       ladders, one a soulstone. The Normal four are 25/50/75/100 at one stone,
       the Demonic four the same at two, and the Prismatic four between them are
       bought by levelling. A clear at two counts for one as well.
-- [ ] **THE FIRST CRYSTAL IS STILL HANDED OVER EARLY.** `crystalEarned` is the
-      main skill at level 4 with every point spent — the first hour, in The
-      Shallows — and it is a level-1 crystal holding NO modifiers, which is how
-      the socket screen was introduced with nothing teaching. Whether the
-      campaign should be run with an empty wall instead is HIS CALL; it is one
-      branch of `giftWaiting`.
+- [x] **THE FIRST CRYSTAL IS THE SECOND PASS'S.** ANSWERED and built: *"make
+      the first crystal come at level 4 on the second clear when you have a
+      soul stone in. So once completed and then you're running the shallows
+      again for the 2nd time and get to level 4 there."* `crystalEarned` asks
+      for a SOCKETED soulstone as well as the skill level, so the whole
+      campaign is walked with an empty wall — which is what it already claimed
+      to be — and the demo holds the same spent build to being owed nothing
+      with the wall empty.
 - [x] **THE UI SAYS TOO MUCH, EVERYWHERE.** *"Really need to stop with the over
       describing everything… it literally says the ilvl already."* The pass is
       made over every screen in `src/ui/` and the two long lines in
@@ -1030,7 +1036,10 @@ is the strongest part of the idea. The feedback that shaped it:
       ramp on, `progressKey` giving each tier its own map, and the crystal
       ladder paid by `soulClears`. The wall is six sockets in a drawer off the
       map's right edge.
-- [ ] **THE ROT'S CROSS-SECTION IS A TRAIN TRACK.** *"It should look like just
+- [x] **THE ROT'S CROSS-SECTION IS SCRATCHED**, at the user's word: *"just
+      scratch this the rot map is fine for now."* The rewritten ask stays in
+      `scenes.json` for whoever wants it later; nothing is queued.
+      ~~THE COMPLAINT:~~ *"It should look like just
       a tunnel going down, there's no train tracks… the lower ones have no
       visible path connecting them."* The ask is REWRITTEN in `scenes.json` —
       round-mouthed tunnels, every chamber joined by one you can see, and NOT a

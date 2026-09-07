@@ -111,10 +111,12 @@ export function ladderSchedule(game: GameState): string | null {
   );
 }
 
-/** The ACTIVE skill at `INTRO.crystalSkillLevel` with every point of it spent:
- *  the level buys the points, the allocation spends them, and WHICH node they
- *  went on is the player's own decision. Nothing can dead-end on it. */
+/** A SOULSTONE IN THE WALL, and the ACTIVE skill at `INTRO.crystalSkillLevel`
+ *  with every point of it spent — so the whole campaign is walked with an empty
+ *  wall and the sockets open on the climb you walk again. `souls` is derived
+ *  off the wall, so it is what is SOCKETED rather than what is held. */
 export function crystalEarned(game: GameState): boolean {
+  if ((game.character.souls ?? 0) < 1) return false;
   const skillId = mainSkillId(game.character);
   const progress = game.character.skills?.[skillId];
   if (!progress || progress.level < INTRO.crystalSkillLevel) return false;
@@ -148,7 +150,7 @@ export function giftSchedule(game: GameState): string {
   if (!given.includes('weapon')) {
     return `${who} owes you the weapon your skill wants. Find him below.`;
   }
-  if (!given.includes('crystal')) {
+  if (!given.includes('crystal') && (game.character.souls ?? 0) >= 1) {
     if (crystalEarned(game)) {
       return `${who} has one for you. Go and talk to him in the camp.`;
     }

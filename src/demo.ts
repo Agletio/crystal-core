@@ -5399,11 +5399,51 @@ rule('SPLASH — every skill that hits ONE thing spills onto what stands by it')
   const theirs = SKILLS.filter((sk) => !sk.category && sk.splash).map((sk) => sk.id);
   check(theirs.length === 0, 'and no monster skill does', theirs.join(', '));
 
+  // ONE SET OF FIGURES A SKILL, and they are a TRADE. Shared, splash is a
+  // constant nobody balances around; the point of the table is that a wide one
+  // is worth less per body.
+  const rows = mine.map((sk) => ({ sk, at: sk.splash! }));
+  const twins = rows.filter(({ at }) =>
+    rows.filter((r) => r.at.share === at.share && r.at.radius === at.radius).length > 1
+  );
+  check(
+    twins.length === 0,
+    `all ${rows.length} of them carry their OWN share and radius, no two alike`,
+    twins.map(({ sk }) => sk.name).join(', ')
+  );
+  for (const { sk, at } of [...rows].sort((a, b) => b.at.share - a.at.share)) {
+    line(`  ${sk.name.padEnd(17)} ${Math.round(at.share * 100)}% within ${at.radius} tiles`);
+  }
+  // A WIDER ONE IS WORTH LESS PER BODY, or the table is a free lunch with a
+  // row nobody would refuse.
+  const widest = rows.reduce((a, b) => (b.at.radius > a.at.radius ? b : a));
+  const hardest = rows.reduce((a, b) => (b.at.share > a.at.share ? b : a));
+  check(
+    widest.at.share < hardest.at.share && hardest.at.radius < widest.at.radius,
+    `and the widest (${widest.sk.name}) pays for it: the hardest (${hardest.sk.name}) ` +
+      `reaches ${widest.at.radius - hardest.at.radius} tiles less`,
+    `${widest.sk.name} ${widest.at.share}/${widest.at.radius}, ` +
+      `${hardest.sk.name} ${hardest.at.share}/${hardest.at.radius}`
+  );
+  // AND EVERY CARD SAYS ITS OWN: a figure a player cannot read is one nobody
+  // balances a build around.
+  const mute = rows.filter(({ sk, at }) =>
+    !sk.description.includes(`${Math.round(at.share * 100)}%`)
+    || !new RegExp(`${at.radius}\\s*tiles`).test(sk.description)
+    || !/Splash/.test(sk.description)
+  );
+  check(
+    mute.length === 0,
+    'and each one names its share, its radius and the word Splash on its own card',
+    mute.map(({ sk }) => sk.name).join(', ')
+  );
+
   // AND IT LANDS. Fired through the real behaviour at a body with a neighbour
   // inside the radius and one outside it.
   const hit = dummy(3, 0);
-  const near = dummy(3 + SPLASH.radius * 0.7, 0);
-  const far = dummy(3 + SPLASH.radius * 2.5, 0);
+  const mine0 = SPLASH.strike;
+  const near = dummy(3 + mine0.radius * 0.7, 0);
+  const far = dummy(3 + mine0.radius * 2.5, 0);
   const swing = (grants: Record<string, unknown>) => {
     const out: Array<{ who: any; multiplier: number }> = [];
     SKILL_BEHAVIOURS.melee({
@@ -5420,13 +5460,13 @@ rule('SPLASH — every skill that hits ONE thing spills onto what stands by it')
   const bare = swing({});
   const onNear = bare.find((h) => h.who === near);
   check(
-    !!onNear && Math.abs(onNear.multiplier - SPLASH.share) < 1e-9,
-    `a bare Strike lands ${Math.round(SPLASH.share * 100)}% of the hit on what stands beside it`,
+    !!onNear && Math.abs(onNear.multiplier - mine0.share) < 1e-9,
+    `a bare Strike lands ${Math.round(mine0.share * 100)}% of the hit on what stands beside it`,
     String(onNear?.multiplier)
   );
   check(
     !bare.some((h) => h.who === far),
-    `and nothing ${SPLASH.radius} tiles further out is touched`,
+    `and nothing ${mine0.radius} tiles further out is touched`,
     String(bare.filter((h) => h.who === far).length)
   );
 
@@ -12893,11 +12933,12 @@ rule('THE COLLECTION — do crystals arrive, and do they grow?');
     // The gate and a COUNT of what is left, not which count: how far one
     // opening descent gets you moves with every drop and pack change, and
     // pinning it here fails on a balance number rather than on a sentence.
+    // THE WHOLE CAMPAIGN IS WALKED WITH AN EMPTY WALL — *"make the first
+    // crystal come at level 4 on the second clear when you have a soul stone
+    // in"* — so what the opening is waiting on is the climb, not a level.
     check(
-      giftWaiting(g) === null &&
-        giftSchedule(g).includes(`level ${INTRO.crystalSkillLevel}`) &&
-        /\d+ unspent/.test(giftSchedule(g)),
-      'and says what the first crystal is waiting on, in numbers',
+      giftWaiting(g) === null && !giftSchedule(g).includes(`level ${INTRO.crystalSkillLevel}`),
+      'and the opening owes no crystal at all: the wall stays empty for the campaign',
       giftSchedule(g)
     );
     while (progress.level < INTRO.crystalSkillLevel) {
@@ -12907,6 +12948,15 @@ rule('THE COLLECTION — do crystals arrive, and do they grow?');
       giftWaiting(g) === null,
       `and ${INTRO.crystalSkillLevel} skill levels with nothing spent is still nothing owed`,
       JSON.stringify(giftWaiting(g))
+    );
+    // THE SECOND PASS is what opens it, and it is the SOCKETED stone that
+    // counts: `souls` is derived off the wall and written nowhere else.
+    g.character.souls = 1;
+    check(
+      giftSchedule(g).includes(`level ${INTRO.crystalSkillLevel}`) &&
+        /\d+ unspent/.test(giftSchedule(g)),
+      'and with a soulstone in, it says what the first crystal waits on, in numbers',
+      giftSchedule(g)
     );
     // The gate is the POINTS, not the notable — but the opening still names
     // the nearest one as a suggestion, so the distance has to keep being one
@@ -12918,6 +12968,15 @@ rule('THE COLLECTION — do crystals arrive, and do they grow?');
       `${route.length} nodes: ${route.map((n) => n.id).join(' → ')}`
     );
     for (const node of route) progress.allocated.push(node.id);
+    // AND THE STONE IS LOAD-BEARING: the same build with the wall empty is
+    // owed nothing, which is the whole of what the second pass buys.
+    g.character.souls = 0;
+    check(
+      giftWaiting(g)?.crystal !== true,
+      'and the same spent build with an empty wall is owed no crystal',
+      JSON.stringify(giftWaiting(g))
+    );
+    g.character.souls = 1;
     const owed = giftWaiting(g);
     check(owed?.crystal === true, 'and spending the last of them is what puts one at the mouth', JSON.stringify(owed));
     check(

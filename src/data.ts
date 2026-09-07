@@ -2497,10 +2497,17 @@ export const CAMPAIGN_REWARD = { crystals: 1, points: 10 };
  * cleared in packs and a skill with no answer to one is a skill nobody takes.
  * The radius goes through `areaRadius`, so increased Area of Effect from
  * anywhere at all widens it.
+ *
+ * PER SKILL, and the trade is SHARE against RADIUS: a wide one pays for it in
+ * what each body takes, and what a skill already reaches free is the rest of
+ * the price — Arc Lightning carries three Arcs, so its splash is the meanest.
  */
-export const SPLASH = {
-  share: 0.3, // of the hit, to every other body inside it
-  radius: 1.1, // tiles from the body that was hit
+export const SPLASH: Record<string, { share: number; radius: number }> = {
+  strike: { share: 0.45, radius: 0.9 },
+  rimespike: { share: 0.25, radius: 1.4 },
+  fireball: { share: 0.35, radius: 1.3 },
+  lightning_arrow: { share: 0.3, radius: 1.1 },
+  arc_lightning: { share: 0.2, radius: 1.0 },
 };
 
 export const CRYSTAL_ILVL = 70;
@@ -4802,7 +4809,7 @@ export const SKILLS: SkillDef[] = [
     requires: 'melee',
     name: 'Strike',
     category: 'attack',
-    description: 'A hard melee blow. One enemy.',
+    description: 'A hard melee blow. One enemy, and Splash for 45% within 0.9 tiles.',
     tags: ['attack', 'melee'],
     behaviour: 'melee',
     damageTypes: ['physical'],
@@ -4812,7 +4819,7 @@ export const SKILLS: SkillDef[] = [
     rateMultiplier: 1,
     manaCost: 7.5,
     range: HERO_BASE.attackRange,
-    splash: SPLASH,
+    splash: SPLASH.strike,
     vfxKind: 'slash',
   },
   {
@@ -4866,18 +4873,16 @@ export const SKILLS: SkillDef[] = [
   },
   {
     /**
-     * ONE target, and the hardest single hit a spell has: 104 at 0.90/s where
-     * Fireball takes 72 at 1.20. The spikes come up UNDER what you aimed at, so
-     * there is nothing in flight to pierce, fork or arc — what its tree buys
-     * instead is what a Chill is worth, which is the one thing Cold has that
-     * nothing else does.
+     * The hardest single hit a spell has: 104 at 0.90/s where Fireball takes 72
+     * at 1.20. The spikes come up UNDER what you aimed at, so there is nothing
+     * in flight to pierce, fork or arc — its tree buys what a Chill is worth.
      */
     id: 'rimespike',
     name: 'Rimespike',
     category: 'spell',
     description:
-      'Ice drives up through the ground under one enemy. One target, and it ' +
-      'hits harder for it.',
+      'Ice drives up through the ground under one enemy. Hits hardest of any ' +
+      'spell, and Splashes for 25% within 1.4 tiles.',
     tags: ['spell'],
     behaviour: 'single_target',
     damageTypes: ['cold'],
@@ -4887,7 +4892,7 @@ export const SKILLS: SkillDef[] = [
     rateMultiplier: 0.75,
     manaCost: 10,
     range: 5,
-    splash: SPLASH,
+    splash: SPLASH.rimespike,
     vfxKind: 'spikes',
   },
   {
@@ -4900,7 +4905,7 @@ export const SKILLS: SkillDef[] = [
     name: 'Fireball',
     category: 'spell',
     description:
-      'A ball of fire at range. One target.',
+      'A ball of fire at range. One enemy, and Splash for 35% within 1.3 tiles.',
     tags: ['spell', 'projectile'],
     behaviour: 'projectile',
     damageTypes: ['fire'],
@@ -4910,7 +4915,7 @@ export const SKILLS: SkillDef[] = [
     rateMultiplier: 1,
     manaCost: 7.5,
     range: 6.5,
-    splash: SPLASH,
+    splash: SPLASH.fireball,
     vfxKind: 'flame',
   },
   {
@@ -4963,17 +4968,16 @@ export const SKILLS: SkillDef[] = [
   },
   {
     /**
-     * Born with three Arcs where every other skill buys its second target with
-     * a point, and it pays in the only currency left: what ONE target is worth.
-     * 44 where Fireball lands 72, so it takes four enemies standing near each
-     * other to come out ahead. The tree widens the Arcs, never the discount.
+     * Born with three Arcs where every other skill buys its second target with a
+     * point, and it pays in what ONE target is worth: 44 where Fireball lands
+     * 72. The tree widens the Arcs, never the discount.
      */
     id: 'arc_lightning',
     name: 'Arc Lightning',
     category: 'spell',
     description:
-      'A bolt of lightning with 3 Arcs, each for 70% of the damage. It hits a ' +
-      'crowd bare, and hits one enemy for less than anything else does.',
+      'A bolt of lightning with 3 Arcs, each for 70% of the damage, and Splash ' +
+      'for 20% within 1.0 tiles. It hits one enemy for less than anything else.',
     tags: ['spell', 'projectile'],
     behaviour: 'projectile',
     damageTypes: ['lightning'],
@@ -4983,7 +4987,7 @@ export const SKILLS: SkillDef[] = [
     rateMultiplier: 1,
     manaCost: 7.5,
     range: 6,
-    splash: SPLASH,
+    splash: SPLASH.arc_lightning,
     vfxKind: 'arc',
     params: { chains: 3, chainDamage: 0.7 },
   },
@@ -4999,8 +5003,8 @@ export const SKILLS: SkillDef[] = [
     name: 'Lightning Arrow',
     category: 'attack',
     description:
-      'An arrow of lightning at range. Full damage to what it hits, and 2 ' +
-      'Forks fall on enemies near it for 45% each.',
+      'An arrow of lightning at range. Full damage to what it hits, 2 Forks on ' +
+      'enemies near it for 45% each, and Splash for 30% within 1.1 tiles.',
     tags: ['attack', 'projectile'],
     behaviour: 'projectile',
     damageTypes: ['lightning'],
@@ -5011,7 +5015,7 @@ export const SKILLS: SkillDef[] = [
     rateMultiplier: 1,
     manaCost: 7.5,
     range: 7,
-    splash: SPLASH,
+    splash: SPLASH.lightning_arrow,
     vfxKind: 'arrow',
     impact: 'storm',
     params: { forks: 2, forkDamage: 0.45 },

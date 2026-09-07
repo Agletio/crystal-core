@@ -43,6 +43,14 @@ export interface KeywordDef {
 }
 
 const pct = (n: number): string => `${Math.round(n * 100)}%`;
+/** SPLASH is per skill, so the keyword names the SPREAD rather than a figure
+ *  no card would agree with. Read off the table, never typed. */
+const splashRange = (of: 'share' | 'radius'): string => {
+  const all = Object.values(SPLASH).map((r) => r[of]);
+  const low = Math.min(...all);
+  const high = Math.max(...all);
+  return of === 'share' ? `${pct(low)} to ${pct(high)}` : `${low} to ${high}`;
+};
 
 /**
  * An ailment's line, out of `AILMENTS` rather than quoted by hand — the table
@@ -149,9 +157,10 @@ export const KEYWORDS: KeywordDef[] = [
     name: 'Splash',
     says: ['Splash', 'Splashes'],
     means:
-      `Damage in a circle around the body a hit landed on, ${SPLASH.radius} tiles ` +
-      `across, for ${pct(SPLASH.share)} of that hit. Every skill that hits ONE ` +
-      `enemy carries it without being asked, and increased Area of Effect from ` +
+      `Damage in a circle around the body a hit landed on, for a share of that ` +
+      `hit — ${splashRange('share')} of it across ${splashRange('radius')} tiles, ` +
+      `and the skill's own card says which. Every skill that hits ONE enemy ` +
+      `carries it without being asked, and increased Area of Effect from ` +
       `anywhere widens it.`,
     grants: ['splashShare', 'splashRadius'],
   },

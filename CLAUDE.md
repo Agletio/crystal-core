@@ -538,7 +538,12 @@ room. The web is on screen from the first descent, with nothing on it walkable:
 a plan you cannot see is a plan nobody makes.
 
 **The Lampwright owes the weapon, the FIRST crystal, the campaign's reward and
-every step of the CRYSTAL LADDER**, and nothing else. **THE LADDER IS THE WHOLE
+every step of the CRYSTAL LADDER**, and nothing else. **THE FIRST CRYSTAL IS
+THE SECOND PASS'S** — *"make the first crystal come at level 4 on the second
+clear when you have a soul stone in"* — so `crystalEarned` asks for a SOCKETED
+soulstone as well as the main skill at `INTRO.crystalSkillLevel` with every
+point spent. The whole campaign is walked with an empty wall, which is what the
+campaign already claimed to be. **THE LADDER IS THE WHOLE
 OF WHAT THE ENDLESS HALF PAYS**: *"Normal crystals pay out at 25/50/75/100 runs
 of this new zone. Prismatic crystal pays out and full lvl 4 normal crystals,
 then another at level 2 prismatic, another at level 3, another at lvl 4, and
@@ -1023,8 +1028,17 @@ every skill should have at least a little AOE baked in. If we don't then
 literally every single person playing Strike is going to click Echoes and
 Repeats until you have good clear and then maybe have 5-10 points to get
 damage."* `SPLASH` is `share` of a hit onto everything else within `radius` of
-the body it landed on — 30% and 1.1 tiles — and `SkillDef.splash` is on every
-hero skill with a single-target delivery and on nothing else. **AMBUSH IS THE
+the body it landed on, and `SkillDef.splash` is on every hero skill with a
+single-target delivery and on nothing else. **IT IS PER SKILL, AND THE TRADE IS
+SHARE AGAINST RADIUS** — *"some skills might be less damage for a larger area
+and others can be more damage for a smaller area"* — so `SPLASH` is a table
+keyed by skill id: Strike 45% within 0.9 tiles, Rimespike 25% within 1.4,
+Fireball 35% within 1.3, Lightning Arrow 30% within 1.1, Arc Lightning 20%
+within 1.0. **What a skill already reaches for free is the other half of the
+price**, which is why Arc Lightning's three Arcs buy it the meanest splash of
+the five. **EVERY CARD SAYS ITS OWN TWO FIGURES**, and the demo fails a skill
+whose description does not; the KEYWORD names the spread instead of a number,
+read off the table rather than typed. **AMBUSH IS THE
 ONE EXCEPTION** — *"it can be an exception since it can scale its speed so
 much"* — so its Pace branch is the rate itself and what a kill is worth. **A MONSTER NEVER
 SPLASHES**: a second unweighed source of damage is one no danger number

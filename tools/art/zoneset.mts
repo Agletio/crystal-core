@@ -631,6 +631,92 @@ const ZONE_ASK: Record<string, Record<string, unknown>> = {
     detail: 'highly detailed',
     view: 'high top-down',
   },
+  // THE ROT, ROUND TWO. Two faults, both named by every critic: *"a 45 degree
+  // hatch at identical pitch and identical phase on every cell over near-white
+  // cream, so a forty-tile chamber is ruled notepaper and the floor is brighter
+  // than any hero or monster standing on it"*, and *"one rounded column per
+  // cell, so every straight wall is a row of battlements"*. So the floor is
+  // asked MID-TONE and explicitly unruled, and the face is asked as one sheer
+  // cut rather than as columns.
+  rot2_damp: {
+    lower_description:
+      'a floor of damp dark red-brown meat, MID-TONE muted maroon, dull and matte, '
+      + 'evenly mottled with no pattern, NOT pale, NOT cream, NOT white, NOT pink, '
+      + 'NOT bright, NOT striped, NOT lined, NOT hatched, NOT cross-hatched, '
+      + 'NOT diagonal lines, NOT ruled, NOT woven, NOT fabric',
+    upper_description: `a mass of dark clotted meat grown solid, ${ROT_DARK}`,
+    transition_description:
+      'one continuous sheer wet cliff of dark muscle, flat and unbroken along its '
+      + 'whole length, NOT columns, NOT pillars, NOT rounded lumps, NOT battlements, '
+      + 'NOT crenellations, NOT a repeating scallop, NOT bricks',
+    shape_style: 'round',
+    transition_size: 1,
+    enhance: false,
+    tile_size: { width: 32, height: 32 },
+    outline: 'lineless',
+    shading: 'detailed shading',
+    detail: 'highly detailed',
+    view: 'high top-down',
+  },
+  rot2_ash: {
+    lower_description:
+      'a floor of dry ashen grey-brown hide, MID-TONE dull taupe, matte and even, '
+      + 'faintly pitted all over with no repeating mark, NOT pale, NOT cream, '
+      + 'NOT white, NOT bright, NOT striped, NOT lined, NOT hatched, '
+      + 'NOT diagonal lines, NOT ruled, NOT scaled, NOT tiled',
+    upper_description: `a mass of dark clotted meat grown solid, ${ROT_DARK}`,
+    transition_description:
+      'one continuous sheer wet cliff of dark muscle, flat and unbroken along its '
+      + 'whole length, NOT columns, NOT pillars, NOT rounded lumps, NOT battlements, '
+      + 'NOT crenellations, NOT a repeating scallop, NOT bricks',
+    shape_style: 'round',
+    transition_size: 1,
+    enhance: false,
+    tile_size: { width: 32, height: 32 },
+    outline: 'lineless',
+    shading: 'detailed shading',
+    detail: 'highly detailed',
+    view: 'high top-down',
+  },
+  rot2_ragged: {
+    lower_description:
+      'a floor of damp dark red-brown meat, MID-TONE muted maroon, dull and matte, '
+      + 'evenly mottled with no pattern, NOT pale, NOT cream, NOT white, NOT pink, '
+      + 'NOT bright, NOT striped, NOT lined, NOT hatched, NOT diagonal lines, NOT ruled',
+    upper_description: `a mass of dark clotted meat grown solid, ${ROT_DARK}`,
+    transition_description:
+      'a torn irregular edge of dark muscle dropping away, ragged and uneven, every '
+      + 'stretch of it different, NOT columns, NOT pillars, NOT rounded lumps, '
+      + 'NOT battlements, NOT a repeating scallop',
+    transition_size: 1,
+    mode: 'pro',
+    raggedness: 0.8,
+    spread_x: 0.5,
+    tile_size: { width: 32, height: 32 },
+    outline: 'lineless',
+    shading: 'detailed shading',
+    detail: 'highly detailed',
+    view: 'high top-down',
+  },
+  rot2_sinew: {
+    lower_description:
+      'a floor of dark wet sinew and gristle, MID-TONE deep russet, matte, an even '
+      + 'grain running every which way, NOT pale, NOT cream, NOT white, NOT bright, '
+      + 'NOT striped, NOT lined, NOT hatched, NOT diagonal lines, NOT ruled, NOT combed',
+    upper_description: `a mass of dark clotted meat grown solid, ${ROT_DARK}`,
+    transition_description:
+      'one continuous sheer wet cliff of dark muscle, flat and unbroken along its '
+      + 'whole length, NOT columns, NOT pillars, NOT rounded lumps, NOT battlements',
+    transition_size: 1,
+    mode: 'pro',
+    raggedness: 0.4,
+    spread_x: 0.3,
+    tile_size: { width: 32, height: 32 },
+    outline: 'lineless',
+    shading: 'detailed shading',
+    detail: 'highly detailed',
+    view: 'high top-down',
+  },
   rot_pro: {
     lower_description: `a floor of pale dry membrane and shed skin, ${ROT_LIGHT}`,
     upper_description: `a mass of dark clotted meat grown solid, ${ROT_DARK}`,
