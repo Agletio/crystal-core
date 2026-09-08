@@ -86,6 +86,8 @@ export interface CombatStats {
   /** PERCENT reduced on every skill cooldown there is: the mover's, and the
    *  follow-up Ambush's Relay buys. */
   cooldown: number;
+  /** PERCENT of damage dealt returning as life, summed with the grant's. */
+  lifeLeech: number;
   /** Gear-side reward stats. Added to whatever the crystal already grants. */
   rarity: number;
   currencyFind: number;
@@ -404,6 +406,7 @@ export function heroStats(
     // Percentages with no base to scale — see percentStat. `cooldown` rolls
     // NEGATIVE, like Mana Cost, so a reduction is what a bigger roll is.
     cooldown: -percentStat(mods, 'cooldown'),
+    lifeLeech: percentStat(mods, 'lifeLeech'),
     rarity: percentStat(mods, 'rarity'),
     currencyFind: percentStat(mods, 'currencyFind'),
     ailmentDps: ailmentDamage(mods, skill),
@@ -959,6 +962,7 @@ export function monsterStats(
     // No monster has an area skill yet; its crystal mod would land here.
     areaOfEffect: 0,
     cooldown: 0,
+    lifeLeech: 0,
     rarity: 0,
     currencyFind: 0,
     ailmentDps: {},

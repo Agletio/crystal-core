@@ -1403,6 +1403,21 @@ export const GEAR_UTILITY_MODS: ModDef[] = [
     ],
   },
   {
+    /** THE ONLY ROLLED LEECH, and a WEAPON'S — the one slot a build has exactly
+     *  one of, so sustain is what is in your hand rather than a line six pieces
+     *  could each carry. `appliesTo` names the KIND, derived off the base. */
+    id: 'life_leech',
+    slot: 'offence',
+    name: 'of the Leech',
+    appliesTo: ['gear', 'weapon'],
+    tags: ['life', 'defence'],
+    tiers: [
+      { ilvl: 65, weight: 40, stats: [{ stat: 'lifeLeech', form: 'inc', range: [2.4, 3.2] }] },
+      { ilvl: 35, weight: 110, stats: [{ stat: 'lifeLeech', form: 'inc', range: [1.2, 2.1] }] },
+      { ilvl: 1, weight: 200, stats: [{ stat: 'lifeLeech', form: 'inc', range: [0.5, 1.1] }] },
+    ],
+  },
+  {
     id: 'attack_level',
     slot: 'offence',
     name: 'of the Duellist',
@@ -1763,6 +1778,7 @@ export const STAT_POWER: Record<string, number> = {
   'mana:inc': 0.5,
   'mana:flat': 0.02,
   'lifeRegen:flat': 0.4,
+  'lifeLeech:inc': 9, // one weapon line against six pieces of everything else
   'manaRegen:flat': 0.15,
   'critMultiplier:inc': 0.5,
   'areaOfEffect:inc': 0.7,
@@ -5096,9 +5112,8 @@ export const SKILLS: SkillDef[] = [
     name: 'Blood Pact',
     category: 'passive',
     description:
-      'Your mana pool is 0, every use costs 1.4 life per point of mana it ' +
-      'would have cost, and 3% of the damage you deal returns to you as ' +
-      'life.',
+      'Your mana pool is 0, and every use costs 1.4 life per point of mana it ' +
+      'would have cost.',
     tags: ['passive'],
     behaviour: 'no_cast',
     damageTypes: [],
@@ -5107,9 +5122,110 @@ export const SKILLS: SkillDef[] = [
     rateMultiplier: 1,
     manaCost: 0,
     range: 0,
-    // The leech is ON the passive rather than left to the tables: a build with
-    // no pool and no way back is a passive nobody can finish a descent with.
-    grants: { bloodCost: 1.4, lifeLeech: 0.03 },
+    // NO LEECH OF ITS OWN: the ways back are a weapon's `life_leech` line and
+    // the Warrior's Glut, so taking this is a build rather than a button.
+    grants: { bloodCost: 1.4 },
+  },
+  {
+    // What a build with no damage left to add still buys: the LAST sliver.
+    id: 'headsman',
+    name: 'Headsman',
+    category: 'passive',
+    description:
+      'A hit that leaves an enemy under 6% of its life kills it.',
+    tags: ['passive'],
+    behaviour: 'no_cast',
+    damageTypes: [],
+    baseDamage: 0,
+    addedEffectiveness: 0,
+    rateMultiplier: 1,
+    manaCost: 0,
+    range: 0,
+    grants: { execute: 0.06 },
+  },
+  {
+    // COLD ONLY, the way Contagion is poison only: a passive may be the answer
+    // to one damage type, and choosing it is choosing to deal that type.
+    id: 'deepwinter',
+    name: 'Deep Winter',
+    category: 'passive',
+    description:
+      'A Freeze takes 3 fewer stacks of Chill, and holds 40% longer.',
+    tags: ['passive'],
+    behaviour: 'no_cast',
+    damageTypes: [],
+    baseDamage: 0,
+    addedEffectiveness: 0,
+    rateMultiplier: 1,
+    manaCost: 0,
+    range: 0,
+    grants: { freezeSooner: 3, freezeLonger: 1.4 },
+  },
+  {
+    id: 'transfixion',
+    name: 'Transfixion',
+    category: 'passive',
+    description:
+      'What you hit is held where it stands for 0.35s.',
+    tags: ['passive'],
+    behaviour: 'no_cast',
+    damageTypes: [],
+    baseDamage: 0,
+    addedEffectiveness: 0,
+    rateMultiplier: 1,
+    manaCost: 0,
+    range: 0,
+    grants: { pinSeconds: 0.35 },
+  },
+  {
+    // The pair of it and Lingering is the whole point: the same total spread
+    // two ways, and which one is better is a fact about the floor you run.
+    id: 'virulence',
+    name: 'Virulence',
+    category: 'passive',
+    description:
+      'Your Ailments deal 50% more damage and last 40% less time.',
+    tags: ['passive'],
+    behaviour: 'no_cast',
+    damageTypes: [],
+    baseDamage: 0,
+    addedEffectiveness: 0,
+    rateMultiplier: 1,
+    manaCost: 0,
+    range: 0,
+    grants: { ailmentMultiplier: 1.5, ailmentDuration: 0.6 },
+  },
+  {
+    id: 'lingering',
+    name: 'Lingering',
+    category: 'passive',
+    description:
+      'Your Ailments last 70% longer and deal 15% less damage.',
+    tags: ['passive'],
+    behaviour: 'no_cast',
+    damageTypes: [],
+    baseDamage: 0,
+    addedEffectiveness: 0,
+    rateMultiplier: 1,
+    manaCost: 0,
+    range: 0,
+    grants: { ailmentMultiplier: 0.85, ailmentDuration: 1.7 },
+  },
+  {
+    id: 'infection',
+    name: 'Infection',
+    category: 'passive',
+    description:
+      '+40% chance to apply an Ailment.',
+    tags: ['passive'],
+    behaviour: 'no_cast',
+    damageTypes: [],
+    baseDamage: 0,
+    addedEffectiveness: 0,
+    rateMultiplier: 1,
+    manaCost: 0,
+    range: 0,
+    grants: { ailmentChance: 40 },
   },
   {
     id: 'refraction',

@@ -262,10 +262,14 @@ export const WARRIOR_TRADE: TradeSpec = {
               grants: { killHeal: 0.02 },
             },
             {
+              // A kill-heal is a LUMP between fights; this is the same branch's
+              // answer DURING one, and the two do not replace each other.
               id: 'mah_glut',
               name: 'Glut',
-              description: 'Every kill restores a further 5% of your maximum life.',
-              grants: { killHeal: 0.05 },
+              description:
+                'Every kill restores a further 3% of your maximum life, and 1.5% ' +
+                'of the damage you deal returns to you as life.',
+              grants: { killHeal: 0.03, lifeLeech: 0.015 },
             },
           ],
         },

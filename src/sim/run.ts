@@ -3764,7 +3764,8 @@ export class RunSim {
     if (share > 0 && damage > 0) {
       hero.mana = Math.min(hero.stats.maxMana, hero.mana + damage * share);
     }
-    const life = (this.grants.lifeLeech as number) ?? 0;
+    // BOTH ROADS AT ONCE: what a grant hands over, and what a weapon rolled.
+    const life = ((this.grants.lifeLeech as number) ?? 0) + hero.stats.lifeLeech / 100;
     if (life > 0 && damage > 0) {
       const wasLeeched = hero.life;
       hero.life = Math.min(hero.stats.maxLife, hero.life + damage * life);

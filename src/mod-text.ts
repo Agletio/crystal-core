@@ -37,6 +37,7 @@ const NAMED: Record<string, string> = {
   areaOfEffect: 'Area of Effect',
   moveSpeed: 'Movement Speed',
   cooldown: 'Skill Cooldown',
+  lifeLeech: 'of Attack Damage Leeched as Life',
   attackRange: 'Attack Range',
   rarity: 'Rarity',
   currencyFind: 'Currency Find',

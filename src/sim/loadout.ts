@@ -18,11 +18,13 @@ import {
   RUN_SLOTS,
   SKILL_BY_ID,
   SKILL_SLOTS,
+  STAT_POWER,
   WEAPON_SLOT,
   TOOL_BY_ID,
   toolBaseId,
 } from '../data';
 import { characterStats, damageDetail } from './stats';
+import { choices, chooseMod } from '../crafting';
 import { defaultGearBase, makeGear, rollCrystal, rollGear } from '../economy';
 import { runSet } from './crystal';
 import { RunSim, TICK } from './run';
@@ -30,7 +32,7 @@ import { attributePointsFor, canDualWield, equipSkill, makeCharacter, slotIsOpen
 import { MOVE_WEBS, canAllocate, treeFor, treePointsFor } from '../skills-tree';
 import { skillProgress } from './character';
 import type { Character } from './character';
-import type { Item } from '../types';
+import type { Item, ModEntry } from '../types';
 
 /** One item per slot, filled to its base's capacity, keyed by slot id. A pool
  *  narrower than every mod rolls a FOCUSED set: a slot whose pool is empty
@@ -229,6 +231,43 @@ const FOCUS: Array<((stat: string) => boolean) | null> = [
  * at random. NOT optimal: the best of what this search covers, and the demo
  * prints its power so a better build found by hand has a number to argue with.
  */
+/** EVERY SLOT FILLED WITH LINES A PLAYER CHOSE, which is what the select bench
+ *  offers: no wasted modifier anywhere. Rolled from a themed pool instead — what
+ *  this did — the ceiling wears waste nobody at the deep end would keep, and
+ *  every balance number read off it is low. Greedy on `statPower`, and it
+ *  chooses at level 99 because a ceiling assumes the profession behind it. */
+function chosenLoadout(
+  rng: Rng,
+  ilvl: number,
+  pool: ModPool,
+  family: string
+): Record<string, Item> {
+  const out: Record<string, Item> = {};
+  for (const slot of EQUIP_SLOTS) {
+    const base = defaultGearBase(slot.accepts[0], ilvl, family);
+    if (!base) continue;
+    if ((base.hands ?? 1) > 1) continue; // never a bow: one arrangement, measured
+    let item = makeGear(base.id, ilvl, undefined, false, 1);
+    // Until nothing more fits: the capacity cap is inside `choices`.
+    for (let guard = 0; guard < 12; guard++) {
+      const open = choices(item, pool);
+      if (open.length === 0) break;
+      const best = open.reduce((a, b) => (worth(b) > worth(a) ? b : a));
+      item = chooseMod(item, best, 99, rng);
+    }
+    out[slot.id] = item;
+  }
+  return out;
+}
+
+/** What one CHOSEN line is worth, off `STAT_POWER` — the table the hybrid rule
+ *  is held to, so the greedy pick cannot disagree with it. */
+const worth = (entry: ModEntry): number =>
+  entry.stats.reduce((n, st) => {
+    const mid = ((st.range?.[0] ?? 0) + (st.range?.[1] ?? 0)) / 2;
+    return n + mid * (STAT_POWER[`${st.stat}:${st.form}`] ?? 0);
+  }, 0);
+
 export function bestBuild(band: number, rng: Rng, skillId = 'strike', atLevel?: number): Character {
   const rung = Math.min(Math.max(1, band), DROP_BANDS.length - 1);
   const ilvl = DROP_BANDS[rung - 1].ilvl;
@@ -251,7 +290,7 @@ export function bestBuild(band: number, rng: Rng, skillId = 'strike', atLevel?: 
         const pool = focus
           ? new ModPool(ALL_MODS.filter((m) => m.tiers.some((t) => t.stats.some((st) => focus(st.stat)))))
           : new ModPool(ALL_MODS);
-        const character = makeCharacter(starterLoadout(rng, ilvl, pool, family), skillId);
+        const character = makeCharacter(chosenLoadout(rng, ilvl, pool, family), skillId);
         character.level = level;
         pour(character, attrs);
         // Before the tree: what they grant is in every score the walk reads.

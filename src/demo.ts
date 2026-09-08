@@ -854,12 +854,13 @@ rule('CRAFTING PLANS — is the third gate one no level and no shard can open?')
   // because a table read cannot see the pool being filtered before the pick.
   {
     const learn = (
-      crystals: Item[], seeds: number, held: string[] = [], where?: RunWhere
+      crystals: Item[] | null, seeds: number, held: string[] = [], where?: RunWhere
     ): string[] => {
       const out = new Set<string>();
       const hero = { ...ceiling(DROP_BANDS.length - 1), plans: held };
       for (let i = 0; i < seeds; i++) {
-        const sim = new RunSim(crystals, hero, new Rng(6100 + i), { where });
+        const set = crystals ?? deepestSet(new Rng(4242 + i * 13), pool);
+        const sim = new RunSim(set, hero, new Rng(6100 + i), { where });
         for (const id of runToCompletion(sim, 900).loot.plans) out.add(id);
       }
       return [...out];
@@ -877,11 +878,13 @@ rule('CRAFTING PLANS — is the third gate one no level and no shard can open?')
     // TEN SEEDS, not forty: at 0.30 a run this is three finds expected, and a
     // descent at the deep end is 850 bodies — the seed count is the whole cost
     // of this section.
-    const deep = learn(deepestSet(new Rng(4242), pool), 10, [], drafting);
+    // A NEW SET PER SEED, so this asks whether a Drafting Room turns a plan up
+    // rather than whether one particular draw was survivable.
+    const deep = learn(null, 10, [], drafting);
     gauge(`${deep.length} of the ${PLANS.length} plans turned up over 10 Drafting Room descents`);
     check(deep.length > 0, 'and a Drafting Room does turn one up', 'none in 10 descents');
     // NEVER TWICE: what you hold is out of the pool before the pick.
-    const again = learn(deepestSet(new Rng(4242), pool), 10, PLANS.map((p) => p.id), drafting);
+    const again = learn(null, 10, PLANS.map((p) => p.id), drafting);
     check(again.length === 0, 'and never one you already hold', again.join(', '));
   }
 
@@ -945,22 +948,30 @@ rule('THE SHARD ECONOMY — how many clears is one line?');
       .reduce((n, [, v]) => n + v, 0);
 
   const runs = 8;
-  const measure = (crystals: () => Item[], hero: Character): number => {
+  // WHAT A CLEAR PAYS, so the divisor is CLEARS. Divided by every run instead,
+  // a build that dies half the time reported half the rate — the run that died
+  // banked nothing and still counted in the denominator.
+  const measure = (crystals: (i: number) => Item[], hero: Character): number => {
     let got = 0;
+    let cleared = 0;
     for (let i = 0; i < runs; i++) {
-      const sim = new RunSim(crystals(), hero, new Rng(3300 + i));
+      const sim = new RunSim(crystals(i), hero, new Rng(3300 + i));
       const end = runToCompletion(sim, 900);
-      if (end.status === 'cleared') got += shardsIn(end.loot.currency);
+      if (end.status !== 'cleared') continue;
+      cleared++;
+      got += shardsIn(end.loot.currency);
     }
-    return got / runs;
+    return cleared === 0 ? NaN : got / cleared;
   };
 
   const bare = measure(
     () => [makeCrystal(1), makeCrystal(1), makeCrystal(1), makeCrystal(1)],
     bestBuild(1, new Rng(31))
   );
+  // A FRESH SET PER RUN: one pairing of build and set deciding this asked
+  // whether that draw was survivable rather than what the deep end pays.
   const deep = measure(
-    () => deepestSet(new Rng(4242), pool),
+    (i) => deepestSet(new Rng(4242 + i * 13), pool),
     bestBuild(DROP_BANDS.length - 1, new Rng(31))
   );
   gauge(`a clear pays ${bare.toFixed(1)} shards at the bare Fissure and ${deep.toFixed(1)} at the deep end`);
@@ -981,7 +992,9 @@ rule('THE SHARD ECONOMY — how many clears is one line?');
   check(
     bare > 0 && deep > bare,
     'a clear pays shards, and a deeper one pays more of them',
-    `${bare.toFixed(1)} bare against ${deep.toFixed(1)} deep`
+    Number.isNaN(deep)
+      ? `${bare.toFixed(1)} bare, and NOTHING cleared the deep end in ${runs} tries`
+      : `${bare.toFixed(1)} bare against ${deep.toFixed(1)} deep`
   );
 }
 
@@ -3736,13 +3749,18 @@ rule('GATHERING — is a node free, guarded, walked to and equally spread?');
       }
       return { gathered, dropped, cleared: sim.state.status === 'cleared' };
     };
-    const ends: [string, Item[], Character][] = [['bare', bareSet, ceiling(0)], ['deep', deepSet, ceiling(6)]];
+    const ends: [string, Item[] | null, Character][] = [['bare', bareSet, ceiling(0)], ['deep', null, ceiling(6)]];
     let fails = 0;
-    for (const [name, crystals, who] of ends) {
+    for (const [name, fixed, who] of ends) {
       let g = 0;
       let d = 0;
       let cleared = 0;
       for (let i = 0; i < 6; i++) {
+        // A NEW SET EACH TIME at the deep end. Decided on one, this asked
+        // whether that particular draw was clearable rather than whether the
+        // road pays — and adding one entry to `ALL_MODS` re-seeds `rollCrystal`,
+        // so an unrelated change moves which set it lands on.
+        const crystals = fixed ?? deepestSet(new Rng(4242 + i * 13), pool);
         const got = paid(crystals, who, 950 + i);
         g += got.gathered;
         d += got.dropped;

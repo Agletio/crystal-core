@@ -202,6 +202,8 @@ export class ModPool {
 
     // Dealt once, not per candidate: this runs over the whole pool per roll.
     const alloc = slotAllocation(item);
+    // Tags plus the base's KIND, derived, so no save migrates for a kind match.
+    const is = new Set([...item.tags, GEAR_BASE_BY_ID[item.base]?.kind ?? '']);
     const used: Record<ModSlot, number> = {};
     for (const m of item.mods) used[m.slot] = (used[m.slot] ?? 0) + 1;
 
@@ -210,7 +212,7 @@ export class ModPool {
       if (takenGroups.has(e.group)) return false;
       if (opts.slot && e.slot !== opts.slot) return false;
       if (opts.tag && !e.tags.includes(opts.tag)) return false;
-      if (!e.appliesTo.every((t) => item.tags.includes(t))) return false;
+      if (!e.appliesTo.every((t) => is.has(t))) return false;
       // The item must actually HAVE an opening of this type.
       if ((used[e.slot] ?? 0) >= (alloc[e.slot] ?? 0)) return false;
       return true;
