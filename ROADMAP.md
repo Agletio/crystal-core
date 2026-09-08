@@ -1436,13 +1436,16 @@ cloud lasting 5s instead of 0.9 over 10s. Blight's RADIUS was the first fix and
 was wrong: at 1.6 the bare end read right and an invested build ran 5.93 kills/s
 against everybody else's 3.5–4.3, because area is what its tree already sells.
 
-- [ ] **AMBUSH PUTS DOWN 39% OF THE FLOOR** where the other seven put down
-      64–84%, on a kill rate inside the band. It is the DELIVERY: `stepBehind`
-      teleports him past whatever he swings at, every swing, so he fights every
-      pack from inside one. Neither more damage (+33% took it to 52%) nor a
-      shorter step (3.5 tiles took it to 41%) is the answer, and it is the one
-      skill the user excluded from Splash by name — *"it can be an exception
-      since it can scale its speed so much."* Ask him before touching either.
+- [x] **AMBUSH'S ANSWER IS THE BUILD, AND IT IS A COOLDOWN.** *"I really want
+      it to be stack cooldown reduction for ambush so you can lower the .3
+      second cooldown between crit teleports so you get 100% and then stack
+      CDR."* The worn line reached the mover alone; it cuts `AMBUSH.chainDelay`
+      now, through the grant and the line multiplied. `AMBUSH.leastChain` is
+      0.15 against the mover's 0.35 because a full set of the line rolls 84% —
+      at 0.3 the floor binds and stacking stops paying at a 70% cut. Measured at
+      the deep end: 1.44 kills/s on a random walk, 1.84 walking Relay, 2.79 with
+      the line stacked. Still 39% of the floor BARE, which is right: a level 1
+      character has neither half of the build.
 - [ ] **A FEW MORE THINGS AROUND THE LEVELS**, deferred by the user after the
       raised areas came out: *"we can just add a few more things around the
       levels to make it feel just a little more alive but we can worry about
