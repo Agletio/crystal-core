@@ -13,6 +13,7 @@ import {
   FORGED,
   GEAR_BASES,
   GEAR_MODS,
+  MOD_BY_ID,
   ATTRIBUTES,
   SKILLS,
   WEAPON_BASES,
@@ -31,6 +32,15 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { Rng } from './rng';
 import { DAMAGE_TYPES, MONSTERS } from './data';
 import type { Item, ModEntry, RolledMod } from './types';
+
+/** What one rollable entry SWITCHES: the def's own, plus its tier's. */
+const grantsOf = (entry: ModEntry): Array<[string, unknown]> => {
+  const def = MOD_BY_ID[entry.defId];
+  return Object.entries({ ...(def?.grants ?? {}), ...(def?.tiers[entry.tier - 1]?.grants ?? {}) });
+};
+const said = ([id, value]: [string, unknown]): string =>
+  GRANT_BY_ID[id]?.say?.(value) ?? GRANT_BY_ID[id]?.what ?? id;
+
 
 let failures = 0;
 const line = (s = ''): void => console.log(s);
@@ -185,6 +195,17 @@ line('\n── EFFECT — does the engine actually read each stat? ────�
   const waiting: string[] = [];
   for (const entry of gearPool.entries) {
     if (heroFingerprint([bedrock, maxRoll(entry)]) !== baseline) continue;
+    // A SWITCH is not a stat and never shows on a sheet: what it has to be is
+    // declared, read by something, and able to say its own value.
+    const switches = grantsOf(entry);
+    if (switches.length > 0) {
+      for (const [id, value] of switches) {
+        const def = GRANT_BY_ID[id];
+        if (!def) inert.push(`${entry.id}: ${id} is not a declared switch`);
+        else if (def.say && def.say(value) === null) inert.push(`${entry.id}: ${id} cannot say ${value}`);
+      }
+      continue;
+    }
     const excuse = unusedType(entry);
     if (excuse) waiting.push(`${entry.defId} (no skill deals ${excuse})`);
     else inert.push(entry.id);
@@ -299,10 +320,12 @@ line('\n── TEXT — does the player read words, not identifiers? ───�
   const rendered = new Map<string, string[]>();
 
   for (const entry of [...gearPool.entries, ...crystalPool.entries]) {
-    const text = describeMod(maxRoll(entry));
+    // A line whose whole effect is a SWITCH renders as that switch, as the card draws it.
+    const text = [describeMod(maxRoll(entry)), ...grantsOf(entry).map(said)].join(' ').trim();
     // A camelCase run, or a bare stat id, means the describer fell through.
     if (/[a-z][A-Z]/.test(text)) leaks.push(`${entry.id}: ${text}`);
-    const body = text.split('  (T')[0];
+    // Keyed by what it may land ON: one line on two kinds is one idea, not two.
+    const body = `${text.split('  (T')[0]} @${(MOD_BY_ID[entry.defId]?.appliesTo ?? []).join('+')}`;
     rendered.set(body, [...(rendered.get(body) ?? []), entry.defId]);
   }
   check(leaks.length === 0, 'no camelCase identifiers reach the player', leaks.slice(0, 3).join(' | '));

@@ -266,8 +266,8 @@ export function damageBreakdown(
 
 /** What a PASSIVE's own damage scales by: increases and mores to Damage that
  *  are untagged or name this TYPE. Never the skill's tags, never flat. */
-export function passiveScale(mods: RolledMod[], type: string): number {
-  const b = aggregate(mods, 'damage', [type]);
+export function passiveScale(mods: RolledMod[], type: string | string[]): number {
+  const b = aggregate(mods, 'damage', typeof type === 'string' ? [type] : type);
   let m = 1 + b.inc / 100;
   for (const more of b.more) m *= 1 + more / 100;
   return m;
@@ -664,8 +664,10 @@ export function treeGrants(character: Character): Record<string, unknown> {
     // A LINE may grant too, by the same path a unique's does. A grafted
     // implicit is the only thing that writes one.
     for (const line of [...worn.mods, ...worn.implicits]) {
-      const mod = MOD_BY_ID[line.defId]?.grants;
-      if (mod) mergeGrants(out, mod);
+      const def = MOD_BY_ID[line.defId];
+      if (def?.grants) mergeGrants(out, def.grants);
+      const rung = def?.tiers[line.tier - 1]?.grants; // +1 and +2 are two rungs of one
+      if (rung) mergeGrants(out, rung);
     }
   }
   // The other two slots, BOTH halves each: the skill's own static `grants` —

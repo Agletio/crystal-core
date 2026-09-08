@@ -295,7 +295,7 @@ export interface Entity {
   effects: TimedEffect[];
   stats: CombatStats;
   cooldown: number;
-  stun?: number; // held still by something that landed on you: only the Fall
+  stun?: number; // seconds held still: a Freeze, a Pin, or the boss's Fall
   struck?: boolean; // whether ANY hit has landed on it: First Blood reads it
   /** Which shred aura reaches this body: for whatever DRAWS it. The sim asks
    *  `shredding` when a hit lands and never reads this. */
@@ -741,7 +741,11 @@ export class RunSim {
         );
     const stats = characterStats(character);
     const lines = statMods(character);
-    this.passiveScale = { physical: passiveScale(lines, 'physical'), cold: passiveScale(lines, 'cold') };
+    this.passiveScale = {
+      physical: passiveScale(lines, 'physical'),
+      cold: passiveScale(lines, 'cold'),
+      shard: passiveScale(lines, ['cold', 'projectile', 'spell']), // Shardfall's, all three tags
+    };
 
     const worn = heroSpriteFor(character);
     this.worn = worn;
@@ -2307,6 +2311,15 @@ export class RunSim {
     // Above the aggro gate: a pose an unwoken body was knocked into would hold
     if (m.actionTimer > 0) m.actionTimer -= dt; // for the rest of the descent
 
+    // FROZEN or PINNED, which is `stun` — the same hold, written as seconds
+    // rather than as an effect because a build asks whether THIS body is in it.
+    if ((m.stun ?? 0) > 0) {
+      m.stun = Math.max(0, (m.stun ?? 0) - dt);
+      m.path = [];
+      this.settleAction(m, false);
+      return;
+    }
+
     // STUNNED: it neither swings nor closes, and its cooldown above still runs
     // down — so a Stun is time off the fight, not a free swing at the end of it.
     if (m.effects.some((e) => e.id === STUNNED)) {
@@ -3569,6 +3582,7 @@ export class RunSim {
 
   /** Typeless has no entry, so it passes through untouched — by design. */
   private afterResistance(defender: Entity, amount: number, type: string): number {
+    if (!Number.isFinite(amount)) return 0; // a NaN life is a body nothing can ever kill
     const res = defender.stats.resistances[type] ?? 0;
     return amount * (1 - (res - this.shredding(defender, type)) / 100);
   }
@@ -3699,6 +3713,26 @@ export class RunSim {
     }
     if (near.length > 0) {
       this.emit('arc', [{ x: from.x, y: from.y }, { x: near[0].x, y: near[0].y }], def.type, 0.14);
+    }
+  }
+
+  /** SHARDFALL: a body that dies FROZEN throws crystals at what is near it.
+   *  They are Projectiles, so `extraTargets` buys another, and Spells, so both
+   *  halves of a cold sheet scale them. */
+  private shardfall(victim: Entity): void {
+    const fall = this.grants.shardfall as { count: number; perLevel: number } | undefined;
+    if (!fall || victim.kind !== 'monster' || (victim.stun ?? 0) <= 0) return;
+
+    const count = fall.count + ((this.grants.extraTargets as number) ?? 0);
+    const damage = fall.perLevel * this.level * this.passiveScale.shard;
+    const near = this.state.monsters
+      .filter((m) => !m.dead && m !== victim && dist(m, victim) <= PASSIVE_DAMAGE.shardRange)
+      .sort((a, b) => dist(a, victim) - dist(b, victim))
+      .slice(0, count);
+    for (const m of near) {
+      m.life -= this.afterResistance(m, damage, 'cold');
+      this.emit('shard', [{ x: victim.x, y: victim.y }, { x: m.x, y: m.y }], 'cold', 0.22);
+      if (m.life <= 0) this.kill(m);
     }
   }
 
@@ -4118,6 +4152,8 @@ export class RunSim {
     if (this.grants.killGuard || this.grants.killHaste || this.grants.killMove) {
       this.sinceKill = Math.max(ROGUE.guardSeconds, ROGUE.hasteSeconds);
     }
+    // SHARDFALL first: a crystal can kill, and that death throws its own.
+    this.shardfall(victim);
     // TOPPING UP: a kill hands a charge back, rolled only where there is a
     // chance, or a build with none would spend a draw on every body.
     const c = this.moving?.gusts;

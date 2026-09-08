@@ -1843,13 +1843,13 @@ assert($('skills-detail').hidden === true, 'and not on a web');
 assert(all('#skills-cats .catcard').length === 3, 'three shelves offered');
 assert($('skills-back').hidden === true, 'nothing to go back to from the top');
 
-// A second way to move, and both of them have a web to spend points in — the
-// movement slot is a build decision now rather than a fixed convenience.
+// THREE ways to move, each with a tree the size of a skill's — the movement
+// slot is a build decision rather than a fixed convenience.
 {
   const movement = all('#skills-cats .catcard').find((c) => /Movement/.test(c.textContent ?? ''));
   movement.click();
   const rows = all('#skills-list .skilltile');
-  assert(rows.length === 2, 'the movement shelf holds Blink and Leap', String(rows.length));
+  assert(rows.length === 3, 'the movement shelf holds Blink, Leap and Gale', String(rows.length));
   // The badge is only drawn for a skill that HAS a web with a point waiting,
   // so its presence is the claim: both movers have one to spend in.
   assert(
@@ -1859,16 +1859,18 @@ assert($('skills-back').hidden === true, 'nothing to go back to from the top');
   );
   rows.find((r) => /Leap/.test(r.textContent ?? '')).click();
   assert($('skills-detail').hidden === false, 'Leap opens its own web');
-  assert(all('#skills-web .web__node').length === 9, 'nine nodes in it',
+  // A TREE, exactly like a damage skill's: six branches and six trunk notables
+  // over the same ring, at the same thirty points.
+  assert(all('#skills-web .web__node').length === 117, 'a whole tree of nodes in it',
     String(all('#skills-web .web__node').length));
   assert(
-    all('#skills-web .web__node--notable').length === 3,
-    'three of them notable, one at the tip of each arm',
+    all('#skills-web .web__node--notable').length === 30,
+    'thirty of them notable, the same as a skill tree',
     String(all('#skills-web .web__node--notable').length)
   );
   assert(
-    /6 at level 6/.test(text('skills-sub')),
-    'and six points to spend at most, not thirty',
+    /30 at level 30/.test(text('skills-sub')),
+    'and thirty points to spend at most, the same as a skill tree',
     text('skills-sub')
   );
   $('skills-close').click();

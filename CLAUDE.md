@@ -1041,6 +1041,36 @@ type's own colour, exactly as the burst is drawn. `spikeAlpha` works in SECONDS
 rather than in a fraction of a life, so a blade that stands for four is the same
 blade coming up at the same speed and held.
 
+**A FREEZE HOLDS A BODY STILL, AND FOR A LONG TIME IT HELD NOTHING.** A
+monster's `Entity.stun` — what a Freeze writes, and a Pin, and the boss's Fall —
+was written by three things and READ by none: `stepMonster` never asked, so a
+Frozen body swung and closed exactly as before while every card said it could
+not. It is one early return beside the Stun's now, and the seconds run down
+there. Measured: a body Frozen for 2s moves 0.00 tiles and takes 0 life off you.
+
+**AND A NaN NEVER CRASHES — IT MAKES A BODY UNKILLABLE.** A passive's scale read
+off a key nobody wrote made `damage` NaN, `m.life -= NaN` made the body's life
+NaN, and nothing could ever kill it again: a descent that cleared in 4,594 ticks
+ran 27,000 with 221 bodies standing and no error anywhere. `afterResistance` is
+the one seam every damage path goes through, and it refuses a number that is not
+finite.
+
+**SHARDFALL IS THE SHAPE A PASSIVE IS MEANT TO BE** — *"another passive could be
+enemies that die while frozen shoot some ice crystals out nearby targets. Make
+it projectile tagged spell. Add mods to weapons and gloves that are +1-2
+projectiles and then you can make an entire build out of that with any skill
+basically just convert to cold and add cold ailment chance."* A body dying
+FROZEN throws crystals at what is near it; they are Projectiles, so
+`extraTargets` from anywhere buys another, and Spells, so a cold sheet scales
+them. **A TIER MAY CARRY ITS OWN SWITCH** (`ModDef.tiers[].grants`), which is
+what makes `+1` and `+2 Projectiles` two rungs of ONE modifier — on a WEAPON and
+on GLOVES, the two slots a build has one of. Measured on a Freeze build at band
+5: 0 crystals without the passive, 221 with it, 294 with a Projectile line on
+the gloves, and 1.93 to 2.07 to 2.18 kills/s. **THIS IS WHAT MOST NODES ARE FOR**
+— *"this is kinda what I want most nodes to be like, some cool path to figure
+out a unique build."* Nothing in it is new content: Transmutation, Chill chance,
+Deepfreeze and the standing spike were all already there.
+
 **A BRANCH ENABLER'S OWN STAT LINES ARE ITS OWN, AND THE BUILDER DROPPED THEM.**
 `buildTree` copies a node a field at a time, so a field it forgets is a card
 printing a figure the sim never applies — six enablers across three trees shipped

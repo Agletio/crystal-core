@@ -374,6 +374,7 @@ import {
   forgetAttributes,
   attributesSpent,
   equipSkill,
+  slotIsOpen,
   equippedSkill,
   mainSkillId,
   weaponFamilies,
@@ -5980,6 +5981,91 @@ rule('THE SPIKE — does one cast cover ground, and does buying area cover more?
     lowered.freezes > standing.freezes,
     'and Deepfreeze takes the bar down under it',
     `${lowered.freezes} against ${standing.freezes}`
+  );
+}
+
+// A FREEZE HOLDS A BODY STILL, which is what the keyword says it does. Nothing
+// read a monster's `stun` for a long time, so it held nothing at all: the one
+// seam is `stepMonster`, and this is the scenario that proves it.
+{
+  const character = makeCharacter(starterLoadout(new Rng(9)), 'strike');
+  const sim = new RunSim([], character, new Rng(404));
+  const hero = sim.state.hero;
+  // Stepped INTO a fight first: a body in a room nobody has walked into is not
+  // being stepped at all, so freezing one there proves nothing.
+  let body: Entity | undefined;
+  for (let k = 0; k < 2000 && !body; k++) {
+    sim.step(TICK);
+    body = sim.state.monsters.find((m) => !m.dead && m.aggroed && dist(m, hero) < 2.5);
+  }
+  if (body) {
+    // Made unkillable first, or the hero takes it down inside the window and
+    // "it never moved" is a body that died rather than a body that was held.
+    body.life = 1e9;
+    body.stun = 2;
+    const was = { x: body.x, y: body.y };
+    const life = hero.life;
+    for (let k = 0; k < 30; k++) sim.step(TICK);
+    const gone = Math.hypot(body.x - was.x, body.y - was.y);
+    line(
+      `  a body Frozen for 2s moved ${gone.toFixed(2)} tiles, took ${(life - hero.life).toFixed(0)} ` +
+        `life off you, and has ${(body.stun ?? 0).toFixed(2)}s of it left`
+    );
+    check(
+      hero.life >= life && gone < 0.5,
+      'a Frozen body neither swings nor closes',
+      `${(life - hero.life).toFixed(0)} life, ${gone.toFixed(2)} tiles`
+    );
+    check((body.stun ?? 0) < 2, 'and it runs down, so a Freeze is seconds rather than for ever', String(body.stun));
+  }
+}
+
+// SHARDFALL, and it is the build he asked for: *"enemies that die while frozen
+// shoot some ice crystals out nearby targets… add mods to weapons and gloves
+// that are +1-2 projectiles."* The crystals are Projectiles, so a roll on a
+// glove buys another; they are Spells, so a cold sheet scales them.
+{
+  const crystals = (passive: string | null, shots: number) => {
+    const who = ladderCharacter(5, new Rng(88), 'rimespike');
+    const freeze = walkTo('rimespike', 'rs_ward');
+    const field = walkTo('rimespike', 'rs_field');
+    skillProgress(who, 'rimespike').allocated = [...new Set([...freeze, ...field])];
+    for (const slot of SKILL_SLOTS) {
+      if (!slot.accepts.includes('passive') || !slotIsOpen(who, slot.id)) continue;
+      if (passive) equipSkill(who, passive, slot.id);
+      break;
+    }
+    if (shots > 0) {
+      // ROLLED off the table, so the tier's own switch is what is worn.
+      const only = new ModPool(ALL_MODS.filter((m) => m.id === 'glove_shots'));
+      const piece = rollGear('skirmisher_gloves_t3', 80, 99, only, new Rng(31));
+      if (piece.mods.length > 0) who.equipment.gloves = piece;
+    }
+    const sim = new RunSim(ladderSet(5, new Rng(400), pool), who, new Rng(404));
+    let thrown = 0;
+    const emit = (sim as unknown as { emit: (...a: unknown[]) => void }).emit.bind(sim);
+    (sim as unknown as { emit: unknown }).emit = (k: string, p: unknown, t: string, l: number) => {
+      if (k === 'shard' && l === 0.22) thrown++;
+      return emit(k, p, t, l);
+    };
+    const facts = runToCompletion(sim, 900);
+    return { thrown, killed: facts.killed, rate: facts.killed / Math.max(1, facts.elapsed) };
+  };
+
+  const without = crystals(null, 0);
+  const withIt = crystals('shardfall', 0);
+  const armed = crystals('shardfall', 2);
+  line(
+    `  crystals thrown over one descent: ${without.thrown} without the passive, ` +
+      `${withIt.thrown} with it, ${armed.thrown} with Projectiles rolled on the gloves — ` +
+      `${without.rate.toFixed(2)}, ${withIt.rate.toFixed(2)}, ${armed.rate.toFixed(2)} kills/s`
+  );
+  check(without.thrown === 0, 'nothing throws a crystal without the passive', String(without.thrown));
+  check(withIt.thrown > 0, 'and a body dying Frozen throws them', String(withIt.thrown));
+  check(
+    armed.rate > without.rate,
+    'and a Projectile line on a glove is what a cold build buys them with',
+    `${armed.rate.toFixed(2)} against ${without.rate.toFixed(2)} kills/s`
   );
 }
 

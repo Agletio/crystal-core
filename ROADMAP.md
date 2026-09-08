@@ -1509,7 +1509,12 @@ damage skills, so the target is 24 — nine more, and **every one of them change
 a RULE and PAYS for it**, the way Blood Pact and Featherstep do. A passive that
 only adds is a passive every build takes.
 
-- [ ] **THE ONE HE NAMED, AND IT IS THE SHAPE THE REST FOLLOW.** *"Another
+- [x] **THE ONE HE NAMED, AND IT IS THE SHAPE THE REST FOLLOW.** LANDED, and
+      with it two faults it needed fixed first: a monster's `stun` was written
+      by three things and read by nothing, so a Freeze held nothing at all, and
+      an undefined scale made a body's life NaN, which no error ever reports.
+      The whole of it is in `CLAUDE.md`. The rest of this phase is the other
+      eight. *"Another
       passive could be enemies that die while frozen shoot some ice crystals out
       nearby targets. Make it projectile tagged spell. Add mods to weapons and
       gloves that are +1-2 projectiles and then you can make an entire build out

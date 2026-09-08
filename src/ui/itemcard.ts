@@ -56,7 +56,9 @@ export function statLines(mod: RolledMod): HTMLElement[] {
  *  every forged one, says nothing at all without this. */
 export function grantLines(mod: RolledMod): HTMLElement[] {
   const out: HTMLElement[] = [];
-  for (const [id, value] of Object.entries(MOD_BY_ID[mod.defId]?.grants ?? {})) {
+  const def = MOD_BY_ID[mod.defId];
+  const both = { ...(def?.grants ?? {}), ...(def?.tiers[mod.tier - 1]?.grants ?? {}) };
+  for (const [id, value] of Object.entries(both)) {
     const said = GRANT_BY_ID[id]?.say?.(value) ?? GRANT_BY_ID[id]?.what;
     if (said) out.push(keywordLine(said, 'tip__grant'));
   }

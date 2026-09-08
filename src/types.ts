@@ -45,12 +45,13 @@ export interface ModDef {
   tags?: string[]; // matched by tag-filtered currencies
   /** Switches out of `GRANTS`, merged by `treeGrants` off what is WORN. */
   grants?: Record<string, unknown>;
-  /** Best tier first. ilvl is the minimum item level to roll it. */
+  /** Best tier first; `ilvl` is the minimum item level. A tier's own switch is what makes +1 and +2 Projectiles two rungs of one modifier. */
   tiers: Array<{
     ilvl: number;
     weight: number;
     stats: StatSpec[];
     name?: string;
+    grants?: Record<string, unknown>;
   }>;
 }
 

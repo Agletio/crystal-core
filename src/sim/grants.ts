@@ -910,6 +910,21 @@ export const GRANTS: GrantDef[] = [
   { id: 'everyNth', what: 'every nth cast is worth more', reads: SCALED, changes: 'scale' },
   { id: 'moreVsAiling', what: 'more damage to enemies already suffering', reads: SCALED, changes: 'scale' },
   {
+    /** A body dying FROZEN throws crystals. They are Projectiles and Spells, so
+     *  every line for either reaches them — `extraTargets` included, which is
+     *  how a Projectile roll on a glove buys another one. */
+    id: 'shardfall',
+    what: 'a body dying Frozen throws Projectiles of ice',
+    reads: [STATS, SIM],
+    say: (v) => {
+      const o = v as { count?: number; perLevel?: number } | null;
+      return o && typeof o.count === 'number' && typeof o.perLevel === 'number'
+        ? `A body dying Frozen throws ${o.count} Projectiles of ice within ` +
+          `${PASSIVE_DAMAGE.shardRange} tiles, each for ${o.perLevel} Cold damage per character level`
+        : null;
+    },
+  },
+  {
     /** Reads `Entity.stun`, which a Freeze is the only thing to write for a
      *  Cold build — a Pin is the bow's and a Fall the boss's. */
     id: 'moreVsFrozen',

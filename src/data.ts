@@ -202,6 +202,9 @@ export const PASSIVE_DAMAGE = {
   frostPerLevel: 1.6, // Hoarfrost's spike, cold, and it goes off far more often
   frostEvery: 0.7,
   frostRange: 7,
+  shardCount: 3, // Shardfall's crystals off a body that died FROZEN
+  shardPerLevel: 1.1,
+  shardRange: 6,
 };
 
 export const DEFENCE = {
@@ -1415,6 +1418,31 @@ export const GEAR_UTILITY_MODS: ModDef[] = [
       { ilvl: 65, weight: 40, stats: [{ stat: 'lifeLeech', form: 'inc', range: [2.4, 3.2] }] },
       { ilvl: 35, weight: 110, stats: [{ stat: 'lifeLeech', form: 'inc', range: [1.2, 2.1] }] },
       { ilvl: 1, weight: 200, stats: [{ stat: 'lifeLeech', form: 'inc', range: [0.5, 1.1] }] },
+    ],
+  },
+  {
+    /** THE PROJECTILE LINES, and they are a WEAPON'S and a GLOVE'S — the two
+     *  slots a build has one of and cannot stack six ways. A TIER carries the
+     *  switch, so +1 and +2 are two rungs of one modifier. */
+    id: 'weapon_shots',
+    slot: 'offence',
+    name: 'of the Volley',
+    appliesTo: ['gear', 'weapon'],
+    tags: ['damage', 'clear'],
+    tiers: [
+      { ilvl: 75, weight: 18, stats: [], grants: { extraTargets: 2 }, name: 'of the Barrage' },
+      { ilvl: 45, weight: 60, stats: [], grants: { extraTargets: 1 } },
+    ],
+  },
+  {
+    id: 'glove_shots',
+    slot: 'offence',
+    name: 'of the Volley',
+    appliesTo: ['gear', 'gloves'],
+    tags: ['damage', 'clear'],
+    tiers: [
+      { ilvl: 75, weight: 18, stats: [], grants: { extraTargets: 2 }, name: 'of the Barrage' },
+      { ilvl: 45, weight: 60, stats: [], grants: { extraTargets: 1 } },
     ],
   },
   {
@@ -5357,6 +5385,32 @@ export const SKILLS: SkillDef[] = [
     range: 0,
     grants: {
       frostVolley: { every: PASSIVE_DAMAGE.frostEvery, perLevel: PASSIVE_DAMAGE.frostPerLevel },
+    },
+  },
+  {
+    /**
+     * A BUILD MADE OF NODES THAT ALREADY EXIST. Convert a skill to Cold, buy
+     * Chill chance, take the Freeze bar down, and every Projectile line on a
+     * weapon or a glove is another crystal off every body that dies in one.
+     * The crystals are Projectiles AND Spells, so both halves of a sheet reach
+     * them; what it asks for is the FREEZE, which is the whole of its cost.
+     */
+    id: 'shardfall',
+    name: 'Shardfall',
+    category: 'passive',
+    description:
+      'A body dying Frozen throws 3 Projectiles of ice at enemies within 6 ' +
+      'tiles, each a Spell dealing 1.1 Cold damage per character level.',
+    tags: ['passive'],
+    behaviour: 'no_cast',
+    damageTypes: [],
+    baseDamage: 0,
+    addedEffectiveness: 0,
+    rateMultiplier: 1,
+    manaCost: 0,
+    range: 0,
+    grants: {
+      shardfall: { count: PASSIVE_DAMAGE.shardCount, perLevel: PASSIVE_DAMAGE.shardPerLevel },
     },
   },
   {
