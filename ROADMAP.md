@@ -1146,16 +1146,27 @@ still be satisfiable.
 
 ## Loose ends — real, small, and belonging to no phase
 
-**Empty. Both are done** — the named-piece check is a `gauge()` with a
-deterministic reachability `check` beside it, and the dialogue pass has been
-made: every clause that restated the one before it is cut, and every voice tic
-is kept.
+- [ ] **THE GALE HAS NO ICON, at eight generations spent.** Fifteen passives
+      were drawn and imported; `sk_gale` came back a feather five times (twice
+      off an abstract wind swirl, once off a cloak, once off a weathervane with
+      a bird on it), then a knife in rubble and a pennant so dark it read as
+      nothing. It falls through `skillIcon` to the movement shelf's own BOOT,
+      which is a real glyph and not the wrong sword, so this is cosmetic. The
+      row in `icons.json` holds the last ask. **The lesson is written down: the
+      shape that keeps coming back is TAPERING AND UPRIGHT, which is a feather
+      in this palette whatever noun is on it** — so the next ask has to be a
+      squat or horizontal object, and `NOT tall` did not buy that on its own.
 
 ---
 
 ## Traps that outlive the phase that found them
 
 **Kept because they bite the NEXT thing, not because of what they came from.**
+
+- **THE DEV KIT CARRIES EVERY UNIQUE AND THE BAG HOLDS 48.** At 24 named pieces
+  it stands at 46 of 48 gear slots. The next two are free; the one after that
+  fails `the kit carries all N` in the UNIQUES rule, and the repair is the kit's
+  own contents, not the bag.
 
 - **`KIND_VARIETY` IS AUTHORED AND MUST STAY THAT WAY.** It was COUNTED twice —
   off `GearBase.family`, then off the filter's own groups — and both read right
@@ -1572,4 +1583,13 @@ far more than it feeds the others.
       floor that infects itself. MEASURE which lines the ceiling picked for each
       of the eight and what each is worth, rather than moving Blight's numbers
       until the gauge reads level.
+
+- [ ] **AND IT NOW PRICES THE ENDGAME WALL.** `SOULS.perStone[1]` is 8 climbs
+      because that is what it took to stop Blight; every other skill was walled
+      at 3. Measured at the top of The Rot with both stones, ceiling at the level
+      cap and immune to Ailments: flat 1 → strike 3/3, blight 3/3, rimespike 1/3,
+      fireball 1/3; at 3 → blight 3/3 and nothing else; at 5 → blight 2/3; at 8 →
+      none. So the wall is priced against ONE outlier, and whatever this phase
+      finds should be followed by re-sweeping that number rather than leaving 8
+      standing as if it were about the endgame.
 

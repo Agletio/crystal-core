@@ -434,13 +434,36 @@ is a `Rung` and nothing else — there is no second kind of place, no influence
 pick and no world you choose. **IT ROLLS NOTHING**: `makeSoul` is one base with
 no mods, no level and no family.
 
-**THE RAMP JUST CARRIES ON.** `rungMod` runs 0 to 1 across the whole 42, so
-`soulMod` adds exactly `souls` on the same three stats and depth 1 of The
-Shallows costs what depth 42 did. Measured: 822 danger at the bottom of the bare
-climb, 833 at the top of the first zone with one socketed, and 1637 at the end
-of the second pass. **TWO OF THEM** (`SOULS.max`), and the second is a whole
-second climb — `soulOwed` asks for the campaign to be finished AT THE TIER YOU
-STAND ON, so it is 84 depths for the pair.
+**THE RAMP JUST CARRIES ON, AND A STONE'S WORTH IS A TABLE.** `rungMod` runs 0
+to 1 across the whole 42 and `soulMod` adds `soulClimbs(souls)` on the same three
+stats, so every depth still costs the same as the one below it and there is no
+exponent anywhere. `SOULS.perStone` is what each stone is worth IN WHOLE CLIMBS:
+the first is exactly 1, so depth 1 of The Shallows with one socketed costs what
+depth 42 cost bare — his rule, pinned at the one point he named. **TWO OF THEM**
+(`SOULS.max`), and `soulOwed` asks for the campaign to be finished AT THE TIER
+YOU STAND ON, so it is 84 depths for the pair.
+
+**THE SECOND STONE IS 8 CLIMBS, AND THE TOP OF THE ROT UNDER IT IS THE ONE FLOOR
+NOTHING IS MEANT TO WALK.** *"I'd rather the two soulstone clears, at least like
+the rot area, be so hard that nothing beats them on your tests because I have a
+feeling as someone plays theyll find a unique combination that makes it
+through."* Measured with `bestBuild` at the level cap and IMMUNE to Ailments —
+the honest ceiling, since a player who gets there has the lines: at a flat 1 the
+top of The Rot was cleared 4/4 by strike and blight and 2/4 by rimespike and
+fireball; at 3 it was blight alone, at 5 blight alone, and at 8 nothing at all.
+**BLIGHT IS THE WHOLE OF WHY IT IS 8** — every other skill was walled at 3 — so
+the number is priced against one outlier and Phase 18 owns that. **NOTHING
+STRANDS BEHIND IT**: no crystal-ladder step and no soulstone asks for a clear up
+there, `soulClears` counts a clear at any depth of the tier, and the second stone
+is owed for the campaign at ONE. The gauge is in FLOOR AND CEILING and it is a
+gauge, never a check — the harness is softer than a player, and the one
+difficulty check that still fails is the bare Fissure.
+
+**AND DIFFICULTY PAST THE CAMPAIGN ARRIVES THROUGH THE RAMP AND NOWHERE ELSE.**
+`dangerStep` saturates at `POWER.max * POWER.perDanger` — danger 330 — and the
+two-stone Rot top sits at 8195, so `DANGER.lifeAtTop` and `hitAtTop` have been
+flat out since somewhere inside the campaign. Moving either changes the campaign
+and does nothing at all to the endgame.
 
 **THE MAP STARTS AGAIN AND NOTHING IS EVER WIPED.** `progressKey` keys `climbed`
 and `opened` by the soul count, so each tier keeps its own sheet and taking a

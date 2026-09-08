@@ -11136,6 +11136,29 @@ rule('FLOOR AND CEILING — is a difficulty number aimed at anything real?');
     `the deep end at level ${LEVELLING.maxLevel}: ${endgame.cleared}/${seeds.length} through, ` +
       `down to ${endgame.low.toFixed(0)}% — this is what the top is meant to be for`
   );
+
+  // THE WALL: the top of The Rot with both soulstones in, which is the one
+  // floor in the game NOTHING is meant to walk. Every skill's own ceiling, at
+  // the level cap, made IMMUNE to Ailments on purpose — a ceiling that dies to
+  // the newest lever says nothing about whether the floor is hard enough, and
+  // a player who gets this far has the lines for it. A GAUGE and never a check:
+  // it is a difficulty number, and the harness is softer than a real player.
+  {
+    const zone = LADDER.zones.length - 1;
+    const where: RunWhere = { zone, rung: LADDER.zones[zone].rungs - 1 };
+    const through: string[] = [];
+    for (const skill of MAIN_SKILLS) {
+      const who = { ...ceiling(6, skill.id, LEVELLING.maxLevel), souls: SOULS.max };
+      const sim = new RunSim([], who, new Rng(770), { where });
+      for (const t of DAMAGE_TYPES) sim.state.hero.stats.ailmentWard[t.id] = DEFENCE.ailmentWardCap;
+      if (runToCompletion(sim, 1800).status === 'cleared') through.push(skill.id);
+    }
+    gauge(
+      `and the top of ${LADDER.zones[zone].name} at ${SOULS.max} soulstones is walked by ` +
+        `${through.length} of the ${MAIN_SKILLS.length}${through.length ? ` (${through.join(', ')})` : ''} ` +
+        '— wanted NONE, because a player will find what the search cannot'
+    );
+  }
 }
 
 // ===========================================================================

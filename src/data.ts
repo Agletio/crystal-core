@@ -308,7 +308,7 @@ export const SOULS = {
    *  worth more because the two-stone climb is the CEILING and nothing is meant
    *  to walk it; no step on the ladder and no soulstone asks for a clear up
    *  there, so making it unbeatable strands nothing. */
-  perStone: [1, 5],
+  perStone: [1, 8],
   name: 'Soulstone',
   flavour: 'The Rot kept something of everyone who got this far. This is a piece of it.',
 };
@@ -4597,8 +4597,8 @@ export const UNIQUES: UniqueDef[] = [
     gate: { zone: 'fissure', minPower: 2 },
   },
   {
-    id: 'answering_board',
-    name: 'The Answering Board',
+    id: 'the_reply',
+    name: 'The Reply',
     base: 'bark_buckler',
     flavour: 'Bark over oak over bark. It has been rebuilt more times than it has been carried.',
     stats: [
@@ -4659,8 +4659,8 @@ export const UNIQUES: UniqueDef[] = [
     gate: { zone: 'demonic', minPower: 3 },
   },
   {
-    id: 'the_long_swing',
-    name: 'The Long Swing',
+    id: 'the_follow_through',
+    name: 'The Follow Through',
     base: 'shadow_gloves_t3',
     flavour: 'The arm keeps going. That was always the difficult part.',
     stats: [
@@ -4720,8 +4720,8 @@ export const UNIQUES: UniqueDef[] = [
     gate: { zone: 'prismatic', minPower: 3 },
   },
   {
-    id: 'the_second_hand',
-    name: 'The Second Hand',
+    id: 'the_afterblow',
+    name: 'The Afterblow',
     base: 'duelist_gloves_t2',
     flavour: 'It arrives after you do and it is not sorry.',
     stats: [
