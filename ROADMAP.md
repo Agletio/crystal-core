@@ -1156,6 +1156,12 @@ still be satisfiable.
       shape that keeps coming back is TAPERING AND UPRIGHT, which is a feather
       in this palette whatever noun is on it** — so the next ask has to be a
       squat or horizontal object, and `NOT tall` did not buy that on its own.
+      A ninth ask proved that: worded as a squat wide BOOT it came back clean
+      and first time. It was NOT imported, because a boot is the picture the
+      fallback already draws — Blink is a rift and Leap an arrow, so Gale being
+      the movement shelf's own glyph is the sameness this was fixing. **What is
+      wanted is a squat object that is not a boot**, and the boot is the proof
+      that squat is the lever.
 
 ---
 
