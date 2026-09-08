@@ -1482,3 +1482,59 @@ in `reads`, which the every-notable-changes-the-cast check reads as inert.
       that is the retroactive-refusal trap in `CLAUDE.md` and costs every player
       their build, so it wants measuring before it is written.
 
+---
+
+## Phase 17 — THE MOVERS: two modes, trees the size of a skill's, and a third one
+
+*"I want to add the movement skills should still all work to just traverse the
+area faster when not fighting but when actually fighting it should work as
+described."*
+
+**TWO MODES, AND THE FIRST ONE IS WHAT THEY ALL DO TODAY.** Out of combat every
+mover fires off cooldown to cover ground — that is the whole of what a mover is
+while you are walking between packs, and it stays. IN A FIGHT each one behaves
+as its own skill, which is what the trees are then built around. This is what
+stops a kiting mover being dead weight on a floor you are clearing well: it is
+still your travel speed there.
+
+- [ ] **BLINK KITES.** In a fight it fires when something is in reach AND has
+      landed a hit recently, so it stays quiet while you are winning. Legal
+      under *"nothing keys off where the hero stands"* — it keys off BEING HIT,
+      which is a fact about the fight rather than about position. Its big node
+      Slows around where it LEFT rather than where it lands, which is what makes
+      it a kite rather than a second walk.
+- [ ] **LEAP DIVES.** In a fight it fires off cooldown onto the pack. Its big
+      node Slows the attack speed of what it lands ON.
+- [ ] **A THIRD MOVER, replacing nothing.** *"Make the speed tied to the charges
+      instead. % move speed per charge, lose charges when hit."* The charges ARE
+      the skill: move speed per charge held, one lost per hit taken. Its
+      notables move that one dial — more speed per charge, a heal when one
+      drops, extra charges, or charges that are not removed at all with
+      everything weaker for it.
+- [ ] **THE WEBS BECOME REAL TREES.** *"Movement skill trees should just
+      function exactly like skills, 30 points max level 30."* So Blink and Leap
+      are rewritten as `TreeSpec`s through `buildTree` — six branches, six trunk
+      notables, a ring of 12 — and `MOVE_POINTS`, `MOVE_SKILLS`,
+      `pointCapFor`'s special case and the bespoke `src/moves/layout.ts` all go.
+      Small nodes are the mover's own: cooldown, move speed after a use, regen
+      for a few seconds after one. **Stats that last a few seconds after the
+      skill is used are fine here** and are what tells these trees apart from a
+      damage skill's.
+
+---
+
+## Phase 18 — WHY THE HONEST CEILING FEEDS BLIGHT SO MUCH BETTER
+
+Measured on a ceiling that CHOOSES every line (the old one rolled, and hid
+this): blight 6.72 kills/s against fireball 4.25 and rimespike 1.94 — a 3.5x
+spread at the deep end. The BARE band is unaffected and still 0.31–0.44, so this
+is purely about scaling: something a full set of chosen lines buys feeds Blight
+far more than it feeds the others.
+
+- [ ] **FIND WHAT IT IS BEFORE TUNING ANYTHING.** The suspicion is that
+      `ailmentMultiplier` and duration compound where a hit skill's damage does
+      not, and that Harvest spreading off every death turns a chosen set into a
+      floor that infects itself. MEASURE which lines the ceiling picked for each
+      of the eight and what each is worth, rather than moving Blight's numbers
+      until the gauge reads level.
+
