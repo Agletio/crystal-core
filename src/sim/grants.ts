@@ -1219,7 +1219,7 @@ export const GRANTS: GrantDef[] = [
     merge: 'sum',
     say: (v) => {
       const n = asNumber(v);
-      return n === null ? null : `A Freeze takes ${n} fewer stacks of Chill`;
+      return n === null ? null : `A Freeze takes ${n} fewer stack${n === 1 ? '' : 's'} of Chill`;
     },
   },
   {
@@ -1394,7 +1394,7 @@ export const GRANTS: GrantDef[] = [
     merge: 'sum',
     say: (v) => {
       const n = asNumber(v);
-      return n === null ? null : `+${n} Arc`;
+      return n === null ? null : `+${n} Arc${n === 1 ? '' : 's'}`;
     },
   },
   {

@@ -34,6 +34,7 @@ import {
   LADDER,
   LADDER_RUNGS,
   SOULS,
+  soulClimbs,
   rungsBelow,
 } from '../data';
 import { attributeSteps, equippedItems, equippedSkill, mainSkillId } from './character';
@@ -590,7 +591,7 @@ export function branchMod(bonus: BranchBonusDef | null): RolledMod | null {
  *  soulstone adds exactly 1 and the ramp carries straight on — depth 1 of the
  *  first zone costs what the last depth of the last one did. */
 export function soulMod(souls: number): RolledMod | null {
-  const up = Math.max(0, souls);
+  const up = soulClimbs(souls);
   const stats: RolledMod['stats'] = (
     [
       ['monsterLife', LADDER.lifeAtTop],

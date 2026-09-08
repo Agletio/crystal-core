@@ -303,8 +303,22 @@ export const SOUL_SLOTS = RUN_SLOTS.filter((s) => s.accepts === 'soul');
  */
 export const SOULS = {
   max: 2,
+  /** WHAT EACH STONE IS WORTH, in whole climbs. The first is exactly one, so
+   *  depth 1 with one socketed costs what depth 42 cost bare. The second is
+   *  worth more because the two-stone climb is the CEILING and nothing is meant
+   *  to walk it; no step on the ladder and no soulstone asks for a clear up
+   *  there, so making it unbeatable strands nothing. */
+  perStone: [1, 5],
   name: 'Soulstone',
   flavour: 'The Rot kept something of everyone who got this far. This is a piece of it.',
+};
+
+/** How many whole climbs are in the wall, summing `SOULS.perStone`. */
+export const soulClimbs = (souls: number): number => {
+  const held = Math.max(0, Math.min(SOULS.max, Math.floor(souls)));
+  let climbs = 0;
+  for (let i = 0; i < held; i++) climbs += SOULS.perStone[i] ?? 1;
+  return climbs;
 };
 
 // --- what a base holds -----------------------------------------------------
@@ -4546,6 +4560,54 @@ export const UNIQUES: UniqueDef[] = [
     grants: { pierce: 2, pierceDamage: 1 },
     gate: { zone: 'fissure', minPower: 2 },
   },
+  {
+    id: 'twicecut',
+    name: 'Twicecut',
+    base: 'iron_sword',
+    flavour: 'Sharpened on both passes. Whoever did it was in no hurry.',
+    stats: [
+      { stat: 'damage', form: 'inc', range: [-45, -35] },
+      { stat: 'attackSpeed', form: 'inc', range: [10, 18] },
+    ],
+    grants: { doubleStrike: 1 },
+    gate: { zone: 'fissure', minPower: 1 },
+  },
+  {
+    id: 'nobody_touched_them',
+    name: 'Nobody Touched Them',
+    base: 'skirmisher_boots_t2',
+    flavour: 'Whoever wore these last walked out. That is the whole of what is known.',
+    stats: [
+      { stat: 'life', form: 'inc', range: [-30, -20] },
+      { stat: 'moveSpeed', form: 'inc', range: [8, 14] },
+    ],
+    grants: { unhitHaste: { after: 3, more: 0.4 } },
+    gate: { zone: 'fissure', minPower: 1 },
+  },
+  {
+    id: 'the_tally',
+    name: 'The Tally',
+    base: 'ring_mana_t2',
+    flavour: 'A notch a body. The band ran out of room a long way back.',
+    stats: [
+      { stat: 'mana', form: 'flat', range: [-60, -40] },
+      { stat: 'intelligence', form: 'flat', range: [10, 18] },
+    ],
+    grants: { manaOnKill: 0.06 },
+    gate: { zone: 'fissure', minPower: 2 },
+  },
+  {
+    id: 'answering_board',
+    name: 'The Answering Board',
+    base: 'bark_buckler',
+    flavour: 'Bark over oak over bark. It has been rebuilt more times than it has been carried.',
+    stats: [
+      { stat: 'armour', form: 'inc', range: [-50, -40] },
+      { stat: 'strength', form: 'flat', range: [12, 20] },
+    ],
+    grants: { blockRiposte: 60 },
+    gate: { zone: 'fissure', minPower: 2 },
+  },
   // The Rot: everything here is about what a corpse is still good for.
   {
     id: 'rotcallers_grasp',
@@ -4572,6 +4634,54 @@ export const UNIQUES: UniqueDef[] = [
     grants: { ailmentMultiplier: 1.6, ailmentDuration: 1.4 },
     gate: { zone: 'demonic', minPower: 3 },
   },
+  {
+    id: 'the_opening_cut',
+    name: 'The Opening Cut',
+    base: 'bone_kris',
+    flavour: 'It does not finish anything. It starts a great deal.',
+    stats: [
+      { stat: 'critChance', form: 'inc', range: [-60, -45] },
+      { stat: 'ailmentChance', form: 'flat', range: [25, 40] },
+    ],
+    grants: { bleedOnHit: { seconds: 4, multiplier: 0.5 } },
+    gate: { zone: 'demonic', minPower: 2 },
+  },
+  {
+    id: 'wake_of_the_choir',
+    name: 'Wake Of The Choir',
+    base: 'nightweave_body_t2',
+    flavour: 'They went down together and they have not stopped agreeing.',
+    stats: [
+      { stat: 'life', form: 'inc', range: [-35, -25] },
+      { stat: 'poisonRes', form: 'flat', range: [20, 35] },
+    ],
+    grants: { ailmentSpread: { radius: 3.5, stacks: 2, targets: 3 } },
+    gate: { zone: 'demonic', minPower: 3 },
+  },
+  {
+    id: 'the_long_swing',
+    name: 'The Long Swing',
+    base: 'shadow_gloves_t3',
+    flavour: 'The arm keeps going. That was always the difficult part.',
+    stats: [
+      { stat: 'attackSpeed', form: 'inc', range: [-30, -22] },
+      { stat: 'damage', form: 'inc', range: [15, 25] },
+    ],
+    grants: { carryOnKill: 2 },
+    gate: { zone: 'demonic', minPower: 3 },
+  },
+  {
+    id: 'harvest_lamp',
+    name: 'The Harvest Lamp',
+    base: 'amulet_occult_t2',
+    flavour: 'It burns what is already dying, and it burns it all at once.',
+    stats: [
+      { stat: 'life', form: 'flat', range: [-50, -30] },
+      { stat: 'spirit', form: 'flat', range: [12, 20] },
+    ],
+    grants: { consumeAilment: 1.8 },
+    gate: { zone: 'demonic', minPower: 4 },
+  },
   // The Cavern: light goes through everything, and so does what you throw.
   {
     id: 'splintered_eye',
@@ -4585,6 +4695,66 @@ export const UNIQUES: UniqueDef[] = [
     grants: { extraTargets: 2, extraFields: 1 },
     gate: { zone: 'prismatic', minPower: 3 },
   },
+  {
+    id: 'the_dividing_wand',
+    name: 'The Dividing Wand',
+    base: 'quartz_wand',
+    flavour: 'Point it at one thing. It disagrees.',
+    stats: [
+      { stat: 'damage', form: 'inc', range: [-40, -30] },
+      { stat: 'castSpeed', form: 'inc', range: [10, 18] },
+    ],
+    grants: { forks: 2, forkDamage: 0.9 },
+    gate: { zone: 'prismatic', minPower: 2 },
+  },
+  {
+    id: 'the_travelling_light',
+    name: 'The Travelling Light',
+    base: 'whisper_helmet_t2',
+    flavour: 'It has been off this wall for a while and it has not stopped.',
+    stats: [
+      { stat: 'armour', form: 'inc', range: [-45, -35] },
+      { stat: 'acuity', form: 'flat', range: [12, 20] },
+    ],
+    grants: { chains: 2, chainDamage: 0.85 },
+    gate: { zone: 'prismatic', minPower: 3 },
+  },
+  {
+    id: 'the_second_hand',
+    name: 'The Second Hand',
+    base: 'duelist_gloves_t2',
+    flavour: 'It arrives after you do and it is not sorry.',
+    stats: [
+      { stat: 'damage', form: 'inc', range: [-28, -20] },
+      { stat: 'attackSpeed', form: 'inc', range: [12, 20] },
+    ],
+    grants: { echoes: 1, echoDamage: 0.75 },
+    gate: { zone: 'prismatic', minPower: 3 },
+  },
+  {
+    id: 'the_thin_place',
+    name: 'The Thin Place',
+    base: 'oracle_body_t3',
+    flavour: 'The wall here is a suggestion and everything on the far side knows it.',
+    stats: [
+      { stat: 'armour', form: 'inc', range: [-55, -45] },
+      { stat: 'elementalRes', form: 'flat', range: [15, 25] },
+    ],
+    grants: { prismaticExtra: 0.35 },
+    gate: { zone: 'prismatic', minPower: 4 },
+  },
+  {
+    id: 'the_glass_reading',
+    name: 'The Glass Reading',
+    base: 'ring_acuity_t2',
+    flavour: 'Every angle it names is one you were not standing at.',
+    stats: [
+      { stat: 'critMultiplier', form: 'flat', range: [-40, -30] },
+      { stat: 'critChance', form: 'inc', range: [50, 80] },
+    ],
+    grants: { elementalShred: { radius: 3, amount: 18 } },
+    gate: { zone: 'prismatic', minPower: 4 },
+  },
   // The Seam, and the only piece that asks for both worlds at once.
   {
     id: 'what_the_seam_left',
@@ -4597,6 +4767,66 @@ export const UNIQUES: UniqueDef[] = [
     ],
     grants: { burstOnHit: { every: 2.5, perLevel: 7 } },
     gate: { zone: 'seam', minPower: 4 },
+  },
+  {
+    id: 'the_settling',
+    name: 'The Settling',
+    base: 'great_maul',
+    flavour: 'Two rooms came together. This was between them and it did not move.',
+    stats: [
+      { stat: 'attackSpeed', form: 'inc', range: [-35, -25] },
+      { stat: 'strength', form: 'flat', range: [20, 30] },
+    ],
+    grants: { twoHandMore: 1.6, overwhelm: 0.4 },
+    gate: { zone: 'seam', minPower: 4 },
+  },
+  {
+    id: 'the_cold_remainder',
+    name: 'The Cold Remainder',
+    base: 'runeguard_gloves_t3',
+    flavour: 'What was left of the man was left in one piece, which is unusual here.',
+    stats: [
+      { stat: 'damage', form: 'inc', range: [-30, -22] },
+      { stat: 'coldRes', form: 'flat', range: [20, 32] },
+    ],
+    grants: { shardfall: { count: 2, perLevel: 0.8 }, freezeSooner: 1 },
+    gate: { zone: 'seam', minPower: 5 },
+  },
+  {
+    id: 'the_short_answer',
+    name: 'The Short Answer',
+    base: 'amulet_dexterity_t3',
+    flavour: 'It reads a body the way a ledger reads a debt.',
+    stats: [
+      { stat: 'damage', form: 'inc', range: [-35, -25] },
+      { stat: 'dexterity', form: 'flat', range: [18, 28] },
+    ],
+    grants: { execute: 0.12 },
+    gate: { zone: 'seam', minPower: 5 },
+  },
+  {
+    id: 'the_far_step',
+    name: 'The Far Step',
+    base: 'raider_boots_t3',
+    flavour: 'The ground it wants is never the ground under it.',
+    stats: [
+      { stat: 'moveSpeed', form: 'inc', range: [-25, -18] },
+      { stat: 'life', form: 'flat', range: [50, 90] },
+    ],
+    grants: { moveCooldown: 0.55, landingSlow: { radius: 3, slow: 0.4, seconds: 3 } },
+    gate: { zone: 'seam', minPower: 5 },
+  },
+  {
+    id: 'the_going_rate',
+    name: 'The Going Rate',
+    base: 'templar_helmet_t3',
+    flavour: 'It counts what you kill and it pays in the only coin down here.',
+    stats: [
+      { stat: 'armour', form: 'inc', range: [-40, -30] },
+      { stat: 'rarity', form: 'flat', range: [20, 34] },
+    ],
+    grants: { killHeal: 0.03, killHaste: 20 },
+    gate: { zone: 'seam', minPower: 6 },
   },
 ];
 
