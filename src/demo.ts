@@ -14322,7 +14322,9 @@ rule('UNIQUES — is every named piece real, reachable and unbreakable?');
 {
   const undeclared: string[] = [];
   const unread: string[] = [];
-  const behaviours = new Set(MAIN_SKILLS.map((s) => s.behaviour));
+  // EVERY SKILL YOU CAN EQUIP, not just the main slot: a mover fills a slot of
+  // its own, so a switch only `step`, `leap` or `gale` reads is live content.
+  const behaviours = new Set(PLAYER_SKILLS.map((s) => s.behaviour));
   for (const u of UNIQUES) {
     for (const key of Object.keys(u.grants ?? {})) {
       const def = GRANT_BY_ID[key];
@@ -14338,6 +14340,18 @@ rule('UNIQUES — is every named piece real, reachable and unbreakable?');
   }
   check(undeclared.length === 0, `all ${UNIQUES.length} uniques grant only declared switches`, undeclared.join(', '));
   check(unread.length === 0, 'and every one of them is read by a skill you can pick', unread.join(', '));
+  // WEAK BY CONSTRUCTION and said so: every declared grant is read by some
+  // behaviour, so the check above can only fire on a switch nothing reads at
+  // all. What is worth SEEING is which uniques are narrow — a switch only some
+  // deliveries read is the whole of what makes a piece build-defining, and a
+  // roster with none of them is a roster of stat sticks.
+  const narrow = UNIQUES.filter((u) =>
+    Object.keys(u.grants ?? {}).some((key) => {
+      const def = GRANT_BY_ID[key];
+      return def && !def.reads.includes(STATS) && def.reads.length < behaviours.size;
+    })
+  );
+  line(`  build-defining — a switch only some deliveries read: ${narrow.map((u) => u.name).join(', ') || 'none'}`);
 
   // Declared and read is not the same as READABLE. A grant whose value is the
   // wrong shape — a bare number where the sim wants { above, more } — is a
