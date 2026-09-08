@@ -10320,13 +10320,23 @@ rule('THE WARRIOR — does what is in your other hand change anything?');
   {
     const lessSim = new RunSim([], warrior(['mah_wall_m0', 'mah_wall'], 'tower_shield'), new Rng(808)) as any;
     const plainSim = new RunSim([], warrior([], 'tower_shield'), new Rng(808)) as any;
+    // TWO FLOORS SWALLOWED THIS AND IT STILL READ AS A PASS. A bare Fissure
+    // monster hits for 3 into 53% Armour, so every unblocked hit landed on
+    // `Math.max(1, dmg)` and 18% less came out as 1.03 against 1.00; and topped
+    // up or not, forty of them kill, so the TOTAL clamped at the life pool and
+    // both sides read the same number. So: a multiplier that clears the floor,
+    // and full life before each hit so nothing is capped by dying.
     const took = (sim: any): number => {
       const hero = sim.state.hero;
-      const before = hero.life;
+      let total = 0;
       // FORTY, because a tower shield BLOCKS: one hit reads zero on both sides
       // whenever the roll goes that way, which is the flake this replaces.
-      for (let i = 0; i < 40; i++) sim.dealDamage(sim.state.monsters[0], hero, 1, undefined);
-      return before - hero.life;
+      for (let i = 0; i < 40; i++) {
+        hero.life = hero.stats.maxLife;
+        sim.dealDamage(sim.state.monsters[0], hero, 50, undefined);
+        total += hero.stats.maxLife - hero.life;
+      }
+      return total;
     };
     const a = took(lessSim);
     const b = took(plainSim);
