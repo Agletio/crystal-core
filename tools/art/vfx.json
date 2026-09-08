@@ -1,5 +1,5 @@
 {
- "_": "What to SAY to the generator for an EFFECT still, one row per id. `tools/art/icon.mts vfx.json` reads it and `portrait.mts <id> <png> <grid> vfx` puts the result in `src/render/generated-vfx.ts`, which only Pixi draws \u2014 canvas2d has no sprites and keeps its blocks.",
+ "_": "What to SAY to the generator for an EFFECT still, one row per id. `tools/art/icon.mts vfx.json` reads it and `portrait.mts <id> <png> <grid> vfx` puts the result in `src/render/generated-vfx.ts`, which only Pixi draws — canvas2d has no sprites and keeps its blocks.",
  "_how": "An effect is drawn in the WORLD at about a tile across and is laid over a lit stone floor, so: no ground, no shadow, no actor holding it, and the thing itself is the only light in the frame.",
  "_inks": "Storm greys and near-black, with the game's own lightning gold (--citrine #D9A441) and a white core. A bolt is the one saturated ink. COLD is the game's own quartz (#6FC7E8) down to a blue-black, with a white core.",
  "size": 64,
@@ -84,6 +84,62 @@
    "id": "spike_glass",
    "say": "ONE single tall shard of ICE standing straight UPRIGHT and alone in empty space, seen from the SIDE, driven up from below: widest at the bottom where it is broken and ragged, narrowing all the way to one sharp POINT at the top, its body split into a few big flat FACETS with hard straight edges between them, GLASSY and half see-through, pale ice blue at its edges with a bright white core running up the middle and deep blue-black shadow down one whole side, long straight CRACKS running up through it, a hard dark outline all round it. NOT a cluster, NOT a group, NOT two of them, NOT several shards, NOT a gemstone, NOT a diamond, NOT a jewel, NOT a snowflake, NOT a sword, NOT a spear, NOT a blade, NOT a weapon, NOT stone, NOT rock, NOT a stalagmite, NOT ground, NOT a floor, NOT a shadow, NOT a base, NOT a pedestal, NOT snow, NOT a hand, NOT a character, NOT text, NOT a border, NOT a frame.",
    "size": 96
+  },
+  {
+   "id": "spike_blade",
+   "say": "ONE single straight BLADE of clear ice standing point-UP alone in empty space, seen from the SIDE: a long narrow sharply pointed blade like a dagger driven up through the floor, its two edges DEAD STRAIGHT from the broken base to the point, the body divided down its length into two or three big flat FACETS by straight lines — one facet pale and lit, one facet in deep shadow, a white glint along the lit edge — and a hard black outline all round it. Drawn in only FOUR colours: one pale ice blue, one mid blue, one deep blue-black, and white. LARGE FLAT AREAS of a single colour meeting along HARD STRAIGHT LINES, with no speckling, no dithering, no stippling and no soft blending anywhere. NOT snow, NOT slush, NOT sleet, NOT frost, NOT a snowdrift, NOT a snowbank, NOT a mound, NOT a hill, NOT a mountain, NOT a peak, NOT a fir tree, NOT a pine tree, NOT a christmas tree, NOT a cone, NOT a rock, NOT a stone, NOT a stalagmite, NOT a fountain, NOT a splash, NOT foam, NOT bubbles, NOT a cloud, NOT fur, NOT feathers, NOT speckles, NOT dots, NOT dithering, NOT noise, NOT a gradient, NOT text, NOT a border, NOT a frame, NOT a ground, NOT a shadow.",
+   "size": 96,
+   "detail": "low detail",
+   "shading": "flat shading"
+  },
+  {
+   "id": "spike_wedge",
+   "say": "ONE single angular WEDGE of broken ice standing point-UP alone in empty space, seen from the SIDE, like a piece of shattered plate glass driven upright into the floor: an uneven four-sided silhouette of straight lines and sharp corners, leaning very slightly, wide and cleanly snapped off at the bottom, tapering to one sharp corner at the top. Its face is broken into three or four big flat PLANES, each a single flat colour, meeting along straight lines; the left plane lit pale, the right plane deep blue-black, a white sliver at the top corner. Hard black outline all round. Drawn in only FOUR colours: one pale ice blue, one mid blue, one deep blue-black, and white. LARGE FLAT AREAS of a single colour meeting along HARD STRAIGHT LINES, with no speckling, no dithering, no stippling and no soft blending anywhere. NOT snow, NOT slush, NOT sleet, NOT frost, NOT a snowdrift, NOT a snowbank, NOT a mound, NOT a hill, NOT a mountain, NOT a peak, NOT a fir tree, NOT a pine tree, NOT a christmas tree, NOT a cone, NOT a rock, NOT a stone, NOT a stalagmite, NOT a fountain, NOT a splash, NOT foam, NOT bubbles, NOT a cloud, NOT fur, NOT feathers, NOT speckles, NOT dots, NOT dithering, NOT noise, NOT a gradient, NOT text, NOT a border, NOT a frame, NOT a ground, NOT a shadow.",
+   "size": 96,
+   "detail": "low detail",
+   "shading": "flat shading"
+  },
+  {
+   "id": "spike_prism",
+   "say": "ONE single six-sided CRYSTAL PRISM of ice standing upright alone in empty space, seen from the SIDE, like a quartz crystal grown up out of the floor: a tall narrow column with straight parallel sides and a pointed pyramid tip, the column divided vertically into three long flat faces by two straight lines — the left face pale, the middle face lighter still, the right face deep blue-black — and the pyramid tip divided into two flat triangles. Hard black outline all round. Drawn in only FOUR colours: one pale ice blue, one mid blue, one deep blue-black, and white. LARGE FLAT AREAS of a single colour meeting along HARD STRAIGHT LINES, with no speckling, no dithering, no stippling and no soft blending anywhere. NOT snow, NOT slush, NOT sleet, NOT frost, NOT a snowdrift, NOT a snowbank, NOT a mound, NOT a hill, NOT a mountain, NOT a peak, NOT a fir tree, NOT a pine tree, NOT a christmas tree, NOT a cone, NOT a rock, NOT a stone, NOT a stalagmite, NOT a fountain, NOT a splash, NOT foam, NOT bubbles, NOT a cloud, NOT fur, NOT feathers, NOT speckles, NOT dots, NOT dithering, NOT noise, NOT a gradient, NOT text, NOT a border, NOT a frame, NOT a ground, NOT a shadow.",
+   "size": 96,
+   "detail": "low detail",
+   "shading": "flat shading"
+  },
+  {
+   "id": "shard_fly",
+   "say": "ONE single six-sided CRYSTAL of ice lying on its SIDE, drawn horizontally across the middle of the frame, the whole crystal made of clear blue ice through and through: a narrow column with dead straight parallel sides, cleanly snapped off flat at the LEFT end and drawn to one sharp pyramid POINT at the RIGHT end. The column is split lengthways into three long flat faces by two straight lines — the upper face pale ice blue, the middle face lighter, the lower face deep blue-black — and the pyramid point is two flat triangles with a white glint on the tip. Hard black outline all round, and nothing else in the frame. Drawn in only FOUR colours: one pale ice blue, one mid blue, one deep blue-black, and white. LARGE FLAT AREAS of a single colour meeting along HARD STRAIGHT LINES, with no speckling, no dithering and no soft blending anywhere. NOT snow, NOT snow on top of it, NOT a white snow cap, NOT slush, NOT frost, NOT ice cream, NOT a rock, NOT a stone, NOT a boulder, NOT a pile, NOT several pieces, NOT a rocket, NOT a plane, NOT an aircraft, NOT a missile, NOT a bullet, NOT a log, NOT a ski, NOT a boat, NOT an arrow, NOT feathers, NOT a shaft, NOT a trail, NOT a streak, NOT motion lines, NOT speckles, NOT dithering, NOT noise, NOT a gradient, NOT a ground, NOT a shadow, NOT text.",
+   "size": 96,
+   "detail": "low detail",
+   "shading": "flat shading"
+  },
+  {
+   "id": "shard_dart",
+   "say": "ONE single long thin CRYSTAL SPLINTER of clear blue ice lying on its SIDE and pointing RIGHT, drawn horizontally across the middle of the frame: a very narrow four-sided sliver of ice, widest at the LEFT where it is snapped off square and tapering in a dead straight line to a needle point at the RIGHT, split lengthways into a pale lit face above and a deep blue-black face below by one straight line, a white glint at the point. Hard black outline all round. Drawn in only FOUR colours: one pale ice blue, one mid blue, one deep blue-black, and white. LARGE FLAT AREAS of a single colour meeting along HARD STRAIGHT LINES, with no speckling, no dithering and no soft blending anywhere. NOT snow, NOT snow on top of it, NOT a white snow cap, NOT slush, NOT frost, NOT ice cream, NOT a rock, NOT a stone, NOT a boulder, NOT a pile, NOT several pieces, NOT a rocket, NOT a plane, NOT an aircraft, NOT a missile, NOT a bullet, NOT a log, NOT a ski, NOT a boat, NOT an arrow, NOT feathers, NOT a shaft, NOT a trail, NOT a streak, NOT motion lines, NOT speckles, NOT dithering, NOT noise, NOT a gradient, NOT a ground, NOT a shadow, NOT text.",
+   "size": 96,
+   "detail": "low detail",
+   "shading": "flat shading"
+  },
+  {
+   "id": "shard_chip",
+   "say": "ONE single small angular FLAKE of clear blue ice, drawn in the middle of the frame, made of ice through and through with no covering on it: a squat five-sided sliver of straight lines and sharp corners, tilted so its sharpest corner points to the upper RIGHT, its face broken into three big flat PLANES of one flat colour each meeting along straight lines, the upper plane pale ice blue, the lower plane deep blue-black, a white glint on the sharp corner. Hard black outline all round. Drawn in only FOUR colours: one pale ice blue, one mid blue, one deep blue-black, and white. LARGE FLAT AREAS of a single colour meeting along HARD STRAIGHT LINES, with no speckling, no dithering and no soft blending anywhere. NOT snow, NOT snow on top of it, NOT a white snow cap, NOT slush, NOT frost, NOT ice cream, NOT a rock, NOT a stone, NOT a boulder, NOT a pile, NOT several pieces, NOT a rocket, NOT a plane, NOT an aircraft, NOT a missile, NOT a bullet, NOT a log, NOT a ski, NOT a boat, NOT an arrow, NOT feathers, NOT a shaft, NOT a trail, NOT a streak, NOT motion lines, NOT speckles, NOT dithering, NOT noise, NOT a gradient, NOT a ground, NOT a shadow, NOT text.",
+   "size": 96,
+   "detail": "low detail",
+   "shading": "flat shading"
+  },
+  {
+   "id": "shard_up",
+   "say": "ONE single narrow SPLINTER of clear blue ice standing UPRIGHT alone in empty space, seen flat from the SIDE: a long thin sliver drawn to a sharp POINT at the TOP and to a second sharp point at the BOTTOM, its two long edges dead straight, the body split down its length into two big flat faces by one straight line — the left face pale ice blue, the right face deep blue-black — and a white glint along the left edge. Hard black outline all round. Drawn in only FOUR colours: one pale ice blue, one mid blue, one deep blue-black, and white. LARGE FLAT AREAS of a single colour meeting along HARD STRAIGHT LINES, with no speckling, no dithering and no soft blending anywhere. NOT snow, NOT a snow cap, NOT slush, NOT frost, NOT a rock, NOT a stone, NOT a block, NOT a bar, NOT a brick, NOT a cube, NOT a box, NOT a slab, NOT lying down, NOT horizontal, NOT seen from a corner, NOT three-quarter view, NOT isometric, NOT a pile, NOT several pieces, NOT speckles, NOT dithering, NOT noise, NOT a gradient, NOT a ground, NOT a shadow, NOT text.",
+   "size": 96,
+   "detail": "low detail",
+   "shading": "flat shading"
+  },
+  {
+   "id": "shard_leaf",
+   "say": "ONE single small SPLINTER of clear blue ice standing UPRIGHT alone in empty space, seen flat from the SIDE: a narrow four-sided sliver, widest a third of the way up and drawn to a sharp POINT at the TOP and a sharp point at the BOTTOM, all four edges dead straight so the silhouette is a long thin diamond, its face split into three flat panels by two straight lines — pale ice blue on the left, white down the middle, deep blue-black on the right. Hard black outline all round. Drawn in only FOUR colours: one pale ice blue, one mid blue, one deep blue-black, and white. LARGE FLAT AREAS of a single colour meeting along HARD STRAIGHT LINES, with no speckling, no dithering and no soft blending anywhere. NOT snow, NOT a snow cap, NOT slush, NOT frost, NOT a rock, NOT a stone, NOT a block, NOT a bar, NOT a brick, NOT a cube, NOT a box, NOT a slab, NOT lying down, NOT horizontal, NOT seen from a corner, NOT three-quarter view, NOT isometric, NOT a pile, NOT several pieces, NOT speckles, NOT dithering, NOT noise, NOT a gradient, NOT a ground, NOT a shadow, NOT text.",
+   "size": 96,
+   "detail": "low detail",
+   "shading": "flat shading"
   }
  ],
  "_sweep": "A centred radial EFFECT is the one ask this generator would not take. Five variants of the melee sweep came back a beaded wreath, a saw blade, a clock face, a directional cut and a closed sunburst: 'arranged around an empty middle, seen from directly above' is a decorative RING to it, whatever it is told not to draw. The sweep stays procedural, and `sweepRing` breaks its ring on purpose because a closed hoop reads as a shield. Do not spend another generation on it without a genuinely different framing."

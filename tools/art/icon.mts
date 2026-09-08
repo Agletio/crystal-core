@@ -24,7 +24,7 @@ const asks = JSON.parse(readFileSync(here(words), 'utf8')) as {
   size: number;
   how: string;
   inks: string[];
-  icons: { id: string; say: string; size?: number }[];
+  icons: { id: string; say: string; size?: number; detail?: string; shading?: string }[];
 };
 
 /** The forced palette, as an image: only its colours are read. */
@@ -53,7 +53,11 @@ for (const ask of todo.slice(0, 10)) {
     description: ask.say + asks.how,
     width: ask.size ?? asks.size, height: ask.size ?? asks.size,
     no_background: true, view: 'side',
-    outline: 'single color black outline', shading: 'medium shading', detail: 'medium detail',
+    // A ROW MAY NAME ITS OWN: a crystal wants flat planes where a poison pool
+    // wants mottling, and one setting for both is what made ice come back slush.
+    outline: 'single color black outline',
+    shading: ask.shading ?? 'medium shading',
+    detail: ask.detail ?? 'medium detail',
     text_guidance_scale: 13, color_image_url: palette(),
   });
   const job = fields(out).job_id ?? /([0-9a-f-]{36})/.exec(out)?.[1];
