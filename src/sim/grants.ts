@@ -1069,7 +1069,8 @@ export const GRANTS: GrantDef[] = [
     say: (v) =>
       v === true
         ? `A Critical teleports you into another enemy ${AMBUSH.chainDelay}s later and ` +
-          `Ambushes it, chaining until it lands on a body it has already opened on`
+          `Ambushes it, chaining until it lands on a body it has already opened on. ` +
+          `reduced Skill Cooldown cuts that ${AMBUSH.chainDelay}s`
         : null,
   },
   {

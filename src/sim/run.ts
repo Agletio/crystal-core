@@ -2900,7 +2900,9 @@ export class RunSim {
     if (!crit || this.grants.critChain !== true) return;
     const seen = this.chaining ?? [];
     if (seen.includes(on.id)) return;
-    const sooner = (this.grants.chainSooner as number) ?? 1;
+    // THE SECOND COOLDOWN IN THE GAME, cut by both of the mover's: grant and line.
+    const sooner = ((this.grants.chainSooner as number) ?? 1)
+      * Math.max(AMBUSH.leastChain, 1 - this.state.hero.stats.cooldown / 100);
     this.chained.push({ in: AMBUSH.chainDelay * sooner, seen: [...seen, on.id] });
   }
 

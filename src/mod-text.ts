@@ -36,7 +36,7 @@ const NAMED: Record<string, string> = {
   blockChance: 'Block Chance',
   areaOfEffect: 'Area of Effect',
   moveSpeed: 'Movement Speed',
-  cooldown: 'Movement Skill Cooldown',
+  cooldown: 'Skill Cooldown',
   attackRange: 'Attack Range',
   rarity: 'Rarity',
   currencyFind: 'Currency Find',

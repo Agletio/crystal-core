@@ -83,7 +83,8 @@ export interface CombatStats {
   critMultiplier: number;
   /** AREA, not radius. Behaviours must go through `areaRadius`, never this. */
   areaOfEffect: number;
-  /** PERCENT reduced on the one cooldown there is, the movement skill's. */
+  /** PERCENT reduced on every skill cooldown there is: the mover's, and the
+   *  follow-up Ambush's Relay buys. */
   cooldown: number;
   /** Gear-side reward stats. Added to whatever the crystal already grants. */
   rarity: number;

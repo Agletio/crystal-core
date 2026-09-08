@@ -19,6 +19,7 @@ import {
 } from './crafting';
 import {
   AILMENT,
+  AMBUSH,
   ALL_MODS,
   AILMENT_OF_TYPE,
   CRYSTAL_MODS,
@@ -206,6 +207,7 @@ import {
   canSell,
   isPerfect,
   perfectChance,
+  defaultGearBase,
   rollGear,
   sellPrice,
 } from './economy';
@@ -6075,6 +6077,57 @@ rule('THE RELAY — does a Critical carry you into the next body?');
     armed.status !== 'running',
     'and a room at 100% crit still ends, because a repeat ends the chain',
     `${armed.status} at ${armed.elapsed.toFixed(0)}s`
+  );
+}
+
+// THE SECOND HALF OF THE BUILD: the follow-up is a COOLDOWN, and the worn line
+// cuts it. *"I really want it to be stack cooldown reduction for ambush so you
+// can lower the .3 second cooldown between crit teleports so you get 100% and
+// then stack CDR."* Without this the line reached the mover alone, so a Relay
+// build had nothing to stack after the crit.
+{
+  // CUT OFF EARLY, on the same seed and the same map: how many follow-ups have
+  // landed by then is what the delay decides. Run to the END and it says
+  // nothing — a faster chain empties the floor sooner, so there is less left to
+  // relay into, and the count comes back level or lower.
+  const seconds = 8;
+  const relayed = (cooldown: number) => {
+    const character = ladderCharacter(3, new Rng(88), 'ambush');
+    skillProgress(character, 'ambush').allocated = walkTo('ambush', 'am_relay');
+    const sim = new RunSim([], character, new Rng(404));
+    sim.state.hero.stats.critChance = 100;
+    sim.state.hero.stats.cooldown = cooldown;
+    return runToCompletion(sim, seconds);
+  };
+
+  const slow = relayed(0);
+  const quick = relayed(84);
+  const delay = (n: number) => AMBUSH.chainDelay * Math.max(AMBUSH.leastChain, 1 - n / 100);
+  line(
+    `  the follow-up lands in ${delay(0).toFixed(3)}s bare and ${delay(84).toFixed(3)}s at ` +
+      `84% reduced Skill Cooldown, and by ${seconds}s ${slow.relays} have landed against ${quick.relays}`
+  );
+  check(
+    quick.relays > slow.relays,
+    'reduced Skill Cooldown cuts the delay before a Critical’s follow-up lands, in the SIM',
+    `${quick.relays} follow-ups by ${seconds}s against ${slow.relays}`
+  );
+  // A floor UNDER what gear can actually roll, or stacking the line stops
+  // paying partway. ROLLED rather than typed, so the table moving is caught.
+  const only = new ModPool(ALL_MODS.filter((m) => m.id === 'cooldown'));
+  const worn = makeCharacter({}, 'ambush');
+  const rng = new Rng(31);
+  for (const slot of EQUIP_SLOTS) {
+    const base = defaultGearBase(slot.accepts[0], DROP_BANDS[DROP_BANDS.length - 1].ilvl);
+    if (!base || (base.hands ?? 1) > 1) continue;
+    const piece = rollGear(base.id, base.ilvl ?? 1, 99, only, rng);
+    if (piece.mods.length > 0) worn.equipment[slot.id] = piece;
+  }
+  const most = characterStats(worn).cooldown;
+  check(
+    1 - most / 100 > AMBUSH.leastChain,
+    'and the floor sits under what a full set of the line rolls, so stacking pays all the way',
+    `floor ${AMBUSH.leastChain} against ${(1 - most / 100).toFixed(2)} at ${most.toFixed(0)}%`
   );
 }
 

@@ -860,7 +860,7 @@ really powerful stats should be locked behind crafting plans. Blacksmithing
 plans, weaving patterns etc. You have to find these in higher level zones and
 they can be locked in the side areas."* `PLANS` in `src/data.ts` and
 `planFor(defId)`: three lines are behind one — **Area of Effect**, **reduced
-Movement Skill Cooldown** and **+Level of Attack or Spell Skills** — and a
+Skill Cooldown** and **+Level of Attack or Spell Skills** — and a
 level 99 bench holding ten thousand of every shard still refuses each of them
 by name. `Character.plans` is what is held, per character, and a plan is never
 unlearned. **IT GATES THE BENCH AND NEVER THE FLOOR**: the same lines still
@@ -873,10 +873,18 @@ Drafting Room (`blueprint`, `RunBonus.plans` of 6), two rooms at the bottom of
 every zone. **A PLAN'S WORD IS ITS PROFESSION'S** (`PLAN_WORD`, `planName`) and
 so is its picture (`planIcon`), so a new plan is one row and no art.
 
-**THE ONE COOLDOWN IS THE MOVER'S, AND TWO THINGS CUT IT.** `MOVE.leastCooldown`
-is the floor — a mover with none is a second walk speed — and the grant and the
-worn `cooldown` stat MULTIPLY, so a notable and a rolled line cannot replace
-each other. **A LEVEL ON A SKILL LANDS INSIDE `skillBase`**, tagged like every
+**THERE ARE TWO COOLDOWNS, AND THE SAME TWO THINGS CUT BOTH.** The mover's and
+**the follow-up Ambush's Relay buys** — *"I really want it to be stack cooldown
+reduction for ambush so you can lower the .3 second cooldown between crit
+teleports so you get 100% and then stack CDR."* Each has a FLOOR
+(`MOVE.leastCooldown`, `AMBUSH.leastChain`) and each is cut by the GRANT and the
+worn `cooldown` stat MULTIPLIED, so a notable and a rolled line cannot replace
+each other. **A MOVER'S FLOOR IS THERE TO STOP IT BEING A SECOND WALK SPEED;
+AMBUSH'S IS SET UNDER WHAT GEAR ROLLS ON PURPOSE** — measured, a full set of
+the line is 84% and the floor is 15%, so stacking it pays all the way rather
+than stopping partway, and the demo ROLLS that set rather than quoting it. The
+line is called **Skill Cooldown** now, because naming the mover was a lie the
+moment a second cooldown existed. **A LEVEL ON A SKILL LANDS INSIDE `skillBase`**, tagged like every
 other line, so `+1 to Level of Attack Skills` reaches a swing and not a cast and
 the sheet and the sim read one number.
 
@@ -1042,10 +1050,14 @@ there — Lightning Arrow, the only one holding a two-hander, from 58 damage to
 **A LEVER THAT MULTIPLIES IS THE WRONG ONE**: Blight's radius fixed the bare end
 at 1.6 and took an INVESTED build to 5.93 kills/s against everybody else's
 3.5–4.3, because area is what a tree already sells. Every bare-end change is
-checked at the deep end too. **AMBUSH IS THE ONE THAT STILL SITS APART**, at 39%
-of the floor on a kill rate inside the band: it steps BEHIND
-what it hits, so it fights every pack from inside one. That is its delivery, and
-the number is printed rather than tuned away.
+checked at the deep end too. **AMBUSH IS THE ONE THAT SITS APART BARE**, at 39%
+of the floor on a kill rate inside the band: it steps BEHIND what it hits, so it
+fights every pack from inside one. That is its delivery, it is printed rather
+than tuned away, and **WHAT ANSWERS IT IS THE BUILD** — 100% Critical Chance
+(157% is reachable) turns every use into a Relay, and reduced Skill Cooldown
+then drives the follow-up. Measured at the deep end: 1.44 kills/s on a random
+tree walk, 1.84 walking the Relay branch, **2.79 with the line stacked on top**,
+which puts it in the pack rather than 1.9x below the next skill.
 
 **A SKILL'S OWN TREE BUYS WHAT THE SKILL DOES.** *"Remove all the flat stats
 that aren't related to the skill. So like health, armour and stuff like that —

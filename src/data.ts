@@ -1385,9 +1385,9 @@ export const GEAR_SECONDARY_MODS: ModDef[] = [
 // Only boots and amulets have these slots — three on the whole character —
 // which is what stops universally-useful mods from being free power.
 export const GEAR_UTILITY_MODS: ModDef[] = [
-  // THE THREE A PLAN GATES, and the only lines a shard and a level alone do
-  // not buy. Every one of them is a whole build's worth on its own: a mover
-  // off cooldown, a Burst that reaches a second pack, a level on the skill.
+  // THE THREE A PLAN GATES, the only lines a shard and a level alone do not
+  // buy: a Burst reaching a second pack, a level on the skill, and the line
+  // that drives a mover AND a Relay.
   {
     id: 'cooldown',
     slot: 'utility',
@@ -2577,6 +2577,7 @@ export const MELEE = {
 export const AMBUSH = {
   behind: 0.45, // the gap past both bodies' radii: touching, the two sprites overlap
   chainDelay: 0.3, // seconds before a Critical's follow-up lands
+  leastChain: 0.15, // the floor the worn line cuts to, under the 84% a set rolls
   chainReach: 9, // how far a follow-up may cross, in tiles
   chainDamage: 0.7, // what it lands for, where the one you aimed at takes all
 };
