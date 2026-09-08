@@ -6079,12 +6079,18 @@ rule('THE SPIKE — does one cast cover ground, and does buying area cover more?
   // inside the window and the count reads target supply rather than cast rate.
   const window = 20;
   const set = ladderSet(5, new Rng(400), new ModPool(ALL_MODS));
+  // THE PASSIVES ARE PINNED, or a random draw decides this: Quickening stacks a
+  // rate off kills and put a third onto the bare build's cast count alone.
+  const fill = ['headsman', 'refraction', 'contagion'];
   const cast = (route: string[], cooldown: number) => {
     const character = ladderCharacter(5, new Rng(88), 'rimespike');
+    SKILL_SLOTS.filter((sl) => sl.accepts.includes('passive')).forEach((sl, i) => {
+      if (fill[i]) equipSkill(character, fill[i], sl.id);
+    });
     skillProgress(character, 'rimespike').allocated = route;
     const sim = new RunSim(set, character, new Rng(404));
     sim.state.hero.stats.cooldown = cooldown;
-    return runToCompletion(sim, window).casts;
+    return { casts: runToCompletion(sim, window).casts, killed: sim.state.killed };
   };
 
   const field = walkTo('rimespike', 'rs_field');
@@ -6092,15 +6098,27 @@ rule('THE SPIKE — does one cast cover ground, and does buying area cover more?
   const moded = cast(field, 0);
   const stacked = cast(field, 84);
   line(
-    `  uses in ${window}s: ${free} cast at your own rate, ${moded} on the mode's ` +
+    `  in ${window}s: ${free.casts} uses and ${free.killed} down at your own rate, ` +
+      `${moded.casts} and ${moded.killed} on the mode's ` +
       `${(nodeById('rimespike', 'rs_field')?.grants?.spikeStands as { cooldown: number }).cooldown}s ` +
-      `cooldown, ${stacked} with 84% reduced Skill Cooldown`
+      `cooldown, ${stacked.casts} and ${stacked.killed} with 84% reduced Skill Cooldown`
   );
-  check(moded < free, 'the mode clicked on its own casts less often than the skill does', `${moded} against ${free}`);
   check(
-    stacked > free,
+    moded.casts < free.casts,
+    'the mode clicked on its own casts less often than the skill does',
+    `${moded.casts} against ${free.casts}`
+  );
+  // THROUGHPUT is what the trade is about, and casts cannot say it: the mode
+  // kills BETWEEN uses, so a build casting no more often is still killing more.
+  check(
+    moded.killed < free.killed,
+    'and clicked on its own it is a LOSS, which is the whole point of the mode',
+    `${moded.killed} against ${free.killed} down`
+  );
+  check(
+    stacked.killed > free.killed,
     'and reduced Skill Cooldown is what buys the throughput back, past what it cost',
-    `${stacked} against ${free}`
+    `${stacked.killed} against ${free.killed} down`
   );
 }
 
