@@ -3000,6 +3000,23 @@ for (const tree of BUILT_TREES) {
   check(nodes.length === expected, 'every node the spec asks for is built', `${nodes.length} of ${expected}`);
   check(new Set(nodes.map((n) => n.id)).size === nodes.length, 'and no id is used twice', 'duplicate ids');
 
+  // AND EVERYTHING IT WRITES ON ONE ARRIVES. The builder copies a node field
+  // at a time, so a field it forgets is a card printing a figure the sim never
+  // applies — six branch enablers across three trees shipped that way.
+  const dropped: string[] = [];
+  const wrote = (id: string, stats?: unknown[], grants?: Record<string, unknown>) => {
+    const built = nodeById(skillId, id);
+    if ((stats?.length ?? 0) !== (built?.stats?.length ?? 0)) dropped.push(`${id} stats`);
+    const want = Object.keys(grants ?? {}).sort().join(',');
+    if (want !== Object.keys(built?.grants ?? {}).sort().join(',')) dropped.push(`${id} grants`);
+  };
+  for (const b of tree.spec.branches) {
+    wrote(b.enabler.id, b.enabler.stats, b.enabler.grants);
+    for (const twig of b.twigs) wrote(twig.notable.id, twig.notable.stats, twig.notable.grants);
+  }
+  for (const n of tree.spec.trunkNotables) wrote(n.id, n.stats, n.grants);
+  check(dropped.length === 0, 'and every line and switch the spec writes on one arrives', dropped.join(', '));
+
   // Every switch a node hands the sim must be one the sim reads, AND one this
   // skill's own delivery reads. A tree asking a cloud to pierce is a point
   // spent on nothing; a typo is the same thing without a name.
@@ -6004,55 +6021,126 @@ rule('DUAL WIELDING — is a pair two weapons or an average of one?');
 }
 
 // ===========================================================================
-rule('RIMEFIELD — does the one single-target skill reach a pack?');
+rule('THE SPIKE — does one cast cover ground, and does buying area cover more?');
 
-// Rimespike hits ONE body. The arm's whole job is the room, and what it leaves
-// is a CLOUD: no damage at all, and the build's own Chill on everything
-// standing in it. So what is counted is bodies CAUGHT, and the ones the cast
-// never touched are the whole answer.
+// Rimespike is an AREA skill now: one spike up under a body, and everything
+// round it takes the WHOLE hit. So what is counted is bodies STRUCK, and what
+// has to hold is that the radius is the thing a build buys — the same figure
+// the renderer draws the blade at.
 {
   const dummy = (x: number, y: number) =>
     ({ x, y, life: 1e6, radius: 0, dead: false, ailments: [] as unknown[],
        stats: { maxLife: 1e6, attacksPerSecond: 1 } }) as any;
   const primary = dummy(4, 0);
-  // Two inside a bare Cloud, one only a WIDER one reaches, one across the room.
+  // Two inside the bare radius, one only a WIDER spike reaches, one far off
+  // that only a SECOND spike can find.
   const enemies = [primary, dummy(4.8, 0.5), dummy(3.4, 1.1), dummy(6.6, 0), dummy(24, 0)];
   const grantsOf = (id: string) => nodeById('rimespike', id)?.grants ?? {};
 
-  /** Bodies a Cloud caught over four casts, counting repeats. */
-  const caught = (grants: Record<string, unknown>): number => {
-    let left = 0;
-    for (let castIndex = 0; castIndex < 4; castIndex++) {
-      SKILL_BEHAVIOURS.single_target({
-        skill: SKILL_BY_ID.rimespike,
-        user: dummy(0, 0), primary, enemies,
-        rng: new Rng(9), grants, crit: false, castIndex, heft: 1,
-        hit: () => {}, ailment: () => {}, leave: () => { left++; },
-        areaRadius: (base: number) => base, vfx: () => {},
-      } as any);
-    }
-    return left;
+  /** Bodies the cast STRUCK, and the widest circle it drew. */
+  const cast = (grants: Record<string, unknown>, area = 1) => {
+    const hit = new Set<unknown>();
+    let widest = 0;
+    SKILL_BEHAVIOURS.spike({
+      skill: SKILL_BY_ID.rimespike,
+      user: dummy(0, 0), primary, enemies,
+      rng: new Rng(9), grants, crit: false, castIndex: 0, heft: 1,
+      hit: (who: unknown) => { hit.add(who); }, ailment: () => {}, leave: () => {},
+      areaRadius: (base: number) => base * area,
+      vfx: (_k: string, pts: Array<{ x: number; y: number }>) => {
+        widest = Math.max(widest, Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y));
+      },
+    } as any);
+    return { struck: hit.size, widest };
   };
 
-  const bare = caught({});
-  const field = { ...grantsOf('rs_field') };
-  const armed = caught(field);
-  const wide = caught({ ...field, ...grantsOf('rs_whiteout') });
-  const often = caught({ ...field, ...grantsOf('rs_frostfall') });
-  const bloom = caught({ ...field, ...grantsOf('rs_bloom') });
+  const bare = cast({});
+  const wider = cast({}, 1.8);
+  const stands = cast(grantsOf('rs_field'));
   line(
-    `  bodies a Cloud catches in 4 casts: bare ${bare}, Rimefield ${armed}, ` +
-      `Whiteout ${wide}, Frostfall ${often}, Bloom ${bloom}`
+    `  bodies one cast strikes: bare ${bare.struck} within ${bare.widest.toFixed(1)} tiles, ` +
+      `+80% area ${wider.struck} within ${wider.widest.toFixed(1)}, ` +
+      `Rimefield ${stands.struck} within ${stands.widest.toFixed(1)}`
   );
-  check(bare === 0, 'a bare Rimespike leaves no Cloud at all', String(bare));
+  check(bare.struck > 1, 'a bare Rimespike strikes more than the body it aimed at', String(bare.struck));
   check(
-    armed > 1,
-    'Rimefield catches bodies the spike never touched',
-    `${armed} caught, and one of them is the target`
+    wider.struck > bare.struck && wider.widest > bare.widest,
+    'Area of Effect widens the spike, and the picture is drawn at the size the sim used',
+    `${wider.struck} within ${wider.widest.toFixed(1)} against ${bare.struck} within ${bare.widest.toFixed(1)}`
   );
-  check(wide > armed, 'a wider Cloud catches more of them', `${wide} against ${armed}`);
-  check(often > armed, 'and a more frequent one catches them more often', `${often} against ${armed}`);
-  check(bloom > armed, 'and a second and third Cloud reach further still', `${bloom} against ${armed}`);
+  check(
+    stands.widest > bare.widest,
+    'and Rimefield is a bigger spike, not just a standing one',
+    `${stands.widest.toFixed(1)} against ${bare.widest.toFixed(1)}`
+  );
+}
+
+// WHAT THE CHILL IS FOR. Eight stacks FREEZE a body, which is out of reach of
+// any cast rate — a Chill lasts 3s and nothing casts eight times inside one. A
+// standing spike Chills everything round it every 0.5s, so the mode is what
+// fills the bar and the Freeze branch is what lowers it.
+{
+  const froze = (route: string[]) => {
+    const character = ladderCharacter(5, new Rng(88), 'rimespike');
+    skillProgress(character, 'rimespike').allocated = route;
+    const set = ladderSet(5, new Rng(400), new ModPool(ALL_MODS));
+    return runToCompletion(new RunSim(set, character, new Rng(404)), 600);
+  };
+
+  const freeze = walkTo('rimespike', 'rs_ward');
+  const field = walkTo('rimespike', 'rs_field');
+  const bare = froze([]);
+  const standing = froze(field);
+  const lowered = froze([...new Set([...freeze, ...field])]);
+  line(
+    `  Freezes over one descent: ${bare.freezes} on a bare tree, ${standing.freezes} with the ` +
+      `spike standing, ${lowered.freezes} with Deepfreeze under it`
+  );
+  check(
+    standing.freezes > bare.freezes * 20,
+    'the standing spike Chilling every 0.5s is what fills a bar of 8',
+    `${standing.freezes} against ${bare.freezes}`
+  );
+  check(
+    lowered.freezes > standing.freezes,
+    'and Deepfreeze takes the bar down under it',
+    `${lowered.freezes} against ${standing.freezes}`
+  );
+}
+
+// AND THE MODE IS A LOSS CLICKED ON ITS OWN. *"The idea is if you just click it
+// then it should be worse than not."* Its cooldown is longer than the interval
+// the skill is cast at, so what buys the throughput back is Skill Cooldown —
+// measured at band 4 over 6 crystal sets, 20% under a bare tree with nothing
+// stacked and 48% over it at the 84% a full set of the line rolls.
+{
+  // A WINDOW ON A FULL FLOOR: on a bare Fissure the mode empties the room
+  // inside the window and the count reads target supply rather than cast rate.
+  const window = 20;
+  const set = ladderSet(5, new Rng(400), new ModPool(ALL_MODS));
+  const cast = (route: string[], cooldown: number) => {
+    const character = ladderCharacter(5, new Rng(88), 'rimespike');
+    skillProgress(character, 'rimespike').allocated = route;
+    const sim = new RunSim(set, character, new Rng(404));
+    sim.state.hero.stats.cooldown = cooldown;
+    return runToCompletion(sim, window).casts;
+  };
+
+  const field = walkTo('rimespike', 'rs_field');
+  const free = cast([], 0);
+  const moded = cast(field, 0);
+  const stacked = cast(field, 84);
+  line(
+    `  uses in ${window}s: ${free} cast at your own rate, ${moded} on the mode's ` +
+      `${(nodeById('rimespike', 'rs_field')?.grants?.spikeStands as { cooldown: number }).cooldown}s ` +
+      `cooldown, ${stacked} with 84% reduced Skill Cooldown`
+  );
+  check(moded < free, 'the mode clicked on its own casts less often than the skill does', `${moded} against ${free}`);
+  check(
+    stacked > free,
+    'and reduced Skill Cooldown is what buys the throughput back, past what it cost',
+    `${stacked} against ${free}`
+  );
 }
 
 // ===========================================================================

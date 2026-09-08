@@ -9,7 +9,8 @@
  * runs for every skill whatever its delivery is.
  */
 import {
-  AMBUSH, BURST, FASTEST_SWING, HERO_BASE, MANA, MELEE, PASSIVE_DAMAGE, ROGUE, WARRIOR,
+  AMBUSH, BURST, FASTEST_SWING, HERO_BASE, MANA, MELEE, PASSIVE_DAMAGE, ROGUE, STANDING,
+  WARRIOR,
   WEAPON_SPECIALITY,
   stunChanceFor,
 } from '../data';
@@ -75,10 +76,10 @@ const pair = (v: unknown, a: string, b: string): [number, number] | null => {
 
 /** What EVERY delivery scales by: how good this cast is, and what the body in
  *  front of you is. A behaviour opts in by calling `castScale`/`targetScale`. */
-const SCALED = ['projectile', 'melee', 'ailment_burst', 'cone', 'single_target', 'ambush'];
+const SCALED = ['projectile', 'melee', 'ailment_burst', 'cone', 'single_target', 'ambush', 'spike'];
 /** And the ones that call `blastAround`, which is a narrower list. */
-const SHARED = ['projectile', 'melee', 'ailment_burst', 'cone', 'ambush'];
-const HITTERS = ['projectile', 'melee', 'cone', 'ambush'];
+const SHARED = ['projectile', 'melee', 'ailment_burst', 'cone', 'ambush', 'spike'];
+const HITTERS = ['projectile', 'melee', 'cone', 'ambush', 'spike'];
 /** The single-target deliveries, which are the ones that SPLASH. */
 const SPLASHERS = ['projectile', 'melee', 'ambush', 'single_target'];
 /** The two movers. Their own behaviour names, so `reads` can tell a jump's
@@ -907,6 +908,18 @@ export const GRANTS: GrantDef[] = [
   },
   { id: 'everyNth', what: 'every nth cast is worth more', reads: SCALED, changes: 'scale' },
   { id: 'moreVsAiling', what: 'more damage to enemies already suffering', reads: SCALED, changes: 'scale' },
+  {
+    /** Reads `Entity.stun`, which a Freeze is the only thing to write for a
+     *  Cold build — a Pin is the bow's and a Fall the boss's. */
+    id: 'moreVsFrozen',
+    changes: 'scale',
+    what: 'more damage to Frozen enemies',
+    reads: SCALED,
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null ? null : `${pct(n)} more damage to Frozen enemies`;
+    },
+  },
   // WHAT REPLACED THE DISTANCE NODES. *"It feels bad to ever take increased
   // damage to near enemies when you can't control your character's location at
   // all."* Both of these fire on something a BUILD decides — how fast it kills,
@@ -989,6 +1002,36 @@ export const GRANTS: GrantDef[] = [
         ? null
         : `A hit on an enemy carrying your Ailment consumes every stack and deals ` +
           `${pct(n)} of what they had left, at once`;
+    },
+  },
+  {
+    /** THE MODE SWITCH. Rimespike stops being cast at your rate and becomes a
+     *  COOLDOWN: bigger, harder, and what it leaves STANDS, Chilling everything
+     *  round it while it does. Read by the SIM, which owns the clock and the
+     *  standing spikes; the delivery only says where one went in. */
+    id: 'spikeStands',
+    changes: 'field',
+    what: 'the spike stands where it went in, and the skill runs on a cooldown',
+    reads: ['spike', SIM],
+    say: (v) => {
+      const o = v as { seconds?: number; cooldown?: number; radius?: number; more?: number } | null;
+      if (!o || typeof o.seconds !== 'number' || typeof o.cooldown !== 'number') return null;
+      return (
+        `Rimespike runs on a ${o.cooldown}s cooldown, reaches ${more(o.radius ?? 1)} further, ` +
+        `deals ${more(o.more ?? 1)} more damage, and the spike stands for ${o.seconds}s, ` +
+        `Chilling everything round it every ${STANDING.chills}s`
+      );
+    },
+  },
+  {
+    id: 'spikeLonger',
+    changes: 'field',
+    what: 'a standing spike stands longer',
+    reads: ['spike', SIM],
+    merge: 'sum',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null ? null : `The spike stands ${n}s longer`;
     },
   },
   {

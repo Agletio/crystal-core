@@ -199,7 +199,7 @@ export const PASSIVE_DAMAGE = {
   sunderPerLevel: 5.5, // Sundering's Burst, physical
   sunderEvery: 4, // seconds between one Burst being armed and the next
   sunderRadius: 2.4,
-  frostPerLevel: 0.9, // Hoarfrost's spike, cold, and it goes off far more often
+  frostPerLevel: 1.6, // Hoarfrost's spike, cold, and it goes off far more often
   frostEvery: 0.7,
   frostRange: 7,
 };
@@ -2074,7 +2074,13 @@ export const planFor = (defId: string): PlanDef | null => PLAN_BY_MOD[defId] ?? 
 
 /** The one COOLDOWN is the movement skill's, and the floor under what a build
  *  may take off it: a mover with none is a second walk speed. */
-export const MOVE = { leastCooldown: 0.35 };
+export const MOVE = {
+  leastCooldown: 0.35,
+  /** How long a LEAP is in the air, and how high it arcs in tiles. The body is
+   *  already at the landing; this is only how it is drawn getting there. */
+  hopSeconds: 0.34,
+  hopHeight: 1.15,
+};
 
 export const PLAN_DROP = {
   /** Plans a CLEAR pays, before a branch's own multiplier and only ever out of
@@ -2512,7 +2518,6 @@ export const CAMPAIGN_REWARD = { crystals: 1, points: 10 };
  */
 export const SPLASH: Record<string, { share: number; radius: number }> = {
   strike: { share: 0.45, radius: 0.9 },
-  rimespike: { share: 0.25, radius: 1.4 },
   fireball: { share: 0.35, radius: 1.3 },
   lightning_arrow: { share: 0.3, radius: 1.1 },
   arc_lightning: { share: 0.2, radius: 1.0 },
@@ -2600,6 +2605,14 @@ export const AMBUSH = {
   leastChain: 0.15, // the floor the worn line cuts to, under the 84% a set rolls
   chainReach: 9, // how far a follow-up may cross, in tiles
   chainDamage: 0.7, // what it lands for, where the one you aimed at takes all
+};
+
+/** THE SPIKE THAT STANDS. Rimespike's one mode switch: the cast becomes a
+ *  COOLDOWN and what it leaves keeps Chilling everything round it. `chills` is
+ *  the tick, so a spike is applications rather than one lump. */
+export const STANDING = {
+  chills: 0.5, // seconds between the Chills a standing spike applies
+  leastCooldown: 0.15, // set UNDER the 84% a full set of the line rolls, so stacking pays all the way
 };
 
 /** A killed enemy's Burst sets off the Burst of whatever IT kills, so a floor
@@ -4885,23 +4898,31 @@ export const SKILLS: SkillDef[] = [
      * at 1.20. The spikes come up UNDER what you aimed at, so there is nothing
      * in flight to pierce, fork or arc — its tree buys what a Chill is worth.
      */
+    /**
+     * ONE SPIKE UP THROUGH THE GROUND, and everything round it takes the whole
+     * hit — no falloff, no target cap. The RADIUS is the skill, so Area of
+     * Effect from anywhere widens it and the picture grows with it. Aimed at a
+     * body rather than at a point, because nobody drives the hero.
+     */
     id: 'rimespike',
     name: 'Rimespike',
     category: 'spell',
     description:
-      'Ice drives up through the ground under one enemy. Hits hardest of any ' +
-      'spell, and Splashes for 25% within 1.4 tiles.',
-    tags: ['spell'],
-    behaviour: 'single_target',
+      'Ice drives up through the ground under one enemy. Everything within ' +
+      '1.9 tiles takes the whole hit.',
+    tags: ['spell', 'area'],
+    behaviour: 'spike',
     damageTypes: ['cold'],
-    baseDamage: 104,
+    // Down from 104, which was one body's number: at full damage to everything
+    // inside the radius, the same figure is a pack's worth every cast.
+    baseDamage: 78,
     critChance: 6,
     addedEffectiveness: 100,
     rateMultiplier: 0.75,
     manaCost: 10,
     range: 5,
-    splash: SPLASH.rimespike,
     vfxKind: 'spikes',
+    params: { radius: 1.9 },
   },
   {
     /**
@@ -5311,7 +5332,7 @@ export const SKILLS: SkillDef[] = [
     category: 'passive',
     description:
       'Every 0.7s a spike goes out at every Chilled enemy within 7 tiles, ' +
-      'for 0.9 Cold damage per character level.',
+      'for 1.6 Cold damage per character level.',
     tags: ['passive'],
     behaviour: 'no_cast',
     damageTypes: [],

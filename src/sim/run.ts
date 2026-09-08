@@ -85,6 +85,7 @@ import {
   socketSize,
   GILT,
   FASTEST_SWING,
+  STANDING,
   GATHER,
   HOARD,
   MATERIALS,
@@ -255,6 +256,10 @@ const HURT_POSE = 0.16;
 
 export interface Entity {
   id: number;
+  /** MID-JUMP: where the leap started and what is left of it. The sim puts the
+   *  body at the landing AT ONCE, so nothing it decides depends on the arc; a
+   *  renderer draws it along the way it went. */
+  hop?: { fx: number; fy: number; left: number; total: number };
   kind: EntityKind;
   /** Which body draws it: a monster's id, or the hero's TRADE. */
   sprite: string;
@@ -485,6 +490,9 @@ export interface RunState {
   hoards: Hoard[];
   /** Every gathering node, and whether it has been worked. */
   nodes: GatherNode[];
+  /** Spikes STANDING on the floor, each Chilling what is round it until it
+   *  goes. Never in the save: a descent always starts with none. */
+  spikes: Array<{ x: number; y: number; radius: number; left: number; tickIn: number }>;
   /** Bodies that welled up out of another and were then put down. */
   welled: number;
   wardens: number; // Wardens put down; nothing else could tell one apart
@@ -546,6 +554,7 @@ export interface RunState {
   overcharges: number;
   /** Follow-ups a Critical bought, teleport and all. Zero without the node. */
   relays: number;
+  freezes: number; // bodies a Chill took to the bar and FROZE
   /** Damage the mana pool paid for instead of your life. */
   absorbed: number;
 }
@@ -766,6 +775,7 @@ export class RunSim {
       vfx: [],
       hoards: this.putDown,
       nodes: this.nodesDown,
+      spikes: [],
       welled: 0,
       wardens: 0,
       bearers: 0,
@@ -787,6 +797,7 @@ export class RunSim {
       buffs: [],
       overcharges: 0,
       relays: 0,
+      freezes: 0,
       absorbed: 0,
       folk: [],
       meeting: false,
@@ -1376,6 +1387,7 @@ export class RunSim {
     for (const m of s.monsters) if (!m.dead && m.effects.length > 0) this.stepEffects(m, dt);
 
     this.stepChains(dt);
+    this.stepSpikes(dt);
     this.stepFight(dt);
     this.stepHero(dt);
     if (s.status !== 'running') return;
@@ -1787,6 +1799,10 @@ export class RunSim {
     const hero = s.hero;
 
     if (hero.stun !== undefined && hero.stun > 0) hero.stun -= dt;
+    if (hero.hop) {
+      hero.hop.left -= dt;
+      if (hero.hop.left <= 0) hero.hop = undefined;
+    }
     if (hero.cooldown > 0) hero.cooldown -= dt;
     if (this.moveIn > 0) this.moveIn -= dt;
     if (hero.hitFlash > 0) hero.hitFlash -= dt;
@@ -2557,6 +2573,10 @@ export class RunSim {
       'physical',
       0.25
     );
+    // A JUMP is DRAWN travelling where a step arrives; both move at once.
+    if (jumps) {
+      hero.hop = { fx: hero.x, fy: hero.y, left: MOVE.hopSeconds, total: MOVE.hopSeconds };
+    }
     hero.x = landing.x;
     hero.y = landing.y;
     hero.path = hero.path.slice(steps);
@@ -2865,7 +2885,22 @@ export class RunSim {
     });
 
     this.useCrit = null;
-    user.cooldown = this.swingCooldown(user);
+    // A STANDING SPIKE is planted where the cast went in, and the SAME grant
+    // puts the skill on a cooldown — the mode is one switch, not two.
+    const stands = this.grants.spikeStands as
+      { seconds: number; cooldown: number; radius: number; more: number } | undefined;
+    if (stands && user.kind === 'hero' && skill.behaviour === 'spike') {
+      this.state.spikes.push({
+        x: primary.x,
+        y: primary.y,
+        radius: this.areaRadius(user, (skill.params?.radius as number) ?? 1.9) * stands.radius,
+        left: stands.seconds + ((this.grants.spikeLonger as number) ?? 0),
+        tickIn: 0,
+      });
+    }
+    user.cooldown = stands && user.kind === 'hero' && skill.behaviour === 'spike'
+      ? stands.cooldown * Math.max(STANDING.leastCooldown, 1 - user.stats.cooldown / 100)
+      : this.swingCooldown(user);
     // Only off the skill in the MAIN slot: a follow-up is another use of it.
     if (user.kind === 'hero' && skill === this.skill) this.maybeChain(primary, crit);
   }
@@ -2901,6 +2936,25 @@ export class RunSim {
     if (per <= 0) return 1;
     const rate = Math.max(0.01, user.stats.attacksPerSecond);
     return 1 + per * Math.max(0, FASTEST_SWING / rate - 1);
+  }
+
+  /** A STANDING SPIKE Chills what is inside it on its own clock and goes when
+   *  its seconds run out. It deals no HIT — the damage was the cast. */
+  private stepSpikes(dt: number): void {
+    const live = this.state.spikes;
+    if (live.length === 0) return;
+    for (const spike of live) {
+      spike.left -= dt;
+      spike.tickIn -= dt;
+      if (spike.tickIn > 0) continue;
+      spike.tickIn = STANDING.chills;
+      for (const m of this.state.monsters) {
+        if (m.dead || dist(m, spike) > spike.radius) continue;
+        // `applyAilment` is the CLOUD's and writes a Poison whatever it is handed.
+        if (AILMENT_BY_ID.chill) this.strike(this.state.hero, m, AILMENT_BY_ID.chill);
+      }
+    }
+    this.state.spikes = live.filter((s) => s.left > 0);
   }
 
   /** THE FOLLOW-UP a Critical buys. A body this chain has already opened on
@@ -3416,6 +3470,7 @@ export class RunSim {
       const longer = (this.grants.freezeLonger as number) ?? 1;
       target.stun = Math.max(target.stun ?? 0, (def.freezeSeconds ?? 1) * longer);
       target.thawed = true; // the hit after a Freeze is a Critical, whatever your chance
+      this.state.freezes++;
       target.ailments = target.ailments.filter((a) => a.id !== 'chill');
       target.slowed = 0;
     }

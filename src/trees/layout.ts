@@ -244,6 +244,7 @@ export function buildTree(spec: TreeSpec): BuiltTree {
       x: Math.cos(base) * ENABLER_R,
       y: Math.sin(base) * ENABLER_R,
       links: links.get(branch.enabler.id) ?? [],
+      ...(branch.enabler.stats ? { stats: branch.enabler.stats } : {}), // dropped here, six enablers printed figures the sim never applied
       ...(branch.enabler.grants ? { grants: branch.enabler.grants } : {}),
     });
 

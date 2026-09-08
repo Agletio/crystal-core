@@ -124,6 +124,10 @@ export function targetScale(use: SkillUse, target: Entity): number {
   const ailing = g.moreVsAiling as number | undefined;
   if (ailing && target.ailments.length > 0) m *= 1 + ailing;
 
+  // A Freeze is the only thing that writes `stun` on a body a Cold build fights.
+  const frozen = g.moreVsFrozen as number | undefined;
+  if (frozen && (target.stun ?? 0) > 0) m *= 1 + frozen;
+
   // NEITHER IS ABOUT WHERE YOU STAND: a kill and an untouched run are things a
   // BUILD decides, and nobody drives the hero to a tile.
   const killed = g.killMore as { seconds: number; more: number } | undefined;
@@ -236,6 +240,41 @@ function alongRay(
 
 export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
   /** One target, full damage — the floor the rest build on. */
+  /**
+   * ONE SPIKE, and everything standing round where it came up takes the whole
+   * hit. No falloff and no target cap: the radius IS the skill, so Area of
+   * Effect is what a build buys and the picture grows with it.
+   * params: { radius }
+   */
+  spike: (use) => {
+    const g = use.grants;
+    const castMultiplier = castScale(g, use.castIndex);
+    // THE MODE'S OWN TWO NUMBERS, read here so the cast that plants a standing
+    // spike is the same cast that lands harder and wider for it.
+    const stands = g.spikeStands as { seconds: number; radius: number; more: number } | undefined;
+    const scale = (e: Entity) =>
+      castMultiplier * targetScale(use, e) * (1 + (stands?.more ?? 0));
+    const radius =
+      use.areaRadius((use.skill.params?.radius as number) ?? 1.9) * (stands?.radius ?? 1);
+
+    for (const enemy of use.enemies) {
+      if (enemy.dead || !within(use.primary, enemy, radius)) continue;
+      use.hit(enemy, scale(enemy));
+      burstFrom(use, enemy, scale, true);
+    }
+
+    // Second point IS the radius, so the renderer draws the size the sim used,
+    // and a spike that STANDS is drawn for as long as it stands there.
+    use.vfx(
+      use.skill.vfxKind ?? 'spikes',
+      [
+        { x: use.primary.x, y: use.primary.y },
+        { x: use.primary.x + radius, y: use.primary.y },
+      ],
+      stands ? stands.seconds + num(g.spikeLonger, 0) : undefined
+    );
+  },
+
   single_target: (use) => {
     const castMultiplier = castScale(use.grants, use.castIndex);
     const scale = (e: Entity) => castMultiplier * targetScale(use, e);

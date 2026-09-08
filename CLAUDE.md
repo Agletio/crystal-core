@@ -1010,6 +1010,33 @@ whose mind has changed. The crafting people are never RESCUED: they live down th
 their own table, not scenes. **The one `plan` left is the ANSWERING HALL**, because a boss fight
 needs a floor with nothing on it.
 
+**RIMESPIKE IS AN AREA SKILL, AND RIMEFIELD IS THE ONE MODE SWITCH IN THE GAME.**
+*"Make rimespike a large aoe spike instead of single target + splash… it does an
+aoe hit that looks like one big spike raising up from the ground."* One blade up
+under the body it aimed at, everything within 1.9 tiles taking the WHOLE hit, and
+the picture is drawn at the radius the SIM used, so Area of Effect grows the
+blade. **RIMEFIELD TAKES THE CAST OFF YOUR RATE AND PUTS IT ON A COOLDOWN** —
+2.5s, 120% further, 100% more damage, and what it leaves STANDS for 3.5s,
+Chilling everything round it every 0.5s. **CLICKED ALONE IT IS A LOSS** — *"the
+idea is if you just click it then it should be worse than not"* — measured at
+band 4 over six crystal sets, 20% under a bare tree; what buys it back is Skill
+Cooldown, 48% OVER at the 84% a full set of the line rolls, against
+`STANDING.leastCooldown` of 0.15 set under that so stacking pays all the way.
+**AND WHAT THE CHILL IS FOR IS THE FREEZE.** Eight stacks freeze a body and
+nothing casts fast enough to reach that bar; the standing spike does. Measured
+over one band-5 descent: 1 Freeze on a bare tree, 9 walking Deepfreeze, 331 with
+the spike standing under it. HOARFROST is the third leg — *"the passive that
+shoots frost at targets that are chilled so that the aoe chill application can
+become a source of damage"* — 1.77 to 2.03 kills/s with the mode feeding it and
+nothing at all without one. **THE SPIKE'S CHILL GOES DOWN THE ONE-STACK PATH**:
+`applyAilment` is the CLOUD's and writes a Poison whatever type it is handed.
+
+**A BRANCH ENABLER'S OWN STAT LINES ARE ITS OWN, AND THE BUILDER DROPPED THEM.**
+`buildTree` copies a node a field at a time, so a field it forgets is a card
+printing a figure the sim never applies — six enablers across three trees shipped
+that way, Ambush's Edge and Footing among them. The demo holds every spec node's
+stats COUNT and grant KEYS against the built node now.
+
 **EVERY SINGLE-TARGET SKILL SPLASHES, AND IT IS BAKED IN.** *"The game revolves
 so much around aoe clearing and single target only being one small part of it,
 every skill should have at least a little AOE baked in. If we don't then

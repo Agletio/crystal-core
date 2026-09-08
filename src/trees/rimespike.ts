@@ -114,16 +114,27 @@ const BRANCHES: Branch[] = [
     minors: [COMMON[3], COMMON[4], COMMON[1], COMMON[4]],
   },
   {
+    /**
+     * THE ONE MODE SWITCH IN THE GAME. Rimespike stops being cast at your rate
+     * and becomes a COOLDOWN: bigger, harder, and what it leaves STANDS,
+     * Chilling everything round it while it does. Everything else in this tree
+     * makes the cast better; this changes what the cast IS, and a build taking
+     * it stops caring about cast speed and starts caring about Skill Cooldown
+     * and Area of Effect — which is the whole decision.
+     */
     id: 'field',
     theme: 'Rimefield',
     enabler: {
       id: 'rs_field',
       name: 'Rimefield',
       description:
-        'Every 4th Rimespike leaves a Cloud reaching 2 tiles where the spike ' +
-        'went in. It deals no damage: what it leaves is your Chill, at your ' +
-        'chance to apply it.',
-      grants: { fieldOnCast: { every: 4, radius: 2 }, manaMultiplier: 1.2 },
+        'Rimespike runs on a 2.5s cooldown, reaches 120% further, deals 100% ' +
+        'more damage, and the spike stands for 3.5s, Chilling everything round ' +
+        'it every 0.5s.',
+      grants: {
+        spikeStands: { seconds: 3.5, cooldown: 2.5, radius: 2.2, more: 1 },
+        manaMultiplier: 1.2,
+      },
     },
     twigs: [
       {
@@ -131,8 +142,8 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'rs_whiteout',
           name: 'Whiteout',
-          description: "Rimespike's Cloud covers 70% more ground.",
-          grants: { fieldRadius: 1.7 },
+          description: '+35% increased Area of Effect.',
+          stats: [stat('areaOfEffect', 'inc', 35)],
         },
       },
       {
@@ -140,8 +151,8 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'rs_frostfall',
           name: 'Frostfall',
-          description: 'Rimespike leaves a Cloud every 2nd cast instead of every 4th.',
-          grants: { fieldEvery: 0.5, manaMultiplier: 1.15 },
+          description: 'The spike stands 2s longer.',
+          grants: { spikeLonger: 2 },
         },
       },
       {
@@ -150,42 +161,45 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'rs_bloom',
           name: 'Bloom of Frost',
-          description: '+2 Clouds, on the two enemies nearest the one you hit.',
-          grants: { extraFields: 2, manaMultiplier: 1.15 },
+          description: 'The spike stands 2.5s longer, and +25% increased Area of Effect.',
+          grants: { spikeLonger: 2.5 },
+          stats: [stat('areaOfEffect', 'inc', 25)],
         },
       },
     ],
     minors: [COMMON[1], COMMON[0], COMMON[2], COMMON[1]],
   },
   {
-    // THE IDS ARE THE OLD WARD BRANCH'S: a save points at them. Life, armour
-    // and a resistance are gear's and the character's own web — a SKILL's tree
-    // buys what the skill does, and what Rimespike does is Splash.
+    // THE IDS ARE THE OLD WARD BRANCH'S: a save points at them. What a Chill
+    // ENDS in is the Freeze, and what fills the bar is the standing spike —
+    // eight stacks is out of reach of any cast rate, so this branch is what
+    // Rimefield's own Chill is FOR. It sells no chance of its own: that is
+    // Rime's, and a stat gated there cannot sit in another branch.
     id: 'ward',
-    theme: 'Spill',
+    theme: 'Freeze',
     enabler: {
       id: 'rs_ward',
-      name: 'Shatterfront',
-      description: 'Splash lands for 15% more of the hit.',
-      grants: { splashShare: 0.15 },
+      name: 'Deepfreeze',
+      description: 'A Freeze takes 2 fewer stacks of Chill.',
+      grants: { freezeSooner: 2 },
     },
     twigs: [
       {
         minors: 3,
         notable: {
           id: 'rs_frostplate',
-          name: 'Rimefield',
-          description: 'Splash is 40% wider.',
-          grants: { splashRadius: 1.4 },
+          name: 'Lockjaw',
+          description: 'A Freeze holds 60% longer.',
+          grants: { freezeLonger: 1.6 },
         },
       },
       {
         minors: 4,
         notable: {
           id: 'rs_stillness',
-          name: 'Deep Frost',
-          description: 'Splash lands for 25% more of the hit.',
-          grants: { splashShare: 0.25 },
+          name: 'Killing Cold',
+          description: 'Rimespike deals 45% more damage to Frozen enemies.',
+          grants: { moreVsFrozen: 0.45 },
         },
       },
       {
@@ -193,18 +207,13 @@ const BRANCHES: Branch[] = [
         forkFrom: { twig: 1, at: 2 },
         notable: {
           id: 'rs_wellspring',
-          name: 'Wellspring',
-          description: 'Splash lands for 20% more of the hit and is 25% wider.',
-          grants: { splashShare: 0.2, splashRadius: 1.25, manaMultiplier: 1.08 },
+          name: 'Everfrost',
+          description: 'A Freeze takes 2 fewer stacks of Chill and holds 40% longer.',
+          grants: { freezeSooner: 2, freezeLonger: 1.4 },
         },
       },
     ],
-    minors: [
-      COMMON[5],
-      { text: '+5% increased Cold Damage', stats: [stat('damage', 'inc', 5, ['cold'])] },
-      COMMON[5],
-      { text: '+8% increased Area of Effect', stats: [stat('areaOfEffect', 'inc', 8)] },
-    ],
+    minors: [COMMON[5], COMMON[0], COMMON[4], COMMON[0]],
   },
   {
     id: 'tempo',
@@ -362,8 +371,10 @@ export const RIMESPIKE_SPEC: TreeSpec = {
     ailmentMultiplier: 'rs_rime',
     ailmentDuration: 'rs_rime',
     // And a Cloud is nothing without one to leave.
-    fieldRadius: 'rs_field',
-    fieldEvery: 'rs_field',
-    extraFields: 'rs_field',
+    spikeLonger: 'rs_field',
+    // A Freeze is worth nothing to a build that never gets a body to the bar.
+    freezeSooner: 'rs_ward',
+    freezeLonger: 'rs_ward',
+    moreVsFrozen: 'rs_ward',
   },
 };

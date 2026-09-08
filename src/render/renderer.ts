@@ -1832,6 +1832,47 @@ export function fireSparks(at: Vec2, t: number): FirePixel[] {
  * node widening the reach by a quarter has to READ as a wider ring, which the
  * old fixed-size arc aimed at one target could never do.
  */
+/** THE LEAP, drawn as what it costs the ground: dust kicked at the foot it
+ *  left, a thin arc of the way it went, and dust where it comes down. The BODY
+ *  is lifted by the renderer off `Entity.hop`; this is only the ground's half. */
+export function leapArc(from: Vec2, to: Vec2, t: number): FirePixel[] {
+  const pixels: FirePixel[] = [];
+  const alpha = 1 - t;
+  const puff = (at: Vec2, spread: number, when: number): void => {
+    if (t < when) return;
+    const age = Math.min(1, (t - when) / 0.5);
+    for (let i = 0; i < 7; i++) {
+      const a = (i / 7) * Math.PI * 2;
+      const out = spread * (0.4 + age * 0.9);
+      pixels.push({
+        x: onGrid(at.x + Math.cos(a) * out),
+        y: onGrid(at.y + Math.sin(a) * out * 0.45),
+        size: FIRE_PX * 2,
+        shade: i % 2 ? 3 : 0,
+        alpha: alpha * (1 - age) * 0.8,
+      });
+    }
+  };
+  puff(from, 0.5, 0);
+  puff(to, 0.55, 0.45);
+
+  // The way it went, as a thin parabola that fades from the foot it left.
+  const span = Math.hypot(to.x - from.x, to.y - from.y);
+  const marks = Math.max(4, Math.round(span * 5));
+  for (let i = 0; i <= marks; i++) {
+    const along = i / marks;
+    if (along > Math.min(1, t * 2.2)) break;
+    pixels.push({
+      x: onGrid(from.x + (to.x - from.x) * along),
+      y: onGrid(from.y + (to.y - from.y) * along - Math.sin(along * Math.PI) * 1.15),
+      size: FIRE_PX,
+      shade: 1,
+      alpha: alpha * 0.5 * (1 - along * 0.6),
+    });
+  }
+  return pixels;
+}
+
 export function sweepRing(origin: Vec2, radius: number, t: number): FirePixel[] {
   const pixels: FirePixel[] = [];
   if (radius <= 0) return pixels;
@@ -1904,27 +1945,55 @@ export function pixelDisc(origin: Vec2, radius: number): FirePixel[] {
  * travelling to it — nothing here is in flight, and a bolt crossing the room
  * would say the opposite.
  */
-export function iceSpikes(at: Vec2, t: number): FirePixel[] {
-  const pixels: FirePixel[] = [];
-  const up = Math.min(1, t * 3); // they arrive fast and then stand and fade
-  const alpha = 1 - Math.max(0, (t - 0.35) / 0.65);
+const SPIKE_TTL = 0.3; // the cast's own, when nothing is standing
+const SPIKE_UP = 0.1; // seconds the blade takes to come up, however long it stands
+const SPIKE_GONE = 0.2; // and to sink back
 
-  for (let dx = -0.5; dx <= 0.5; dx += FIRE_PX * 2) { // a shadow row under the cluster, so the blades STAND
-    pixels.push({ x: onGrid(at.x + dx), y: onGrid(at.y + FIRE_PX), size: FIRE_PX * 2, shade: 3, alpha: alpha * 0.4 });
+/** ONE BLADE, sized off the RADIUS the sim used, so a build buying Area of
+ *  Effect watches it grow; the ring of shattered ground at the rim is what
+ *  says who was caught. */
+export function iceSpikes(at: Vec2, t: number, radius = 1, ttl = SPIKE_TTL): FirePixel[] {
+  const pixels: FirePixel[] = [];
+  // IN SECONDS, not in the fraction: a spike that STANDS for four is the same
+  // blade coming up at the same speed, held, and then going.
+  const secs = t * ttl;
+  const up = Math.min(1, secs / SPIKE_UP);
+  const alpha = 1 - Math.max(0, (secs - (ttl - SPIKE_GONE)) / SPIKE_GONE);
+  const tall = radius * 1.55 * up;
+  const wide = radius * 0.30;
+
+  // The ground it came up through, at the rim: the reach, drawn.
+  const ring = Math.max(6, Math.round(radius * 22));
+  for (let i = 0; i < ring; i++) {
+    const a = (i / ring) * Math.PI * 2;
+    const noise = tileNoise(i, Math.round(at.x * 16 + at.y * 32), 31);
+    const out = radius * (0.86 + noise * 0.18);
+    pixels.push({
+      x: onGrid(at.x + Math.cos(a) * out),
+      y: onGrid(at.y + Math.sin(a) * out * 0.6),
+      size: FIRE_PX * 2,
+      shade: noise > 0.6 ? 0 : 3,
+      alpha: alpha * 0.7,
+    });
   }
-  for (let i = 0; i < 5; i++) { // a fifth of a tile apart; at an eighth they merge
-    const noise = tileNoise(i, Math.round(at.x * 16 + at.y * 32), 29);
-    const lean = (i - 2) * 0.2 + (noise - 0.5) * 0.06;
-    const tall = (0.8 - Math.abs(i - 2) * 0.17) * (0.7 + noise * 0.5) * up;
-    const foot = at.x + lean * 0.9;
-    for (let step = 0; step * FIRE_PX < tall; step++) {
-      const along = (step * FIRE_PX) / Math.max(tall, 1e-3);
+
+  // A shadow under the foot, so the blade STANDS rather than floating.
+  for (let dx = -wide; dx <= wide; dx += FIRE_PX * 2) {
+    pixels.push({ x: onGrid(at.x + dx), y: onGrid(at.y + FIRE_PX), size: FIRE_PX * 2, shade: 3, alpha: alpha * 0.45 });
+  }
+
+  // THE BLADE: a column that tapers to a point, widest at the root.
+  for (let step = 0; step * FIRE_PX < tall; step++) {
+    const along = (step * FIRE_PX) / Math.max(tall, 1e-3);
+    const half = wide * (1 - along) ** 0.7;
+    for (let dx = -half; dx <= half; dx += FIRE_PX) {
+      const edge = Math.abs(dx) > half - FIRE_PX * 1.5;
       pixels.push({
-        x: onGrid(foot + lean * along * 0.35),
+        x: onGrid(at.x + dx + along * radius * 0.06),
         y: onGrid(at.y - step * FIRE_PX),
-        size: FIRE_PX * (along > 0.7 ? 1 : along > 0.35 ? 2 : 3), // a blade tapers toward its point
-        // DARK at the root, the type's colour up the body, white only at the tip.
-        shade: along > 0.78 ? 2 : along > 0.45 ? 1 : along > 0.2 ? 0 : 3,
+        size: FIRE_PX * (along > 0.8 ? 1 : 2),
+        // DARK at the root, the type's colour up the body, white at the tip.
+        shade: along > 0.82 ? 2 : edge ? 3 : along > 0.4 ? 1 : 0,
         alpha,
       });
     }

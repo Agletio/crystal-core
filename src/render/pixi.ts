@@ -37,6 +37,7 @@ import {
   lightningArc,
   coneWedge,
   iceSpikes,
+  leapArc,
   sweepRing,
   fireBurst,
   fireShades,
@@ -112,7 +113,7 @@ import {
 } from '../vignettes';
 import { GENERATED } from './generated-art';
 import type { MonsterRank } from './bestiary';
-import { SKILL_BY_ID } from '../data';
+import { MOVE, SKILL_BY_ID } from '../data';
 
 /** How far past the grid the rock is drawn, so a chamber near the boundary
  *  does not end on a straight lit line with nothing past it. */
@@ -935,10 +936,20 @@ export async function createPixiRenderer(
     }
     if (e.action === 'hurt') lunge = -0.12;
 
-    s.x = cx(e.x) + Math.cos(e.facing) * lunge;
+    // MID-JUMP the body is drawn back along the way it came and lifted off the
+    // ground, so a leap reads as one; the sim already has it at the landing.
+    let hopX = 0;
+    let hopY = 0;
+    if (e.hop && e.hop.total > 0) {
+      const through = Math.min(1, Math.max(0, 1 - e.hop.left / e.hop.total));
+      hopX = (e.hop.fx - e.x) * (1 - through);
+      hopY = (e.hop.fy - e.y) * (1 - through) - Math.sin(through * Math.PI) * MOVE.hopHeight;
+    }
+
+    s.x = cx(e.x) + Math.cos(e.facing) * lunge + hopX;
     // Down into the hole, not simply away: a figure that only faded would read
     // as a bug rather than as a climb.
-    s.y = cy(e.y) + Math.sin(e.facing) * lunge + sunk * 0.8;
+    s.y = cy(e.y) + Math.sin(e.facing) * lunge + sunk * 0.8 + hopY;
 
     // A bob under the frames, for a body with no walk of its own: a creature
     // has a frame per step and bobs on every one.
@@ -1370,10 +1381,15 @@ export async function createPixiRenderer(
         continue;
       }
 
-      // THREE points, and the last two are the wedge's own rim corners.
+      if (fx.kind === 'leap') {
+        blocks(leapArc(from, to, t), fx.damageType, 1);
+        continue;
+      }
+
       if (fx.kind === 'spikes') {
-        // At the TARGET: the second point is where they came up, not a path.
-        blocks(iceSpikes(to, t), fx.damageType, 1);
+        // FIRST point is where it came up; the second carries the radius, the
+        // same contract the burst and the sweep are drawn under.
+        blocks(iceSpikes(from, t, Math.hypot(to.x - from.x, to.y - from.y), fx.ttl), fx.damageType, 1);
         continue;
       }
 

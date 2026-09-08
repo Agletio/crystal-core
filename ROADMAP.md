@@ -49,6 +49,16 @@ judgement. Phase 3 is PARKED and is not the
 lowest-numbered thing to take. Everything after them is a parked phase, the
 traps, and questions only the user can answer.
 
+**RIMESPIKE IS AN AREA SKILL AND RIMEFIELD IS ITS MODE** — his own design,
+taken ahead of the numbered order. One blade up under the body it aimed at
+striking everything within 1.9 tiles, and the ex-Ward branch is a FREEZE branch
+rather than the Projectile vocabulary an area skill cannot use. The mode is a
+LOSS clicked alone and a gain stacked with Skill Cooldown and Hoarfrost, all
+three measured; the whole of it is in `CLAUDE.md`. Two faults it turned up: the
+tree builder was dropping every branch enabler's own stat lines (six of them,
+across three trees), and the standing spike was applying Chills down
+`applyAilment`, which writes a Poison whatever type it is handed.
+
 **THE MEETINGS ARE ONE QUEUE, AND A TALE IS WHAT MOVES IT** — his own design,
 taken ahead of the numbered order. Everybody found down there is in `MEETINGS`,
 ordered by zone and then by the depth each names: the Lampwright at 2, the
@@ -1498,28 +1508,40 @@ stops a kiting mover being dead weight on a floor you are clearing well: it is
 still your travel speed there.
 
 - [ ] **BLINK KITES.** In a fight it fires when something is in reach AND has
-      landed a hit recently, so it stays quiet while you are winning. Legal
-      under *"nothing keys off where the hero stands"* — it keys off BEING HIT,
-      which is a fact about the fight rather than about position. Its big node
-      Slows around where it LEFT rather than where it lands, which is what makes
-      it a kite rather than a second walk.
-- [ ] **LEAP DIVES.** In a fight it fires off cooldown onto the pack. Its big
-      node Slows the attack speed of what it lands ON.
-- [ ] **A THIRD MOVER, replacing nothing.** *"Make the speed tied to the charges
-      instead. % move speed per charge, lose charges when hit."* The charges ARE
-      the skill: move speed per charge held, one lost per hit taken. Its
-      notables move that one dial — more speed per charge, a heal when one
-      drops, extra charges, or charges that are not removed at all with
-      everything weaker for it.
+      landed a hit recently, and it steps AWAY rather than along the path.
+      Legal under *"nothing keys off where the hero stands"* — it keys off BEING
+      HIT, which is a fact about the fight rather than about position. Its
+      WAKE branch Slows around where it LEFT rather than where it lands, which
+      is what makes it a kite rather than a second walk.
+- [ ] **LEAP DIVES.** In a fight it fires off cooldown at what you are fighting
+      and comes down on it. Its IMPACT branch Slows what it landed on, where
+      Tremor Slows the ring — one Slow seam, two shapes.
+- [ ] **A THIRD MOVER, replacing nothing: SURGE.** *"Make the speed tied to the
+      charges instead. % move speed per charge, lose charges when hit."* It
+      never teleports: three charges, movement speed for each one held, one lost
+      to anything that lands a hit and one back on a timer — so out of a fight
+      you are quick and in one you are as quick as you are untouched. Its six
+      branches are the one dial: what a charge is worth (speed, haste, damage),
+      what it guards, what dropping one pays back, how many you hold, how fast
+      they return, and ANCHORED — a hit takes none and every charge is worth
+      40% less. **Its icon is the shelf's fallback**, because the generator's
+      allowance is spent until 2026-09-13 and art is never hand-written.
 - [ ] **THE WEBS BECOME REAL TREES.** *"Movement skill trees should just
-      function exactly like skills, 30 points max level 30."* So Blink and Leap
-      are rewritten as `TreeSpec`s through `buildTree` — six branches, six trunk
-      notables, a ring of 12 — and `MOVE_POINTS`, `MOVE_SKILLS`,
-      `pointCapFor`'s special case and the bespoke `src/moves/layout.ts` all go.
-      Small nodes are the mover's own: cooldown, move speed after a use, regen
-      for a few seconds after one. **Stats that last a few seconds after the
-      skill is used are fine here** and are what tells these trees apart from a
-      damage skill's.
+      function exactly like skills, 30 points max level 30."* Three `TreeSpec`s
+      through `buildTree` — six branches, six trunk notables, a ring of 12 — and
+      `MOVE_POINTS`, `MOVE_SKILLS`, `pointCapFor`'s special case, the bespoke
+      `src/moves/layout.ts` and `src/moves/spec.ts` all go, along with the
+      demo's whole MOVEMENT WEBS section: they are trees, so THE WEB checks
+      them. The nine old node ids that a save points at are kept.
+- [ ] **A WINDOW AFTER A USE IS THE MOVERS' OWN VOCABULARY.** *"Stats in the
+      movement skills is fine as something you get for a few seconds after the
+      skill's used."* Four seams and no more, each read in exactly one place:
+      speed (`paceOf`), damage (`dealDamage`'s scale), damage taken, and
+      regeneration. Every "for Ns after" notable in all three trees is one of
+      those four with a different number.
+- [ ] **AND THE EIGHT MAIN SKILLS ARE MEASURED AGAIN AFTER IT.** A mover that
+      kites or dives changes how much of a floor reaches you, so the bare-skill
+      gauge and the deep-end one both move.
 
 ---
 
