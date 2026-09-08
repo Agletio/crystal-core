@@ -2081,6 +2081,22 @@ export function coneWedge(origin: Vec2, left: Vec2, right: Vec2, t: number): Fir
  * a grid like `BALL`, because a shard has to POINT and a rotated grid does
  * not — which is the whole of what tells it apart from a fireball at speed.
  */
+/** How wide a flying shard is drawn, in tiles. */
+export const SHARD_SPAN = 0.5;
+
+/** WHERE A SHARD IS and which way it points, so the sprite Pixi draws and the
+ *  blocks canvas2d draws are one answer. Its art is point-UP, so the quarter
+ *  turn is the drawing's and belongs here rather than at the call. */
+export function shardFlight(from: Vec2, to: Vec2, t: number): Flight {
+  const travel = Math.min(1, t * 1.9);
+  return {
+    x: from.x + (to.x - from.x) * travel,
+    y: from.y + (to.y - from.y) * travel,
+    angle: Math.atan2(to.y - from.y, to.x - from.x) + Math.PI / 2,
+    alpha: Math.max(0, 1 - t),
+  };
+}
+
 export function frostShard(from: Vec2, to: Vec2, t: number): FirePixel[] {
   const travel = Math.min(1, t * 1.9);
   const dx = to.x - from.x;

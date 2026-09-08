@@ -33,7 +33,8 @@ import {
   burstRadius,
   clampOffset,
   fireBolt,
-  frostShard,
+  shardFlight,
+  SHARD_SPAN,
   lightningArc,
   coneWedge,
   iceSpikes,
@@ -1444,8 +1445,20 @@ export async function createPixiRenderer(
         continue;
       }
 
+      // A SHARD OF ICE, and the picture is the whole of it: both things that
+      // throw one throw COLD, so there is no damage type for blocks to carry
+      // that the art does not already say.
       if (fx.kind === 'shard') {
-        blocks(frostShard(from, to, t), fx.damageType, 1);
+        const flight = shardFlight(from, to, t);
+        const texture = flight.alpha > 0 ? vfxTexture('shard') : null;
+        if (texture) {
+          const s = effectSprite(texture, SHARD_SPAN);
+          s.anchor.set(0.5, 0.5);
+          s.rotation = flight.angle;
+          s.x = cx(flight.x);
+          s.y = cy(flight.y);
+          s.alpha = flight.alpha;
+        }
         continue;
       }
 
