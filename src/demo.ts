@@ -3392,7 +3392,7 @@ rule('WHAT A MONSTER LEAVES — is it felt, and is it answerable?');
         pinned(band, 70 + i),
         new Rng(800 + i)
       );
-      sim.state.hero.stats.ailmentWard = ward;
+      for (const t of DAMAGE_TYPES) sim.state.hero.stats.ailmentWard[t.id] = ward;
       if (runToCompletion(sim, 900).status === 'cleared') cleared++;
       taken += Object.values(sim.state.damageTaken).reduce((n, v) => n + v, 0);
     }
@@ -3428,17 +3428,39 @@ rule('WHAT A MONSTER LEAVES — is it felt, and is it answerable?');
     rows.map((r) => `${Math.round(r.immune.taken)} < ${Math.round(r.bare.taken)}`).join(', ')
   );
 
-  // IT TAKES FOUR LINES, which is the whole shape of the decision: one is a
-  // quarter of the way and never a box ticked, four is immunity and leaves the
-  // resistances their own slots.
-  const ward = ALL_MODS.find((m) => m.id === 'ailment_ward');
-  const best = ward?.tiers[0].stats[0].range[1] ?? 0;
-  const lines = Math.ceil(DEFENCE.ailmentWardCap / Math.max(1, best));
-  line(`  the best roll is ${best}%, so immunity is ${lines} lines of it`);
+  // THE SHAPE OF THE DECISION, and it is the resistances' own: a SINGLE line
+  // rolls high enough that one perfect roll ends that one Ailment, a GROUP line
+  // rolls low enough to want two perfect or three decent for the whole group.
+  const cap = DEFENCE.ailmentWardCap;
+  const rung = (id: string): [number, number] => {
+    const def = ALL_MODS.find((m) => m.id === id);
+    const top = def?.tiers[0].stats[0].range ?? [0, 0];
+    return [top[0], top[1]];
+  };
+  const [singleLow, singleTop] = rung('fire_inurement');
+  const [groupLow, groupTop] = rung('elemental_inurement');
+  line(
+    `  a perfect single rolls ${singleTop}% and a perfect group ${groupTop}%: ` +
+      `${Math.ceil(cap / Math.max(1, singleTop))} line ends one Ailment, ` +
+      `${Math.ceil(cap / Math.max(1, groupTop))} end a whole group`
+  );
   check(
-    lines >= 3 && lines <= 5,
-    'and immunity costs FOUR lines or so — never one, never every slot you own',
-    `${lines} lines at ${best}% each`
+    singleTop >= cap && singleLow < cap,
+    'ONE perfect single-Ailment roll is immunity to that one, and a middling one is not',
+    `${singleLow}–${singleTop}% against a cap of ${cap}`
+  );
+  check(
+    Math.ceil(cap / Math.max(1, groupTop)) === 2 && Math.ceil(cap / Math.max(1, groupLow)) === 3,
+    'and a GROUP takes two perfect rolls, or three at the bottom of the same tier',
+    `${groupLow}–${groupTop}% against a cap of ${cap}`
+  );
+  // DERIVED off the Ailment table, so a new Ailment is a row and not a list to
+  // keep in step: every one of them has a line that answers it by name.
+  const missing = AILMENTS.filter((ail) => !ALL_MODS.some((m) => m.id === `${ail.type}_inurement`));
+  check(
+    missing.length === 0,
+    'and every Ailment in the game has a line naming it, because the family is derived',
+    missing.map((a2) => a2.id).join(', ')
   );
 
   // A FREEZE IS SOMETHING YOU DO. Nothing hero-side reads a hold, so laying one

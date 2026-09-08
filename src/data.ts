@@ -1418,22 +1418,6 @@ export const GEAR_UTILITY_MODS: ModDef[] = [
     ],
   },
   {
-    /** THE ANSWER TO WHAT A MONSTER LEAVES, and it is meant to take FOUR lines.
-     *  One is a quarter of the way at the best tier, so it is a decision rather
-     *  than a box ticked; four is immunity, which is four of the thirty-odd
-     *  lines a full set holds and leaves the resistances their room. */
-    id: 'ailment_ward',
-    slot: 'defence',
-    name: 'of Inurement',
-    appliesTo: ['gear'],
-    tags: ['ailment', 'defence'],
-    tiers: [
-      { ilvl: 60, weight: 90, stats: [{ stat: 'ailmentWard', form: 'flat', range: [20, 25] }] },
-      { ilvl: 30, weight: 160, stats: [{ stat: 'ailmentWard', form: 'flat', range: [12, 18] }] },
-      { ilvl: 1, weight: 240, stats: [{ stat: 'ailmentWard', form: 'flat', range: [6, 11] }] },
-    ],
-  },
-  {
     /** THE ONLY ROLLED LEECH, and a WEAPON'S — the one slot a build has exactly
      *  one of, so sustain is what is in your hand rather than a line six pieces
      *  could each carry. `appliesTo` names the KIND, derived off the base. */
@@ -1706,6 +1690,43 @@ const TYPED_DAMAGE_MODS: ModDef[] = DAMAGE_TYPES.flatMap((type) => [
   },
 ]);
 
+/**
+ * WHAT ANSWERS WHAT A MONSTER LEAVES, and it is the resistances' own shape: a
+ * SINGLE line rolls high enough that one perfect roll is immunity to that one
+ * Ailment, a GROUP line rolls lower so two perfect rolls or three decent ones
+ * cover the whole group. Derived off the Ailment table, so a new one is a row.
+ */
+const AILMENT_WARD_MODS: ModDef[] = [
+  ...AILMENTS.map((ail) => ({
+    id: `${ail.type}_inurement`,
+    slot: 'defence' as const,
+    name: `of ${ail.name} Inurement`,
+    appliesTo: ['gear'],
+    tags: [
+      'ailment',
+      ail.type,
+      ...(DAMAGE_TYPE_BY_ID[ail.type]?.group ? [DAMAGE_TYPE_BY_ID[ail.type].group as string] : []),
+    ],
+    tiers: [
+      { ilvl: 60, weight: 70, stats: [{ stat: `${ail.type}Ail`, form: 'flat' as const, range: [85, 100] as [number, number] }] },
+      { ilvl: 30, weight: 130, stats: [{ stat: `${ail.type}Ail`, form: 'flat' as const, range: [66, 82] as [number, number] }] },
+      { ilvl: 1, weight: 200, stats: [{ stat: `${ail.type}Ail`, form: 'flat' as const, range: [50, 64] as [number, number] }] },
+    ],
+  })),
+  ...DAMAGE_GROUPS.map((group) => ({
+    id: `${group}_inurement`,
+    slot: 'defence' as const,
+    name: group === 'elemental' ? 'of the Unburnt' : 'of the Unmarred',
+    appliesTo: ['gear'],
+    tags: ['ailment', group],
+    tiers: [
+      { ilvl: 60, weight: 50, stats: [{ stat: `${group}Ail`, form: 'flat' as const, range: [36, 50] as [number, number] }] },
+      { ilvl: 30, weight: 90, stats: [{ stat: `${group}Ail`, form: 'flat' as const, range: [20, 32] as [number, number] }] },
+      { ilvl: 1, weight: 140, stats: [{ stat: `${group}Ail`, form: 'flat' as const, range: [10, 18] as [number, number] }] },
+    ],
+  })),
+] as ModDef[];
+
 /** Single-type resistances roll high; group resistances roll low but wide. */
 const RESISTANCE_MODS: ModDef[] = [
   ...DAMAGE_TYPES.map((type) => ({
@@ -1885,6 +1906,7 @@ export const GEAR_MODS: ModDef[] = [
   ...DELIVERY_DAMAGE_MODS,
   ...AILMENT_MODS,
   ...RESISTANCE_MODS,
+  ...AILMENT_WARD_MODS,
 ];
 
 /** What somebody will write over a base's own line. Never rolled — weight 0 —

@@ -3314,7 +3314,13 @@ export class RunSim {
     }
     // EXPOSURE changes a HIT rather than ticking: more damage taken, from anyone.
     const exposed = stacksOf(defender, 'exposure');
-    if (exposed > 0) scale *= 1 + (exposed * (AILMENT_BY_ID.exposure?.takenPer ?? 0) * this.weak()) / 100;
+    if (exposed > 0) {
+      const worth =
+        defender.kind === 'hero'
+          ? this.hide(defender, AILMENT_BY_ID.exposure?.type ?? 'light')
+          : this.weak();
+      scale *= 1 + (exposed * (AILMENT_BY_ID.exposure?.takenPer ?? 0) * worth) / 100;
+    }
     // A flask that blunts what reaches you. The window is the trade.
     if (defender.kind === 'hero' && this.flasked()) {
       scale *= 1 - Math.min(0.8, (this.grants.potionLess as number) ?? 0);
@@ -3736,7 +3742,9 @@ export class RunSim {
    *  place a swing rate is multiplied, so there is no second slow. */
   private chill(target: Entity, def: AilmentDef): void {
     const stacks = stacksOf(target, 'chill');
-    target.slowed = Math.min(0.75, (stacks * (def.slowPer ?? 0) * this.weak()) / 100);
+    // `weak()` is the HERO'S own, so it reaches a monster alone.
+    const worth = target.kind === 'hero' ? this.hide(target, def.type) : this.weak();
+    target.slowed = Math.min(0.75, (stacks * (def.slowPer ?? 0) * worth) / 100);
     const live = target.effects.find((x) => x.id === SLOWED);
     if (live) live.remaining = Math.max(live.remaining, def.seconds);
     else target.effects.push({ id: SLOWED, remaining: def.seconds });
@@ -3972,7 +3980,7 @@ export class RunSim {
       // threaten a build no hit can get through.
       for (const [type, dps] of Object.entries(ailment.dps)) {
         // SECOND SKIN: the one thing that puts Armour in front of an Ailment.
-        const dealt = this.afterResistance(e, dps * scale, type) * this.hide(e);
+        const dealt = this.afterResistance(e, dps * scale, type) * this.hide(e, ailment.type);
         total += dealt;
         ticked[ailment.id] = (ticked[ailment.id] ?? 0) + dealt;
         if (e.kind === 'hero') byType[type] = (byType[type] ?? 0) + dealt;
@@ -4121,11 +4129,11 @@ export class RunSim {
 
   /** What an AILMENT is multiplied by into this body: 1 for every build but
    *  the one that bought Armour a say over them. */
-  private hide(e: Entity): number {
+  private hide(e: Entity, type: string): number {
     if (e.kind !== 'hero') return 1;
-    // WHAT THE GEAR BOUGHT. Capped in `heroStats`, so no pile of lines can
-    // turn an Ailment into a heal.
-    let left = 1 - Math.min(DEFENCE.ailmentWardCap, e.stats.ailmentWard) / 100;
+    // WHAT THE GEAR BOUGHT for THIS type, own line plus its group, capped in
+    // `heroStats` so no pile of lines can turn an Ailment into a heal.
+    let left = 1 - (e.stats.ailmentWard?.[type] ?? 0) / 100;
     // SECOND SKIN: the one thing that puts Armour in front of an Ailment.
     const share = Math.min(WARRIOR.secondSkinCap, (this.grants.secondSkin as number) ?? 0);
     if (share > 0) left *= 1 - (e.stats.armourReduction / 100) * share;

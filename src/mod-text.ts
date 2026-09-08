@@ -5,6 +5,7 @@
  */
 import {
   AILMENT_BY_ID,
+  AILMENT_OF_TYPE,
   AILMENTS,
   ADDED_DAMAGE_TYPES,
   DAMAGE_TYPES,
@@ -38,7 +39,6 @@ const NAMED: Record<string, string> = {
   moveSpeed: 'Movement Speed',
   cooldown: 'Skill Cooldown',
   lifeLeech: 'of Attack Damage Leeched as Life',
-  ailmentWard: 'reduced Effect of Ailments on you',
   attackRange: 'Attack Range',
   rarity: 'Rarity',
   currencyFind: 'Currency Find',
@@ -91,11 +91,22 @@ function resistancePrefix(stat: string): string | null {
   return TAG_WORDS[key] ?? titled(key);
 }
 
+/** `fireAil` → Burn, `elementalAil` → Elemental Ailments. Null when it is not
+ *  one — the Ailment's own NAME for a type, since that is the word a player
+ *  reads on the debuff, and the group's for a group. */
+function ailmentPrefix(stat: string): string | null {
+  if (!stat.endsWith('Ail')) return null;
+  const key = stat.slice(0, -3);
+  const own = AILMENT_OF_TYPE[key];
+  return own ? own.name : `${TAG_WORDS[key] ?? titled(key)} Ailments`;
+}
+
 /** Stats whose FLAT form is a PERCENTAGE. "+8 Chance to apply Bleed" is eight
  *  of nothing, and so is every chance beside it. */
 const FLAT_PERCENT = new Set([
   'ailmentChance',
-  'ailmentWard',
+  ...DAMAGE_TYPES.map((t) => `${t.id}Ail`),
+  ...DAMAGE_GROUPS.map((g) => `${g}Ail`),
   'critChance',
   'blockChance',
   'dodgeChance',
@@ -113,6 +124,9 @@ export function statLabel(stat: string): string {
   const res = resistancePrefix(stat);
   if (res) return `${res} Resistance`;
 
+  const ail = ailmentPrefix(stat);
+  if (ail) return `reduced Effect of ${ail}`;
+
   return stat
     .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
     .replace(/^./, (c) => c.toUpperCase());
@@ -124,8 +138,8 @@ export function statLabel(stat: string): string {
  */
 export function qualify(stat: string, tags: string[] = []): string {
   const base = statLabel(stat);
-  // A resistance already names its type; tagging it again would stutter.
-  if (resistancePrefix(stat)) return base;
+  // A resistance and a ward already name their type; tagging it would stutter.
+  if (resistancePrefix(stat) || ailmentPrefix(stat)) return base;
 
   // A LEVEL reads as the thing it is a level OF, so the tag lands inside the
   // phrase rather than in front of it: "Level of Attack Skills".
@@ -158,7 +172,10 @@ export interface StatParts {
 
 /** Stats whose LABEL already says which way the number goes, so a leading `+`
  *  would say it twice and say it wrong: "+22% reduced Effect of Ailments". */
-const SIGNLESS = new Set(['ailmentWard']);
+const SIGNLESS = new Set([
+  ...DAMAGE_TYPES.map((t) => `${t.id}Ail`),
+  ...DAMAGE_GROUPS.map((g) => `${g}Ail`),
+]);
 
 export function statParts(line: StatRoll): StatParts {
   const sign = line.value >= 0 && !SIGNLESS.has(line.stat) ? '+' : '';

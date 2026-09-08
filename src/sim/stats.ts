@@ -88,8 +88,8 @@ export interface CombatStats {
   cooldown: number;
   /** PERCENT of damage dealt returning as life, summed with the grant's. */
   lifeLeech: number;
-  /** Percent OFF every Ailment ticking on you, capped where it is nothing. */
-  ailmentWard: number;
+  /** Percent OFF an Ailment of that TYPE, capped where it is nothing at all. */
+  ailmentWard: Record<string, number>;
   /** Gear-side reward stats. Added to whatever the crystal already grants. */
   rarity: number;
   currencyFind: number;
@@ -103,6 +103,19 @@ export function armourReduction(armour: number): number {
   if (armour <= 0) return 0;
   const raw = (100 * armour) / (armour + DEFENCE.armourHalfPoint);
   return Math.min(DEFENCE.armourCap, raw);
+}
+
+/** THE SAME SHAPE AS A RESISTANCE, own plus group, and capped where the Ailment
+ *  does nothing at all. Keyed by the TYPE, because that is what the sim holds
+ *  wherever an Ailment does something. */
+export function ailmentWardsFrom(mods: RolledMod[]): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const type of DAMAGE_TYPES) {
+    const own = computeStat(0, mods, `${type.id}Ail`);
+    const group = type.group ? computeStat(0, mods, `${type.group}Ail`) : 0;
+    out[type.id] = Math.min(DEFENCE.ailmentWardCap, own + group);
+  }
+  return out;
 }
 
 /** Own plus group, capped. Typeless is absent: nothing resists it. */
@@ -415,7 +428,7 @@ export function heroStats(
     // NEGATIVE, like Mana Cost, so a reduction is what a bigger roll is.
     cooldown: -percentStat(mods, 'cooldown'),
     lifeLeech: percentStat(mods, 'lifeLeech'),
-    ailmentWard: Math.min(DEFENCE.ailmentWardCap, percentStat(mods, 'ailmentWard')),
+    ailmentWard: ailmentWardsFrom(mods),
     rarity: percentStat(mods, 'rarity'),
     currencyFind: percentStat(mods, 'currencyFind'),
     ailmentDps: ailmentDamage(mods, skill),
@@ -974,7 +987,7 @@ export function monsterStats(
     areaOfEffect: 0,
     cooldown: 0,
     lifeLeech: 0,
-    ailmentWard: 0,
+    ailmentWard: {},
     rarity: 0,
     currencyFind: 0,
     ailmentDps: {},
