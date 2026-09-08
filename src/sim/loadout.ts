@@ -23,7 +23,7 @@ import {
   TOOL_BY_ID,
   toolBaseId,
 } from '../data';
-import { characterStats, damageDetail } from './stats';
+import { characterStats, damageDetail, treeGrants } from './stats';
 import { choices, chooseMod } from '../crafting';
 import { defaultGearBase, makeGear, rollCrystal, rollGear } from '../economy';
 import { runSet } from './crystal';
@@ -197,11 +197,14 @@ export function buildPower(character: Character): number {
   const dps = damageDetail(character).perSecond;
   const res = Object.values(stats.resistances);
   const soak = res.length ? res.reduce((a, b) => a + b, 0) / res.length / 100 : 0;
+  // Half of a passive's trade, or Glass reads as free damage. `damageScale`
+  const taken = (treeGrants(character).takenScale as number) ?? 1; // is on the sheet
   const through =
     (1 - stats.armourReduction / 100) *
     (1 - stats.dodgeChance / 100) *
     (1 - stats.blockChance / 100) *
-    (1 - soak);
+    (1 - soak) *
+    taken;
   return Math.sqrt(dps * (stats.maxLife / Math.max(0.05, through)));
 }
 

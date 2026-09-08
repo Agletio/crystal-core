@@ -1537,11 +1537,9 @@ only adds is a passive every build takes.
       carries an Ailment** (`applyTyped` returns unless the attacker is the
       hero), so Ironclad, Stoneskin and Warding were all answering something
       that never happens, and Ironclad became Bulwark's hit ceiling instead.
-- [ ] **`secondSkin` IS DEAD CONTENT and it SHIPS.** The Warrior's tree sells
-      "part of your Armour blunts Ailments too" and the hero has never carried
-      one. Either a monster's hit gets to leave an Ailment — which the sim
-      refuses on purpose, being a second unweighed difficulty source — or the
-      node buys something else. His call, not a repair to make quietly.
+- [x] **`secondSkin` WAS DEAD CONTENT, and his answer was to make it live.**
+      *"Mobs should begin to apply ailments."* Landed with the gear line that
+      answers it — both in `CLAUDE.md`.
 - [ ] **AND THE THREE SLOTS ARE MEASURED AFTER IT.** The ceiling picks passives;
       eight more candidates move what it picks, so the deep-end gauge shifts.
 

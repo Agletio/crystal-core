@@ -88,6 +88,8 @@ export interface CombatStats {
   cooldown: number;
   /** PERCENT of damage dealt returning as life, summed with the grant's. */
   lifeLeech: number;
+  /** Percent OFF every Ailment ticking on you, capped where it is nothing. */
+  ailmentWard: number;
   /** Gear-side reward stats. Added to whatever the crystal already grants. */
   rarity: number;
   currencyFind: number;
@@ -366,6 +368,9 @@ export function heroStats(
       steps.push({ label: matched ? 'A Matched Pair' : 'An Odd Pair', value: 1 + suited / 100 });
     }
   }
+  // A PASSIVE'S FLAT MULTIPLIER IS A SHEET NUMBER: what the card promises, what
+  const passive = (grants.damageScale as number) ?? 1; // buildPower weighs, what the sim swings
+  if (passive !== 1) steps.push({ label: 'Passive', value: passive });
   const breakdown = damageBreakdown(mods, level, skill, grants, steps);
   // Bare to the rock. `characterStats` is what stops counting the rating.
   const bare = typeof grants.bareChest === 'number' ? grants.bareChest : 0;
@@ -410,6 +415,7 @@ export function heroStats(
     // NEGATIVE, like Mana Cost, so a reduction is what a bigger roll is.
     cooldown: -percentStat(mods, 'cooldown'),
     lifeLeech: percentStat(mods, 'lifeLeech'),
+    ailmentWard: Math.min(DEFENCE.ailmentWardCap, percentStat(mods, 'ailmentWard')),
     rarity: percentStat(mods, 'rarity'),
     currencyFind: percentStat(mods, 'currencyFind'),
     ailmentDps: ailmentDamage(mods, skill),
@@ -968,6 +974,7 @@ export function monsterStats(
     areaOfEffect: 0,
     cooldown: 0,
     lifeLeech: 0,
+    ailmentWard: 0,
     rarity: 0,
     currencyFind: 0,
     ailmentDps: {},

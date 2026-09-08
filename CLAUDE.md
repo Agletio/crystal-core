@@ -1250,9 +1250,32 @@ OWN tags and nothing else, so Spell, Attack and Critical never reach one, and
 crit is out of them in both directions — it comes back only as the guaranteed
 Critical on a body thawing out of a Freeze. **A MARK'S SIZE IS IN TILES AND
 NEVER THE BODY'S** (`MARK_R`): keyed off `scale`, a boss wore a slab of sky
-blue where a beetle wore a speck. **Ailments are the HERO'S**: a
-monster's difficulty is what a crystal rolls, and a second unweighed source is
-one no danger number accounts for.
+blue where a beetle wore a speck.
+
+**A MONSTER'S HIT LEAVES ONE TOO, AND IT IS A SHARE OF THAT HIT.** *"Mobs should
+begin to apply ailments."* `MONSTER_AILMENT` is 30% of the hits that land on you,
+each leaving one stack of the Ailment of whichever half of the hit landed
+hardest, worth 1.2 of that hit over its own run. **Riding the hit is the whole of
+what keeps it inside the danger already priced** — a flat dps would be 26 a
+second at the bare Fissure and 26 at the bottom of The Rot, which is the
+unweighed second source the old rule was written against, and it is why there is
+no `DANGER_STATS` row for it. Measured on a floor build: 32% on top of what
+reaches you at band 1 and 22% at band 5, the same share of the fight at both
+ends. **A FREEZE IS STILL SOMETHING YOU DO** — nothing hero-side reads a hold, so
+a Chill on him slows and never Freezes, which would be a wall with no answer.
+
+**AND THE ANSWER IS ON GEAR, AND IT TAKES FOUR LINES.** *"A way to get ailment
+immunity on gear by getting % reduced effect of ailments where 100% means they
+do nothing. But I don't want it to be like a 1 mod thing you get and don't think
+about, and I don't want it to be impossible where you have to get it on 500
+pieces of gear and can't get resistances."* `ailmentWard`, rolled by
+`ailment_ward` at 6–11 / 12–18 / 20–25 by tier: one best-tier line is a quarter
+of the way, four is `DEFENCE.ailmentWardCap` and they do nothing at all, and four
+of the thirty-odd lines a full set holds leaves the resistances their slots.
+**`hide()` IS THE ONE SEAM** for what an Ailment is multiplied by into a body,
+so the gear and the Warrior's `secondSkin` fold there and nowhere else — and
+`secondSkin`, which had been dead content since a monster could not Ail anybody,
+is live for the first time.
 
 **THE OFF HAND TAKES A SHIELD OR A SECOND ONE-HANDED WEAPON.** A pair puts
 `DUAL.main` of one and `DUAL.off` of the other into every hit — 1.30 between

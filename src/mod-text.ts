@@ -38,6 +38,7 @@ const NAMED: Record<string, string> = {
   moveSpeed: 'Movement Speed',
   cooldown: 'Skill Cooldown',
   lifeLeech: 'of Attack Damage Leeched as Life',
+  ailmentWard: 'reduced Effect of Ailments on you',
   attackRange: 'Attack Range',
   rarity: 'Rarity',
   currencyFind: 'Currency Find',
@@ -94,6 +95,7 @@ function resistancePrefix(stat: string): string | null {
  *  of nothing, and so is every chance beside it. */
 const FLAT_PERCENT = new Set([
   'ailmentChance',
+  'ailmentWard',
   'critChance',
   'blockChance',
   'dodgeChance',
@@ -154,8 +156,12 @@ export interface StatParts {
   label: string;
 }
 
+/** Stats whose LABEL already says which way the number goes, so a leading `+`
+ *  would say it twice and say it wrong: "+22% reduced Effect of Ailments". */
+const SIGNLESS = new Set(['ailmentWard']);
+
 export function statParts(line: StatRoll): StatParts {
-  const sign = line.value >= 0 ? '+' : '';
+  const sign = line.value >= 0 && !SIGNLESS.has(line.stat) ? '+' : '';
   const shown = String(Math.round(line.value * 100) / 100); // never float noise
 
 

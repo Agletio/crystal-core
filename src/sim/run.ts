@@ -74,6 +74,7 @@ import {
   MONSTERS_BY_FAMILY,
   MONSTER_RANKS,
   MONSTER_ABILITIES,
+  MONSTER_AILMENT,
   abilitiesFor,
   SKILLS,
   SKILL_BY_ID,
@@ -3363,8 +3364,6 @@ export class RunSim {
         if (this.afterIn > 0) scale *= 1 + m.after.damage;
         if (m.gusts) scale *= 1 + this.gusts * m.gusts.damage;
       }
-      // Every passive multiplier on your damage, through the one seam.
-      scale *= (this.grants.damageScale as number) ?? 1;
       // THE BRINK: the same bargain read from the attacking side.
       const brink = this.grants.atBrink as
         | { under: number; more: number; otherwise: number }
@@ -3672,7 +3671,11 @@ export class RunSim {
     // source that no danger number accounts for. Measured: it took the first
     // descent from winnable to 1 clear in 24. Beat retuning every band, which
     // is the balance pass, and that is held.
-    if (attacker.kind !== 'hero' || target.dead) return;
+    if (target.dead) return;
+    if (attacker.kind !== 'hero') {
+      this.leaveOnHero(attacker, target, byType);
+      return;
+    }
     for (const [type, dealt] of Object.entries(byType)) {
       if (dealt <= 0) continue;
       const def = AILMENT_OF_TYPE[type];
@@ -3690,9 +3693,24 @@ export class RunSim {
     }
   }
 
+  /** WHAT A MONSTER'S HIT LEAVES: one stack of the Ailment of whichever half of
+   *  the hit landed hardest, worth `MONSTER_AILMENT.share` of that hit. */
+  private leaveOnHero(attacker: Entity, target: Entity, byType: Record<string, number>): void {
+    if (target.kind !== 'hero' || MONSTER_AILMENT.chance <= 0) return;
+    let type = '';
+    let most = 0;
+    for (const [id, dealt] of Object.entries(byType)) {
+      if (dealt > most) [type, most] = [id, dealt];
+    }
+    const def = AILMENT_OF_TYPE[type];
+    if (!def || most <= 0) return;
+    if (!this.rng.chance(MONSTER_AILMENT.chance / 100)) return;
+    this.strike(attacker, target, def, most);
+  }
+
   /** ONE stack. The oldest falls off at the cap rather than the new one being
    *  refused, so re-applying to a saturated target still refreshes. */
-  private strike(attacker: Entity, target: Entity, def: AilmentDef): void {
+  private strike(attacker: Entity, target: Entity, def: AilmentDef, hit = 0): void {
     if (target.ailments.length >= MAX_AILMENT_STACKS) target.ailments.shift();
     // The two switches a tree still hands over: what an ailment is worth and
     // how long it runs. They reach the new ailments exactly as they reached
@@ -3700,7 +3718,10 @@ export class RunSim {
     const g = attacker.kind === 'hero' ? this.grants : {};
     const more = ((g.ailmentMultiplier as number) ?? 1) * (attacker.kind === 'hero' ? this.weak() : 1);
     const longer = (g.ailmentDuration as number) ?? 1;
-    const dps = (attacker.stats.ailmentDps?.[def.id] ?? def.dps ?? 0) * more;
+    const dps =
+      attacker.kind === 'hero'
+        ? (attacker.stats.ailmentDps?.[def.id] ?? def.dps ?? 0) * more
+        : (hit * MONSTER_AILMENT.share) / Math.max(0.01, def.seconds);
     target.ailments.push({
       id: def.id,
       type: def.type,
@@ -3720,6 +3741,9 @@ export class RunSim {
     if (live) live.remaining = Math.max(live.remaining, def.seconds);
     else target.effects.push({ id: SLOWED, remaining: def.seconds });
 
+    // A FREEZE IS SOMETHING YOU DO: nothing hero-side reads a hold, so one
+    // there is a wall with no answer.
+    if (target.kind === 'hero') return;
     // Floored at one stack, so no walk makes a Freeze free.
     const sooner = (this.grants.freezeSooner as number) ?? 0;
     const needs = Math.max(1, (def.freezeAt ?? 0) - sooner);
@@ -4099,9 +4123,13 @@ export class RunSim {
    *  the one that bought Armour a say over them. */
   private hide(e: Entity): number {
     if (e.kind !== 'hero') return 1;
+    // WHAT THE GEAR BOUGHT. Capped in `heroStats`, so no pile of lines can
+    // turn an Ailment into a heal.
+    let left = 1 - Math.min(DEFENCE.ailmentWardCap, e.stats.ailmentWard) / 100;
+    // SECOND SKIN: the one thing that puts Armour in front of an Ailment.
     const share = Math.min(WARRIOR.secondSkinCap, (this.grants.secondSkin as number) ?? 0);
-    if (share <= 0) return 1;
-    return 1 - (e.stats.armourReduction / 100) * share;
+    if (share > 0) left *= 1 - (e.stats.armourReduction / 100) * share;
+    return Math.max(0, left);
   }
 
   /** Damage dealt, back as mana. The road that pays for spending the pool. */

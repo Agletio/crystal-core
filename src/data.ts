@@ -139,6 +139,16 @@ export interface AilmentDef {
   takenPer?: number;
 }
 
+/** WHAT A MONSTER'S HIT LEAVES. Worth a SHARE OF THAT HIT, so it rides every
+ *  multiplier danger already prices and needs no `DANGER_STATS` row: a flat dps
+ *  would be 26 a second at the bare Fissure and 26 at the bottom of The Rot. */
+export const MONSTER_AILMENT = {
+  /** Chance a hit that lands on you leaves one. */
+  chance: 30,
+  /** What it deals over its whole run, as a share of that hit. */
+  share: 1.2,
+};
+
 export const AILMENTS: AilmentDef[] = [
   {
     id: 'burn', name: 'Burn', type: 'fire', kind: 'damage', chance: 0, seconds: 4,
@@ -218,6 +228,8 @@ export const DEFENCE = {
   blockCap: 60,
   /** Armour points at which reduction reaches half the cap. */
   armourHalfPoint: 300,
+  /** Where reduced Effect of Ailments stops, and 100 is nothing at all. */
+  ailmentWardCap: 100,
   /**
    * The least of a hit that must still reach a MONSTER. Resistance and armour
    * multiply, and a map you cannot hurt is a wall rather than a hard map.
@@ -1403,6 +1415,22 @@ export const GEAR_UTILITY_MODS: ModDef[] = [
     tiers: [
       { ilvl: 60, weight: 90, stats: [{ stat: 'cooldown', form: 'inc', range: [-26, -18] }] },
       { ilvl: 30, weight: 200, stats: [{ stat: 'cooldown', form: 'inc', range: [-16, -9] }] },
+    ],
+  },
+  {
+    /** THE ANSWER TO WHAT A MONSTER LEAVES, and it is meant to take FOUR lines.
+     *  One is a quarter of the way at the best tier, so it is a decision rather
+     *  than a box ticked; four is immunity, which is four of the thirty-odd
+     *  lines a full set holds and leaves the resistances their room. */
+    id: 'ailment_ward',
+    slot: 'defence',
+    name: 'of Inurement',
+    appliesTo: ['gear'],
+    tags: ['ailment', 'defence'],
+    tiers: [
+      { ilvl: 60, weight: 90, stats: [{ stat: 'ailmentWard', form: 'flat', range: [20, 25] }] },
+      { ilvl: 30, weight: 160, stats: [{ stat: 'ailmentWard', form: 'flat', range: [12, 18] }] },
+      { ilvl: 1, weight: 240, stats: [{ stat: 'ailmentWard', form: 'flat', range: [6, 11] }] },
     ],
   },
   {

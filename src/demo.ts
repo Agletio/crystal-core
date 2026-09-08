@@ -3368,6 +3368,98 @@ rule('AILMENTS — does dealing the type, and only that, apply the ailment?');
 }
 
 // ===========================================================================
+rule('WHAT A MONSTER LEAVES — is it felt, and is it answerable?');
+
+// A monster's hit leaves an Ailment now, which is a second source of damage the
+// danger table does not name. It is inside the danger anyway because it is a
+// SHARE OF THE HIT — so what this holds is that it is felt, that it scales, and
+// that the one line on gear that answers it actually answers it.
+{
+  const pinned = (band: number, seed: number): Character => {
+    const who = ladderCharacter(band, new Rng(seed), 'strike');
+    const fill = ['headsman', 'refraction', 'contagion'];
+    SKILL_SLOTS.filter((sl) => sl.accepts.includes('passive')).forEach((sl, i) => {
+      if (fill[i]) equipSkill(who, fill[i], sl.id);
+    });
+    return who;
+  };
+  const played = (band: number, ward: number) => {
+    let taken = 0;
+    let cleared = 0;
+    for (let i = 0; i < 6; i++) {
+      const sim = new RunSim(
+        ladderSet(band, new Rng(300 + i), pool),
+        pinned(band, 70 + i),
+        new Rng(800 + i)
+      );
+      sim.state.hero.stats.ailmentWard = ward;
+      if (runToCompletion(sim, 900).status === 'cleared') cleared++;
+      taken += Object.values(sim.state.damageTaken).reduce((n, v) => n + v, 0);
+    }
+    return { taken: taken / 6, cleared };
+  };
+
+  const rows = [1, 5].map((band) => {
+    const bare = played(band, 0);
+    const immune = played(band, DEFENCE.ailmentWardCap);
+    const share = bare.taken / Math.max(1, immune.taken) - 1;
+    line(
+      `  band ${band}: ${Math.round(immune.taken)} taken immune against ` +
+        `${Math.round(bare.taken)} bare — an Ailment is ${(share * 100).toFixed(0)}% on top`
+    );
+    return { band, share, bare, immune };
+  });
+
+  check(
+    rows.every((r) => r.share > 0.05),
+    'a monster’s hit leaves something, and it is felt',
+    rows.map((r) => `band ${r.band} ${(r.share * 100).toFixed(0)}%`).join(', ')
+  );
+  // IT RIDES THE HIT, so its share of what reaches you is about the same at
+  // both ends: a flat dps would be a wall at the shallow end and nothing deep.
+  check(
+    Math.abs(rows[0].share - rows[1].share) < 0.35,
+    'and it is the same share of the fight at both ends of the ladder, because it rides the hit',
+    rows.map((r) => `${(r.share * 100).toFixed(0)}%`).join(' against ')
+  );
+  check(
+    rows.every((r) => r.immune.taken < r.bare.taken && r.bare.cleared > 0),
+    'and reduced Effect of Ailments is what answers it, at 100% entirely',
+    rows.map((r) => `${Math.round(r.immune.taken)} < ${Math.round(r.bare.taken)}`).join(', ')
+  );
+
+  // IT TAKES FOUR LINES, which is the whole shape of the decision: one is a
+  // quarter of the way and never a box ticked, four is immunity and leaves the
+  // resistances their own slots.
+  const ward = ALL_MODS.find((m) => m.id === 'ailment_ward');
+  const best = ward?.tiers[0].stats[0].range[1] ?? 0;
+  const lines = Math.ceil(DEFENCE.ailmentWardCap / Math.max(1, best));
+  line(`  the best roll is ${best}%, so immunity is ${lines} lines of it`);
+  check(
+    lines >= 3 && lines <= 5,
+    'and immunity costs FOUR lines or so — never one, never every slot you own',
+    `${lines} lines at ${best}% each`
+  );
+
+  // A FREEZE IS SOMETHING YOU DO. Nothing hero-side reads a hold, so laying one
+  // on him would be a wall with no answer at all.
+  {
+    const sim = new RunSim(ladderSet(3, new Rng(11), pool), pinned(3, 12), new Rng(13));
+    const hero = sim.state.hero;
+    const cold = AILMENT_BY_ID.chill;
+    for (let i = 0; i < 20 && cold; i++) {
+      (sim as unknown as { strike: (a: Entity, b: Entity, d: typeof cold, hit: number) => void })
+        .strike(sim.state.monsters[0] ?? hero, hero, cold, 40);
+    }
+    check(
+      (hero.stun ?? 0) === 0,
+      'and no pile of Chill ever Freezes the hero, which is a hold he could not answer',
+      `stun ${hero.stun ?? 0}`
+    );
+  }
+}
+
+// ===========================================================================
 rule('MATERIALS AND PROFESSIONS — is the table a thing a recipe could read?');
 
 // STEP 1 OF THE CRAFTING ARC: the tables exist and NOTHING reads them yet, so
