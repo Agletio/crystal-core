@@ -1557,8 +1557,12 @@ only adds is a passive every build takes.
 - [x] **`secondSkin` WAS DEAD CONTENT, and his answer was to make it live.**
       *"Mobs should begin to apply ailments."* Landed with the gear line that
       answers it — both in `CLAUDE.md`.
-- [ ] **AND THE THREE SLOTS ARE MEASURED AFTER IT.** The ceiling picks passives;
-      eight more candidates move what it picks, so the deep-end gauge shifts.
+- [x] **AND THE THREE SLOTS ARE MEASURED AFTER IT.** DONE. The gap between the
+      searched build and a random walk went from 1.4x–3.0x to **1.5x–6.2x**:
+      band 6 reads strike 4.57x, blight 6.18x, arc_lightning 3.27x. The floor
+      moved not at all — it is the ceiling that grew, because the search picks
+      three passives out of 24 where a random walk picks none of them well.
+      `CLAUDE.md` carries the new figure.
 - [ ] **THE CEILING TAKES BLOOD PACT, AND IT IS A TIE RATHER THAN A WIN.**
       `bestBuild` equips it and dies 8 times in 8 at the deep end where the same
       gear with a neutral passive clears 3 — so what it reports as a ceiling is

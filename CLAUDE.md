@@ -80,9 +80,11 @@ table is in the `harness` skill, along with every quirk and flake. Build before 
   `ladderCharacter` walks its tree at random and splits its attributes four
   ways; `bestBuild` searches plate, lines, attributes, passives, mover and a
   greedy tree walk, then PLAYS its shortlist because the sheet cannot see a
-  pack. Measured, the second is 1.4× the first at band 1 and 3.0× at band 6 —
-  so anything tuned until the floor dies is off by that much, which is what
-  made the whole game clearable at 89% life or better. **Anything measuring
+  pack. Measured across bands 1, 3 and 6, the second is **1.5× to 6.2×** the
+  first — so anything tuned until the floor dies is off by that much, which is
+  what made the whole game clearable at 89% life or better. The top of that
+  spread WIDENED from 3.0× when the passive shelf tripled, because the search
+  picks three passives and a random walk does not. **Anything measuring
   what a descent PAYS runs a ceiling**: a character that dies banks nothing.
 - **Read the LOW-WATER mark, not the life you walk out on.** A descent ends in a
   walk to the exit and regeneration tops you up on the way, so a build nearly
