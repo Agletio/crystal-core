@@ -1525,19 +1525,25 @@ only adds is a passive every build takes.
       chance plus Deepfreeze — a route through nodes that already exist, which
       is the whole point: *"this is kinda what I want most nodes to be like,
       some cool path to figure out a unique build."*
-- [ ] **NINE MORE, each with its own cost.** Drafted: Ironclad (Armour blunts
-      more, you move slower), Bloodletting (every hit leaves a Bleed, hits deal
-      less), Glass (more damage dealt AND taken), Reaping (a kill restores life,
-      your maximum is lower), Overflow (regeneration multiplied, maximum life
-      lower), Warding (less Elemental damage taken, more Physical), Stoneskin
-      (Armour blunts Ailments too, and is lower), Frugality (uses cost less mana
-      and deal less damage), Cascade (a body killed by an Ailment Bursts).
-- [ ] **THE SEAMS THEY NEED**, and no more than one read site each:
-      `takenMore`, `takenLessOf` by type, `killHeal`, `regenMore` and
-      `armourAilment`. Everything else reuses `bleedOnHit`, `explodeOnKill` and
-      `manaCost`.
+- [x] **THE OTHER EIGHT.** LANDED, and the shelf is 24. Brink, Glass, Reaping,
+      Zealotry, Aftershock, Bulwark, Quickening and Rimeheart, all in
+      `CLAUDE.md`. Five new switches with one read site each — `atBrink`,
+      `flushMore`, `ailmentShare`, `killTempo`, `hitCap` — and three generic
+      multipliers, `damageScale`, `takenScale` and `lifeScale`, so a passive
+      paying in damage and one buying with it share the arithmetic. Measured at
+      band 6 over five descents: every one moves the kill rate, −8% (Bulwark) to
+      +6% (Glass, Quickening), and Reaping is the only one clearing 5 of 5.
+      Three of the drafted nine were dropped and one repaired: **a hero never
+      carries an Ailment** (`applyTyped` returns unless the attacker is the
+      hero), so Ironclad, Stoneskin and Warding were all answering something
+      that never happens, and Ironclad became Bulwark's hit ceiling instead.
+- [ ] **`secondSkin` IS DEAD CONTENT and it SHIPS.** The Warrior's tree sells
+      "part of your Armour blunts Ailments too" and the hero has never carried
+      one. Either a monster's hit gets to leave an Ailment — which the sim
+      refuses on purpose, being a second unweighed difficulty source — or the
+      node buys something else. His call, not a repair to make quietly.
 - [ ] **AND THE THREE SLOTS ARE MEASURED AFTER IT.** The ceiling picks passives;
-      nine more candidates move what it picks, so the deep-end gauge shifts.
+      eight more candidates move what it picks, so the deep-end gauge shifts.
 
 ---
 

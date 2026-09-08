@@ -5439,6 +5439,166 @@ export const SKILLS: SkillDef[] = [
     range: 0,
     grants: { armourToDodge: 0.6, unhitHaste: { after: 2, more: 0.6 } },
   },
+  {
+    /**
+     * THE LOW-LIFE BUILD, and the one bargain it is made of. Nothing here heals
+     * you back up, so what pays for it is the rest of the sheet: Blood Pact
+     * spending life for every use, mana eating the hits ahead of it, a weapon's
+     * own leech topping you back to just under the line.
+     */
+    id: 'brink',
+    name: 'Brink',
+    category: 'passive',
+    description:
+      'While under 35% of your maximum life you deal 65% more damage and take ' +
+      '30% less damage; above it you deal 20% less damage.',
+    tags: ['passive'],
+    behaviour: 'no_cast',
+    damageTypes: [],
+    baseDamage: 0,
+    addedEffectiveness: 0,
+    rateMultiplier: 1,
+    manaCost: 0,
+    range: 0,
+    grants: { atBrink: { under: 0.35, more: 0.65, less: 0.3, otherwise: 0.2 } },
+  },
+  {
+    /** The plainest trade on the shelf, and the one every other defence answers:
+     *  a Block, a Dodge and an Armour rating all sit in front of the half that
+     *  costs, so what buys it back is the gear rather than another passive. */
+    id: 'glass',
+    name: 'Glass',
+    category: 'passive',
+    description: 'You deal 50% more damage and take 50% more damage.',
+    tags: ['passive'],
+    behaviour: 'no_cast',
+    damageTypes: [],
+    baseDamage: 0,
+    addedEffectiveness: 0,
+    rateMultiplier: 1,
+    manaCost: 0,
+    range: 0,
+    grants: { damageScale: 1.5, takenScale: 1.5 },
+  },
+  {
+    /** SUSTAIN WITH NO BUFFER: the pool it restores a tenth of is the smaller
+     *  one, so it pays a pack and pays nothing at all to a boss. */
+    id: 'reaping',
+    name: 'Reaping',
+    category: 'passive',
+    description:
+      'Every kill restores 10% of your maximum life, and your maximum life is ' +
+      '35% lower.',
+    tags: ['passive'],
+    behaviour: 'no_cast',
+    damageTypes: [],
+    baseDamage: 0,
+    addedEffectiveness: 0,
+    rateMultiplier: 1,
+    manaCost: 0,
+    range: 0,
+    grants: { killHeal: 0.1, lifeScale: 0.65 },
+  },
+  {
+    /** A POOL YOU NEVER SPEND DOWN, which is the whole build: regeneration,
+     *  mana on kill and a bigger pool are what keep the line above 70%, and the
+     *  cost is written in the one currency that gets you there. */
+    id: 'zealotry',
+    name: 'Zealotry',
+    category: 'passive',
+    description:
+      'You deal 55% more damage while your mana is above 70% of your pool, and ' +
+      'every use costs 70% more mana.',
+    tags: ['passive'],
+    behaviour: 'no_cast',
+    damageTypes: [],
+    baseDamage: 0,
+    addedEffectiveness: 0,
+    rateMultiplier: 1,
+    manaCost: 0,
+    range: 0,
+    grants: { flushMore: { above: 0.7, more: 0.55 }, manaMultiplier: 1.7 },
+  },
+  {
+    /** WHAT MAKES AN AILMENT A CLEAR: every tick is dealt again round the body
+     *  carrying it, so a pack packed together is one poison killing all of it.
+     *  The shorter Ailment is what stops it being a rider on every build. */
+    id: 'aftershock',
+    name: 'Aftershock',
+    category: 'passive',
+    description:
+      'Every Ailment on an enemy also deals 50% of each tick to enemies within ' +
+      '2.2 tiles of it, and your Ailments last 40% less time.',
+    tags: ['passive'],
+    behaviour: 'no_cast',
+    damageTypes: [],
+    baseDamage: 0,
+    addedEffectiveness: 0,
+    rateMultiplier: 1,
+    manaCost: 0,
+    range: 0,
+    grants: { ailmentShare: { share: 0.5, radius: 2.2 }, ailmentDuration: 0.6 },
+  },
+  {
+    /** A CEILING ON ONE HIT, which makes the build LIFE rather than Armour: the
+     *  bigger the pool the wider the gap under the line, and at a small one
+     *  every ordinary swing is already beneath it and this buys nothing. What
+     *  it answers is the one blow a tier ends on. */
+    id: 'bulwark',
+    name: 'Bulwark',
+    category: 'passive',
+    description:
+      'No single hit can take more than 10% of your maximum life, and you deal ' +
+      '35% less damage.',
+    tags: ['passive'],
+    behaviour: 'no_cast',
+    damageTypes: [],
+    baseDamage: 0,
+    addedEffectiveness: 0,
+    rateMultiplier: 1,
+    manaCost: 0,
+    range: 0,
+    grants: { hitCap: 0.1, damageScale: 0.65 },
+  },
+  {
+    /** A RATE BUILD off a floor rather than off gear: six kills is 60% and a
+     *  room is where you get them, so it pays nothing to the boss that ends a
+     *  zone and everything to the thirty packs before it. */
+    id: 'quickening',
+    name: 'Quickening',
+    category: 'passive',
+    description:
+      'Each kill grants 10% increased Attack and Cast Speed for 4s, stacking to ' +
+      '6, and you deal 20% less damage.',
+    tags: ['passive'],
+    behaviour: 'no_cast',
+    damageTypes: [],
+    baseDamage: 0,
+    addedEffectiveness: 0,
+    rateMultiplier: 1,
+    manaCost: 0,
+    range: 0,
+    grants: { killTempo: { per: 0.1, most: 6, seconds: 4 }, damageScale: 0.8 },
+  },
+  {
+    /** THE ONE THAT MAKES ANY SKILL A COLD SKILL, which is what Shardfall,
+     *  Hoarfrost and Deep Winter are all waiting on — two of the eight trees
+     *  sell no Cold conversion at all, and this is how those two get there. */
+    id: 'rimeheart',
+    name: 'Rimeheart',
+    category: 'passive',
+    description:
+      'All your damage is Converted to Cold, and you deal 15% less damage.',
+    tags: ['passive'],
+    behaviour: 'no_cast',
+    damageTypes: [],
+    baseDamage: 0,
+    addedEffectiveness: 0,
+    rateMultiplier: 1,
+    manaCost: 0,
+    range: 0,
+    grants: { convertTree: 'cold', damageScale: 0.85 },
+  },
 
   // Never cast either: `RunSim` reads these params off the equipped slot and
   // fires it ITSELF, because automation is universal.

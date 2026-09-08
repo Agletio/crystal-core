@@ -220,7 +220,7 @@ export const KEYWORDS: KeywordDef[] = [
       `that Ailment's own chance; past 100% you apply a second, past 200% a ` +
       'third. Resistance blunts one and Armour never does, which is what makes ' +
       'an Ailment the answer to something you cannot punch through.',
-    grants: ['ailmentChance', 'ailmentMultiplier', 'ailmentDuration', 'bleedOnHit'],
+    grants: ['ailmentChance', 'ailmentMultiplier', 'ailmentDuration', 'bleedOnHit', 'ailmentShare'],
   },
   {
     id: 'burn',

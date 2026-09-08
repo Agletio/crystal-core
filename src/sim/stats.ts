@@ -369,7 +369,10 @@ export function heroStats(
   const breakdown = damageBreakdown(mods, level, skill, grants, steps);
   // Bare to the rock. `characterStats` is what stops counting the rating.
   const bare = typeof grants.bareChest === 'number' ? grants.bareChest : 0;
-  const maxLife = computeStat(lifeFor(level), mods, 'life') * (1 + bare);
+  const maxLife =
+    computeStat(lifeFor(level), mods, 'life') *
+    (1 + bare) *
+    ((grants.lifeScale as number) ?? 1);
   // Worn ratings are the BASE armour computes from, not a flat mod, so
   // "Reinforced" scales the plate you wear rather than a number beside it.
   const armour = computeStat(HERO_BASE.armour + baseArmour, mods, 'armour');

@@ -640,6 +640,10 @@ export class RunSim {
   private riposte = 0;
   /** Seconds left of a KILL still covering and quickening you. */
   private sinceKill = 0;
+  /** Kills stacked up, and the seconds left of the whole stack. Refreshed as one
+   *  rather than per stack, exactly as the crit buff is. */
+  private tempo = 0;
+  private tempoIn = 0;
   /** A Critical's follow-ups, each with every body ITS chain has opened on. */
   private chained: { in: number; seen: number[] }[] = [];
   /** The chain the use running right now belongs to, and null outside one. */
@@ -1834,6 +1838,10 @@ export class RunSim {
     this.sinceHit += dt;
     if (this.riposte > 0) this.riposte -= dt;
     if (this.sinceKill > 0) this.sinceKill -= dt;
+    if (this.tempoIn > 0) {
+      this.tempoIn -= dt;
+      if (this.tempoIn <= 0) this.tempo = 0;
+    }
     if (hero.actionTimer > 0) hero.actionTimer -= dt;
 
     if (hero.life < hero.stats.maxLife) {
@@ -3210,10 +3218,12 @@ export class RunSim {
     const slow = 1 - (e.slowed ?? 0);
     if (e.kind !== 'hero') return slow;
     const killed = this.sinceKill > 0 ? 1 + ((this.grants.killHaste as number) ?? 0) / 100 : 1;
+    const tempo = this.grants.killTempo as { per: number } | undefined;
+    const stacked = tempo ? 1 + this.tempo * tempo.per : 1;
     const held = this.moving?.gusts;
     const charged = held ? 1 + (this.gusts * held.haste) / 100 : 1;
-    if (!this.flasked()) return slow * killed * charged;
-    return slow * killed * charged * (1 + ((this.grants.potionHaste as number) ?? 0) / 100);
+    if (!this.flasked()) return slow * killed * charged * stacked;
+    return slow * killed * charged * stacked * (1 + ((this.grants.potionHaste as number) ?? 0) / 100);
   }
 
   /** What a step is multiplied by: a running flask, and nothing else yet. */
@@ -3322,6 +3332,12 @@ export class RunSim {
       // What a KILL bought: cover, for as long as it lasts.
       const guard = (this.grants.killGuard as number) ?? 0;
       if (guard > 0 && this.sinceKill > 0) scale *= Math.max(0, 1 - guard / 100);
+      scale *= (this.grants.takenScale as number) ?? 1;
+      // THE BRINK from the other side: near death is where it covers you.
+      const edge = this.grants.atBrink as { under: number; less: number } | undefined;
+      if (edge && defender.life < defender.stats.maxLife * edge.under) {
+        scale *= Math.max(0, 1 - edge.less);
+      }
     }
     if (crit) scale *= 2 + attacker.stats.critMultiplier / 100;
     // Ailments and bursts too: no corner of a build runs dry for free.
@@ -3346,6 +3362,22 @@ export class RunSim {
       if (m) {
         if (this.afterIn > 0) scale *= 1 + m.after.damage;
         if (m.gusts) scale *= 1 + this.gusts * m.gusts.damage;
+      }
+      // Every passive multiplier on your damage, through the one seam.
+      scale *= (this.grants.damageScale as number) ?? 1;
+      // THE BRINK: the same bargain read from the attacking side.
+      const brink = this.grants.atBrink as
+        | { under: number; more: number; otherwise: number }
+        | undefined;
+      if (brink) {
+        const low = attacker.life < attacker.stats.maxLife * brink.under;
+        scale *= low ? 1 + brink.more : 1 - brink.otherwise;
+      }
+      // A pool you never spend down. Read off the mana STANDING, so a build
+      // that casts its way empty is one that has given this up.
+      const flush = this.grants.flushMore as { above: number; more: number } | undefined;
+      if (flush && attacker.mana > attacker.stats.maxMana * flush.above) {
+        scale *= 1 + flush.more;
       }
     }
     // From a crit that landed BEFORE this one: the crit granting it never
@@ -3401,6 +3433,10 @@ export class RunSim {
     // every type in proportion — so the overlay reports what actually landed.
     if (defender.kind === 'hero') {
       const before = dmg;
+      // THE CEILING, read after armour and before the pool: what it caps is what
+      // would otherwise reach you, so a bigger pool is a wider gap under it.
+      const cap = this.grants.hitCap as number | undefined;
+      if (cap !== undefined) dmg = Math.min(dmg, defender.stats.maxLife * cap);
       dmg = this.absorb(defender, dmg * this.softened());
       if (dmg < before) {
         const kept = dmg / before;
@@ -3949,6 +3985,16 @@ export class RunSim {
     this.wake(e, true);
 
     e.life -= total;
+    // AFTERSHOCK: the same tick, dealt again round the body carrying it. It
+    // applies nothing, so there is no second Ailment to tick and no cascade.
+    const share = this.grants.ailmentShare as { share: number; radius: number } | undefined;
+    if (share && e.kind === 'monster' && total > 0) {
+      for (const m of this.state.monsters) {
+        if (m.dead || m === e || dist(m, e) > share.radius) continue;
+        m.life -= total * share.share;
+        if (m.life <= 0) this.kill(m);
+      }
+    }
     if (e.life <= 0) this.kill(e);
   }
 
@@ -4151,6 +4197,11 @@ export class RunSim {
     // A KILL carries the rogue on: cover, pace and swing, off one clock.
     if (this.grants.killGuard || this.grants.killHaste || this.grants.killMove) {
       this.sinceKill = Math.max(ROGUE.guardSeconds, ROGUE.hasteSeconds);
+    }
+    const tempo = this.grants.killTempo as { most: number; seconds: number } | undefined;
+    if (tempo) {
+      this.tempo = Math.min(tempo.most, this.tempo + 1);
+      this.tempoIn = tempo.seconds;
     }
     // SHARDFALL first: a crystal can kill, and that death throws its own.
     this.shardfall(victim);

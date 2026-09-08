@@ -1071,6 +1071,26 @@ the gloves, and 1.93 to 2.07 to 2.18 kills/s. **THIS IS WHAT MOST NODES ARE FOR*
 out a unique build."* Nothing in it is new content: Transmutation, Chill chance,
 Deepfreeze and the standing spike were all already there.
 
+**TWENTY-FOUR PASSIVES, THREE A DAMAGE SKILL, AND EVERY ONE IS A TRADE.**
+*"We need to add some more ideally like 3x the number of damage skills because
+you get three passives so we need some variety."* Sixteen became twenty-four:
+**Brink** (65% more damage and 30% less taken under 35% life, 20% less above
+it), **Glass**, **Reaping** (a kill restores a tenth of a pool 35% smaller),
+**Zealotry** (55% more damage over 70% mana, every use costing 70% more),
+**Aftershock** (every Ailment tick dealt again 2.2 tiles round the body carrying
+it, Ailments 40% shorter), **Bulwark** (no hit takes more than 10% of your
+maximum life), **Quickening** (six kills is 60% increased Attack and Cast Speed)
+and **RIMEHEART**, which Converts everything you deal to Cold — the one that
+makes any skill a Cold skill, since two of the eight trees sell no Cold node at
+all. **A PASSIVE'S BOTH HALVES ARE ITS OWN `grants`**, never a stat line, and
+each new switch has exactly ONE read site: `damageScale`, `takenScale` and
+`lifeScale` are the three generic multipliers, `atBrink`, `flushMore`,
+`ailmentShare`, `killTempo` and `hitCap` the five rules. Measured at band 6,
+every one moves a run: −8% to +6% on the kill rate, and Reaping is the only one
+that clears 5 of 5. **AND A HERO NEVER CARRIES AN AILMENT** — `applyTyped`
+returns unless the attacker is the hero — so a passive answering one is dead
+content, which is what an Ironclad drafted round `secondSkin` turned out to be.
+
 **A BRANCH ENABLER'S OWN STAT LINES ARE ITS OWN, AND THE BUILDER DROPPED THEM.**
 `buildTree` copies a node a field at a time, so a field it forgets is a card
 printing a figure the sim never applies — six enablers across three trees shipped

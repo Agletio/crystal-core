@@ -910,6 +910,130 @@ export const GRANTS: GrantDef[] = [
   { id: 'everyNth', what: 'every nth cast is worth more', reads: SCALED, changes: 'scale' },
   { id: 'moreVsAiling', what: 'more damage to enemies already suffering', reads: SCALED, changes: 'scale' },
   {
+    /** THE LOW-LIFE BUILD, as one bargain rather than two switches: what it is
+     *  worth to run near death, and what it costs to run anywhere else. Read
+     *  twice in `dealDamage` — once with the hero swinging, once with the hero
+     *  being swung at — because both halves are the same decision. */
+    id: 'atBrink',
+    what: 'running near death sharpens what you swing and blunts what lands on you',
+    reads: [STATS],
+    say: (v) => {
+      const o = v as Record<string, unknown> | null;
+      if (!o) return null;
+      const n = ['under', 'more', 'less', 'otherwise'].map((k) => o[k]);
+      if (n.some((x) => typeof x !== 'number')) return null;
+      const [under, up, guard, tax] = n as number[];
+      return (
+        `While under ${pct(under)} of your maximum life you deal ${pct(up)} more damage ` +
+        `and take ${pct(guard)} less damage; above it you deal ${pct(tax)} less damage`
+      );
+    },
+  },
+  {
+    /** What EVERY hit of yours is multiplied by, gift or cost — one seam, so a
+     *  passive that pays in damage and one that buys with it cannot each be
+     *  running their own arithmetic. Ailments and Bursts are in it: it lands in
+     *  `dealDamage`, which is what every one of them comes through. */
+    id: 'damageScale',
+    what: 'everything you deal is multiplied',
+    reads: [STATS],
+    merge: 'product',
+    say: (v) => {
+      const n = asNumber(v);
+      if (n === null) return null;
+      return n >= 1 ? `You deal ${more(n)} more damage` : `You deal ${pct(1 - n)} less damage`;
+    },
+  },
+  {
+    /** The other side of the same seam, on the hit LANDING on you. Armour, a
+     *  Block and a Dodge all happen before it: this is the last word. */
+    id: 'takenScale',
+    what: 'every hit that lands on you is multiplied',
+    reads: [STATS],
+    merge: 'product',
+    say: (v) => {
+      const n = asNumber(v);
+      if (n === null) return null;
+      return n >= 1 ? `You take ${more(n)} more damage` : `You take ${pct(1 - n)} less damage`;
+    },
+  },
+  {
+    /** Maximum life, multiplied. It lands in `heroStats` beside `bareChest`, so
+     *  regeneration, the pool a Vein draws off it and every share-of-life switch
+     *  read the one number. */
+    id: 'lifeScale',
+    what: 'your maximum life is multiplied',
+    reads: [STATS],
+    merge: 'product',
+    say: (v) => {
+      const n = asNumber(v);
+      if (n === null) return null;
+      return n >= 1
+        ? `Your maximum life is ${more(n)} higher`
+        : `Your maximum life is ${pct(1 - n)} lower`;
+    },
+  },
+  {
+    /** A FULL POOL is the condition, so the build is one that never spends down
+     *  — which is what makes paying for it in mana cost a real price. */
+    id: 'flushMore',
+    what: 'a full mana pool sharpens what you swing',
+    reads: [STATS],
+    say: (v) => {
+      const p = pair(v, 'above', 'more');
+      return p && `You deal ${pct(p[1])} more damage while your mana is above ${pct(p[0])} of your pool`;
+    },
+  },
+  {
+    /** An Ailment's tick, dealt AGAIN around the body carrying it. It applies
+     *  nothing of its own, so there is no second Ailment and no cascade: what a
+     *  tick is worth is decided once and spread. */
+    id: 'ailmentShare',
+    what: 'an Ailment ticking also reaches what stands near the body carrying it',
+    reads: [STATS],
+    say: (v) => {
+      const p = pair(v, 'share', 'radius');
+      return (
+        p &&
+        `Every Ailment on an enemy also deals ${pct(p[0])} of each tick to enemies ` +
+          `within ${p[1]} tiles of it`
+      );
+    },
+  },
+  {
+    /** THE CEILING ON ONE HIT, as a share of the pool it lands on. What it is
+     *  worth is the pool, so the build is LIFE: at a big one nothing the floor
+     *  swings can take a quarter of you, and at a small one every ordinary
+     *  swing is already under the line and it buys nothing at all. */
+    id: 'hitCap',
+    what: 'no single hit may take more than a share of your maximum life',
+    reads: [STATS],
+    merge: 'product',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null ? null : `No single hit can take more than ${pct(n)} of your maximum life`;
+    },
+  },
+  {
+    /** Kills STACK a rate, refreshed as a whole rather than per stack — the crit
+     *  buff's shape. It is read in `hasteOf`, the one place a swing's clock is
+     *  multiplied, so a cast is quickened by exactly as much as a swing. */
+    id: 'killTempo',
+    what: 'kills stack up Attack and Cast Speed',
+    reads: [STATS],
+    say: (v) => {
+      const o = v as Record<string, unknown> | null;
+      if (!o) return null;
+      const n = ['per', 'most', 'seconds'].map((k) => o[k]);
+      if (n.some((x) => typeof x !== 'number')) return null;
+      const [per, most, seconds] = n as number[];
+      return (
+        `Each kill grants ${pct(per)} increased Attack and Cast Speed for ${seconds}s, ` +
+        `stacking to ${most}`
+      );
+    },
+  },
+  {
     /** A body dying FROZEN throws crystals. They are Projectiles and Spells, so
      *  every line for either reaches them — `extraTargets` included, which is
      *  how a Projectile roll on a glove buys another one. */
