@@ -53,9 +53,8 @@ for (const ask of todo.slice(0, 10)) {
     description: ask.say + asks.how,
     width: ask.size ?? asks.size, height: ask.size ?? asks.size,
     no_background: true, view: 'side',
-    // A ROW MAY NAME ITS OWN: a crystal wants flat planes where a poison pool
-    // wants mottling, and one setting for both is what made ice come back slush.
-    outline: 'single color black outline',
+    // A ROW MAY NAME ITS OWN: a crystal wants flat planes where a pool wants
+    outline: 'single color black outline', // mottling, and one setting for both made ice slush
     shading: ask.shading ?? 'medium shading',
     detail: ask.detail ?? 'medium detail',
     text_guidance_scale: 13, color_image_url: palette(),
