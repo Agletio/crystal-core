@@ -10448,15 +10448,29 @@ rule('MANA — is a bare skill just barely sustainable?');
     const stacked = carriers.slice(0, 4).reduce((n, x) => n * (x.grants!.manaMultiplier as number), 1);
     line(`  four of them together: ×${stacked.toFixed(2)} on the cost`);
 
+    // A MOVER'S MANA LINE IS ITS OWN MOVER'S, derived off what that behaviour
+    // READS rather than off a name: `moveMana` is a per-use cost and Gale has no
+    // use to charge for — it holds Gusts, and its line is `gustMana`.
     const movers = BUILT_TREES.filter(
       (t) => SKILL_BY_ID[t.spec.skillId]?.category === 'movement'
     );
-    const paid = movers.filter((t) => t.nodes.some((n) => typeof n.grants?.moveMana === 'number'));
-    line(`  ${paid.length} of ${movers.length} movement trees charge mana for a use`);
+    const manaOf = (t: (typeof BUILT_TREES)[number]): string[] => {
+      const behaviour = SKILL_BY_ID[t.spec.skillId]?.behaviour ?? '';
+      return GRANTS.filter((g) => g.id.toLowerCase().includes('mana') && g.reads.includes(behaviour))
+        .map((g) => g.id);
+    };
+    const mute = movers.filter((t) => {
+      const mine = manaOf(t);
+      return !t.nodes.some((n) => mine.some((id) => typeof n.grants?.[id] === 'number'));
+    });
+    line(
+      `  movement trees and the mana switch each one sells: ` +
+        movers.map((t) => `${t.spec.skillId} ${manaOf(t).join('/')}`).join(', ')
+    );
     check(
-      movers.length > 0 && paid.length === movers.length,
-      'and a movement tree charges in the one currency a mover has',
-      movers.filter((t) => !paid.includes(t)).map((t) => t.spec.skillId).join(', ')
+      movers.length > 0 && mute.length === 0,
+      'and a movement tree sells the mana switch its own mover reads',
+      mute.map((t) => t.spec.skillId).join(', ')
     );
   }
 }
