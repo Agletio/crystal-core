@@ -189,10 +189,6 @@ function walkMover(character: Character, shape: BuildShape): void {
   }
 }
 
-/** A nominal engagement, and the only number here CHOSEN rather than read: a
- *  build that pays LIFE to cast and lasts this long unaided is unpenalised. */
-const FIGHT = 60;
-
 /** What a build is WORTH, as one number a player would optimise: damage against
  *  how long it stands in the fire. A GEOMETRIC mean, so dumping either half
  *  cannot win — a glass cannon and a brick both score badly. */
@@ -210,12 +206,7 @@ export function buildPower(character: Character): number {
     (1 - stats.blockChance / 100) *
     (1 - soak) *
     taken;
-  // BLOOD PACT SPENDS THE POOL TO CAST, and cost, rate and regeneration are all
-  const blood = (grants.bloodCost as number) ?? 0; // on the sheet — this read none
-  const drain = blood > 0 ? stats.manaCost * stats.attacksPerSecond * blood - stats.lifeRegen : 0;
-  const alone = drain > 0 ? stats.maxLife / drain : Infinity;
-  const lasts = Math.min(1, alone / FIGHT);
-  return Math.sqrt(dps * ((stats.maxLife * lasts) / Math.max(0.05, through)));
+  return Math.sqrt(dps * (stats.maxLife / Math.max(0.05, through)));
 }
 
 /** A build takes one or two attributes, never four. */

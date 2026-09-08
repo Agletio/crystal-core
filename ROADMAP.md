@@ -1542,13 +1542,19 @@ only adds is a passive every build takes.
       answers it — both in `CLAUDE.md`.
 - [ ] **AND THE THREE SLOTS ARE MEASURED AFTER IT.** The ceiling picks passives;
       eight more candidates move what it picks, so the deep-end gauge shifts.
-- [ ] **THE CEILING TAKES BLOOD PACT, AND THE SHEET CANNOT SEE WHY NOT.**
-      `buildPower` reads the sheet, and a pool of 0 with every cast paid for in
-      life prices as free there — so `bestBuild` equips it and the "ceiling" it
-      reports is softer than a real one. Measured at the deep end: that build
-      died 8 times in 8 where the same gear with a neutral passive cleared 3.
-      Either `buildPower` learns to price `bloodCost`, or the search PLAYS a
-      candidate before keeping it, which is what it already does for gear.
+- [ ] **THE CEILING TAKES BLOOD PACT, AND IT IS A TIE RATHER THAN A WIN.**
+      `bestBuild` equips it and dies 8 times in 8 at the deep end where the same
+      gear with a neutral passive clears 3 — so what it reports as a ceiling is
+      softer than a real one. **Pricing `bloodCost` in `buildPower` was tried and
+      REVERTED, because it changes nothing**: measured on that build, casting
+      drains 9.8 life a second against a pool of 3750, which is 383 seconds and
+      survivable on its own — and bloodpact, headsman and refraction all score
+      11161 to the digit. The sheet cannot separate them because not one of the
+      three changes a thing the sheet reads, so LIST ORDER decides.
+      So the repair is not a better score, it is `played` DECIDING the passive
+      set the way it already decides an arrangement — a second passive fill per
+      arrangement, which doubles the `made` list and is why it is not a
+      five-minute change.
 
 ---
 
