@@ -10,7 +10,7 @@ import { generateMap, sceneMap, dist, hasLineOfSight, roomCenter, openSpots, dam
 import type { GameMap, Grid, Room, Vec2 } from './grid';
 import { findPath, nearestByPath } from './pathfind';
 import { AILMENT, AMBUSH, DAMAGE_TYPE_BY_ID, PASSIVE_DAMAGE, POTIONS, POTION_BY_ID } from '../data';
-import { percentStat } from '../mods';
+import { percentStat, dangerScore} from '../mods';
 import type { BossPhase } from '../data';
 
 /** A circle the Fall has put on the floor, and the seconds until it lands. */
@@ -75,6 +75,7 @@ import {
   MONSTER_RANKS,
   MONSTER_ABILITIES,
   MONSTER_AILMENT,
+  monsterAilmentChance,
   abilitiesFor,
   SKILLS,
   SKILL_BY_ID,
@@ -639,6 +640,8 @@ export class RunSim {
   private frostIn = 0;
   /** Seconds left of a Block having sharpened the next hit. */
   private riposte = 0;
+  /** What a hit that lands on you leaves, in percent, off this set's danger. */
+  private readonly ailChance: number;
   /** Seconds left of a KILL still covering and quickening you. */
   private sinceKill = 0;
   /** Kills stacked up, and the seconds left of the whole stack. Refreshed as one
@@ -721,6 +724,8 @@ export class RunSim {
     // converted Fireball scales off cold and is resisted as fire.
     this.skill = effectiveSkill(SKILL_BY_ID[mainSkillId(character)] ?? SKILLS[0], this.grants);
     this.set = runSet(crystals, trialMod(character), options.where, soulsIn(character));
+    // Off the danger this set carries; nothing in a descent moves its own.
+    this.ailChance = monsterAilmentChance(dangerScore(this.set.mods).danger);
     this.wellChance = percentStat(this.set.mods, 'wellChance');
     this.splitChance = percentStat(this.set.mods, 'splitChance');
     this.giltChance = percentStat(this.set.mods, 'giltChance');
@@ -3699,10 +3704,10 @@ export class RunSim {
     }
   }
 
-  /** WHAT A MONSTER'S HIT LEAVES: one stack of the Ailment of whichever half of
-   *  the hit landed hardest, worth `MONSTER_AILMENT.share` of that hit. */
+  /** WHAT A MONSTER'S HIT LEAVES: the Ailment of whichever half of the hit
+   *  landed hardest, worth `MONSTER_AILMENT.share` of that hit. */
   private leaveOnHero(attacker: Entity, target: Entity, byType: Record<string, number>): void {
-    if (target.kind !== 'hero' || MONSTER_AILMENT.chance <= 0) return;
+    if (target.kind !== 'hero' || this.ailChance <= 0) return;
     let type = '';
     let most = 0;
     for (const [id, dealt] of Object.entries(byType)) {
@@ -3710,8 +3715,12 @@ export class RunSim {
     }
     const def = AILMENT_OF_TYPE[type];
     if (!def || most <= 0) return;
-    if (!this.rng.chance(MONSTER_AILMENT.chance / 100)) return;
-    this.strike(attacker, target, def, most);
+    // PAST 100% IT LEAVES TWO, the hero's own rule read the other way. The
+    // remainder is rolled only where there IS one, or every hit spends a draw.
+    let count = Math.floor(this.ailChance / 100);
+    const over = this.ailChance - count * 100;
+    if (over > 0 && this.rng.chance(over / 100)) count++;
+    for (let i = 0; i < count; i++) this.strike(attacker, target, def, most);
   }
 
   /** ONE stack. The oldest falls off at the cap rather than the new one being
@@ -4131,11 +4140,9 @@ export class RunSim {
    *  the one that bought Armour a say over them. */
   private hide(e: Entity, type: string): number {
     if (e.kind !== 'hero') return 1;
-    // WHAT THE GEAR BOUGHT for THIS type, own line plus its group, capped in
-    // `heroStats` so no pile of lines can turn an Ailment into a heal.
-    let left = 1 - (e.stats.ailmentWard?.[type] ?? 0) / 100;
-    // SECOND SKIN: the one thing that puts Armour in front of an Ailment.
-    const share = Math.min(WARRIOR.secondSkinCap, (this.grants.secondSkin as number) ?? 0);
+    // Own line plus its group, capped in `heroStats` so no pile of them
+    let left = 1 - (e.stats.ailmentWard?.[type] ?? 0) / 100; // turns one into a heal
+    const share = Math.min(WARRIOR.secondSkinCap, (this.grants.secondSkin as number) ?? 0); // SECOND SKIN
     if (share > 0) left *= 1 - (e.stats.armourReduction / 100) * share;
     return Math.max(0, left);
   }

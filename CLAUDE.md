@@ -1253,16 +1253,26 @@ NEVER THE BODY'S** (`MARK_R`): keyed off `scale`, a boss wore a slab of sky
 blue where a beetle wore a speck.
 
 **A MONSTER'S HIT LEAVES ONE TOO, AND IT IS A SHARE OF THAT HIT.** *"Mobs should
-begin to apply ailments."* `MONSTER_AILMENT` is 30% of the hits that land on you,
-each leaving one stack of the Ailment of whichever half of the hit landed
-hardest, worth 1.2 of that hit over its own run. **Riding the hit is the whole of
-what keeps it inside the danger already priced** — a flat dps would be 26 a
-second at the bare Fissure and 26 at the bottom of The Rot, which is the
-unweighed second source the old rule was written against, and it is why there is
-no `DANGER_STATS` row for it. Measured on a floor build: 32% on top of what
-reaches you at band 1 and 22% at band 5, the same share of the fight at both
-ends. **A FREEZE IS STILL SOMETHING YOU DO** — nothing hero-side reads a hold, so
-a Chill on him slows and never Freezes, which would be a wall with no answer.
+begin to apply ailments."* The Ailment is of whichever half of the hit landed
+hardest, and it is worth `MONSTER_AILMENT.share` — 1.2 — of that hit over its own
+run. **Riding the hit is the whole of what keeps it inside the danger already
+priced** — a flat dps would be 26 a second at the bare Fissure and 26 at the
+bottom of The Rot, which is the unweighed second source the old rule was written
+against, and it is why there is no `DANGER_STATS` row for it.
+
+**AND THE CHANCE IS A STRAIGHT LINE IN DANGER, FROM NOTHING TO OVER 100%.**
+*"For monsters applying ailments start at 0% and scale up to a lot at really
+high difficulties. Like over 100% at top end."* `monsterAilmentChance` is
+`MONSTER_AILMENT.atTop` of 120 across `topDanger` of 820, and it is **UNCLAMPED**
+— `POWER.max` is what a run may DROP where this is what it does to you, so a
+souled climb keeps climbing. Measured down the climb rather than across the drop
+bands, which top out near 240: **0% at the bare Fissure**, 15% at Shallows d6,
+32% at d12, 97% at Rot d8 and **120% at the bottom, where a hit leaves TWO** —
+`floor(chance/100)` outright and the remainder rolled, the hero's own rule read
+the other way. At d12 it is 37% on top of what reaches you and takes the
+low-water mark from 32% to 14%. **A FREEZE IS STILL SOMETHING YOU DO** — nothing
+hero-side reads a hold, so a Chill on him slows and never Freezes, which would
+be a wall with no answer.
 
 **AND THE ANSWER IS ON GEAR, IN THE RESISTANCES' OWN SHAPE.** *"Maybe it should
 be specific to certain ailments but a large percent? Like reduced elemental

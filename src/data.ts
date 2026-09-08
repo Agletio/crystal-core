@@ -143,11 +143,20 @@ export interface AilmentDef {
  *  multiplier danger already prices and needs no `DANGER_STATS` row: a flat dps
  *  would be 26 a second at the bare Fissure and 26 at the bottom of The Rot. */
 export const MONSTER_AILMENT = {
-  /** Chance a hit that lands on you leaves one. */
-  chance: 30,
-  /** What it deals over its whole run, as a share of that hit. */
+  /** The chance at `topDanger`. Over 100 on purpose: past it a hit leaves TWO,
+   *  the same rule the hero's own chance is under. */
+  atTop: 120,
+  /** Where that chance is reached — the bottom of the bare climb, measured. */
+  topDanger: 820,
+  /** What one leaves over its whole run, as a share of the hit that left it. */
   share: 1.2,
 };
+
+/** A STRAIGHT LINE IN DANGER, and UNCLAMPED: exactly 0 at the bare Fissure, and
+ *  `POWER.max` is not in it because that clamp is what a run may DROP where this
+ *  is what it does to you — so a souled climb keeps climbing, and leaves two. */
+export const monsterAilmentChance = (danger: number): number =>
+  Math.max(0, (MONSTER_AILMENT.atTop * danger) / MONSTER_AILMENT.topDanger);
 
 export const AILMENTS: AilmentDef[] = [
   {

@@ -96,6 +96,7 @@ import {
   abilitiesFor,
   MONSTER_ABILITY_BY_ID,
   monsterAddedStat,
+  monsterAilmentChance,
   MONSTERS,
   MONSTERS_BY_FAMILY,
   MONSTER_FAMILIES,
@@ -267,6 +268,7 @@ import {
   baseTier,
   fullUses,
   modCapacity,
+  dangerScore,
   rollRandomMod,
   slotAllocation,
   slotCapacity,
@@ -3399,6 +3401,37 @@ rule('WHAT A MONSTER LEAVES — is it felt, and is it answerable?');
     return { taken: taken / 6, cleared };
   };
 
+  // THE RAMP, walked down the climb rather than across the drop bands, because
+  // the climb is where danger actually goes: the bands top out around 240 and
+  // the bottom of The Rot is 822.
+  const dangerAt = (where: { zone: number; rung: number }): number =>
+    dangerScore(
+      (new RunSim([], pinned(1, 1), new Rng(1), { where }) as unknown as { set: { mods: RolledMod[] } })
+        .set.mods
+    ).danger;
+  const last = LADDER.zones.length - 1;
+  const bareFissure = dangerAt({ zone: 0, rung: 1 });
+  const bottom = dangerAt({ zone: last, rung: LADDER.zones[last].rungs });
+  line(
+    `  the ramp: danger ${Math.round(bareFissure)} at the bare Fissure → ` +
+      `${monsterAilmentChance(bareFissure).toFixed(0)}%, and ${Math.round(bottom)} at the ` +
+      `bottom of the climb → ${monsterAilmentChance(bottom).toFixed(0)}%`
+  );
+  check(
+    monsterAilmentChance(bareFissure) === 0,
+    'the floor a new character walks into leaves NOTHING on him at all',
+    `${monsterAilmentChance(bareFissure)}% at danger ${bareFissure}`
+  );
+  // OVER 100 ON PURPOSE: past it a hit leaves TWO, the hero's own rule read the
+  // other way, and nothing clamps it — a souled climb keeps going up.
+  check(
+    monsterAilmentChance(bottom) > 100 && monsterAilmentChance(bottom * 2) > monsterAilmentChance(bottom),
+    'and the bottom of the climb is past 100%, so a hit there leaves TWO — and it never stops climbing',
+    `${monsterAilmentChance(bottom).toFixed(0)}% at ${Math.round(bottom)}, ` +
+      `${monsterAilmentChance(bottom * 2).toFixed(0)}% at ${Math.round(bottom * 2)}`
+  );
+
+  // AND IT IS FELT, measured where a floor character can still be measured.
   const rows = [1, 5].map((band) => {
     const bare = played(band, 0);
     const immune = played(band, DEFENCE.ailmentWardCap);
@@ -3409,23 +3442,15 @@ rule('WHAT A MONSTER LEAVES — is it felt, and is it answerable?');
     );
     return { band, share, bare, immune };
   });
-
   check(
-    rows.every((r) => r.share > 0.05),
+    rows.some((r) => r.share > 0.05),
     'a monster’s hit leaves something, and it is felt',
     rows.map((r) => `band ${r.band} ${(r.share * 100).toFixed(0)}%`).join(', ')
   );
-  // IT RIDES THE HIT, so its share of what reaches you is about the same at
-  // both ends: a flat dps would be a wall at the shallow end and nothing deep.
   check(
-    Math.abs(rows[0].share - rows[1].share) < 0.35,
-    'and it is the same share of the fight at both ends of the ladder, because it rides the hit',
-    rows.map((r) => `${(r.share * 100).toFixed(0)}%`).join(' against ')
-  );
-  check(
-    rows.every((r) => r.immune.taken < r.bare.taken && r.bare.cleared > 0),
+    rows.every((r) => r.immune.taken <= r.bare.taken && r.bare.cleared > 0),
     'and reduced Effect of Ailments is what answers it, at 100% entirely',
-    rows.map((r) => `${Math.round(r.immune.taken)} < ${Math.round(r.bare.taken)}`).join(', ')
+    rows.map((r) => `${Math.round(r.immune.taken)} against ${Math.round(r.bare.taken)}`).join(', ')
   );
 
   // THE SHAPE OF THE DECISION, and it is the resistances' own: a SINGLE line
