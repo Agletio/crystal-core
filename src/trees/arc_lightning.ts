@@ -88,31 +88,38 @@ const BRANCHES: Branch[] = [
     minors: [COMMON[1], COMMON[0], COMMON[2], COMMON[1]],
   },
   {
-    id: 'potential',
-    theme: 'Potential',
+    /**
+     * THE CHAIN RUNS THE OTHER WAY. Bare, each Arc lands for 70% of the one
+     * before it and the bolt fades out; here it CLIMBS, so the far end of the
+     * chain is the biggest hit in the cast and the build is pointed at a wall
+     * of bodies rather than at one. The whole branch is that one inversion,
+     * and the fork is the trade the other way — fewer Arcs, each worth more.
+     */
+    id: 'runaway',
+    theme: 'Runaway',
     enabler: {
       id: 'al_potential',
-      name: 'Potential',
-      description: '+7% Momentum per use, up to 55%.',
-      grants: { momentum: { per: 7, max: 55 } },
+      name: 'Runaway',
+      description: 'Each Arc deals 25% more than the one before it, instead of 30% less.',
+      grants: { chainBuild: 1.25, manaMultiplier: 1.15 },
     },
     twigs: [
       {
         minors: 4,
         notable: {
           id: 'al_capacitor',
-          name: 'Capacitor',
-          description: 'Momentum builds 4% faster per use.',
-          grants: { momentumPer: 4 },
+          name: 'Avalanche',
+          description: 'Each Arc deals a further 20% more than the one before it.',
+          grants: { chainBuild: 1.2, manaMultiplier: 1.08 },
         },
       },
       {
         minors: 4,
         notable: {
           id: 'al_reservoir',
-          name: 'Reservoir',
-          description: 'Momentum reaches 40% higher.',
-          grants: { momentumMax: 40 },
+          name: 'Long Line',
+          description: 'Arc Lightning gains +2 Arcs, so the climb has further to run.',
+          grants: { chains: 2, manaMultiplier: 1.15 },
         },
       },
       {
@@ -120,15 +127,14 @@ const BRANCHES: Branch[] = [
         forkFrom: { twig: 1, at: 2 },
         notable: {
           id: 'al_grounding',
-          name: 'Grounding Line',
-          description:
-            'Momentum carries to a new enemy whole instead of being halved, ' +
-            'and reaches 15% higher.',
-          grants: { momentumKeep: true, momentumMax: 15 },
+          name: 'Short Circuit',
+          description: 'Arc Lightning loses 2 Arcs, and deals 45% increased Damage.',
+          stats: [stat('damage', 'inc', 45)],
+          grants: { chains: -2 },
         },
       },
     ],
-    minors: [COMMON[0], { text: '+2% Momentum per use', grants: { momentumPer: 2 } }, COMMON[1], COMMON[2]],
+    minors: [COMMON[0], COMMON[3], COMMON[1], COMMON[2]],
   },
   {
     id: 'ionisation',
@@ -319,9 +325,7 @@ export const ARC_LIGHTNING_SPEC: TreeSpec = {
   // Arcs are not in here: the skill has three of its own, so a node that makes
   // an Arc better does something the moment it is bought.
   needs: {
-    momentumPer: 'al_potential',
-    momentumMax: 'al_potential',
-    momentumKeep: 'al_potential',
+    chainBuild: 'al_potential',
     ailmentMultiplier: 'al_ionise',
     ailmentDuration: 'al_ionise',
     ailmentChance: 'al_ionise',

@@ -245,33 +245,41 @@ const BRANCHES: Branch[] = [
     ],
   },
   {
-    id: 'rhythm',
-    theme: 'Rhythm',
+    /**
+     * THE CULL. Every other branch here buys a bigger hit; this one buys the
+     * hit not having to be big enough. It reads what the wound ACTUALLY left,
+     * so it pays exactly where a rogue's damage runs out — a body it took to a
+     * sliver and could not finish — and it is worth nothing at all on a body
+     * the build one-shots anyway.
+     */
+    id: 'cull',
+    theme: 'Cull',
     enabler: {
       id: 'am_rhythm',
-      name: 'Rhythm',
-      description: '+8% Momentum per use, up to 64%.',
-      grants: { momentum: { per: 8, max: 64 } },
+      name: 'Cull',
+      description: 'A hit that leaves an enemy under 8% of its life kills it.',
+      grants: { execute: 0.08, manaMultiplier: 1.15 },
     },
     twigs: [
       {
         minors: 3,
         notable: {
           id: 'am_cadence',
-          name: 'Cadence',
-          description: 'Momentum builds 5% faster per use.',
-          grants: { momentumPer: 5 },
+          name: 'Bled Out',
+          description: 'A hit that leaves an enemy under a further 7% of its life kills it.',
+          grants: { execute: 0.07 },
         },
       },
       {
         minors: 4,
         notable: {
           id: 'am_carried',
-          name: 'Carried Over',
+          name: 'Mercy',
           description:
-            'Momentum carries to a new enemy whole instead of being halved, and ' +
-            'reaches 20% higher.',
-          grants: { momentumKeep: true, momentumMax: 20 },
+            'A hit that leaves an enemy under a further 5% of its life kills it, ' +
+            'and Ambush crits 8% more often.',
+          grants: { execute: 0.05 },
+          stats: [stat('critChance', 'flat', 8)],
         },
       },
       {
@@ -279,13 +287,16 @@ const BRANCHES: Branch[] = [
         forkFrom: { twig: 1, at: 2 },
         notable: {
           id: 'am_drumming',
-          name: 'Drumming',
-          description: 'Momentum reaches 50% higher.',
-          grants: { momentumMax: 50 },
+          name: 'The Quiet Part',
+          description:
+            'A hit that leaves an enemy under a further 10% of its life kills it, ' +
+            'and Ambush has +45% Critical Damage.',
+          grants: { execute: 0.1, manaMultiplier: 1.15 },
+          stats: [stat('critMultiplier', 'flat', 45)],
         },
       },
     ],
-    minors: [COMMON[2], { text: '+2% Momentum per use', grants: { momentumPer: 2 } }, COMMON[1], COMMON[2]],
+    minors: [COMMON[2], COMMON[3], COMMON[1], COMMON[2]],
   },
 ];
 
@@ -357,9 +368,7 @@ export const AMBUSH_SPEC: TreeSpec = {
   needs: {
     chainSooner: 'am_relay',
     chainReach: 'am_relay',
-    momentumPer: 'am_rhythm',
-    momentumMax: 'am_rhythm',
-    momentumKeep: 'am_rhythm',
+    execute: 'am_rhythm',
     ailmentMultiplier: 'am_bleeding',
     ailmentDuration: 'am_bleeding',
     ailmentChance: 'am_bleeding',

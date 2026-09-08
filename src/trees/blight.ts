@@ -68,31 +68,40 @@ const BRANCHES: Branch[] = [
     minors: [COMMON[3], COMMON[4], COMMON[0], COMMON[3]],
   },
   {
-    id: 'fixation',
-    theme: 'Fixation',
+    /**
+     * THE PLAGUE OUTLIVES WHAT IT KILLED. Contagion spreads the Cloud from a
+     * body while it is still up; this passes what a body was CARRYING on as it
+     * falls, so a floor Blight has already worked keeps infecting itself with
+     * no cast at all. It is worth nothing on a floor that dies to one hit and
+     * everything on one that does not, which is the trade the whole skill is.
+     */
+    id: 'harvest',
+    theme: 'Harvest',
     enabler: {
       id: 'bl_fixation',
-      name: 'Fixation',
-      description: '+7% Momentum per use, up to 55%.',
-      grants: { momentum: { per: 7, max: 55 } },
+      name: 'Harvest',
+      description:
+        'A body dying with an Ailment gives 1 stack of each to the 2 nearest ' +
+        'enemies within 3 tiles.',
+      grants: { ailmentSpread: { radius: 3, stacks: 1, targets: 2 }, manaMultiplier: 1.15 },
     },
     twigs: [
       {
         minors: 4,
         notable: {
           id: 'bl_saturation',
-          name: 'Saturation',
-          description: 'Momentum builds 4% faster per use.',
-          grants: { momentumPer: 4 },
+          name: 'Seeding',
+          description: 'It gives 1 more stack of each, to 1 more enemy.',
+          grants: { ailmentSpread: { radius: 0, stacks: 1, targets: 1 } },
         },
       },
       {
         minors: 4,
         notable: {
           id: 'bl_deepening',
-          name: 'Deepening',
-          description: 'Momentum reaches 40% higher.',
-          grants: { momentumMax: 40 },
+          name: 'Windborne',
+          description: 'It reaches 2.5 tiles further, and 1 more enemy.',
+          grants: { ailmentSpread: { radius: 2.5, stacks: 0, targets: 1 } },
         },
       },
       {
@@ -101,14 +110,15 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'bl_takehold',
           name: 'Taking Hold',
-          description:
-            'Momentum carries to a new enemy whole instead of being halved, ' +
-            'and reaches 15% higher.',
-          grants: { momentumKeep: true, momentumMax: 15 },
+          description: 'It reaches 1.5 tiles further, gives 1 more stack of each, and 2 more enemies.',
+          grants: {
+            ailmentSpread: { radius: 1.5, stacks: 1, targets: 2 },
+            manaMultiplier: 1.15,
+          },
         },
       },
     ],
-    minors: [COMMON[0], { text: '+2% Momentum per use', grants: { momentumPer: 2 } }, COMMON[1], COMMON[2]],
+    minors: [COMMON[0], COMMON[3], COMMON[1], COMMON[2]],
   },
   {
     id: 'miasma',
@@ -342,9 +352,7 @@ export const BLIGHT_SPEC: TreeSpec = {
   branches: BRANCHES,
   trunkNotables: TRUNK_NOTABLES,
   needs: {
-    momentumPer: 'bl_fixation',
-    momentumMax: 'bl_fixation',
-    momentumKeep: 'bl_fixation',
+    ailmentSpread: 'bl_fixation',
     contagionRadius: 'bl_contagion',
     extraFields: 'bl_miasma',
   },

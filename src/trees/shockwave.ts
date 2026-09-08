@@ -66,31 +66,38 @@ const BRANCHES: Branch[] = [
     ],
   },
   {
-    id: 'pressure',
-    theme: 'Pressure',
+    /**
+     * THE GROUND STAYS BROKEN. Every other branch here is about the wedge — how
+     * wide, how far, how hard — and this one is about what is left standing in
+     * it after the wave has gone: a Cloud, on the same seam Rimespike leaves
+     * one, so a Cone that catches a pack keeps working on it while you swing
+     * somewhere else. Armour blunts the wave; it does not blunt what it leaves.
+     */
+    id: 'faultline',
+    theme: 'Fault',
     enabler: {
       id: 'sw_pressure',
-      name: 'Pressure',
-      description: '+8% Momentum per use, up to 60%.',
-      grants: { momentum: { per: 8, max: 60 } },
+      name: 'Fault Line',
+      description: 'Every 3rd Cone leaves a Cloud reaching 2.2 tiles where it lands.',
+      grants: { fieldOnCast: { every: 3, radius: 2.2 }, manaMultiplier: 1.15 },
     },
     twigs: [
       {
         minors: 4,
         notable: {
           id: 'sw_bearing',
-          name: 'Bearing',
-          description: 'Momentum builds 4% faster per use.',
-          grants: { momentumPer: 4 },
+          name: 'Aftershock',
+          description: 'Clouds come round 100% more often.',
+          grants: { fieldEvery: 0.5, manaMultiplier: 1.08 },
         },
       },
       {
         minors: 4,
         notable: {
           id: 'sw_deadweight',
-          name: 'Dead Weight',
-          description: 'Momentum reaches 40% higher.',
-          grants: { momentumMax: 40 },
+          name: 'Subsidence',
+          description: 'Clouds cover 45% more ground.',
+          grants: { fieldRadius: 1.45, manaMultiplier: 1.08 },
         },
       },
       {
@@ -98,15 +105,13 @@ const BRANCHES: Branch[] = [
         forkFrom: { twig: 1, at: 2 },
         notable: {
           id: 'sw_carrythrough',
-          name: 'Carry-Through',
-          description:
-            'Momentum carries to a new enemy whole instead of being halved, ' +
-            'and reaches 15% higher.',
-          grants: { momentumKeep: true, momentumMax: 15 },
+          name: 'Shear',
+          description: 'The Cone drops 2 more Clouds, on other enemies.',
+          grants: { extraFields: 2, manaMultiplier: 1.15 },
         },
       },
     ],
-    minors: [COMMON[0], { text: '+2% Momentum per use', grants: { momentumPer: 2 } }, COMMON[1], COMMON[2]],
+    minors: [COMMON[0], COMMON[3], COMMON[1], COMMON[2]],
   },
   {
     id: 'fracture',
@@ -355,9 +360,10 @@ export const SHOCKWAVE_SPEC: TreeSpec = {
   // The Cone is the skill, so opening it needs nothing bought first; a Burst
   // and a Bleed both do, and every switch that only tunes one is listed here.
   needs: {
-    momentumPer: 'sw_pressure',
-    momentumMax: 'sw_pressure',
-    momentumKeep: 'sw_pressure',
+    fieldOnCast: 'sw_pressure',
+    fieldEvery: 'sw_pressure',
+    fieldRadius: 'sw_pressure',
+    extraFields: 'sw_pressure',
     ailmentChance: 'sw_fracture',
     ailmentMultiplier: 'sw_fracture',
     ailmentDuration: 'sw_fracture',

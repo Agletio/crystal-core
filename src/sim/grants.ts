@@ -9,7 +9,9 @@
  * runs for every skill whatever its delivery is.
  */
 import {
-  AMBUSH, BURST, HERO_BASE, MANA, PASSIVE_DAMAGE, ROGUE, WARRIOR, WEAPON_SPECIALITY, stunChanceFor,
+  AMBUSH, BURST, FASTEST_SWING, HERO_BASE, MANA, MELEE, PASSIVE_DAMAGE, ROGUE, WARRIOR,
+  WEAPON_SPECIALITY,
+  stunChanceFor,
 } from '../data';
 
 export const STATS = 'stats';
@@ -20,7 +22,7 @@ export const STATS = 'stats';
 export const SIM = 'sim';
 
 /** What two nodes granting the same thing come to. `replace` is the default. */
-export type Merge = 'sum' | 'product' | 'max' | 'append' | 'replace';
+export type Merge = 'sum' | 'product' | 'max' | 'append' | 'replace' | 'bag';
 
 /**
  * What MECHANISM a grant touches. Two grants can only interact if they touch
@@ -371,6 +373,7 @@ export const GRANTS: GrantDef[] = [
     id: 'ailmentSpread',
     what: 'an ailing body passes what it carried on when it dies',
     reads: [STATS],
+    merge: 'bag',
     say: (v) => {
       const p = pair(v, 'radius', 'stacks');
       const targets = (v as { targets?: number } | null)?.targets;
@@ -887,6 +890,21 @@ export const GRANTS: GrantDef[] = [
     },
   },
 
+  {
+    /** AN EXECUTE, and it is the WOUND that decides: asked after the hit landed,
+     *  so what finishes a body is how far your blow actually took it rather than
+     *  what the sheet said it would. Monsters only — a rule that could cull the
+     *  hero is a rule that kills him through armour. */
+    id: 'execute',
+    changes: 'scale',
+    what: 'a hit that leaves an enemy under a share of its life finishes it',
+    reads: [STATS],
+    merge: 'sum',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null ? null : `A hit that leaves an enemy under ${pct(n)} of its life kills it`;
+    },
+  },
   { id: 'everyNth', what: 'every nth cast is worth more', reads: SCALED, changes: 'scale' },
   { id: 'moreVsAiling', what: 'more damage to enemies already suffering', reads: SCALED, changes: 'scale' },
   // WHAT REPLACED THE DISTANCE NODES. *"It feels bad to ever take increased
@@ -956,6 +974,83 @@ export const GRANTS: GrantDef[] = [
     },
   },
   {
+    /** BACKDRAFT: a hit on a body already carrying the skill's own Ailment eats
+     *  every stack of it and lands what those stacks had LEFT to deal, at this
+     *  share, as one hit. It is what makes a burning tree and a hitting tree
+     *  the same build — and it pays nothing at all on a body nothing has lit. */
+    id: 'consumeAilment',
+    changes: 'ailment',
+    what: 'a hit eats the Ailment it finds and deals what was left of it at once',
+    reads: ['projectile', SIM],
+    merge: 'sum',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null
+        ? null
+        : `A hit on an enemy carrying your Ailment consumes every stack and deals ` +
+          `${pct(n)} of what they had left, at once`;
+    },
+  },
+  {
+    /** THE HEAVY BLOW. Pays for every step the swing rate sits under the bare
+     *  one, so a build takes this INSTEAD of the attack speed the rest of its
+     *  own tree sells — which is the whole decision. Never pays for swinging
+     *  faster than bare. */
+    id: 'slowMore',
+    changes: 'scale',
+    what: 'a slower swing lands for more',
+    // The SIM computes it — only it knows the rate — and hands it to every
+    // delivery through `SkillUse.heft`, so a cast alone cannot show it.
+    reads: [...SCALED, SIM],
+    merge: 'sum',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null
+        ? null
+        : `Up to ${pct(n)} more damage as your swing rate falls below ${FASTEST_SWING}/s, ` +
+          `reaching all of it at half that`;
+    },
+  },
+  {
+    /** A PIN holds a body where it stands, on `Entity.stun` — the seam a Freeze
+     *  already writes, so there is no second way to take a body out of a fight.
+     *  Monsters only, and never stacked past its own seconds. */
+    id: 'pinSeconds',
+    changes: 'duration',
+    what: 'the shot holds what it hits where it stands',
+    reads: [STATS],
+    merge: 'sum',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null ? null : `What it hits is held where it stands for ${n}s`;
+    },
+  },
+  {
+    /** A FREEZE IS THE ONLY THING THAT TAKES A BODY OUT OF THE FIGHT, and it is
+     *  Chill's alone. `AILMENTS.chill.freezeAt` stacks is the bar; this lowers
+     *  it, floored at one so no walk makes a Freeze free. */
+    id: 'freezeSooner',
+    changes: 'duration',
+    what: 'a Freeze takes fewer stacks of Chill',
+    reads: [STATS],
+    merge: 'sum',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null ? null : `A Freeze takes ${n} fewer stacks of Chill`;
+    },
+  },
+  {
+    id: 'freezeLonger',
+    changes: 'duration',
+    what: 'a Freeze holds a body longer',
+    reads: [STATS],
+    merge: 'product',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null ? null : `A Freeze holds ${more(n)} longer`;
+    },
+  },
+  {
     id: 'ailmentMultiplier',
     changes: 'scale',
     what: 'Ailments you apply deal more',
@@ -982,49 +1077,6 @@ export const GRANTS: GrantDef[] = [
   // moment you switch, so it is worth everything to a build that commits and
   // nothing to one that sprays. It is what a Burst branch became: coverage used
   // to be the only thing a branch could sell, and this sells the opposite.
-  {
-    id: 'momentum',
-    changes: 'scale',
-    what: 'staying on one enemy builds Momentum against it',
-    reads: [STATS],
-    say: (v) => {
-      const p = pair(v, 'per', 'max');
-      return (
-        p &&
-        `Each use on the same enemy as the last builds ${p[0]}% Momentum against it, up to ${p[1]}%; using it elsewhere halves what you have built`
-      );
-    },
-  },
-  {
-    id: 'momentumPer',
-    changes: 'scale',
-    what: 'Momentum builds faster',
-    reads: [STATS],
-    merge: 'sum',
-    say: (v) => {
-      const n = asNumber(v);
-      return n === null ? null : `Momentum builds ${n}% faster per use`;
-    },
-  },
-  {
-    id: 'momentumMax',
-    changes: 'scale',
-    what: 'Momentum reaches higher',
-    reads: [STATS],
-    merge: 'sum',
-    say: (v) => {
-      const n = asNumber(v);
-      return n === null ? null : `Momentum reaches ${n}% higher`;
-    },
-  },
-  {
-    id: 'momentumKeep',
-    changes: 'scale',
-    what: 'Momentum carries to the next enemy whole instead of being halved',
-    reads: [STATS],
-    say: (v) =>
-      v === true ? 'Momentum carries to a new enemy whole instead of being halved' : null,
-  },
 
   // --- SPLASH, which every single-target skill already has ------------------
   {
@@ -1050,6 +1102,7 @@ export const GRANTS: GrantDef[] = [
     changes: 'burst',
     what: 'a killed enemy Bursts, and so does whatever that Burst kills',
     reads: HITTERS,
+    merge: 'bag',
     say: (v) => {
       const p = pair(v, 'radius', 'multiplier');
       return (
@@ -1171,6 +1224,20 @@ export const GRANTS: GrantDef[] = [
       return n === null ? null : `Arcs deal ${pct(n)} of the damage`;
     },
   },
+  {
+    /** THE CHAIN RUNS THE OTHER WAY. Every Arc is worth this much more than the
+     *  one before it, so a bolt that normally fades gets bigger the further it
+     *  travels — and the build is pointed at a PACK rather than at a body. */
+    id: 'chainBuild',
+    changes: 'targets',
+    what: 'each Arc is worth more than the one before it',
+    reads: ['projectile'],
+    merge: 'product',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null ? null : `Each Arc deals ${more(n)} more than the one before it`;
+    },
+  },
 
   {
     id: 'forks',
@@ -1217,6 +1284,24 @@ export const GRANTS: GrantDef[] = [
     },
   },
   {
+    /** THE SWING DOES NOT STOP AT A BODY IT KILLED. Reach is `MELEE.carry` from
+     *  the body that fell, at FULL damage — an Echo is a share and this is not,
+     *  which is what makes clearing with it a decision rather than a discount.
+     *  The count is spent per carry rather than per kill, so it terminates. */
+    id: 'carryOnKill',
+    changes: 'targets',
+    what: 'a blow that kills swings on into another enemy',
+    reads: ['melee'],
+    merge: 'sum',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null
+        ? null
+        : `A blow that kills swings on into the nearest enemy within ${MELEE.carry} tiles ` +
+          `at full damage, up to ${n} times`;
+    },
+  },
+  {
     id: 'doubleStrike',
     changes: 'targets',
     what: 'more Repeats at the enemy you aimed at',
@@ -1258,7 +1343,7 @@ export const GRANTS: GrantDef[] = [
     id: 'fieldOnCast',
     changes: 'field',
     what: 'the skill leaves a Cloud where it lands, every so many casts',
-    reads: ['single_target'],
+    reads: ['single_target', 'cone'],
     say: (v) => {
       const p = pair(v, 'every', 'radius');
       return p && `Every ${p[0]} casts leaves a Cloud reaching ${p[1]} tiles where it lands`;
@@ -1268,7 +1353,7 @@ export const GRANTS: GrantDef[] = [
     id: 'fieldEvery',
     changes: 'field',
     what: 'the Cloud comes round sooner',
-    reads: ['single_target'],
+    reads: ['single_target', 'cone'],
     merge: 'product',
     say: (v) => {
       const n = asNumber(v);
@@ -1279,7 +1364,7 @@ export const GRANTS: GrantDef[] = [
     id: 'fieldRadius',
     changes: 'field',
     what: 'the Cloud covers more ground',
-    reads: ['ailment_burst', 'single_target'],
+    reads: ['ailment_burst', 'single_target', 'cone'],
     merge: 'product',
     say: (v) => {
       const n = asNumber(v);
@@ -1290,7 +1375,7 @@ export const GRANTS: GrantDef[] = [
     id: 'extraFields',
     changes: 'targets',
     what: 'the skill drops more Clouds, on other enemies',
-    reads: ['ailment_burst', 'single_target'],
+    reads: ['ailment_burst', 'single_target', 'cone'],
     merge: 'sum',
     say: (v) => {
       const n = asNumber(v);
@@ -1334,6 +1419,17 @@ export function mergeGrants(
       case 'append':
         out[key] = [...((out[key] as string[]) ?? []), ...(value as string[])];
         break;
+      // A BAG of numbers sums FIELD BY FIELD, so a notable saying "a further
+      // 25%" adds to the enabler rather than replacing the whole bag — which is
+      // what an override does, and it can make a node walked second a downgrade.
+      case 'bag': {
+        const had = (out[key] as Record<string, number>) ?? {};
+        const add = value as Record<string, number>;
+        const bag: Record<string, number> = { ...had };
+        for (const [f, n] of Object.entries(add)) bag[f] = (bag[f] ?? 0) + n;
+        out[key] = bag;
+        break;
+      }
       default:
         out[key] = value;
     }

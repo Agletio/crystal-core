@@ -75,13 +75,22 @@ const BRANCHES: Branch[] = [
     ],
   },
   {
+    /**
+     * THE BRANCH THAT NEEDS THE OTHER ONE. A Burn is damage spread over
+     * seconds; this eats it and lands what was LEFT all at once, so the tree's
+     * two halves stop being alternatives — Kindling lights the body and this
+     * cashes it in. It is worth exactly nothing on a floor nothing has lit,
+     * which is what makes taking both a build rather than a rider.
+     */
     id: 'bellows',
-    theme: 'Bellows',
+    theme: 'Backdraft',
     enabler: {
       id: 'fb_bellows',
-      name: 'Bellows',
-      description: '+8% Momentum per use, up to 60%.',
-      grants: { momentum: { per: 8, max: 60 } },
+      name: 'Backdraft',
+      description:
+        'A hit on an enemy carrying your Ailment consumes every stack and deals ' +
+        '60% of what they had left, at once.',
+      grants: { consumeAilment: 0.6, manaMultiplier: 1.15 },
     },
     twigs: [
       {
@@ -89,8 +98,8 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'fb_draught',
           name: 'Draught',
-          description: 'Momentum builds 4% faster per use.',
-          grants: { momentumPer: 4 },
+          description: 'It consumes them for a further 45% of what they had left.',
+          grants: { consumeAilment: 0.45 },
         },
       },
       {
@@ -98,8 +107,8 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'fb_furnace',
           name: 'Furnace',
-          description: 'Momentum reaches 40% higher.',
-          grants: { momentumMax: 40 },
+          description: 'It consumes them for a further 30%.',
+          grants: { consumeAilment: 0.3 },
         },
       },
       {
@@ -108,14 +117,12 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'fb_forgefire',
           name: 'Forge-Fire',
-          description:
-            'Momentum carries to a new enemy whole instead of being halved, ' +
-            'and reaches 15% higher.',
-          grants: { momentumKeep: true, momentumMax: 15 },
+          description: 'It consumes them for a further 65%.',
+          grants: { consumeAilment: 0.65, manaMultiplier: 1.15 },
         },
       },
     ],
-    minors: [COMMON[0], { text: '+2% Momentum per use', grants: { momentumPer: 2 } }, COMMON[1], COMMON[2]],
+    minors: [COMMON[0], COMMON[3], COMMON[1], COMMON[2]],
   },
   {
     id: 'volley',
@@ -173,8 +180,10 @@ const BRANCHES: Branch[] = [
       {
         minors: 5,
         notable: {
+          // The ID is kept — a save points at it — where the NAME was Momentum's
+          // and that mechanic is gone.
           id: 'fb_momentum',
-          name: 'Momentum',
+          name: 'Clean Through',
           description: 'Pierce deals full damage instead of 70%.',
           grants: { pierceDamage: 1, manaMultiplier: 1.08 },
         },
@@ -224,31 +233,39 @@ const BRANCHES: Branch[] = [
     minors: [COMMON[0], COMMON[2], COMMON[1], COMMON[0]],
   },
   {
+    /**
+     * THE CHAIN REACTION. Every other branch here decides where the ball GOES;
+     * this one decides what happens after it has already killed something —
+     * a Burst off the body, and a Burst off whatever THAT takes down, `BURST`
+     * deep. A pack tight enough goes up off one cast, and a pack that is not
+     * gets nothing at all, which is what makes it a decision about the floor
+     * you run rather than a rider on the damage.
+     */
     id: 'cruelty',
-    theme: 'Malice',
+    theme: 'Detonation',
     enabler: {
       id: 'fb_immolate',
-      name: 'Immolate',
-      description: 'Fireball deals 25% more damage to enemies carrying an Ailment.',
-      grants: { moreVsAiling: 0.25 },
+      name: 'Detonation',
+      description: 'A killed enemy Bursts 2 tiles across, for 30% of the damage.',
+      grants: { explodeOnKill: { radius: 2, multiplier: 0.3 }, manaMultiplier: 1.15 },
     },
     twigs: [
       {
         minors: 3,
         notable: {
           id: 'fb_closequarters',
-          name: 'Clean Sweep',
-          description: 'For 4s after a kill, Fireball deals 30% more damage.',
-          grants: { killMore: { seconds: 4, more: 0.3 } },
+          name: 'Firestorm',
+          description: 'The Burst off a killed enemy reaches 0.8 tiles further.',
+          grants: { explodeOnKill: { radius: 0.8, multiplier: 0 } },
         },
       },
       {
         minors: 4,
         notable: {
           id: 'fb_executioner',
-          name: 'Executioner',
-          description: 'Fireball deals 35% more damage to enemies below 33% of their life.',
-          grants: { moreVsLow: { below: 0.33, more: 0.35 } },
+          name: 'Fuel Air',
+          description: 'The Burst off a killed enemy deals a further 25% of the damage.',
+          grants: { explodeOnKill: { radius: 0, multiplier: 0.25 } },
         },
       },
       {
@@ -257,8 +274,10 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'fb_overload',
           name: 'Overload',
-          description: 'Every 5th cast of Fireball deals 300% damage.',
-          grants: { everyNth: { n: 5, multiplier: 3 } },
+          description:
+            'The Burst off a killed enemy reaches 0.6 tiles further and deals a ' +
+            'further 20% of the damage.',
+          grants: { explodeOnKill: { radius: 0.6, multiplier: 0.2 }, manaMultiplier: 1.15 },
         },
       },
     ],
@@ -331,9 +350,8 @@ export const FIREBALL_SPEC: TreeSpec = {
   branches: BRANCHES,
   trunkNotables: TRUNK_NOTABLES,
   needs: {
-    momentumPer: 'fb_bellows',
-    momentumMax: 'fb_bellows',
-    momentumKeep: 'fb_bellows',
+    consumeAilment: 'fb_bellows',
+    explodeOnKill: 'fb_immolate',
     ailmentMultiplier: 'fb_kindling',
     ailmentDuration: 'fb_kindling',
     ailmentChance: 'fb_kindling',

@@ -5400,7 +5400,7 @@ rule('SPLASH — every skill that hits ONE thing spills onto what stands by it')
     SKILL_BEHAVIOURS.melee({
       skill: SKILL_BY_ID.strike,
       user: dummy(0, 0), primary: hit, enemies: [hit, near, far],
-      rng: new Rng(3), grants, crit: false, castIndex: 0, momentum: 1,
+      rng: new Rng(3), grants, crit: false, castIndex: 0, heft: 1,
       hit: (who: any, multiplier: number) => out.push({ who, multiplier }),
       ailment: () => {}, leave: () => {},
       areaRadius: (base: number) => base,
@@ -5466,7 +5466,7 @@ rule('FIREBALL — do the notables actually change the cast?');
   const name = (e: any) =>
     e === ahead ? 'ahead' : e === behind ? 'behind' : e === beside ? 'beside' : 'across';
 
-  const cast = (grants: Record<string, unknown>, crit = false, momentum = 1) => {
+  const cast = (grants: Record<string, unknown>, crit = false, heft = 1) => {
     const user = dummy(0, 0);
     const enemies = [ahead, behind, beside, across];
 
@@ -5476,7 +5476,7 @@ rule('FIREBALL — do the notables actually change the cast?');
     SKILL_BEHAVIOURS.projectile({
       skill: SKILL_BY_ID.fireball,
       user, primary: ahead, enemies,
-      rng: new Rng(9), grants, crit, castIndex: 0, momentum,
+      rng: new Rng(9), grants, crit, castIndex: 0, heft,
       hit: (who: any, multiplier: number) => hits.push({ who, multiplier }),
       ailment: (who: any, _m: number, seconds: number) => burns.push({ who, seconds }),
       leave: () => {},
@@ -5521,21 +5521,21 @@ rule('FIREBALL — do the notables actually change the cast?');
     pierced.names.join()
   );
 
-  // MOMENTUM reaches the body you AIMED at and no other. A build that spreads
-  // its uses is what it is worth nothing to, so a Fork carrying it would be the
-  // whole trade undone in silence.
+  // HEFT is what the USE is worth before any target is looked at, so it reaches
+  // EVERY body the cast touches. Momentum, which it replaced, reached the aimed-at
+  // body alone — the opposite — so this is the check that says which one shipped.
   {
     const spread = cast({ extraTargets: 2 }, false, 1.5);
     const aimed = spread.hits.find((h) => name(h.who) === 'ahead');
     const other = spread.hits.find((h) => name(h.who) !== 'ahead');
     line(
-      `  momentum x1.5      → ahead ${aimed?.multiplier.toFixed(2)}, ` +
+      `  heft x1.5          → ahead ${aimed?.multiplier.toFixed(2)}, ` +
         `${other ? name(other.who) : 'nobody'} ${other?.multiplier.toFixed(2)}`
     );
     check(
       aimed !== undefined && other !== undefined
-        && Math.abs(aimed.multiplier - 1.5) < 1e-9 && Math.abs(other.multiplier - 1) < 1e-9,
-      'Momentum reaches the enemy you aimed at and no other',
+        && Math.abs(aimed.multiplier - 1.5) < 1e-9 && Math.abs(other.multiplier - 1.5) < 1e-9,
+      'a heavier swing is heavier on every body it touches, not just the one aimed at',
       `${aimed?.multiplier} / ${other?.multiplier}`
     );
   }
@@ -6008,7 +6008,7 @@ rule('RIMEFIELD — does the one single-target skill reach a pack?');
       SKILL_BEHAVIOURS.single_target({
         skill: SKILL_BY_ID.rimespike,
         user: dummy(0, 0), primary, enemies,
-        rng: new Rng(9), grants, crit: false, castIndex, momentum: 1,
+        rng: new Rng(9), grants, crit: false, castIndex, heft: 1,
         hit: () => {}, ailment: () => {}, leave: () => { left++; },
         areaRadius: (base: number) => base, vfx: () => {},
       } as any);
@@ -6351,13 +6351,15 @@ rule('COMBINATIONS — is every pair of changing nodes a decided thing?');
     const pair = interactionOf('scale', 'field')!;
     const was = pair.blocked;
     pair.blocked = true;
-    const held = ['bl_fixation'];
+    // `bl_virulence` is Blight's own 'scale' node; it was the Momentum enabler
+    // until that mechanic was deleted, and the pair needs a live one on each side.
+    const held = ['bl_virulence'];
     const stopped = blockedBy('blight', 'bl_canopy', held);
     const free = blockedBy('blight', 'bl_slowrot', held);
     pair.blocked = was;
 
     check(
-      stopped?.node.id === 'bl_fixation' && stopped.says === pair.says,
+      stopped?.node.id === 'bl_virulence' && stopped.says === pair.says,
       'a blocked pair refuses the second node and names the first',
       stopped ? `${stopped.node.id}` : 'nothing was refused'
     );

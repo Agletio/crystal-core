@@ -84,6 +84,7 @@ import {
   socketPacks,
   socketSize,
   GILT,
+  FASTEST_SWING,
   GATHER,
   HOARD,
   MATERIALS,
@@ -613,9 +614,6 @@ export class RunSim {
   /** Seconds until Sundering arms the next Burst, and until Hoarfrost fires. */
   private sunderIn = 0;
   private frostIn = 0;
-  /** Whose body Momentum is built against, and how many uses have gone into it. */
-  private momentumOn = -1;
-  private momentumStacks = 0;
   /** Seconds left of a Block having sharpened the next hit. */
   private riposte = 0;
   /** Seconds left of a KILL still covering and quickening you. */
@@ -2830,7 +2828,7 @@ export class RunSim {
 
     const grants = user.kind === 'hero' ? this.grants : {};
     const castIndex = user.kind === 'hero' ? this.casts++ : 0;
-    const momentum = user.kind === 'hero' ? this.stepMomentum(primary) : 1;
+    const heft = user.kind === 'hero' ? this.heftOf(user) : 1;
 
     // Rolled once for the whole use. Behaviours branch on it (Contagion), and
     // dealDamage honours it so a critical cast crits every target it touches.
@@ -2853,7 +2851,7 @@ export class RunSim {
           ? this.state.monsters.filter((m) => !m.dead)
           : [this.state.hero],
       rng: this.rng,
-      momentum,
+      heft,
       sinceKill: this.sinceKill,
       sinceHit: this.sinceHit,
       hit: (target, multiplier) => this.dealDamage(user, target, multiplier, skill),
@@ -2892,6 +2890,17 @@ export class RunSim {
       this.face(user, target.x, target.y);
       return;
     }
+  }
+
+  /** WHAT A SLOW SWING IS WORTH, measured against the FASTEST weapon there is:
+   *  a maul at 0.8 sits 94% under a dagger's 1.55 and is paid for all of it,
+   *  and nothing pays for swinging faster. A build taking this is turning down
+   *  the attack speed the rest of its own tree sells. */
+  private heftOf(user: Entity): number {
+    const per = (this.grants.slowMore as number) ?? 0;
+    if (per <= 0) return 1;
+    const rate = Math.max(0.01, user.stats.attacksPerSecond);
+    return 1 + per * Math.max(0, FASTEST_SWING / rate - 1);
   }
 
   /** THE FOLLOW-UP a Critical buys. A body this chain has already opened on
@@ -2934,24 +2943,6 @@ export class RunSim {
     }
   }
 
-  /** MOMENTUM, advanced once per use: what THIS use is worth against the body
-   *  it is aimed at, before the use adds to it. */
-  private stepMomentum(primary: Entity): number {
-    const bag = this.grants.momentum as { per: number; max: number } | undefined;
-    if (!bag) return 1;
-
-    // HALVED on a switch, never zeroed: a room with adds takes the hero off the
-    // body he is working on constantly, and a streak one add wipes never exists.
-    if (primary.id !== this.momentumOn) {
-      this.momentumOn = primary.id;
-      if (this.grants.momentumKeep !== true) this.momentumStacks >>= 1;
-    }
-    const per = bag.per + ((this.grants.momentumPer as number) ?? 0);
-    const ceiling = bag.max + ((this.grants.momentumMax as number) ?? 0);
-    const built = Math.min(ceiling, this.momentumStacks * per);
-    this.momentumStacks++;
-    return 1 + built / 100;
-  }
 
   /** Critical chance, plus whatever a running flask is adding to the hero's. */
   private critChanceOf(e: Entity): number {
@@ -3154,6 +3145,30 @@ export class RunSim {
     this.wake(defender, true);
 
     defender.life -= dmg;
+    // CULL, read AFTER the damage: the wound decides, not the sheet.
+    const cull = attacker.kind === 'hero' ? ((this.grants.execute as number) ?? 0) : 0;
+    if (cull > 0 && defender.kind === 'monster' && defender.life > 0
+      && defender.life <= defender.stats.maxLife * cull) {
+      defender.life = 0;
+    }
+    // BACKDRAFT: what the Ailments had LEFT, landed at once and taken off.
+    const eat = attacker.kind === 'hero' ? ((this.grants.consumeAilment as number) ?? 0) : 0;
+    if (eat > 0 && defender.kind === 'monster' && defender.life > 0 && defender.ailments.length > 0) {
+      let left = 0;
+      for (const a of defender.ailments) {
+        for (const n of Object.values(a.dps)) left += n * a.remaining;
+      }
+      if (left > 0) {
+        defender.ailments = [];
+        defender.life -= left * eat;
+        this.bank(defender, left * eat, false);
+      }
+    }
+    // A PIN, on the same seam a Freeze writes: monsters only, never stacked.
+    const pin = attacker.kind === 'hero' ? ((this.grants.pinSeconds as number) ?? 0) : 0;
+    if (pin > 0 && defender.kind === 'monster' && defender.life > 0) {
+      defender.stun = Math.max(defender.stun ?? 0, pin);
+    }
     defender.struck = true; // FIRST BLOOD is spent the moment one lands
     // A HEAVY HAND, on the ONE Slow seam a landing already writes.
     const heavy = attacker.kind === 'hero' ? ((this.grants.heavyHand as number) ?? 0) : 0;
@@ -3394,8 +3409,12 @@ export class RunSim {
     if (live) live.remaining = Math.max(live.remaining, def.seconds);
     else target.effects.push({ id: SLOWED, remaining: def.seconds });
 
-    if (def.freezeAt && stacks >= def.freezeAt) {
-      target.stun = Math.max(target.stun ?? 0, def.freezeSeconds ?? 1);
+    // Floored at one stack, so no walk makes a Freeze free.
+    const sooner = (this.grants.freezeSooner as number) ?? 0;
+    const needs = Math.max(1, (def.freezeAt ?? 0) - sooner);
+    if (def.freezeAt && stacks >= needs) {
+      const longer = (this.grants.freezeLonger as number) ?? 1;
+      target.stun = Math.max(target.stun ?? 0, (def.freezeSeconds ?? 1) * longer);
       target.thawed = true; // the hit after a Freeze is a Critical, whatever your chance
       target.ailments = target.ailments.filter((a) => a.id !== 'chill');
       target.slowed = 0;

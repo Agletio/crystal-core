@@ -147,31 +147,42 @@ const BRANCHES: Branch[] = [
     minors: [COMMON[2], COMMON[1], COMMON[2], COMMON[0]],
   },
   {
-    id: 'rhythm',
-    theme: 'Rhythm',
+    /**
+     * THE BRANCH THAT ARGUES WITH THE REST OF THE TREE. Every other one here
+     * wants the swing rate up — Onslaught doubles it, the Echoes ride it, half
+     * the minors sell it — and this one pays for it being DOWN, measured
+     * against the fastest weapon in the game. A maul at 0.8 sits 94% under a
+     * dagger's 1.55 and is paid for all of it, so Strike's heavy build is a
+     * real second answer rather than the same build with bigger numbers, and
+     * the two cannot be walked together for full value.
+     */
+    id: 'heft',
+    theme: 'Heft',
     enabler: {
       id: 'st_rhythm',
-      name: 'Rhythm',
-      description: '+9% Momentum per use, up to 70%.',
-      grants: { momentum: { per: 9, max: 70 } },
+      name: 'Heft',
+      description: 'Up to 30% more damage as your swing rate falls below 1.55/s.',
+      grants: { slowMore: 0.3 },
     },
     twigs: [
       {
         minors: 4,
         notable: {
           id: 'st_cadence',
-          name: 'Cadence',
-          description: 'Momentum builds 5% faster per use.',
-          grants: { momentumPer: 5 },
+          name: 'Dead Lift',
+          description: 'A further 35% as your swing rate falls below 1.55/s.',
+          grants: { slowMore: 0.35 },
         },
       },
       {
         minors: 4,
         notable: {
           id: 'st_relentless',
-          name: 'Relentless',
-          description: 'Momentum reaches 45% higher.',
-          grants: { momentumMax: 45 },
+          name: 'Anvil Weight',
+          description:
+            'A further 25% as your swing rate falls below 1.55/s, and Strike ' +
+            'Splashes for 15% more.',
+          grants: { slowMore: 0.25, splashShare: 0.15 },
         },
       },
       {
@@ -181,13 +192,19 @@ const BRANCHES: Branch[] = [
           id: 'st_followthrough',
           name: 'Follow-Through',
           description:
-            'Momentum carries to a new enemy whole instead of being halved, ' +
-            'and reaches 15% higher.',
-          grants: { momentumKeep: true, momentumMax: 15 },
+            'A further 45% as your swing rate falls below 1.55/s, and Strike is ' +
+            'swung 15% slower.',
+          grants: { slowMore: 0.45 },
+          stats: [stat('attackSpeed', 'inc', -15)],
         },
       },
     ],
-    minors: [COMMON[0], { text: '+2% Momentum per use', grants: { momentumPer: 2 } }, COMMON[1], COMMON[2]],
+    minors: [
+      COMMON[0],
+      { text: '+4% increased Physical Damage', stats: [stat('damage', 'inc', 4, ['physical'])] },
+      COMMON[1],
+      COMMON[0],
+    ],
   },
   {
     // THE IDS ARE THE OLD BULWARK BRANCH'S and are kept exactly: a save points
@@ -240,31 +257,40 @@ const BRANCHES: Branch[] = [
     ],
   },
   {
-    id: 'cruelty',
-    theme: 'Cruelty',
+    /**
+     * THE SWING DOES NOT STOP AT A BODY IT KILLED. An Echo is a SHARE landing
+     * on a neighbour; a carry is the same blow at FULL damage, and it only ever
+     * happens off a kill — so the branch pays nothing until the build is already
+     * killing, and then it pays a whole clear. Its far notable is the trade the
+     * other way: a kill that carries costs the swing that follows it.
+     */
+    id: 'cleave',
+    theme: 'Cleave',
     enabler: {
       id: 'st_cruelty',
-      name: 'Cruelty',
-      description: 'Strike deals 25% more damage to enemies carrying an Ailment.',
-      grants: { moreVsAiling: 0.25 },
+      name: 'Cleave',
+      description:
+        'A blow that kills swings on into the nearest enemy within 1.8 tiles at ' +
+        'full damage, up to 1 time.',
+      grants: { carryOnKill: 1, manaMultiplier: 1.15 },
     },
     twigs: [
       {
         minors: 3,
         notable: {
           id: 'st_executioner',
-          name: 'Executioner',
-          description: 'Strike deals 35% more damage to enemies below 33% of their life.',
-          grants: { moreVsLow: { below: 0.33, more: 0.35 } },
+          name: 'Through and Through',
+          description: 'A blow that kills swings on 2 more times.',
+          grants: { carryOnKill: 2, manaMultiplier: 1.08 },
         },
       },
       {
         minors: 4,
         notable: {
           id: 'st_ambush',
-          name: 'Unspoiled',
-          description: 'Strike deals 35% more damage to enemies above 80% of their life.',
-          grants: { moreVsFull: { above: 0.8, more: 0.35 } },
+          name: 'Reaping',
+          description: 'A blow that kills swings on 1 more time, and Strike Splashes for 20% more.',
+          grants: { carryOnKill: 1, splashShare: 0.2 },
         },
       },
       {
@@ -272,9 +298,11 @@ const BRANCHES: Branch[] = [
         forkFrom: { twig: 1, at: 2 },
         notable: {
           id: 'st_haymaker',
-          name: 'Haymaker',
-          description: 'Every 5th swing of Strike deals 300% damage.',
-          grants: { everyNth: { n: 5, multiplier: 3 } },
+          name: 'Butcher',
+          description:
+            'A blow that kills swings on 3 more times, and Strike deals 35% more ' +
+            'damage to enemies below 33% of their life.',
+          grants: { carryOnKill: 3, moreVsLow: { below: 0.33, more: 0.35 }, manaMultiplier: 1.15 },
         },
       },
     ],
@@ -348,9 +376,7 @@ export const STRIKE_SPEC: TreeSpec = {
   branches: BRANCHES,
   trunkNotables: TRUNK_NOTABLES,
   needs: {
-    momentumPer: 'st_rhythm',
-    momentumMax: 'st_rhythm',
-    momentumKeep: 'st_rhythm',
+    slowMore: 'st_rhythm',
     echoDamage: 'st_sweep',
     ailmentMultiplier: 'st_rend',
     ailmentDuration: 'st_rend',

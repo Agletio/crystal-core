@@ -1,12 +1,8 @@
-/**
- * Skill delivery registry — the extension point for combat. A skill is a data
- * entry in SKILLS naming a behaviour here; new code is only needed for a
- * genuinely new KIND of delivery.
- *
- * A behaviour never touches the sim. It gets candidate targets and a `hit`
- * callback and decides who is hit and for how much; damage numbers, crit,
- * armour, death and XP are the sim's business.
- */
+/** Skill delivery registry, the extension point for combat: a skill is a row in
+ *  SKILLS naming a behaviour here, and new code is only needed for a genuinely
+ *  new KIND of delivery. A behaviour never touches the sim — it gets candidate
+ *  targets and a `hit` callback; damage, crit, armour, death and XP are the
+ *  sim's. */
 import { Rng } from '../rng';
 import { ailmentSeconds } from './stats';
 import { BURST, MELEE, PROJECTILE } from '../data';
@@ -23,8 +19,9 @@ export interface SkillUse {
   grants: Record<string, unknown>; // behaviour switches from the skill tree
   crit: boolean; // whether this whole use crit
   castIndex: number; // uses so far by this user, from zero
-  /** Momentum BUILT against `primary` and nobody else — the sim's to say. */
-  momentum: number;
+  /** What this USE is worth before any target is looked at, off the swing rate
+   *  it was made at — the sim's to say, since only it knows the rate. */
+  heft: number;
   sinceKill: number; // seconds left of a kill still counting
   sinceHit: number; // seconds since anything landed on the hero
   /** `multiplier` is relative to THIS skill's damage, not to anything else. */
@@ -141,9 +138,8 @@ export function targetScale(use: SkillUse, target: Entity): number {
   const full = g.moreVsFull as { above: number; more: number } | undefined;
   if (full && target.life >= target.stats.maxLife * full.above) m *= 1 + full.more;
 
-  // The body you AIMED at and no other: Momentum is what staying on one thing
-  // is worth, so spilling it onto whatever a Fork found would be the opposite.
-  if (target === use.primary) m *= use.momentum ?? 1;
+  // EVERY target: a heavier swing is heavier wherever it lands.
+  m *= use.heft ?? 1;
   return m;
 }
 
@@ -283,14 +279,11 @@ export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
     ]);
   },
 
-  /**
-   * A thrown ball of fire, and everything a tree can make of one. Order
-   * matters — aimed-at, then pierced, then leapt-to, then spread.
-   *
-   * Nothing is hit twice by one cast, or pierce and chain and spread all find
-   * the same clump and talents meant to make you hit MORE things just make you
-   * hit the same things harder. Bursts are exempt: overlapping is the point.
-   */
+  /** A thrown ball of fire, and everything a tree can make of one. Order
+   *  matters — aimed-at, then pierced, then leapt-to, then spread — and nothing
+   *  is hit twice by one cast, or pierce and chain and spread all find the same
+   *  clump and talents meant to hit MORE things hit the same things harder.
+   *  Bursts are exempt: overlapping is the point. */
   projectile: (use) => {
     const g = use.grants;
     const kind = use.skill.vfxKind ?? 'bolt';
@@ -363,10 +356,11 @@ export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
         .sort((a, b) => separation(last, a) - separation(last, b))[0];
       if (!next) break;
       const from = last;
+      // COMPOUNDED PER HOP: `chainBuild` above 1 turns the falloff into a climb.
       const falloff = num(
         g.chainDamage,
         num(use.skill.params?.chainDamage, PROJECTILE.arcDamage)
-      );
+      ) * num(g.chainBuild, 1) ** i;
       const leg = flight(from, next);
       if (!strike(next, falloff, at + lands(leg))) break;
       use.vfx(kind, [{ x: from.x, y: from.y }, { x: next.x, y: next.y }], leg, at);
@@ -443,6 +437,21 @@ export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
     // Repeats land on what you aimed at, and stop once it is down.
     for (let i = 0; i < num(g.doubleStrike, 0); i++) swing(use.primary, 1);
 
+    // A CARRY continues the swing through a body it KILLED. The budget is spent
+    // per carry rather than per kill, which is the termination proof.
+    let carries = num(g.carryOnKill, 0);
+    let from = use.primary;
+    while (carries > 0 && from.dead) {
+      carries--;
+      const next = use.enemies
+        .filter((e) => !e.dead && e !== from && e !== use.primary)
+        .sort((a, b) => separation(from, a) - separation(from, b))[0];
+      if (!next || separation(from, next) > MELEE.carry) break;
+      use.vfx(kind, [{ x: from.x, y: from.y }, { x: next.x, y: next.y }]);
+      swing(next, 1);
+      from = next;
+    }
+
     const echoes = num(g.echoes, 0);
     if (echoes > 0) {
       const share = num(g.echoDamage, MELEE.echoDamage);
@@ -512,6 +521,9 @@ export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
       use.hit(enemy, scale(enemy));
       burstFrom(use, enemy, scale, true);
     }
+
+    // BROKEN GROUND, on the Cloud's own seam: the wedge says who it caught.
+    leaveClouds(use);
 
     // The ground going up UNDER you: sized to the reach it would be a circle
     // where the wedge is a wedge, and the wedge is what says who it caught.

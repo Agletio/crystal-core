@@ -152,20 +152,27 @@ const BRANCHES: Branch[] = [
   {
     id: 'mark',
     theme: 'Mark',
+    /**
+     * THE ONLY BRANCH IN THE TREE THAT IS NOT ABOUT HITTING MORE THINGS. Four
+     * of the other five buy a Fork, a Pierce, a Spread or an Arc; this one buys
+     * the body not getting to answer. A Pin rides `Entity.stun`, which is the
+     * one seam a Freeze already writes, so nothing else has to learn a word —
+     * and a bow that holds a pack at arm's length is what the range is FOR.
+     */
     enabler: {
       id: 'la_mark',
-      name: 'Mark',
-      description: '+8% Momentum per use, up to 60%.',
-      grants: { momentum: { per: 8, max: 60 } },
+      name: 'Pinning Shot',
+      description: 'What the arrow hits is held where it stands for 0.5s.',
+      grants: { pinSeconds: 0.5, manaMultiplier: 1.15 },
     },
     twigs: [
       {
         minors: 4,
         notable: {
           id: 'la_ranging',
-          name: 'Ranging Shot',
-          description: 'Momentum builds 4% faster per use.',
-          grants: { momentumPer: 4 },
+          name: 'Nailed Down',
+          description: 'What the arrow hits is held for a further 0.4s.',
+          grants: { pinSeconds: 0.4 },
         },
       },
       {
@@ -173,8 +180,8 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'la_deadeye',
           name: 'Dead Eye',
-          description: 'Momentum reaches 40% higher.',
-          grants: { momentumMax: 40 },
+          description: 'Lightning Arrow has +8% Critical Chance and +60% Critical Damage.',
+          stats: [stat('critChance', 'flat', 8), stat('critMultiplier', 'flat', 60)],
         },
       },
       {
@@ -184,13 +191,13 @@ const BRANCHES: Branch[] = [
           id: 'la_quarry',
           name: 'Quarry',
           description:
-            'Momentum carries to a new enemy whole instead of being halved, ' +
-            'and reaches 15% higher.',
-          grants: { momentumKeep: true, momentumMax: 15 },
+            'What the arrow hits is held for a further 0.6s, and Lightning ' +
+            'Arrow gains +1 Fork.',
+          grants: { pinSeconds: 0.6, forks: 1, manaMultiplier: 1.15 },
         },
       },
     ],
-    minors: [COMMON[0], { text: '+2% Momentum per use', grants: { momentumPer: 2 } }, COMMON[1], COMMON[2]],
+    minors: [COMMON[0], COMMON[3], COMMON[1], COMMON[2]],
   },
   {
     id: 'ionisation',
@@ -304,9 +311,7 @@ export const LIGHTNING_ARROW_SPEC: TreeSpec = {
   // Forks are not in here: the skill looses two of its own, so a node that
   // makes a Fork hit harder does something the moment it is bought.
   needs: {
-    momentumPer: 'la_mark',
-    momentumMax: 'la_mark',
-    momentumKeep: 'la_mark',
+    pinSeconds: 'la_mark',
     ailmentMultiplier: 'la_takeaim',
     ailmentDuration: 'la_takeaim',
     ailmentChance: 'la_takeaim',

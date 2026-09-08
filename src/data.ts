@@ -592,6 +592,9 @@ export const WEAPON_RATE: Record<string, number> = {
   staff: 1.0, sword2h: 0.95, mace2h: 0.8,
 };
 
+// What `slowMore` measures a rate against, DERIVED so the table cannot drift.
+export const FASTEST_SWING = Math.max(...Object.values(WEAPON_RATE));
+
 const weapon = (
   id: string,
   name: string,
@@ -2568,6 +2571,7 @@ export const MELEE = {
   echo: 1.5, // how far the FIRST Echo looks, from the enemy you struck
   echoStep: 0.6, // and how much further out each one after it may look
   echoDamage: 0.7, // what an Echo lands for, where the one you aimed at takes all
+  carry: 1.8, // how far a swing CARRIES from a body it killed, into the next
 };
 
 /** AMBUSH puts you BEHIND the body before it hits it, and a Critical does the

@@ -176,18 +176,6 @@ export const KEYWORDS: KeywordDef[] = [
     grants: ['convertTree'],
   },
   {
-    id: 'momentum',
-    name: 'Momentum',
-    says: ['Momentum'],
-    means:
-      'Damage that BUILDS while you keep using the skill on one enemy. Each ' +
-      'use on the same enemy as the last adds to it, up to a cap; using it on ' +
-      'anything else HALVES what you have built. It reaches the enemy you ' +
-      'aimed at and no other, so it is worth nothing to a build that spreads ' +
-      'its uses around.',
-    grants: ['momentum', 'momentumPer', 'momentumMax', 'momentumKeep'],
-  },
-  {
     id: 'echo',
     name: 'Echo',
     says: ['Echo', 'Echoes'],
