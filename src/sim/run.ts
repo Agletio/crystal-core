@@ -3989,8 +3989,12 @@ export class RunSim {
     // applies nothing, so there is no second Ailment to tick and no cascade.
     const share = this.grants.ailmentShare as { share: number; radius: number } | undefined;
     if (share && e.kind === 'monster' && total > 0) {
-      for (const m of this.state.monsters) {
-        if (m.dead || m === e || dist(m, e) > share.radius) continue;
+      // SNAPSHOT: a death here can put fresh bodies on the floor.
+      const near = this.state.monsters.filter(
+        (m) => !m.dead && m !== e && dist(m, e) <= share.radius
+      );
+      for (const m of near) {
+        if (m.dead) continue;
         m.life -= total * share.share;
         if (m.life <= 0) this.kill(m);
       }

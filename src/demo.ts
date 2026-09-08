@@ -7075,20 +7075,27 @@ rule('THE SHEET — does every number on it survive being checked?');
     equipSkill(walker, 'blink');
     const mover = SKILL_BY_ID[equippedSkill(walker, 'movement') ?? ''];
     const bare = mover ? slotWorkings(mover, walker).join(' ') : '';
+    const walkTo = ['bk_reach_0_0', 'bk_longstep'];
     if (mover) {
       const progress = skillProgress(walker, mover.id);
-      progress.allocated = [...progress.allocated, 'bk_reach_0_0', 'bk_longstep'];
+      progress.allocated = [...progress.allocated, ...walkTo];
     }
     const walked = mover ? slotWorkings(mover, walker).join(' ') : '';
+    // What the WALK comes to, off the nodes themselves: a minor on the way in
+    // grants distance too, so a figure typed here would be a second answer.
+    const want = treeFor(mover?.id ?? '')
+      .filter((n) => walkTo.includes(n.id))
+      .reduce((n, x) => n * ((x.grants?.moveDistance as number) ?? 1), 1);
     line(`  the movement slot's hover: ${bare} → ${walked} with Longstep`);
     check(
       !!mover &&
         bare.includes('tiles every') &&
         bare.includes('on its own') &&
         walked !== bare &&
-        (treeGrants(walker).moveDistance as number) === 1.6,
+        want > 1 &&
+        Math.abs((treeGrants(walker).moveDistance as number) - want) < 1e-9,
       'and a mover reads its two numbers THROUGH the web, never off the table',
-      `${bare} → ${walked}`
+      `${bare} → ${walked}, web says ×${treeGrants(walker).moveDistance} against ×${want}`
     );
   }
 }
@@ -10397,14 +10404,18 @@ rule('MANA — is a bare skill just barely sustainable?');
   // DOES multiply the cost, so a build stacking them pays for the privilege —
   // and the trees have to actually carry them for that to be true.
   {
-    const carriers = BUILT_TREES.flatMap((t) =>
+    // A MOVER'S trees are exempt by construction, not by a list: nothing there
+    // casts, so there is no cast whose cost a delivery node could multiply.
+    // What one charges for instead is `moveMana`, which is asked for below.
+    const casts = BUILT_TREES.filter(
+      (t) => SKILL_BY_ID[t.spec.skillId]?.category !== 'movement'
+    );
+    const carriers = casts.flatMap((t) =>
       t.nodes.filter((n) => typeof n.grants?.manaMultiplier === 'number')
     );
     line(`  ${carriers.length} nodes multiply the cost of the skill they change`);
     check(
-      BUILT_TREES.every((t) =>
-        t.nodes.some((n) => typeof n.grants?.manaMultiplier === 'number')
-      ),
+      casts.every((t) => t.nodes.some((n) => typeof n.grants?.manaMultiplier === 'number')),
       'every tree charges for the nodes that change what its skill does',
       'a tree hands out delivery for free'
     );
@@ -10418,6 +10429,17 @@ rule('MANA — is a bare skill just barely sustainable?');
     );
     const stacked = carriers.slice(0, 4).reduce((n, x) => n * (x.grants!.manaMultiplier as number), 1);
     line(`  four of them together: ×${stacked.toFixed(2)} on the cost`);
+
+    const movers = BUILT_TREES.filter(
+      (t) => SKILL_BY_ID[t.spec.skillId]?.category === 'movement'
+    );
+    const paid = movers.filter((t) => t.nodes.some((n) => typeof n.grants?.moveMana === 'number'));
+    line(`  ${paid.length} of ${movers.length} movement trees charge mana for a use`);
+    check(
+      movers.length > 0 && paid.length === movers.length,
+      'and a movement tree charges in the one currency a mover has',
+      movers.filter((t) => !paid.includes(t)).map((t) => t.spec.skillId).join(', ')
+    );
   }
 }
 

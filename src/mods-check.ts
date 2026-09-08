@@ -397,6 +397,26 @@ line('\n── TEXT — does the player read words, not identifiers? ───�
   );
 }
 
+// A line the BENCH can offer has to be drawable, and the bench draws a stat's
+// window. A line whose whole effect is a switch has no window — +1 Projectile is
+// a rung, not a range — so it must say the switch instead, or the card reaches
+// for a stat that is not there and the screen throws.
+{
+  const mute: string[] = [];
+  for (const entry of new ModPool(ALL_MODS).entries) {
+    if (entry.stats.length > 0) continue;
+    if (grantsOf(entry).some(([id, v]) => GRANT_BY_ID[id]?.say?.(v) ?? GRANT_BY_ID[id]?.what)) {
+      continue;
+    }
+    mute.push(`${entry.defId} T${entry.tier}`);
+  }
+  check(
+    mute.length === 0,
+    'and a line with no stat at all still says its switch, which is what a card draws',
+    mute.join(', ')
+  );
+}
+
 // ---------------------------------------------------------------------------
 line('\n── FORGED — a line no drop can roll is still a line ────────────');
 // ---------------------------------------------------------------------------

@@ -54,15 +54,16 @@ export function statLines(mod: RolledMod): HTMLElement[] {
 /** What one modifier SWITCHES, in its own numbers, off the table by `defId` —
  *  the path `treeGrants` reads. A line whose whole effect is a grant, which is
  *  every forged one, says nothing at all without this. */
-export function grantLines(mod: RolledMod): HTMLElement[] {
-  const out: HTMLElement[] = [];
+export function grantSaid(mod: { defId: string; tier: number }): string[] {
   const def = MOD_BY_ID[mod.defId];
   const both = { ...(def?.grants ?? {}), ...(def?.tiers[mod.tier - 1]?.grants ?? {}) };
-  for (const [id, value] of Object.entries(both)) {
-    const said = GRANT_BY_ID[id]?.say?.(value) ?? GRANT_BY_ID[id]?.what;
-    if (said) out.push(keywordLine(said, 'tip__grant'));
-  }
-  return out;
+  return Object.entries(both)
+    .map(([id, value]) => GRANT_BY_ID[id]?.say?.(value) ?? GRANT_BY_ID[id]?.what)
+    .filter((said): said is string => !!said);
+}
+
+export function grantLines(mod: RolledMod): HTMLElement[] {
+  return grantSaid(mod).map((said) => keywordLine(said, 'tip__grant'));
 }
 
 /** One modifier: its stats, its switches, then the tier and family behind them. */

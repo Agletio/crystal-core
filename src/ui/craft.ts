@@ -47,7 +47,7 @@ import {
 import { note } from './history';
 import { attachTooltip, hideTooltip } from './tooltip';
 import { crystalFamily, rewardRows } from '../sim/crystal';
-import { grantLines, itemCard, statLines } from './itemcard';
+import { grantLines, grantSaid, itemCard, statLines } from './itemcard';
 import { crystalProgress } from '../game/crystals';
 import { crystalsIn, socketed } from '../game/state';
 import { CRYSTAL_SLOTS, FAMILY_BY_ID } from '../data';
@@ -369,11 +369,18 @@ function pickRow(item: Item, entry: ModEntry, level: number): HTMLButtonElement 
   // The stat line as the WINDOW would roll it, not the tier's whole range: the
   // number a player acts on is the one they will get. Split rather than
   // string-replaced, or a range whose figure appears twice comes out mangled.
-  const [lo, hi] = windowRange(entry, level);
-  const top = statParts({ ...entry.stats[0], value: hi, tags: entry.stats[0]?.tags ?? [] });
-  const bottom = statParts({ ...entry.stats[0], value: lo, tags: entry.stats[0]?.tags ?? [] });
-  const span = lo === hi ? top.value : `${bottom.value}–${top.value.replace(/^\+/, '')}`;
-  row.append(el('span', 'craftpick__what', `${span} ${top.label}`));
+  // A LINE WHOSE WHOLE EFFECT IS A SWITCH has no stat to put a window round —
+  // +1 Projectile is a rung, not a range — so it says the switch instead.
+  const said = entry.stats.length === 0 ? grantSaid(entry).join(', ') : '';
+  if (said) {
+    row.append(el('span', 'craftpick__what', said));
+  } else {
+    const [lo, hi] = windowRange(entry, level);
+    const top = statParts({ ...entry.stats[0], value: hi, tags: entry.stats[0]?.tags ?? [] });
+    const bottom = statParts({ ...entry.stats[0], value: lo, tags: entry.stats[0]?.tags ?? [] });
+    const span = lo === hi ? top.value : `${bottom.value}–${top.value.replace(/^\+/, '')}`;
+    row.append(el('span', 'craftpick__what', `${span} ${top.label}`));
+  }
 
   const cost = el('span', 'craftpick__cost');
   cost.append(el('span', 'craftpick__n', `${n}`));
