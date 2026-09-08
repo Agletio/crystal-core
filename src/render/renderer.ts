@@ -1835,6 +1835,30 @@ export function fireSparks(at: Vec2, t: number): FirePixel[] {
 /** THE LEAP, drawn as what it costs the ground: dust kicked at the foot it
  *  left, a thin arc of the way it went, and dust where it comes down. The BODY
  *  is lifted by the renderer off `Entity.hop`; this is only the ground's half. */
+/** AIR LINES BEHIND A BODY, one streak a Gust: what SURGE is holding, drawn
+ *  rather than counted. Laid along the way it is FACING, so they trail. */
+export function speedLines(at: Vec2, facing: number, gusts: number, t: number): FirePixel[] {
+  const pixels: FirePixel[] = [];
+  const back = facing + Math.PI;
+  for (let g = 0; g < gusts; g++) {
+    // Each streak sits its own way off the line and slides back over time, so
+    // three of them read as air rather than as one thick tail.
+    const off = (g % 2 === 0 ? 1 : -1) * (0.16 + 0.16 * Math.floor(g / 2));
+    const along = 0.3 + ((t * 1.6 + g * 0.33) % 1) * 0.5;
+    for (let step = 0; step < 7; step++) {
+      const out = along + step * FIRE_PX * 2;
+      pixels.push({
+        x: onGrid(at.x + Math.cos(back) * out - Math.sin(back) * off),
+        y: onGrid(at.y + Math.sin(back) * out * 0.7 + Math.cos(back) * off * 0.7),
+        size: FIRE_PX * 2,
+        shade: step > 4 ? 3 : step > 1 ? 1 : 2,
+        alpha: (1 - step / 9) * 0.85,
+      });
+    }
+  }
+  return pixels;
+}
+
 export function leapArc(from: Vec2, to: Vec2, t: number): FirePixel[] {
   const pixels: FirePixel[] = [];
   const alpha = 1 - t;
@@ -1948,21 +1972,29 @@ export function pixelDisc(origin: Vec2, radius: number): FirePixel[] {
 const SPIKE_TTL = 0.3; // the cast's own, when nothing is standing
 const SPIKE_UP = 0.1; // seconds the blade takes to come up, however long it stands
 const SPIKE_GONE = 0.2; // and to sink back
+/** How tall the blade stands for the radius it covers, and how far its foot
+ *  sinks below the spot: the art's own ragged base wants burying a little. */
+export const SPIKE_TALL = 2.1;
+export const SPIKE_ROOT = 0.12;
+
+/** IN SECONDS, not in the fraction of a life: a spike that STANDS for four is
+ *  the same blade coming up at the same speed, held, and then going. */
+export function spikeAlpha(t: number, ttl = SPIKE_TTL): number {
+  const secs = t * ttl;
+  const up = Math.min(1, secs / SPIKE_UP);
+  return up * (1 - Math.max(0, (secs - (ttl - SPIKE_GONE)) / SPIKE_GONE));
+}
 
 /** ONE BLADE, sized off the RADIUS the sim used, so a build buying Area of
  *  Effect watches it grow; the ring of shattered ground at the rim is what
  *  says who was caught. */
 export function iceSpikes(at: Vec2, t: number, radius = 1, ttl = SPIKE_TTL): FirePixel[] {
   const pixels: FirePixel[] = [];
-  // IN SECONDS, not in the fraction: a spike that STANDS for four is the same
-  // blade coming up at the same speed, held, and then going.
-  const secs = t * ttl;
-  const up = Math.min(1, secs / SPIKE_UP);
-  const alpha = 1 - Math.max(0, (secs - (ttl - SPIKE_GONE)) / SPIKE_GONE);
-  const tall = radius * 1.55 * up;
-  const wide = radius * 0.30;
+  const alpha = spikeAlpha(t, ttl);
 
-  // The ground it came up through, at the rim: the reach, drawn.
+  // The ground it came up THROUGH, at the rim: the reach, drawn. The BLADE is
+  // generated art the renderer lays over this, so what these blocks are for is
+  // the damage TYPE, which a baked picture cannot carry.
   const ring = Math.max(6, Math.round(radius * 22));
   for (let i = 0; i < ring; i++) {
     const a = (i / ring) * Math.PI * 2;
@@ -1978,25 +2010,9 @@ export function iceSpikes(at: Vec2, t: number, radius = 1, ttl = SPIKE_TTL): Fir
   }
 
   // A shadow under the foot, so the blade STANDS rather than floating.
+  const wide = radius * 0.3;
   for (let dx = -wide; dx <= wide; dx += FIRE_PX * 2) {
     pixels.push({ x: onGrid(at.x + dx), y: onGrid(at.y + FIRE_PX), size: FIRE_PX * 2, shade: 3, alpha: alpha * 0.45 });
-  }
-
-  // THE BLADE: a column that tapers to a point, widest at the root.
-  for (let step = 0; step * FIRE_PX < tall; step++) {
-    const along = (step * FIRE_PX) / Math.max(tall, 1e-3);
-    const half = wide * (1 - along) ** 0.7;
-    for (let dx = -half; dx <= half; dx += FIRE_PX) {
-      const edge = Math.abs(dx) > half - FIRE_PX * 1.5;
-      pixels.push({
-        x: onGrid(at.x + dx + along * radius * 0.06),
-        y: onGrid(at.y - step * FIRE_PX),
-        size: FIRE_PX * (along > 0.8 ? 1 : 2),
-        // DARK at the root, the type's colour up the body, white at the tip.
-        shade: along > 0.82 ? 2 : edge ? 3 : along > 0.4 ? 1 : 0,
-        alpha,
-      });
-    }
   }
   return pixels;
 }

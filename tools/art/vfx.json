@@ -1,7 +1,7 @@
 {
  "_": "What to SAY to the generator for an EFFECT still, one row per id. `tools/art/icon.mts vfx.json` reads it and `portrait.mts <id> <png> <grid> vfx` puts the result in `src/render/generated-vfx.ts`, which only Pixi draws \u2014 canvas2d has no sprites and keeps its blocks.",
  "_how": "An effect is drawn in the WORLD at about a tile across and is laid over a lit stone floor, so: no ground, no shadow, no actor holding it, and the thing itself is the only light in the frame.",
- "_inks": "Storm greys and near-black, with the game's own lightning gold (--citrine #D9A441) and a white core. A bolt is the one saturated ink.",
+ "_inks": "Storm greys and near-black, with the game's own lightning gold (--citrine #D9A441) and a white core. A bolt is the one saturated ink. COLD is the game's own quartz (#6FC7E8) down to a blue-black, with a white core.",
  "size": 64,
  "grid": 48,
  "how": " A single EFFECT: ONE thing centred and filling the frame, seen straight from the side, BOLD readable silhouette with a hard dark outline, chunky shapes and few colours, lit only by itself. Transparent background. NOT a scene, NOT a landscape, NOT a character, NOT a hand holding it, NOT a ground shadow, NOT text, NOT a border, NOT a frame, NOT multiple objects.",
@@ -33,7 +33,15 @@
   "#5F9433",
   "#7CB03D",
   "#9CCB4E",
-  "#C3E27A"
+  "#C3E27A",
+  "#0A1620",
+  "#12283A",
+  "#1C4256",
+  "#2E6C86",
+  "#4FA0C4",
+  "#6FC7E8",
+  "#A8E3F5",
+  "#DFF3FF"
  ],
  "icons": [
   {
@@ -61,6 +69,21 @@
   {
    "id": "burst",
    "say": "a loose SCATTER of separate chunky angular fragments thrown violently outward and away from an empty middle, seen from DIRECTLY ABOVE looking straight down, spread far apart with big empty gaps between them and NOT touching one another, uneven and messy and irregular with some fragments much larger than others, the middle completely EMPTY with nothing drawn there, each fragment a hard-edged pale hot white and gold splinter with a near-black edge, the farthest ones smallest. NOT a ring, NOT a hoop, NOT a wreath, NOT a wheel, NOT a gear, NOT a chain, NOT a necklace, NOT beads, NOT evenly spaced, NOT a closed loop, NOT joined up, NOT a circle outline, NOT a ball, NOT a sphere, NOT smoke, NOT a character, NOT text."
+  },
+  {
+   "id": "spike",
+   "say": "ONE single tall shard of ICE standing straight UPRIGHT and alone in empty space, seen from the SIDE, driven up from below: widest at the bottom where it is broken and ragged, narrowing all the way to one sharp POINT at the top, its body split into a few big flat FACETS with hard straight edges between them, pale ice blue with a white core near the tip and deep blue-black in the cracks and along one side, a hard dark outline all round it. NOT a cluster, NOT a group, NOT two of them, NOT several shards, NOT a gemstone, NOT a diamond, NOT a jewel, NOT a snowflake, NOT a sword, NOT a spear, NOT a blade, NOT a weapon, NOT stone, NOT rock, NOT a stalagmite, NOT ground, NOT a floor, NOT a shadow, NOT a base, NOT a pedestal, NOT snow, NOT a hand, NOT a character, NOT text, NOT a border, NOT a frame.",
+   "size": 96
+  },
+  {
+   "id": "spike_tall",
+   "say": "ONE single tall shard of ICE standing straight UPRIGHT and alone in empty space, seen from the SIDE, driven up from below: very TALL and NARROW, widest at the bottom where it is broken and ragged, narrowing in a long straight taper to one needle POINT at the top, with two thin splinters of the same ice sheared off along its lower half, its body split into a few big flat FACETS with hard straight edges between them, pale ice blue with a white core near the tip and deep blue-black in the cracks and along one side, a hard dark outline all round it. NOT a cluster, NOT a group, NOT two of them, NOT several shards, NOT a gemstone, NOT a diamond, NOT a jewel, NOT a snowflake, NOT a sword, NOT a spear, NOT a blade, NOT a weapon, NOT stone, NOT rock, NOT a stalagmite, NOT ground, NOT a floor, NOT a shadow, NOT a base, NOT a pedestal, NOT snow, NOT a hand, NOT a character, NOT text, NOT a border, NOT a frame.",
+   "size": 96
+  },
+  {
+   "id": "spike_glass",
+   "say": "ONE single tall shard of ICE standing straight UPRIGHT and alone in empty space, seen from the SIDE, driven up from below: widest at the bottom where it is broken and ragged, narrowing all the way to one sharp POINT at the top, its body split into a few big flat FACETS with hard straight edges between them, GLASSY and half see-through, pale ice blue at its edges with a bright white core running up the middle and deep blue-black shadow down one whole side, long straight CRACKS running up through it, a hard dark outline all round it. NOT a cluster, NOT a group, NOT two of them, NOT several shards, NOT a gemstone, NOT a diamond, NOT a jewel, NOT a snowflake, NOT a sword, NOT a spear, NOT a blade, NOT a weapon, NOT stone, NOT rock, NOT a stalagmite, NOT ground, NOT a floor, NOT a shadow, NOT a base, NOT a pedestal, NOT snow, NOT a hand, NOT a character, NOT text, NOT a border, NOT a frame.",
+   "size": 96
   }
  ],
  "_sweep": "A centred radial EFFECT is the one ask this generator would not take. Five variants of the melee sweep came back a beaded wreath, a saw blade, a clock face, a directional cut and a closed sunburst: 'arranged around an empty middle, seen from directly above' is a decorative RING to it, whatever it is told not to draw. The sweep stays procedural, and `sweepRing` breaks its ring on purpose because a closed hoop reads as a shield. Do not spend another generation on it without a genuinely different framing."

@@ -1031,6 +1031,16 @@ become a source of damage"* — 1.77 to 2.03 kills/s with the mode feeding it an
 nothing at all without one. **THE SPIKE'S CHILL GOES DOWN THE ONE-STACK PATH**:
 `applyAilment` is the CLOUD's and writes a Poison whatever type it is handed.
 
+**THE BLADE IS GENERATED ART; THE RING UNDER IT IS BLOCKS.** *"Use pixel lab to
+make a cool looking ice spike not whatever that is."* The spike a Rimespike
+raises is a `VFX_ART` row like the burst's shards — asked through `vfx.json`,
+imported by `portrait.mts <id> <png> 48 vfx`, drawn by Pixi pinned at its FOOT
+and sized off the radius the sim used. What the picture cannot carry is the
+damage TYPE, so the broken ground at the rim stays `FirePixel` blocks in the
+type's own colour, exactly as the burst is drawn. `spikeAlpha` works in SECONDS
+rather than in a fraction of a life, so a blade that stands for four is the same
+blade coming up at the same speed and held.
+
 **A BRANCH ENABLER'S OWN STAT LINES ARE ITS OWN, AND THE BUILDER DROPPED THEM.**
 `buildTree` copies a node a field at a time, so a field it forgets is a card
 printing a figure the sim never applies — six enablers across three trees shipped
@@ -1086,6 +1096,38 @@ then drives the follow-up. Measured at the deep end: 1.44 kills/s on a random
 tree walk, 1.84 walking the Relay branch, **2.79 with the line stacked on top**,
 which puts it in the pack rather than 1.9x below the next skill.
 
+**A MOVER HAS TWO MODES, AND THE SECOND ONE IS WHAT TELLS THEM APART.** *"They
+should still all work to just traverse the area faster when not fighting but
+when actually fighting it should work as described."* Out of a fight all three
+cover ground along the path already found; with something alive inside
+`MOVE.engaged` they stop travelling entirely and do their own thing, which is
+what keeps a kite's cooldown for the moment something lands a hit. **BLINK
+KITES**: it fires when a body is within `MOVE.reach` AND has hit you inside
+`MOVE.pressed` seconds — being HIT is a fact about the fight where a bare
+distance is a condition on the pathfinder — and it steps the other way, leaving
+its WAKE where it LEFT rather than where it lands. **LEAP DIVES**: off cooldown
+onto whatever you are fighting, and what it comes down ON takes its own Slow
+beside the ring's. Measured over six descents, every combat Blink opened ground
+and 16 of 18 combat Leaps closed it. **GALE NEVER STEPS AT ALL**: it holds
+GUSTS, movement speed for each one held, one taken by anything that lands a hit
+and one back every 6s — so out of a fight you are quick and in one you are as
+quick as you are untouched. A flask's CHARGE and a mover's GUST are two words
+because they are two mechanisms. Measured at band 4 with no point spent in any
+of the three: 2.18 kills/s and 2555 damage taken with the slot EMPTY, against
+Blink 2.28 and 2291, Leap 2.58 and 2478, Gale 2.38 and 2287 — the dive kills
+fastest, the kite and the Gusts are what stop the floor reaching you. **THE THREE WEBS ARE TREES NOW**, six branches
+and 30 points each, and `MOVE_POINTS`, `MOVE_SKILLS`, `pointCapFor`'s special
+case and the bespoke movement layout are all gone.
+
+**A MOVER'S OWN VOCABULARY IS THE WINDOW AFTER A USE** — *"stats in the movement
+skills is fine as something you get for a few seconds after the skill's used."*
+`AFTER.seconds` is the ONE length and `afterStepLonger` is what stretches it;
+four seams and no more, each read in exactly one place: speed in `paceOf`,
+damage in `dealDamage`'s scale, damage taken in `softened`, and regeneration in
+the hero step. **AND `moverReading` IS THE WHOLE OF WHAT A MOVER IS**: the sim
+moves by it, the sheet's hover prints it and the demo fingerprints it, so a
+notable that changes nothing there changes nothing in a descent.
+
 **A MECHANIC IN SEVEN TREES IS NOBODY'S IDENTITY, AND MOMENTUM IS DELETED.**
 *"Honestly momentum kinda sucks. I feel like it only makes sense on a skill that
 attacks super fast already but we don't really have that."* It was one identical
@@ -1114,7 +1156,8 @@ that aren't related to the skill. So like health, armour and stuff like that —
 attack and cast speed, crit etc is all fine."* A web may sell `damage`,
 `attackSpeed`, `castSpeed`, `critChance`, `critMultiplier`, `attackRange`,
 `areaOfEffect`, `ailmentChance` and `manaCost` and NOTHING else; a MOVEMENT web
-adds `moveSpeed`, which is its own subject. Life, armour, resistances,
+adds `moveSpeed` and `cooldown`, which are its own subject — how fast you cross
+ground and how often the skill comes back. Life, armour, resistances,
 regeneration and the mana pool are gear's and the character's own web — a branch
 of them inside Strike is six points that change nothing about striking. The
 three defensive branches are gone: Strike's and Ambush's and Rimespike's are
@@ -1262,7 +1305,7 @@ src/webgraph.ts    how ANY web is walked: reach, refund, replay
 src/skills-tree.ts per-skill webs; src/trees/* is the content, layout.ts the shape
 src/trades.ts      the character's own web; src/trades/* the three trades
 src/ui/webcam.ts   how ANY web is panned and zoomed, and why it is built once
-src/moves/         the movement webs
+src/moves/         the three movers' trees; src/sim/movers.ts what one COMES TO
 src/ladder.ts      the CLIMB: which rung is open, and what a clear records
 src/trials.ts      the RECKONING and what a point buys; src/trials/* its arms
 src/game/trials.ts the LEDGER: what a clear counts, and what that has paid for

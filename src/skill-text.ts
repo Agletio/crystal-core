@@ -6,6 +6,7 @@
  */
 import { DAMAGE_TYPE_BY_ID, SKILL_BY_ID } from './data';
 import { GRANT_BY_ID } from './sim/grants';
+import { moverReading } from './sim/movers';
 import { characterStats, damageDetail, treeGrants } from './sim/stats';
 import { equippedSkill } from './sim/character';
 import type { SkillDef } from './types';
@@ -44,12 +45,23 @@ export function mainWorkings(character: Character): string[] {
 export function slotWorkings(skill: SkillDef, character: Character): string[] {
   const grants = treeGrants(character);
   const lines: string[] = [];
-  const reach = skill.params?.distance;
-  const wait = skill.params?.cooldown;
-  if (typeof reach === 'number' && typeof wait === 'number') {
-    const further = typeof grants.moveDistance === 'number' ? grants.moveDistance : 1;
-    const sooner = typeof grants.moveCooldown === 'number' ? grants.moveCooldown : 1;
-    lines.push(`${trim(reach * further)} tiles every ${trim(wait * sooner)}s, on its own`);
+  // OFF THE ONE READING the sim moves by, so the hover cannot promise a step
+  // the descent does not take.
+  const move = moverReading(skill, grants);
+  if (move && move.reach > 0 && move.wait > 0) {
+    lines.push(`${trim(move.reach)} tiles every ${trim(move.wait)}s, on its own`);
+  }
+  if (move?.gusts) {
+    const g = move.gusts;
+    lines.push(`${g.most} Gusts, ${trim(g.speed)}% increased Movement Speed each`);
+    lines.push(`one back every ${trim(g.back)}s`);
+  }
+  if (move && move.after.speed + move.after.damage + move.after.guard > 0) {
+    const parts: string[] = [];
+    if (move.after.speed > 0) parts.push(`${trim(move.after.speed * 100)}% faster`);
+    if (move.after.damage > 0) parts.push(`${trim(move.after.damage * 100)}% more damage`);
+    if (move.after.guard > 0) parts.push(`${trim(move.after.guard * 100)}% less damage taken`);
+    lines.push(`${parts.join(', ')} for ${trim(move.after.seconds)}s after a use`);
   }
   for (const [id, value] of Object.entries(skill.grants ?? {})) {
     const said = GRANT_BY_ID[id]?.say?.(value);

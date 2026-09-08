@@ -646,6 +646,10 @@ export function skillIcon(skillId: string, size = 44): SVGSVGElement {
       return sprite(SURGE, STEEL, size, 'surge');
     case 'blink':
       return sprite(BLINK, STEEL, size, 'blink');
+    // Nobody has DRAWN one for the Gale yet and art is never hand-written, so
+    // it wears the movement shelf's own boot until the generator draws it.
+    case 'gale':
+      return sprite(BOOT, LEATHER, size, 'gale');
     default:
       return sprite(BLADE, STEEL, size, 'strike');
   }

@@ -75,23 +75,28 @@ non-main slot's own web**, both as loops over `SKILL_SLOTS`. Each was a silence
 rather than a bug: a mover's allocations never arrived, and its web sat at
 level 1 holding one point forever.
 
-**The point cap belongs to the WEB.** `treePointsFor` takes a skillId — a
-nine-node movement web under a global 30 is owned outright by level 9.
+**EVERY WEB IS 30 POINTS, movers included.** *"Movement skill trees should just
+function exactly like skills, 30 points max level 30."* `treePointsFor` still
+takes a skillId, but there is no special case behind it any more.
 
 ## Trees and webs
 
-Three shapes, one graph. **How a web is WALKED lives in `src/webgraph.ts`** —
+Two shapes, one graph. **How a web is WALKED lives in `src/webgraph.ts`** —
 `neighboursIn`, `canAllocateIn`, `canDeallocateIn`, `replayWeb` — over any list
 of nodes, because two copies of a reachability rule is one copy that is wrong.
 
 | | shape | points |
 |---|---|---|
 | skill tree (`src/trees/`) | 3 ways in, a ring of 12, 6 branches, 6 trunk notables | level-funded |
-| movement web (`src/moves/`) | 3 arms of 3 | 6 — two whole arms fit, a third never does |
+| mover tree (`src/moves/`) | the same as a skill tree, and built by `buildTree` | level-funded |
 | trade tree (`src/trades/`) | 5 spokes of 10: a stem of 1, a GATE, then two branches of minor-notable-minor-notable | 6, TWO AT A TIME — one BRANCH walked whole, and 3 notables is the CEILING |
 
 - **Content only**; `layout.ts` owns every coordinate, in tile units. Give a
   tree a `prefix` no other tree uses — node ids are what a save points at.
+- **A MOVER'S TREE SELLS THE MOVER**, never flat life or armour: what it moves,
+  what the move leaves behind, and the WINDOW after a use — `AFTER.seconds`, one
+  length for all of them. `moverReading` is what a mover COMES TO, and the sim,
+  the sheet's hover and the demo all read it.
 - `buildTree` wants six branches and six trunk notables and **throws rather
   than dropping the extras**; the movement and trade webs have their own
   layouts rather than bending it.

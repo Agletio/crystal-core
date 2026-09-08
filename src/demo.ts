@@ -329,7 +329,6 @@ import {
   STATS,
   behaviourReads,
   critBuff,
-  landingOf,
   mergeGrants,
   overchargeOf,
   shieldShare,
@@ -350,14 +349,13 @@ import {
   respecCost,
 } from './trades';
 import { INTERACTIONS, interactionOf } from './trees/interactions';
-import { ARM_COUNT, ARM_STEPS, MOVE_NODES, MOVE_POINTS } from './moves/layout';
+import { moverReading } from './sim/movers';
 
 /** Every skill the movement slot takes, so a third one joins every sweep. */
-const MOVERS = MOVE_WEBS.map((m) => m.spec.skillId);
+const MOVERS = PLAYER_SKILLS.filter((sk) => sk.category === 'movement').map((sk) => sk.id);
 import { canAllocateIn } from './webgraph';
 import {
   BUILT_TREES,
-  MOVE_WEBS,
   CENTRE,
   MAX_TREE_POINTS,
   blockedBy,
@@ -3259,130 +3257,6 @@ for (const tree of BUILT_TREES) {
   check(held.length === 0, 'and every one of them refunded again', `${held.length} stuck`);
 }
 
-// ===========================================================================
-rule('THE MOVEMENT WEBS — is a small web still a decision?');
-
-// Three arms of three over six points. `THE WEB` above cannot be pointed at
-// these: it is derived from `TreeSpec`'s branches and twigs, and it asks
-// whether a notable is a long walk, which for a nine-node web it never is.
-// What IS the same is the geometry and the refund rule, so those are checked
-// exactly as they are up there.
-for (const web of MOVE_WEBS) {
-  const skillId = web.spec.skillId;
-  const nodes = web.nodes;
-  const notables = nodes.filter((n) => n.kind === 'notable');
-
-  line(`  ${skillId}: ${nodes.length} nodes, ${notables.length} notable, ${MOVE_POINTS} points`);
-  check(
-    nodes.length === MOVE_NODES && notables.length === ARM_COUNT,
-    'the web is the shape the layout promises',
-    `${nodes.length} nodes, ${notables.length} notable`
-  );
-  check(new Set(nodes.map((n) => n.id)).size === nodes.length, 'and no id is used twice', 'duplicate ids');
-
-  // The whole mechanism: fewer points than nodes, so a third arm never fits
-  // and WHICH TWO stays a decision no level ever takes back.
-  check(
-    MOVE_POINTS < nodes.length && MOVE_POINTS >= ARM_STEPS * 2,
-    'the budget is smaller than the web and buys exactly two whole arms',
-    `${MOVE_POINTS} points over ${nodes.length} nodes`
-  );
-
-  // A mover's switches have to be declared and READ by its own behaviour: a
-  // landing switch on the web of a skill that does not land is the point spent
-  // on nothing this check exists for.
-  const behaviour = SKILL_BY_ID[skillId]?.behaviour ?? '';
-  const unread: string[] = [];
-  const handed = new Map<string, number>();
-  for (const n of nodes) {
-    for (const key of Object.keys(n.grants ?? {})) {
-      handed.set(key, (handed.get(key) ?? 0) + 1);
-      const def = GRANT_BY_ID[key];
-      if (!def) unread.push(`${n.id}: ${key} is not a declared grant`);
-      else if (!def.reads.includes(STATS) && !behaviourReads(behaviour, key)) {
-        unread.push(`${n.id}: ${behaviour} never reads ${key}`);
-      }
-    }
-  }
-  check(unread.length === 0, 'every grant is one this mover actually reads', unread.join(', '));
-  const lossy = [...handed]
-    .filter(([key, count]) => count > 1 && !GRANT_BY_ID[key]?.merge)
-    .map(([key, count]) => `${key} on ${count} nodes`);
-  check(lossy.length === 0, 'and anything granted twice says how it stacks', lossy.join(', '));
-
-  // Every notable is the TIP of its arm, so the arm is the whole price.
-  const tips = notables.filter((n) => neighboursOf(skillId, n.id).size === 1);
-  check(tips.length === notables.length, 'every notable is a dead end at the tip of its arm',
-    notables.filter((n) => neighboursOf(skillId, n.id).size !== 1).map((n) => n.id).join(', '));
-
-  // Same geometry as a skill web and a trade: no link crosses another, and none
-  // runs through a node it does not join. Both read on screen as a link to
-  // somewhere it does not go.
-  const at = new Map<string, { x: number; y: number }>(nodes.map((n) => [n.id, { x: n.x, y: n.y }]));
-  at.set(CENTRE, { x: 0, y: 0 });
-  const pairs: Array<[string, string]> = [];
-  for (const n of nodes) {
-    for (const other of neighboursOf(skillId, n.id)) {
-      if (!pairs.some(([a, b]) => (a === n.id && b === other) || (a === other && b === n.id))) {
-        pairs.push([n.id, other]);
-      }
-    }
-  }
-  type P = { x: number; y: number };
-  const side = (a: P, b: P, c: P) => (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
-  const crossed: string[] = [];
-  for (let i = 0; i < pairs.length; i++) {
-    for (let j = i + 1; j < pairs.length; j++) {
-      const [a1, b1] = pairs[i];
-      const [a2, b2] = pairs[j];
-      if (a1 === a2 || a1 === b2 || b1 === a2 || b1 === b2) continue;
-      const [p1, q1, p2, q2] = [at.get(a1)!, at.get(b1)!, at.get(a2)!, at.get(b2)!];
-      if (
-        side(p2, q2, p1) > 0 !== side(p2, q2, q1) > 0 &&
-        side(p1, q1, p2) > 0 !== side(p1, q1, q2) > 0
-      ) {
-        crossed.push(`${a1}~${b1} over ${a2}~${b2}`);
-      }
-    }
-  }
-  check(crossed.length === 0, 'no link crosses another', crossed.join(', '));
-
-  const grazed: string[] = [];
-  for (const [a, b] of pairs) {
-    const p = at.get(a)!;
-    const q = at.get(b)!;
-    const dx = q.x - p.x;
-    const dy = q.y - p.y;
-    const span = dx * dx + dy * dy;
-    for (const [id, n] of at) {
-      if (id === a || id === b) continue;
-      const t = span === 0 ? 0 : Math.max(0, Math.min(1, ((n.x - p.x) * dx + (n.y - p.y) * dy) / span));
-      if (Math.hypot(n.x - (p.x + t * dx), n.y - (p.y + t * dy)) < 0.45) {
-        grazed.push(`${a}~${b} through ${id}`);
-      }
-    }
-  }
-  check(grazed.length === 0, 'and none runs through a node it does not join', grazed.join(', '));
-
-  // Walked in, and out again. A build you can walk into and not out of is
-  // worse than one with no refunds at all.
-  const walk: string[] = [];
-  const spendRng = new Rng(909);
-  while (walk.length < MOVE_POINTS) {
-    const open = nodes.filter((n) => canAllocate(skillId, n.id, walk));
-    if (open.length === 0) break;
-    walk.push(spendRng.pick(open)!.id);
-  }
-  check(walk.length === MOVE_POINTS, 'every point can be spent', String(walk.length));
-  let held = [...walk];
-  while (held.length > 0) {
-    const loose = held.find((id) => canDeallocate(skillId, id, held));
-    if (!loose) break;
-    held = held.filter((id) => id !== loose);
-  }
-  check(held.length === 0, 'and every one of them refunded again', `${held.length} stuck`);
-}
-
 /** Every node between a tree's middle and one named, in order. Nothing else
  *  reaches a particular enabler, and the enabler is the whole point. */
 function walkTo(skillId: string, goal: string): string[] {
@@ -5315,8 +5189,9 @@ rule('A SKILL TREE BUYS WHAT THE SKILL DOES');
     'damage', 'attackSpeed', 'castSpeed', 'critChance', 'critMultiplier',
     'attackRange', 'areaOfEffect', 'ailmentChance', 'manaCost',
   ]);
-  // A MOVER'S subject is the move itself, so move speed is its own too.
-  const MOVER_OWN = new Set([...ITS_OWN, 'moveSpeed']);
+  // A MOVER'S subject is the move itself: how fast you cross ground, and how
+  // often the skill comes back. Everything else is still the character's.
+  const MOVER_OWN = new Set([...ITS_OWN, 'moveSpeed', 'cooldown']);
 
   const strayed: string[] = [];
   for (const skill of MAIN_SKILLS) {
@@ -6263,6 +6138,9 @@ rule('EVERY TREE — does every notable actually change the cast?');
       // Some arrive already suffering, which is the ordinary case once your
       // last cast landed — and the only way "more damage to ailing" can show.
       if (i % 4 === 0) e.ailments.push(1);
+      // And some are held: `stun` is what a Freeze writes, so a notable that
+      // pays against a Frozen body has one in front of it.
+      if (i % 5 === 0) e.stun = 1;
       out.push(e);
     }
     out.push(dummy(3, 1.1, 1e6), dummy(3, 2.2, 1), dummy(2, 2, 6e4));
@@ -6322,6 +6200,9 @@ rule('EVERY TREE — does every notable actually change the cast?');
   for (const tree of BUILT_TREES) {
     const skill = SKILL_BY_ID[tree.spec.skillId];
     const behave = SKILL_BEHAVIOURS[skill.behaviour];
+    // A mover never CASTS, so it has no cast to change: exempt by
+    // construction, and the reading above is what holds its notables instead.
+    if (!behave) continue;
     const inert: string[] = [];
 
     for (const node of tree.nodes) {
@@ -7110,7 +6991,7 @@ rule('THE SHEET — does every number on it survive being checked?');
     const bare = mover ? slotWorkings(mover, walker).join(' ') : '';
     if (mover) {
       const progress = skillProgress(walker, mover.id);
-      progress.allocated = [...progress.allocated, 'bk_reach_m0', 'bk_longstep'];
+      progress.allocated = [...progress.allocated, 'bk_reach_0_0', 'bk_longstep'];
     }
     const walked = mover ? slotWorkings(mover, walker).join(' ') : '';
     line(`  the movement slot's hover: ${bare} → ${walked} with Longstep`);
@@ -7752,10 +7633,6 @@ rule('EVERY NUMBER SAID OUT LOUD — does any line withhold its figure?');
       holds(`${tree.spec.skillId}/${node.id}`, node.description);
     }
   }
-  // Every movement node too: a small web is still six points spent by hand.
-  for (const web of MOVE_WEBS) {
-    for (const node of web.nodes) holds(`${web.spec.skillId}/${node.id}`, node.description);
-  }
   // Every trade node too. A trade is nothing but rules with numbers on them,
   // so a line here with no figure is a decision the player cannot make.
   for (const trade of TRADES) {
@@ -7812,9 +7689,6 @@ rule('ONE WORD PER MECHANISM — does the game say Arc every time it means Arc?'
       }
     }
   }
-  for (const web of MOVE_WEBS) {
-    for (const node of web.nodes) read(`${web.spec.skillId}/${node.id}`, node.description);
-  }
   for (const trade of TRADES) {
     read(`${trade.spec.id}`, trade.spec.blurb);
     for (const node of trade.nodes) read(`${trade.spec.id}/${node.id}`, node.description);
@@ -7865,7 +7739,6 @@ rule('ONE WORD PER MECHANISM — does the game say Arc every time it means Arc?'
 
   for (const web of [
     ...BUILT_TREES.map((t) => ({ id: t.spec.skillId, nodes: t.nodes })),
-    ...MOVE_WEBS.map((m) => ({ id: m.spec.skillId, nodes: m.nodes })),
     ...TRADES.map((t) => ({ id: t.spec.id, nodes: t.nodes })),
   ]) {
     for (const node of web.nodes) {
@@ -8423,10 +8296,11 @@ rule('THREE SLOTS — one that kills, one always on, one that moves you');
     }
   }
 
-  // A movement skill fires ITSELF and may never put a body in rock. BOTH of
-  // them: a jump wants no clear line, so it is the one that could land
-  // somewhere the step never could.
+  // A movement skill fires ITSELF and may never put a body in rock. Every one
+  // that STEPS: a jump wants no clear line, so it is the one that could land
+  // somewhere the step never could. Surge takes none, and says so in its reach.
   for (const mover of MOVERS) {
+    if ((moverReading(SKILL_BY_ID[mover], {})?.reach ?? 0) <= 0) continue;
     const walker = makeCharacter(starterLoadout(new Rng(9)), 'strike');
     equipSkill(walker, mover);
     let inRock = 0;
@@ -8496,34 +8370,134 @@ rule('THREE SLOTS — one that kills, one always on, one that moves you');
     );
   }
 
-  // Every movement notable changes what the MOVE does. `FIREBALL` above asks
+  // EVERY MOVEMENT NOTABLE CHANGES WHAT THE MOVE DOES. `FIREBALL` above asks
   // this of a cast by firing the behaviour; a mover has no behaviour to fire,
-  // so what is measured is the move itself: how often, how far, and what is
-  // standing near you afterwards.
-  for (const web of MOVE_WEBS) {
-    const skillId = web.spec.skillId;
+  // so what is compared is `moverReading` — the ONE reading the sim itself
+  // moves by, so a switch that changes nothing here changes nothing in a run.
+  for (const tree of BUILT_TREES) {
+    const skillId = tree.spec.skillId;
+    if (!MOVERS.includes(skillId)) continue;
     const skill = SKILL_BY_ID[skillId];
+    const bare = JSON.stringify(moverReading(skill, {}));
     const inert: string[] = [];
-    for (const node of web.nodes) {
+    for (const node of tree.nodes) {
       if (node.kind !== 'notable') continue;
       const bag = node.grants ?? {};
+      // A notable of pure stat lines is the stat pipeline's to check.
       if (Object.keys(bag).length === 0) {
-        inert.push(`${node.id} (nothing at all)`);
+        if (!node.stats?.length) inert.push(`${node.id} (nothing at all)`);
         continue;
       }
-      // Straight off the same expressions the sim reads, so a grant renamed in
-      // one place and not the other is a failure here rather than a silence.
-      const reach = ((skill.params?.distance as number) ?? 0) * ((bag.moveDistance as number) ?? 1);
-      const wait = ((skill.params?.cooldown as number) ?? 0) * ((bag.moveCooldown as number) ?? 1);
-      const back = (bag.moveMana as number) ?? 0;
-      const moved =
-        reach !== (skill.params?.distance as number) ||
-        wait !== (skill.params?.cooldown as number) ||
-        back > 0 ||
-        landingOf(bag) !== null;
-      if (!moved) inert.push(`${node.id} (${Object.keys(bag).join(', ')})`);
+      // Whatever it needs to do anything, so a wake modifier is measured
+      // against a build that already leaves one.
+      const base: Record<string, unknown> = {};
+      for (const key of Object.keys(bag)) {
+        const enabler = tree.spec.needs[key];
+        if (!enabler || enabler === node.id) continue;
+        const from = nodeById(skillId, enabler)?.grants;
+        if (from) mergeGrants(base, from);
+      }
+      const without = JSON.stringify(moverReading(skill, { ...base }));
+      const withIt = JSON.stringify(moverReading(skill, mergeGrants({ ...base }, bag)));
+      if (withIt === without || (Object.keys(base).length === 0 && withIt === bare)) {
+        inert.push(`${node.id} (${Object.keys(bag).join(', ')})`);
+      }
     }
     check(inert.length === 0, `${skillId}: every notable changes the move`, inert.join(', '));
+  }
+
+  // TWO MODES, AND THE SECOND ONE IS THE POINT. *"They should still all work to
+  // just traverse the area faster when not fighting but when actually fighting
+  // it should work as described."* Out of a fight every mover covers ground
+  // along the path; IN one, Blink goes the other way from what pushed you and
+  // Leap comes down on what you are fighting. Measured by watching the tick a
+  // use lands on: how far the nearest live body was before it, and after.
+  {
+    const nearest = (sim: RunSim): number => {
+      const hero = sim.state.hero;
+      let near = Infinity;
+      for (const m of sim.state.monsters) {
+        if (m.dead) continue;
+        near = Math.min(near, Math.hypot(m.x - hero.x, m.y - hero.y));
+      }
+      return near;
+    };
+
+    const modes = (mover: string) => {
+      let away = 0;
+      let onto = 0;
+      for (const seed of [77, 78, 79, 80, 81, 90]) {
+        const who = makeCharacter(starterLoadout(new Rng(9)), 'strike');
+        who.level = 20;
+        equipSkill(who, mover);
+        const sim = new RunSim([], who, new Rng(seed));
+        // ONLY the combat mode: a traverse fires along the path, which closes
+        // on whatever is in the next room and says nothing about either rule.
+        let mode = sim.state.kites + sim.state.dives;
+        for (let k = 0; k < 9000 && sim.state.status === 'running'; k++) {
+          const before = nearest(sim);
+          sim.step(TICK);
+          if (sim.state.kites + sim.state.dives > mode && Number.isFinite(before)) {
+            const after = nearest(sim);
+            if (after > before + 0.5) away++;
+            else if (after < before - 0.5) onto++;
+          }
+          mode = sim.state.kites + sim.state.dives;
+        }
+      }
+      return { away, onto };
+    };
+
+    const stepped = modes('blink');
+    const jumped = modes('leap');
+    line(
+      `  uses that opened ground against uses that closed it: ` +
+        `Blink ${stepped.away}/${stepped.onto}, Leap ${jumped.away}/${jumped.onto}`
+    );
+    check(
+      stepped.away > 0 && stepped.onto === 0,
+      'Blink KITES: in a fight every use steps away from what landed a hit',
+      `${stepped.away} away, ${stepped.onto} onto`
+    );
+    check(
+      jumped.onto > jumped.away,
+      'and Leap DIVES: it comes down on what you are fighting',
+      `${jumped.onto} onto against ${jumped.away} away`
+    );
+  }
+
+  // GALE holds GUSTS and nothing else: no step, speed for each one held, and
+  // anything that lands a hit takes one. ANCHORED buys that away and pays for
+  // it in what every Gust is worth.
+  {
+    const surged = (allocated: string[]) => {
+      const who = makeCharacter(starterLoadout(new Rng(9)), 'strike');
+      who.level = 30;
+      equipSkill(who, 'gale');
+      skillProgress(who, 'gale').allocated = allocated;
+      const sim = new RunSim([], who, new Rng(404));
+      let least = Infinity;
+      for (let k = 0; k < 9000 && sim.state.status === 'running'; k++) {
+        sim.step(TICK);
+        least = Math.min(least, sim.state.gusts);
+      }
+      return { least, ended: sim.state.gusts, uses: sim.state.blinks };
+    };
+
+    const most = (SKILL_BY_ID.gale.params?.gusts as number) ?? 0;
+    const plain = surged([]);
+    const anchored = surged([...walkTo('gale', 'gl_anchor'), 'gl_anchor']);
+    line(
+      `  Gusts of ${most} at the worst of a descent: ${plain.least} bare, ` +
+        `${anchored.least} Anchored, and ${plain.uses} steps taken`
+    );
+    check(plain.uses === 0, 'Gale never steps: the Gusts are the whole skill', String(plain.uses));
+    check(plain.least < most, 'a hit takes one', `${plain.least} of ${most}`);
+    check(
+      anchored.least === most,
+      'and Anchored keeps every one of them, at 40% of what each is worth',
+      `${anchored.least} of ${most}`
+    );
   }
 
   // A Slow reaches a MELEE pack and a ranged one alike: the swing rate is set
@@ -8532,7 +8506,7 @@ rule('THREE SLOTS — one that kills, one always on, one that moves you');
     const jumper = makeCharacter(starterLoadout(new Rng(9)), 'strike');
     equipSkill(jumper, 'leap');
     skillProgress(jumper, 'leap').allocated = ['lp_tremor'];
-    const shock = landingOf(treeGrants(jumper));
+    const shock = moverReading(SKILL_BY_ID.leap, treeGrants(jumper))?.tremor ?? null;
     check(!!shock && shock.slow > 0, 'walking to Tremor reaches the sim through the web',
       JSON.stringify(shock));
 

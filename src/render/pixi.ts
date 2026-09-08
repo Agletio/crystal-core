@@ -37,6 +37,10 @@ import {
   lightningArc,
   coneWedge,
   iceSpikes,
+  spikeAlpha,
+  SPIKE_ROOT,
+  SPIKE_TALL,
+  speedLines,
   leapArc,
   sweepRing,
   fireBurst,
@@ -1290,7 +1294,17 @@ export async function createPixiRenderer(
       const cells = new Map<string, { x: number; y: number; size: number }>();
       let ink = 0;
       let lit = 0;
-      for (const fx of state.vfx) {
+      // AIR LINES, one a Gust: what SURGE is holding, drawn behind a body that is
+    // actually moving. Off the entity rather than a VFX, because it is a state
+    // rather than an event.
+    {
+      const hero = state.hero;
+      if ((hero.gusts ?? 0) > 0 && hero.action === 'move' && !hero.dead) {
+        blocks(speedLines(hero, hero.facing, hero.gusts ?? 0, state.elapsed % 1), 'physical', 1);
+      }
+    }
+
+    for (const fx of state.vfx) {
         if (fx.kind !== 'blight_field' || fx.age < 0) continue;
         const from = fx.points[0];
         const to = fx.points[1] ?? from;
@@ -1388,8 +1402,20 @@ export async function createPixiRenderer(
 
       if (fx.kind === 'spikes') {
         // FIRST point is where it came up; the second carries the radius, the
-        // same contract the burst and the sweep are drawn under.
-        blocks(iceSpikes(from, t, Math.hypot(to.x - from.x, to.y - from.y), fx.ttl), fx.damageType, 1);
+        // same contract the burst and the sweep are drawn under. The BLADE is
+        // generated art pinned at its foot; the ring of broken ground under it
+        // is blocks, which is what carries the damage TYPE a picture cannot.
+        const radius = Math.hypot(to.x - from.x, to.y - from.y);
+        blocks(iceSpikes(from, t, radius, fx.ttl), fx.damageType, 1);
+        const ice = vfxTexture('spike');
+        if (ice) {
+          const tall = radius * SPIKE_TALL;
+          const art = effectSprite(ice, tall);
+          art.anchor.set(0.5, 1); // it STANDS on the spot it came up through
+          art.x = cx(from.x);
+          art.y = cy(from.y) + SPIKE_ROOT;
+          art.alpha = spikeAlpha(t, fx.ttl);
+        }
         continue;
       }
 

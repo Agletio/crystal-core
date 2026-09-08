@@ -9,7 +9,8 @@
  * runs for every skill whatever its delivery is.
  */
 import {
-  AMBUSH, BURST, FASTEST_SWING, HERO_BASE, MANA, MELEE, PASSIVE_DAMAGE, ROGUE, STANDING,
+  AFTER,
+  AMBUSH, BURST, MOVE, FASTEST_SWING, HERO_BASE, MANA, MELEE, PASSIVE_DAMAGE, ROGUE, STANDING,
   WARRIOR,
   WEAPON_SPECIALITY,
   stunChanceFor,
@@ -82,9 +83,9 @@ const SHARED = ['projectile', 'melee', 'ailment_burst', 'cone', 'ambush', 'spike
 const HITTERS = ['projectile', 'melee', 'cone', 'ambush', 'spike'];
 /** The single-target deliveries, which are the ones that SPLASH. */
 const SPLASHERS = ['projectile', 'melee', 'ambush', 'single_target'];
-/** The two movers. Their own behaviour names, so `reads` can tell a jump's
- *  landing from a step that never lands anywhere. */
-const MOVERS = ['step', 'leap'];
+/** The three movers. Their own behaviour names, so `reads` can tell a jump's
+ *  landing from a step that never lands anywhere, and Surge from both. */
+const MOVERS = ['step', 'leap', 'gale'];
 
 export const GRANTS: GrantDef[] = [
   { id: 'convertTree', what: 'the skill is Converted to another damage type', reads: [STATS], changes: 'type' },
@@ -869,11 +870,11 @@ export const GRANTS: GrantDef[] = [
   {
     id: 'moveMana',
     what: 'moving restores mana',
-    reads: ['step'],
+    reads: ['step', 'leap'],
     merge: 'sum',
     say: (v) => {
       const n = asNumber(v);
-      return n === null ? null : `Each Blink restores ${pct(n)} of your mana pool`;
+      return n === null ? null : `Each use of your movement skill restores ${pct(n)} of your mana pool`;
     },
   },
   {
@@ -1435,6 +1436,306 @@ export const GRANTS: GrantDef[] = [
       const n = asNumber(v);
       return n === null ? null : `A Critical tick plants a Cloud ${n} tiles across`;
     },
+  },
+  // ---- THE MOVERS ---------------------------------------------------------
+  // A mover deals no damage, so nothing here `changes` a delivery. What they
+  // hand over is the step itself, what it leaves behind, and a WINDOW after it.
+  {
+    id: 'blinkWake',
+    what: 'a Blink Slows the ground it LEFT',
+    reads: ['step'],
+    say: (v) => {
+      const o = v as { radius?: number; slow?: number; seconds?: number } | null;
+      return o && typeof o.radius === 'number' && typeof o.slow === 'number'
+        && typeof o.seconds === 'number'
+        ? `Blink Slows enemies within ${o.radius} tiles of where it left by ` +
+          `${pct(o.slow)} for ${o.seconds}s`
+        : null;
+    },
+  },
+  {
+    id: 'wakeRadius',
+    what: 'the wake a Blink leaves reaches further',
+    reads: ['step'],
+    merge: 'product',
+    say: (v) => { const n = asNumber(v); return n === null ? null : `The wake reaches ${more(n)} further`; },
+  },
+  {
+    id: 'wakeSlow',
+    what: 'the wake a Blink leaves Slows harder',
+    reads: ['step'],
+    merge: 'sum',
+    say: (v) => { const n = asNumber(v); return n === null ? null : `The wake Slows by a further ${pct(n)}`; },
+  },
+  {
+    id: 'wakeSeconds',
+    what: 'the wake a Blink leaves lasts longer',
+    reads: ['step'],
+    merge: 'sum',
+    say: (v) => { const n = asNumber(v); return n === null ? null : `The wake lasts ${n}s longer`; },
+  },
+  {
+    id: 'kiteFurther',
+    what: 'a Blink taken under pressure keeps more ground',
+    reads: ['step'],
+    merge: 'product',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null ? null : `Blink keeps ${more(n)} more ground between you and what pushed you`;
+    },
+  },
+  {
+    id: 'kiteUnhurt',
+    what: 'a Blink fires on something being in reach rather than on being hit',
+    reads: ['step'],
+    say: (v) =>
+      v === true ? `A Blink fires when something is within ${MOVE.reach} tiles, hit or not` : null,
+  },
+  {
+    id: 'pressedCooldown',
+    what: 'a movement skill used in a fight comes back sooner',
+    reads: MOVERS,
+    merge: 'product',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null ? null : `A movement skill used in a fight comes back ${pct(1 - n)} sooner`;
+    },
+  },
+  {
+    id: 'landingPin',
+    what: 'landing Slows what you came down on',
+    reads: ['leap'],
+    say: (v) => {
+      const o = v as { slow?: number; seconds?: number } | null;
+      return o && typeof o.slow === 'number' && typeof o.seconds === 'number'
+        ? `Landing Slows what you came down on by ${pct(o.slow)} for ${o.seconds}s`
+        : null;
+    },
+  },
+  {
+    id: 'pinSlow',
+    what: 'what you came down on is Slowed harder',
+    reads: ['leap'],
+    merge: 'sum',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null ? null : `What you came down on is Slowed by a further ${pct(n)}`;
+    },
+  },
+  {
+    id: 'pinLonger',
+    what: 'what you came down on is Slowed for longer',
+    reads: ['leap'],
+    merge: 'sum',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null ? null : `What you came down on is Slowed for ${n}s longer`;
+    },
+  },
+  {
+    id: 'landingRadius',
+    what: 'the tremor a landing leaves reaches further',
+    reads: ['leap'],
+    merge: 'product',
+    say: (v) => { const n = asNumber(v); return n === null ? null : `The tremor reaches ${more(n)} further`; },
+  },
+  {
+    id: 'landingMore',
+    what: 'the tremor a landing leaves Slows harder',
+    reads: ['leap'],
+    merge: 'sum',
+    say: (v) => { const n = asNumber(v); return n === null ? null : `The tremor Slows by a further ${pct(n)}`; },
+  },
+  {
+    id: 'landingSeconds',
+    what: 'the tremor a landing leaves lasts longer',
+    reads: ['leap'],
+    merge: 'sum',
+    say: (v) => { const n = asNumber(v); return n === null ? null : `The tremor lasts ${n}s longer`; },
+  },
+  {
+    id: 'moveHeal',
+    what: 'landing restores life',
+    reads: ['leap'],
+    merge: 'sum',
+    say: (v) => { const n = asNumber(v); return n === null ? null : `Landing restores ${pct(n)} of your life`; },
+  },
+  {
+    id: 'afterStepSpeed',
+    what: 'you move faster for a moment after your movement skill',
+    reads: MOVERS,
+    merge: 'sum',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null ? null : `You move ${pct(n)} faster for ${AFTER.seconds}s after your movement skill`;
+    },
+  },
+  {
+    id: 'afterStepDamage',
+    what: 'you deal more damage for a moment after your movement skill',
+    reads: MOVERS,
+    merge: 'sum',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null ? null : `You deal ${pct(n)} more damage for ${AFTER.seconds}s after your movement skill`;
+    },
+  },
+  {
+    id: 'afterStepGuard',
+    what: 'you take less damage for a moment after your movement skill',
+    reads: MOVERS,
+    merge: 'sum',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null ? null : `You take ${pct(n)} less damage for ${AFTER.seconds}s after your movement skill`;
+    },
+  },
+  {
+    id: 'afterStepRegen',
+    what: 'you regenerate for a moment after your movement skill',
+    reads: MOVERS,
+    merge: 'bag',
+    say: (v) => {
+      const o = v as { life?: number; mana?: number } | null;
+      if (!o) return null;
+      const parts: string[] = [];
+      if (typeof o.life === 'number') parts.push(`${pct(o.life)} of your life`);
+      if (typeof o.mana === 'number') parts.push(`${pct(o.mana)} of your mana pool`);
+      return parts.length === 0
+        ? null
+        : `You regenerate ${parts.join(' and ')} a second for ${AFTER.seconds}s after your movement skill`;
+    },
+  },
+  {
+    id: 'afterStepLonger',
+    what: 'the window after your movement skill lasts longer',
+    reads: MOVERS,
+    merge: 'sum',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null ? null : `The window after your movement skill lasts ${n}s longer`;
+    },
+  },
+  // ---- GALE'S GUSTS ----------------------------------------------------
+  {
+    id: 'gustSpeed',
+    what: 'each Gust held is more movement speed',
+    reads: ['gale'],
+    merge: 'sum',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null ? null : `+${n}% increased Movement Speed for each charge held`;
+    },
+  },
+  {
+    id: 'gustHaste',
+    what: 'each Gust held is more attack and cast speed',
+    reads: ['gale'],
+    merge: 'sum',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null ? null : `+${n}% increased Attack and Cast Speed for each charge held`;
+    },
+  },
+  {
+    id: 'gustDamage',
+    what: 'each Gust held is more damage',
+    reads: ['gale'],
+    merge: 'sum',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null ? null : `${pct(n)} more damage for each charge held`;
+    },
+  },
+  {
+    id: 'gustGuard',
+    what: 'each Gust held is less damage taken',
+    reads: ['gale'],
+    merge: 'sum',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null ? null : `${pct(n)} less damage taken for each charge held`;
+    },
+  },
+  {
+    id: 'gustlessGuard',
+    what: 'holding no Gusts at all is less damage taken',
+    reads: ['gale'],
+    merge: 'sum',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null ? null : `${pct(n)} less damage taken while you hold no charges`;
+    },
+  },
+  {
+    id: 'gustHeal',
+    what: 'losing a Gust restores life',
+    reads: ['gale'],
+    merge: 'sum',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null ? null : `Losing a charge restores ${pct(n)} of your life`;
+    },
+  },
+  {
+    id: 'gustMana',
+    what: 'losing a Gust restores mana',
+    reads: ['gale'],
+    merge: 'sum',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null ? null : `Losing a charge restores ${pct(n)} of your mana pool`;
+    },
+  },
+  {
+    id: 'gustMax',
+    what: 'you hold more Gusts',
+    reads: ['gale'],
+    merge: 'sum',
+    say: (v) => { const n = asNumber(v); return n === null ? null : `+${n} charge${n === 1 ? '' : 's'}`; },
+  },
+  {
+    id: 'gustBack',
+    what: 'a Gust comes back sooner',
+    reads: ['gale'],
+    merge: 'product',
+    say: (v) => { const n = asNumber(v); return n === null ? null : `A charge comes back ${pct(1 - n)} sooner`; },
+  },
+  {
+    id: 'gustOnKill',
+    what: 'a kill hands back a Gust',
+    reads: ['gale'],
+    merge: 'sum',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null ? null : `A kill has a ${pct(n)} chance to hand back a charge`;
+    },
+  },
+  {
+    id: 'gustRefill',
+    what: 'every Gust comes back at once after a stretch with nothing landing on you',
+    reads: ['gale'],
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null ? null : `Every charge comes back at once after ${n}s with nothing landing on you`;
+    },
+  },
+  {
+    id: 'gustKeep',
+    what: 'a hit takes no Gust, and every Gust is worth less',
+    reads: ['gale'],
+    merge: 'product',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null ? null : `A hit no longer takes a charge, and each charge is worth ${pct(1 - n)} less`;
+    },
+  },
+  {
+    id: 'gustKept',
+    what: 'a Gust a hit did not take is worth more',
+    reads: ['gale'],
+    merge: 'product',
+    say: (v) => { const n = asNumber(v); return n === null ? null : `A charge you keep is worth ${more(n)} more`; },
   },
 ];
 

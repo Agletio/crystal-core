@@ -2076,6 +2076,13 @@ export const planFor = (defId: string): PlanDef | null => PLAN_BY_MOD[defId] ?? 
  *  may take off it: a mover with none is a second walk speed. */
 export const MOVE = {
   leastCooldown: 0.35,
+  /** Share of its reach a kite puts between you and what pushed you. */
+  kite: 0.9,
+  /** How recently something has to have LANDED A HIT for a kite to fire, and
+   *  how close it has to be. */
+  pressed: 1.4,
+  reach: 1.6,
+  engaged: 5, // a live body this near is a FIGHT, and a mover stops travelling
   /** How long a LEAP is in the air, and how high it arcs in tiles. The body is
    *  already at the landing; this is only how it is drawn getting there. */
   hopSeconds: 0.34,
@@ -2610,6 +2617,13 @@ export const AMBUSH = {
 /** THE SPIKE THAT STANDS. Rimespike's one mode switch: the cast becomes a
  *  COOLDOWN and what it leaves keeps Chilling everything round it. `chills` is
  *  the tick, so a spike is applications rather than one lump. */
+/** THE WINDOW AFTER A MOVE, which is the movers' own vocabulary: *"stats in the
+ *  movement skills is fine as something you get for a few seconds after the
+ *  skill's used."* One length, so a notable is a number rather than a clock. */
+export const AFTER = {
+  seconds: 3,
+};
+
 export const STANDING = {
   chills: 0.5, // seconds between the Chills a standing spike applies
   leastCooldown: 0.15, // set UNDER the 84% a full set of the line rolls, so stacking pays all the way
@@ -5411,6 +5425,31 @@ export const SKILLS: SkillDef[] = [
     range: 0,
     vfxKind: 'leap',
     params: { distance: 6, cooldown: 4 },
+  },
+  {
+    /**
+     * THE ONE MOVER THAT NEVER TELEPORTS. *"Make the speed tied to the charges
+     * instead. % move speed per charge, lose charges when hit."* So out of a
+     * fight you hold them all and travel fast, and in one you are as fast as
+     * you are untouched — the same two modes the other two have, out of one
+     * mechanism rather than two behaviours.
+     */
+    id: 'gale',
+    name: 'Gale',
+    category: 'movement',
+    description:
+      'You hold 3 Gusts and move 10% faster for each one. Anything that lands ' +
+      'a hit takes one, and one comes back every 6 seconds.',
+    tags: ['movement'],
+    behaviour: 'gale',
+    damageTypes: [],
+    baseDamage: 0,
+    addedEffectiveness: 0,
+    rateMultiplier: 1,
+    manaCost: 0,
+    range: 0,
+    vfxKind: 'gale',
+    params: { gusts: 3, speed: 10, back: 6 },
   },
 ];
 

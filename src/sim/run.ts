@@ -37,7 +37,9 @@ import {
 } from './stats';
 import type { CombatStats, Grip } from './stats';
 import { SKILL_BEHAVIOURS } from './skills';
-import { bleedOf, critBuff, landingOf, overchargeOf, shieldShare, starvedMultiplier } from './grants';
+import { bleedOf, critBuff, overchargeOf, shieldShare, starvedMultiplier } from './grants';
+import { moverReading } from './movers';
+import type { MoverReading, MoverSlow } from './movers';
 import { equippedSkill, gatherableFamilies, mainSkillId, monsterXp, toolMore } from './character';
 import type { Character } from './character';
 import { dominantFamily, familyPlan, runSet } from './crystal';
@@ -260,6 +262,7 @@ export interface Entity {
    *  body at the landing AT ONCE, so nothing it decides depends on the arc; a
    *  renderer draws it along the way it went. */
   hop?: { fx: number; fy: number; left: number; total: number };
+  gusts?: number; // SURGE's, drawn as air lines behind a body that is moving
   kind: EntityKind;
   /** Which body draws it: a monster's id, or the hero's TRADE. */
   sprite: string;
@@ -555,6 +558,10 @@ export interface RunState {
   /** Follow-ups a Critical bought, teleport and all. Zero without the node. */
   relays: number;
   freezes: number; // bodies a Chill took to the bar and FROZE
+  gusts: number; // what GALE is holding, which is what its speed is worth
+  /** Uses that fired the COMBAT mode: a step away, and a landing on a body. */
+  kites: number;
+  dives: number;
   /** Damage the mana pool paid for instead of your life. */
   absorbed: number;
 }
@@ -598,6 +605,12 @@ export class RunSim {
   private readonly recharging: Record<string, number> = {};
   /** Seconds until the movement skill can fire again. */
   private moveIn = 0;
+  /** What the equipped mover comes to, read ONCE: nothing swaps mid-descent. */
+  private moving: MoverReading | null = null;
+  private gusts = 0;
+  private gustIn = 0;
+  /** Seconds left of the window a use (or a charge dropping) opened. */
+  private afterIn = 0;
   /** Seconds until the MOVEMENT slot may fire again, and what it counts down
    *  from: the readout draws the wait, so it reads one number the sim owns. */
   get moverWait(): { left: number; of: number } {
@@ -694,6 +707,10 @@ export class RunSim {
     this.toolMore = (family) => toolMore(character, family);
     this.level = character.level;
     this.mover = SKILL_BY_ID[equippedSkill(character, 'movement') ?? ''] ?? null;
+    // ONE reading of the mover, so the sim behaves by exactly what a card says
+    // and what the demo fingerprints. Charges start FULL: nothing has hit you.
+    this.moving = moverReading(this.mover, this.grants);
+    this.gusts = this.moving?.gusts?.most ?? 0;
     // The tree can change what the skill IS — its damage type, its tags — and
     // the sim has to fight with the same skill the stat sheet described, or a
     // converted Fireball scales off cold and is resisted as fire.
@@ -798,6 +815,9 @@ export class RunSim {
       overcharges: 0,
       relays: 0,
       freezes: 0,
+      gusts: 0,
+      kites: 0,
+      dives: 0,
       absorbed: 0,
       folk: [],
       meeting: false,
@@ -1783,13 +1803,14 @@ export class RunSim {
     if (hero.dead) return;
     const marked = 1 + this.state.marks * BOSS_FIGHT.markMore;
     const blunt = hit ? 1 - this.blunting(hero) / 100 : 1;
-    let total = this.afterResistance(hero, raw * marked * this.rage, type) * blunt;
+    let total = this.afterResistance(hero, raw * marked * this.rage, type) * blunt * this.softened();
     const before = total;
     total = this.absorb(hero, total);
     const kept = before > 0 ? total / before : 1;
     this.state.damageTaken[type] = (this.state.damageTaken[type] ?? 0) + before * kept;
     if (total <= 0) return;
     this.sinceHit = 0;
+    this.spendGust(hero);
     hero.life -= total;
     if (hero.life <= 0) this.kill(hero);
   }
@@ -1817,6 +1838,24 @@ export class RunSim {
     if (hero.mana < hero.stats.maxMana) {
       hero.mana = Math.min(hero.stats.maxMana, hero.mana + hero.stats.manaRegen * dt);
     }
+    // THE WINDOW a mover opened, in SHARES of the pool it fills rather than in
+    // the flat figure a stat line buys.
+    const after = this.moving?.after;
+    if (after && this.afterIn > 0) {
+      if (after.life > 0) {
+        hero.life = Math.min(hero.stats.maxLife, hero.life + hero.stats.maxLife * after.life * dt);
+      }
+      if (after.mana > 0) {
+        hero.mana = Math.min(hero.stats.maxMana, hero.mana + hero.stats.maxMana * after.mana * dt);
+      }
+    }
+
+    if (this.afterIn > 0) this.afterIn -= dt;
+    this.stepGusts(dt);
+    // ASKED EVERY TICK, not from inside the walk: a hero toe to toe with
+    // something has no path at all, and standing there being hit is exactly
+    // when a kite has to fire.
+    this.maybeMove(hero);
 
     // A CIRCLE ON YOU outranks fighting, and leaving means clearing them ALL —
     // out of one and into the next is how a burst catches a mover. Getting out
@@ -2486,9 +2525,6 @@ export class RunSim {
       e.pathTimer = 0.4 + this.rng.float(0, 0.25);
       if (e.path.length === 0) return false;
     }
-    // Not while PACING: a mover would blink him across the room he is walking.
-    if (e.kind === 'hero' && pace === 1) this.maybeMove(e);
-
     const startX = e.x;
     const startY = e.y;
 
@@ -2533,43 +2569,125 @@ export class RunSim {
     return true;
   }
 
-  /** The movement skill, firing ITSELF, along the path already found: the
-   *  furthest walkable waypoint in reach. A STEP wants a clear line and goes
-   *  through; a JUMP wants none and goes over, and neither reaches anywhere
-   *  the walk could not. */
+  /** Something alive close enough to be a fight. */
+  private engaged(hero: Entity): boolean {
+    return this.state.monsters.some((m) => !m.dead && dist(m, hero) <= MOVE.engaged);
+  }
+
+  /** THE BODY THAT PUSHED YOU, or null. Being HIT is a fact about the fight
+   *  where a bare distance is a condition on the pathfinder. */
+  private pressing(hero: Entity): Entity | null {
+    const m = this.moving;
+    if (!m) return null;
+    if (!m.unhurt && this.sinceHit > MOVE.pressed) return null;
+    let near: Entity | null = null;
+    for (const e of this.state.monsters) {
+      if (e.dead || dist(e, hero) > MOVE.reach) continue;
+      if (!near || dist(e, hero) < dist(near, hero)) near = e;
+    }
+    return near;
+  }
+
+  /** THE STEP AWAY, for a kite: as far from what pushed you as the reach buys,
+   *  swept round until a tile is walkable and in sight. */
+  private kiteTo(hero: Entity, from: Entity, reach: number): Vec2 | null {
+    const grid = this.state.map.grid;
+    const away = Math.atan2(hero.y - from.y, hero.x - from.x);
+    for (const turn of [0, 0.4, -0.4, 0.8, -0.8, 1.2, -1.2]) {
+      for (const span of [reach, reach * 0.7, reach * 0.4]) {
+        const at = { x: hero.x + Math.cos(away + turn) * span, y: hero.y + Math.sin(away + turn) * span };
+        if (this.penned(at, hero.radius)) continue;
+        if (this.throughBoss(hero, at)) continue;
+        if (grid.walkable(at.x, at.y) && grid.fits(at.x, at.y, hero.radius) && hasLineOfSight(grid, hero, at)) return at;
+      }
+    }
+    return null;
+  }
+
+  /** ON TOP OF WHAT YOU ARE FIGHTING: its own tile if it fits, else the ring
+   *  round it — the same answer `stepBehind` gives. */
+  private diveAt(hero: Entity, target: Entity, reach: number): Vec2 | null {
+    if (dist(hero, target) > reach) return null;
+    const grid = this.state.map.grid;
+    if (grid.walkable(target.x, target.y) && !this.penned(target, hero.radius)) {
+      return { x: target.x, y: target.y };
+    }
+    for (let i = 0; i < 8; i++) {
+      const a = (i / 8) * Math.PI * 2;
+      const at = { x: target.x + Math.cos(a) * (hero.radius * 2), y: target.y + Math.sin(a) * (hero.radius * 2) };
+      if (!this.penned(at, hero.radius) && grid.walkable(at.x, at.y) && grid.fits(at.x, at.y, hero.radius)) return at;
+    }
+    return null;
+  }
+
+  /**
+   * THE MOVER, IN ITS TWO MODES. Out of a fight all of them cover ground along
+   * the path already found — the furthest walkable waypoint in reach, a STEP
+   * through a clear line and a JUMP over anything. IN a fight each one is its
+   * own skill: Blink goes the other way from whatever pushed you, Leap comes
+   * down on what you are fighting, and Gale never steps at all.
+   */
   private maybeMove(hero: Entity): void {
     const skill = this.mover;
-    if (!skill || this.moveIn > 0 || hero.path.length === 0) return;
+    const m = this.moving;
+    if (!skill || !m || this.moveIn > 0) return;
+    if (hero.dead || (hero.stun ?? 0) > 0) return; // a Fall holds you still
+    if (skill.behaviour === 'gale') return; // its charges are the whole skill
     // Never in a room you are WALKING across — skipping the last of it reads
     // as a bug — but a boss room is a fight, and a mover is how you leave a
     // slam without turning at all. Which is why a slam comes in a BURST.
     if (this.options.scene && !this.fighting) return;
 
-    const further = (this.grants.moveDistance as number) ?? 1;
-    const reach = ((skill.params?.distance as number) ?? 0) * further;
     const jumps = skill.behaviour === 'leap';
     const grid = this.state.map.grid;
     let landing: Vec2 | null = null;
     let steps = 0;
-    let seen = 0;
-    for (const wp of hero.path) {
-      if (dist(hero, wp) > reach) break;
-      seen++;
-      // Never INTO a live circle or the boss: a blink landing in either is the
-      // mover doing the boss's work. A JUMP clears the body; a STEP wants a
-      // line, and one is no clearer through a boss than through a wall.
-      if (this.penned(wp, hero.radius)) continue;
-      if (!jumps && this.throughBoss(hero, wp)) continue;
-      if (grid.walkable(wp.x, wp.y) && (jumps || hasLineOfSight(grid, hero, wp))) {
-        landing = wp;
-        steps = seen;
+    let pressed = false;
+    let dived: Entity | null = null;
+
+    const pushing = this.pressing(hero);
+    if (!jumps && pushing) {
+      landing = this.kiteTo(hero, pushing, m.reach * m.kite);
+      pressed = landing !== null;
+      if (pressed) this.state.kites++;
+    } else if (jumps) {
+      const at = hero.targetId !== null ? this.byId.get(hero.targetId) : undefined;
+      if (at && !at.dead && dist(hero, at) > hero.radius + at.radius) {
+        landing = this.diveAt(hero, at, m.reach);
+        if (landing) {
+          pressed = true;
+          dived = at;
+          this.state.dives++;
+        }
       }
     }
-    if (!landing || steps === 0) return;
 
+    // IN A FIGHT a mover does not cover ground: spent walking at the pack, a
+    // kite never has its cooldown when something finally lands a hit.
+    if (!landing) {
+      if (this.engaged(hero)) return;
+      if (hero.path.length === 0) return;
+      let seen = 0;
+      for (const wp of hero.path) {
+        if (dist(hero, wp) > m.reach) break;
+        seen++;
+        // Never INTO a live circle or the boss: a blink landing in either is the
+        // mover doing the boss's work. A JUMP clears the body; a STEP wants a
+        // line, and one is no clearer through a boss than through a wall.
+        if (this.penned(wp, hero.radius)) continue;
+        if (!jumps && this.throughBoss(hero, wp)) continue;
+        if (grid.walkable(wp.x, wp.y) && (jumps || hasLineOfSight(grid, hero, wp))) {
+          landing = wp;
+          steps = seen;
+        }
+      }
+      if (!landing || steps === 0) return;
+    }
+
+    const was = { x: hero.x, y: hero.y };
     this.emit(
       skill.vfxKind ?? 'blink',
-      [{ x: hero.x, y: hero.y }, { x: landing.x, y: landing.y }],
+      [was, { x: landing.x, y: landing.y }],
       'physical',
       0.25
     );
@@ -2579,33 +2697,103 @@ export class RunSim {
     }
     hero.x = landing.x;
     hero.y = landing.y;
-    hero.path = hero.path.slice(steps);
+    hero.path = steps > 0 ? hero.path.slice(steps) : [];
     this.state.blinks++;
     // The grant and the worn line multiply: one is a notable, the other a
     // rolled stat, and neither may quietly replace the other.
-    const sooner = ((this.grants.moveCooldown as number) ?? 1)
-      * Math.max(MOVE.leastCooldown, 1 - hero.stats.cooldown / 100);
-    this.moveIn = ((skill.params?.cooldown as number) ?? 1) * sooner;
+    const sooner = Math.max(MOVE.leastCooldown, 1 - hero.stats.cooldown / 100);
+    this.moveIn = m.wait * sooner * (pressed ? m.pressed : 1);
 
-    if (jumps) this.land(hero); // a step arrives; only a jump LANDS
-    const back = (this.grants.moveMana as number) ?? 0;
-    if (back > 0) hero.mana = Math.min(hero.stats.maxMana, hero.mana + hero.stats.maxMana * back);
+    // WHAT IT LEFT, which is the whole of what makes a step a kite: the Slow
+    // lands where you WERE rather than where you are standing now.
+    if (m.wake) this.slowRound(was, m.wake);
+    if (jumps) this.land(hero, dived); // a step arrives; only a jump LANDS
+    if (m.mana > 0) hero.mana = Math.min(hero.stats.maxMana, hero.mana + hero.stats.maxMana * m.mana);
+    if (m.heal > 0 && jumps) hero.life = Math.min(hero.stats.maxLife, hero.life + hero.stats.maxLife * m.heal);
+    this.openWindow();
+  }
+
+  /** GALE'S GUSTS. Speed for each one held, one taken by anything that lands
+   *  a hit, one back on a clock. There is no step to fire: they ARE the skill. */
+  private stepGusts(dt: number): void {
+    const c = this.moving?.gusts;
+    if (!c) return;
+    // Drawn off the entity, read off the state: the lines ARE the count.
+    this.state.gusts = this.gusts;
+    this.state.hero.gusts = this.gusts;
+    // All of them at once after a stretch untouched, where the clock hands them
+    // back one at a time. Both end at `most`, so neither runs away.
+    if (c.refill > 0 && this.sinceHit >= c.refill) this.gusts = c.most;
+    if (this.gusts >= c.most) {
+      this.gustIn = c.back;
+      return;
+    }
+    this.gustIn -= dt;
+    if (this.gustIn > 0) return;
+    this.gustIn = c.back;
+    this.gusts = Math.min(c.most, this.gusts + 1);
+  }
+
+  /** What a hit takes, and what dropping one hands back. */
+  private spendGust(hero: Entity): void {
+    const c = this.moving?.gusts;
+    if (!c || c.keeps || this.gusts <= 0) return;
+    this.gusts--;
+    this.gustIn = c.back;
+    if (c.heal > 0) hero.life = Math.min(hero.stats.maxLife, hero.life + hero.stats.maxLife * c.heal);
+    if (c.mana > 0) hero.mana = Math.min(hero.stats.maxMana, hero.mana + hero.stats.maxMana * c.mana);
+    this.openWindow();
+  }
+
+  /** WHAT THE MOVERS TAKE OFF A HIT, in one place: the window a use opened, and
+   *  what the charges in hand are worth. Clamped, so no walk makes you immune. */
+  private softened(): number {
+    const m = this.moving;
+    if (!m) return 1;
+    let less = this.afterIn > 0 ? m.after.guard : 0;
+    if (m.gusts) {
+      less += this.gusts * m.gusts.guard;
+      if (this.gusts === 0) less += m.gusts.empty;
+    }
+    return Math.max(0.2, 1 - less);
+  }
+
+  /** THE WINDOW a use opens, and the one a charge dropping opens: one clock,
+   *  so two sources cannot each be running their own. */
+  private openWindow(): void {
+    const after = this.moving?.after;
+    if (!after) return;
+    if (after.speed > 0 || after.damage > 0 || after.guard > 0 || after.life > 0 || after.mana > 0) {
+      this.afterIn = after.seconds;
+    }
+  }
+
+  /** A Slow laid on everything inside a circle, wherever the circle is. */
+  private slowRound(at: Vec2, shock: MoverSlow): void {
+    this.emit('sweep', [{ x: at.x, y: at.y }, { x: at.x + shock.radius, y: at.y }], 'physical', 0.35);
+    for (const m of this.state.monsters) {
+      if (m.dead || dist(m, at) > shock.radius) continue;
+      this.slowFor(m, shock);
+    }
+  }
+
+  /** Refreshed rather than stacked, exactly as the crit buff is. */
+  private slowFor(m: Entity, shock: MoverSlow): void {
+    const live = m.effects.find((e) => e.id === SLOWED);
+    if (live) live.remaining = Math.max(live.remaining, shock.seconds);
+    else m.effects.push({ id: SLOWED, remaining: shock.seconds });
+    m.slowed = Math.max(m.slowed ?? 0, shock.slow);
   }
 
   /** What coming down does to what is near it. Never damage: every damage
    *  number in the game belongs to the skill in the main slot. */
-  private land(hero: Entity): void {
-    const shock = landingOf(this.grants);
-    if (!shock) return;
-    this.emit('sweep', [{ x: hero.x, y: hero.y }, { x: hero.x + shock.radius, y: hero.y }], 'physical', 0.35);
-    for (const m of this.state.monsters) {
-      if (m.dead || dist(m, hero) > shock.radius) continue;
-      const live = m.effects.find((e) => e.id === SLOWED);
-      // Refreshed rather than stacked, exactly as the crit buff is.
-      if (live) live.remaining = Math.max(live.remaining, shock.seconds);
-      else m.effects.push({ id: SLOWED, remaining: shock.seconds });
-      m.slowed = shock.slow;
-    }
+  private land(hero: Entity, on: Entity | null): void {
+    const m = this.moving;
+    if (!m) return;
+    if (m.tremor) this.slowRound(hero, m.tremor);
+    // AND WHAT IS UNDER YOU takes its own, which is the other shape one Slow
+    // seam has: the ring, or the body you came down on.
+    if (m.pin && on && !on.dead) this.slowFor(on, m.pin);
   }
 
   /** The behaviour decides WHO gets hit; the sim decides what a hit does. */
@@ -2685,7 +2873,7 @@ export class RunSim {
       } else if (e.id === CRIT_BUFF) {
         const buff = critBuff(this.grants);
         out.push({
-          id: e.id, by: 'surge', name: SKILL_BY_ID.surge?.name ?? 'Killing Surge',
+          id: e.id, by: 'gale', name: SKILL_BY_ID.gale?.name ?? 'Killing Surge',
           says: `A Critical landed. ${buff?.more ?? 0}% more damage until it falls.`,
           left: e.remaining,
         });
@@ -3009,8 +3197,10 @@ export class RunSim {
     const slow = 1 - (e.slowed ?? 0);
     if (e.kind !== 'hero') return slow;
     const killed = this.sinceKill > 0 ? 1 + ((this.grants.killHaste as number) ?? 0) / 100 : 1;
-    if (!this.flasked()) return slow * killed;
-    return slow * killed * (1 + ((this.grants.potionHaste as number) ?? 0) / 100);
+    const held = this.moving?.gusts;
+    const charged = held ? 1 + (this.gusts * held.haste) / 100 : 1;
+    if (!this.flasked()) return slow * killed * charged;
+    return slow * killed * charged * (1 + ((this.grants.potionHaste as number) ?? 0) / 100);
   }
 
   /** What a step is multiplied by: a running flask, and nothing else yet. */
@@ -3022,6 +3212,14 @@ export class RunSim {
     const ramp = this.grants.unhitHaste as { after: number; more: number } | undefined;
     if (ramp && this.sinceHit >= ramp.after) pace *= 1 + ramp.more;
     if (this.sinceKill > 0) pace *= 1 + ((this.grants.killMove as number) ?? 0) / 100;
+    // THE MOVERS' OWN TWO: the window a use opened, and what the charges in
+    // hand are worth. A pace rather than a stat, so a hit takes it the instant
+    // it lands.
+    const m = this.moving;
+    if (m) {
+      if (this.afterIn > 0) pace *= 1 + m.after.speed;
+      if (m.gusts) pace *= 1 + (this.gusts * m.gusts.speed) / 100;
+    }
     return pace;
   }
 
@@ -3130,6 +3328,12 @@ export class RunSim {
       // the same thing is an ordinary one however long the fight runs.
       const opening = (this.grants.firstBlood as number) ?? 0;
       if (opening > 0 && !defender.struck) scale *= 1 + opening / 100;
+      // THE MOVERS' OWN: the window a use opened, and the charges in hand.
+      const m = this.moving;
+      if (m) {
+        if (this.afterIn > 0) scale *= 1 + m.after.damage;
+        if (m.gusts) scale *= 1 + this.gusts * m.gusts.damage;
+      }
     }
     // From a crit that landed BEFORE this one: the crit granting it never
     // hits harder for doing so.
@@ -3184,7 +3388,7 @@ export class RunSim {
     // every type in proportion — so the overlay reports what actually landed.
     if (defender.kind === 'hero') {
       const before = dmg;
-      dmg = this.absorb(defender, dmg);
+      dmg = this.absorb(defender, dmg * this.softened());
       if (dmg < before) {
         const kept = dmg / before;
         for (const type of Object.keys(byType)) byType[type] *= kept;
@@ -3234,7 +3438,10 @@ export class RunSim {
     }
     if (attacker.kind === 'hero' && defender.kind !== 'hero') this.stun(defender, dmg);
     if (attacker.kind === 'hero' && defender.kind !== 'hero') this.sunder(defender);
-    if (defender.kind === 'hero') this.sinceHit = 0;
+    if (defender.kind === 'hero') {
+      this.sinceHit = 0;
+      this.spendGust(defender); // anything that LANDS takes one
+    }
     defender.hitFlash = 0.18;
     defender.action = 'hurt';
     defender.actionTimer = HURT_POSE;
@@ -3911,6 +4118,10 @@ export class RunSim {
     if (this.grants.killGuard || this.grants.killHaste || this.grants.killMove) {
       this.sinceKill = Math.max(ROGUE.guardSeconds, ROGUE.hasteSeconds);
     }
+    // TOPPING UP: a kill hands a charge back, rolled only where there is a
+    // chance, or a build with none would spend a draw on every body.
+    const c = this.moving?.gusts;
+    if (c && c.onKill > 0 && this.gusts < c.most && this.rng.chance(c.onKill)) this.gusts++;
     this.bankCharges((this.grants.chargeOnKill as number) ?? 0);
     const fed = (this.grants.killHeal as number) ?? 0;
     if (fed > 0) {

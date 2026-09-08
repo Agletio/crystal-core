@@ -14,7 +14,7 @@
  * `means` carries its own numbers, out of the same tables the sim reads. A
  * glossary quoting a figure by hand is a glossary that goes stale silently.
  */
-import { AILMENT_BY_ID, BURST, DAMAGE_TYPE_BY_ID, DEFENCE, MANA, MELEE, PASSIVE_DAMAGE, POTIONS, PROJECTILE, SPLASH, WARRIOR, stunChanceFor } from './data';
+import { AILMENT_BY_ID, BURST, SKILL_BY_ID, DAMAGE_TYPE_BY_ID, DEFENCE, MANA, MELEE, PASSIVE_DAMAGE, POTIONS, PROJECTILE, SPLASH, WARRIOR, stunChanceFor } from './data';
 
 export interface KeywordDef {
   id: string;
@@ -381,6 +381,18 @@ export const KEYWORDS: KeywordDef[] = [
       `always begins full, and nothing about them survives one — there is ` +
       `nothing to hoard.`,
     grants: ['chargeRegen', 'chargeOnKill'],
+  },
+  {
+    /** A flask's Charge and a mover's Gust are two things, so they are two
+     *  words: one word may only ever mean one mechanism. */
+    id: 'gust',
+    name: 'Gust',
+    says: ['Gust', 'Gusts'],
+    means:
+      `What GALE holds. You move ${SKILL_BY_ID.gale?.params?.speed ?? 0}% ` +
+      `faster for each one, anything that lands a hit takes one, and one comes ` +
+      `back every ${SKILL_BY_ID.gale?.params?.back ?? 0}s.`,
+    grants: ['gustSpeed', 'gustMax', 'gustBack'],
   },
   {
     id: 'stun',

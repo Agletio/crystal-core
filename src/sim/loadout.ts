@@ -29,7 +29,7 @@ import { defaultGearBase, makeGear, rollCrystal, rollGear } from '../economy';
 import { runSet } from './crystal';
 import { RunSim, TICK } from './run';
 import { attributePointsFor, canDualWield, equipSkill, makeCharacter, slotIsOpen } from './character';
-import { MOVE_WEBS, canAllocate, treeFor, treePointsFor } from '../skills-tree';
+import { BUILT_TREES, canAllocate, treeFor, treePointsFor } from '../skills-tree';
 import { skillProgress } from './character';
 import type { Character } from './character';
 import type { Item, ModEntry } from '../types';
@@ -162,7 +162,10 @@ const SHAPE_PASSIVES: Record<BuildShape, string[]> = {
   neither: [],
 };
 
-/** Two arms fit the six points; naming none leaves the slot EMPTY. */
+/** Every mover there is, off the one table. */
+const MOVER_IDS = PLAYER_SKILLS.filter((sk) => sk.category === 'movement').map((sk) => sk.id);
+
+/** A mover is a tree like any other now; naming none leaves the slot EMPTY. */
 const SHAPE_MOVER: Record<BuildShape, { skill: string; arms: string[] } | null> = {
   runner: { skill: 'blink', arms: ['reach', 'quickening'] },
   tank: null,
@@ -173,14 +176,14 @@ function walkMover(character: Character, shape: BuildShape): void {
   const want = SHAPE_MOVER[shape];
   if (!want) return;
   equipSkill(character, want.skill);
-  const web = MOVE_WEBS.find((m) => m.spec.skillId === want.skill);
+  const web = BUILT_TREES.find((t) => t.spec.skillId === want.skill);
   if (!web) return;
   const progress = skillProgress(character, want.skill);
   const budget = treePointsFor(want.skill, character.level);
   for (const arm of want.arms) {
     for (const node of web.nodes) {
       if (progress.allocated.length >= budget) return;
-      if (web.armOf[node.id] !== arm) continue;
+      if (web.branchOf[node.id] !== arm) continue;
       if (canAllocate(want.skill, node.id, progress.allocated)) progress.allocated.push(node.id);
     }
   }
@@ -278,7 +281,7 @@ export function bestBuild(band: number, rng: Rng, skillId = 'strike', atLevel?: 
   );
   const plate = (wear.length ? wear : ARMOUR_FAMILIES).map((f) => f.id);
   const passives = PLAYER_SKILLS.filter((sk) => sk.category === 'passive').map((sk) => sk.id);
-  const movers = [null, ...MOVE_WEBS.map((m) => m.spec.skillId)];
+  const movers = [null, ...MOVER_IDS];
 
   // Two passes, because the tree walk is nearly the whole cost: score every
   // arrangement BARE, then walk only the few worth walking. The order can move
@@ -404,11 +407,11 @@ function fillPassives(character: Character, passives: string[]): void {
   }
 }
 
-/** A mover, walked greedily too: six points buy two whole arms of the three. */
+/** A mover, walked greedily too — its own tree, at its own 30 points. */
 function walkBest(character: Character, skillId: string | null): void {
   if (!skillId) return;
   equipSkill(character, skillId);
-  const web = MOVE_WEBS.find((m) => m.spec.skillId === skillId);
+  const web = BUILT_TREES.find((t) => t.spec.skillId === skillId);
   if (!web) return;
   const progress = skillProgress(character, skillId);
   const budget = treePointsFor(skillId, character.level);

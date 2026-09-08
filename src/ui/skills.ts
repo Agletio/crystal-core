@@ -474,8 +474,7 @@ function renderHeader(): void {
   const cap = treePointsFor(skillId, progress.level);
 
   $('skills-title').textContent = skill.name;
-  // The cap is the WEB's, so a nine-node movement web says 6 rather than 30.
-  const most = pointCapFor(skillId);
+  const most = pointCapFor();
   $('skills-sub').textContent =
     `level ${progress.level} · ${progress.allocated.length}/${cap} points spent` +
     (cap < most ? ` · ${most} at level ${most}` : '') +

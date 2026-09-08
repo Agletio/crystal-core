@@ -49,6 +49,13 @@ judgement. Phase 3 is PARKED and is not the
 lowest-numbered thing to take. Everything after them is a parked phase, the
 traps, and questions only the user can answer.
 
+**THE MOVERS HAVE TWO MODES AND THREE REAL TREES** — his own design, taken
+ahead of the numbered order, and the whole of it is in `CLAUDE.md`. Blink
+kites, Leap dives, GALE holds Gusts and never steps, and all three webs are
+`TreeSpec`s at 30 points. What is left of that phase is the retune it implies:
+a mover that kites or dives changes how much of a floor reaches you, so the
+bare-skill gauge and the deep-end one both want re-measuring against it.
+
 **RIMESPIKE IS AN AREA SKILL AND RIMEFIELD IS ITS MODE** — his own design,
 taken ahead of the numbered order. One blade up under the body it aimed at
 striking everything within 1.9 tiles, and the ex-Ward branch is a FREEZE branch
@@ -1494,54 +1501,38 @@ in `reads`, which the every-notable-changes-the-cast check reads as inert.
 
 ---
 
-## Phase 17 — THE MOVERS: two modes, trees the size of a skill's, and a third one
+## Phase 17 — THREE TIMES THE PASSIVES
 
-*"I want to add the movement skills should still all work to just traverse the
-area faster when not fighting but when actually fighting it should work as
-described."*
+*"We need to add some more ideally like 3x the number of damage skills because
+you get three passives so we need some variety."* Fifteen today against eight
+damage skills, so the target is 24 — nine more, and **every one of them changes
+a RULE and PAYS for it**, the way Blood Pact and Featherstep do. A passive that
+only adds is a passive every build takes.
 
-**TWO MODES, AND THE FIRST ONE IS WHAT THEY ALL DO TODAY.** Out of combat every
-mover fires off cooldown to cover ground — that is the whole of what a mover is
-while you are walking between packs, and it stays. IN A FIGHT each one behaves
-as its own skill, which is what the trees are then built around. This is what
-stops a kiting mover being dead weight on a floor you are clearing well: it is
-still your travel speed there.
-
-- [ ] **BLINK KITES.** In a fight it fires when something is in reach AND has
-      landed a hit recently, and it steps AWAY rather than along the path.
-      Legal under *"nothing keys off where the hero stands"* — it keys off BEING
-      HIT, which is a fact about the fight rather than about position. Its
-      WAKE branch Slows around where it LEFT rather than where it lands, which
-      is what makes it a kite rather than a second walk.
-- [ ] **LEAP DIVES.** In a fight it fires off cooldown at what you are fighting
-      and comes down on it. Its IMPACT branch Slows what it landed on, where
-      Tremor Slows the ring — one Slow seam, two shapes.
-- [ ] **A THIRD MOVER, replacing nothing: SURGE.** *"Make the speed tied to the
-      charges instead. % move speed per charge, lose charges when hit."* It
-      never teleports: three charges, movement speed for each one held, one lost
-      to anything that lands a hit and one back on a timer — so out of a fight
-      you are quick and in one you are as quick as you are untouched. Its six
-      branches are the one dial: what a charge is worth (speed, haste, damage),
-      what it guards, what dropping one pays back, how many you hold, how fast
-      they return, and ANCHORED — a hit takes none and every charge is worth
-      40% less. **Its icon is the shelf's fallback**, because the generator's
-      allowance is spent until 2026-09-13 and art is never hand-written.
-- [ ] **THE WEBS BECOME REAL TREES.** *"Movement skill trees should just
-      function exactly like skills, 30 points max level 30."* Three `TreeSpec`s
-      through `buildTree` — six branches, six trunk notables, a ring of 12 — and
-      `MOVE_POINTS`, `MOVE_SKILLS`, `pointCapFor`'s special case, the bespoke
-      `src/moves/layout.ts` and `src/moves/spec.ts` all go, along with the
-      demo's whole MOVEMENT WEBS section: they are trees, so THE WEB checks
-      them. The nine old node ids that a save points at are kept.
-- [ ] **A WINDOW AFTER A USE IS THE MOVERS' OWN VOCABULARY.** *"Stats in the
-      movement skills is fine as something you get for a few seconds after the
-      skill's used."* Four seams and no more, each read in exactly one place:
-      speed (`paceOf`), damage (`dealDamage`'s scale), damage taken, and
-      regeneration. Every "for Ns after" notable in all three trees is one of
-      those four with a different number.
-- [ ] **AND THE EIGHT MAIN SKILLS ARE MEASURED AGAIN AFTER IT.** A mover that
-      kites or dives changes how much of a floor reaches you, so the bare-skill
-      gauge and the deep-end one both move.
+- [ ] **THE ONE HE NAMED, AND IT IS THE SHAPE THE REST FOLLOW.** *"Another
+      passive could be enemies that die while frozen shoot some ice crystals out
+      nearby targets. Make it projectile tagged spell. Add mods to weapons and
+      gloves that are +1-2 projectiles and then you can make an entire build out
+      of that with any skill basically just convert to cold and add cold ailment
+      chance."* So: a passive whose crystals are a `projectile`-and-`spell`
+      tagged source, `+1 Projectile` and `+2 Projectiles` as rolled lines on
+      WEAPONS and GLOVES, and the build is Transmutation to cold plus Chill
+      chance plus Deepfreeze — a route through nodes that already exist, which
+      is the whole point: *"this is kinda what I want most nodes to be like,
+      some cool path to figure out a unique build."*
+- [ ] **NINE MORE, each with its own cost.** Drafted: Ironclad (Armour blunts
+      more, you move slower), Bloodletting (every hit leaves a Bleed, hits deal
+      less), Glass (more damage dealt AND taken), Reaping (a kill restores life,
+      your maximum is lower), Overflow (regeneration multiplied, maximum life
+      lower), Warding (less Elemental damage taken, more Physical), Stoneskin
+      (Armour blunts Ailments too, and is lower), Frugality (uses cost less mana
+      and deal less damage), Cascade (a body killed by an Ailment Bursts).
+- [ ] **THE SEAMS THEY NEED**, and no more than one read site each:
+      `takenMore`, `takenLessOf` by type, `killHeal`, `regenMore` and
+      `armourAilment`. Everything else reuses `bleedOnHit`, `explodeOnKill` and
+      `manaCost`.
+- [ ] **AND THE THREE SLOTS ARE MEASURED AFTER IT.** The ceiling picks passives;
+      nine more candidates move what it picks, so the deep-end gauge shifts.
 
 ---
 

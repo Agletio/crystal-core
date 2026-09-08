@@ -20,13 +20,12 @@ import { LIGHTNING_ARROW_SPEC } from './trees/lightning_arrow';
 import { RIMESPIKE_SPEC } from './trees/rimespike';
 import { SHOCKWAVE_SPEC } from './trees/shockwave';
 import { STRIKE_SPEC } from './trees/strike';
-import { MOVE_POINTS, buildMove } from './moves/layout';
-import { BLINK_MOVES } from './moves/blink';
-import { LEAP_MOVES } from './moves/leap';
+import { BLINK_TREE } from './moves/blink';
+import { LEAP_TREE } from './moves/leap';
+import { GALE_TREE } from './moves/gale';
 import { CENTRE } from './trees/node';
 import type { SkillNodeDef } from './trees/node';
 import type { BuiltTree } from './trees/spec';
-import type { BuiltMove } from './moves/spec';
 
 export { CENTRE } from './trees/node';
 export type { NodeStat, SkillNodeDef } from './trees/node';
@@ -44,18 +43,16 @@ export const BUILT_TREES: BuiltTree[] = [
   ARC_LIGHTNING_SPEC,
   LIGHTNING_ARROW_SPEC,
   AMBUSH_SPEC,
+  // The movers are trees like any other: same six branches, same 30 points.
+  // *"Movement skill trees should just function exactly like skills."*
+  BLINK_TREE,
+  LEAP_TREE,
+  GALE_TREE,
 ].map(buildTree);
 
-/** The movement webs: their own geometry and their own budget, but a web the
- *  screen walks exactly like a tree — `treeFor` is what every caller asks. */
-export const MOVE_WEBS: BuiltMove[] = [BLINK_MOVES, LEAP_MOVES].map(buildMove);
-
-export const SKILL_TREES: Record<string, SkillNodeDef[]> = Object.fromEntries([
-  ...BUILT_TREES.map((t) => [t.spec.skillId, t.nodes] as const),
-  ...MOVE_WEBS.map((m) => [m.spec.skillId, m.nodes] as const),
-]);
-
-const MOVE_SKILLS = new Set(MOVE_WEBS.map((m) => m.spec.skillId));
+export const SKILL_TREES: Record<string, SkillNodeDef[]> = Object.fromEntries(
+  BUILT_TREES.map((t) => [t.spec.skillId, t.nodes] as const)
+);
 
 export const treeFor = (skillId: string): SkillNodeDef[] => SKILL_TREES[skillId] ?? [];
 
@@ -132,14 +129,11 @@ export const replayTreeNodes = (
   cap: number
 ): string[] => replayWeb(treeFor(skillId), wanted, cap);
 
-/** Levels past the cap still arrive; they just stop buying points. The cap is
- *  the WEB's rather than the game's — a nine-node movement web under a global
- *  30 is owned by level 9, which is what `MAX_TREE_POINTS` exists to stop. */
-export const pointCapFor = (skillId: string): number =>
-  MOVE_SKILLS.has(skillId) ? MOVE_POINTS : MAX_TREE_POINTS;
+/** Levels past the cap still arrive; they just stop buying points. */
+export const pointCapFor = (): number => MAX_TREE_POINTS;
 
 export const treePointsFor = (skillId: string, level: number): number =>
-  Math.min(level, pointCapFor(skillId));
+  Math.min(level, MAX_TREE_POINTS);
 
 export const hasNotable = (skillId: string, allocated: readonly string[]): boolean =>
   allocated.some((id) => nodeById(skillId, id)?.kind === 'notable');

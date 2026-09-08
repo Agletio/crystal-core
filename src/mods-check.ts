@@ -445,7 +445,7 @@ line('\n── THE WEBS — does a node\'s stat line reach the sheet? ───�
       return [st.maxLife, st.damage, st.attacksPerSecond, st.critChance, st.critMultiplier,
         st.moveSpeed, st.armour, st.armourReduction, st.attackRange, st.lifeRegen, st.maxMana,
         st.manaRegen, st.manaCost, st.areaOfEffect, st.rarity, st.currencyFind,
-        st.dodgeChance, st.blockChance,
+        st.dodgeChance, st.blockChance, st.cooldown,
         ...Object.values(st.ailmentChance), ...Object.values(st.ailmentDps),
         ...Object.values(st.resistances)].join(',');
     }).join('|');
