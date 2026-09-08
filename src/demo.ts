@@ -952,11 +952,16 @@ rule('THE SHARD ECONOMY — how many clears is one line?');
   // WHAT A CLEAR PAYS, so the divisor is CLEARS. Divided by every run instead,
   // a build that dies half the time reported half the rate — the run that died
   // banked nothing and still counted in the denominator.
-  const measure = (crystals: (i: number) => Item[], hero: Character): number => {
+  // A FRESH SET AND A FRESH BUILD PER RUN. One pairing deciding this asked
+  // whether that draw was survivable rather than what the deep end pays — and
+  // the BUILD side of that is the half that bit: the ceiling scores off the
+  // sheet, so it will happily take Blood Pact, which pays life for every cast
+  // and reads as free there. One such draw took the deep end to 0 clears in 8.
+  const measure = (crystals: (i: number) => Item[], hero: (i: number) => Character): number => {
     let got = 0;
     let cleared = 0;
     for (let i = 0; i < runs; i++) {
-      const sim = new RunSim(crystals(i), hero, new Rng(3300 + i));
+      const sim = new RunSim(crystals(i), hero(i), new Rng(3300 + i));
       const end = runToCompletion(sim, 900);
       if (end.status !== 'cleared') continue;
       cleared++;
@@ -965,16 +970,15 @@ rule('THE SHARD ECONOMY — how many clears is one line?');
     return cleared === 0 ? NaN : got / cleared;
   };
 
+  const ceilings = (band: number): ((i: number) => Character) => {
+    const built = [31, 97, 404].map((seed) => bestBuild(band, new Rng(seed)));
+    return (i) => built[i % built.length];
+  };
   const bare = measure(
     () => [makeCrystal(1), makeCrystal(1), makeCrystal(1), makeCrystal(1)],
-    bestBuild(1, new Rng(31))
+    ceilings(1)
   );
-  // A FRESH SET PER RUN: one pairing of build and set deciding this asked
-  // whether that draw was survivable rather than what the deep end pays.
-  const deep = measure(
-    (i) => deepestSet(new Rng(4242 + i * 13), pool),
-    bestBuild(DROP_BANDS.length - 1, new Rng(31))
-  );
+  const deep = measure((i) => deepestSet(new Rng(4242 + i * 13), pool), ceilings(DROP_BANDS.length - 1));
   gauge(`a clear pays ${bare.toFixed(1)} shards at the bare Fissure and ${deep.toFixed(1)} at the deep end`);
 
   // What that is in CLEARS, for the family everybody wants. A worst-tier line

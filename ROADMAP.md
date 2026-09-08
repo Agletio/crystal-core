@@ -1542,6 +1542,13 @@ only adds is a passive every build takes.
       answers it — both in `CLAUDE.md`.
 - [ ] **AND THE THREE SLOTS ARE MEASURED AFTER IT.** The ceiling picks passives;
       eight more candidates move what it picks, so the deep-end gauge shifts.
+- [ ] **THE CEILING TAKES BLOOD PACT, AND THE SHEET CANNOT SEE WHY NOT.**
+      `buildPower` reads the sheet, and a pool of 0 with every cast paid for in
+      life prices as free there — so `bestBuild` equips it and the "ceiling" it
+      reports is softer than a real one. Measured at the deep end: that build
+      died 8 times in 8 where the same gear with a neutral passive cleared 3.
+      Either `buildPower` learns to price `bloodCost`, or the search PLAYS a
+      candidate before keeping it, which is what it already does for gear.
 
 ---
 
