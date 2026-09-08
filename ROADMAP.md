@@ -1450,3 +1450,35 @@ against everybody else's 3.5–4.3, because area is what its tree already sells.
       raised areas came out: *"we can just add a few more things around the
       levels to make it feel just a little more alive but we can worry about
       that later."*
+
+---
+
+## Phase 16 — EVERY TREE GETS A BRANCH ONLY IT COULD HAVE
+
+*"Do a pass over the skill trees again and try to make them even more unique.
+Keeping the ones that are cool like ailment chance, echos, arcs etc but add
+stuff that really changes how the skill works in interesting ways. Like maybe
+arc has - a few arcs but does more damage per remaining arc or something."*
+→ *"Honestly momentum kinda sucks. I feel like it only makes sense on a skill
+that attacks super fast already but we don't really have that."*
+
+**LANDED.** Momentum is deleted outright — one identical branch in seven of the
+eight trees, and nothing in the game swings fast enough to build it. Nine
+branches replaced: Strike's Heft and Cleave, Ambush's Cull, Shockwave's Fault
+Line, Fireball's Backdraft and Detonation, Arc Lightning's Runaway, Lightning
+Arrow's Pinning Shot, Blight's Harvest. Two argue with their own tree on
+purpose. The seam survives as `heft`, and the demo check that asserted
+Momentum's primary-only reach was INVERTED rather than deleted.
+
+Four kinds of fault the suite caught and are worth not repeating:
+a notable measured against an empty build because its grant had no `needs`
+entry (three of Fireball's were inert); a notable handing out a switch gated
+behind another branch; the same grant on two nodes with no merge, so the second
+overwrote the first; and a grant computed in the SIM that did not declare `SIM`
+in `reads`, which the every-notable-changes-the-cast check reads as inert.
+
+- [ ] **NOTHING IS BLOCKED, STILL.** `INTERACTIONS` gained no `blocked` pair
+      here either. The nine new mechanisms all compose; if one turns out not to,
+      that is the retroactive-refusal trap in `CLAUDE.md` and costs every player
+      their build, so it wants measuring before it is written.
+

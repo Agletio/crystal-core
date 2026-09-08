@@ -1059,6 +1059,29 @@ then drives the follow-up. Measured at the deep end: 1.44 kills/s on a random
 tree walk, 1.84 walking the Relay branch, **2.79 with the line stacked on top**,
 which puts it in the pack rather than 1.9x below the next skill.
 
+**A MECHANIC IN SEVEN TREES IS NOBODY'S IDENTITY, AND MOMENTUM IS DELETED.**
+*"Honestly momentum kinda sucks. I feel like it only makes sense on a skill that
+attacks super fast already but we don't really have that."* It was one identical
+branch — enabler, three notables, a minor, the same four grants — in seven of the
+eight, and nothing in the game swings fast enough to build it. **EVERY TREE NOW
+HAS A BRANCH ONLY IT COULD HAVE**: Strike's HEFT pays up to 30% for the swing
+rate falling under the fastest weapon's 1.55/s (`FASTEST_SWING`, derived off
+`WEAPON_RATE`) and its CLEAVE carries a killing blow into the next body; Ambush
+CULLS anything a hit leaves under 8%; Shockwave's cone leaves BROKEN GROUND on
+the Cloud's own seam; Fireball's BACKDRAFT eats the Ailment and lands what was
+left, and its DETONATION chains Bursts off the dead; Arc Lightning's chain
+RUNS AWAY, each Arc worth 25% more than the one before instead of 30% less;
+Lightning Arrow PINS what it hits on `Entity.stun`, the seam a Freeze already
+writes; Blight HARVESTS, a dying body passing its Ailment on. **TWO OF THEM
+ARGUE WITH THEIR OWN TREE ON PURPOSE** — Heft pays for the attack speed Strike's
+other four branches sell, and Backdraft is worth nothing unless Kindling lit the
+body — because a branch that only ever adds is a branch every build takes.
+**MOMENTUM'S SEAM SURVIVES AS `heft`**, what a use is worth before any target is
+looked at, and it reaches EVERY body the cast touches where Momentum reached the
+aimed-at one alone. **AN OBJECT GRANT NEEDS THE `bag` MERGE**: without it a
+notable saying "a further 25%" replaces the enabler's whole bag and is a
+downgrade the tooltip cannot show.
+
 **A SKILL'S OWN TREE BUYS WHAT THE SKILL DOES.** *"Remove all the flat stats
 that aren't related to the skill. So like health, armour and stuff like that —
 attack and cast speed, crit etc is all fine."* A web may sell `damage`,
