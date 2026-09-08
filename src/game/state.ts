@@ -234,7 +234,7 @@ export function resetGame(game: GameState, mode: StartMode): void {
     : [];
   game.jobs = [];
   game.stash = plain.slice(room);
-  game.stashSlots = Math.max(STASH_START, game.stash.length);
+  game.stashSlots = Math.max(STASH_START, game.stash.length + 2); // the stash keeps two for the same reason
 
   // The dev preset wears a rolled set, so the stat pipeline has something in it.
   game.character = makeCharacter(
