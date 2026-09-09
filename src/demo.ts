@@ -27,6 +27,7 @@ import {
   usesFor,
   ATTRIBUTES,
   DEFENCE,
+  MONSTER_AILMENT,
   FISSURE,
   BINDING_BY_ID,
   HERO_BASE,
@@ -3506,20 +3507,36 @@ rule('WHAT A MONSTER LEAVES — is it felt, and is it answerable?');
     missing.map((a2) => a2.id).join(', ')
   );
 
-  // A FREEZE IS SOMETHING YOU DO. Nothing hero-side reads a hold, so laying one
-  // on him would be a wall with no answer at all.
+  // A FREEZE HOLDS THE HERO, AND THE WARD IS WHAT ANSWERS IT. Asked a stack at
+  // a time rather than by waiting for a descent to roll one: at the bottom of
+  // the climb a Freeze is 0.2 events a run, which no sample can tell apart.
   {
-    const sim = new RunSim(ladderSet(3, new Rng(11), pool), pinned(3, 12), new Rng(13));
-    const hero = sim.state.hero;
-    const cold = AILMENT_BY_ID.chill;
-    for (let i = 0; i < 20 && cold; i++) {
-      (sim as unknown as { strike: (a: Entity, b: Entity, d: typeof cold, hit: number) => void })
-        .strike(sim.state.monsters[0] ?? hero, hero, cold, 40);
-    }
+    const cold = AILMENT_BY_ID.chill!;
+    /** Stacks of Chill it takes to hold him at this ward, or 0 for never. */
+    const bar = (ward: number): number => {
+      const sim = new RunSim(ladderSet(3, new Rng(11), pool), pinned(3, 12), new Rng(13));
+      const hero = sim.state.hero;
+      for (const t of DAMAGE_TYPES) hero.stats.ailmentWard[t.id] = ward;
+      for (let i = 1; i <= 20; i++) {
+        (sim as unknown as { strike: (a: Entity, b: Entity, d: typeof cold, hit: number) => void })
+          .strike(sim.state.monsters[0] ?? hero, hero, cold, 40);
+        if ((hero.stun ?? 0) > 0 && hero.stunKind === 'freeze') return i;
+      }
+      return 0;
+    };
+    const bare = bar(0);
+    const half = bar(50);
+    const whole = bar(DEFENCE.ailmentWardCap);
+    line(`  the hero's Freeze bar: ${bare} stacks bare, ${half} at half a ward, ${whole || 'never'} at a full one`);
     check(
-      (hero.stun ?? 0) === 0,
-      'and no pile of Chill ever Freezes the hero, which is a hold he could not answer',
-      `stun ${hero.stun ?? 0}`
+      bare > 0 && bare === MONSTER_AILMENT.freezeAt,
+      `a pile of Chill DOES Freeze the hero, at his own bar of ${MONSTER_AILMENT.freezeAt}`,
+      `held at ${bare}`
+    );
+    check(
+      half > bare && whole === 0,
+      'and the ward is the answer: half of one doubles the bar, a whole one never freezes',
+      `${half} at half, ${whole || 'never'} at a full one`
     );
   }
 }

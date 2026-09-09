@@ -1563,6 +1563,18 @@ only adds is a passive every build takes.
       moved not at all — it is the ceiling that grew, because the search picks
       three passives out of 24 where a random walk picks none of them well.
       `CLAUDE.md` carries the new figure.
+- [ ] **THE SEARCH PICKS THE SAME THREE PASSIVES WHATEVER THE SKILL, and that
+      is why it cannot judge a rule.** Measured at band 6 for both strike and
+      shockwave, `bestBuild` took `surge+contagion+bloodpact` — the same set, on
+      two skills with nothing in common. It scores passives off `buildPower`,
+      which is a SHEET number, so a passive whose worth is a RULE the sheet
+      cannot see is one the search will never take. **So `bestBuild`'s own pick
+      is not "what a good player takes" for passives and must not be quoted as
+      one.** The cold trio measures −7% against it on strike and −1% on
+      shockwave while doing something the sheet cannot read at all — 65 Freezes
+      where the set it replaces does 0. Same root as the Blood Pact tie below,
+      and the same repair: `played` deciding the passive set.
+
 - [ ] **THE CEILING TAKES BLOOD PACT, AND IT IS A TIE RATHER THAN A WIN.**
       `bestBuild` equips it and dies 8 times in 8 at the deep end where the same
       gear with a neutral passive clears 3 — so what it reports as a ceiling is
