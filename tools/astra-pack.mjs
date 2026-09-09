@@ -37,10 +37,11 @@ if (briefs.length) {
     const body = readFileSync(`art/briefs/${f}`, 'utf8');
     if (/\*\*Status:\*\*\s*(integrated|dropped)/.test(body)) continue;
     parts.push(`\n\n## ${f}\n\n${body}`);
-    // A brief's own pictures sit beside it under the same stem.
-    const stem = f.replace(/\.md$/, '');
+    // A brief's pictures sit beside it under the same NUMBER — not the same
+    // stem, so a picture can be named for what it shows.
+    const num = f.slice(0, 4);
     for (const p of readdirSync('art/briefs')) {
-      if (p.startsWith(stem) && !p.endsWith('.md')) attach.push(`art/briefs/${p}`);
+      if (p.startsWith(num) && !p.endsWith('.md')) attach.push(`art/briefs/${p}`);
     }
   }
 }

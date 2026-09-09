@@ -129,6 +129,61 @@ draws coloured circles. **Sprite work being invisible in the fallback is
 correct**, not a bug. Anything per-tile is a pure function in
 `render/renderer.ts` so both read one answer.
 
+## Replacing the generator
+
+**The plan is for Astra to replace Pixel Lab outright.** That is not one
+switch, because the three import paths are coupled to it by different amounts.
+Measured:
+
+| what | rows | import path | needs Pixel Lab? |
+|---|---|---|---|
+| icons, VFX, portraits, cast stills | 233 | `portrait.mts <id> <png> <grid> <table>` | **No.** A local PNG in, a table row out |
+| bodies and props | 236 | `tables.mts` | **Yes** — keyed by server group ids |
+| tilesets | 15 sets | `zoneset.mts emit` | **Yes** — reads Pixel Lab's own tile metadata |
+
+So about half the art surface takes an Astra PNG today with no new tooling at
+all, and half needs an importer that reads a sheet plus a small manifest
+instead of a server id. **Writing that importer is Claude's**, not Astra's:
+integration is Claude's half, and the table quirks are not worth learning
+twice. Astra says what shape a sheet arrives in; Claude makes it load.
+
+### The three stages, easiest first
+
+1. **One picture each — works now.** Icons, effects, portraits, cast stills,
+   and any prop that is a single picture. No consistency problem to solve: one
+   generation is one asset.
+2. **Tilesets — one sheet, one new importer.** A Wang set is 4x8 tiles in a
+   fixed layout keyed by corners. Consistency is within a single image, which
+   is the tractable case. Claude writes the importer once Astra says what the
+   sheet looks like.
+3. **Bodies — the hard one, and the honest risk.** A body is five facings x
+   several states x four frames of *the same character*. This is what Pixel
+   Lab was structurally good at: `create_character` rotates one character and
+   `animate_character` animates that same one. A general image model returns a
+   different character per generation. It is on record that even Pixel Lab's
+   own editor was consistent WITHIN one call and not ACROSS one — five facings
+   split 4+1 came back wearing two different helms on the same description and
+   seed. **Do not start here.** If stages 1 and 2 land well, this is worth an
+   experiment; if they do not, nothing here will work either.
+
+### Is a picture honest pixel art?
+
+`npx tsx tools/art/gridcheck.mts <png…>` measures four things and says what
+the import will do with each: whether the art is at its own resolution or
+upscaled (and by how much, so it can be resampled first), how many colours,
+whether alpha is hard or soft, and how much of its colour variation is gentle
+steps.
+
+**It is calibrated, not opinionated.** `@<iconId>` measures a row the game
+already ships, so a new file is judged against real art: shipped icons read 14
+colours and 0-1% gentle steps; a raw Pixel Lab tileset reads 38 colours and
+69%, because detailed shading legitimately has many small steps. Read the
+numbers side by side rather than against a threshold.
+
+The two that always matter: **upscaled art must be resampled down before
+import** or every "pixel" becomes a block of identical pixels in the table,
+and **soft alpha quantises to a halo**, which on a body is the silhouette.
+
 ## The generator, as it stands today
 
 `tools/art/` speaks to Pixel Lab over MCP (`mcp.mts`, plain JSON-RPC over one

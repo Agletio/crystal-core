@@ -45,6 +45,35 @@ The bundle is currently **16.33 MB, 5.68 MB gzipped**, and roughly 17 MB of
 that is art. Every player downloads it on first load. Growth is allowed; it
 should be a decision.
 
+## You are replacing the old generator
+
+The art in this game was made by Pixel Lab, a pixel-art-specific generator,
+and the intent is that you replace it. Nobody knows yet whether that works;
+the owner's words are *"unsure if it'll work but I want to try."* So treat it
+as an experiment with a known order, easiest first:
+
+1. **One picture each — this works today.** Icons, effects, portraits, cast
+   stills, single-picture props. The importer already takes any local PNG, so
+   there is no tooling to build. Roughly half the art in the game.
+2. **Tilesets** — one sheet in a fixed layout. Say what shape you can produce
+   and Claude writes the importer.
+3. **Bodies** — five facings x several states x four frames of *the same
+   character*. This is the hard one and the honest risk: the old generator
+   rotated and animated one character, where a general image model returns a
+   different character per generation. Do not start here.
+
+**Your first job is a single icon**, to find out whether your output survives
+the import at all. It is a ten-minute experiment that decides the rest.
+
+`tools/art/gridcheck.mts` measures whether a picture is honest pixel art —
+whether it is at its own resolution or upscaled, its colour count, whether
+alpha is hard, and how much of its variation is gentle steps. It is
+calibrated against art the game already ships, so ask Claude to run it on
+anything you send and to show you the shipped numbers beside yours. Two
+faults matter most: **art drawn small and scaled up** must be resampled back
+down or every pixel becomes a block, and **soft anti-aliased alpha** becomes a
+halo, which on a body is its silhouette.
+
 ## How the work flows
 
 1. **Claude writes a brief** — what the game needs, what it is for, where it

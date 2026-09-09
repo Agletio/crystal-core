@@ -49,4 +49,5 @@ suite said, and anything the delivery taught.
 
 | # | job | status |
 |---|---|---|
+| 0002 | the Gale icon: the test that decides the rest | open — **do this first** |
 | 0001 | the cut rock face, currently near-black | open |

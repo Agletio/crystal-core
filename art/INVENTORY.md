@@ -33,11 +33,13 @@ first thing worth an opinion.
 
 ## What has no art yet
 
-- **The skill shelf's fallback grids** in `src/ui/icons.ts` predate the
-  pipeline. They are the fallback for an id nobody has drawn, and nothing new
-  joins them.
-- **`fault_glass`**, the Seam's own material, wears the ore's picture until
-  its own is asked.
+- **Gale** is the one skill with no generated icon, of 34. It falls back to
+  the movement shelf's boot — another skill's picture. The old generator was
+  asked eight or more times and never drew it. This is brief 0002.
+- **The other fallback grids** in `src/ui/icons.ts` predate the pipeline and
+  are reached by nothing that ships; nothing new joins them.
+- **`fault_glass`**, the Seam's own material, has an icon but no FLOOR NODE
+  picture — it wears the ore's until its own is asked.
 - **`torch` and `hung`** in `HUNG_PROPS` are art waiting for an author.
 
 ## Open art questions the user has not settled
