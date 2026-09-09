@@ -138,7 +138,7 @@ Measured:
 | what | rows | import path | needs Pixel Lab? |
 |---|---|---|---|
 | icons, VFX, portraits, cast stills | 233 | `portrait.mts <id> <png> <grid> <table>` | **No.** A local PNG in, a table row out |
-| bodies and props | 236 | `tables.mts` | **Yes** — keyed by server group ids |
+| bodies and props | 236 | `tables.mts`, or `stripcut.mts` from one sheet | **No** either way, via `stripcut.mts` |
 | tilesets | 15 sets | `zoneset.mts emit` | **Yes** — reads Pixel Lab's own tile metadata |
 
 So about half the art surface takes an Astra PNG today with no new tooling at
@@ -156,15 +156,22 @@ twice. Astra says what shape a sheet arrives in; Claude makes it load.
    fixed layout keyed by corners. Consistency is within a single image, which
    is the tractable case. Claude writes the importer once Astra says what the
    sheet looks like.
-3. **Bodies — the hard one, and the honest risk.** A body is five facings x
-   several states x four frames of *the same character*. This is what Pixel
-   Lab was structurally good at: `create_character` rotates one character and
-   `animate_character` animates that same one. A general image model returns a
-   different character per generation. It is on record that even Pixel Lab's
-   own editor was consistent WITHIN one call and not ACROSS one — five facings
-   split 4+1 came back wearing two different helms on the same description and
-   seed. **Do not start here.** If stages 1 and 2 land well, this is worth an
-   experiment; if they do not, nothing here will work either.
+3. **Bodies — and this is SMALLER than it looks.** Measured: **all 126 bodies
+   in the game are ONE facing.** The renderer mirrors anything facing left, so
+   the western half was never drawn, and the rotation half of the old pipeline
+   is not used at all. A body is one facing x 4-5 states x 2-9 frames — 12 to
+   26 frames in total, and the Gaunt is 12.
+
+   The risk that remains is consistency ACROSS frames, and there is a way
+   round it: **ask for every frame inside ONE picture**, a strip or a grid.
+   Consistency is then a property of a single generation rather than something
+   the model has to remember — the same reason a Wang tileset arrives as one
+   sheet and works. `stripcut.mts` cuts such a picture into a body row.
+
+   Two things it does that matter and are easy to get wrong: it quantises
+   every frame TOGETHER, because a body row holds one `key` and a per-frame
+   palette flickers; and it fits the frames to one shared bounding box, because
+   fitting each alone makes the creature jump inside its own cell.
 
 ### Is a picture honest pixel art?
 
