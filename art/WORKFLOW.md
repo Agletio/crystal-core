@@ -4,22 +4,26 @@
 
 ## What can and cannot wake the other
 
-**Neither of us can trigger the other on demand.** There is no channel between
-a Claude Code session and a GPT project — no webhook, no shared queue, nothing
-either vendor exposes to the other. A pull request does not wake Claude, and
-nothing Claude pushes wakes Astra.
+The configured path is **hourly polling of main**. The ChatGPT automation
+**Crystal Core art handoffs** is enabled. Claude's cloud routine still needs
+one-time account setup; see [AUTOMATION.md](AUTOMATION.md) for its exact prompt,
+setup status and verification steps.
 
-What each of us actually has:
-
-| | can be woken by |
+| side | configured wake-up |
 |---|---|
-| **Claude** | a scheduled Routine that starts a fresh session; PR events, but only into a session already running and subscribed |
-| **Astra** | whatever her side polls, if anything; otherwise the owner opening the chat |
+| **Astra** | enabled hourly ChatGPT check of the art queue |
+| **Claude** | hourly cloud Routine, pending setup and verification |
 
-So the working model is **symmetric polling, not mutual triggering**: each side
-checks the repository when it next runs, picks up whatever is waiting, and
-leaves its own result behind. It is slower than an event, and in practice it
-costs nothing, because neither of us is idle-waiting on the other anyway.
+Both platforms also expose event-based options. Claude cloud routines support
+GitHub PR/release events and API triggers; an already-running Claude session is
+not required for a configured routine. See the
+[official routine documentation](https://code.claude.com/docs/en/routines).
+These alternatives are not configured by this setup. A commit alone does not
+wake an unconfigured routine.
+
+Polling consumes account usage and depends on available tools and run limits.
+The end-to-end art loop is unverified until a real delivery is picked up and
+integrated. Empty checks should neither write commits nor notify the owner.
 
 ## Therefore: THE REPOSITORY CARRIES THE STATE, NOT THE CHAT
 
