@@ -4,22 +4,23 @@
 
 ## What can and cannot wake the other
 
-**Neither of us can trigger the other on demand.** There is no channel between
-a Claude Code session and a GPT project — no webhook, no shared queue, nothing
-either vendor exposes to the other. A pull request does not wake Claude, and
-nothing Claude pushes wakes Astra.
+**A pull request from Astra DOES wake Claude.** A Routine with a GitHub trigger
+starts a fresh session on `pull_request.opened`, filtered to head branches
+beginning `astra/`. Nothing polls and nothing fires on a timer. `ROUTINE.md`
+is the setup and the prompt.
 
-What each of us actually has:
+**Nothing Claude pushes wakes Astra.** There is no channel from a Claude
+session to a GPT project, so that direction is still the owner saying "there is
+a new brief" — a great deal less than carrying files.
 
-| | can be woken by |
+| | woken by |
 |---|---|
-| **Claude** | a scheduled Routine that starts a fresh session; PR events, but only into a session already running and subscribed |
-| **Astra** | whatever her side polls, if anything; otherwise the owner opening the chat |
+| **Claude** | Astra opening a pull request, through the GitHub-triggered Routine |
+| **Astra** | whatever her side polls, if anything; otherwise the owner |
 
-So the working model is **symmetric polling, not mutual triggering**: each side
-checks the repository when it next runs, picks up whatever is waiting, and
-leaves its own result behind. It is slower than an event, and in practice it
-costs nothing, because neither of us is idle-waiting on the other anyway.
+**So Astra must name her branches `astra/NNNN-slug`.** The filter is what stops
+the routine firing on every pull request in the repository, Claude's own
+included, and that is the whole of what she has to remember.
 
 ## Therefore: THE REPOSITORY CARRIES THE STATE, NOT THE CHAT
 
@@ -46,13 +47,11 @@ still says `open` is a delivery nobody will look for.
 
 1. Read `briefs/` for anything `open`. Highest number first.
 2. Work.
-3. Commit to `deliveries/NNNN-slug/` on `main` — the art, plus `NOTES.md`
+3. Commit to `deliveries/NNNN-slug/` — the art, plus `NOTES.md`
    (`deliveries/README.md` has the shape).
 4. In the same commit, set that brief's status to `delivered`.
-
-A pull request instead of a direct commit is welcome and changes nothing about
-the protocol — it just gives the owner a review gate. Say which you did in
-`NOTES.md`.
+5. **Open a pull request from a branch named `astra/NNNN-slug`.** The branch
+   name is what wakes Claude; a direct commit to `main` does not.
 
 ## Claude's side
 
