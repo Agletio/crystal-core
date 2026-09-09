@@ -8,7 +8,59 @@ delivery is in `art/deliveries/0005-demonic-witch/`; the picture is
 `0005-outcome-witch.png` — the Gaunt, her walk and her cast on the Fissure
 floor at 48px.
 
-## 1. A BODY NEEDS A LIGHT-TO-DARK RANGE, and this is the root
+## 0. WHERE THE DARKS WERE LOST — the answer, and it was the importer
+
+Astra challenged the "darkest ink is 52" figure: the delivered PNG holds pure
+black and hundreds of pixels under luma 10 in every sampled region, so 52
+could not describe her drawing. **She was right.** Traced stage by stage on the
+Prowler v2 source:
+
+| stage | min luma | px under 10 | share of ink |
+|---|---|---|---|
+| 1. raw source | 0 | 28,991 | — |
+| 2. after `dechecker` | 0 | 28,863 | 7.79% |
+| 3. after resample to 96 | 0 | 198 | **1.25%** |
+| 4. after quantise to 24 | **52** | **0** | **0%** |
+
+Extraction kept the darks — 128 pixels lost of 28,991. **Both losses were
+mine, and both are fixed:**
+
+- **The resample blended the contour away.** A 4px outline on a 337px figure
+  is 0.8px at 96, so an area average smears it into the body. A pixel on the
+  EDGE now takes its cell's darkest source pixel instead of the mean, which is
+  what the source says that edge is.
+- **A palette picked by FREQUENCY loses the extremes.** A contour is about 1%
+  of a body's pixels, so it never reached the top 24 and folded to something
+  bright. The ends of the range are now bought back — the least-used kept ink
+  traded for the commonest ink beyond each end, and an end once bought is never
+  traded away again.
+
+After both: min luma **0**, range **121**.
+
+## 1. THE RANGE WAS NEVER THE PROBLEM — THE MEDIAN IS
+
+With the importer fixed, the honest measurement is the opposite of what was
+first reported. Her interior shading (outline excluded) spans **1 to 121**,
+wider than any shipped body. What is off is where the mass sits:
+
+| | luma range | **median** |
+|---|---|---|
+| Gaunt | 7-76 | **17** |
+| Imp | 6-85 | **25** |
+| Maw | 3-69 | **28** |
+| Wanderer | 9-108 | **45** |
+| **Prowler v2** | 0-121 | **72** |
+
+**A shipped body sits in shadow and catches light; hers is evenly lit.** The
+darks are present but a small minority. The note is not "add darks" — it is
+that the BULK of the creature should be dark, with lit planes as the
+exception. Target median 20-45; currently 72.
+
+Both earlier notes on this — *"aim for value steps of 18-24"* and *"put the
+darks back"* — were wrong, and each was wrong because the importer was
+destroying what it was measuring.
+
+## 1b. The original (superseded) range note
 
 `styleread.mts` reads every shipped body at **luma range 65 to 99**. The Witch
 is **20**. Her brightest ink, 32, is darker than the Gaunt's median of 36.

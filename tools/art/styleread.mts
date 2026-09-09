@@ -56,9 +56,17 @@ for (const id of process.argv.slice(2)) {
   }
   // Every shipped body spans 65-99 luma.
   const spread = [...lumas].sort((a, z) => a - z);
+  // The MEDIAN of the pixels, not of the palette: where the body's mass sits.
+  // A range can be right while the whole creature is lit far too brightly.
+  const px: number[] = [];
+  for (const f of frames) for (const row of f) for (const ch of row) {
+    const hex = b.key[ch]; if (hex) px.push(luma(hex));
+  }
+  px.sort((a, z) => a - z);
   console.log(
     `  ${id.padEnd(15)} luma ${spread[0].toFixed(0).padStart(3)}-${spread[spread.length - 1].toFixed(0).padStart(3)}` +
     ` (range ${(spread[spread.length - 1] - spread[0]).toFixed(0).padStart(3)})` +
+    `  median ${px[Math.floor(px.length / 2)].toFixed(0).padStart(3)}` +
     `   contour ${((darkEdge / Math.max(1, edge)) * 100).toFixed(0).padStart(3)}%` +
     `   clusters ${(runPx / Math.max(1, runs)).toFixed(1)}px` +
     `   step ${(stepSum / Math.max(1, steps)).toFixed(1)}` +
