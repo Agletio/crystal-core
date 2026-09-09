@@ -549,6 +549,53 @@ const ASK: Record<string, Record<string, unknown>> = {
     detail: 'highly detailed',
     view: 'high top-down',
   },
+  // THE FACE, WARM BROWN, ROUND THREE — and the lever is `lower_base_tile_id`,
+  // never the wording. The two above failed the same way and the diagnosis is
+  // in their comment: one sheet is one exposure, so the rock's words drag the
+  // floor and byte-identical floor wording still came back at luma 117, 78 and
+  // 68. Chaining pins the floor to the tile the game already draws, which is
+  // what `test_pool` and every patch set in this file already do — it was the
+  // one thing the face was never asked with.
+  test_warm_chained: {
+    lower_description: TEST_FLOOR_SAID,
+    lower_base_tile_id: TEST_FLOOR_TILE,
+    upper_description:
+      'a mass of near-black rock, VERY DARK charcoal almost black, unlit, ' +
+      'NOT pale, NOT light grey, NOT brown, NOT sandy',
+    transition_description:
+      'a sheer cut rock face of WARM DARK BROWN earth and stone dropping to the floor, ' +
+      'rich chocolate brown, NOT grey, NOT black, NOT pale, NOT orange, NOT red',
+    shape_style: 'round',
+    transition_size: 1,
+    enhance: false,
+    tile_size: { width: 32, height: 32 },
+    outline: 'lineless',
+    shading: 'detailed shading',
+    detail: 'highly detailed',
+    view: 'high top-down',
+  },
+  // The mass warm as well, chained the same way. `test_warm_mass` was the tone
+  // rule failing outright at floor 68 against rock 65; with the floor pinned
+  // the rock is the only thing the wording can move, so this is the honest
+  // second try at it rather than a repeat.
+  test_warm_mass_chained: {
+    lower_description: TEST_FLOOR_SAID,
+    lower_base_tile_id: TEST_FLOOR_TILE,
+    upper_description:
+      'a mass of WARM DARK BROWN earth and stone, deep chocolate brown, unlit, ' +
+      'NOT pale, NOT light grey, NOT charcoal, NOT sandy, NOT orange, NOT red',
+    transition_description:
+      'a sheer cut face of WARM DARK BROWN earth and stone dropping to the floor, ' +
+      'rich chocolate brown, NOT grey, NOT black, NOT pale, NOT orange, NOT red',
+    shape_style: 'round',
+    transition_size: 1,
+    enhance: false,
+    tile_size: { width: 32, height: 32 },
+    outline: 'lineless',
+    shading: 'detailed shading',
+    detail: 'highly detailed',
+    view: 'high top-down',
+  },
   // WATER, in the rock set's own mode, its floor the rock set's floor. A
   // shore and never a cliff: 0.2 on the continuous scale `shape_style` opens.
   test_pool: {
