@@ -75,7 +75,32 @@ about 2px.
 Picture: `0004-outcome-v2-floor.png`. Delivery:
 `art/deliveries/0004-cave-prowler-v2/`.
 
-### The gait is FIXED
+### The gait is NOT fixed — and the width check could not see why
+
+**Correction.** This section first said the gait was fixed on the strength of
+the foot spans below. It is not, and the owner caught what the number missed:
+*"Legs start with left, then right is up and out and then right goes back and
+then left is fully out again. Makes no sense."*
+
+**A stance's WIDTH says a foot is planted; it cannot say WHICH foot.** Two
+poses with the same leg forward measure identically to a real alternating
+cycle. `feetread.mts` reads the feet as separate blobs instead, and on v2 both
+wide contacts — frames 1 and 4 — lead with the SAME foot. One pose twice with
+the legs waving between it, exactly as described.
+
+**The root is that the upper body never moves.** Torso, shoulders and head sit
+in nearly the same place in all six frames while only the legs flap. A walk is
+the body rising and falling and the shoulders counter-rotating against the
+hips; without that, no arrangement of legs reads as walking.
+
+Astra asked for the right thing — her notes specify contact, weight transfer,
+passing, opposite contact, opposite weight transfer, opposite passing. The
+generator did not deliver it, which makes this a tool limit rather than a
+direction fault, and changes what to ask for: **four frames rather than six**,
+each with its body height said out loud (lowest at contact, highest at
+passing), and the second contact stated as the MIRROR of the first.
+
+### The stance widths, which were not enough
 
 Foot spans, with the target being two wide and the rest narrow:
 
