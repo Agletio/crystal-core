@@ -1,9 +1,7 @@
-# 0002 — the Gale icon: the test that decides the rest
+# 0003 — the Gale icon: the one subject the old generator could not draw
 
-**Status:** open
-**This is a test, not a job.** One 48px picture. It comes before everything,
-including brief 0001, because it answers the only question that matters yet:
-does art out of Astra survive the import and sit beside what already ships?
+**Status:** open — **after 0002.** If the redo test says the pipeline works,
+this is the first icon the game actually gains.
 
 ## Why this one
 
@@ -47,7 +45,7 @@ about 34px. **34px is the size that has to read.**
 
 ## What already exists
 
-`art/briefs/0002-skill-icons.png` — all 34 shipped skill icons at 3x. That is
+`art/briefs/0002-skill-icons.png` (attached to brief 0002) — all 34 shipped skill icons at 3x. That is
 the bench yours has to look like it came off, and matching it is the actual
 test. Ask Claude for any of them larger, or for a screenshot of the Skills
 screen or the HUD.
