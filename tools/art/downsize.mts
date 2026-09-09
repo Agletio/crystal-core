@@ -2,21 +2,12 @@
  * A LARGE SOURCE PICTURE DOWN TO A 48px ICON.
  *   `downsize.mts <in.png> <out.png> [grid] [pad] [cut]`
  *
- * An image model returns a picture that LOOKS like pixel art at 1254px: tens
- * of thousands of colours, soft alpha, and blocks that do not divide the
- * canvas. Prompting for a native grid has been tried and does not hold, so the
- * grid, the palette and the alpha are enforced HERE instead — which is the
- * only place they can be enforced at all.
- *
- * Four stages, in this order, and the order matters:
- *   1. crop to what is actually drawn, ignoring the near-transparent fringe
- *   2. area-average down, PREMULTIPLIED — averaging straight RGB across an
- *      edge pulls the background's colour into it and every silhouette gets a
- *      dark rim
- *   3. cut alpha to 0 or 255 at `cut`, because the tables hold no partial
- *      alpha and a soft edge quantises to a halo
- *   4. snap every colour to the shipped icon palette, nearest, NO dithering —
- *      dither at 48px is noise, not shading
+ * An image model returns pixel art that is not on a pixel grid: tens of
+ * thousands of colours and soft alpha. Prompting for a native grid does not
+ * hold, so grid, palette and alpha are enforced here — the only place they can
+ * be. Crop, area-average PREMULTIPLIED (straight RGB across an edge pulls the
+ * background in and rims every silhouette), cut alpha hard, snap the palette
+ * with NO dithering, which at 48px is noise rather than shading.
  */
 import { readFileSync, writeFileSync } from 'node:fs';
 import { decodePng, encodePng } from './png.mts';
@@ -28,8 +19,7 @@ const GRID = Number(gridArg ?? 48);
 const PAD = Number(padArg ?? 2);
 const CUT = Number(cutArg ?? 128);
 
-/** THE PALETTE THE GAME IS MADE OF, read off the shipped rows rather than
- *  typed here — so it cannot drift from what ships. */
+/** Read off the shipped rows, so it cannot drift from what ships. */
 const palette: number[][] = (() => {
   const seen = new Set<string>();
   for (const row of Object.values(GENERATED_ICONS))
@@ -41,8 +31,7 @@ const src = decodePng(readFileSync(inPath));
 const { width: W, height: H, rgba } = src;
 const A = (x: number, y: number) => rgba[(y * W + x) * 4 + 3];
 
-// 1. CROP. The fringe is alpha 1-8 spray around the subject; including it
-//    drags the fitted box outward and shrinks the art inside the frame.
+// Alpha 1-8 spray around the subject drags the box out and shrinks the art.
 const FRINGE = 24;
 let x0 = W, y0 = H, x1 = -1, y1 = -1;
 for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
@@ -53,7 +42,6 @@ for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
 if (x1 < 0) throw new Error('nothing drawn');
 const cw = x1 - x0 + 1, ch = y1 - y0 + 1;
 
-// 2. AREA-AVERAGE into the padded box, keeping the source's aspect.
 const box = GRID - PAD * 2;
 const scale = Math.min(box / cw, box / ch);
 const dw = Math.max(1, Math.round(cw * scale)), dh = Math.max(1, Math.round(ch * scale));
@@ -75,8 +63,7 @@ for (let dy = 0; dy < dh; dy++) {
     if (!n) continue;
     const meanA = a / n;
     const d = ((dy + offY) * GRID + dx + offX) * 4;
-    // 3. HARD ALPHA, and the colour un-premultiplied by the coverage it had.
-    if (meanA < CUT) { out[d + 3] = 0; continue; }
+    if (meanA < CUT) { out[d + 3] = 0; continue; } // hard alpha, then unpremultiply
     const cover = Math.max(1e-6, meanA / 255 * n);
     out[d] = Math.min(255, Math.round(r / cover));
     out[d + 1] = Math.min(255, Math.round(g / cover));
@@ -85,13 +72,11 @@ for (let dy = 0; dy < dh; dy++) {
   }
 }
 
-// 4. SNAP to the palette.
-/** Brightness distance PLUS the chroma vector's, weighted heavier. A plain
- *  luma metric lets a neutral grey land on a brown of the same brightness,
- *  because only chroma separates them: a steel blade round-tripped through it
- *  comes back with a tan blade and a brown guard. Pixel-exact recovery cannot
- *  tell the two apart — 19% against 20% — and looking at them can, which is
- *  why the choice was made on a picture. `SNAP=luma|rgb` overrides. */
+/** Brightness distance PLUS the chroma vector's, weighted heavier: under a
+ *  plain luma metric a neutral grey lands on a brown of equal brightness, and
+ *  a steel blade comes back tan. Pixel-exact recovery scores 19% against 20%
+ *  and cannot tell them apart; the two pictures are not close, so the choice
+ *  was made on one. `SNAP=luma|rgb` overrides. */
 const MODE = process.env.SNAP ?? 'chroma';
 const near = (r: number, g: number, b: number) => {
   let best = palette[0], bd = Infinity;
