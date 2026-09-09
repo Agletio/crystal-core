@@ -28,7 +28,7 @@ generated tables ship.
 
 | table | file | grid | shape |
 |---|---|---|---|
-| `GENERATED` | `generated-art.ts` | 96 | bodies: rows + key, multi-state, multi-facing |
+| `GENERATED` | `generated-art.ts` | **48** | bodies: rows + key, multi-state, ONE facing |
 | `GENERATED_ICONS` | `generated-icons.ts` | 48 | one frame, rows + key |
 | `ZONES` | `generated-tiles.ts` | 32 | a PNG sheet + corner-keyed tile boxes |
 | `GENERATED_PROPS` | `generated-props.ts` | varies | rows + key, anchored at the tile foot |
@@ -50,7 +50,19 @@ renderer samples per destination pixel.
 
 ### A body
 
-Bodies carry more, and each field is load-bearing:
+**THE GRID IS 48, AND THAT IS THE WHOLE GAME'S SCALE.** Measured: 121 of the
+126 shipped bodies are a 48 grid. The only 96s are the Gaunt and the Hornfiend,
+which are oversized monsters at `scale` 3.2, and the three 160s are bosses.
+`TILE_AT_1X` is 18, so an ordinary body at `scale` 1.5 draws at about **27
+pixels on screen** at 1x zoom.
+
+So a body is a **48x48 sprite drawn at roughly its own size**, not a picture
+reduced to fit one. Detail finer than about a fiftieth of the creature cannot
+survive and was never wanted: an eye is one or two pixels, a limb is four or
+five across, and the whole body holds perhaps twenty to thirty distinct
+regions of colour.
+
+Bodies carry more besides, and each field is load-bearing:
 
 - **`dirs` is the EAST HALF of the compass only.** The renderer mirrors
   anything facing left. Drawing the western three is paying twice for art
