@@ -5245,7 +5245,7 @@ export const SKILLS: SkillDef[] = [
     category: 'spell',
     description:
       'Ice drives up through the ground under one enemy. Everything within ' +
-      '1.9 tiles takes the whole hit.',
+      '1.3 tiles takes the whole hit.',
     tags: ['spell', 'area'],
     behaviour: 'spike',
     damageTypes: ['cold'],
@@ -5258,7 +5258,7 @@ export const SKILLS: SkillDef[] = [
     manaCost: 10,
     range: 5,
     vfxKind: 'spikes',
-    params: { radius: 1.9 },
+    params: { radius: 1.3 },
   },
   {
     /**

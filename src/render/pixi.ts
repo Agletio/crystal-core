@@ -44,6 +44,10 @@ import {
   SPIKE_ROOT,
   SPIKE_TALL,
   SPIKE_SQUAT,
+  SPIKE_ONE,
+  SPIKE_TTL,
+  spikeField,
+  blizzard,
   speedLines,
   leapArc,
   sweepRing,
@@ -1428,20 +1432,42 @@ export async function createPixiRenderer(
 
       if (fx.kind === 'spikes') {
         // FIRST point is where it came up; the second carries the radius, the
-        // same contract the burst and the sweep are drawn under. The BLADE is
-        // generated art pinned at its foot; the ring of broken ground under it
-        // is blocks, which is what carries the damage TYPE a picture cannot.
+        // same contract the burst and the sweep are drawn under. A BLADE is
+        // generated art pinned at its foot; the broken ground is blocks, which
+        // is what carries the damage TYPE a picture cannot.
         const radius = Math.hypot(to.x - from.x, to.y - from.y);
-        blocks(iceSpikes(from, t, radius, fx.ttl), fx.damageType, 1);
         const ice = vfxTexture('spike');
-        if (ice) {
-          const tall = radius * SPIKE_TALL;
-          const art = effectSprite(ice, tall);
-          art.scale.y *= SPIKE_SQUAT; // squatter than the art, which is drawn tall
-          art.anchor.set(0.5, 1); // it STANDS on the spot it came up through
-          art.x = cx(from.x);
-          art.y = cy(from.y) + SPIKE_ROOT;
-          art.alpha = spikeAlpha(t, fx.ttl);
+        const alpha = spikeAlpha(t, fx.ttl);
+        // A STANDING field is the MODE's, and it keeps the one big blade and
+        // the ring: it is a place that stays, so it reads as one thing. An
+        // ordinary cast FILLS its circle with blades instead, because the hit
+        // is the circle and a rim said only where the edge was.
+        const stands = (fx.ttl ?? 0) > SPIKE_TTL;
+        // The ring is the STANDING mode's alone, and it is also the fallback
+        // for either mode with no picture imported: blocks are the only thing
+        // that can say the damage TYPE at all.
+        if (stands || !ice) {
+          blocks(iceSpikes(from, t, radius, fx.ttl), fx.damageType, 1);
+          if (stands) blocks(blizzard(from, radius, state.elapsed), 'cold', alpha);
+          if (ice) {
+            const art = effectSprite(ice, radius * SPIKE_TALL);
+            art.scale.y *= SPIKE_SQUAT; // squatter than the art, which is drawn tall
+            art.anchor.set(0.5, 1); // it STANDS on the spot it came up through
+            art.x = cx(from.x);
+            art.y = cy(from.y) + SPIKE_ROOT;
+            art.alpha = alpha;
+          }
+          continue;
+        }
+        for (const blade of spikeField(from, radius)) {
+          const art = effectSprite(ice, SPIKE_ONE);
+          art.scale.y *= SPIKE_SQUAT;
+          art.anchor.set(0.5, 1);
+          art.x = cx(blade.x);
+          art.y = cy(blade.y) + SPIKE_ROOT;
+          // Each blade on its own point of the rise, so the field ERUPTS from
+          // the middle out rather than appearing whole.
+          art.alpha = alpha * Math.max(0, Math.min(1, blade.up + t * 2));
         }
         continue;
       }

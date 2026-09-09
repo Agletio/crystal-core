@@ -255,7 +255,7 @@ export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
     const scale = (e: Entity) =>
       castMultiplier * targetScale(use, e) * (1 + (stands?.more ?? 0));
     const radius =
-      use.areaRadius((use.skill.params?.radius as number) ?? 1.9) * (stands?.radius ?? 1);
+      use.areaRadius((use.skill.params?.radius as number) ?? 1.3) * (stands?.radius ?? 1);
 
     for (const enemy of use.enemies) {
       if (enemy.dead || !within(use.primary, enemy, radius)) continue;

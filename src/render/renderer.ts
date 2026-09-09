@@ -2046,7 +2046,7 @@ export function pixelDisc(origin: Vec2, radius: number): FirePixel[] {
  * travelling to it — nothing here is in flight, and a bolt crossing the room
  * would say the opposite.
  */
-const SPIKE_TTL = 0.3; // the cast's own, when nothing is standing
+export const SPIKE_TTL = 0.3; // the cast's own, when nothing is standing
 const SPIKE_UP = 0.1; // seconds the blade takes to come up, however long it stands
 const SPIKE_GONE = 0.2; // and to sink back
 /** How WIDE the blade stands for the radius it covers, how much it is squashed
@@ -2054,6 +2054,8 @@ const SPIKE_GONE = 0.2; // and to sink back
  *  art's own ragged base wants burying a little. */
 export const SPIKE_TALL = 0.52;
 export const SPIKE_SQUAT = 0.8;
+/** One blade of a FIELD: the circle buys MORE of them, never bigger ones. */
+export const SPIKE_ONE = 0.62;
 export const SPIKE_ROOT = 0.12;
 
 /** IN SECONDS, not in the fraction of a life: a spike that STANDS for four is
@@ -2062,6 +2064,55 @@ export function spikeAlpha(t: number, ttl = SPIKE_TTL): number {
   const secs = t * ttl;
   const up = Math.min(1, secs / SPIKE_UP);
   return up * (1 - Math.max(0, (secs - (ttl - SPIKE_GONE)) / SPIKE_GONE));
+}
+
+/** WHERE THE BLADES STAND, FILLING the circle the sim hit rather than marking
+ *  its rim. The count rides the AREA, so Area of Effect buys more of them
+ *  rather than one bigger one, and each is the size one blade reads at. `up` is
+ *  the share of the rise this one has done, staggered so the field erupts. */
+export function spikeField(at: Vec2, radius: number): { x: number; y: number; up: number }[] {
+  const many = Math.max(3, Math.round(radius * radius * SPIKES_PER_AREA));
+  const seed = Math.round(at.x * 16 + at.y * 32);
+  const out: { x: number; y: number; up: number }[] = [];
+  for (let i = 0; i < many; i++) {
+    // A SUNFLOWER SPIRAL: a draw clumps, and a hole in a field reads as a miss.
+    const turn = i * 2.39996;
+    const far = Math.sqrt((i + 0.5) / many) * radius * 0.92;
+    const jitter = tileNoise(i, seed, 17) - 0.5;
+    out.push({
+      x: at.x + Math.cos(turn) * far + jitter * 0.18,
+      // FLATTENED like the ring: a circle seen from above is an ellipse.
+      y: at.y + Math.sin(turn) * far * 0.6 + jitter * 0.1,
+      up: 1 - (far / Math.max(0.001, radius)) * 0.55,
+    });
+  }
+  return out;
+}
+
+/** How many blades one square tile of the hit circle stands up. */
+const SPIKES_PER_AREA = 5.2;
+
+/** SNOW OVER A STANDING FIELD, so the Chill it keeps applying is visible
+ *  rather than inferred. Drifting, and always inside the circle. */
+export function blizzard(at: Vec2, radius: number, elapsed: number): FirePixel[] {
+  const many = Math.max(14, Math.round(radius * radius * 30));
+  const seed = Math.round(at.x * 16 + at.y * 32);
+  const out: FirePixel[] = [];
+  for (let i = 0; i < many; i++) {
+    const own = tileNoise(i, seed, 23);
+    const across = tileNoise(i, seed, 41);
+    // Each mote falls on its OWN clock and wraps, so nothing pulses together.
+    const fall = (elapsed * (0.5 + own * 0.5) + own) % 1;
+    const drift = Math.sin(elapsed * 1.7 + i) * 0.18;
+    out.push({
+      x: onGrid(at.x + (across * 2 - 1) * radius * 0.95 + drift),
+      y: onGrid(at.y + (fall * 2 - 1) * radius * 0.6),
+      size: FIRE_PX * (own > 0.7 ? 2 : 1),
+      shade: own > 0.55 ? 4 : 3,
+      alpha: 0.9 * Math.sin(fall * Math.PI),
+    });
+  }
+  return out;
 }
 
 /** ONE BLADE, sized off the RADIUS the sim used, so a build buying Area of

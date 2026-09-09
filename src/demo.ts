@@ -6083,8 +6083,9 @@ rule('THE SPIKE — does one cast cover ground, and does buying area cover more?
        stats: { maxLife: 1e6, attacksPerSecond: 1 } }) as any;
   const primary = dummy(4, 0);
   // Two inside the bare radius, one only a WIDER spike reaches, one far off
-  // that only a SECOND spike can find.
-  const enemies = [primary, dummy(4.8, 0.5), dummy(3.4, 1.1), dummy(6.6, 0), dummy(24, 0)];
+  // that only a SECOND spike can find. The distances are the SKILL's own
+  // radius, so they move when it does.
+  const enemies = [primary, dummy(4.8, 0.5), dummy(3.4, 1.1), dummy(6.0, 0), dummy(24, 0)];
   const grantsOf = (id: string) => nodeById('rimespike', id)?.grants ?? {};
 
   /** Bodies the cast STRUCK, and the widest circle it drew. */

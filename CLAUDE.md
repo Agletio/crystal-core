@@ -1046,9 +1046,19 @@ needs a floor with nothing on it.
 **RIMESPIKE IS AN AREA SKILL, AND RIMEFIELD IS THE ONE MODE SWITCH IN THE GAME.**
 *"Make rimespike a large aoe spike instead of single target + splash… it does an
 aoe hit that looks like one big spike raising up from the ground."* One blade up
-under the body it aimed at, everything within 1.9 tiles taking the WHOLE hit, and
+under the body it aimed at, everything within 1.3 tiles taking the WHOLE hit, and
 the picture is drawn at the radius the SIM used, so Area of Effect grows the
-blade. **RIMEFIELD TAKES THE CAST OFF YOUR RATE AND PUTS IT ON A COOLDOWN** —
+field. **1.9 WAS A PACK FOR FREE** — *"the area is already big enough that
+theres no real reason to get AOE it just covers most of a pack already"* — and
+the arithmetic agrees: at the deep end +50% Area bought **+7%** of the kill rate
+at 1.9 and buys **+29%** at 1.3, because a circle that already swept the pack
+had nothing left to catch. The skill costs 3.62 kills/s down to 2.52 for it,
+which is inside the band the other seven hold (1.80 to 4.73) rather than under
+it, and bare at depth 4 it is 0.41 — the middle of the eight rather than the
+top. **AND THE CAST IS A FIELD, not a rim**: the circle is FILLED with blades
+(`spikeField`), because an outline said only where the edge was. The one big
+blade and the ring are the STANDING mode's alone, with a blizzard of cold motes
+over it so the Chill it is laying down reads. **RIMEFIELD TAKES THE CAST OFF YOUR RATE AND PUTS IT ON A COOLDOWN** —
 2.5s, 120% further, 100% more damage, and what it leaves STANDS for 3.5s,
 Chilling everything round it every 0.5s. **CLICKED ALONE IT IS A LOSS** — *"the
 idea is if you just click it then it should be worse than not"* — measured at
@@ -1161,8 +1171,8 @@ stuff."* The yardstick is a character with NOTHING — level 1, no trade, no
 points, no gear but the weapon the skill itself comes down holding — at DEPTH 4
 of The Shallows, which is the shallowest floor that separates them: the first is
 cleared by all eight and past the sixth none of them lives. Measured, they kill
-0.31 to 0.44 a second, **1.44x between the best and the worst** against 2.79x
-before, and put down 64% to 84% of that floor. **THE SHEET DOES NOT PREDICT
+0.32 to 0.47 a second, **1.45x between the best and the worst** against 2.79x
+before, and put down 40% to 82% of that floor. **THE SHEET DOES NOT PREDICT
 IT**: single-target DPS runs 58 to 153 in a different ORDER, because what a
 skill reaches for free is half of what it is worth. Two were levelled to get
 there — Lightning Arrow, the only one holding a two-hander, from 58 damage to
