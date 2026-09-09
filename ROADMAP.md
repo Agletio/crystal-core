@@ -1567,8 +1567,15 @@ only adds is a passive every build takes.
       is why it cannot judge a rule.** `playPassives` LANDED — the sheet's pick
       is one candidate and `played` decides between it and `PASSIVE_TRIES`
       drawn sets, two-stage on the winner rather than doubling the shortlist,
-      which is ~40% more play time instead of 100%. **Still to confirm: that
-      the picks now differ by skill, and what it costs the demo's wall clock.** Measured at band 6 for both strike and
+      which is ~40% more play time instead of 100%. **CONFIRMED, A/B on one
+      build**: the sheet took `surge+contagion+bloodpact` in 42s, the floor
+      takes `featherstep+hoarfrost+glass` in 57s — +36%. Across four skills the
+      sets no longer share a single passive: strike `featherstep+hoarfrost+
+      glass`, shockwave `unbinding+aftershock+brink`, blight `virulence+
+      rimeheart+surge`, rimespike `bulwark+sundering+contagion`. Twelve distinct
+      passives where the sheet used three, and the rule-shaped ones it could
+      never see — Glass, Brink, Aftershock, Bulwark, Rimeheart — are picked.
+      **What is left is the demo's own wall clock, being timed now.** Measured at band 6 for both strike and
       shockwave, `bestBuild` took `surge+contagion+bloodpact` — the same set, on
       two skills with nothing in common. It scores passives off `buildPower`,
       which is a SHEET number, so a passive whose worth is a RULE the sheet
