@@ -4,15 +4,16 @@
 
 ## What can and cannot wake the other
 
-The configured path is **hourly polling of main**. The ChatGPT automation
-**Crystal Core art handoffs** is enabled. Claude's cloud routine still needs
+Hourly polling is **paused** at the owner's request. The intended replacement
+is a GitHub PR event for each ready handoff; event subscriptions are not yet
+configured. Claude's cloud routine still needs
 one-time account setup; see [AUTOMATION.md](AUTOMATION.md) for its exact prompt,
 setup status and verification steps.
 
 | side | configured wake-up |
 |---|---|
-| **Astra** | enabled hourly ChatGPT check of the art queue |
-| **Claude** | hourly cloud Routine, pending setup and verification |
+| **Astra** | hourly check paused; PR event setup pending |
+| **Claude** | GitHub event cloud Routine, pending setup and verification |
 
 Both platforms also expose event-based options. Claude cloud routines support
 GitHub PR/release events and API triggers; an already-running Claude session is
