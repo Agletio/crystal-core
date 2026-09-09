@@ -47,7 +47,13 @@ console.log(`${file} ${sheet.width}x${sheet.height} → ${COUNT} cells of ${cw}x
  *  — and squashing one into the grid would WIDEN the creature. One box, one
  *  uniform scale, one offset: aspect kept, and no frame silently recentred,
  *  which would hide a hitch rather than show it. */
+/** ART ALREADY AT THE GRID IS COPIED, NEVER FITTED. A native 48 sprite has its
+ *  ink placed on purpose — 40px tall at a chosen offset, so the feet sit where
+ *  the artist put them — and refitting it would rescale that and move the foot
+ *  anchor the renderer pins to. Only art bigger than the grid is reduced. */
+const NATIVE = cw === GRID && chh === GRID;
 const shared = (() => {
+  if (NATIVE) return { x0: 0, y0: 0, w: GRID, h: GRID, scale: 1, offX: 0, offY: 0 };
   let x0 = cw, y0 = chh, x1 = -1, y1 = -1;
   for (let k = 0; k < COUNT; k++) {
     const cx = (k % COLS) * cw, cy = Math.floor(k / COLS) * chh;
@@ -62,7 +68,9 @@ const shared = (() => {
   return { x0, y0, w, h, scale,
     offX: Math.round((GRID - w * scale) / 2), offY: Math.round((GRID - h * scale) / 2) };
 })();
-console.log(`  shared ink box ${shared.w}x${shared.h} at ${shared.scale.toFixed(3)}x, offset ${shared.offX},${shared.offY}`);
+console.log(NATIVE
+  ? `  already ${GRID}x${GRID} a cell — copied 1:1, not refitted`
+  : `  shared ink box ${shared.w}x${shared.h} at ${shared.scale.toFixed(3)}x, offset ${shared.offX},${shared.offY}`);
 
 /** One cell, area-averaged, premultiplied so edges keep their hue. */
 function cell(k: number): Uint8Array {
@@ -101,7 +109,7 @@ function cell(k: number): Uint8Array {
   // greys out — measured, ink under luma 10 fell from 7.8% to 1.3% here. A
   // pixel on the EDGE takes its cell's darkest source pixel instead of the
   // mean, which is what the source says that edge is.
-  for (let y = 0; y < dh; y++) for (let x = 0; x < dw; x++) {
+  if (!NATIVE) for (let y = 0; y < dh; y++) for (let x = 0; x < dw; x++) {
     const px = x + shared.offX, py = y + shared.offY;
     if (px < 0 || px >= GRID || py < 0 || py >= GRID) continue;
     const d = (py * GRID + px) * 4;

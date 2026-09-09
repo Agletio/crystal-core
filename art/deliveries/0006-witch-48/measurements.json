@@ -1,0 +1,78 @@
+{
+  "source": "/workspace/scratch/eb8af5c77649/crystal-core-witch-size-test/source/witch-isolated.png",
+  "sourceCrop": {
+    "left": 352,
+    "top": 249,
+    "width": 746,
+    "height": 838
+  },
+  "sourceBodySpellSplitX": 950,
+  "exportBodySpellSplitX": 35,
+  "conversion": "alpha >=128; uniform fit to 40 px ink height; nearest-neighbor; shared palette of at most 24 opaque colors; no dithering",
+  "composite": {
+    "canvas": [
+      48,
+      48
+    ],
+    "opaquePixels": 550,
+    "opaqueColors": 24,
+    "alphaValues": [
+      0,
+      255
+    ],
+    "inkBounds": [
+      6,
+      4,
+      41,
+      43
+    ],
+    "medianLuma": 37.9926,
+    "interiorMedianLuma": 42.0698,
+    "minLuma": 5.640600000000001,
+    "maxLuma": 237.39999999999998
+  },
+  "body": {
+    "canvas": [
+      48,
+      48
+    ],
+    "opaquePixels": 528,
+    "opaqueColors": 23,
+    "alphaValues": [
+      0,
+      255
+    ],
+    "inkBounds": [
+      6,
+      4,
+      33,
+      43
+    ],
+    "medianLuma": 37.9926,
+    "interiorMedianLuma": 42.0698,
+    "minLuma": 5.640600000000001,
+    "maxLuma": 237.39999999999998
+  },
+  "display27": {
+    "canvas": [
+      27,
+      27
+    ],
+    "opaquePixels": 170,
+    "opaqueColors": 23,
+    "alphaValues": [
+      0,
+      255
+    ],
+    "inkBounds": [
+      3,
+      2,
+      23,
+      24
+    ],
+    "medianLuma": 37.9926,
+    "interiorMedianLuma": 56.8246,
+    "minLuma": 5.640600000000001,
+    "maxLuma": 237.39999999999998
+  }
+}

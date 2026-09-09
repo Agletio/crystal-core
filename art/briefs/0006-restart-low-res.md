@@ -1,7 +1,7 @@
 # 0006 — restart: 48 pixels, and motion over detail
 
-**Status:** open. This replaces the approach in 0004 and 0005, not the
-findings in them.
+**Status:** the size test LANDS. One cast still at a true 48 grid, needing no
+conversion at all. One thing sits outside the game's register — see the outcome.
 
 ## What was wrong, and it was the brief
 
@@ -65,5 +65,59 @@ repeated same-foot sequence does not fix it.
 leading with opposite feet.
 
 ---
-## Outcome
-_not yet_
+## Outcome — the witch at 48 (`art/deliveries/0006-witch-48/`)
+
+Picture: `0006-outcome-witch48.png` — Hob, Nell, the witch and the Imp, each
+drawn at **27px and 54px**, the real on-screen sizes, on the Fissure floor.
+
+### It arrives import-ready, which nothing before did
+
+Verified independently rather than taken on trust: **48x48 native, 23 colours,
+binary alpha, 5% gentle steps.** No `dechecker`, no `downsize`, no resample —
+`stripcut` copies it 1:1. She wrote her own export (`export-witch.cjs`, sharp
+plus ImageMagick), hardening alpha at 128, fitting to a 40px ink height by
+nearest neighbour and quantising to 24 without dithering. **Art production
+tooling is hers under the contract, and this is what that being hers looks
+like.**
+
+That change alone removes every fault of 0004 and 0005: nothing to smear, no
+palette to guess at, no contour thinner than a destination pixel.
+
+**A native-grid sprite is now copied, never fitted.** Its ink is placed on
+purpose — 40px tall at a chosen offset — and refitting would rescale it and
+move the foot anchor the renderer pins to. Only art larger than the grid is
+reduced.
+
+### At ship size it belongs
+
+At 27px she reads as a robed figure with an outstretched arm; at 54 she is a
+dark-fantasy caster. She sits in the palette, has the right chunk, and stands
+beside Hob and Nell as one roster.
+
+### The ONE thing outside the register
+
+| | luma range | median | step |
+|---|---|---|---|
+| Hob | 5-66 | 32 | 14.6 |
+| Nell | 3-65 | 31 | 16.7 |
+| Imp | 6-85 | 25 | 22.2 |
+| **witch48** | **6-238** | **43** | **46.0** |
+
+**Her highlight reaches 238 where no shipped body passes 85.** She flagged it
+herself — *"the retained skin highlights reach luma 237.4; no global darkening
+was applied"* — and it is a deliberate choice, not a slip. It is what drives
+the step to 46 as well.
+
+The median at 43 against a shipped 25-32 is the same thing at lower volume:
+she is lit, where the roster sits in a cave.
+
+**This is a direction question, not a fault.** The craft is better than the
+shipped NPCs. Either the game moves toward her — brighter, more colour, a real
+specular — or she comes down into the muted register Hob and Nell hold. That
+is the owner's call and it should be made deliberately, because it decides what
+the other 125 bodies eventually look like.
+
+### Not claimed
+
+One pose. No gait, no stride, no states. The spell ships as its own aligned
+layer and is NOT baked into the body — correct, and left that way.
