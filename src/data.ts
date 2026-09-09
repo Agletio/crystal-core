@@ -5755,10 +5755,16 @@ export const SKILLS: SkillDef[] = [
     /** The plainest trade on the shelf, and the one every other defence answers:
      *  a Block, a Dodge and an Armour rating all sit in front of the half that
      *  costs, so what buys it back is the gear rather than another passive. */
+    /** A DOWNSIDE YOU MITIGATE, not a second multiplier. Taking half again as
+     *  much damage is answered by the same armour every build already has, so
+     *  it was 50% more damage for nothing; a pool this small is answered by the
+     *  % Life family, by Constitution, by a shield, by a mover and by Bulwark's
+     *  cap — which is a SHARE of the pool, so it shrinks with it and each hit
+     *  costs the same fraction. */
     id: 'glass',
     name: 'Glass',
     category: 'passive',
-    description: 'You deal 50% more damage and take 50% more damage.',
+    description: 'You deal 90% more damage, and your maximum life is 70% lower.',
     tags: ['passive'],
     behaviour: 'no_cast',
     damageTypes: [],
@@ -5767,7 +5773,7 @@ export const SKILLS: SkillDef[] = [
     rateMultiplier: 1,
     manaCost: 0,
     range: 0,
-    grants: { damageScale: 1.5, takenScale: 1.5 },
+    grants: { damageScale: 1.9, lifeScale: 0.3 },
   },
   {
     /** SUSTAIN WITH NO BUFFER: the pool it restores a tenth of is the smaller
@@ -5873,11 +5879,16 @@ export const SKILLS: SkillDef[] = [
     /** THE ONE THAT MAKES ANY SKILL A COLD SKILL, which is what Shardfall,
      *  Hoarfrost and Deep Winter are all waiting on — two of the eight trees
      *  sell no Cold conversion at all, and this is how those two get there. */
+    /** THE CONVERSION IS THE ENGINE AND THE CARD HAS TO SAY SO. Converting
+     *  alone reads as a downside beside a downside — what it BUYS is that every
+     *  hit Chills, which is what feeds Deepfreeze, Hoarfrost and Shardfall from
+     *  a skill that sells no Cold node at all. */
     id: 'rimeheart',
     name: 'Rimeheart',
     category: 'passive',
     description:
-      'All your damage is Converted to Cold, and you deal 15% less damage.',
+      'All your damage is Converted to Cold and every hit you land Chills, and ' +
+      'you deal 25% less damage.',
     tags: ['passive'],
     behaviour: 'no_cast',
     damageTypes: [],
@@ -5886,7 +5897,7 @@ export const SKILLS: SkillDef[] = [
     rateMultiplier: 1,
     manaCost: 0,
     range: 0,
-    grants: { convertTree: 'cold', damageScale: 0.85 },
+    grants: { convertTree: 'cold', ailmentChance: 100, damageScale: 0.75 },
   },
 
   // Never cast either: `RunSim` reads these params off the equipped slot and

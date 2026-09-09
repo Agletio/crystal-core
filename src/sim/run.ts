@@ -298,6 +298,7 @@ export interface Entity {
   stats: CombatStats;
   cooldown: number;
   stun?: number; // seconds held still: a Freeze, a Pin, or the boss's Fall
+  stunKind?: 'freeze' | 'pin' | 'fall'; // which of the three wrote it, for the picture
   struck?: boolean; // whether ANY hit has landed on it: First Blood reads it
   /** Which shred aura reaches this body: for whatever DRAWS it. The sim asks
    *  `shredding` when a hit lands and never reads this. */
@@ -1782,6 +1783,7 @@ export class RunSim {
       if (dist(s.hero, ring) <= ring.r) {
         this.bite(boss.stats.damage * BOSS_FIGHT.fallDamage, 'physical', true);
         s.hero.stun = Math.max(s.hero.stun ?? 0, BOSS_FIGHT.fallStun);
+        s.hero.stunKind = 'fall';
         // Tank it if you can, but every one marks you.
         s.marks = Math.min(BOSS_FIGHT.markCap, s.marks + BOSS_FIGHT.markPerCatch);
       }
@@ -3485,6 +3487,7 @@ export class RunSim {
     const pin = attacker.kind === 'hero' ? ((this.grants.pinSeconds as number) ?? 0) : 0;
     if (pin > 0 && defender.kind === 'monster' && defender.life > 0) {
       defender.stun = Math.max(defender.stun ?? 0, pin);
+      defender.stunKind = 'pin';
     }
     defender.struck = true; // FIRST BLOOD is spent the moment one lands
     // A HEAVY HAND, on the ONE Slow seam a landing already writes.
@@ -3758,15 +3761,28 @@ export class RunSim {
     if (live) live.remaining = Math.max(live.remaining, def.seconds);
     else target.effects.push({ id: SLOWED, remaining: def.seconds });
 
-    // A FREEZE IS SOMETHING YOU DO: nothing hero-side reads a hold, so one
-    // there is a wall with no answer.
-    if (target.kind === 'hero') return;
+    // A FREEZE HOLDS THE HERO TOO, and the WARD answers it: the bar is his own
+    // `hide` away, so a full ward is never Frozen and half a one is twice the
+    // stacks. Nothing new decides it — `hide` is already the one seam.
+    if (target.kind === 'hero') {
+      if (worth <= 0 || !def.freezeAt) return;
+      const bar = Math.ceil(def.freezeAt / worth);
+      if (stacks < bar) return;
+      // NEVER `thawed`: that hands the next hit a Critical, and a monster
+      // critting is a second damage source no danger number accounts for.
+      target.stun = Math.max(target.stun ?? 0, def.freezeSeconds ?? 1);
+      target.stunKind = 'freeze';
+      target.ailments = target.ailments.filter((a) => a.id !== 'chill');
+      target.slowed = 0;
+      return;
+    }
     // Floored at one stack, so no walk makes a Freeze free.
     const sooner = (this.grants.freezeSooner as number) ?? 0;
     const needs = Math.max(1, (def.freezeAt ?? 0) - sooner);
     if (def.freezeAt && stacks >= needs) {
       const longer = (this.grants.freezeLonger as number) ?? 1;
       target.stun = Math.max(target.stun ?? 0, (def.freezeSeconds ?? 1) * longer);
+      target.stunKind = 'freeze';
       target.thawed = true; // the hit after a Freeze is a Critical, whatever your chance
       this.state.freezes++;
       target.ailments = target.ailments.filter((a) => a.id !== 'chill');

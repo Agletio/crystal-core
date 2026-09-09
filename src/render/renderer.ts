@@ -452,6 +452,46 @@ export function ailmentMarks(
   return out;
 }
 
+/** THE PICTURE A DEBUFF WEARS, beside `ailmentMarks`' blocks. Sized off the
+ *  BODY where a mark is sized off the TILE: a mark is a speck beside a thing,
+ *  a shell is a casing round it, and a boss in a beetle's shell wears a
+ *  brooch. */
+export const DEBUFF_ART: Record<string, string> = {
+  frozen: 'db_frozen',
+  burn: 'db_burn',
+  bleed: 'db_bleed',
+  chill: 'db_chill',
+  shock: 'db_shock',
+  poison: 'db_poison',
+  curse: 'db_curse',
+  exposure: 'db_exposure',
+};
+
+/** UNDER the body, so what shows is what sticks out past the silhouette: an
+ *  outline outside the art, the only light a body may wear. */
+export const DEBUFF_BEHIND = new Set(['frozen']);
+
+/** Where one goes and how big, in world units. `null` is nothing to draw. */
+export function debuffOverlay(
+  id: string,
+  stacks: number,
+  head: number,
+  size: number,
+  elapsed: number
+): { x: number; y: number; span: number; alpha: number } | null {
+  if (stacks <= 0 || !DEBUFF_ART[id]) return null;
+  // A CASING is the body's size; the rest ride over its middle at about half.
+  const shell = id === 'frozen';
+  const weight = Math.min(1, stacks / 4);
+  const beat = Math.sin(elapsed * (shell ? 1.6 : 3.4) + stacks);
+  return {
+    x: 0,
+    y: -head * (shell ? 0.5 : 0.55),
+    span: size * (shell ? 1.25 : 0.62) * (1 + beat * 0.04),
+    alpha: shell ? 0.95 : 0.5 + 0.3 * weight + 0.12 * beat,
+  };
+}
+
 /** How fast each one moves off the body. Frost and Exposure orbit instead. */
 const RISE: Record<string, number> = {
   burn: 1.5,

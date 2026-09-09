@@ -1,0 +1,77 @@
+{
+ "_": "What to SAY for a DEBUFF still, one row per ailment. `icon.mts debuffs.json` reads it and `portrait.mts <id> <png> 48 vfx` puts the result in generated-vfx.ts beside the other effects.",
+ "_how": "Drawn ON a body rather than on the floor, so the middle is HOLLOW or the creature is hidden by its own debuff.",
+ "_inks": "The game's OWN damage colours out of the stylesheet \u2014 ember #C4483A fire, quartz #6FC7E8 cold, citrine #D9A441 lightning, venom #9BD13A poison, amethyst #8B4FD1 dark, bone #C9BFA3 light, hurt #8E2B22 blood \u2014 each with a dark and a light either side, because generated art is baked hex and cannot recolour.",
+ "size": 64,
+ "grid": 48,
+ "how": " A single EFFECT drawn ON a small creature: ONE thing centred, seen straight from the side, with a HOLLOW EMPTY MIDDLE so the body underneath shows through. BOLD readable silhouette, chunky shapes, few colours, lit only by itself. Transparent background. NOT a scene, NOT a landscape, NOT a character, NOT a creature, NOT a body, NOT a face, NOT a hand, NOT a ground shadow, NOT text, NOT a border, NOT a frame, NOT a solid disc.",
+ "inks": [
+  "#07080A",
+  "#FFFFFF",
+  "#3A1410",
+  "#6E241C",
+  "#C4483A",
+  "#E8735C",
+  "#FFC9A8",
+  "#0A1620",
+  "#1C4256",
+  "#2E6C86",
+  "#6FC7E8",
+  "#A8E3F5",
+  "#DFF3FF",
+  "#2A1C0C",
+  "#8A6C25",
+  "#D9A441",
+  "#F5C24A",
+  "#FFE9A8",
+  "#0B1A0E",
+  "#325E24",
+  "#9BD13A",
+  "#C3E27A",
+  "#150A22",
+  "#3A1E5C",
+  "#8B4FD1",
+  "#B98BE8",
+  "#3A352A",
+  "#7A7259",
+  "#C9BFA3",
+  "#E8E2D2",
+  "#2A0C0A",
+  "#5A1A14",
+  "#8E2B22"
+ ],
+ "icons": [
+  {
+   "id": "db_frozen",
+   "say": "a hollow SHELL of clear pale blue ice, an empty ragged CASING with a big open hole straight through the middle of it, seen from the side: thick jagged crystal walls all the way round the outside and NOTHING AT ALL in the centre, spiky facets pointing outward, NOT a solid block, NOT a filled circle, NOT a gemstone, NOT a snowflake, NOT a creature."
+  },
+  {
+   "id": "db_burn",
+   "say": "a ring of ragged orange-red FLAMES licking upward, tallest at the sides and open through the middle so there is a clear empty gap in the centre, each tongue of fire a separate ragged shape with a bright pale core, NOT a fireball, NOT a solid blob, NOT a torch, NOT a candle, NOT a creature, NOT smoke."
+  },
+  {
+   "id": "db_bleed",
+   "say": "a RING of dark red BLOOD DROPLETS and thrown spatter, open through the middle so there is a clear empty gap in the centre, each drop a separate fat teardrop flung outward, NOT a puddle, NOT a dome, NOT a helmet, NOT a creature, NOT a solid disc."
+  },
+  {
+   "id": "db_chill",
+   "say": "a RING of pale blue FROST FLAKES and thin rime needles, open through the middle so there is a clear empty gap in the centre, each flake a separate sharp sliver pointing outward, NOT a snowball, NOT a solid blob, NOT a cloud, NOT a creature, NOT a gemstone."
+  },
+  {
+   "id": "db_shock",
+   "say": "a RING of short jagged pale gold LIGHTNING forks crackling outward, open through the middle so there is a clear empty gap in the centre, each fork a separate sharp zigzag with a white-hot core, NOT flames, NOT fire, NOT a cloud, NOT a plate, NOT a creature, NOT a solid disc."
+  },
+  {
+   "id": "db_poison",
+   "say": "a RING of swollen sickly green BUBBLES, open through the middle so there is a clear empty gap in the centre, each bubble a separate round blister and some of them burst open, NOT a skull, NOT a face, NOT a creature, NOT a plant, NOT a solid disc."
+  },
+  {
+   "id": "db_curse",
+   "say": "a RING of thin ragged dark violet SMOKE tendrils curling outward, open through the middle so there is a clear empty gap in the centre, each tendril a separate torn wisp, NOT a creature, NOT a face, NOT a ghost, NOT a hand, NOT a solid disc."
+  },
+  {
+   "id": "db_exposure",
+   "say": "a ring of thin pale bone-white CRACKS radiating outward from an empty middle like broken glaze, sharp hairline splits with nothing filling the centre, NOT a solid circle, NOT a sun, NOT a star, NOT a web, NOT a creature, NOT a face."
+  }
+ ]
+}

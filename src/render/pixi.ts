@@ -25,6 +25,9 @@ import {
   arrowFlight,
   auraLook,
   ailmentMarks,
+  debuffOverlay,
+  DEBUFF_ART,
+  DEBUFF_BEHIND,
   damageColour,
   bossTelegraph,
   dazeMarks,
@@ -1213,11 +1216,36 @@ export async function createPixiRenderer(
     // clutch of marks per ailment — so a burning thing looks burning without
     // anybody reading a number off a bar.
     for (const e of [state.hero, ...state.monsters]) {
-      if (e.dead || e.ailments.length === 0) continue;
+      if (e.dead) continue;
       const head = e.scale * (anchorY(e) - bodyTop(e.sprite));
+      // HELD IN THE ICE, and only a Freeze: a Pin and the boss's Fall write the
+      // same hold and neither is made of ice. Under the body, so what reads is
+      // the casing sticking out past the silhouette.
+      if ((e.stun ?? 0) > 0 && e.stunKind === 'freeze') {
+        const shell = debuffOverlay('frozen', 1, head, e.scale, state.elapsed);
+        const ice = shell && vfxTexture(DEBUFF_ART.frozen);
+        if (shell && ice) {
+          const s = effectSprite(ice, shell.span, true);
+          s.anchor.set(0.5);
+          s.position.set(cx(e.x) + shell.x, cy(e.y) + shell.y);
+          s.alpha = shell.alpha;
+        }
+      }
+      if (e.ailments.length === 0) continue;
       for (const def of AILMENTS) {
         const stacks = e.ailments.reduce((n, a) => n + (a.id === def.id ? 1 : 0), 0);
         if (stacks === 0) continue;
+        // THE PICTURE WINS where one has been drawn; the blocks stay for an
+        // ailment nobody has generated yet, and canvas2d keeps them either way.
+        const worn = debuffOverlay(def.id, stacks, head, e.scale, state.elapsed);
+        const art = DEBUFF_ART[def.id] ? vfxTexture(DEBUFF_ART[def.id]) : null;
+        if (worn && art) {
+          const s = effectSprite(art, worn.span, DEBUFF_BEHIND.has(def.id));
+          s.anchor.set(0.5);
+          s.position.set(cx(e.x) + worn.x, cy(e.y) + worn.y);
+          s.alpha = worn.alpha;
+          continue;
+        }
         const colour = toHexNumber(damageColour(palette, def.type));
         const edge = toHexNumber(palette.void);
         for (const m of ailmentMarks(def.id, stacks, head, e.scale, state.elapsed)) {
