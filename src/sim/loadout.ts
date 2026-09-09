@@ -327,7 +327,35 @@ export function bestBuild(band: number, rng: Rng, skillId = 'strike', atLevel?: 
   // And then PLAYED: measured, the score alone picked a band 3 fireball that
   // cleared 0 of 6 where the random walk cleared 5. One target at a time is a
   // number the sheet reads; a pack is a thing it cannot see.
-  return played(shortlist, band, rng) ?? shortlist[0] ?? ladderCharacter(band, rng, skillId);
+  const won = played(shortlist, band, rng) ?? shortlist[0] ?? ladderCharacter(band, rng, skillId);
+  return playPassives(won, band, rng, passives);
+}
+
+/** How many drawn passive sets are played against the sheet's own pick. */
+const PASSIVE_TRIES = 3;
+
+/** THE PASSIVES ARE PLAYED TOO, on the winner rather than on every arrangement.
+ *  `fillPassives` scores on the SHEET, so a passive worth a RULE is worth
+ *  nothing to it — measured, the sheet took the same three for strike and for
+ *  shockwave, two skills with nothing in common. Its pick is one candidate here
+ *  and the floor decides between it and drawn sets. */
+function playPassives(won: Character, band: number, rng: Rng, pool: string[]): Character {
+  const slots = SKILL_SLOTS.filter((s) => s.accepts.includes('passive') && slotIsOpen(won, s.id));
+  if (slots.length === 0 || pool.length <= slots.length) return won;
+  const tries: Character[] = [won];
+  for (let i = 0; i < PASSIVE_TRIES; i++) {
+    const other = JSON.parse(JSON.stringify(won)) as Character;
+    const held = { ...(other.equipped ?? {}) };
+    for (const slot of slots) delete held[slot.id];
+    other.equipped = held;
+    const left = [...pool];
+    for (const slot of slots) {
+      if (left.length === 0) break;
+      equipSkill(other, left.splice(rng.int(0, left.length - 1), 1)[0], slot.id);
+    }
+    tries.push(other);
+  }
+  return played(tries, band, rng) ?? won;
 }
 
 /** A SECOND of what the main hand holds, in place of the shield: the ceiling

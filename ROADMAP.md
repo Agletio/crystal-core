@@ -1563,8 +1563,12 @@ only adds is a passive every build takes.
       moved not at all — it is the ceiling that grew, because the search picks
       three passives out of 24 where a random walk picks none of them well.
       `CLAUDE.md` carries the new figure.
-- [ ] **THE SEARCH PICKS THE SAME THREE PASSIVES WHATEVER THE SKILL, and that
-      is why it cannot judge a rule.** Measured at band 6 for both strike and
+- [~] **THE SEARCH PICKS THE SAME THREE PASSIVES WHATEVER THE SKILL, and that
+      is why it cannot judge a rule.** `playPassives` LANDED — the sheet's pick
+      is one candidate and `played` decides between it and `PASSIVE_TRIES`
+      drawn sets, two-stage on the winner rather than doubling the shortlist,
+      which is ~40% more play time instead of 100%. **Still to confirm: that
+      the picks now differ by skill, and what it costs the demo's wall clock.** Measured at band 6 for both strike and
       shockwave, `bestBuild` took `surge+contagion+bloodpact` — the same set, on
       two skills with nothing in common. It scores passives off `buildPower`,
       which is a SHEET number, so a passive whose worth is a RULE the sheet
