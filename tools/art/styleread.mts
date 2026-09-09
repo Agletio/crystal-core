@@ -2,8 +2,9 @@
  * WHAT SEPARATES ONE BODY'S DRAWING FROM ANOTHER'S.  `styleread.mts <id…>`
  *
  * "Match the style" is not an instruction anybody can act on. These are the
- * four things that actually differ between a drawn sprite and a rendered one
- * shrunk down, each a number an art director can aim at.
+ * things that actually differ between a drawn sprite and a rendered one shrunk
+ * down. LUMA RANGE is the root of the rest: big value steps and a dark contour
+ * are both impossible inside a narrow one, so read it first.
  */
 import { GENERATED } from '../../src/render/generated-art';
 
@@ -17,15 +18,14 @@ for (const id of process.argv.slice(2)) {
   if (!b) { console.log(`  ${id}: not in GENERATED`); continue; }
   const frames = b.frames;
 
-  // 1. CONTOUR: the share of edge pixels — ink with transparency beside it —
-  //    that are among the darkest inks. A drawn sprite is outlined; a render
-  //    fades out instead.
+  // CONTOUR: the share of edge pixels among the darkest inks. A drawn sprite
+  // is outlined; a render fades out instead.
   let edge = 0, darkEdge = 0;
   const lumas = Object.values(b.key).map(luma);
   const darkest = [...lumas].sort((a, z) => a - z)[Math.floor(lumas.length * 0.25)];
-  // 2. CLUSTERS: mean run of one colour along a row. Chunky art runs long.
+  // CLUSTERS: mean run of one colour along a row. Chunky art runs long.
   let runs = 0, runPx = 0;
-  // 3. STEPS: mean luma jump between neighbouring different inks.
+  // STEPS: mean luma jump between neighbouring inks.
   let steps = 0, stepSum = 0;
   for (const f of frames) {
     f.forEach((row, y) => {
@@ -47,7 +47,6 @@ for (const id of process.argv.slice(2)) {
       if (run) { runs++; runPx += run; }
     });
   }
-  // 4. INKS actually used, and how many are near-duplicates of another.
   const inks = Object.values(b.key);
   let crowded = 0;
   for (let i = 0; i < inks.length; i++) for (let j = i + 1; j < inks.length; j++) {
@@ -55,10 +54,14 @@ for (const id of process.argv.slice(2)) {
     const z = [1, 3, 5].map((o) => parseInt(inks[j].slice(o, o + 2), 16));
     if (Math.abs(a[0] - z[0]) + Math.abs(a[1] - z[1]) + Math.abs(a[2] - z[2]) < 24) { crowded++; break; }
   }
+  // Every shipped body spans 65-99 luma.
+  const spread = [...lumas].sort((a, z) => a - z);
   console.log(
-    `  ${id.padEnd(15)} contour ${((darkEdge / Math.max(1, edge)) * 100).toFixed(0).padStart(3)}% of its edge` +
+    `  ${id.padEnd(15)} luma ${spread[0].toFixed(0).padStart(3)}-${spread[spread.length - 1].toFixed(0).padStart(3)}` +
+    ` (range ${(spread[spread.length - 1] - spread[0]).toFixed(0).padStart(3)})` +
+    `   contour ${((darkEdge / Math.max(1, edge)) * 100).toFixed(0).padStart(3)}%` +
     `   clusters ${(runPx / Math.max(1, runs)).toFixed(1)}px` +
-    `   value step ${(stepSum / Math.max(1, steps)).toFixed(1)}` +
-    `   ${inks.length} inks, ${crowded} near-duplicate`
+    `   step ${(stepSum / Math.max(1, steps)).toFixed(1)}` +
+    `   ${inks.length} inks`
   );
 }

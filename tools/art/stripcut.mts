@@ -17,12 +17,21 @@ import { decodePng } from './png.mts';
 import { debackground, apart } from './convert.mts';
 
 const [id, file, framesArg, colsArg, state, gridArg] = process.argv.slice(2);
-if (!id || !file || !framesArg) throw new Error('stripcut.mts <id> <sheet.png> <frames> <cols> <state> [grid]');
+if (!id || !file || !framesArg) throw new Error('stripcut.mts <id> <sheet.png> <frames> <cols> <states> [grid]');
 const COUNT = Number(framesArg);
 const COLS = Number(colsArg || COUNT);
 const ROWS = Math.ceil(COUNT / COLS);
 const GRID = Number(gridArg ?? 96);
-const STATE = state ?? 'idle';
+/** `walk` for one run, or `walk:0-5,cast:6-11` for a sheet holding several.
+ *  One sheet is one generation, so several states drawn on it are the only
+ *  ones guaranteed to be the same creature. */
+const STATES: Record<string, number[]> = (state ?? 'idle').includes(':')
+  ? Object.fromEntries((state as string).split(',').map((part) => {
+      const [name, span] = part.split(':');
+      const [from, to] = span.split('-').map(Number);
+      return [name, Array.from({ length: to - from + 1 }, (_, i) => from + i)];
+    }))
+  : { [state ?? 'idle']: Array.from({ length: Number(framesArg) }, (_, i) => i) };
 /** What every shipped body settles to: measured, 124 of the 126 rows hold
  *  exactly 24. A bigger palette is what makes a rendered picture read as
  *  rendered — its value steps halve and the shading turns smooth. */
@@ -128,7 +137,7 @@ let frames = cells.map((c) => {
   return rows;
 });
 
-const states = { [STATE]: frames.map((_, i) => i) };
+const states = STATES;
 const row = `  ${id}: {
     grid: ${GRID},
     dirs: ["south-east"],
@@ -142,4 +151,5 @@ let src = readFileSync(OUT, 'utf8');
 const already = new RegExp(`\\n  ${id}: \\{[\\s\\S]*?\\n  \\},`);
 src = already.test(src) ? src.replace(already, `\n${row}`) : src.replace(/\n\};\s*$/, `\n${row}\n};\n`);
 writeFileSync(OUT, src);
-console.log(`  ${id}: ${COUNT} frames of ${GRID}, state '${STATE}', ${char.size} inks -> generated-art.ts`);
+const said = Object.entries(STATES).map(([n, ix]) => `${n} ${ix.length}`).join(', ');
+console.log(`  ${id}: ${COUNT} frames of ${GRID}, ${said}, ${char.size} inks -> generated-art.ts`);
