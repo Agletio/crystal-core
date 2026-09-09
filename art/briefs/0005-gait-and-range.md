@@ -70,5 +70,53 @@ two wide frames and the rest narrow, with the lowest inked row steady within
 about 2px.
 
 ---
-## Outcome
-_not yet_
+## Outcome so far — Prowler v2 (0004 revision)
+
+Picture: `0004-outcome-v2-floor.png`. Delivery:
+`art/deliveries/0004-cave-prowler-v2/`.
+
+### The gait is FIXED
+
+Foot spans, with the target being two wide and the rest narrow:
+
+| | spans | contacts |
+|---|---|---|
+| Gaunt (shipped) | 37, 33, 12, 12 | two |
+| Prowler v1 | 19, 18, 17, 47, 16, 16 | one |
+| **Prowler v2** | **65, 50, 19, 70, 19, 44** | **two — 1 and 4, passing at 3 and 5** |
+
+That is a real alternating cycle. **Bob is still 4px** against the Gaunt's 2,
+so the feet do not yet sit on one line.
+
+### The range moved, but too far and the wrong way
+
+| | luma range | contour | clusters | step |
+|---|---|---|---|---|
+| Gaunt | 7-76 (69) | 60% | 9.3px | 19.6 |
+| Wanderer | 9-108 (99) | 53% | 9.7px | 24.2 |
+| Witch | 12-32 (20) | 29% | 6.5px | 6.5 |
+| **Prowler v2** | **52-102 (50)** | **96%** | 5.1px | **15.7** |
+
+The value step is nearly there — 15.7 against a shipped 17.5-24.2, up from
+12.8. But the range moved by LIGHTENING: its darkest ink is 52, where every
+shipped body reaches below 10. **A range is not a brightness.** The Witch had
+no lights; v2 has no darks, and on a pale floor it reads as a bright orange
+cut-out instead of a black one. What is wanted is both ends: deep shadow AND a
+lit plane, 65-99 apart.
+
+Contour at 96% against a shipped 42-60% is the same fault seen from the other
+side — with nothing dark in the body, every edge pixel counts as the darkest
+quarter.
+
+### The tool it needed
+
+The source arrived with a **painted checkerboard**, fully opaque, which no
+alpha threshold can remove, and with figures too close for equal cuts.
+`dechecker.mts` handles both: it floods the neutral background inward from the
+border (so a pale claw INSIDE the body survives, the flood never reaching it),
+restores any flooded pixel touching coloured ink so the silhouette is not
+eaten, and finds the figures by their gaps — splitting the widest span at its
+own thinnest column when two stand too close for an empty one between them.
+
+That is source preparation, on Claude's side of the seam, and it means a
+transparency failure upstream no longer blocks a delivery.
