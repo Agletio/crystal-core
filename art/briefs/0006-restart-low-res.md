@@ -111,11 +111,21 @@ the step to 46 as well.
 The median at 43 against a shipped 25-32 is the same thing at lower volume:
 she is lit, where the roster sits in a cave.
 
-**This is a direction question, not a fault.** The craft is better than the
-shipped NPCs. Either the game moves toward her — brighter, more colour, a real
-specular — or she comes down into the muted register Hob and Nell hold. That
-is the owner's call and it should be made deliberately, because it decides what
-the other 125 bodies eventually look like.
+**ANSWERED, and the answer is both** — *"a bright young wizard casting
+elemental spells makes sense. A gloomy dark witch casting undead probably less
+so. The shallows full of skeletons and deserts yeah probably darker. The Prism
+with shiny geodes lighter and more colors."*
+
+Measured off the roster, the game was already doing this and nobody had written
+it down. **The mass is dark in every zone — every family's median sits between
+17 and 33.** What changes is the LIGHT: the Shallows top out near 89 at chroma
+10 and nearly grey, the Prism reaches 109 at chroma 22 and leans blue. It is
+`art/decisions/LIGHT.md` now, and `FAMILY=<name> styleread` prints the band.
+
+So the witch is not too bright for being a lit caster; she is too bright at
+**238**, which is above the lampwright's lamp at 146 and twice the Prism's
+ceiling. White belongs to a light SOURCE, not to lit skin. **110 to 150** puts
+her at the top of the game's range without leaving it.
 
 ### Not claimed
 

@@ -13,6 +13,16 @@ const luma = (h: string) => {
   return 0.299 * r + 0.587 * g + 0.114 * b;
 };
 
+/** Measured off the shipped roster, and written up in `art/decisions/LIGHT.md`:
+ *  the MASS is dark in every zone and only the light changes. */
+const BANDS: Record<string, string> = {
+  normal:    'The Shallows — median 17-33, brightest 50-89, chroma ~10 near-grey, warm',
+  demonic:   'The Rot      — median 21-28, brightest 59-86, chroma ~20, warm',
+  prismatic: 'The Prism    — median 19-26, brightest 72-109, chroma ~22, COOL',
+  people:    'the camp     — median 17-45, brightest 65-146, lit by what they carry',
+};
+if (process.env.FAMILY) console.log(`  band: ${BANDS[process.env.FAMILY] ?? 'no such family'}`);
+
 for (const id of process.argv.slice(2)) {
   const b = GENERATED[id] as { grid: number; frames: string[][]; key: Record<string, string> };
   if (!b) { console.log(`  ${id}: not in GENERATED`); continue; }
