@@ -508,6 +508,47 @@ const ASK: Record<string, Record<string, unknown>> = {
     detail: 'highly detailed',
     view: 'high top-down',
   },
+  // THE FACE, WARM BROWN — BOTH REJECTED, and kept so neither is asked again.
+  // The floor sentence is byte-identical in these two and in `test_round`, and
+  // the floor still came back at luma 117, 78 and 68: A TILESET IS ONE IMAGE
+  // WITH ONE EXPOSURE, so the rock's wording drags the floor's brightness with
+  // it and a floor cannot be held still by saying the same thing about it.
+  // `test_warm_mass` is the tone rule failing outright — floor 68 against rock
+  // 65, a separation of THREE, and the map does not read at all.
+  test_warm_face: {
+    lower_description: TEST_FLOOR_SAID,
+    upper_description:
+      'a mass of near-black rock, VERY DARK charcoal almost black, unlit, ' +
+      'NOT pale, NOT light grey, NOT brown, NOT sandy',
+    transition_description:
+      'a sheer cut rock face of WARM DARK BROWN earth and stone dropping to the floor, ' +
+      'rich chocolate brown, NOT grey, NOT black, NOT pale, NOT orange, NOT red',
+    shape_style: 'round',
+    transition_size: 1,
+    enhance: false,
+    tile_size: { width: 32, height: 32 },
+    outline: 'lineless',
+    shading: 'detailed shading',
+    detail: 'highly detailed',
+    view: 'high top-down',
+  },
+  test_warm_mass: {
+    lower_description: TEST_FLOOR_SAID,
+    upper_description:
+      'a mass of WARM DARK BROWN earth and stone, deep chocolate brown, unlit, ' +
+      'NOT pale, NOT light grey, NOT charcoal, NOT sandy, NOT orange, NOT red',
+    transition_description:
+      'a sheer cut face of WARM DARK BROWN earth and stone dropping to the floor, ' +
+      'rich chocolate brown, NOT grey, NOT black, NOT pale, NOT orange, NOT red',
+    shape_style: 'round',
+    transition_size: 1,
+    enhance: false,
+    tile_size: { width: 32, height: 32 },
+    outline: 'lineless',
+    shading: 'detailed shading',
+    detail: 'highly detailed',
+    view: 'high top-down',
+  },
   // WATER, in the rock set's own mode, its floor the rock set's floor. A
   // shore and never a cliff: 0.2 on the continuous scale `shape_style` opens.
   test_pool: {
