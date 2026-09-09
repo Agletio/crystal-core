@@ -1,7 +1,7 @@
 # 0004 — the first animation: one creature, one walk, ONE picture
 
-**Status:** open. Do after 0002's revision round, or instead of it if you would
-rather answer the bigger question first.
+**Status:** DELIVERED. The identity question is answered YES. The gait is not
+a walk yet, and the style has one measured gap left.
 **Nothing is replaced.** This is a new creature on a scratch id.
 
 ## The question
@@ -88,4 +88,65 @@ is the answer to the real question and it costs one picture.
 
 ---
 ## Outcome
-_not yet_
+
+Delivery: `art/deliveries/0004-cave-prowler/`. Picture:
+`0004-outcome-onfloor.png` — Gaunt, Imp and the Prowler on the Fissure floor
+at 48px, shown 4x.
+
+### The question it was for: ANSWERED
+
+**One picture gives one creature.** The ears, hunched torso, long forearms and
+proportions hold across all six frames. The strip trick works, and that is the
+thing that was actually in doubt.
+
+### Two bugs in the importer, both caught before they cost anything
+
+1. **Rectangular cells.** The sheet came back 1881x836 — six cells of 313x836,
+   nowhere near square — and `stripcut` would have squashed each into the grid
+   and WIDENED the creature. Astra's notes flagged it before I ran it. There is
+   now one shared ink box across every cell, scaled uniformly, so aspect is kept
+   and no frame is silently recentred — which would hide a hitch rather than
+   show it.
+2. **56 inks against the house 24.** Measured: **124 of the 126 shipped bodies
+   hold exactly 24**. Mine took 56 and folded by plain RGB where every other
+   body import folds by redmean. Fixed, and it moved the value step from 11.1
+   to 12.8 on its own.
+
+### The gait is NOT a walk, and the numbers say so
+
+A contact pose plants a foot and reads WIDE at the bottom; a passing pose is
+narrow. Foot span, frame by frame:
+
+| | frame spans | reading |
+|---|---|---|
+| Gaunt (shipped, 4) | **37, 33**, 12, 12 | two contacts, two passes |
+| Prowler (6) | 19, 18, 17, **47**, 16, 16 | **one contact in six** |
+
+A walk needs two contacts alternating — left foot, then right. There is one.
+As drawn it will read as a hop or a limp, not a stride. Astra predicted this
+in her own notes before seeing any of it: *"the opposite contact intended for
+pose 4 does not read as an unambiguous reversal of pose 1."*
+
+Also 4px of vertical bob against the Gaunt's 2px, which is the frame-6 lift she
+flagged. Ink-box travel is 4.0px against the Gaunt's 2.5.
+
+### The style gap is now ONE number
+
+| | contour | clusters | value step | inks |
+|---|---|---|---|---|
+| shipped bodies | 42-60% | 4.5-9.7px | **17.5-24.2** | 24 |
+| Prowler | 61% | 6.1px | **12.8** | 24 |
+
+Contour and cluster size are already in range — it is not the outline and not
+the chunkiness. What is left is **the size of the jump between neighbouring
+values**: hers are about two thirds of the shipped step, which is what reads as
+smooth or rendered rather than drawn. That is in the SOURCE, not the
+conversion, and `styleread.mts` is the tool to aim at it.
+
+### Next
+
+Two corrections, one art and one drawing: **a second contact pose** so the
+walk alternates, and **harder value steps** — fewer, further apart. Nothing
+about the character needs changing.
+
+Imported to `prowler_astra`, measured, then reverted. No test rows ship.

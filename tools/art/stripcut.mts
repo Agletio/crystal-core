@@ -14,7 +14,7 @@
  */
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { decodePng } from './png.mts';
-import { debackground, fittedTogether } from './convert.mts';
+import { debackground, apart } from './convert.mts';
 
 const [id, file, framesArg, colsArg, state, gridArg] = process.argv.slice(2);
 if (!id || !file || !framesArg) throw new Error('stripcut.mts <id> <sheet.png> <frames> <cols> <state> [grid]');
@@ -23,27 +23,57 @@ const COLS = Number(colsArg || COUNT);
 const ROWS = Math.ceil(COUNT / COLS);
 const GRID = Number(gridArg ?? 96);
 const STATE = state ?? 'idle';
-const INKS = 56;
+/** What every shipped body settles to: measured, 124 of the 126 rows hold
+ *  exactly 24. A bigger palette is what makes a rendered picture read as
+ *  rendered — its value steps halve and the shading turns smooth. */
+const INKS = 24;
 
 type Png = { width: number; height: number; rgba: Uint8Array };
 const sheet = debackground(decodePng(readFileSync(file))) as Png;
 const cw = Math.floor(sheet.width / COLS), chh = Math.floor(sheet.height / ROWS);
 console.log(`${file} ${sheet.width}x${sheet.height} → ${COUNT} cells of ${cw}x${chh}`);
 
-/** One cell, area-averaged to the grid, premultiplied so edges keep their hue. */
+/** THE SHARED INK BOX, in cell-local pixels, over every cell at once. A cell
+ *  is rarely square — six figures across one wide sheet gives tall thin cells
+ *  — and squashing one into the grid would WIDEN the creature. One box, one
+ *  uniform scale, one offset: aspect kept, and no frame silently recentred,
+ *  which would hide a hitch rather than show it. */
+const shared = (() => {
+  let x0 = cw, y0 = chh, x1 = -1, y1 = -1;
+  for (let k = 0; k < COUNT; k++) {
+    const cx = (k % COLS) * cw, cy = Math.floor(k / COLS) * chh;
+    for (let y = 0; y < chh; y++) for (let x = 0; x < cw; x++) {
+      if (sheet.rgba[((cy + y) * sheet.width + cx + x) * 4 + 3] < 128) continue;
+      if (x < x0) x0 = x; if (x > x1) x1 = x;
+      if (y < y0) y0 = y; if (y > y1) y1 = y;
+    }
+  }
+  const w = x1 - x0 + 1, h = y1 - y0 + 1;
+  const scale = (GRID - 4) / Math.max(w, h);
+  return { x0, y0, w, h, scale,
+    offX: Math.round((GRID - w * scale) / 2), offY: Math.round((GRID - h * scale) / 2) };
+})();
+console.log(`  shared ink box ${shared.w}x${shared.h} at ${shared.scale.toFixed(3)}x, offset ${shared.offX},${shared.offY}`);
+
+/** One cell, area-averaged, premultiplied so edges keep their hue. */
 function cell(k: number): Uint8Array {
   const cx = (k % COLS) * cw, cy = Math.floor(k / COLS) * chh;
   const out = new Uint8Array(GRID * GRID * 4);
-  for (let y = 0; y < GRID; y++) for (let x = 0; x < GRID; x++) {
-    const sx0 = cx + Math.floor((x / GRID) * cw), sx1 = cx + Math.max(Math.floor(((x + 1) / GRID) * cw), Math.floor((x / GRID) * cw) + 1);
-    const sy0 = cy + Math.floor((y / GRID) * chh), sy1 = cy + Math.max(Math.floor(((y + 1) / GRID) * chh), Math.floor((y / GRID) * chh) + 1);
+  const dw = Math.round(shared.w * shared.scale), dh = Math.round(shared.h * shared.scale);
+  for (let y = 0; y < dh; y++) for (let x = 0; x < dw; x++) {
+    const sx0 = cx + shared.x0 + Math.floor((x / dw) * shared.w);
+    const sx1 = cx + shared.x0 + Math.max(Math.floor(((x + 1) / dw) * shared.w), Math.floor((x / dw) * shared.w) + 1);
+    const sy0 = cy + shared.y0 + Math.floor((y / dh) * shared.h);
+    const sy1 = cy + shared.y0 + Math.max(Math.floor(((y + 1) / dh) * shared.h), Math.floor((y / dh) * shared.h) + 1);
     let r = 0, g = 0, b = 0, a = 0, n = 0;
     for (let sy = sy0; sy < sy1 && sy < sheet.height; sy++) for (let sx = sx0; sx < sx1 && sx < sheet.width; sx++) {
       const i = (sy * sheet.width + sx) * 4, al = sheet.rgba[i + 3] / 255;
       r += sheet.rgba[i] * al; g += sheet.rgba[i + 1] * al; b += sheet.rgba[i + 2] * al;
       a += sheet.rgba[i + 3]; n++;
     }
-    const d = (y * GRID + x) * 4;
+    const px = x + shared.offX, py = y + shared.offY;
+    if (px < 0 || px >= GRID || py < 0 || py >= GRID) continue;
+    const d = (py * GRID + px) * 4;
     if (!n || a / n < 128) { out[d + 3] = 0; continue; }
     const cover = Math.max(1e-6, (a / n / 255) * n);
     out[d] = Math.min(255, Math.round(r / cover));
@@ -66,13 +96,14 @@ for (const c of cells) for (let i = 0; i < c.length; i += 4) {
 const order = [...count.entries()].sort((a, b) => b[1] - a[1]).map(([h]) => h);
 const kept = order.slice(0, INKS);
 const rgbOf = (h: string) => [1, 3, 5].map((o) => parseInt(h.slice(o, o + 2), 16));
+// REDMEAN, the same distance every other body import uses — plain RGB drifts
+// hue where this does not.
 const fold = new Map(order.map((h) => {
   if (kept.includes(h)) return [h, h];
-  const [r, g, b] = rgbOf(h);
+  const mine = rgbOf(h) as [number, number, number];
   let best = kept[0], far = Infinity;
   for (const k of kept) {
-    const [kr, kg, kb] = rgbOf(k);
-    const d = (r - kr) ** 2 + (g - kg) ** 2 + (b - kb) ** 2;
+    const d = apart(mine, rgbOf(k) as [number, number, number]);
     if (d < far) { far = d; best = k; }
   }
   return [h, best];
@@ -96,7 +127,6 @@ let frames = cells.map((c) => {
   }
   return rows;
 });
-frames = fittedTogether(frames, 2);
 
 const states = { [STATE]: frames.map((_, i) => i) };
 const row = `  ${id}: {
