@@ -49,6 +49,6 @@ suite said, and anything the delivery taught.
 
 | # | job | status |
 |---|---|---|
-| 0002 | redo three skill icons — the test | open — **do this first** |
+| 0002 | redo three skill icons — the test | **delivered: the answer is yes** |
 | 0003 | the Gale icon, which the old generator never drew | open — after 0002 |
 | 0001 | the cut rock face, currently near-black | open |

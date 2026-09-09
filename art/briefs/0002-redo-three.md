@@ -1,6 +1,6 @@
 # 0002 — redo three skill icons: the test that decides the rest
 
-**Status:** open — **do this first, before 0001 and 0003.**
+**Status:** DELIVERED and measured. The answer is yes.
 **A test, not a job. Nothing is deleted and nothing is replaced.** The three
 shipped icons stay exactly where they are; yours are put beside them and we
 look at the pair.
@@ -99,4 +99,53 @@ they cost three pictures.
 
 ---
 ## Outcome
-_not yet_
+
+**Astra's three are better than the shipped three, at ship size, on all
+three.** Pictures: `0002-outcome-pairs.png` (8x, shipped left) and
+`0002-outcome-shipsize.png` (34px and 44px on the real panel, shipped left).
+
+### What arrived, and what the conversion did
+
+The raw sources came back **1254x1254, 40-48,000 colours, 17-27% part-alpha**
+against a spec of 48x48, 12-14 colours and binary alpha — the tool ignored all
+three, and Astra said so in her notes rather than presenting them as finished.
+That is the delivery working: the fault was reported, not hidden.
+
+`downsize.mts` is the fix and it belongs on this side of the seam. After it:
+
+| | colours | alpha | gentle steps |
+|---|---|---|---|
+| raw source | 40-48,000 | 17-27% soft | 88-93% |
+| **converted** | **15-20** | **hard** | **0-2%** |
+| shipped rows | 12-15 | hard | 0-7% |
+
+So the converted files are inside the shipped range on every axis the
+importer cares about, and `portrait.mts` took all three without complaint.
+
+### The finding
+
+**Ambush is the clearest result.** The shipped icon nearly disappears on the
+panel — a thin dark-purple vertical smear with scattered noise around it, at
+the size a player sees it. Astra identified that from the live game before
+drawing anything, made the blade broader and put a bright edge on it, and the
+result reads at 34px where the original does not. **Strike** is the same story
+smaller: the shipped blade is speckled, hers is a solid form with one decisive
+light edge. **Fireball** is the closest — both work — but hers has the
+stronger silhouette and reads as moving.
+
+### What this does NOT establish
+
+The single-picture path only: one image, one table row. It says nothing about
+character consistency across facings, animation, or tilesets — which is why
+the staging in `PIPELINE.md` puts bodies last. Astra wrote the same caveat
+herself, unprompted, which is worth as much as the art.
+
+Astra's own notes hold three follow-ups worth doing: her Ambush is long enough
+to read as Strike's silhouette at a glance, its detached purple echo may read
+as debris, and both blades carry more ornament than the shipped set does.
+
+### Housekeeping
+
+Imported to `sk_*_astra` scratch ids to prove the path end to end, then
+**reverted** — no test rows ship. Redoing it is three `portrait.mts` calls.
+Nothing was overwritten at any point.
