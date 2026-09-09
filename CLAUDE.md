@@ -80,7 +80,15 @@ table is in the `harness` skill, along with every quirk and flake. Build before 
   `ladderCharacter` walks its tree at random and splits its attributes four
   ways; `bestBuild` searches plate, lines, attributes, passives, mover and a
   greedy tree walk, then PLAYS its shortlist because the sheet cannot see a
-  pack. Measured across bands 1, 3 and 6, the second is **1.5× to 6.2×** the
+  pack — **and PLAYS its passive set too** (`playPassives`), because
+  `buildPower` is a SHEET number and a passive whose worth is a RULE is worth
+  nothing to it: scoring alone took `surge+contagion+bloodpact` for strike AND
+  for shockwave, two skills with nothing in common. Played, four skills share
+  no passive at all and the rule-shaped ones — Glass, Brink, Aftershock,
+  Bulwark, Rimeheart — get picked. **It cost +36% a build and 2 minutes on the
+  demo, and it moved no gauge**: the ratio below is `buildPower` over
+  `buildPower`, so the one number that reports the search cannot see the search
+  getting better. Measured across bands 1, 3 and 6, the second is **1.5× to 6.2×** the
   first — so anything tuned until the floor dies is off by that much, which is
   what made the whole game clearable at 89% life or better. The top of that
   spread WIDENED from 3.0× when the passive shelf tripled, because the search

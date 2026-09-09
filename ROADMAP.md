@@ -1563,7 +1563,7 @@ only adds is a passive every build takes.
       moved not at all — it is the ceiling that grew, because the search picks
       three passives out of 24 where a random walk picks none of them well.
       `CLAUDE.md` carries the new figure.
-- [~] **THE SEARCH PICKS THE SAME THREE PASSIVES WHATEVER THE SKILL, and that
+- [x] **THE SEARCH PICKS THE SAME THREE PASSIVES WHATEVER THE SKILL, and that
       is why it cannot judge a rule.** `playPassives` LANDED — the sheet's pick
       is one candidate and `played` decides between it and `PASSIVE_TRIES`
       drawn sets, two-stage on the winner rather than doubling the shortlist,
@@ -1575,7 +1575,12 @@ only adds is a passive every build takes.
       rimeheart+surge`, rimespike `bulwark+sundering+contagion`. Twelve distinct
       passives where the sheet used three, and the rule-shaped ones it could
       never see — Glass, Brink, Aftershock, Bulwark, Rimeheart — are picked.
-      **What is left is the demo's own wall clock, being timed now.** Measured at band 6 for both strike and
+      **DONE.** The demo runs 52 minutes against ~50, and every gauge it
+      reports is UNCHANGED — 1.5x–6.2x, low water 67–99%, the deep end 3/4, the
+      endgame wall 0 of 8. That is the finding, not a disappointment: the
+      picks got diverse without silently re-baselining the game's balance, and
+      the `1.5x–6.2x` gauge is `buildPower` over `buildPower`, so the one number
+      that reports the search is blind to the search improving. Measured at band 6 for both strike and
       shockwave, `bestBuild` took `surge+contagion+bloodpact` — the same set, on
       two skills with nothing in common. It scores passives off `buildPower`,
       which is a SHEET number, so a passive whose worth is a RULE the sheet
