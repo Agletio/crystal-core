@@ -5892,8 +5892,8 @@ export const SKILLS: SkillDef[] = [
     name: 'Rimeheart',
     category: 'passive',
     description:
-      'All your damage is Converted to Cold and every hit you land Chills, and ' +
-      'you deal 25% less damage.',
+      'All your damage is Converted to Cold and every hit you land Chills twice, ' +
+      'and you deal 25% less damage.',
     tags: ['passive'],
     behaviour: 'no_cast',
     damageTypes: [],
@@ -5902,7 +5902,7 @@ export const SKILLS: SkillDef[] = [
     rateMultiplier: 1,
     manaCost: 0,
     range: 0,
-    grants: { convertTree: 'cold', ailmentChance: 100, damageScale: 0.75 },
+    grants: { convertTree: 'cold', ailmentChance: 200, damageScale: 0.75 },
   },
 
   // Never cast either: `RunSim` reads these params off the equipped slot and
