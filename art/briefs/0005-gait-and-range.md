@@ -1,6 +1,7 @@
 # 0005 — the two things stopping a body from landing
 
-**Status:** open, and both are corrections to art already made. Nothing about
+**Status:** `superseded by 0006` — its two findings stand and are carried into
+0006: the walk needs two contacts on opposite feet, and light is per zone.
 either character needs redesigning.
 
 Measured on the Cave Prowler (0004) and the Demonic Witch (0005 v1). The Witch

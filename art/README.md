@@ -19,6 +19,7 @@ https://raw.githubusercontent.com/Agletio/crystal-core/refs/heads/main/
 
 | read this | why |
 |---|---|
+| `art/WORKFLOW.md` | **how work is handed over, and what can actually wake whom** |
 | `art/CONTRACT.md` | who owns what, and what to do when a job crosses the line |
 | `art/PIPELINE.md` | **how art actually ships.** Read before drawing anything |
 | `art/decisions/LIGHT.md` | light and colour per zone, measured off the roster |

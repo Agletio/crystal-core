@@ -1,6 +1,6 @@
 # 0001 — the cut rock face, currently near-black
 
-**Status:** open
+**Status:** `open` — Astra's call, including the call to redo it from scratch.
 **Handed over mid-flight.** Claude had generated candidates and was waiting on
 the user when art direction moved to Astra. Everything below is what was
 learned; the decision is Astra's, including the decision to throw all of it

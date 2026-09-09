@@ -1,6 +1,7 @@
 # 0002 — redo three skill icons: the test that decides the rest
 
-**Status:** DELIVERED and measured. The answer is yes.
+**Status:** `integrated` — the icons were measured, imported to scratch ids and
+reverted; the finding is in the Outcome. Nothing further is asked of Astra.
 **A test, not a job. Nothing is deleted and nothing is replaced.** The three
 shipped icons stay exactly where they are; yours are put beside them and we
 look at the pair.

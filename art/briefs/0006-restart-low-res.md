@@ -1,6 +1,8 @@
 # 0006 — restart: 48 pixels, and motion over detail
 
-**Status:** the size test LANDS. One cast still at a true 48 grid, needing no
+**Status:** `open` — the size test landed (see the Outcome). What is still
+wanted is the WALK at this grid: four frames, two contacts on opposite feet,
+and the highlight brought from 238 into 110-150.
 conversion at all. One thing sits outside the game's register — see the outcome.
 
 ## What was wrong, and it was the brief

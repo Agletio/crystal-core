@@ -35,7 +35,8 @@ if (briefs.length) {
   parts.push('\n\n---\n\n# ── OPEN BRIEFS ──\n');
   for (const f of briefs) {
     const body = readFileSync(`art/briefs/${f}`, 'utf8');
-    if (/\*\*Status:\*\*\s*(integrated|dropped)/.test(body)) continue;
+    // A finished or overtaken brief is history; the pack carries what is live.
+    if (/\*\*Status:\*\*\s*`?(integrated|dropped|superseded)/.test(body)) continue;
     parts.push(`\n\n## ${f}\n\n${body}`);
     // A brief's pictures sit beside it under the same NUMBER — not the same
     // stem, so a picture can be named for what it shows.

@@ -1,6 +1,7 @@
 # 0003 — the Gale icon: the one subject the old generator could not draw
 
-**Status:** open — **after 0002.** If the redo test says the pipeline works,
+**Status:** `open` — the pipeline is proven, so this is the first icon the game
+actually gains. Lower priority than 0006.
 this is the first icon the game actually gains.
 
 ## Why this one

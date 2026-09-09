@@ -1,6 +1,7 @@
 # 0004 — the first animation: one creature, one walk, ONE picture
 
-**Status:** DELIVERED. The identity question is answered YES. The gait is not
+**Status:** `superseded by 0006` — its finding stands (identity holds across
+frames in one generation); its approach does not.
 a walk yet, and the style has one measured gap left.
 **Nothing is replaced.** This is a new creature on a scratch id.
 
