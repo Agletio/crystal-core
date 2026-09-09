@@ -27,6 +27,12 @@ Two folders carry the word "art" and they are different things:
 
 A brief and its delivery share a number. `0007-frozen-overlay` on both sides.
 
+## Setting Astra up
+
+`SETUP.md` is the owner's fifteen minutes, once. `ASTRA.md` is the role prompt
+to paste into her. `node tools/astra-pack.mjs` bundles this whole desk into
+one uploadable file — re-run it whenever the desk changes.
+
 ## Reading order for Astra, first time
 
 1. `CONTRACT.md` — who owns what, and what to do when a job crosses the line.
