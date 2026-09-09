@@ -2,8 +2,8 @@
 
 ## Current connected setup
 
-GitHub read and write access has been verified, and the hourly ChatGPT art
-handoff check is enabled. Follow [AUTOMATION.md](AUTOMATION.md) to create the
+GitHub read and write access has been verified. The hourly ChatGPT art
+handoff check is paused; the owner wants event-triggered ready-work handoffs. Follow [AUTOMATION.md](AUTOMATION.md) to create the
 Claude **Cloud** routine and verify the first complete exchange. That file
 carries the current setup status and the exact routine prompt.
 
