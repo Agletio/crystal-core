@@ -467,29 +467,66 @@ export const DEBUFF_ART: Record<string, string> = {
   exposure: 'db_exposure',
 };
 
-/** UNDER the body, so what shows is what sticks out past the silhouette: an
- *  outline outside the art, the only light a body may wear. */
-export const DEBUFF_BEHIND = new Set(['frozen']);
+/** WHAT EACH ONE DOES ON THE BODY. One still becomes a stream by drawing it at
+ *  several points of one loop, so flame RISES and blood FALLS off one picture.
+ *  `span` and `y` are shares of the body. */
+interface DebuffMotion {
+  drift: number; // body-heights travelled over a loop; negative rises
+  each: number; // seconds one copy takes
+  copies: number; // at one stack, before `stacks` thickens it
+  span: number;
+  y: number;
+  alpha: number;
+  under?: number; // ENCASED: the same still under the body too, at this alpha
+}
 
-/** Where one goes and how big, in world units. `null` is nothing to draw. */
-export function debuffOverlay(
+const DEBUFF_MOTION: Record<string, DebuffMotion> = {
+  // ENCASED, not outlined: one still held over the whole body, see-through, so
+  // the thing inside still reads. *"It should look like ice they are
+  // encapsulated in."*
+  frozen: { drift: 0, each: 1, copies: 1, span: 1.15, y: -0.5, alpha: 0.3, under: 1 },
+  burn: { drift: -0.55, each: 0.7, copies: 3, span: 0.5, y: -0.45, alpha: 0.85 },
+  curse: { drift: -0.45, each: 1.1, copies: 2, span: 0.55, y: -0.5, alpha: 0.7 },
+  bleed: { drift: 0.5, each: 0.8, copies: 3, span: 0.4, y: -0.55, alpha: 0.9 },
+  poison: { drift: 0.4, each: 1.1, copies: 2, span: 0.5, y: -0.6, alpha: 0.85 },
+  shock: { drift: 0, each: 0.18, copies: 1, span: 0.75, y: -0.5, alpha: 0.9 },
+  chill: { drift: 0, each: 1.6, copies: 2, span: 0.45, y: -0.5, alpha: 0.75 },
+  exposure: { drift: 0, each: 1.4, copies: 2, span: 0.6, y: -0.5, alpha: 0.75 },
+};
+
+/** Every copy to draw this frame, in world units. Empty is nothing to draw. */
+export function debuffPuffs(
   id: string,
   stacks: number,
   head: number,
   size: number,
   elapsed: number
-): { x: number; y: number; span: number; alpha: number } | null {
-  if (stacks <= 0 || !DEBUFF_ART[id]) return null;
-  // A CASING is the body's size; the rest ride over its middle at about half.
-  const shell = id === 'frozen';
-  const weight = Math.min(1, stacks / 4);
-  const beat = Math.sin(elapsed * (shell ? 1.6 : 3.4) + stacks);
-  return {
-    x: 0,
-    y: -head * (shell ? 0.5 : 0.55),
-    span: size * (shell ? 1.25 : 0.62) * (1 + beat * 0.04),
-    alpha: shell ? 0.95 : 0.5 + 0.3 * weight + 0.12 * beat,
-  };
+): { x: number; y: number; span: number; alpha: number; flip: boolean; under: boolean }[] {
+  const m = DEBUFF_MOTION[id];
+  if (stacks <= 0 || !m || !DEBUFF_ART[id]) return [];
+  const many = Math.min(m.copies + Math.floor(Math.min(stacks, 6) / 3), m.copies + 2);
+  const out: { x: number; y: number; span: number; alpha: number; flip: boolean; under: boolean }[] = [];
+  for (let i = 0; i < many; i++) {
+    // Each copy on its own point of the loop, or they move in lockstep and
+    // read as one thing flashing rather than as a stream.
+    const seed = i * 2.399;
+    const t = m.drift === 0 ? 0 : (elapsed / m.each + seed) % 1;
+    const wide = m.drift === 0 && many > 1 ? Math.sin(seed * 4.7) * size * 0.2 : Math.sin(seed * 4.7) * size * 0.13;
+    // A still cannot flicker: a static one breathes, a drifting one fades out.
+    const beat = Math.sin(elapsed * 3.1 + seed);
+    out.push({
+      x: wide,
+      y: head * m.y + m.drift * head * t,
+      span: size * m.span * (m.drift === 0 ? 1 + beat * 0.05 : 1 - t * 0.3),
+      alpha: m.alpha * (m.drift === 0 ? 0.85 + 0.15 * beat : Math.min(1, 3 * t) * (1 - t)),
+      flip: i % 2 === 1,
+      under: false,
+    });
+  }
+  if (m.under !== undefined && out.length > 0) {
+    out.unshift({ ...out[0], alpha: m.under, under: true });
+  }
+  return out;
 }
 
 /** How fast each one moves off the body. Frost and Exposure orbit instead. */
@@ -2012,9 +2049,11 @@ export function pixelDisc(origin: Vec2, radius: number): FirePixel[] {
 const SPIKE_TTL = 0.3; // the cast's own, when nothing is standing
 const SPIKE_UP = 0.1; // seconds the blade takes to come up, however long it stands
 const SPIKE_GONE = 0.2; // and to sink back
-/** How tall the blade stands for the radius it covers, and how far its foot
- *  sinks below the spot: the art's own ragged base wants burying a little. */
-export const SPIKE_TALL = 2.1;
+/** How WIDE the blade stands for the radius it covers, how much it is squashed
+ *  vertically against that, and how far its foot sinks below the spot: the
+ *  art's own ragged base wants burying a little. */
+export const SPIKE_TALL = 0.52;
+export const SPIKE_SQUAT = 0.8;
 export const SPIKE_ROOT = 0.12;
 
 /** IN SECONDS, not in the fraction of a life: a spike that STANDS for four is

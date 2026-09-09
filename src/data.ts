@@ -150,6 +150,11 @@ export const MONSTER_AILMENT = {
   topDanger: 820,
   /** What one leaves over its whole run, as a share of the hit that left it. */
   share: 1.2,
+  /** THE HERO'S OWN FREEZE BAR, in stacks of Chill — not the monsters' 8, which
+   *  is tuned for a hero Chilling every swing. Measured at the bottom of the
+   *  climb, what lands on HIM peaks at 4, so that bar is one he cannot reach.
+   *  His ward scales this, so a full one is never Frozen. */
+  freezeAt: 3,
 };
 
 /** A STRAIGHT LINE IN DANGER, and UNCLAMPED: exactly 0 at the bare Fissure, and

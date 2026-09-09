@@ -3766,7 +3766,7 @@ export class RunSim {
     // stacks. Nothing new decides it — `hide` is already the one seam.
     if (target.kind === 'hero') {
       if (worth <= 0 || !def.freezeAt) return;
-      const bar = Math.ceil(def.freezeAt / worth);
+      const bar = Math.ceil(MONSTER_AILMENT.freezeAt / worth);
       if (stacks < bar) return;
       // NEVER `thawed`: that hands the next hit a Critical, and a monster
       // critting is a second damage source no danger number accounts for.

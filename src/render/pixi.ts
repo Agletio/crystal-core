@@ -25,9 +25,8 @@ import {
   arrowFlight,
   auraLook,
   ailmentMarks,
-  debuffOverlay,
+  debuffPuffs,
   DEBUFF_ART,
-  DEBUFF_BEHIND,
   damageColour,
   bossTelegraph,
   dazeMarks,
@@ -44,6 +43,7 @@ import {
   spikeAlpha,
   SPIKE_ROOT,
   SPIKE_TALL,
+  SPIKE_SQUAT,
   speedLines,
   leapArc,
   sweepRing,
@@ -1218,34 +1218,31 @@ export async function createPixiRenderer(
     for (const e of [state.hero, ...state.monsters]) {
       if (e.dead) continue;
       const head = e.scale * (anchorY(e) - bodyTop(e.sprite));
-      // HELD IN THE ICE, and only a Freeze: a Pin and the boss's Fall write the
-      // same hold and neither is made of ice. Under the body, so what reads is
-      // the casing sticking out past the silhouette.
-      if ((e.stun ?? 0) > 0 && e.stunKind === 'freeze') {
-        const shell = debuffOverlay('frozen', 1, head, e.scale, state.elapsed);
-        const ice = shell && vfxTexture(DEBUFF_ART.frozen);
-        if (shell && ice) {
-          const s = effectSprite(ice, shell.span, true);
+      /** Every copy of one debuff's picture, over the body. */
+      const wear = (id: string, stacks: number) => {
+        const art = DEBUFF_ART[id] ? vfxTexture(DEBUFF_ART[id]) : null;
+        if (!art) return false;
+        for (const puff of debuffPuffs(id, stacks, head, e.scale, state.elapsed)) {
+          const s = effectSprite(art, puff.span, puff.under);
           s.anchor.set(0.5);
-          s.position.set(cx(e.x) + shell.x, cy(e.y) + shell.y);
-          s.alpha = shell.alpha;
+          s.position.set(cx(e.x) + puff.x, cy(e.y) + puff.y);
+          s.alpha = puff.alpha;
+          if (puff.flip) s.scale.x *= -1; // one still, two ways round
         }
-      }
+        return true;
+      };
+
+      // HELD IN THE ICE, and only a Freeze: a Pin and the boss's Fall write the
+      // same hold and neither is made of ice. OVER the body and see-through, so
+      // it reads as a thing encased rather than as a thing behind glass.
+      if ((e.stun ?? 0) > 0 && e.stunKind === 'freeze') wear('frozen', 1);
       if (e.ailments.length === 0) continue;
       for (const def of AILMENTS) {
         const stacks = e.ailments.reduce((n, a) => n + (a.id === def.id ? 1 : 0), 0);
         if (stacks === 0) continue;
         // THE PICTURE WINS where one has been drawn; the blocks stay for an
         // ailment nobody has generated yet, and canvas2d keeps them either way.
-        const worn = debuffOverlay(def.id, stacks, head, e.scale, state.elapsed);
-        const art = DEBUFF_ART[def.id] ? vfxTexture(DEBUFF_ART[def.id]) : null;
-        if (worn && art) {
-          const s = effectSprite(art, worn.span, DEBUFF_BEHIND.has(def.id));
-          s.anchor.set(0.5);
-          s.position.set(cx(e.x) + worn.x, cy(e.y) + worn.y);
-          s.alpha = worn.alpha;
-          continue;
-        }
+        if (wear(def.id, stacks)) continue;
         const colour = toHexNumber(damageColour(palette, def.type));
         const edge = toHexNumber(palette.void);
         for (const m of ailmentMarks(def.id, stacks, head, e.scale, state.elapsed)) {
@@ -1440,6 +1437,7 @@ export async function createPixiRenderer(
         if (ice) {
           const tall = radius * SPIKE_TALL;
           const art = effectSprite(ice, tall);
+          art.scale.y *= SPIKE_SQUAT; // squatter than the art, which is drawn tall
           art.anchor.set(0.5, 1); // it STANDS on the spot it came up through
           art.x = cx(from.x);
           art.y = cy(from.y) + SPIKE_ROOT;

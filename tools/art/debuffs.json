@@ -4,7 +4,7 @@
  "_inks": "The game's OWN damage colours out of the stylesheet \u2014 ember #C4483A fire, quartz #6FC7E8 cold, citrine #D9A441 lightning, venom #9BD13A poison, amethyst #8B4FD1 dark, bone #C9BFA3 light, hurt #8E2B22 blood \u2014 each with a dark and a light either side, because generated art is baked hex and cannot recolour.",
  "size": 64,
  "grid": 48,
- "how": " A single EFFECT drawn ON a small creature: ONE thing centred, seen straight from the side, with a HOLLOW EMPTY MIDDLE so the body underneath shows through. BOLD readable silhouette, chunky shapes, few colours, lit only by itself. Transparent background. NOT a scene, NOT a landscape, NOT a character, NOT a creature, NOT a body, NOT a face, NOT a hand, NOT a ground shadow, NOT text, NOT a border, NOT a frame, NOT a solid disc.",
+ "how": " A single EFFECT drawn OVER a small creature: ONE kind of thing, seen straight from the side, SPARSE with plenty of empty transparent space so the body underneath still shows. BOLD readable silhouette, chunky shapes, few colours, lit only by itself. Transparent background. NOT a scene, NOT a landscape, NOT a character, NOT a creature, NOT a body, NOT a face, NOT a hand, NOT a ground shadow, NOT text, NOT a border, NOT a frame, NOT a solid disc.",
  "inks": [
   "#07080A",
   "#FFFFFF",
@@ -43,35 +43,35 @@
  "icons": [
   {
    "id": "db_frozen",
-   "say": "a hollow SHELL of clear pale blue ice, an empty ragged CASING with a big open hole straight through the middle of it, seen from the side: thick jagged crystal walls all the way round the outside and NOTHING AT ALL in the centre, spiky facets pointing outward, NOT a solid block, NOT a filled circle, NOT a gemstone, NOT a snowflake, NOT a creature."
+   "say": "a SOLID rounded lump of clear pale blue ICE filling the whole frame, one thick block of frozen water with NO HOLE in it, translucent with pale white highlights and chunky angular facets, a hard dark blue edge all round, NOT a ring, NOT a hoop, NOT a hollow shell, NOT a gemstone, NOT a snowflake, NOT a creature, NOT a face."
   },
   {
    "id": "db_burn",
-   "say": "a ring of ragged orange-red FLAMES licking upward, tallest at the sides and open through the middle so there is a clear empty gap in the centre, each tongue of fire a separate ragged shape with a bright pale core, NOT a fireball, NOT a solid blob, NOT a torch, NOT a candle, NOT a creature, NOT smoke."
+   "say": "three or four separate ragged TONGUES OF FLAME rising straight upward, each one taller than it is wide and narrowing to a whipping tip, bright pale gold cores inside orange-red edges, a few loose embers flying off the tops, spread apart with clear gaps between them, NOT a ring, NOT a hoop, NOT a circle, NOT a fireball, NOT a torch, NOT a creature."
   },
   {
    "id": "db_bleed",
-   "say": "a RING of dark red BLOOD DROPLETS and thrown spatter, open through the middle so there is a clear empty gap in the centre, each drop a separate fat teardrop flung outward, NOT a puddle, NOT a dome, NOT a helmet, NOT a creature, NOT a solid disc."
+   "say": "four or five separate DROPS OF BLOOD falling straight downward in a loose vertical trail, dark red, each a fat rounded teardrop with its point upward, the lowest one biggest and stretched into a thin streak, spread apart with clear gaps between them, NOT a ring, NOT a hoop, NOT a circle, NOT a puddle, NOT a splash, NOT a creature."
   },
   {
    "id": "db_chill",
-   "say": "a RING of pale blue FROST FLAKES and thin rime needles, open through the middle so there is a clear empty gap in the centre, each flake a separate sharp sliver pointing outward, NOT a snowball, NOT a solid blob, NOT a cloud, NOT a creature, NOT a gemstone."
+   "say": "a spray of sharp pale blue RIME NEEDLES growing outward from one corner like frost creeping across glass, long thin spines fanning out and getting shorter toward the tips, NOT a ring, NOT a hoop, NOT a circle, NOT a snowflake, NOT a solid block, NOT a gemstone, NOT a creature."
   },
   {
    "id": "db_shock",
-   "say": "a RING of short jagged pale gold LIGHTNING forks crackling outward, open through the middle so there is a clear empty gap in the centre, each fork a separate sharp zigzag with a white-hot core, NOT flames, NOT fire, NOT a cloud, NOT a plate, NOT a creature, NOT a solid disc."
+   "say": "one jagged FORK OF LIGHTNING running from the top of the frame to the bottom in a sharp zigzag, pale gold with a white-hot core, two short branches splitting off it and a few loose sparks, NOT a ring, NOT a hoop, NOT a circle, NOT flames, NOT fire, NOT a cloud, NOT a creature."
   },
   {
    "id": "db_poison",
-   "say": "a RING of swollen sickly green BUBBLES, open through the middle so there is a clear empty gap in the centre, each bubble a separate round blister and some of them burst open, NOT a skull, NOT a face, NOT a creature, NOT a plant, NOT a solid disc."
+   "say": "thick sickly green OOZE running downward in three long connected strands that hang and stretch, each strand ending in a fat swollen pendant drop about to fall, glossy and slimy, NOT separate droplets, NOT a ring, NOT a hoop, NOT a circle, NOT a puddle, NOT a plant, NOT a skull, NOT a creature."
   },
   {
    "id": "db_curse",
-   "say": "a RING of thin ragged dark violet SMOKE tendrils curling outward, open through the middle so there is a clear empty gap in the centre, each tendril a separate torn wisp, NOT a creature, NOT a face, NOT a ghost, NOT a hand, NOT a solid disc."
+   "say": "two torn ribbons of dark violet SMOKE rising and twisting upward, wispy and ragged and fraying apart at the tops, spread apart with a clear gap between them, NOT a ring, NOT a hoop, NOT a circle, NOT a cloud, NOT a ghost, NOT a face, NOT a creature."
   },
   {
    "id": "db_exposure",
-   "say": "a ring of thin pale bone-white CRACKS radiating outward from an empty middle like broken glaze, sharp hairline splits with nothing filling the centre, NOT a solid circle, NOT a sun, NOT a star, NOT a web, NOT a creature, NOT a face."
+   "say": "a STARBURST of thin pale bone-white CRACKS splitting outward from one point like a struck pane, sharp hairline splits of uneven length radiating in every direction, NOT a ring, NOT a hoop, NOT a circle, NOT a sun, NOT a star shape, NOT a web, NOT a creature."
   }
  ]
 }
