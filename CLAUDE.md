@@ -7,14 +7,17 @@ Two files: **this one** (always true, always loaded) and **`ROADMAP.md`** (the
 work that is left). Everything domain-specific is a SKILL — load it when you
 touch that domain, not before.
 
+**Claude builds the game; ASTRA directs the art.** `art/` is the seam between
+them and `art/CONTRACT.md` is the split. Read it before touching a picture.
+
 | skill | load before |
 |---|---|
-| `art` | spending a generation on anything: bodies, tilesets, icons, fixtures |
+| `art` | **ASTRA'S — read it to brief her or to import a delivery, never to make art.** The pipeline, its costs and every trap it has already paid for |
 | `renderer` | `src/render/`, `src/vignettes.ts`, the carve in `src/sim/grid.ts` |
 | `systems` | `src/sim/`, `src/data.ts`, `src/trees/`, `src/trades/`, `src/moves/`, `src/trials/`, `src/game/`, `src/crafting.ts` |
 | `screens` | `src/ui/`, `src/web.ts`, `docs/index.html` |
 | `harness` | a failing, flaking or hanging check; adding one |
-| `critique` | judging the ART: the creative director shoots and approves a set, three critics score it 1–10 against Steam's pixel-art indies — after a large art change, and at the end of every phase until all three give 8 |
+| `critique` | **ASTRA'S CALL to run or retire** — the creative director shoots a set and three critics score it 1–10 against Steam's pixel-art indies. Claude may still run it to SHOOT the game for a brief; judging the result is art direction |
 
 ## The cycle
 
@@ -141,16 +144,23 @@ table is in the `harness` skill, along with every quirk and flake. Build before 
 - **There are no image files, and no binary assets.** Every sprite is a list of
   strings or a data URI in TypeScript. Adding one is a change to how the game
   ships, not an art decision.
-- **ART IS GENERATED, never hand-written.** *The user's call: "make sure you're
-  using the pixel lab art generator and not creating art yourself. We need it to
-  match the rest of the art."* A grid typed out by hand does not sit beside a
-  roster that came off one generator with one forced palette, however readable
-  it is on its own. **Load the `art` skill and use the pipeline** — `icons.json`
-  → `icon.mts` → `portrait.mts` for an icon, `bodies.json` → `body.mts` for a
-  body, `zoneset.mts` for a floor, `uikit.mts` for a fixture. **A DESIGN IS
-  SHOWN TO THE USER AND APPROVED BY HIM BEFORE ANYTHING IS ROTATED, ANIMATED OR
-  DRESSED** — *"you're supposed to give me sample images before you begin making
-  animations or additional generations for characters."* **GEAR HAS NO
+- **THE ART IS ASTRA'S, AND CLAUDE DOES NOT MAKE IT.** *The user's call:
+  "I want to have gpt6 Astra be the art director and do all art
+  creation/direction from here on out… you're the main developer."* Claude owns
+  systems, logic, UI implementation, data, saves, performance and **the
+  INTEGRATION of art**; Astra owns visual style, assets, palettes, animation
+  and the art tooling. **`art/` is the seam** — `CONTRACT.md` is who owns what,
+  `PIPELINE.md` how art ships, a `briefs/` file is what Claude asks for and a
+  `deliveries/` folder is what comes back. **Claude does not redesign the look,
+  modify source art, make competing assets, or replace an asset because it
+  could look better.** A picture the game needs is a BRIEF, not a generation;
+  what Claude still owns is the renderer seam — where a picture is drawn, its
+  anchor, its layer, its beat — because that is draw order and hit testing.
+  Anything in `decisions/` is standing art direction and is followed like this
+  file. **A DESIGN IS STILL SHOWN TO THE USER AND APPROVED BEFORE ANYTHING IS
+  ROTATED, ANIMATED OR DRESSED** — *"you're supposed to give me sample images
+  before you begin making animations or additional generations for
+  characters."* **GEAR HAS NO
   FALLBACK AT ALL**: all 59 `GearBase.art` keys are generated rows, the
   hand-drawn silhouettes behind them were deleted, and the demo fails a base
   with no icon — *"delete all of that old self made crap and use the new
