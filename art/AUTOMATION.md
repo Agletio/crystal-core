@@ -3,14 +3,32 @@
 ## Setup status — 2026-09-09
 
 - GitHub reads succeeded as Agletio; GitHub reports pull, push and admin permission.
-- ChatGPT automation **Crystal Core art handoffs** is enabled, checking hourly.
+- ChatGPT automation **Crystal Core art handoffs** is **paused** at the owner's request; no hourly checks are enabled.
 - Claude cloud routine: **not configured or verified from this session**.
 - The complete art-production and integration loop has **not** passed an unattended run.
 
 This file is the shared setup record. A successful file commit proves repository
 writing, not image-generation availability in a future run or Claude activation.
 
-## Claude: one-time setup
+## Event-triggered handoff plan — supersedes hourly setup below
+
+The owner prefers a ready-work event over polling to avoid idle checks and
+hour-long handoff delays. GitHub PR event support has been verified on both
+sides. Neither event subscription has been configured yet.
+
+The intended signal is a ready art-request PR for Astra and a ready delivery
+PR for Claude. Filter each direction by a distinct title prefix and trigger
+only on opening or marking ready, not every comment or commit. Processing must
+deduplicate by brief and delivered revision, and read the event PR's actual
+head contents rather than assuming an unmerged brief is already on main.
+
+Claude setup should use a **GitHub event** trigger with no schedule.
+Do not create the hourly routine described in the historical instructions below.
+A configured trigger starts a new cloud session; delivery latency, execution
+tools and account limits still apply. Event receipt and a complete handoff
+remain untested.
+
+## Previous hourly setup — reference only
 
 Open [Claude Routines](https://claude.ai/code/routines), create a **Cloud**
 routine named **Crystal Core art integration**, select **Agletio/crystal-core**
