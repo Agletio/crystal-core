@@ -4243,35 +4243,6 @@
      "frames": 5
     }
    }
-  },
-  {
-   "grid": 48,
-   "inks": 24,
-   "luma": 45,
-   "sprite": "witch",
-   "character": "b80b4cb4-d314-4a2a-adb6-cc27341e5911",
-   "dirs": [
-    "south-east"
-   ],
-   "states": {
-    "idle": {
-     "group": ""
-    },
-    "walk": {
-     "group": ""
-    },
-    "attack": {
-     "group": ""
-    },
-    "cast": {
-     "group": ""
-    },
-    "death": {
-     "group": ""
-    }
-   },
-   "robed": true,
-   "stride": 1.15
   }
  ],
  "props": [

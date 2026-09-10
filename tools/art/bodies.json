@@ -3035,36 +3035,6 @@
    "character": "d6449585-4c2b-4bcf-a086-395f722b2e88"
   },
   {
-   "sprite": "witch",
-   "name": "Hesper",
-   "size": 96,
-   "look": "a gaunt hollow-cheeked WOMAN, old before her time, in a long tattered dress of coarse near-black wool patched at the hem and hanging in ragged uneven strips, a threadbare shawl of dull ash-grey drawn up over her head and shoulders like a hood so the face is half lost in shadow, a heavy belt of knotted cord hung with small stoppered clay bottles and two or three bone charms, thin bare forearms, lank grey hair falling from under the shawl. Near-black, ash-grey and dried rust-brown, dusty and unpolished, the cloth stained and worn through. Realistic ADULT proportions: a SMALL head on a tall thin long-limbed body. BOTH HANDS EMPTY — no staff, no wand, no knife, no weapon at all. NOT anime, NOT manga, NOT chibi, NOT cute, NOT a big head, NOT a doll, NOT a cartoon, NOT a hero pose, NOT a pointed hat, NOT a broomstick, NOT a cat, NOT a cauldron, NOT glowing, NOT rim light, NOT shiny, NOT bright colours, NOT purple, NOT green skin, NOT a pretty sorceress, NOT a young woman, NOT armour, NOT clean smooth shading, NOT a floor-length cape. FULL BODY head to feet, seen at a THREE-QUARTER angle, turned enough that you can tell which way she faces. No ground, no floor, no shadow cast on the ground, no base, no platform, no other objects.",
-   "states": {
-    "idle": {
-     "frames": 4,
-     "say": "standing hunched with the weight on one hip, shoulders drawn in, hands hanging loose and half curled at her sides, a slow breath"
-    },
-    "walk": {
-     "frames": 8,
-     "say": "shuffling forward at a stooped steady pace, knees bending under the ragged hem, the shawl swaying, arms swinging a little"
-    },
-    "attack": {
-     "frames": 4,
-     "say": "staying in strict side profile, lunging through off the front foot and driving one arm forward and across in a short vicious stab, ending at full forward extension"
-    },
-    "cast": {
-     "frames": 4,
-     "say": "strict side profile, both arms raised together above her head and then flung down and forward with the fingers spread, the whole body bowing with it"
-    },
-    "death": {
-     "frames": 4,
-     "say": "buckling at the knees and sinking down, then toppling onto her side and lying flat and still"
-    }
-   },
-   "approved": "cache/designs/witch-0.png",
-   "character": "b80b4cb4-d314-4a2a-adb6-cc27341e5911"
-  },
-  {
    "sprite": "obreth_sword",
    "name": "Obreth, with a sword",
    "size": 96,

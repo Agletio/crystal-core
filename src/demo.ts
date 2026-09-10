@@ -6066,8 +6066,8 @@ rule('DUAL WIELDING — is a pair two weapons or an average of one?');
     'and which hand is which still decides what it swings for',
     `${swing(pair).toFixed(2)} against ${swing(swapped).toFixed(2)}`
   );
-  // DUAL WIELDING IS A PRIVILEGE. *"All characters should just not be able to
-  // dual wield and then we just have a trade that can."* Everybody may
+  // DUAL WIELDING IS ONE TRADE'S PRIVILEGE. *"All characters should just not be
+  // able to dual wield and then we just have a trade that can."* Everybody may
   // hold a shield; a second WEAPON is a decision made at character creation.
   const off = EQUIP_SLOTS.find((sl) => sl.id === OFF_SLOT)!;
   const anybody = makeCharacter({}, 'strike');
@@ -6087,13 +6087,10 @@ rule('DUAL WIELDING — is a pair two weapons or an average of one?');
     `and a second weapon only from the one trade that dual wields — ${wielder ?? 'nobody'}`,
     `wielder ${wielder}`
   );
-  // TWO of them now and no more: the Witch is the Rogue's web under another
-  // body, at the user's word, so what she holds is what he holds.
-  const wielders = TRADES.filter((t) => t.spec.dualWields).map((t) => t.spec.id);
   check(
-    wielders.length === 2 && wielders.includes('rogue') && wielders.includes('witch'),
-    'and only the rogue and the witch have it, or it is not a privilege',
-    wielders.join(', ')
+    TRADES.filter((t) => t.spec.dualWields).length === 1,
+    'and exactly one trade has it, or it is not a privilege',
+    String(TRADES.filter((t) => t.spec.dualWields).length)
   );
 }
 

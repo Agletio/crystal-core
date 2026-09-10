@@ -105,8 +105,8 @@ assert($('savedata').hidden === true, 'Play now takes you into the live slot');
 // A character is MADE before it is played, and the trade is who you ARE, so
 // the cast comes up before the name and the skill do.
 assert($('pick').hidden === false, 'and a character with no trade is made first');
-assert(all('#pick-cast .pickfig').length === 5, 'all five trades stand there');
-assert($('pick-warrior') !== null && $('pick-rogue') !== null && $('pick-witch') !== null, 'the warrior, the rogue and the witch among them');
+assert(all('#pick-cast .pickfig').length === 4, 'all four trades stand there');
+assert($('pick-warrior') !== null && $('pick-rogue') !== null, 'the warrior and the rogue among them');
 assert($('pick-say').hidden === true, 'saying nothing until one is clicked');
 $('pick-aethermancer').click();
 assert($('pick-say').hidden === false, 'clicking one says who he is');
@@ -2715,8 +2715,8 @@ $('dev-kit').click();
   $('open-trade').click();
   assert($('trade').hidden === false, 'and it opens a screen of its own');
   assert(
-    all('#trade-pick .catcard').length === 5,
-    'five trades are offered, and none is picked for you',
+    all('#trade-pick .catcard').length === 4,
+    'four trades are offered, and none is picked for you',
     String(all('#trade-pick .catcard').length)
   );
   assert(
