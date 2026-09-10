@@ -16,6 +16,17 @@ Once configured:
 | **Claude** | Astra opening a pull request, via a GitHub-event Routine | **needs one-time account setup** |
 | **Astra** | a ready art-request PR from Claude | **subscription pending**; hourly polling paused at the owner's request |
 
+### The two event signals, one per direction
+
+| direction | signal | who configures it |
+|---|---|---|
+| **Astra → Claude** | a PR from a head branch **starting `astra/`** | the owner, done — see `ROUTINE.md` |
+| **Claude → Astra** | a PR **titled `ASTRA READY: NNNN-slug`** | Astra, **not yet configured** |
+
+A branch prefix one way and a title prefix the other, deliberately: Claude's
+routine reads branches with git and never needs the title, where a title is
+what Astra's side can filter on without cloning anything.
+
 **Astra names her branches `astra/NNNN-slug`.** The filter is what stops the
 routine firing on every pull request in the repository, Claude's own included,
 and burning a run each time.
@@ -58,6 +69,10 @@ still says `open` is a delivery nobody will look for.
 
 ## Claude's side
 
+0. **A new brief is published as a pull request titled
+   `ASTRA READY: NNNN-slug`.** That title is Astra's event filter, so it is
+   exact — the prefix in capitals, one space after the colon, then the brief's
+   number and slug. Nothing else in the repository uses that prefix.
 1. Read `briefs/` for anything `delivered`.
 2. Measure it — `gridcheck`, `styleread`, `feetread`, and the floor at ship
    size. Never take a claim on trust, including a well-evidenced one; Astra has

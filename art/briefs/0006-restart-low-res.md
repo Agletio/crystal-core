@@ -1,9 +1,10 @@
 # 0006 — restart: 48 pixels, and motion over detail
 
-**Status:** `open` — the size test landed (see the Outcome). What is still
-wanted is the WALK at this grid: four frames, two contacts on opposite feet,
-and the highlight brought from 238 into 110-150.
-conversion at all. One thing sits outside the game's register — see the outcome.
+**Status:** `dropped` — **at the owner's request, not because it was
+finished.** *"I'm done with the witch — mark 0006 dropped at my request, not
+completed."* The size test in the Outcome below LANDED and its findings stand;
+the walk at this grid was never delivered and is not owed. Brief 0007 is
+current.
 
 ## What was wrong, and it was the brief
 

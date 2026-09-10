@@ -10,6 +10,37 @@
 This file is the shared setup record. A successful file commit proves repository
 writing, not image-generation availability in a future run or Claude activation.
 
+## Verified 2026-09-10 — Claude's routine, read back from the API
+
+Read off `list_triggers` rather than off the form, so this is what is stored:
+
+| | |
+|---|---|
+| routine | `trig_01DnB7qx2NkzKhnXX2KUQqJ4`, "Crystal Core art Integration" |
+| enabled | **true** |
+| schedule | **none** — `cron_expression` empty, no next run. **No polling.** |
+| repository | `https://github.com/Agletio/crystal-core` |
+| connectors | **none** — the `visualize` image generator was attached at creation and has been removed |
+| prompt | the corrected git-only one, stored in full |
+| tools | Bash, Read, Write, Edit, Glob, Grep, WebFetch, WebSearch — **no GitHub API**, which is why the prompt uses git |
+| notifications | push on, email off |
+| run history | **none recorded** |
+
+**WHAT THIS DOES NOT PROVE, AND MUST NOT BE READ AS PROVING:** the payload
+carries **no GitHub trigger field at all** — no event, no repository
+subscription, no filter. That is ambiguous between the endpoint not
+serialising GitHub triggers and the trigger not being saved, and this session
+cannot tell those apart. No tool available here exposes GitHub App
+installations or repository webhooks either.
+
+**So the trigger is UNVERIFIED.** Two things would settle it: the routine's
+detail page showing its GitHub trigger row, and
+`github.com/Agletio/crystal-core/settings/installations` showing Claude
+installed and scoped to this repository. Until one of those, or until a real
+event fires a run, the correct statement is that the routine exists and is
+correctly configured in every respect this session can see, and that whether
+an event reaches it is untested.
+
 ## Event-triggered handoff plan — supersedes hourly setup below
 
 The owner prefers a ready-work event over polling to avoid idle checks and
