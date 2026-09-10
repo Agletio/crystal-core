@@ -29,7 +29,7 @@ export const WITCH_TRADE: TradeSpec = {
     'her hood up and her mouth shut about the survey, and she has never once ' +
     'seen the point of a shield.',
   prefix: PREFIX,
-  sprite: 'witch',
+  sprite: 'witch_rig', // TEST: the rigged body, not the PixelLab one
   spokes,
   needs: Object.fromEntries(
     Object.entries(ROGUE_TRADE.needs).map(([k, v]) => [k, v.replace(`${ROGUE_TRADE.prefix}_`, `${PREFIX}_`)])
