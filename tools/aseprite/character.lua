@@ -238,7 +238,7 @@ local STATES = {
       local f = seg(t, 0.3, 0.8)         -- he goes down onto his face, the blade with him
       return { dy = 9 * k + 10 * f, lean = 10 + 12 * k + 74 * f, dx = 2 * k + 9 * f,
         backFootX = -4 - 6 * k - 6 * f, backFootY = 0, frontFootX = 5 + 3 * k - 4 * f, frontFootY = 0, frontFoot = 30 * f,
-        handX = 7 + 2 * k + 5 * f, handY = 8 + 3 * k + 4 * f, swordAngle = 40 + 15 * k + 45 * f,
+        handX = 7 + 2 * k + 8 * f, handY = 8 + 3 * k - 11 * f, swordAngle = 40 + 15 * k + 45 * f,
         trail = 1 - 4 * k - 3 * f, flap = 4 * f, headDy = 1 * k + 2 * f, faceDx = -1 * f }
     end },
 }
