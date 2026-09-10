@@ -1093,12 +1093,11 @@ Frostwork growing the field off what the last cast hit (`fieldFeeds`,
 refunding a crowd (`refundOnCrowd`) and Glassing shattering a Critical
 (`shatterShare`, `SHATTER.radius`). **A RULE THE RUN KEEPS reads `[STATS]`**,
 the way a kill's tempo does, so the tree check and the fingerprint both leave it
-to a played descent. **A SKILL MAY HAVE WEATHER**: `WEB_BACKDROPS` in
-`src/render/generated-backdrops.ts`, asked through `tools/art/backdrops.json`
-and imported by `portrait.mts <id> <png> 256 backdrops 0.62` — the top of the
-frame only, because the generator hangs a snowbank under any blizzard — and
-drawn by `src/ui/skills.ts` as one `.web__weather` layer filling the window
-under the web. Rimespike's is the first.
+to a played descent. **A SKILL MAY HAVE WEATHER**: a whole generated SCENE, `web_<skillId>` in
+`tools/art/scenes.json` asked through `scene.mts` like the camp — a wide
+picture, dark and low-contrast, with no focal point — and drawn by
+`src/ui/skills.ts` as one `.web__weather` layer filling the window under the
+web. Rimespike's blizzard is the first.
 
 **RIMESPIKE IS AN AREA SKILL, AND RIMEFIELD IS THE ONE MODE SWITCH IN THE GAME.**
 *"Make rimespike a large aoe spike instead of single target + splash… it does an

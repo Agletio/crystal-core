@@ -15,13 +15,6 @@ const TABLES = {
   portraits: { file: 'generated-portraits.ts', name: 'GENERATED_PORTRAITS', type: 'GeneratedPortrait', what: 'Generated faces, one frame each and carrying their own colours. The\n * hand-drawn table merges these OVER its own rows.' },
   icons: { file: 'generated-icons.ts', name: 'GENERATED_ICONS', type: 'GeneratedIcon', what: 'Generated UI icons, one frame each and carrying their own colours.\n * The hand-drawn table merges these OVER its own rows.' },
   cast: { file: 'generated-cast.ts', name: 'GENERATED_CAST', type: 'GeneratedCast', what: "A hero's WHOLE FIGURE for the cast hall, one frame and its own colours:\n * the one screen that shows a man at four times his ship size shows a drawing\n * made for it rather than his 48-grid body magnified." },
-  backdrops: {
-    file: 'generated-backdrops.ts', name: 'WEB_BACKDROPS', type: 'GeneratedBackdrop',
-    what:
-      "A plain picture laid faint behind a skill's own web, keyed by skill id:\n" +
-      ' * the top `keep` of the generated frame, as a band `grid` wide and as tall\n' +
-      ' * as that band is, because the generator hangs a ground under any weather.',
-  },
   vfx: {
     file: 'generated-vfx.ts', name: 'VFX_ART', type: 'GeneratedVfx',
     what:
@@ -93,12 +86,6 @@ function square(src: Png, keep: number): Png {
   return { width: side, height: side, rgba: out };
 }
 
-/** The top `keep` of the frame, as it is: no ink crop and no squaring. */
-function band(src: Png, keep: number): Png {
-  const height = Math.max(1, Math.round(src.height * keep));
-  return { width: src.width, height, rgba: src.rgba.slice(0, src.width * height * 4) };
-}
-
 /** Nearest-neighbour down to `grid` wide and `tall` high, alpha carried through. */
 function resample(src: Png, grid: number, tall = grid) {
   const out = new Uint8Array(grid * tall * 4);
@@ -122,7 +109,7 @@ if (!table) throw new Error(`no table ${tableArg}`);
 const OUT = new URL(`../../src/render/${table.file}`, import.meta.url).pathname;
 
 const png = debackground(decodePng(readFileSync(file)));
-const cut = name === 'vfx' ? square(png, Number(keepArg ?? 1)) : name === 'backdrops' ? band(png, Number(keepArg ?? 1)) : png;
+const cut = name === 'vfx' ? square(png, Number(keepArg ?? 1)) : png;
 const tall = Math.max(1, Math.round((grid * cut.height) / cut.width));
 const rgba = resample(cut, grid, tall);
 const fold = quantise(rgba, 40);
