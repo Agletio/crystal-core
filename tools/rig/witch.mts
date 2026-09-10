@@ -341,6 +341,17 @@ function gifs(dir: string): void {
   }
 }
 
+function writeRow(body: object, frames: number, inkCount: number): void {
+  const file = here('../../src/render/generated-art.ts');
+  let src = readFileSync(file, 'utf8');
+  src = src.replace(/\n  witch_rig: \{[\s\S]*?\n  \},\n(?=  [a-z0-9_]+: \{|\};)/, '\n');
+  const text = `  witch_rig: ${JSON.stringify(body, null, 2).replace(/\n/g, '\n  ')},\n`;
+  const end = src.lastIndexOf('\n};');
+  src = `${src.slice(0, end)}\n${text}${src.slice(end + 1)}`;
+  writeFileSync(file, src);
+  console.log(`witch_rig: ${frames} frames, ${inkCount} inks -> generated-art.ts`);
+}
+
 function row(): void {
   const CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
   const key: Record<string, string> = {};
@@ -361,17 +372,13 @@ function row(): void {
       frames.push(rows);
     }
   }
-  const body = {
-    grid: GRID, stride: 1.15, robed: true, dirs: ['south-east'], frames, states, key,
-  };
-  const file = here('../../src/render/generated-art.ts');
-  let src = readFileSync(file, 'utf8');
-  src = src.replace(/\n  witch_rig: \{[\s\S]*?\n  \},\n(?=  [a-z0-9_]+: \{|\};)/, '\n');
-  const text = `  witch_rig: ${JSON.stringify(body, null, 2).replace(/\n/g, '\n  ')},\n`;
-  const end = src.lastIndexOf('\n};');
-  src = `${src.slice(0, end)}\n${text}${src.slice(end + 1)}`;
-  writeFileSync(file, src);
-  console.log(`witch_rig: ${frames.length} frames, ${inks.length} inks -> generated-art.ts`);
+  writeRow({ grid: GRID, stride: 1.15, robed: true, dirs: ['south-east'], frames, states, key }, frames.length, inks.length);
+}
+
+// The same row, composed elsewhere: what compose.lua wrote out of Aseprite.
+function rowFrom(file: string): void {
+  const body = JSON.parse(readFileSync(file, 'utf8'));
+  writeRow(body, body.frames.length, Object.keys(body.key).length);
 }
 
 function json(out: string): void {
@@ -389,9 +396,41 @@ function json(out: string): void {
   console.log(`${out}: ${frames.length} frames`);
 }
 
+// Every part as its own PNG on the still's canvas, and every frame's world
+// transform a part, so another compositor (Aseprite, with RotSprite) can pose
+// the same cut off the same skeleton.
+function exportParts(dir: string): void {
+  mkdirSync(dir, { recursive: true });
+  const write = (name: string, layer: Int16Array) => {
+    const px = new Uint8Array(still.width * still.height * 4);
+    for (let i = 0; i < layer.length; i++) {
+      if (layer[i] < 0) continue;
+      const [r, g, b] = rgbOf(inks[layer[i]]);
+      px[i * 4] = r; px[i * 4 + 1] = g; px[i * 4 + 2] = b; px[i * 4 + 3] = 255;
+    }
+    writeFileSync(`${dir}/${name}.png`, encodePng(still.width, still.height, px));
+  };
+  for (const p of PARTS) { write(`part-${p.name}`, parts.get(p.name)!.mask); if (p.fillUnder) write(`fill-${p.name}`, parts.get(p.name)!.fill); }
+  const poses: Record<string, { loop: boolean; frames: Record<string, Affine>[] }> = {};
+  for (const state of ORDER) {
+    const s = STATES[state];
+    poses[state] = { loop: s.loop, frames: [] };
+    for (let i = 0; i < s.frames; i++) {
+      const t = s.loop ? i / s.frames : i / (s.frames - 1);
+      const { pose, root } = s.at(t);
+      const W = worlds(pose, root);
+      poses[state].frames.push(Object.fromEntries(DRAW_ORDER.map((n) => [n, W.get(n)!])));
+    }
+  }
+  writeFileSync(`${dir}/poses.json`, JSON.stringify({ grid: GRID, off: OFF, still: { width: still.width, height: still.height }, inks, order: DRAW_ORDER, fillUnder: PARTS.filter((p) => p.fillUnder).map((p) => p.name), states: ORDER, poses }));
+  console.log(`${dir}: ${PARTS.length} parts, ${ORDER.length} states`);
+}
+
 const [cmd, arg] = process.argv.slice(2);
 if (cmd === 'json') json(arg ?? 'witch-rig.json');
 else if (cmd === 'sheet') sheet(arg ?? 'witch-rig-sheet.png');
 else if (cmd === 'gif') gifs(arg ?? 'rig-gifs');
 else if (cmd === 'row') row();
-else console.log('sheet <png> | gif <dir> | row');
+else if (cmd === 'parts') exportParts(arg ?? 'rig-parts');
+else if (cmd === 'rowFrom') rowFrom(arg);
+else console.log('sheet <png> | gif <dir> | json <file> | row | parts <dir> | rowFrom <frames.json>');
