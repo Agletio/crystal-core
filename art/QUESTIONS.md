@@ -26,3 +26,21 @@ The pipeline notes record 1.62 MB / 0.43 gzipped and that is a lot of art ago.
 Art is ~17 MB of source: bodies 9.42, the camp scene 4.93. Nothing is broken —
 first load is just heavy, and it will keep growing as art does. Worth an
 explicit call on whether that matters before the next large art push.
+
+---
+
+## 3. 0007 Rimespike — PixelLab access for Astra
+
+**Blocks:** all four replacement visuals in request PR #16.
+
+Astra received [PR #16](https://github.com/Agletio/crystal-core/pull/16) at
+`906f4fdf724e1c3b0840cdd32070faec810225ff`. PixelLab is explicitly requested, but this run has
+no PixelLab tool, no matching plugin-directory result, and no
+`PIXELLAB_API_KEY` for the repository's documented transport.
+
+**Unblock:** provide authorized PixelLab access to Astra's runtime, or explicitly
+approve a different provider. Do not paste or commit a key into this public repo.
+Access permits the initial concept; it does not waive owner design approval
+before animations/variations or final delivery. No assets have been generated.
+State and evidence: `art/deliveries/0007-rimespike/INTAKE.json` and `NOTES.md`
+on `astra/0007-rimespike`. This is recorded once; unchanged events are no-ops.
