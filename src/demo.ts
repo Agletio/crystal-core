@@ -277,7 +277,7 @@ import {
   slotUsed,
   statPower,
 } from './mods';
-import { DESIGN, ENTRANCE, EXIT, FLOOR, LAKE_SHORE, TEST_LEVEL, TUNNEL, WALL, dist, generateMap, patchesFor, reachable, roomCenter, sceneMap, shoreClear, testLevel } from './sim/grid';
+import { DESIGN, ENTRANCE, EXIT, FACE_LIP, FLOOR, LAKE_SHORE, TEST_LEVEL, TUNNEL, WALL, dist, generateMap, patchesFor, reachable, roomCenter, sceneMap, shoreClear, testLevel } from './sim/grid';
 import type { Grid } from './sim/grid';
 import { CREATURE_FRAMES, GLOW, IDLE_CYCLE, STRIDE_CYCLE, framesOf, wellFormed } from './render/sprites';
 import { PORTRAITS } from './render/portraits';
@@ -411,6 +411,7 @@ import {
   stormBolts,
   stormCloud,
   paletteFrom,
+  walkMarks,
   tileDecals,
 } from './render/renderer';
 import { VFX_ART } from './render/generated-vfx';
@@ -2327,6 +2328,29 @@ rule('SPRITES — is the pixel art well formed?');
       stranded === 0,
       'water takes exactly the tiles it covers and cuts nothing off behind it',
       `${stranded} of 56 maps lost more than the water itself`
+    );
+
+    // THE OVERLAY IS HELD TO WHAT THE SIM REFUSES. The amber band it paints
+    // across a tile under rock is `0.5 - FACE_LIP` tall; if `fits` ever moves
+    // that line the picture becomes a second opinion, which is worse than none.
+    let banded = 0, agreed = 0;
+    for (const theme of MAP_THEMES) {
+      const grid = generateMap([], new Rng(58000), 1, 1, theme.id).grid;
+      for (let y = 1; y < grid.height - 1; y++) for (let x = 1; x < grid.width - 1; x++) {
+        if (!grid.walkable(x, y) || grid.at(x, y - 1) !== WALL) continue;
+        const amber = walkMarks(PALETTE, grid, x, y).length === 2;
+        if (!amber) continue;
+        banded++;
+        // Just inside the band the sim refuses; just outside it, it allows.
+        const inside = !grid.fits(x, y - FACE_LIP - 0.02, 0.2);
+        const outside = grid.fits(x, y - FACE_LIP + 0.02, 0.2);
+        if (inside && outside) agreed++;
+      }
+    }
+    check(
+      banded > 0 && agreed === banded,
+      `the walkable overlay's amber band is exactly where \`fits\` refuses, on all ${banded} cells under rock`,
+      `${agreed} of ${banded} agreed`
     );
     // A set nothing places is a set nobody sees, and a name that does not
     // resolve draws NOTHING and fails nowhere.

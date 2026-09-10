@@ -20,6 +20,7 @@ import { mainSkillId, skillProgress } from '../sim/character';
 import { heal } from '../game/save';
 import { ZONES } from '../render/generated-tiles';
 import { TEST_LEVEL, testLevel } from '../sim/grid';
+import { showingWalk, walkOverlay } from '../render/renderer';
 import { takeHeard, takeMet } from '../game/scenes';
 import { campaignDone, progressKey } from '../ladder';
 import { pathToNotable } from '../skills-tree';
@@ -347,6 +348,19 @@ function render(): void {
     render();
   };
   sets.append(test);
+
+  // WHERE A BODY MAY STAND, over the floor that shipped. Green walks, red does
+  // not, and the amber band across the top of a tile under rock is drawn ground
+  // the sim refuses — which is the illusion this exists to show.
+  const walk = el('button', 'mini devbtn') as HTMLButtonElement;
+  walk.id = 'dev-walk';
+  walk.append(el('span', 'devbtn__name', showingWalk() ? 'Walkable overlay: on' : 'Walkable overlay: off'));
+  walk.append(el('span', 'devbtn__what', 'green walks, red does not, amber is floor drawn under a face'));
+  walk.onclick = () => {
+    walkOverlay(!showingWalk());
+    render();
+  };
+  sets.append(walk);
 
   const over = group('Start over', 'Wipes what you are playing and deals a stocked game.');
   const kit = el('button', 'mini devbtn devbtn--warn') as HTMLButtonElement;

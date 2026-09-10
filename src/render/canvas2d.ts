@@ -47,8 +47,10 @@ import {
   stormCloud,
   stormPuffs,
   livingDecals,
+  showingWalk,
   PROPS,
   tileDecals,
+  walkMarks,
   tileSize,
   lootBeam,
   vfxColour,
@@ -200,6 +202,16 @@ export function createCanvasRenderer(host: HTMLElement, palette: Palette): Rende
           );
         }
         for (const d of livingDecals(floor, at, x, y, state.elapsed)) {
+          ctx.globalAlpha = d.alpha;
+          ctx.fillStyle = d.colour;
+          ctx.fillRect(
+            v.offX + (x + d.x) * v.tile,
+            v.offY + (y + d.y) * v.tile,
+            Math.max(1, Math.ceil(d.w * v.tile)),
+            Math.max(1, Math.ceil(d.h * v.tile))
+          );
+        }
+        for (const d of showingWalk() ? walkMarks(palette, grid, x, y) : []) {
           ctx.globalAlpha = d.alpha;
           ctx.fillStyle = d.colour;
           ctx.fillRect(

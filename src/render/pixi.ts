@@ -69,8 +69,10 @@ import {
   stormBolts,
   stormCloud,
   livingDecals,
+  showingWalk,
   PROPS,
   tileDecals,
+  walkMarks,
   tileSize,
   toHexNumber,
   floaterInk,
@@ -1669,6 +1671,19 @@ export async function createPixiRenderer(
         rippleLayer
           .circle((x + 0.5) * RIPPLE_PX, (y + 0.5) * RIPPLE_PX, ring.r * RIPPLE_PX)
           .stroke({ color: toHexNumber(palette.chalk), alpha: ring.alpha, width: RIPPLE.width * RIPPLE_PX });
+      }
+    }
+
+    // THE WALKABLE OVERLAY, before the early return below: a generated map has
+    // no living floor, and it is exactly the map an argument about the face is
+    // about.
+    if (showingWalk()) {
+      for (let y = y0; y < y1; y++) {
+        for (let x = x0; x < x1; x++) {
+          for (const d of walkMarks(palette, grid, x, y)) {
+            propLayer.rect(x + d.x, y + d.y, d.w, d.h).fill({ color: toHexNumber(d.colour), alpha: d.alpha });
+          }
+        }
       }
     }
 

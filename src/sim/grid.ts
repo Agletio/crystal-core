@@ -155,7 +155,7 @@ const BODY_MAX = 0.45;
 
 /** How far above its tile's CENTRE a body may stand with rock north of it. A
  *  tile centre always fits, so nothing is made unreachable. */
-const FACE_LIP = FOOT - FACE_FOOT;
+export const FACE_LIP = FOOT - FACE_FOOT;
 
 
 /** Sampled along the segment, not Bresenham: entities sit at fractional

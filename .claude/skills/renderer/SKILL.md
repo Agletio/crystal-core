@@ -152,6 +152,14 @@ the 0.33 tiles of drawn ground that puts out of reach.
 width is its `scale`, applied uniformly. Do not shrink a body to make a
 vertical fix look finished.
 
+**AND THERE IS A PICTURE OF IT NOW.** `walkMarks` in `renderer.ts` paints
+`Grid.walkable` a cell at a time — the dev kit's **Walkable overlay**, and
+`WALK=1` on `descent-peek`. Green walks, red does not, and the AMBER band across
+the top `0.5 - FACE_LIP` of a tile under rock is the drawn face-ground `fits`
+refuses. It is read off the same exported `FACE_LIP` the sim refuses by, so it
+cannot become a second opinion; the demo holds the two together on every cell
+under rock in every world.
+
 **The life bar reads the SAME anchor** — `bar()` in `pixi.ts` asks `anchorY` and
 `bodyTop`, or every bar detaches the day a `scale` moves. A boss gets a framed
 bar across the top of the screen instead: at `size` 5 the strip over its head is

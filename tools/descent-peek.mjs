@@ -19,6 +19,8 @@
  * skill's and cannot be judged behind another one; `shots` is how many frames
  * to take, as fast as they can be taken, because an effect is over in a fifth
  * of a second and one screenshot of a descent will not hold one.
+ * `TEST=1` shoots the test level; `WALK=1` paints where a body may STAND: green
+ * walks, red does not, amber is ground a face is drawn on that nobody may enter.
  */
 import { createServer } from 'node:http';
 import { readFile, writeFile } from 'node:fs/promises';
@@ -145,6 +147,11 @@ await page.waitForTimeout(150);
 // TEST=1 shoots the TEST LEVEL — the dev menu's own family and rules.
 if (process.env.TEST) {
   await page.evaluate(() => document.getElementById('dev-test')?.click());
+  await page.waitForTimeout(150);
+}
+// WALK=1 the same way: the flag is the renderer's and outlives the restart.
+if (process.env.WALK) {
+  await page.evaluate(() => document.getElementById('dev-walk')?.click());
   await page.waitForTimeout(150);
 }
 await page.evaluate(() => document.getElementById('dev-kit')?.click());

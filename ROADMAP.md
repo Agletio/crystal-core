@@ -49,6 +49,14 @@ judgement. Phase 3 is PARKED and is not the
 lowest-numbered thing to take. Everything after them is a parked phase, the
 traps, and questions only the user can answer.
 
+**PHASE 14 IS DONE AND DELETED.** The pathfinder was never the liar: all 719
+real one-tile channels are walked straight through, and `openPlugs` took the
+1122 fake ones to zero. What was left was the PICTURE, and it is built — the
+dev kit's **Walkable overlay** and `WALK=1` on `descent-peek`. Green walks, red
+does not, and the amber band along every tile under rock is the drawn face-
+ground `fits` refuses, read off the same `FACE_LIP` the sim refuses by:
+measured, **378 of 378** such cells agree, and the band is 0.410 of a tile.
+
 **THE MOVERS HAVE TWO MODES AND THREE REAL TREES** — his own design, taken
 ahead of the numbered order, and the whole of it is in `CLAUDE.md`. Blink
 kites, Leap dives, GALE holds Gusts and never steps, and all three webs are
@@ -883,42 +891,6 @@ ours** — verify each against the code before spending anything.
       still shot running rather than at its report, and a SCENE met on the way
       down is dismissed rather than read as the end.
       (`rot_z4.png`, `cavern_z4.png`, `seam_z4.png`)
-
-## Phase 14 — WHERE THE HERO MAY WALK, against where the floor is DRAWN
-
-*"This screenshot shows a small gap in the rock that happened in a layout and
-the character pathed all the way around it. I feel like he should have fit
-through here no? I mean maybe not but maybe he should — im open to
-disagreements on this."* (`gap-walked-around.png`)
-
-**THE PATHFINDER IS PROBABLY RIGHT AND THE PICTURE IS PROBABLY LYING**, and
-that is the thing to settle first. `BODY_MAX` is 0.45 — under half a tile,
-written down as *"so a rank-scaled body can still walk a one-tile gap"* — so
-`fits` already admits a one-tile channel and a real gap is not what is being
-refused. What DOES read as floor without being floor is the rock's own head: a
-WALL tile draws its top `FACE_HEAD` (0.38 of a tile) as ground, so every run of
-rock wears a pale band that looks like standable floor, and two rock runs
-meeting can put a pale channel on screen where the grid holds solid stone. The
-demo already prints the south side of that discrepancy — 0.33 tiles of drawn
-ground out of reach.
-
-- [x] **SETTLED BY MEASURING, and the picture was the liar.** Over 24 Fissure
-      maps: all **719** REAL one-tile channels are walked STRAIGHT THROUGH, so
-      the pathfinder was never the fault, against **1122** PLUGS — single WALL
-      cells with floor either side, solid stone drawing its own head as pale
-      ground, 1.56 fakes for every real gap and 47 a map.
-- [x] **THE CARVE MOVED, and it was the safe side.** `openPlugs` turns a plug
-      into floor, run to a fixed point and paired with `fitCorners` since each
-      leaves work for the other: plugs **1122 → 0**, and the 513 real channels
-      left are still walked straight through. Measured BEFORE it was written —
-      of 540 plugs on 12 maps, 454 are dimples you step round in four tiles, 86
-      are short cuts worth a median 8 tiles the way round, and **NOT ONE** is
-      the only thing joining two places, so no map reaches anywhere it could
-      not before. The demo holds plugs at zero across every world.
-- [ ] **THE OVERLAY IS STILL WORTH BUILDING.** `Grid.walkable` painted over
-      the rendered floor, in the dev kit, and a peek that shoots it. Nothing
-      needs it today — the count answered this one — but the next argument
-      about where a body may stand will want a picture rather than a number.
 
 ## Phase 13 — BRANCHES OFF THE MAIN LINE, his own design
 

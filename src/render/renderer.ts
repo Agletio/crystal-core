@@ -3,7 +3,7 @@
  * (a WebGL and a 2D context cannot share a canvas), and works in TILE UNITS —
  * scale and camera are its own business.
  */
-import { ENTRANCE, EXIT, TUNNEL, WALL, cornerOf, isRock, patchKey, wangKey } from '../sim/grid';
+import { ENTRANCE, EXIT, FACE_LIP, TUNNEL, WALL, cornerOf, isRock, patchKey, wangKey } from '../sim/grid';
 import type { RunState } from '../sim/run';
 import type { Grid, Vec2 } from '../sim/grid';
 import type { ZoneSet } from './generated-tiles';
@@ -1576,6 +1576,29 @@ export function tileDecals(
 
   return out;
 }
+
+/** THE WALKABLE OVERLAY, the dev kit's alone. Green walks, red does not, and
+ *  the AMBER band is the point: a tile under rock walks across its FOOT alone,
+ *  the face being drawn `FACE_HEAD` into a top where `fits` refuses anything
+ *  above `FACE_LIP`. Read off the same `FACE_LIP` the sim refuses by, or the
+ *  picture is a second opinion. */
+export const WALK_INK = { walk: 0.26, blocked: 0.32, lip: 0.46 };
+
+export function walkMarks(palette: Palette, grid: Grid, x: number, y: number): Decal[] {
+  if (!grid.inBounds(x, y)) return [];
+  if (!grid.walkable(x, y)) return [{ x: 0, y: 0, w: 1, h: 1, colour: palette.hurt, alpha: WALK_INK.blocked }];
+  const out: Decal[] = [{ x: 0, y: 0, w: 1, h: 1, colour: palette.verdite, alpha: WALK_INK.walk }];
+  if (grid.at(x, y - 1) === WALL) {
+    out.push({ x: 0, y: 0, w: 1, h: 0.5 - FACE_LIP, colour: palette.citrine, alpha: WALK_INK.lip });
+  }
+  return out;
+}
+
+let showWalk = false;
+export function walkOverlay(on: boolean): void {
+  showWalk = on;
+}
+export const showingWalk = (): boolean => showWalk;
 
 /**
  * The part of a zone that MOVES: drawn every frame from the tile's own hash and
