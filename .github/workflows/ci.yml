@@ -57,8 +57,13 @@ jobs:
       - name: smoke — does the page boot and does the loop work
         run: npm run smoke
 
+      # THE DEMO NEEDS MORE HEAP THAN NODE GIVES IT. Measured locally at 6.4 GB
+      # RSS; the runner's default cap is ~4 GB and it died there mid-balance,
+      # on commits that touched only markdown. ubuntu-latest has 16 GB.
       - name: demo — does the sim still terminate and the opening still finish
         run: npm run demo
+        env:
+          NODE_OPTIONS: --max-old-space-size=12288
 
       - name: mods — does every modifier do what it says
         run: npm run mods

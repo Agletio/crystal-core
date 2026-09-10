@@ -202,6 +202,13 @@ for (const vp of VIEWPORTS) {
     viewport: { width: vp.width, height: vp.height },
     deviceScaleFactor: 2,
   });
+  // THE ANALYTICS BEACON IS BLOCKED, never filtered. `docs/index.html` loads
+  // Cloudflare's, and its RUM request is CORS-refused when the page is served
+  // off 127.0.0.1 — which the browser reports against the PAGE's url, so the
+  // off-origin test below cannot see it and CI failed on it while a machine
+  // whose proxy killed the request outright passed.
+  await page.route(/cloudflareinsights\.com/, (route) => route.abort());
+
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
   page.on('console', (m) => {
