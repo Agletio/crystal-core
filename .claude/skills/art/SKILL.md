@@ -21,6 +21,17 @@ monster, prop, zone or fixture is a row in the words-file for its tool and a
 run of that tool — **if the key or the network is not there, say so and leave
 the art undone rather than typing one out.**
 
+**A frame the generator got WRONG is touched up, not re-rolled.** *"Commit to
+pixellab generations and use aseprite to touch up frames as needed."*
+`tools/aseprite/body.mts export <sprite> <dir>` writes a body's frames to a
+frames.json, a Lua script under a headless Aseprite (`tools/aseprite/setup.sh`
+puts one in place in seconds) repairs them, and `body.mts import` puts them
+back, rewriting only that row's frames and key. `lampwright-staff.lua` is the
+pattern: find the thing in each frame, fit what is left of it, redraw it whole
+over background and its own old pixels only. Re-rolling costs ~13 generations
+a state and comes back with a different fault; a repair costs nothing and keeps
+every other pixel the user already judged.
+
 **Judge before importing, and re-ask what missed.** Ten icons in one batch came
 back with three wrong nouns; each was re-asked with the noun that fought
 removed, and one of them took four tries. That is normal and it is cheap — a

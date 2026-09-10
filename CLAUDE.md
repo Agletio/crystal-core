@@ -144,6 +144,12 @@ table is in the `harness` skill, along with every quirk and flake. Build before 
 - **There are no image files, and no binary assets.** Every sprite is a list of
   strings or a data URI in TypeScript. Adding one is a change to how the game
   ships, not an art decision.
+- **PIXELLAB GENERATES; ASEPRITE TOUCHES UP.** *"Let's just commit to
+  pixellab generations and you use aseprite to touch up frames as needed."* A
+  frame the generator got wrong — a staff that vanishes, a hand that lets go —
+  is repaired in the frames, never re-rolled: `tools/aseprite/body.mts` moves a
+  body row to a frames file and back, and a headless Aseprite (`setup.sh`,
+  seconds) runs the script that fixes it. The Lampwright's staff was the first.
 - **THE ART IS ASTRA'S, AND SHE HAS FINAL SAY — THE NUMBERS INCLUDED.** *The user's call:
   "I want to have gpt6 Astra be the art director and do all art
   creation/direction from here on out… you're the main developer."* Claude owns
@@ -1070,7 +1076,13 @@ had nothing left to catch. The skill costs 3.62 kills/s down to 2.52 for it,
 which is inside the band the other seven hold (1.80 to 4.73) rather than under
 it, and bare at depth 4 it is 0.41 — the middle of the eight rather than the
 top. **AND THE CAST IS A FIELD, not a rim**: the circle is FILLED with blades
-(`spikeField`), because an outline said only where the edge was. The one big
+(`spikeField`), because an outline said only where the edge was. **THE FIELD
+IS DRAWN AT RANDOM, NEVER LAID OUT** — *"make a few variations of the ice
+spike in terms of size and design and then randomly place them in the
+circle"* — each blade a place, one of the five pictures in `SPIKE_FIELD_ART`
+and a size of its own, kept only if it stands `SPIKE_APART` from the rest, so
+it is uneven the way broken ice is and has no hole in it; a sunflower spiral
+of one picture read as a pattern. The one big
 blade and the ring are the STANDING mode's alone, with a blizzard of cold motes
 over it so the Chill it is laying down reads. **RIMEFIELD TAKES THE CAST OFF YOUR RATE AND PUTS IT ON A COOLDOWN** —
 2.5s, 120% further, 100% more damage, and what it leaves STANDS for 3.5s,

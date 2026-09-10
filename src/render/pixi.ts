@@ -47,6 +47,7 @@ import {
   SPIKE_ONE,
   SPIKE_TTL,
   spikeField,
+  SPIKE_FIELD_ART,
   blizzard,
   speedLines,
   leapArc,
@@ -1462,7 +1463,7 @@ export async function createPixiRenderer(
           continue;
         }
         for (const blade of spikeField(from, radius)) {
-          const art = effectSprite(ice, SPIKE_ONE);
+          const art = effectSprite(vfxTexture(SPIKE_FIELD_ART[blade.art]) ?? ice, SPIKE_ONE * blade.size);
           art.scale.y *= SPIKE_SQUAT;
           art.anchor.set(0.5, 1);
           art.x = cx(blade.x);

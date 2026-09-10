@@ -2089,31 +2089,40 @@ export function spikeAlpha(t: number, ttl = SPIKE_TTL): number {
   return up * (1 - Math.max(0, (secs - (ttl - SPIKE_GONE)) / SPIKE_GONE));
 }
 
+/** The pictures a FIELD stands up; the first is the standing mode's own blade. */
+export const SPIKE_FIELD_ART = ['spike', 'spike_glass', 'spike_blade', 'spike_wedge', 'spike_prism'];
+
 /** WHERE THE BLADES STAND, FILLING the circle the sim hit rather than marking
  *  its rim. The count rides the AREA, so Area of Effect buys more of them
- *  rather than one bigger one, and each is the size one blade reads at. `up` is
- *  the share of the rise this one has done, staggered so the field erupts. */
-export function spikeField(at: Vec2, radius: number): { x: number; y: number; up: number }[] {
-  const many = Math.max(3, Math.round(radius * radius * SPIKES_PER_AREA));
+ *  rather than one bigger one. Each is DRAWN at random — a place, a picture, a
+ *  size — and kept only if it stands `SPIKE_APART` from every blade before it,
+ *  so the field is uneven the way broken ice is and still has no hole in it. */
+export function spikeField(at: Vec2, radius: number): { x: number; y: number; up: number; art: number; size: number }[] {
+  const many = Math.max(4, Math.round(radius * radius * SPIKES_PER_AREA));
   const seed = Math.round(at.x * 16 + at.y * 32);
-  const out: { x: number; y: number; up: number }[] = [];
-  for (let i = 0; i < many; i++) {
-    // A SUNFLOWER SPIRAL: a draw clumps, and a hole in a field reads as a miss.
-    const turn = i * 2.39996;
-    const far = Math.sqrt((i + 0.5) / many) * radius * 0.92;
-    const jitter = tileNoise(i, seed, 17) - 0.5;
+  const out: { x: number; y: number; up: number; art: number; size: number }[] = [];
+  for (let i = 0; i < many * SPIKE_TRIES && out.length < many; i++) {
+    const far = Math.sqrt(tileNoise(i, seed, 17)) * radius * 0.94;
+    const turn = tileNoise(i, seed, 29) * Math.PI * 2;
+    const x = at.x + Math.cos(turn) * far;
+    // FLATTENED like the ring: a circle seen from above is an ellipse.
+    const y = at.y + Math.sin(turn) * far * 0.6;
+    if (out.some((b) => Math.hypot(b.x - x, (b.y - y) / 0.6) < SPIKE_APART)) continue;
     out.push({
-      x: at.x + Math.cos(turn) * far + jitter * 0.18,
-      // FLATTENED like the ring: a circle seen from above is an ellipse.
-      y: at.y + Math.sin(turn) * far * 0.6 + jitter * 0.1,
+      x, y,
       up: 1 - (far / Math.max(0.001, radius)) * 0.55,
+      art: Math.floor(tileNoise(i, seed, 43) * SPIKE_FIELD_ART.length) % SPIKE_FIELD_ART.length,
+      size: SPIKE_SIZE_LOW + tileNoise(i, seed, 59) * (SPIKE_SIZE_HIGH - SPIKE_SIZE_LOW),
     });
   }
   return out;
 }
 
-/** How many blades one square tile of the hit circle stands up. */
-const SPIKES_PER_AREA = 5.2;
+const SPIKES_PER_AREA = 9; // blades a square tile of the hit circle stands up
+const SPIKE_TRIES = 12; // draws a blade wanted before the field is left short
+const SPIKE_APART = 0.2; // tiles between two feet, in the flattened circle
+const SPIKE_SIZE_LOW = 0.7; // a blade's size as a share of SPIKE_ONE, smallest
+const SPIKE_SIZE_HIGH = 1.35; // and biggest
 
 /** SNOW OVER A STANDING FIELD, so the Chill it keeps applying is visible
  *  rather than inferred. Drifting, and always inside the circle. */
