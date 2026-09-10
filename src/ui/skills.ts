@@ -33,6 +33,7 @@ import {
 import { categoryIcon, skillIcon } from './icons';
 import { chain, frame, mount, svgEl } from './webart';
 import { bakedArt, nodeGlyph } from './webicons';
+import { pointsIn, withoutOne } from '../webgraph';
 import { attachTooltip, hideTooltip } from './tooltip';
 import { ask } from './confirm';
 import { nodeCard } from './glossary';
@@ -667,6 +668,19 @@ function renderWeb(): void {
     glyph.setAttribute('x', (pos.x - glyphSize / 2).toFixed(2));
     glyph.setAttribute('y', (pos.y - Number(glyph.getAttribute('height')) / 2).toFixed(2));
     group.append(glyph);
+    // A node holding a RANGE says where you are in it, on the node itself.
+    const held = pointsIn(progress.allocated, node.id);
+    const most = node.points ?? 1;
+    if (most > 1) {
+      const label = svgEl('text', {
+        class: 'web__node__pts',
+        x: pos.x.toFixed(1),
+        y: (pos.y + r * 1.55).toFixed(1),
+        'text-anchor': 'middle',
+      });
+      label.textContent = `${held}/${most}`;
+      group.append(label);
+    }
 
     attachTooltip(group, () => {
       const picked = node.choices?.find((c) => c.id === progress.choices?.[node.id]);
@@ -674,10 +688,15 @@ function renderWeb(): void {
       // be taken with Rupture" is a decision, where a dark node is a mystery.
       const clash = owned ? null : blockedBy(skillId, node.id, progress.allocated);
       const other = owned ? null : keystoneRefused(skillId, node.id, progress.allocated);
+      const refund = canDeallocate(skillId, node.id, progress.allocated);
       const state = owned
-        ? canDeallocate(skillId, node.id, progress.allocated)
-          ? 'allocated — click to refund'
-          : 'allocated — refunding it would strand another node'
+        ? most > 1
+          ? `${held}/${most} points` +
+            (reachable && spare > 0 ? ' — click to add one' : '') +
+            (refund ? ' — right-click to refund one' : ' — refunding one would shut a gate')
+          : refund
+            ? 'allocated — click to refund'
+            : 'allocated — refunding it would strand another node'
         : clash
           ? `cannot be taken with ${clash.node.name} — ${clash.says}`
           : other
@@ -694,6 +713,8 @@ function renderWeb(): void {
         : '';
       return nodeCard(node.name, state, [
         node.keystone ? 'Keystone. One a tree.' : '',
+        most > 1 ? `Per point, up to ${most}.` : '',
+        node.gate ? `Opens once ${byId.get(node.gate.from)?.name ?? node.gate.from} holds ${node.gate.points}.` : '',
         asConverted(node, skillId), cost(node), choice,
       ]);
     });
@@ -706,9 +727,9 @@ function renderWeb(): void {
         openChoice(node, owned);
         return;
       }
-      if (owned) {
+      if (owned && !(most > 1 && open)) {
         if (canDeallocate(skillId, node.id, progress.allocated)) {
-          progress.allocated = progress.allocated.filter((id) => id !== node.id);
+          progress.allocated = withoutOne(progress.allocated, node.id);
         }
       } else if (open) {
         progress.allocated.push(node.id);
@@ -720,6 +741,16 @@ function renderWeb(): void {
       renderWeb();
     };
     group.addEventListener('click', act);
+    // A point comes off with the other button, so a node holding several can
+    // be walked up and down without emptying it.
+    group.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      if (dragged || !owned || node.choices) return;
+      if (!canDeallocate(skillId, node.id, progress.allocated)) return;
+      progress.allocated = withoutOne(progress.allocated, node.id);
+      render();
+      renderWeb();
+    });
     group.addEventListener('keydown', (e) => {
       const key = (e as KeyboardEvent).key;
       if (key === 'Enter' || key === ' ') {
@@ -780,7 +811,7 @@ function openChoice(node: SkillNodeDef, owned: boolean): void {
     const drop = el('button', 'webmenu__row webmenu__row--drop');
     drop.append(el('span', 'webmenu__name', 'Refund this node'));
     (drop as HTMLButtonElement).onclick = () => {
-      progress.allocated = progress.allocated.filter((id) => id !== node.id);
+      progress.allocated = withoutOne(progress.allocated, node.id);
       delete progress.choices?.[node.id];
       host.hidden = true;
       render();

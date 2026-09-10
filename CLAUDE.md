@@ -1049,6 +1049,25 @@ whose mind has changed. The crafting people are never RESCUED: they live down th
 their own table, not scenes. **The one `plan` left is the ANSWERING HALL**, because a boss fight
 needs a floor with nothing on it.
 
+**A MINOR HOLDS A RANGE OF POINTS, AND EVERY TREE IS ITS OWN SHAPE.** *"Change
+the minor nodes to not have quite as many just generic point ones… make it one
+point that you can put a range of points into… for each tree make it a
+different general shape."* A twig is ONE minor with `SkillNodeDef.points` (3 to
+5) and the notable past it, so a build is a few nodes walked up and down rather
+than a chain of identical studs; `SkillProgress.allocated` lists an id ONCE A
+POINT, `pointsIn` counts them and `withoutOne` refunds the last, so
+`allocated.length` is still what was spent and a save written before it is a
+list of ones. `walked()` merges a node's grants once; `treeMod` reads its stats
+per copy, which is what "per point" means. A fork off a twig is `gate`d — the
+link opens once the twig's minor holds `forkFrom.at` — and `routeTo` in
+`src/skills-tree.ts` is the ONE router, cheapest by points with the gate's
+copies on the way, so a walk to a fork's keystone costs what it did as a chain.
+Left-click adds a point, right-click takes one off, and the node prints
+`held/most`. **THE SILHOUETTE IS `SHAPES` IN `src/trees/layout.ts`** — where the
+six branches hang, a twist on the twigs, a stretch on the whole — eight of them
+mapped by `SHAPE_OF`, the content identical: *"Doesn't need to be different in
+points… just the actual layout."*
+
 **RIMESPIKE IS AN AREA SKILL, AND RIMEFIELD IS THE ONE MODE SWITCH IN THE GAME.**
 *"Make rimespike a large aoe spike instead of single target + splash… it does an
 aoe hit that looks like one big spike raising up from the ground."* One blade up

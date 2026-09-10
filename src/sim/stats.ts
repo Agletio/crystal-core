@@ -666,7 +666,7 @@ export function attributeMod(character: Character): RolledMod | null {
 function walked(character: Character, skillId: string): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   const progress = character.skills?.[skillId];
-  for (const id of progress?.allocated ?? []) {
+  for (const id of new Set(progress?.allocated ?? [])) {
     const node = nodeById(skillId, id);
     const chosen = node?.choices?.find((c) => c.id === progress?.choices?.[id]);
     mergeGrants(out, { ...(node?.grants ?? {}), ...(chosen?.grants ?? {}) });

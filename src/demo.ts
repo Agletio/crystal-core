@@ -356,7 +356,7 @@ import { moverReading } from './sim/movers';
 
 /** Every skill the movement slot takes, so a third one joins every sweep. */
 const MOVERS = PLAYER_SKILLS.filter((sk) => sk.category === 'movement').map((sk) => sk.id);
-import { canAllocateIn } from './webgraph';
+import { canAllocateIn, pointsIn, withoutOne } from './webgraph';
 import {
   BUILT_TREES,
   CENTRE,
@@ -368,6 +368,7 @@ import {
   neighboursOf,
   nodeById,
   pathToNotable,
+  routeTo,
   treeFor,
 } from './skills-tree';
 import {
@@ -3039,7 +3040,7 @@ for (const tree of BUILT_TREES) {
     TRUNK_NODES +
     SPUR_COUNT * SPUR_STEPS +
     tree.spec.branches.reduce(
-      (sum, b) => sum + 1 + b.twigs.reduce((t, twig) => t + twig.minors + 1, 0),
+      (sum, b) => sum + 1 + b.twigs.length * 2,
       0
     );
   check(nodes.length === expected, 'every node the spec asks for is built', `${nodes.length} of ${expected}`);
@@ -3117,8 +3118,10 @@ for (const tree of BUILT_TREES) {
   const orphans = nodes.filter((n) => !distance.has(n.id));
   check(orphans.length === 0, 'every node connects to the middle', orphans.map((n) => n.id).join(', '));
 
-  // Distance is the whole price now: what a node costs is the walk to it.
-  const cost = (n: (typeof nodes)[number]) => distance.get(n.id) ?? Infinity;
+  // Distance is the whole price now: what a node costs is the walk to it, in
+  // POINTS — a minor holding a run of them and a gate on a fork are distance.
+  const pointsTo = new Map(nodes.map((n) => [n.id, routeTo(skillId, n.id).length]));
+  const cost = (n: (typeof nodes)[number]) => pointsTo.get(n.id) || Infinity;
   const unaffordable = nodes.filter((n) => cost(n) > MAX_TREE_POINTS);
   check(
     unaffordable.length === 0,
@@ -3272,11 +3275,9 @@ for (const tree of BUILT_TREES) {
 
   // Getting anywhere means buying road. If the walk to the deepest notable were
   // mostly notables, the minors would be decoration again.
-  const furthest = notables.reduce((a, b) =>
-    (distance.get(a.id) ?? 0) >= (distance.get(b.id) ?? 0) ? a : b
-  );
-  const outward = distance.get(furthest.id) ?? 0;
-  line(`  the furthest notable is ${furthest.name}, ${outward} nodes out`);
+  const furthest = notables.reduce((a, b) => (cost(a) >= cost(b) ? a : b));
+  const outward = cost(furthest);
+  line(`  the furthest notable is ${furthest.name}, ${outward} points out`);
   check(outward >= 8, 'the far notables are a long walk', String(outward));
 
   // Refunding must never strand anything, and must always be possible for the
@@ -3299,28 +3300,33 @@ for (const tree of BUILT_TREES) {
   while (held.length > 0) {
     const loose = held.find((id) => canDeallocate(skillId, id, held));
     if (!loose) break;
-    held = held.filter((id) => id !== loose);
+    held = withoutOne(held, loose);
   }
   check(held.length === 0, 'and every one of them refunded again', `${held.length} stuck`);
-}
 
-/** Every node between a tree's middle and one named, in order. Nothing else
- *  reaches a particular enabler, and the enabler is the whole point. */
-function walkTo(skillId: string, goal: string): string[] {
-  const from = new Map<string, string | null>([[CENTRE, null]]);
-  const queue: string[] = [CENTRE];
-  while (queue.length > 0) {
-    const at = queue.shift()!;
-    if (at === goal) break;
-    for (const next of neighboursOf(skillId, at)) {
-      if (from.has(next)) continue;
-      from.set(next, at);
-      queue.push(next);
-    }
+  // A MINOR HOLDS A RANGE. One node a twig, `points` deep, its stats paid per
+  // point; a fork off it is GATED on how many it holds, and a refund that
+  // would shut that gate behind something owned is refused.
+  const ranged = nodes.filter((n) => (n.points ?? 1) > 1);
+  check(ranged.length > 0, 'some minors hold a range of points', 'none');
+  const wrong = ranged.filter((n) => n.kind !== 'minor' || n.grants || n.choices);
+  check(wrong.length === 0, 'and every one is a minor with stats alone', wrong.map((n) => n.id).join(', '));
+  const full = ranged[0];
+  const upTo = routeTo(skillId, full.id);
+  const stuffed = [...upTo, ...Array(full.points! - 1).fill(full.id)];
+  check(canAllocate(skillId, full.id, stuffed) === false, 'a full one refuses another point', `${full.id} took ${full.points! + 1}`);
+  check(replayTreeNodes(skillId, stuffed, 99).length === stuffed.length, 'and a replay keeps every point of it', String(replayTreeNodes(skillId, stuffed, 99).length));
+  const gated = nodes.find((n) => n.gate);
+  if (gated) {
+    const parent = nodes.find((n) => n.id === gated.gate!.from)!;
+    const toParent = routeTo(skillId, parent.id);
+    check(canAllocate(skillId, gated.id, toParent) === false, `${gated.id} is shut until ${parent.id} holds ${gated.gate!.points}`, 'open at one point');
+    const met = [...toParent, ...Array(gated.gate!.points - 1).fill(parent.id)];
+    check(canAllocate(skillId, gated.id, met), 'and open once it does', met.join(' '));
+    const past = [...met, gated.id];
+    check(canDeallocate(skillId, parent.id, past) === false, 'and a point cannot come off the gate while the fork is held', 'refunded through a gate');
+    check(routeTo(skillId, gated.id).filter((id) => id === parent.id).length === gated.gate!.points, 'the route to a fork buys the gate on the way', routeTo(skillId, gated.id).join(' '));
   }
-  const route: string[] = [];
-  for (let at = goal; at && at !== CENTRE; at = from.get(at) ?? '') route.unshift(at);
-  return route;
 }
 
 // ===========================================================================
@@ -3400,7 +3406,7 @@ rule('AILMENTS — does dealing the type, and only that, apply the ailment?');
     const who = ladderCharacter(2, new Rng(77), 'strike');
     who.tradeAllocated = [];
     const bare = characterStats(who).ailmentChance;
-    skillProgress(who, 'strike').allocated = walkTo('strike', 'st_rend');
+    skillProgress(who, 'strike').allocated = routeTo('strike', 'st_rend');
     const rent = characterStats(who).ailmentChance;
     const moved = byType
       .map((a) => [a, (rent[a.id] ?? 0) - (bare[a.id] ?? 0)] as const)
@@ -6196,12 +6202,12 @@ rule('THE SPIKE — does one cast cover ground, and does buying area cover more?
   check(notTips.length === 0, 'every keystone is the last node of its line', notTips.join(', '));
   const rime = trees.find((t) => t.id === 'rimespike')!;
   check(rime.keys.length === 2 && rime.keys.every((k) => k.kind === 'notable'), 'Rimespike has two keystones, both notables', rime.keys.map((k) => k.id).join(', '));
-  const field = walkTo('rimespike', 'rs_field');
-  const toHail = walkTo('rimespike', 'rs_tempo');
-  const upToHail = toHail.slice(0, -1);
-  check(canAllocate('rimespike', 'rs_tempo', [...new Set([...field, ...upToHail])]) === false, 'and the second keystone is refused while the first is held', 'Hail allowed beside Rimefield');
-  check(canAllocate('rimespike', 'rs_tempo', upToHail), 'though it is open with the first refunded', upToHail.join(' '));
-  const replayed = replayTreeNodes('rimespike', [...new Set([...field, ...toHail])], 99);
+  const field = routeTo('rimespike', 'rs_field');
+  const toHail = routeTo('rimespike', 'rs_tempo', field);
+  const upToHail = [...field, ...toHail.slice(0, -1)];
+  check(canAllocate('rimespike', 'rs_tempo', upToHail) === false, 'and the second keystone is refused while the first is held', 'Hail allowed beside Rimefield');
+  check(canAllocate('rimespike', 'rs_tempo', routeTo('rimespike', 'rs_tempo').slice(0, -1)), 'though it is open with the first refunded', upToHail.join(' '));
+  const replayed = replayTreeNodes('rimespike', [...field, ...toHail], 99);
   check(replayed.filter((id) => id === 'rs_field' || id === 'rs_tempo').length === 1, 'and a save holding both keystones keeps one on replay', replayed.join(' '));
 }
 
@@ -6217,11 +6223,11 @@ rule('THE SPIKE — does one cast cover ground, and does buying area cover more?
     return runToCompletion(new RunSim(set, character, new Rng(404)), 600);
   };
 
-  const freeze = walkTo('rimespike', 'rs_ward');
-  const field = walkTo('rimespike', 'rs_field');
+  const freeze = routeTo('rimespike', 'rs_ward');
+  const field = routeTo('rimespike', 'rs_field');
   const bare = froze([]);
   const standing = froze(field);
-  const lowered = froze([...new Set([...freeze, ...field])]);
+  const lowered = froze([...freeze, ...routeTo('rimespike', 'rs_field', freeze)]);
   line(
     `  Freezes over one descent: ${bare.freezes} on a bare tree, ${standing.freezes} with the ` +
       `spike standing, ${lowered.freezes} with Deepfreeze under it`
@@ -6281,9 +6287,8 @@ rule('THE SPIKE — does one cast cover ground, and does buying area cover more?
 {
   const crystals = (passive: string | null, shots: number) => {
     const who = ladderCharacter(5, new Rng(88), 'rimespike');
-    const freeze = walkTo('rimespike', 'rs_ward');
-    const field = walkTo('rimespike', 'rs_field');
-    skillProgress(who, 'rimespike').allocated = [...new Set([...freeze, ...field])];
+    const freeze = routeTo('rimespike', 'rs_ward');
+    skillProgress(who, 'rimespike').allocated = [...freeze, ...routeTo('rimespike', 'rs_field', freeze)];
     for (const slot of SKILL_SLOTS) {
       if (!slot.accepts.includes('passive') || !slotIsOpen(who, slot.id)) continue;
       if (passive) equipSkill(who, passive, slot.id);
@@ -6347,7 +6352,7 @@ rule('THE SPIKE — does one cast cover ground, and does buying area cover more?
     return { casts: runToCompletion(sim, window).casts, killed: sim.state.killed };
   };
 
-  const field = walkTo('rimespike', 'rs_field');
+  const field = routeTo('rimespike', 'rs_field');
   const free = cast([], 0);
   const moded = cast(field, 0);
   const stacked = cast(field, 84);
@@ -6393,8 +6398,8 @@ rule('THE SPIKE — does one cast cover ground, and does buying area cover more?
     return { casts: runToCompletion(sim, window).casts, killed: sim.state.killed };
   };
   const bare = play([]);
-  const hail = play(walkTo('rimespike', 'rs_tempo'));
-  const cold = play(walkTo('rimespike', 'rs_weight'));
+  const hail = play(routeTo('rimespike', 'rs_tempo'));
+  const cold = play(routeTo('rimespike', 'rs_weight'));
   line(`  in ${window}s: bare ${bare.casts} uses and ${bare.killed} down, Hail ${hail.casts} and ${hail.killed}, Deep Cold ${cold.casts} and ${cold.killed}`);
   check(hail.casts > bare.casts, 'Hail casts more often than the spike does', `${hail.casts} against ${bare.casts}`);
 }
@@ -6410,7 +6415,7 @@ rule('THE RELAY — does a Critical carry you into the next body?');
   const descend = (relay: boolean) => {
     const character = ladderCharacter(3, new Rng(88), 'ambush');
     const progress = skillProgress(character, 'ambush');
-    progress.allocated = relay ? walkTo('ambush', 'am_relay') : [];
+    progress.allocated = relay ? routeTo('ambush', 'am_relay') : [];
     const sim = new RunSim([], character, new Rng(404));
     // FORCED, so the reading is about the chain rather than about a crit roll.
     sim.state.hero.stats.critChance = 100;
@@ -6455,7 +6460,7 @@ rule('THE RELAY — does a Critical carry you into the next body?');
   const seconds = 8;
   const relayed = (cooldown: number) => {
     const character = ladderCharacter(3, new Rng(88), 'ambush');
-    skillProgress(character, 'ambush').allocated = walkTo('ambush', 'am_relay');
+    skillProgress(character, 'ambush').allocated = routeTo('ambush', 'am_relay');
     const sim = new RunSim([], character, new Rng(404));
     sim.state.hero.stats.critChance = 100;
     sim.state.hero.stats.cooldown = cooldown;
@@ -7090,25 +7095,7 @@ rule('THE SHEET — does every number on it survive being checked?');
   }
 
   /** The run of minors in front of a node, so a walk can be aimed rather than hoped for. */
-  const pathTo = (skillId: string, targetId: string): string[] => {
-    const from = new Map<string, string | null>([[CENTRE, null]]);
-    const queue: string[] = [CENTRE];
-    while (queue.length > 0) {
-      const at = queue.shift()!;
-      if (at === targetId) break;
-      for (const next of neighboursOf(skillId, at)) {
-        if (from.has(next)) continue;
-        from.set(next, at);
-        queue.push(next);
-      }
-    }
-    if (!from.has(targetId)) return [];
-    const out: string[] = [];
-    for (let at: string | null = targetId; at && at !== CENTRE; at = from.get(at) ?? null) {
-      out.unshift(at);
-    }
-    return out;
-  };
+  const pathTo = (skillId: string, targetId: string): string[] => routeTo(skillId, targetId);
 
   // A random walk found no node that scales an ailment DOWN, and one of those
   // is exactly what made the sheet disagree with itself. Every node that
@@ -8875,7 +8862,7 @@ rule('THREE SLOTS — one that kills, one always on, one that moves you');
 
     const most = (SKILL_BY_ID.gale.params?.gusts as number) ?? 0;
     const plain = surged([]);
-    const anchored = surged([...walkTo('gale', 'gl_anchor'), 'gl_anchor']);
+    const anchored = surged([...routeTo('gale', 'gl_anchor'), 'gl_anchor']);
     line(
       `  Gusts of ${most} at the worst of a descent: ${plain.least} bare, ` +
         `${anchored.least} Anchored, and ${plain.uses} steps taken`
@@ -15091,7 +15078,7 @@ rule('THE SAVE — does a save survive the game changing under it?');
   const replay: string[] = [];
   for (let i = 0; i < progress.allocated.length; i++) {
     const next = progress.allocated.find(
-      (id) => !replay.includes(id) && canAllocate('fireball', id, replay)
+      (id) => pointsIn(replay, id) < pointsIn(progress.allocated, id) && canAllocate('fireball', id, replay)
     );
     if (!next) break;
     replay.push(next);

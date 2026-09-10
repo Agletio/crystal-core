@@ -184,7 +184,9 @@ function walkMover(character: Character, shape: BuildShape): void {
     for (const node of web.nodes) {
       if (progress.allocated.length >= budget) return;
       if (web.branchOf[node.id] !== arm) continue;
-      if (canAllocate(want.skill, node.id, progress.allocated)) progress.allocated.push(node.id);
+      while (progress.allocated.length < budget && canAllocate(want.skill, node.id, progress.allocated)) {
+        progress.allocated.push(node.id);
+      }
     }
   }
 }

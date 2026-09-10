@@ -7,7 +7,7 @@
  * `stats` are ordinary stat lines; `grants` are switches that CHANGE HOW THE
  * SKILL WORKS. See sim/skills.ts for the ones the delivery layer reads.
  */
-import { canAllocateIn, canDeallocateIn, neighboursIn, replayWeb } from './webgraph';
+import { canAllocateIn, canDeallocateIn, neighboursIn, pointsIn, replayWeb } from './webgraph';
 import { GRANT_BY_ID } from './sim/grants';
 import type { Changes } from './sim/grants';
 import { interactionOf } from './trees/interactions';
@@ -157,35 +157,71 @@ export const hasNotable = (skillId: string, allocated: readonly string[]): boole
   allocated.some((id) => nodeById(skillId, id)?.kind === 'notable');
 
 /**
+ * The points to buy, in order, from what is held to a node that satisfies
+ * `goal` — one entry a POINT, so a gate that wants three in the minor before
+ * it lists that minor three times. Cheapest by points, since distance is the
+ * whole price and a gate is distance too. Empty when nothing qualifies.
+ */
+function routeFrom(
+  skillId: string,
+  allocated: readonly string[],
+  goal: (node: SkillNodeDef) => boolean
+): string[] {
+  const nodes = treeFor(skillId);
+  const byId = new Map(nodes.map((n) => [n.id, n]));
+  const cost = new Map<string, number>();
+  const prev = new Map<string, string | null>();
+  const extra = new Map<string, number>(); // copies of the node before it a gate wants first
+  const done = new Set<string>();
+  const heldAfter = (id: string) => (allocated.includes(id) ? pointsIn(allocated, id) : 1);
+
+  for (const id of [CENTRE, ...new Set(allocated)]) {
+    cost.set(id, 0);
+    prev.set(id, null);
+  }
+  for (;;) {
+    let at: string | null = null;
+    for (const [id, c] of cost) if (!done.has(id) && (at === null || c < cost.get(at)!)) at = id;
+    if (at === null) return [];
+    done.add(at);
+    const node = byId.get(at);
+    if (node && !allocated.includes(at) && goal(node)) {
+      const route: string[] = [];
+      for (let id: string | null = at; id && cost.get(id)! > 0; id = prev.get(id) ?? null) {
+        route.unshift(id);
+        const before = prev.get(id);
+        if (before && before !== CENTRE) route.unshift(...Array(extra.get(id) ?? 0).fill(before));
+      }
+      return route;
+    }
+    const fromHere = byId.get(at);
+    for (const next of neighboursOf(skillId, at)) {
+      const n = byId.get(next);
+      if (!n || done.has(next) || allocated.includes(next)) continue;
+      if (fromHere?.gate?.from === next) continue; // this link opens from the other side
+      const more = n.gate?.from === at ? Math.max(0, n.gate.points - heldAfter(at)) : 0;
+      const c = cost.get(at)! + more + 1;
+      if (c < (cost.get(next) ?? Infinity)) {
+        cost.set(next, c);
+        prev.set(next, at);
+        extra.set(next, more);
+      }
+    }
+  }
+}
+
+/** The points that reach one node, from the middle or from what is held. */
+export const routeTo = (skillId: string, nodeId: string, allocated: readonly string[] = []): string[] =>
+  routeFrom(skillId, allocated, (n) => n.id === nodeId);
+
+/**
  * The nodes to take, in order, to reach the nearest notable — empty once one is
- * allocated. Distance is the whole price, so the shortest route is the cheapest
- * one and its LENGTH is what a notable costs from where you are standing.
+ * allocated. Its LENGTH is what a notable costs from where you are standing.
  */
 export function pathToNotable(
   skillId: string,
   allocated: readonly string[]
 ): SkillNodeDef[] {
   if (hasNotable(skillId, allocated)) return [];
-
-  const seen = new Set<string>(allocated);
-  const queue: string[][] = [];
-  for (const node of treeFor(skillId)) {
-    if (!canAllocate(skillId, node.id, allocated)) continue;
-    seen.add(node.id);
-    queue.push([node.id]);
-  }
-
-  for (let i = 0; i < queue.length; i++) {
-    const path = queue[i];
-    const at = path[path.length - 1];
-    if (nodeById(skillId, at)?.kind === 'notable') {
-      return path.map((id) => nodeById(skillId, id)!);
-    }
-    for (const next of neighboursOf(skillId, at)) {
-      if (next === CENTRE || seen.has(next)) continue;
-      seen.add(next);
-      queue.push([...path, next]);
-    }
-  }
-  return [];
+  return routeFrom(skillId, allocated, (n) => n.kind === 'notable').map((id) => nodeById(skillId, id)!);
 }

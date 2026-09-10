@@ -26,13 +26,36 @@ const SPUR_SLOTS = [1, 3, 5, 7, 9, 11];
 const SPUR_R = [3.5, 4.4];
 
 const ENABLER_R = 3.8;
-/** How far out each step along a twig goes. Wide enough that a twig ending in
- *  a notable does not have to be shoved apart by `spread` to fit its art. */
-const TWIG_STEP = 1.15;
+/** How far out each step along a twig goes: a minor that holds a run of points
+ *  and the notable past it, so two steps is a twig. */
+const TWIG_STEP = 1.55;
 /** How wide a branch spreads, as a fraction of the circle. */
 const BRANCH_ARC = 0.125;
 
 const TAU = Math.PI * 2;
+
+/** THE SILHOUETTE, per tree: where the six branches hang, how the ways in
+ *  turn, how a twig twists as it goes, and how the whole is stretched. The
+ *  content is the same shape everywhere; only where it sits differs. */
+interface Shape { anchors: number[]; twist: number; scale: [number, number] }
+const even = (turn = 0, over = 1): number[] =>
+  Array.from({ length: 6 }, (_, i) => -Math.PI / 2 + turn + (i / 6 - (1 - over) / 2) * TAU * over);
+const SHAPES: Record<string, Shape> = {
+  ring: { anchors: even(), twist: 0, scale: [1, 1] },
+  fan: { anchors: even(0, 0.62).map((a) => a - TAU * 0.19), twist: 0, scale: [1.2, 0.95] },
+  wide: { anchors: even(TAU / 12), twist: 0, scale: [1.5, 0.82] },
+  tall: { anchors: even(), twist: 0, scale: [0.82, 1.45] },
+  spiral: { anchors: even(), twist: 0.32, scale: [1.05, 1.05] },
+  pinwheel: { anchors: even(TAU / 12), twist: -0.3, scale: [1, 1] },
+  cross: { anchors: [-Math.PI / 2 - 0.34, -Math.PI / 2 + 0.34, 0, Math.PI / 2 + 0.34, Math.PI / 2 - 0.34, Math.PI], twist: 0, scale: [1.1, 1.1] },
+  crescent: { anchors: even(Math.PI, 0.7), twist: 0.12, scale: [1.1, 1.15] },
+};
+/** Each tree its own silhouette; a skill not named here is a ring. */
+const SHAPE_OF: Record<string, string> = {
+  strike: 'cross', shockwave: 'wide', fireball: 'spiral', rimespike: 'fan',
+  blight: 'crescent', arc_lightning: 'pinwheel', lightning_arrow: 'tall', ambush: 'ring',
+  blink: 'pinwheel', leap: 'tall', gale: 'spiral',
+};
 
 /** How many branches and trunk notables a spec must supply. */
 export const BRANCH_COUNT = ANCHORS.length;
@@ -181,10 +204,22 @@ export function buildTree(spec: TreeSpec): BuiltTree {
     join(trunkAt(2, (facing + 1) % OUTER), trunkAt(1, i));
   }
 
+  const shape = SHAPES[SHAPE_OF[spec.skillId] ?? 'ring'];
+  /** Slot angles on the outer ring: an anchor's own, and a spur midway to the next. */
+  const slotAngle = (slot: number): number => {
+    const b = Math.floor(slot / 2);
+    const a = shape.anchors[b % 6];
+    if (slot % 2 === 0) return a;
+    let next = shape.anchors[(b + 1) % 6];
+    if (next < a) next += TAU;
+    return (a + next) / 2;
+  };
   for (let ring = 1; ring <= TRUNK.length; ring++) {
     const { count, r } = TRUNK[ring - 1];
     for (let i = 0; i < count; i++) {
-      const angle = ((i + (jitter(ring, i, 1) - 0.5) * 0.3) / count) * TAU - Math.PI / 2;
+      const angle =
+        (ring === 2 ? slotAngle(i) : slotAngle((i * OUTER) / TRUNK[0].count)) +
+        (jitter(ring, i, 1) - 0.5) * 0.08;
       const reach = r + (jitter(ring, i, 2) - 0.5) * 0.3;
       const common = spec.common[(ring * 3 + i) % spec.common.length];
       nodes.push({
@@ -203,13 +238,12 @@ export function buildTree(spec: TreeSpec): BuiltTree {
   // Six short spurs off the trunk, each ending in a notable worth having
   // whatever you go on to build.
   SPUR_SLOTS.forEach((slot, spur) => {
-    const base = (slot / TRUNK[1].count) * TAU - Math.PI / 2;
     for (let step = 0; step < SPUR_R.length; step++) {
       const last = step === SPUR_R.length - 1;
       const id = spurId(spur, step);
       const notable = last ? spec.trunkNotables[spur] : null;
       const common = spec.common[(spur * 2 + step) % spec.common.length];
-      const angle = base + (jitter(spur, step, 5) - 0.5) * 0.12;
+      const angle = slotAngle(slot) + (jitter(spur, step, 5) - 0.5) * 0.12;
       const reach = SPUR_R[step] + (jitter(spur, step, 6) - 0.5) * 0.2;
 
       join(id, step === 0 ? trunkAt(2, slot) : spurId(spur, step - 1));
@@ -234,7 +268,7 @@ export function buildTree(spec: TreeSpec): BuiltTree {
 
   // --- the branches ---------------------------------------------------------
   spec.branches.forEach((branch, b) => {
-    const base = (ANCHORS[b] / TRUNK[1].count) * TAU - Math.PI / 2;
+    const base = shape.anchors[b];
     join(branch.enabler.id, trunkAt(2, ANCHORS[b]));
     nodes.push({
       id: branch.enabler.id,
@@ -248,9 +282,8 @@ export function buildTree(spec: TreeSpec): BuiltTree {
       ...(branch.enabler.grants ? { grants: branch.enabler.grants } : {}),
     });
 
-    // Where each node of each twig ends up, so a fork can start from one.
-    const placed: Array<Array<{ id: string; depth: number; angle: number }>> = [];
-    let minorAt = 0;
+    // Where each twig's minor ends up, so a fork can start from it.
+    const placed: Array<{ id: string; depth: number; angle: number }> = [];
 
     branch.twigs.forEach((twig, t) => {
       // Twigs are aimed across the wedge in the order they are written, so a
@@ -261,33 +294,33 @@ export function buildTree(spec: TreeSpec): BuiltTree {
           `${spec.skillId}/${branch.id}: twig ${t} forks from ${twig.forkFrom.twig}, not its neighbour`
         );
       }
-      // Never off a twig's last node: that one is a notable, and a notable
-      // with something growing out of it is no longer a dead end.
-      const parent = twig.forkFrom
-        ? placed[twig.forkFrom.twig][
-            Math.min(twig.forkFrom.at, branch.twigs[twig.forkFrom.twig].minors - 1)
-          ]
-        : { id: branch.enabler.id, depth: 0, angle: base };
+      // A fork grows off the other twig's MINOR, and opens once that minor
+      // holds `at` points — never off a notable, which is a dead end.
+      const parent = twig.forkFrom ? placed[twig.forkFrom.twig] : { id: branch.enabler.id, depth: 0, angle: base };
+      const gate = twig.forkFrom
+        ? { from: parent.id, points: Math.min(twig.forkFrom.at, branch.twigs[twig.forkFrom.twig].minors) }
+        : null;
       // Each twig aims somewhere of its own inside the wedge, and drifts there
       // as it goes out, so a branch opens like a hand rather than a fan.
       const aim =
-        base + (((t + 0.5) / branch.twigs.length - 0.5) * BRANCH_ARC + 0.012 * t) * TAU;
+        base + (((t + 0.5) / branch.twigs.length - 0.5) * BRANCH_ARC + 0.012 * t) * TAU + shape.twist;
 
-      const chain: Array<{ id: string; depth: number; angle: number }> = [];
-      const length = twig.minors + 1;
-      for (let step = 0; step < length; step++) {
-        const last = step === length - 1;
-        const id = last ? twig.notable.id : branchId(branch.id, t, step);
+      const minor = branch.minors[t % branch.minors.length];
+      const minorId = branchId(branch.id, t, 0);
+      const steps = [
+        { id: minorId, last: false },
+        { id: twig.notable.id, last: true },
+      ];
+      steps.forEach(({ id, last }, step) => {
         const depth = parent.depth + step + 1;
-        const along = (step + 1) / length;
+        const along = (step + 1) / steps.length;
         const angle =
           parent.angle +
           (aim - parent.angle) * along +
           (jitter(b, t * 9 + step, 3) - 0.5) * 0.045;
         const reach = ENABLER_R + depth * TWIG_STEP + (jitter(b, t * 9 + step, 4) - 0.5) * 0.35;
 
-        join(id, step === 0 ? parent.id : chain[step - 1].id);
-        const minor = branch.minors[minorAt++ % branch.minors.length];
+        join(id, step === 0 ? parent.id : minorId);
 
         nodes.push({
           id,
@@ -298,6 +331,8 @@ export function buildTree(spec: TreeSpec): BuiltTree {
           y: Math.sin(angle) * reach,
           links: links.get(id) ?? [],
           ...(last && twig.notable.keystone ? { keystone: true as const } : {}),
+          ...(!last ? { points: twig.minors } : {}),
+          ...(!last && gate ? { gate } : {}),
           ...(last
             ? {
                 ...(twig.notable.stats ? { stats: twig.notable.stats } : {}),
@@ -311,15 +346,17 @@ export function buildTree(spec: TreeSpec): BuiltTree {
                 ...(minor.grants ? { grants: minor.grants } : {}),
               }),
         });
-        chain.push({ id, depth, angle });
-      }
-      placed.push(chain);
+        if (step === 0) placed.push({ id, depth, angle });
+      });
     });
   });
 
   // Links are collected while the shape is worked out, so every node picks up
   // whatever named it after it was pushed.
-  const built = spread(nodes.map((n) => ({ ...n, links: links.get(n.id) ?? [] })), links);
+  const built = spread(
+    nodes.map((n) => ({ ...n, x: n.x * shape.scale[0], y: n.y * shape.scale[1], links: links.get(n.id) ?? [] })),
+    links
+  );
 
   return {
     spec,
@@ -329,10 +366,7 @@ export function buildTree(spec: TreeSpec): BuiltTree {
         [branch.enabler.id, branch.id] as [string, string],
         ...branch.twigs.flatMap((twig, t) => [
           [twig.notable.id, branch.id] as [string, string],
-          ...Array.from(
-            { length: twig.minors },
-            (_, step) => [branchId(branch.id, t, step), branch.id] as [string, string]
-          ),
+          [branchId(branch.id, t, 0), branch.id] as [string, string],
         ]),
       ])
     ),
