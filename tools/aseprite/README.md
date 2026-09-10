@@ -14,4 +14,5 @@ the path; it builds from source only when that binary will not run. Built from
 aseprite `375989a` with `-DLAF_BACKEND=none -DENABLE_UI=OFF`.
 
 - `tools/rig/compose.lua` composes the one-still rig's frames through it.
-- `tools/aseprite/character.lua` draws a character from nothing.
+- `tools/aseprite/character.lua` draws a character from nothing with the drawing tools.
+- `tools/aseprite/overworld.lua` places a small overworld character pixel by pixel.
