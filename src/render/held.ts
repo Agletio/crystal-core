@@ -70,6 +70,68 @@ export interface Hand {
 const REST: Hand = { x: 0.61, y: 0.51, turn: 0 };
 
 export const HERO_HANDS: Record<string, Record<string, Hand[]>> = {
+  // The witch has no drawn-weapon variants, so what she holds is PINNED at
+  // these; read off her sheet, run lengths matching what each state KEEPS.
+  witch: {
+    attack: [ // three frames square, then the lunge and the full extension
+      { x: 0.6, y: 0.55, turn: 0 },
+      { x: 0.6, y: 0.55, turn: 0 },
+      { x: 0.61, y: 0.54, turn: -0.2 },
+      { x: 0.76, y: 0.44, turn: -1.1 },
+      { x: 0.86, y: 0.4, turn: -1.4 },
+    ],
+    'attack/off': [
+      { x: 0.48, y: 0.55, turn: 0 },
+      { x: 0.48, y: 0.55, turn: 0 },
+      { x: 0.48, y: 0.55, turn: 0 },
+      { x: 0.44, y: 0.5, turn: 0.2 },
+      { x: 0.42, y: 0.48, turn: 0.3 },
+    ],
+    cast: [ // both arms up, then flung down and forward with the bow
+      { x: 0.6, y: 0.55, turn: 0 },
+      { x: 0.6, y: 0.55, turn: 0 },
+      { x: 0.62, y: 0.5, turn: 0.4 },
+      { x: 0.7, y: 0.34, turn: 1.2 },
+      { x: 0.8, y: 0.56, turn: -1.3 },
+    ],
+    'cast/off': [
+      { x: 0.5, y: 0.55, turn: 0 },
+      { x: 0.5, y: 0.55, turn: 0 },
+      { x: 0.52, y: 0.5, turn: 0.3 },
+      { x: 0.58, y: 0.36, turn: 1 },
+      { x: 0.66, y: 0.56, turn: -1.1 },
+    ],
+    walk: [
+      { x: 0.6, y: 0.55, turn: 0 },
+      { x: 0.62, y: 0.54, turn: -0.15 },
+      { x: 0.64, y: 0.53, turn: -0.25 },
+      { x: 0.62, y: 0.54, turn: -0.15 },
+      { x: 0.6, y: 0.55, turn: 0 },
+      { x: 0.58, y: 0.56, turn: 0.15 },
+      { x: 0.57, y: 0.57, turn: 0.25 },
+      { x: 0.58, y: 0.56, turn: 0.15 },
+    ],
+    'walk/off': [
+      { x: 0.5, y: 0.55, turn: 0 },
+      { x: 0.49, y: 0.56, turn: 0.1 },
+      { x: 0.48, y: 0.57, turn: 0.15 },
+      { x: 0.49, y: 0.56, turn: 0.1 },
+      { x: 0.5, y: 0.55, turn: 0 },
+      { x: 0.51, y: 0.54, turn: -0.1 },
+      { x: 0.52, y: 0.53, turn: -0.15 },
+      { x: 0.51, y: 0.54, turn: -0.1 },
+    ],
+    idle: [
+      { x: 0.6, y: 0.55, turn: 0 },
+      { x: 0.6, y: 0.56, turn: 0.05 },
+      { x: 0.6, y: 0.55, turn: 0 },
+    ],
+    'idle/off': [
+      { x: 0.5, y: 0.55, turn: 0 },
+      { x: 0.5, y: 0.56, turn: 0.03 },
+      { x: 0.5, y: 0.55, turn: 0 },
+    ],
+  },
   alchemist: {
     attack: [ // an OVERHEAD SMASH: fist high, forward at the head, down, through
       { x: 0.72, y: 0.18, turn: -2.2 },
