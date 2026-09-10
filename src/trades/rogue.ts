@@ -21,7 +21,7 @@ export const ROGUE_TRADE: TradeSpec = {
   id: 'rogue',
   name: 'Rogue',
   blurb:
-    'The only trade that may hold two weapons at once. A pair deals 25% more ' +
+    'One of two trades that may hold two weapons at once. A pair deals 25% more ' +
     'damage, and every node reads WHICH two you are holding.',
   lore:
     `Obreth, of ${ORDER.name}, which is not a thing he volunteers. They sent ` +
@@ -30,7 +30,7 @@ export const ROGUE_TRADE: TradeSpec = {
     'never once been seen carrying a shield and he is unkind about people who ' +
     'are. What the Order wanted read, he has not said.',
   baseline: {
-    short: 'Capable of holding two weapons at once — no other trade may.',
+    short: 'Capable of holding two weapons at once, which most trades may not.',
     says: [
       `Both hands may hold a one-handed weapon. A pair puts ${pct(DUAL.main)} of the main ` +
         `hand and ${pct(DUAL.off)} of the off hand into every hit, and the rate ALTERNATES: ` +

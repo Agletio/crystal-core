@@ -17,6 +17,7 @@ import { AETHERMANCER } from './trades/aethermancer';
 import { ALCHEMIST } from './trades/alchemist';
 import { WARRIOR_TRADE } from './trades/warrior';
 import { ROGUE_TRADE } from './trades/rogue';
+import { WITCH_TRADE } from './trades/witch';
 import { canAllocateIn, canDeallocateIn, neighboursIn, replayWeb } from './webgraph';
 import { mergeGrants } from './sim/grants';
 import type { BuiltTrade } from './trades/spec';
@@ -25,7 +26,7 @@ import type { SkillNodeDef } from './trees/node';
 export type { BuiltTrade } from './trades/spec';
 
 export const TRADES: BuiltTrade[] = [
-  ALCHEMIST, AETHERMANCER, WARRIOR_TRADE, ROGUE_TRADE,
+  ALCHEMIST, AETHERMANCER, WARRIOR_TRADE, ROGUE_TRADE, WITCH_TRADE,
 ].map(buildTrade);
 
 export const TRADE_BY_ID: Record<string, BuiltTrade> = Object.fromEntries(

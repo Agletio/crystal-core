@@ -1388,8 +1388,13 @@ in your hand. The trade is what the hero LOOKS like; it is funded
 by character level out of its own budget, so it survives every skill you swap.
 Four of them: potions as an engine, mana as one, **what is in your other hand**
 (a shield's Block against a two-hander's swing — Mahthar's whole web), and
-**TWO WEAPONS**, which is Obreth's and which nobody else may hold at all.
-**DUAL WIELDING IS ONE TRADE'S PRIVILEGE** — `TradeSpec.dualWields`, read
+**TWO WEAPONS**, which is Obreth's and Hesper's and which nobody else may hold.
+**THE WITCH IS THE ROGUE'S WEB UNDER ANOTHER BODY** — *"copy everything in
+terms of trades and stats and stuff from rogue and make it exactly the same in
+that regard but make new art"* — cloned off `ROGUE_TRADE` at build and
+re-prefixed `wit_`, so nothing mechanical is authored twice and a save cannot
+replay one walk onto the other's web.
+**DUAL WIELDING IS THOSE TWO TRADES' PRIVILEGE** — `TradeSpec.dualWields`, read
 through `canDualWield` and nowhere else. Obreth and the Lambengolmor are both of
 **the Obsidian Order** (`ORDER`), who hold that the rock is writing.
 
