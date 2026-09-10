@@ -3065,6 +3065,34 @@
    "character": "b80b4cb4-d314-4a2a-adb6-cc27341e5911"
   },
   {
+   "sprite": "witch_apose",
+   "name": "Hesper",
+   "size": 96,
+   "look": "a gaunt hollow-cheeked WOMAN, old before her time, standing in a relaxed A-POSE for a sprite sheet: BOTH ARMS HELD OUT AND AWAY from the body at about forty-five degrees with a clear gap of empty air between each arm and the torso, feet planted APART with a clear gap between the legs. A tattered dress of coarse near-black wool with a ragged uneven hem ending at MID-SHIN so the thin shins and worn leather boots are fully visible, a threadbare shawl of dull ash-grey drawn up over her head like a hood so the face is half in shadow, a heavy knotted cord belt with two small stoppered clay bottles, thin bare forearms, lank grey hair falling from under the shawl, a short ragged cloak hanging straight down BEHIND her, not touching the arms and not reaching the ground. Near-black, ash-grey and dried rust-brown, dusty and unpolished. Realistic ADULT proportions: a SMALL head on a tall thin long-limbed body. BOTH HANDS EMPTY — no staff, no wand, no knife, no weapon at all. NOT anime, NOT manga, NOT chibi, NOT cute, NOT a big head, NOT a doll, NOT a cartoon, NOT a hero pose, NOT a pointed hat, NOT a broomstick, NOT a cat, NOT glowing, NOT rim light, NOT shiny, NOT bright colours, NOT purple, NOT green skin, NOT a pretty sorceress, NOT a young woman, NOT armour, NOT a floor-length dress, NOT a floor-length cape, NOT arms at the sides, NOT crossed arms. FULL BODY head to boots, seen at a THREE-QUARTER angle, turned enough that you can tell which way she faces. No ground, no floor, no shadow cast on the ground, no base, no platform, no other objects.",
+   "states": {
+    "idle": {
+     "frames": 4,
+     "say": "standing hunched with the weight on one hip, shoulders drawn in, hands hanging loose and half curled at her sides, a slow breath"
+    },
+    "walk": {
+     "frames": 8,
+     "say": "shuffling forward at a stooped steady pace, knees bending under the ragged hem, the shawl swaying, arms swinging a little"
+    },
+    "attack": {
+     "frames": 4,
+     "say": "staying in strict side profile, lunging through off the front foot and driving one arm forward and across in a short vicious stab, ending at full forward extension"
+    },
+    "cast": {
+     "frames": 4,
+     "say": "strict side profile, both arms raised together above her head and then flung down and forward with the fingers spread, the whole body bowing with it"
+    },
+    "death": {
+     "frames": 4,
+     "say": "buckling at the knees and sinking down, then toppling onto her side and lying flat and still"
+    }
+   }
+  },
+  {
    "sprite": "obreth_sword",
    "name": "Obreth, with a sword",
    "size": 96,

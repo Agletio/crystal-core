@@ -428,7 +428,7 @@ if (process.env.CAST) {
  *  exactly that far and stops it again. BURST=<sim seconds> a frame. */
 const step = Number(process.env.BURST ?? 0.06);
 async function onwards() {
-  if (!process.env.CAST) return page.waitForTimeout(APART);
+  if (!process.env.CAST && !process.env.STEP) return page.waitForTimeout(APART); // STEP=1 steps a WAIT hold too
   await page.evaluate((by) => {
     const at = document.body.dataset;
     at.holdAt = String(Number(at.holdAt ?? 0) + Number(by));

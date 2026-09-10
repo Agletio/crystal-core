@@ -16,11 +16,11 @@ import { decodePng, encodePng } from '../art/png.mts';
 import { encodeGif } from './gif.mts';
 
 const here = (f: string): string => new URL(`./${f}`, import.meta.url).pathname;
-const STILL = here('../art/cache/designs/witch-0.png');
+const STILL = here('../art/cache/designs/witch_apose-0.png');
 const GRID = 48;
 const SUPER = 3; // source px per grid px
 const CANVAS = GRID * SUPER;
-const OFF = { x: 8, y: 14 }; // where the still's own origin lands on the canvas
+const OFF = { x: 12, y: 14 }; // where the still's own origin lands on the canvas
 const COVER = 4; // of 9 source px a grid px needs to be ink
 
 // --- the still --------------------------------------------------------------
@@ -41,18 +41,18 @@ type Pt = [number, number];
 interface PartDef { name: string; parent: string; pivot: Pt; poly: Pt[]; fillUnder?: boolean }
 // In PRIORITY order: a pixel goes to the first polygon that holds it.
 const PARTS: PartDef[] = [
-  { name: 'head', parent: 'torso', pivot: [64, 34], poly: [[46, 2], [80, 2], [80, 34], [78, 44], [64, 46], [50, 44], [46, 34]] },
-  { name: 'armNear', parent: 'torso', pivot: [76, 38], poly: [[72, 34], [84, 34], [84, 76], [72, 76]] },
-  { name: 'armFar', parent: 'torso', pivot: [52, 40], poly: [[44, 36], [56, 36], [56, 76], [44, 76]] },
-  { name: 'footNear', parent: 'root', pivot: [64, 114], poly: [[56, 112], [72, 112], [72, 126], [56, 126]] },
-  { name: 'footFar', parent: 'root', pivot: [50, 112], poly: [[40, 108], [58, 108], [58, 124], [40, 124]] },
-  { name: 'torso', parent: 'root', pivot: [64, 66], poly: [[46, 30], [80, 30], [80, 66], [46, 66]], fillUnder: true },
-  { name: 'dressUpper', parent: 'root', pivot: [64, 66], poly: [[44, 64], [82, 64], [82, 92], [44, 92]], fillUnder: true },
-  { name: 'dressHem', parent: 'dressUpper', pivot: [64, 92], poly: [[42, 90], [84, 90], [84, 120], [42, 120]], fillUnder: true },
-  { name: 'cloakUpper', parent: 'torso', pivot: [48, 30], poly: [[16, 24], [50, 24], [50, 84], [16, 84]] },
-  { name: 'cloakLower', parent: 'cloakUpper', pivot: [36, 82], poly: [[14, 80], [48, 80], [48, 126], [14, 126]] },
+  { name: 'head', parent: 'torso', pivot: [61, 28], poly: [[46, 1], [76, 1], [76, 25], [69, 30], [54, 30], [46, 25]] },
+  { name: 'armLeft', parent: 'torso', pivot: [49, 37], poly: [[45, 32], [53, 32], [53, 50], [50, 54], [43, 66], [41, 74], [28, 74], [28, 60], [40, 46]] },
+  { name: 'armRight', parent: 'torso', pivot: [75, 38], poly: [[71, 35], [80, 35], [80, 81], [71, 81]] },
+  { name: 'legLeft', parent: 'root', pivot: [55, 96], poly: [[49, 96], [62, 96], [62, 122], [40, 122], [40, 112], [49, 106]] },
+  { name: 'legRight', parent: 'root', pivot: [75, 96], poly: [[68, 96], [82, 96], [82, 127], [68, 127]] },
+  { name: 'torso', parent: 'root', pivot: [62, 66], poly: [[47, 26], [77, 26], [77, 67], [47, 67]], fillUnder: true },
+  { name: 'dressUpper', parent: 'root', pivot: [62, 66], poly: [[45, 65], [79, 65], [79, 86], [43, 86]], fillUnder: true },
+  { name: 'dressHem', parent: 'dressUpper', pivot: [62, 85], poly: [[42, 84], [80, 84], [82, 104], [39, 104]], fillUnder: true },
+  { name: 'cloakUpper', parent: 'torso', pivot: [78, 27], poly: [[70, 22], [93, 22], [93, 62], [74, 62]], fillUnder: true },
+  { name: 'cloakLower', parent: 'cloakUpper', pivot: [82, 60], poly: [[76, 58], [94, 58], [94, 104], [80, 104]], fillUnder: true },
 ];
-const DRAW_ORDER = ['cloakLower', 'cloakUpper', 'armFar', 'footFar', 'dressHem', 'dressUpper', 'torso', 'head', 'footNear', 'armNear'];
+const DRAW_ORDER = ['cloakLower', 'cloakUpper', 'legLeft', 'legRight', 'dressHem', 'dressUpper', 'torso', 'head', 'armRight', 'armLeft'];
 
 const inside = (p: Pt[], x: number, y: number): boolean => {
   let on = false;
@@ -180,12 +180,12 @@ const STATES: Record<string, State> = {
     at: (t) => {
       const b = Math.sin(TAU * t);
       return {
-        root: { dy: 1.2 * b },
+        root: { dy: 1.0 * b },
         pose: {
-          torso: { rot: 1.0 * b }, head: { rot: -0.8 * b },
-          armNear: { rot: 2.5 * b }, armFar: { rot: 2.5 * b },
-          cloakUpper: { rot: 1.5 * Math.sin(TAU * t - 0.8) }, cloakLower: { rot: 2.5 * Math.sin(TAU * t - 1.6) },
-          dressHem: { rot: 0.8 * Math.sin(TAU * t - 0.5) },
+          torso: { rot: 0.6 * b }, head: { rot: -0.6 * b, dy: 0.5 * b },
+          armLeft: { rot: 2.0 * b }, armRight: { rot: -2.0 * b },
+          cloakUpper: { rot: -1.5 * Math.sin(TAU * t - 0.8) }, cloakLower: { rot: -2.5 * Math.sin(TAU * t - 1.6) },
+          dressHem: { rot: 0.6 * Math.sin(TAU * t - 0.5) },
         },
       };
     },
@@ -194,16 +194,17 @@ const STATES: Record<string, State> = {
     frames: 12, loop: true,
     at: (t) => {
       const p = TAU * t;
-      const lift = (ph: number) => -5 * Math.max(0, Math.cos(ph));
+      // A leg lifts under the hem, so the shin shortens as it rises.
+      const lift = (ph: number) => -6 * Math.max(0, Math.sin(ph));
       return {
-        root: { dy: -2.4 * (0.5 - 0.5 * Math.cos(2 * p)), dx: 1.5 * Math.sin(2 * p) },
+        root: { dy: -2.0 * (0.5 - 0.5 * Math.cos(2 * p)), dx: 1.5 * Math.sin(p) },
         pose: {
-          torso: { rot: 5 + 2.5 * Math.sin(2 * p) }, head: { rot: -2.5 * Math.sin(2 * p), dy: 0.8 * Math.sin(2 * p) },
-          armNear: { rot: -26 * Math.sin(p) }, armFar: { rot: 26 * Math.sin(p) },
-          footNear: { dx: 10 * Math.sin(p), dy: lift(p) },
-          footFar: { dx: 10 * Math.sin(p + Math.PI), dy: lift(p + Math.PI) },
-          dressUpper: { rot: 3 * Math.sin(p) }, dressHem: { rot: 9 * Math.sin(p - 0.6) },
-          cloakUpper: { rot: 8 + 7 * Math.sin(p - 1.0) }, cloakLower: { rot: 6 + 9 * Math.sin(p - 2.0) },
+          torso: { rot: 2.5 * Math.sin(p) }, head: { rot: -1.5 * Math.sin(p), dy: 0.6 * Math.sin(2 * p) },
+          armLeft: { rot: 12 * Math.sin(p - 0.5) }, armRight: { rot: 12 * Math.sin(p - 0.5) },
+          legLeft: { dx: 2 * Math.sin(p), dy: lift(p) },
+          legRight: { dx: 2 * Math.sin(p + Math.PI), dy: lift(p + Math.PI) },
+          dressUpper: { rot: 2 * Math.sin(p) }, dressHem: { rot: 6 * Math.sin(p - 0.6) },
+          cloakUpper: { rot: -3 - 4 * Math.sin(p - 1.0) }, cloakLower: { rot: -2 - 6 * Math.sin(p - 2.0) },
         },
       };
     },
@@ -213,13 +214,13 @@ const STATES: Record<string, State> = {
     at: (t) => {
       const w = seg(t, 0, 0.35), l = seg(t, 0.35, 0.6), s = seg(t, 0.6, 1);
       return {
-        root: { dx: -3 * w + 14 * l },
+        root: { dx: -3 * w + 12 * l },
         pose: {
-          torso: { rot: -6 * w + 16 * l }, head: { rot: -3 * w + 6 * l },
-          armNear: { rot: 35 * w - 120 * l }, armFar: { rot: 10 * l },
-          footNear: { dx: 8 * l }, footFar: { dx: -3 * l },
-          dressHem: { rot: -6 * l + 3 * s }, dressUpper: { rot: -2 * l },
-          cloakUpper: { rot: -4 * w + 24 * l - 6 * s }, cloakLower: { rot: -3 * w + 18 * seg(t, 0.45, 0.75) - 8 * s },
+          torso: { rot: -5 * w + 12 * l }, head: { rot: -3 * w + 6 * l },
+          armRight: { rot: 30 * w - 115 * l }, armLeft: { rot: -8 * l },
+          legRight: { dx: 8 * l }, legLeft: { dx: -3 * l },
+          dressHem: { rot: -5 * l + 2 * s }, dressUpper: { rot: -2 * l },
+          cloakUpper: { rot: 4 * w + 20 * l - 5 * s }, cloakLower: { rot: 3 * w + 16 * seg(t, 0.45, 0.75) - 7 * s },
         },
       };
     },
@@ -231,10 +232,10 @@ const STATES: Record<string, State> = {
       return {
         root: { dy: 3 * f, dx: 2 * f },
         pose: {
-          torso: { rot: -8 * r + 22 * f }, head: { rot: -6 * r + 14 * f },
-          armNear: { rot: -160 * r + 95 * f }, armFar: { rot: -150 * r + 90 * f },
+          torso: { rot: -6 * r + 18 * f }, head: { rot: -5 * r + 12 * f },
+          armLeft: { rot: 150 * r - 90 * f }, armRight: { rot: -150 * r + 90 * f },
           dressHem: { rot: -3 * f + 2 * s },
-          cloakUpper: { rot: -5 * r + 18 * f - 4 * s }, cloakLower: { rot: -4 * r + 14 * seg(t, 0.6, 0.9) - 6 * s },
+          cloakUpper: { rot: 4 * r + 14 * f - 3 * s }, cloakLower: { rot: 3 * r + 12 * seg(t, 0.6, 0.9) - 5 * s },
         },
       };
     },
@@ -244,11 +245,13 @@ const STATES: Record<string, State> = {
     at: (t) => {
       const b = seg(t, 0, 0.3), f = seg(t, 0.3, 0.85);
       return {
-        root: { pivot: [64, 116], dy: 10 * b + 4 * f, dx: -38 * f, rot: 84 * f },
+        // The knees go first: the body sinks onto legs that stay on the floor, then the whole of her topples.
+        root: { pivot: [64, 118], dy: 12 * b - 9 * f, dx: -52 * f, rot: 88 * f },
         pose: {
-          torso: { rot: 8 * b + 6 * f }, head: { rot: 6 * b + 10 * f },
-          armNear: { rot: -10 * b - 45 * f }, armFar: { rot: 30 * f },
-          dressHem: { rot: -4 * f }, cloakUpper: { rot: 10 * f }, cloakLower: { rot: 16 * seg(t, 0.4, 0.95) },
+          legLeft: { dy: -12 * b, rot: 6 * b }, legRight: { dy: -12 * b, rot: -6 * b },
+          torso: { rot: 10 * b + 5 * f }, head: { rot: 8 * b + 12 * f },
+          armLeft: { rot: 15 * b + 25 * f }, armRight: { rot: -60 * b - 40 * f },
+          dressHem: { rot: -4 * f }, cloakUpper: { rot: 12 * f }, cloakLower: { rot: 18 * seg(t, 0.4, 0.95) },
         },
       };
     },
