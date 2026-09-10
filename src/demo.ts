@@ -6150,6 +6150,42 @@ rule('THE SPIKE — does one cast cover ground, and does buying area cover more?
   );
 }
 
+// HAIL is the other mode: no spike, the cast thrown as Projectiles. What has
+// to hold is the TARGET RULE the user set — one enemy takes them all, more
+// take one each, and a Projectile from anywhere is one more — and that DEEP
+// COLD climbs with a streak and stops at its cap.
+{
+  const dummy = (x: number, y: number) =>
+    ({ x, y, life: 1e6, radius: 0, dead: false, ailments: [] as unknown[],
+       stats: { maxLife: 1e6, attacksPerSecond: 1 } }) as any;
+  const cast = (grants: Record<string, unknown>, enemies: any[], streak = 1) => {
+    const hits: Array<[number, number]> = [];
+    SKILL_BEHAVIOURS.spike({
+      skill: SKILL_BY_ID.rimespike, user: dummy(0, 0), primary: enemies[0], enemies,
+      rng: new Rng(9), grants, crit: false, castIndex: 0, heft: 1, sinceKill: 0, sinceHit: 0, streak,
+      hit: (who: any, m: number) => { hits.push([enemies.indexOf(who), m]); },
+      ailment: () => {}, leave: () => {}, areaRadius: (b: number) => b, vfx: () => {},
+    } as any);
+    return hits;
+  };
+  const hail = nodeById('rimespike', 'rs_tempo')?.grants ?? {};
+  const alone = cast(hail, [dummy(4, 0)]);
+  const room = cast(hail, [dummy(4, 0), dummy(5, 1), dummy(3, -1)]);
+  const more = cast(mergeGrants({ ...hail }, nodeById('rimespike', 'rs_flurry')?.grants ?? {}), [dummy(4, 0), dummy(5, 1), dummy(3, -1)]);
+  const bodies = (h: Array<[number, number]>) => new Set(h.map(([i]) => i)).size;
+  line(`  Hail: ${alone.length} Projectiles at one enemy, ${bodies(room)} bodies of 3 take one each, ${bodies(more)} with Flurry`);
+  check(alone.length === 2 && bodies(alone) === 1, 'Hail throws 2 Projectiles, and one enemy takes both', JSON.stringify(alone));
+  check(room.length === 2 && bodies(room) === 2, 'and with more enemies each Projectile finds its own', JSON.stringify(room));
+  check(bodies(more) === 3, 'and +1 Projectile is one more enemy struck', JSON.stringify(more));
+  check(alone.every(([, m]) => m < 1), 'each for less than the spike lands', JSON.stringify(alone));
+
+  const ramp = nodeById('rimespike', 'rs_weight')?.grants ?? {};
+  const at = (streak: number) => cast(ramp, [dummy(4, 0)], streak)[0][1];
+  line(`  Deep Cold: x${at(1).toFixed(2)} on the first cast, x${at(3).toFixed(2)} on the third, x${at(20).toFixed(2)} on the twentieth`);
+  check(at(1) === 1 && at(3) > at(1) && at(20) > at(3), 'Deep Cold is worth nothing on the first cast and climbs with the streak', `${at(1)} ${at(3)} ${at(20)}`);
+  check(at(20) === at(6), 'and it stops at its cap', `${at(20)} against ${at(6)}`);
+}
+
 // WHAT THE CHILL IS FOR. Eight stacks FREEZE a body, which is out of reach of
 // any cast rate — a Chill lasts 3s and nothing casts eight times inside one. A
 // standing spike Chills everything round it every 0.5s, so the mode is what
@@ -6321,6 +6357,29 @@ rule('THE SPIKE — does one cast cover ground, and does buying area cover more?
   );
 }
 
+// The other two branches, PLAYED: Hail casts more often than the skill does
+// and lands more hits for it; Deep Cold is measured and printed. The kill
+// counts are balance and are said out loud, never held.
+{
+  const window = 40;
+  const set = ladderSet(5, new Rng(400), new ModPool(ALL_MODS));
+  const fill = ['headsman', 'refraction', 'contagion'];
+  const play = (route: string[]) => {
+    const character = ladderCharacter(5, new Rng(88), 'rimespike');
+    SKILL_SLOTS.filter((sl) => sl.accepts.includes('passive')).forEach((sl, i) => {
+      if (fill[i]) equipSkill(character, fill[i], sl.id);
+    });
+    skillProgress(character, 'rimespike').allocated = route;
+    const sim = new RunSim(set, character, new Rng(404));
+    return { casts: runToCompletion(sim, window).casts, killed: sim.state.killed };
+  };
+  const bare = play([]);
+  const hail = play(walkTo('rimespike', 'rs_tempo'));
+  const cold = play(walkTo('rimespike', 'rs_weight'));
+  line(`  in ${window}s: bare ${bare.casts} uses and ${bare.killed} down, Hail ${hail.casts} and ${hail.killed}, Deep Cold ${cold.casts} and ${cold.killed}`);
+  check(hail.casts > bare.casts, 'Hail casts more often than the spike does', `${hail.casts} against ${bare.casts}`);
+}
+
 // ===========================================================================
 rule('THE RELAY — does a Critical carry you into the next body?');
 
@@ -6475,6 +6534,7 @@ rule('EVERY TREE — does every notable actually change the cast?');
             // growing across them: both conditions live inside the five.
             sinceKill: castIndex % 2 === 1 ? 2 : 0,
             sinceHit: castIndex,
+            streak: castIndex + 1,
             hit: (who: any, multiplier: number) => {
               marks.push(`h${enemies.indexOf(who)}:${multiplier.toFixed(3)}`);
               who.life -= multiplier * 5e4;

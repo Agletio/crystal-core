@@ -8,6 +8,9 @@
  * So every branch here is a different answer to the same question: what is a
  * Chill worth, and what happens to the body coming out of one.
  *
+ * RIMEFIELD is how one target becomes a room, and HAIL is how the spike
+ * becomes a shot: the two modes, and a build takes one.
+ *
  * RIMEFIELD is how one target becomes a room. The Cloud deals nothing and
  * leaves the Chill the build already applies, so the pack clear is the Rime
  * tree reaching more bodies — never a second damage pipeline no danger number
@@ -216,13 +219,23 @@ const BRANCHES: Branch[] = [
     minors: [COMMON[5], COMMON[0], COMMON[4], COMMON[0]],
   },
   {
+    /**
+     * THE OTHER MODE. Rimespike stops being a spike at all and is thrown as
+     * ice Projectiles from where you stand, cast twice as fast for half the
+     * damage each: one enemy takes both, a room takes one each. What a build
+     * gives up is the circle, and what it buys back is every Projectile line
+     * in the game — the ids are the old Tempo branch's, which a save points at.
+     */
     id: 'tempo',
-    theme: 'Tempo',
+    theme: 'Hail',
     enabler: {
       id: 'rs_tempo',
-      name: 'Quickening',
-      description: 'Rimespike is cast 22% faster.',
-      stats: [stat('castSpeed', 'inc', 22)],
+      name: 'Hail',
+      description:
+        'Rimespike is thrown as 2 ice Projectiles from you, cast 100% faster, ' +
+        'each dealing 50% less damage. One enemy takes both; more take one each.',
+      grants: { spikeHail: { projectiles: 2, less: 0.5 }, manaMultiplier: 0.6 },
+      stats: [stat('castSpeed', 'inc', 100)],
     },
     twigs: [
       {
@@ -230,17 +243,17 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'rs_flurry',
           name: 'Flurry',
-          description: '25% increased Cast Speed.',
-          stats: [stat('castSpeed', 'inc', 25)],
+          description: '+1 Projectile.',
+          grants: { extraTargets: 1 },
         },
       },
       {
         minors: 4,
         notable: {
           id: 'rs_thrift',
-          name: 'Thrift',
-          description: 'Rimespike costs 25% less mana.',
-          stats: [stat('manaCost', 'inc', -25)],
+          name: 'Sleet',
+          description: 'Hail Projectiles Pierce 1 enemy behind their target, for 70% damage.',
+          grants: { pierce: 1 },
         },
       },
       {
@@ -248,22 +261,28 @@ const BRANCHES: Branch[] = [
         forkFrom: { twig: 1, at: 2 },
         notable: {
           id: 'rs_relentless',
-          name: 'Unrelenting',
-          description: '30% increased Cast Speed, and 25% increased Damage.',
-          stats: [stat('castSpeed', 'inc', 30), stat('damage', 'inc', 25)],
+          name: 'Blizzard',
+          description: '+1 Projectile, and Rimespike is cast 30% faster.',
+          grants: { extraTargets: 1 },
+          stats: [stat('castSpeed', 'inc', 30)],
         },
       },
     ],
     minors: [COMMON[2], COMMON[1], COMMON[2], COMMON[0]],
   },
   {
+    // DEEP COLD is the damage branch, and it is a ramp rather than a number:
+    // casting at one body in a row is what it pays for, so a build that
+    // sweeps a room is worth less here than one that stands and hammers.
     id: 'weight',
-    theme: 'Weight',
+    theme: 'Deep Cold',
     enabler: {
       id: 'rs_weight',
       name: 'Deep Cold',
-      description: 'Rimespike deals 40% more damage and is cast 15% slower.',
-      stats: [stat('damage', 'more', 40), stat('castSpeed', 'inc', -15)],
+      description:
+        'Each cast of Rimespike in a row at the same enemy deals 8% more damage ' +
+        'than the last, up to 5 (40%).',
+      grants: { spikeRamp: { per: 0.08, upTo: 5 } },
     },
     twigs: [
       {
@@ -271,8 +290,8 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'rs_glacier',
           name: 'Glacier',
-          description: '30% more damage.',
-          stats: [stat('damage', 'more', 30)],
+          description: 'Deep Cold climbs 3 casts further, to 8.',
+          grants: { spikeRamp: { upTo: 3 } },
         },
       },
       {
@@ -280,8 +299,8 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'rs_permafrost',
           name: 'Permafrost',
-          description: '55% increased Cold Damage.',
-          stats: [stat('damage', 'inc', 55, ['cold'])],
+          description: 'Each Deep Cold cast is worth 4% more, 12% in all.',
+          grants: { spikeRamp: { per: 0.04 } },
         },
       },
       {
@@ -376,5 +395,10 @@ export const RIMESPIKE_SPEC: TreeSpec = {
     freezeSooner: 'rs_ward',
     freezeLonger: 'rs_ward',
     moreVsFrozen: 'rs_ward',
+    // A Projectile switch reaches a spike only once the cast IS Projectiles.
+    extraTargets: 'rs_tempo',
+    pierce: 'rs_tempo',
+    // And a step on the ramp is nothing without the ramp.
+    spikeRamp: 'rs_weight',
   },
 };

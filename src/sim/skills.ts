@@ -24,6 +24,7 @@ export interface SkillUse {
   heft: number;
   sinceKill: number; // seconds left of a kill still counting
   sinceHit: number; // seconds since anything landed on the hero
+  streak: number; // casts in a row at the same body, this one included
   /** `multiplier` is relative to THIS skill's damage, not to anything else. */
   hit(target: Entity, multiplier: number): void;
   /**
@@ -238,6 +239,43 @@ function alongRay(
   return { along, off: Math.abs(px * uy - py * ux) };
 }
 
+/** HAIL: the cast as ice Projectiles thrown from where you stand. ONE EACH
+ *  while there are enemies in Spread to take one, and whatever is left over
+ *  lands on the body you aimed at — so one enemy takes the lot. Every
+ *  Projectile from anywhere adds one, and a Pierce carries each on past its
+ *  target the way any Projectile's does. No spike, so no circle. */
+function hailOf(use: SkillUse, hail: { projectiles: number; less: number }, scale: (e: Entity) => number): void {
+  const g = use.grants;
+  const count = Math.max(1, Math.round(hail.projectiles + num(g.extraTargets, 0)));
+  const others = spreadTargets(use, use.enemies.filter((e) => !e.dead && e !== use.primary), count - 1);
+  const targets = [use.primary, ...others];
+  const share = 1 - hail.less;
+  const pierce = num(g.pierce, 0);
+  const pierceShare = num(g.pierceDamage, PROJECTILE.pierceDamage);
+  for (let i = 0; i < count; i++) {
+    const target = targets[i % targets.length];
+    if (target.dead) continue;
+    const flight = Math.max(FLIGHT.least, separation(use.user, target) / FLIGHT.speed);
+    use.hit(target, share * scale(target));
+    burstFrom(use, target, (e) => share * scale(e), true);
+    use.vfx('shard', [{ x: use.user.x, y: use.user.y }, { x: target.x, y: target.y }], flight);
+    if (pierce <= 0) continue;
+    const from = separation(use.user, target);
+    const behind = use.enemies
+      .filter((e) => e !== target && !e.dead)
+      .map((e) => ({ e, ...alongRay(use.user, target, e) }))
+      .filter((c) => c.off <= PROJECTILE.corridor && c.along > from && c.along <= from + PROJECTILE.pierce)
+      .sort((a, b) => a.along - b.along)
+      .slice(0, pierce);
+    let last: Entity = target;
+    for (const { e } of behind) {
+      use.hit(e, pierceShare * share * scale(e));
+      use.vfx('shard', [{ x: last.x, y: last.y }, { x: e.x, y: e.y }], flight, flight * FLIGHT.arrives);
+      last = e;
+    }
+  }
+}
+
 export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
   /** One target, full damage — the floor the rest build on. */
   /**
@@ -252,8 +290,18 @@ export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
     // THE MODE'S OWN TWO NUMBERS, read here so the cast that plants a standing
     // spike is the same cast that lands harder and wider for it.
     const stands = g.spikeStands as { seconds: number; radius: number; more: number } | undefined;
+    // DEEP COLD: every cast in a row at one body is worth `per` more than the
+    // last, to a cap. The streak is the sim's; the first cast is worth nothing.
+    const ramp = g.spikeRamp as { per: number; upTo: number } | undefined;
+    const rampMore = ramp ? 1 + ramp.per * Math.min(ramp.upTo, Math.max(0, use.streak - 1)) : 1;
     const scale = (e: Entity) =>
-      castMultiplier * targetScale(use, e) * (1 + (stands?.more ?? 0));
+      castMultiplier * targetScale(use, e) * (1 + (stands?.more ?? 0)) * rampMore;
+    // HAIL is the other mode: no spike at all, the cast thrown as Projectiles.
+    const hail = g.spikeHail as { projectiles: number; less: number } | undefined;
+    if (hail) {
+      hailOf(use, hail, scale);
+      return;
+    }
     const radius =
       use.areaRadius((use.skill.params?.radius as number) ?? 1.3) * (stands?.radius ?? 1);
 

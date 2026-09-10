@@ -1164,6 +1164,36 @@ export const GRANTS: GrantDef[] = [
     },
   },
   {
+    /** THE OTHER MODE. No spike: the cast is thrown as ice Projectiles from
+     *  where you stand, one each while there are enemies to take one and the
+     *  rest on what you aimed at. What it costs is the circle. */
+    id: 'spikeHail',
+    changes: 'targets',
+    what: 'the spike is thrown as ice Projectiles instead',
+    reads: ['spike'],
+    merge: 'bag',
+    say: (v) => {
+      const o = v as { projectiles?: number; less?: number } | null;
+      if (!o || typeof o.projectiles !== 'number' || typeof o.less !== 'number') return null;
+      return (
+        `Rimespike is thrown as ${o.projectiles} ice Projectiles, each dealing ${pct(o.less)} ` +
+        `less damage; one enemy takes them all, more take one each`
+      );
+    },
+  },
+  {
+    id: 'spikeRamp',
+    changes: 'scale',
+    what: 'casts in a row at one enemy are each worth more than the last',
+    reads: ['spike'],
+    merge: 'bag',
+    say: (v) => {
+      const o = v as { per?: number; upTo?: number } | null;
+      if (!o || typeof o.per !== 'number' || typeof o.upTo !== 'number') return null;
+      return `Each cast in a row at the same enemy deals ${pct(o.per)} more damage, up to ${o.upTo} (${pct(o.per * o.upTo)})`;
+    },
+  },
+  {
     id: 'spikeLonger',
     changes: 'field',
     what: 'a standing spike stands longer',
@@ -1336,7 +1366,7 @@ export const GRANTS: GrantDef[] = [
     id: 'extraTargets',
     changes: 'targets',
     what: 'the skill throws more Projectiles',
-    reads: ['projectile', 'single_target'],
+    reads: ['projectile', 'single_target', 'spike'],
     merge: 'sum',
     say: (v) => {
       const n = asNumber(v);
@@ -1369,7 +1399,7 @@ export const GRANTS: GrantDef[] = [
     id: 'pierce',
     changes: 'targets',
     what: 'the Projectile gains Pierce',
-    reads: ['projectile'],
+    reads: ['projectile', 'spike'],
     merge: 'sum',
     say: (v) => {
       const n = asNumber(v);

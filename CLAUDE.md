@@ -1070,7 +1070,20 @@ and a size of its own, kept only if it stands `SPIKE_APART` from the rest, so
 it is uneven the way broken ice is and has no hole in it; a sunflower spiral
 of one picture read as a pattern. The one big
 blade and the ring are the STANDING mode's alone, with a blizzard of cold motes
-over it so the Chill it is laying down reads. **RIMEFIELD TAKES THE CAST OFF YOUR RATE AND PUTS IT ON A COOLDOWN** —
+over it so the Chill it is laying down reads. **HAIL IS THE OTHER MODE, AND DEEP COLD IS THE DAMAGE BRANCH** — *"the cast
+speed nodes and the flat damage nodes are boring… instead of just cast speed
+make it convert to a single ice projectile that is shot from the character at
+an extremely high cast speed but lower damage… start with 2 projectiles and
+they target separate enemies if there are multiple targets and then all hit
+the same if there's only one. Extra projectiles adds extra targets."* `spikeHail`
+throws the cast as 2 ice Projectiles from where you stand, cast 100% faster
+for 50% less each: one enemy takes them all, a room takes one each, and
+`extraTargets` and `pierce` from anywhere reach a spike once it IS Projectiles
+(`needs`). What it costs is the circle. `spikeRamp` is Deep Cold: every cast
+in a row at the SAME body is worth 8% more than the last, to 5, off a streak
+the SIM keeps (`streak` on the use) — a number that pays for standing and
+hammering rather than a number. The ids stay `rs_tempo` and `rs_weight`,
+because a save points at them. **RIMEFIELD TAKES THE CAST OFF YOUR RATE AND PUTS IT ON A COOLDOWN** —
 2.5s, 120% further, 100% more damage, and what it leaves STANDS for 3.5s,
 Chilling everything round it every 0.5s. **CLICKED ALONE IT IS A LOSS** — *"the
 idea is if you just click it then it should be worse than not"* — measured at

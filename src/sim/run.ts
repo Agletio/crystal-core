@@ -626,6 +626,9 @@ export class RunSim {
   private readonly mover: SkillDef | null;
   /** How many times the hero has cast, for nodes that count casts. */
   private casts = 0;
+  /** Casts in a row at one body, this one included, and which body it is. */
+  private streak = 0;
+  private streakOn: number | null = null;
   /** Set once the closing encounter has been triggered. */
   private finale: EncounterDef | null = null;
   /** Bodies of it still to climb out, oldest first. */
@@ -3066,6 +3069,10 @@ export class RunSim {
     const grants = user.kind === 'hero' ? this.grants : {};
     const castIndex = user.kind === 'hero' ? this.casts++ : 0;
     const heft = user.kind === 'hero' ? this.heftOf(user) : 1;
+    if (user.kind === 'hero') {
+      if (primary.id === this.streakOn) this.streak++;
+      else { this.streak = 1; this.streakOn = primary.id; }
+    }
 
     // Rolled once for the whole use. Behaviours branch on it (Contagion), and
     // dealDamage honours it so a critical cast crits every target it touches.
@@ -3091,6 +3098,7 @@ export class RunSim {
       heft,
       sinceKill: this.sinceKill,
       sinceHit: this.sinceHit,
+      streak: user.kind === 'hero' ? this.streak : 1,
       hit: (target, multiplier) => this.dealDamage(user, target, multiplier, skill),
       ailment: (target, multiplier, seconds, spread) =>
         this.applyAilment(user, target, multiplier, seconds, skill, spread),
