@@ -629,6 +629,10 @@ export class RunSim {
   /** Casts in a row at one body, this one included, and which body it is. */
   private streak = 0;
   private streakOn: number | null = null;
+  private sleet = 0; // stacks of Sleet, the spike's own cast-speed ramp
+  private lastHits = 0; // bodies the last hero cast hit
+  private hitsThisUse = 0;
+  private lastCost = 0; // what the last cast paid, for a refund to read
   /** Set once the closing encounter has been triggered. */
   private finale: EncounterDef | null = null;
   /** Bodies of it still to climb out, oldest first. */
@@ -3009,7 +3013,13 @@ export class RunSim {
   private swing(hero: Entity, target: Entity): void {
     // A running flask can pay for the whole thing, which is what makes that
     // window the Alchemist's rather than a stat block with a duration.
-    const cost = this.grants.potionFree && this.flasked() ? 0 : hero.stats.manaCost;
+    // MEASURE: every nth cast in a row at one body is free, read off the
+    // streak this cast is about to make.
+    const nth = (this.grants.freeNth as number) ?? 0;
+    const next = target.id === this.streakOn || this.grants.rampSticks === true ? this.streak + 1 : 1;
+    const free = (this.grants.potionFree && this.flasked()) || (nth > 0 && next % nth === 0);
+    const cost = free ? 0 : hero.stats.manaCost;
+    this.lastCost = cost;
     this.state.casts++;
 
     // NO POOL AT ALL: life is the only currency, so the use always happens and
@@ -3077,10 +3087,15 @@ export class RunSim {
 
     // Rolled once for the whole use. Behaviours branch on it (Contagion), and
     // dealDamage honours it so a critical cast crits every target it touches.
-    const chance = this.critChanceOf(user);
+    const eye = user.kind === 'hero' && stacksOf(primary, 'chill') > 0 ? ((this.grants.critVsChilled as number) ?? 0) : 0;
+    const chance = this.critChanceOf(user) + eye;
     const crit = chance > 0 && this.rng.chance(chance / 100);
 
     this.useCrit = crit;
+    this.hitsThisUse = 0;
+    // SLEET: the bar this cast Freezes at, and what is kept past it.
+    const sleet = this.grants.spikeTempo as { per: number; stacks: number } | undefined;
+    const bar = sleet ? Math.max(1, sleet.stacks + ((this.grants.tempoStacks as number) ?? 0)) : Infinity;
 
     behaviour({
       skill,
@@ -3100,7 +3115,13 @@ export class RunSim {
       sinceKill: this.sinceKill,
       sinceHit: this.sinceHit,
       streak: user.kind === 'hero' ? this.streak : 1,
-      hit: (target, multiplier) => this.dealDamage(user, target, multiplier, skill),
+      sleet: user.kind === 'hero' ? this.sleet : 0,
+      lastHits: user.kind === 'hero' ? this.lastHits : 0,
+      freeze: (target) => this.freeze(target),
+      hit: (target, multiplier) => {
+        if (user.kind === 'hero') this.hitsThisUse++;
+        this.dealDamage(user, target, multiplier, skill);
+      },
       ailment: (target, multiplier, seconds, spread) =>
         this.applyAilment(user, target, multiplier, seconds, skill, spread),
       leave: (target) => this.applyTyped(user, target, user.stats.damageByType),
@@ -3111,6 +3132,15 @@ export class RunSim {
     });
 
     this.useCrit = null;
+    if (user.kind === 'hero') {
+      this.lastHits = this.hitsThisUse;
+      if (sleet) this.sleet = this.sleet >= bar ? Math.min(bar - 1, (this.grants.tempoKeep as number) ?? 0) : this.sleet + 1;
+      // FROSTFALL: a crowd pays the cast back.
+      const crowd = this.grants.refundOnCrowd as { hits: number; share: number } | undefined;
+      if (crowd && this.hitsThisUse >= crowd.hits) {
+        user.mana = Math.min(user.stats.maxMana, user.mana + this.lastCost * crowd.share);
+      }
+    }
     // A STANDING SPIKE is planted where the cast went in, and the SAME grant
     // puts the skill on a cooldown — the mode is one switch, not two.
     const stands = this.grants.spikeStands as
@@ -3236,7 +3266,11 @@ export class RunSim {
     if (e.kind !== 'hero') return slow;
     const killed = this.sinceKill > 0 ? 1 + ((this.grants.killHaste as number) ?? 0) / 100 : 1;
     const tempo = this.grants.killTempo as { per: number } | undefined;
-    const stacked = tempo ? 1 + this.tempo * tempo.per : 1;
+    let stacked = tempo ? 1 + this.tempo * tempo.per : 1;
+    const sleet = this.grants.spikeTempo as { per: number } | undefined;
+    if (sleet) stacked *= 1 + (this.sleet * sleet.per) / 100;
+    // SURE FOOTING: the cast that opened on a new body comes back sooner.
+    if (this.streak === 1) stacked *= 1 + ((this.grants.freshFaster as number) ?? 0) / 100;
     const held = this.moving?.gusts;
     const charged = held ? 1 + (this.gusts * held.haste) / 100 : 1;
     if (!this.flasked()) return slow * killed * charged * stacked;
@@ -3788,15 +3822,20 @@ export class RunSim {
     // Floored at one stack, so no walk makes a Freeze free.
     const sooner = (this.grants.freezeSooner as number) ?? 0;
     const needs = Math.max(1, (def.freezeAt ?? 0) - sooner);
-    if (def.freezeAt && stacks >= needs) {
-      const longer = (this.grants.freezeLonger as number) ?? 1;
-      target.stun = Math.max(target.stun ?? 0, (def.freezeSeconds ?? 1) * longer);
-      target.stunKind = 'freeze';
-      target.thawed = true; // the hit after a Freeze is a Critical, whatever your chance
-      this.state.freezes++;
-      target.ailments = target.ailments.filter((a) => a.id !== 'chill');
-      target.slowed = 0;
-    }
+    if (def.freezeAt && stacks >= needs) this.freeze(target);
+  }
+
+  /** THE FREEZE ITSELF, whatever handed it out: a full Chill bar, or Sleet. */
+  private freeze(target: Entity): void {
+    const def = AILMENT_BY_ID.chill;
+    if (target.kind === 'hero' || target.dead || !def) return;
+    const longer = (this.grants.freezeLonger as number) ?? 1;
+    target.stun = Math.max(target.stun ?? 0, (def.freezeSeconds ?? 1) * longer);
+    target.stunKind = 'freeze';
+    target.thawed = true; // the hit after a Freeze is a Critical, whatever your chance
+    this.state.freezes++;
+    target.ailments = target.ailments.filter((a) => a.id !== 'chill');
+    target.slowed = 0;
   }
 
   /** SHOCK: a little lightning onto the neighbours every tick. Weak on one
@@ -3876,7 +3915,8 @@ export class RunSim {
     const hero = this.state.hero;
     const damage = burst.perLevel * this.level * this.passiveScale.physical;
     const radius = PASSIVE_DAMAGE.sunderRadius;
-    for (const m of this.state.monsters) {
+    // A SNAPSHOT: what a kill puts back on the floor came up after the burst.
+    for (const m of [...this.state.monsters]) {
       if (m.dead || dist(m, hero) > radius) continue;
       m.life -= this.afterResistance(m, damage, 'physical');
       if (m.life <= 0) this.kill(m);
@@ -4266,6 +4306,8 @@ export class RunSim {
       const hero = s.hero;
       hero.mana = Math.min(hero.stats.maxMana, hero.mana + hero.stats.maxMana * back);
     }
+    const refund = (this.grants.refundOnKill as number) ?? 0;
+    if (refund > 0) s.hero.mana = Math.min(s.hero.stats.maxMana, s.hero.mana + this.lastCost * refund);
     // A KILL carries the rogue on: cover, pace and swing, off one clock.
     if (this.grants.killGuard || this.grants.killHaste || this.grants.killMove) {
       this.sinceKill = Math.max(ROGUE.guardSeconds, ROGUE.hasteSeconds);
@@ -4468,7 +4510,10 @@ export class RunSim {
    * chance, both of which bound the chain with a number somebody must tune.
    */
   private wellUp(victim: Entity): void {
-    if (this.wellChance <= 0 || victim.kind !== 'monster') return;
+    // NEVER a body a Split put down: up one ladder and down the other is a
+    // cycle neither ladder's own end can stop, and a Burst killing what comes
+    // up ran it inside one tick until the heap gave out.
+    if (this.wellChance <= 0 || victim.kind !== 'monster' || victim.split) return;
     const at = MONSTER_RANKS.findIndex((r) => r.id === victim.rank);
     const rank = MONSTER_RANKS[at + 1];
     const def = MONSTER_BY_ID[victim.defId ?? ''];
@@ -4519,7 +4564,7 @@ export class RunSim {
    *  mirror, terminating by the same argument — the LADDER is the proof and
    *  there is no counter. A common leaves nothing, so a room is bounded. */
   private splitDown(victim: Entity): void {
-    if (this.splitChance <= 0 || victim.kind !== 'monster') return;
+    if (this.splitChance <= 0 || victim.kind !== 'monster' || victim.welled) return; // see wellUp
     const at = MONSTER_RANKS.findIndex((r) => r.id === victim.rank);
     const rank = MONSTER_RANKS[at - 1];
     const def = MONSTER_BY_ID[victim.defId ?? ''];

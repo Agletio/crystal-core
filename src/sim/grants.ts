@@ -77,6 +77,8 @@ const pair = (v: unknown, a: string, b: string): [number, number] | null => {
 
 /** What EVERY delivery scales by: how good this cast is, and what the body in
  *  front of you is. A behaviour opts in by calling `castScale`/`targetScale`. */
+/** A shatter and a kill-burst reach this far, in tiles. */
+export const SHATTER = { radius: 1.5 };
 const SCALED = ['projectile', 'melee', 'ailment_burst', 'cone', 'single_target', 'ambush', 'spike'];
 /** And the ones that call `blastAround`, which is a narrower list. */
 const SHARED = ['projectile', 'melee', 'ailment_burst', 'cone', 'ambush', 'spike'];
@@ -1201,6 +1203,119 @@ export const GRANTS: GrantDef[] = [
     what: 'Deep Cold holds across enemies',
     reads: ['spike', SIM],
     say: (v) => (v === true ? 'Every cast of Deep Cold holds when you cast at another enemy, all 5' : null),
+  },
+  {
+    /** SLEET: a stack of Cast Speed a cast, and at the bar the next cast
+     *  FREEZES what it hits and spends them. The stacks are the SIM's. */
+    id: 'spikeTempo',
+    changes: 'ailment',
+    what: 'casts stack Cast Speed, and at the bar the next one Freezes',
+    reads: ['spike', SIM],
+    merge: 'bag',
+    say: (v) => {
+      const o = v as { per?: number; stacks?: number } | null;
+      if (!o || typeof o.per !== 'number' || typeof o.stacks !== 'number') return null;
+      return `Each cast grants a stack of Sleet, ${o.per}% increased Cast Speed each; at ${o.stacks} the next cast Freezes what it hits and spends them all`;
+    },
+  },
+  {
+    id: 'tempoKeep',
+    what: 'stacks of Sleet kept after a Freeze',
+    reads: [STATS], // the run's own rule, like a kill's tempo
+    merge: 'sum',
+    say: (v) => { const n = asNumber(v); return n === null ? null : `Keep ${n} stack${n === 1 ? '' : 's'} of Sleet after a Freeze`; },
+  },
+  {
+    id: 'tempoDamage',
+    changes: 'scale',
+    what: 'more damage per stack of Sleet',
+    reads: ['spike'],
+    merge: 'sum',
+    say: (v) => { const n = asNumber(v); return n === null ? null : `${n}% more damage per stack of Sleet`; },
+  },
+  {
+    id: 'tempoStacks',
+    changes: 'ailment',
+    what: 'the Sleet bar moved',
+    reads: ['spike'],
+    merge: 'sum',
+    say: (v) => { const n = asNumber(v); return n === null ? null : `Sleet Freezes ${Math.abs(n)} stacks ${n < 0 ? 'sooner' : 'later'}`; },
+  },
+  {
+    id: 'shatterShare',
+    changes: 'burst',
+    what: 'a Critical shatters onto the bodies round it',
+    reads: ['spike'],
+    merge: 'sum',
+    say: (v) => { const n = asNumber(v); return n === null ? null : `A Critical shatters: ${pct(n)} of the hit to everything within ${SHATTER.radius} tiles of it`; },
+  },
+  {
+    id: 'burstOnKill',
+    changes: 'burst',
+    what: 'a kill bursts onto the bodies round it',
+    reads: ['spike'],
+    merge: 'sum',
+    say: (v) => { const n = asNumber(v); return n === null ? null : `An enemy killed by Rimespike bursts: ${pct(n)} of the hit to everything within ${SHATTER.radius} tiles`; },
+  },
+  {
+    id: 'fieldFeeds',
+    changes: 'field',
+    what: 'the field grows with what the last cast hit',
+    reads: ['spike', SIM],
+    merge: 'bag',
+    say: (v) => {
+      const o = v as { per?: number; upTo?: number } | null;
+      if (!o || typeof o.per !== 'number' || typeof o.upTo !== 'number') return null;
+      return `Rimespike reaches ${pct(o.per)} further for every enemy the last cast hit, up to ${o.upTo} (${pct(o.per * o.upTo)})`;
+    },
+  },
+  {
+    id: 'rimBite',
+    changes: 'scale',
+    what: 'the outer half of the field hits harder',
+    reads: ['spike'],
+    merge: 'sum',
+    say: (v) => { const n = asNumber(v); return n === null ? null : `Enemies in the outer half of the field take ${pct(n)} more damage`; },
+  },
+  { id: 'moreVsClean', changes: 'scale', what: 'more damage to enemies carrying no Ailment', reads: SCALED, merge: 'sum',
+    say: (v) => { const n = asNumber(v); return n === null ? null : `${pct(n)} more damage to enemies carrying no Ailment`; } },
+  {
+    id: 'critVsChilled',
+    what: 'Critical Chance against Chilled enemies',
+    reads: [STATS], // the run's own rule, like a kill's tempo
+    merge: 'sum',
+    say: (v) => { const n = asNumber(v); return n === null ? null : `+${n}% Critical Chance against a Chilled enemy`; },
+  },
+  {
+    id: 'refundOnKill',
+    what: 'a kill refunds mana',
+    reads: [STATS], // the run's own rule, like a kill's tempo
+    merge: 'sum',
+    say: (v) => { const n = asNumber(v); return n === null ? null : `A kill refunds ${pct(n)} of the mana the cast cost`; },
+  },
+  {
+    id: 'refundOnCrowd',
+    what: 'hitting a crowd refunds mana',
+    reads: [STATS], // the run's own rule, like a kill's tempo
+    merge: 'bag',
+    say: (v) => {
+      const o = v as { hits?: number; share?: number } | null;
+      if (!o || typeof o.hits !== 'number' || typeof o.share !== 'number') return null;
+      return `Hitting ${o.hits} or more enemies refunds ${pct(o.share)} of the mana the cast cost`;
+    },
+  },
+  {
+    id: 'freshFaster',
+    what: 'the first cast at a new enemy comes back sooner',
+    reads: [STATS], // the run's own rule, like a kill's tempo
+    merge: 'sum',
+    say: (v) => { const n = asNumber(v); return n === null ? null : `The first cast at an enemy is ${n}% faster`; },
+  },
+  {
+    id: 'freeNth',
+    what: 'every nth cast at one enemy is free',
+    reads: [STATS], // the run's own rule, like a kill's tempo
+    say: (v) => { const n = asNumber(v); return n === null ? null : `Every ${n}${n === 3 ? 'rd' : 'th'} cast at the same enemy costs no mana`; },
   },
   {
     id: 'spikeLonger',

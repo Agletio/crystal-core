@@ -1,10 +1,10 @@
 /**
  * Geometry for a skill web. Knows nothing about any modifier.
  *
- * A tree is two rings of common minors, six short spurs off the outer ring
- * ending in notables anybody would want, and six branches hanging off the
- * remaining outer slots. Every branch is a run of CHAINS: each node hangs off
- * exactly the one before it, so there is no cutting across to a notable.
+ * A tree is three ways in and a ring of six, each holding a run of points; a
+ * notable anybody would want and a branch off every ring node; and each branch
+ * a run of CHAINS — a minor holding a range and the notable it opens — so
+ * there is no cutting across to a notable.
  *
  * Coordinates come out of a stable hash rather than a random number, so a tree
  * is the same web on every machine and in every session — allocations in a save
@@ -14,21 +14,22 @@ import { CENTRE } from './node';
 import type { SkillNodeDef } from './node';
 import type { BuiltTree, TreeSpec } from './spec';
 
+/** Three ways in, then a ring of six — one under each branch — and each holds
+ *  a run of points rather than standing in a crowd of ones. */
 const TRUNK = [
-  // Clear of the HUB's own art, which `spread` cannot see: the middle is drawn
-  // about a unit across and three ways in at 1.35 sat on its frame.
-  { count: 3, r: 1.75 },
-  { count: 12, r: 2.7 },
+  { count: 3, r: 1.9, points: 3 },
+  { count: 6, r: 3.3, points: 2 },
 ];
-/** Trunk slots a branch hangs off, and the ones a trunk spur grows from. */
+/** Trunk slots, in twelfths of the ring: a branch at every even one, a trunk
+ *  notable at the odd one after it, both hung off the ring node before. */
 const ANCHORS = [0, 2, 4, 6, 8, 10];
 const SPUR_SLOTS = [1, 3, 5, 7, 9, 11];
-const SPUR_R = [3.5, 4.4];
+const SPUR_R = [4.7];
 
-const ENABLER_R = 3.8;
+const ENABLER_R = 5.0;
 /** How far out each step along a twig goes: a minor that holds a run of points
  *  and the notable past it, so two steps is a twig. */
-const TWIG_STEP = 1.55;
+const TWIG_STEP = 1.9;
 /** How wide a branch spreads, as a fraction of the circle. */
 const BRANCH_ARC = 0.125;
 
@@ -42,7 +43,7 @@ const even = (turn = 0, over = 1): number[] =>
   Array.from({ length: 6 }, (_, i) => -Math.PI / 2 + turn + (i / 6 - (1 - over) / 2) * TAU * over);
 const SHAPES: Record<string, Shape> = {
   ring: { anchors: even(), twist: 0, scale: [1, 1] },
-  fan: { anchors: even(0, 0.62).map((a) => a - TAU * 0.19), twist: 0, scale: [1.2, 0.95] },
+  fan: { anchors: even(0, 0.74).map((a) => a - TAU * 0.13), twist: 0, scale: [1.2, 0.95] },
   wide: { anchors: even(TAU / 12), twist: 0, scale: [1.5, 0.82] },
   tall: { anchors: even(), twist: 0, scale: [0.82, 1.45] },
   spiral: { anchors: even(), twist: 0.32, scale: [1.05, 1.05] },
@@ -175,10 +176,6 @@ export function buildTree(spec: TreeSpec): BuiltTree {
 
   const trunkAt = (ring: number, i: number) => `${spec.prefix}_t${ring}s${i}`;
   const branchId = (b: string, row: number, i: number) => `${spec.prefix}_${b}_${row}_${i}`;
-  const spurId = (spur: number, step: number) =>
-    step === SPUR_R.length - 1
-      ? spec.trunkNotables[spur].id
-      : `${spec.prefix}_spur${spur}_${step}`;
 
   const nodes: SkillNodeDef[] = [];
   const links = new Map<string, string[]>();
@@ -188,24 +185,15 @@ export function buildTree(spec: TreeSpec): BuiltTree {
   };
 
   // --- the trunk ------------------------------------------------------------
-  //
-  // Three ways off the centre, and each opens the TWO short spurs either side
-  // of it. A ring of six in here was three nodes nobody would ever take: they
-  // sat between the ways in and led nowhere the ways in did not already reach.
-  // Nothing links the three to each other, because the centre already does.
   const OUTER = TRUNK[1].count;
   for (let i = 0; i < OUTER; i++) join(trunkAt(2, i), trunkAt(2, (i + 1) % OUTER));
   for (let i = 0; i < TRUNK[0].count; i++) {
     join(trunkAt(1, i), CENTRE);
-    // The spur slots either side, never the anchors: a way in lands on a short
-    // chain, and a branch is one step further round the ring.
-    const facing = Math.round((i / TRUNK[0].count) * OUTER);
-    join(trunkAt(2, (facing + OUTER - 1) % OUTER), trunkAt(1, i));
-    join(trunkAt(2, (facing + 1) % OUTER), trunkAt(1, i));
+    join(trunkAt(2, (i * OUTER) / TRUNK[0].count), trunkAt(1, i));
   }
 
   const shape = SHAPES[SHAPE_OF[spec.skillId] ?? 'ring'];
-  /** Slot angles on the outer ring: an anchor's own, and a spur midway to the next. */
+  /** Slot angles in twelfths: an anchor's own at an even slot, midway to the next at an odd one. */
   const slotAngle = (slot: number): number => {
     const b = Math.floor(slot / 2);
     const a = shape.anchors[b % 6];
@@ -215,11 +203,9 @@ export function buildTree(spec: TreeSpec): BuiltTree {
     return (a + next) / 2;
   };
   for (let ring = 1; ring <= TRUNK.length; ring++) {
-    const { count, r } = TRUNK[ring - 1];
+    const { count, r, points } = TRUNK[ring - 1];
     for (let i = 0; i < count; i++) {
-      const angle =
-        (ring === 2 ? slotAngle(i) : slotAngle((i * OUTER) / TRUNK[0].count)) +
-        (jitter(ring, i, 1) - 0.5) * 0.08;
+      const angle = slotAngle((i * 2 * OUTER) / count) + (jitter(ring, i, 1) - 0.5) * 0.08;
       const reach = r + (jitter(ring, i, 2) - 0.5) * 0.3;
       const common = spec.common[(ring * 3 + i) % spec.common.length];
       nodes.push({
@@ -227,6 +213,7 @@ export function buildTree(spec: TreeSpec): BuiltTree {
         name: spec.minorName,
         description: common.text,
         kind: 'minor',
+        points,
         x: Math.cos(angle) * reach,
         y: Math.sin(angle) * reach,
         links: links.get(trunkAt(ring, i)) ?? [],
@@ -235,46 +222,40 @@ export function buildTree(spec: TreeSpec): BuiltTree {
     }
   }
 
-  // Six short spurs off the trunk, each ending in a notable worth having
-  // whatever you go on to build.
+  // Six trunk notables, each off the ring node before it and open once that
+  // node is full: worth having whatever you go on to build.
   SPUR_SLOTS.forEach((slot, spur) => {
-    for (let step = 0; step < SPUR_R.length; step++) {
-      const last = step === SPUR_R.length - 1;
-      const id = spurId(spur, step);
-      const notable = last ? spec.trunkNotables[spur] : null;
-      const common = spec.common[(spur * 2 + step) % spec.common.length];
-      const angle = slotAngle(slot) + (jitter(spur, step, 5) - 0.5) * 0.12;
-      const reach = SPUR_R[step] + (jitter(spur, step, 6) - 0.5) * 0.2;
-
-      join(id, step === 0 ? trunkAt(2, slot) : spurId(spur, step - 1));
-      nodes.push({
-        id,
-        name: notable?.name ?? spec.minorName,
-        description: notable?.description ?? common.text,
-        kind: notable ? 'notable' : 'minor',
-        x: Math.cos(angle) * reach,
-        y: Math.sin(angle) * reach,
-        links: links.get(id) ?? [],
-        ...(notable
-          ? {
-              ...(notable.stats ? { stats: notable.stats } : {}),
-              ...(notable.grants ? { grants: notable.grants } : {}),
-              ...(notable.choices ? { choices: notable.choices } : {}),
-            }
-          : { stats: common.stats ?? [] }),
-      });
-    }
+    const notable = spec.trunkNotables[spur];
+    const on = trunkAt(2, Math.floor(slot / 2));
+    const angle = slotAngle(slot) + (jitter(spur, 0, 5) - 0.5) * 0.12;
+    const reach = SPUR_R[0] + (jitter(spur, 0, 6) - 0.5) * 0.2;
+    join(notable.id, on);
+    nodes.push({
+      id: notable.id,
+      name: notable.name,
+      description: notable.description,
+      kind: 'notable',
+      gate: { from: on, points: TRUNK[1].points },
+      x: Math.cos(angle) * reach,
+      y: Math.sin(angle) * reach,
+      links: links.get(notable.id) ?? [],
+      ...(notable.stats ? { stats: notable.stats } : {}),
+      ...(notable.grants ? { grants: notable.grants } : {}),
+      ...(notable.choices ? { choices: notable.choices } : {}),
+    });
   });
 
   // --- the branches ---------------------------------------------------------
   spec.branches.forEach((branch, b) => {
     const base = shape.anchors[b];
-    join(branch.enabler.id, trunkAt(2, ANCHORS[b]));
+    const on = trunkAt(2, ANCHORS[b] / 2);
+    join(branch.enabler.id, on);
     nodes.push({
       id: branch.enabler.id,
       name: branch.enabler.name,
       description: branch.enabler.description,
       kind: 'notable',
+      gate: { from: on, points: TRUNK[1].points },
       x: Math.cos(base) * ENABLER_R,
       y: Math.sin(base) * ENABLER_R,
       links: links.get(branch.enabler.id) ?? [],

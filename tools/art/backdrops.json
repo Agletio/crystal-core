@@ -1,0 +1,33 @@
+{
+ "_": "What to SAY for a WEB BACKDROP, one row per skill id: a plain picture laid faint behind that skill's tree. `tools/art/icon.mts backdrops.json <id>` asks and `portrait.mts <id> <png> 128 backdrops` puts it in `src/render/generated-backdrops.ts`.",
+ "size": 256,
+ "grid": 128,
+ "how": " A wide atmospheric background texture with NO subject: even, soft, spread across the WHOLE frame edge to edge, low contrast, dark, no focal point, no ground, no horizon, no figure, no object, no text, no border, no frame, no vignette. Transparent background: only the weather itself is drawn.",
+ "inks": [
+  "#07080A",
+  "#0E1420",
+  "#15202E",
+  "#1F3040",
+  "#2C4458",
+  "#3E5E74",
+  "#4F8AA8",
+  "#6FC7E8",
+  "#9FDDF0",
+  "#CFEFF8",
+  "#FFFFFF"
+ ],
+ "icons": [
+  {
+   "id": "rimespike",
+   "say": "A blizzard at night: driving snow blown sideways in long pale streaks and swirls of wind, thousands of small white and ice-blue snowflakes scattered UNEVENLY over the WHOLE frame from the very top to the very bottom, drifting curls of frost, cold blue-black air between them. NOT a snowbank, NOT snowdrifts, NOT a floor of snow, NOT snow piled up at the bottom, NOT a ground, NOT a horizon, NOT a hill, NOT a creature, NOT an ice spike, NOT an object \u2014 only falling wind-blown snow filling every part of the frame evenly.",
+   "shading": "flat shading",
+   "detail": "low detail"
+  },
+  {
+   "id": "rimespike_frost",
+   "say": "Frost crystals grown across a dark window pane: branching fern-like ice patterns, feathery frost ferns and needles spreading in from every edge, pale ice-blue and white on blue-black, delicate, even over the WHOLE frame. NOT a snowbank, NOT a ground, NOT a horizon, NOT a creature, NOT an object, NOT a snowflake emblem in the middle \u2014 only frost patterns filling the frame.",
+   "shading": "flat shading",
+   "detail": "medium detail"
+  }
+ ]
+}

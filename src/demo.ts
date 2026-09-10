@@ -535,7 +535,7 @@ let ruleAt = Date.now();
 let ruleWas = '';
 const rule = (t: string) => {
   if (process.env.DEMO_TIME && ruleWas) {
-    line(`   ${((Date.now() - ruleAt) / 1000).toFixed(1)}s — ${ruleWas}`);
+    line(`   ${((Date.now() - ruleAt) / 1000).toFixed(1)}s, ${Math.round(process.memoryUsage().heapUsed / 1e6)} MB held — ${ruleWas}`);
   }
   ruleAt = Date.now();
   ruleWas = t;
@@ -862,7 +862,10 @@ rule('CRAFTING PLANS — is the third gate one no level and no shard can open?')
       crystals: Item[] | null, seeds: number, held: string[] = [], where?: RunWhere
     ): string[] => {
       const out = new Set<string>();
-      const hero = { ...ceiling(DROP_BANDS.length - 1), plans: held };
+      // THE HONEST CEILING: the strongest skill at the level cap, because a
+      // plan is drawn body by body and a hero dead at a tenth of the floor
+      // had a tenth of the chance — measured, it finds one every descent.
+      const hero = { ...ceiling(DROP_BANDS.length - 1, 'blight', 99), plans: held };
       for (let i = 0; i < seeds; i++) {
         const set = crystals ?? deepestSet(new Rng(4242 + i * 13), pool);
         const sim = new RunSim(set, hero, new Rng(6100 + i), { where });
@@ -5314,6 +5317,29 @@ rule('THE RECKONING — is a harder descent actually harder, and paid for?');
     `${ended.killed}/${ended.totalMonsters}`
   );
 
+  // THE WELLING AND THE SPLITTING TOGETHER: up one ladder and down the other
+  // is a cycle neither ladder's own end stops, and a Burst that kills what
+  // comes up ran it inside one tick until the heap gave out. A body a Split
+  // put down never Wells and a Welled one never Splits, so the pair ends.
+  {
+    const both: Character = {
+      ...ladderCharacter(6, new Rng(7)),
+      grinds: Object.fromEntries(GRINDS.map((g) => [g.counter, g.need])),
+      trialAllocated: nodes
+        .filter((n) => (n.stats ?? []).some((s) => s.stat === 'wellChance' || s.stat === 'splitChance'))
+        .map((n) => n.id),
+    };
+    equipSkill(both, 'sundering', 'passive');
+    const churn = new RunSim(bare, both, new Rng(2021));
+    const spawned = churn.state.totalMonsters;
+    const done = runToCompletion(churn, 400);
+    check(
+      done.status !== 'running' && done.totalMonsters < spawned * 8,
+      'and Welling beside Splitting under a Sundering burst still ENDS, bounded',
+      `${done.status}, ${done.totalMonsters} bodies from ${spawned}`
+    );
+  }
+
   // The ladder is the proof, so the top rung has to be a rung nothing rolls:
   // one that came up naturally would make the chain start anywhere.
   const top = MONSTER_RANKS[MONSTER_RANKS.length - 1];
@@ -6559,6 +6585,10 @@ rule('EVERY TREE — does every notable actually change the cast?');
             sinceKill: castIndex % 2 === 1 ? 2 : 0,
             sinceHit: castIndex,
             streak: castIndex + 1,
+            // Sleet climbing across the five, and a crowd hit last cast.
+            sleet: castIndex * 3,
+            lastHits: castIndex * 2,
+            freeze: (who: any) => marks.push(`f${enemies.indexOf(who)}`),
             hit: (who: any, multiplier: number) => {
               marks.push(`h${enemies.indexOf(who)}:${multiplier.toFixed(3)}`);
               who.life -= multiplier * 5e4;
@@ -7347,7 +7377,7 @@ rule('THE SHEET — does every number on it survive being checked?');
       said.includes(`${Math.round(detail.perApplication).toLocaleString()} `) &&
         said.includes(`${Math.round(detail.perSecond).toLocaleString()} damage per second`) &&
         said.includes(`${Math.round(stats.critChance)}% critical chance`) &&
-        said.includes(`${stats.attackRange.toFixed(1)} tile reach`),
+        said.includes(`${Number(stats.attackRange.toFixed(1))} tile reach`), // the hover trims a trailing .0
       'and the skill HOVER is the sheet’s own numbers, not the table’s',
       said
     );

@@ -475,29 +475,60 @@ function greedyTree(character: Character, skillId: string): void {
   const progress = skillProgress(character, skillId);
   const tree = treeFor(skillId);
   const budget = treePointsFor(skillId, character.level);
+  const held = (id: string) => progress.allocated.filter((x) => x === id).length;
   while (progress.allocated.length < budget) {
     const open = tree.filter((n) => canAllocate(skillId, n.id, progress.allocated));
     if (open.length === 0) return;
-    let take = open[0];
-    let power = -Infinity;
+    // A PACKAGE is what buying into a node is worth: the node itself, or a
+    // minor filled far enough to open the notable gated on it and that
+    // notable with it — a gate is distance, and a walk that cannot see past
+    // one fills the trunk with points and never reaches a rule.
+    const packages: string[][] = [];
     for (const node of open) {
-      progress.allocated.push(node.id);
-      const choice = node.choices?.[0]?.id;
-      if (choice) (progress.choices ??= {})[node.id] = choice;
-      const scored = buildPower(character) + (node.kind === 'minor' ? REACH : 0);
-      progress.allocated.pop();
-      if (scored > power) {
-        power = scored;
-        take = node;
+      packages.push([node.id]);
+      for (const gated of tree) {
+        if (gated.gate?.from !== node.id || progress.allocated.includes(gated.id)) continue;
+        const more = Math.max(1, gated.gate.points - held(node.id));
+        if (!canAllocate(skillId, gated.id, [...progress.allocated, ...Array(more).fill(node.id)])) continue;
+        packages.push([...Array(more).fill(node.id), gated.id]);
       }
     }
-    progress.allocated.push(take.id);
-    if (take.choices?.length) (progress.choices ??= {})[take.id] = take.choices[0].id;
+    const room = budget - progress.allocated.length;
+    const base = buildPower(character);
+    let take = packages[0];
+    let power = -Infinity;
+    for (const pack of packages) {
+      if (pack.length > room) continue;
+      const before = progress.allocated.length;
+      const choices = { ...(progress.choices ?? {}) };
+      for (const id of pack) {
+        progress.allocated.push(id);
+        const node = tree.find((n) => n.id === id);
+        if (node?.choices?.length) (progress.choices ??= {})[id] = node.choices[0].id;
+      }
+      // A notable is worth REACH beyond what the sheet can see, because a
+      // rule is invisible to `buildPower` and a walk that never buys one
+      // fills the trunk with points instead.
+      const last = tree.find((n) => n.id === pack[pack.length - 1]);
+      const scored = (buildPower(character) - base + (last?.kind === 'notable' ? REACH : 0)) / pack.length;
+      progress.allocated.length = before;
+      progress.choices = choices;
+      if (scored > power) {
+        power = scored;
+        take = pack;
+      }
+    }
+    if (take.length > room) return;
+    for (const id of take) {
+      progress.allocated.push(id);
+      const node = tree.find((n) => n.id === id);
+      if (node?.choices?.length) (progress.choices ??= {})[id] = node.choices[0].id;
+    }
   }
 }
 
-/** What a minor is worth for being ON THE WAY. Without it a greedy walk buys
- *  the first notable it reaches and stalls on minors forever. */
+/** What reaching a NOTABLE is worth on top of its sheet number: a rule the
+ *  sheet cannot see, priced like one good stat line. */
 const REACH = 12;
 
 /** Sockets fill before levels climb, so a set grows the way a player's does. */

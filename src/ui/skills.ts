@@ -32,7 +32,8 @@ import {
 } from '../skills-tree';
 import { categoryIcon, skillIcon } from './icons';
 import { chain, frame, mount, svgEl } from './webart';
-import { bakedArt, nodeGlyph } from './webicons';
+import { bakeRows, bakedArt, nodeGlyph } from './webicons';
+import { WEB_BACKDROPS } from '../render/generated-backdrops';
 import { pointsIn, withoutOne } from '../webgraph';
 import { attachTooltip, hideTooltip } from './tooltip';
 import { ask } from './confirm';
@@ -143,6 +144,8 @@ let panX = 0;
 let panY = 0;
 /** Set while a drag is in progress, so the drag doesn't also count as a click. */
 let dragged = false;
+/** A backdrop is baked once a skill; the web is rebuilt far more often. */
+const backdrops = new Map<string, string>();
 
 /**
  * The viewport, in pixels.
@@ -580,6 +583,24 @@ function renderWeb(): void {
 
   const at = (n: SkillNodeDef) => place(n.x, n.y);
   const middle = place(0, 0);
+
+  // THE SKILL'S OWN WEATHER: a plain picture filling the window under the
+  // web, for the skills that have one, and nothing for the rest.
+  const wrap = $('skills-webwrap');
+  const weather = WEB_BACKDROPS[skillId];
+  const weatherUrl = weather ? (backdrops.get(skillId) ?? bakeRows(weather)) : null;
+  let sky = wrap.querySelector<HTMLElement>('.web__weather');
+  if (weather && weatherUrl) {
+    backdrops.set(skillId, weatherUrl);
+    if (!sky) {
+      sky = el('div', 'web__weather');
+      wrap.prepend(sky);
+    }
+    sky.style.backgroundImage = `url(${weatherUrl})`;
+    sky.hidden = false;
+  } else if (sky) {
+    sky.hidden = true;
+  }
 
   // Edges first, so nodes sit on top of them. Drawn once per pair — every link
   // is undirected, so drawing both ends would double every stroke and make the

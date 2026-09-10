@@ -6,6 +6,7 @@
 import { Rng } from '../rng';
 import { ailmentSeconds } from './stats';
 import { BURST, MELEE, PROJECTILE } from '../data';
+import { SHATTER } from './grants';
 import type { SkillDef } from '../types';
 import type { Entity } from './run';
 import type { Vec2 } from './grid';
@@ -25,6 +26,10 @@ export interface SkillUse {
   sinceKill: number; // seconds left of a kill still counting
   sinceHit: number; // seconds since anything landed on the hero
   streak: number; // casts in a row at the same body, this one included
+  sleet: number; // stacks of Sleet held going into this cast
+  lastHits: number; // bodies the last cast hit
+  /** Hold a body: the Freeze a Chill ends in, handed out by a rule instead. */
+  freeze(target: Entity): void;
   /** `multiplier` is relative to THIS skill's damage, not to anything else. */
   hit(target: Entity, multiplier: number): void;
   /**
@@ -137,6 +142,9 @@ export function targetScale(use: SkillUse, target: Entity): number {
   const clean = g.untouchedMore as { after: number; more: number } | undefined;
   if (clean && use.sinceHit >= clean.after) m *= 1 + clean.more;
 
+  const fresh = g.moreVsClean as number | undefined;
+  if (fresh && target.ailments.length === 0) m *= 1 + fresh;
+
   const low = g.moreVsLow as { below: number; more: number } | undefined;
   if (low && target.life <= target.stats.maxLife * low.below) m *= 1 + low.more;
 
@@ -244,7 +252,7 @@ function alongRay(
  *  lands on the body you aimed at — so one enemy takes the lot. Every
  *  Projectile from anywhere adds one, and a Pierce carries each on past its
  *  target the way any Projectile's does. No spike, so no circle. */
-function hailOf(use: SkillUse, hail: { projectiles: number; less: number }, scale: (e: Entity) => number): void {
+function hailOf(use: SkillUse, hail: { projectiles: number; less: number }, scale: (e: Entity) => number, freezes: boolean): void {
   const g = use.grants;
   const count = Math.max(1, Math.round(hail.projectiles + num(g.extraTargets, 0)));
   const others = spreadTargets(use, use.enemies.filter((e) => !e.dead && e !== use.primary), count - 1);
@@ -257,6 +265,7 @@ function hailOf(use: SkillUse, hail: { projectiles: number; less: number }, scal
     if (target.dead) continue;
     const flight = Math.max(FLIGHT.least, separation(use.user, target) / FLIGHT.speed);
     use.hit(target, share * scale(target));
+    if (freezes) use.freeze(target);
     burstFrom(use, target, (e) => share * scale(e), true);
     use.vfx('shard', [{ x: use.user.x, y: use.user.y }, { x: target.x, y: target.y }], flight);
     if (pierce <= 0) continue;
@@ -294,26 +303,49 @@ export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
     // last, to a cap. The streak is the sim's; the first cast is worth nothing.
     const ramp = g.spikeRamp as { per: number; upTo: number } | undefined;
     const rampMore = ramp ? 1 + ramp.per * Math.min(ramp.upTo, Math.max(0, use.streak - 1)) : 1;
+    // SLEET: what the stacks are worth on this cast, and whether it is the
+    // one at the bar that Freezes.
+    const tempo = g.spikeTempo as { per: number; stacks: number } | undefined;
+    const tempoMore = tempo ? 1 + (use.sleet * num(g.tempoDamage, 0)) / 100 : 1;
+    const freezes = !!tempo && use.sleet >= Math.max(1, tempo.stacks + num(g.tempoStacks, 0));
     const scale = (e: Entity) =>
-      castMultiplier * targetScale(use, e) * (1 + (stands?.more ?? 0)) * rampMore;
+      castMultiplier * targetScale(use, e) * (1 + (stands?.more ?? 0)) * rampMore * tempoMore;
     // HAIL is the other mode: no spike at all, the cast thrown as Projectiles.
     const hail = g.spikeHail as { projectiles: number; less: number } | undefined;
     if (hail) {
-      hailOf(use, hail, scale);
+      hailOf(use, hail, scale, freezes);
       return;
     }
+    const feeds = g.fieldFeeds as { per: number; upTo: number } | undefined;
+    const fed = feeds ? 1 + feeds.per * Math.min(feeds.upTo, use.lastHits) : 1;
     const radius =
-      use.areaRadius((use.skill.params?.radius as number) ?? 1.3) * (stands?.radius ?? 1);
+      use.areaRadius((use.skill.params?.radius as number) ?? 1.3) * (stands?.radius ?? 1) * fed;
+    const rim = num(g.rimBite, 0);
+    const shatter = use.crit ? num(g.shatterShare, 0) : 0;
+    const bursts = num(g.burstOnKill, 0);
 
     // A PROJECTILE is one more spike, up under another enemy in Spread, and
-    // nothing is struck twice by one cast.
+    // nothing is struck twice by one cast. A shatter and a kill-burst reach
+    // what the field did NOT, once each.
     const struck = new Set<Entity>();
+    const scattered = new Set<Entity>();
+    const scatter = (from: Entity, share: number) => {
+      for (const other of use.enemies) {
+        if (other.dead || struck.has(other) || scattered.has(other) || !within(from, other, SHATTER.radius)) continue;
+        scattered.add(other);
+        use.hit(other, share * scale(other));
+      }
+    };
     const raise = (at: Entity) => {
       for (const enemy of use.enemies) {
         if (enemy.dead || struck.has(enemy) || !within(at, enemy, radius)) continue;
         struck.add(enemy);
-        use.hit(enemy, scale(enemy));
+        const far = rim > 0 && separation(at, enemy) > radius / 2 ? 1 + rim : 1;
+        use.hit(enemy, scale(enemy) * far);
+        if (freezes) use.freeze(enemy);
         burstFrom(use, enemy, scale, true);
+        if (shatter > 0) scatter(enemy, shatter);
+        if (bursts > 0 && enemy.dead) scatter(enemy, bursts);
       }
       // Second point IS the radius, so the renderer draws the size the sim
       // used, and a spike that STANDS is drawn for as long as it stands there.

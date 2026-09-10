@@ -60,7 +60,7 @@ Exactly three things end a session, and a finished phase is not one:
 | `npm run build` | bundle to `docs/app.js` — **committed**, Cloudflare runs no build |
 | `npm run mods` | every modifier rolls, does something, reads |
 | `npm run smoke` | ~7min: headless boot and interaction |
-| `npm run demo` | ~19min: sim, economy, trees, balance. `DEMO_TIME=1` times each section |
+| `npm run demo` | ~19min alone, 70 min measured beside a smoke run since the ceiling walks gates as packages: sim, economy, trees, balance. `DEMO_TIME=1` times each section and prints the heap |
 | `npm run shots` | ~1min: all 30 screens against a checklist |
 | `npm run drag` | ~13s: the dock reorders, a window goes where you put it |
 | `npm run peek` | a descent, at a zoom, a pan, a crop, a skill, a burst of frames |
@@ -1049,26 +1049,56 @@ whose mind has changed. The crafting people are never RESCUED: they live down th
 their own table, not scenes. **The one `plan` left is the ANSWERING HALL**, because a boss fight
 needs a floor with nothing on it.
 
-**A MINOR HOLDS A RANGE OF POINTS, AND EVERY TREE IS ITS OWN SHAPE.** *"Change
-the minor nodes to not have quite as many just generic point ones… make it one
-point that you can put a range of points into… for each tree make it a
-different general shape."* A twig is ONE minor with `SkillNodeDef.points` (3 to
-5) and the notable past it, so a build is a few nodes walked up and down rather
-than a chain of identical studs; `SkillProgress.allocated` lists an id ONCE A
-POINT, `pointsIn` counts them and `withoutOne` refunds the last, so
+**A MINOR HOLDS A RANGE OF POINTS, AND EVERY TREE IS ITS OWN SHAPE.** *"Do way
+less total small nodes but make them all have 2-4 points you can put in… make
+it one point that you can put a range of points into… for each tree make it a
+different general shape."* The trunk is THREE ways in (3 points each) and a
+RING OF SIX (2 each), one ring node under every branch; a trunk notable and a
+branch enabler hang off each ring node and open once it is full; a twig is ONE
+minor with `SkillNodeDef.points` (2 to 4) and the notable it opens, gated on
+the minor being full, so a notable costs the run of points in front of it and
+the far tips are 11 to 13 of the 30. `SkillProgress.allocated` lists an id ONCE
+A POINT — `pointsIn` counts them, `withoutOne` refunds the last,
 `allocated.length` is still what was spent and a save written before it is a
-list of ones. `walked()` merges a node's grants once; `treeMod` reads its stats
-per copy, which is what "per point" means. The notable past a minor is `gate`d
-on the minor being FULL, and a fork on the twig's minor holding `forkFrom.at`,
-so a notable costs the run of points in front of it exactly as the chain of
-minors did (the far tips are 11 to 12 of the 30); `routeTo` in
-`src/skills-tree.ts` is the ONE router, cheapest by points with the gate's
-copies on the way, so a walk to a fork's keystone costs what it did as a chain.
-Left-click adds a point, right-click takes one off, and the node prints
-`held/most`. **THE SILHOUETTE IS `SHAPES` IN `src/trees/layout.ts`** — where the
-six branches hang, a twist on the twigs, a stretch on the whole — eight of them
-mapped by `SHAPE_OF`, the content identical: *"Doesn't need to be different in
-points… just the actual layout."*
+list of ones. **A GRANT ON A MINOR IS PER POINT**: `walked()` merges a node's
+grants once a copy, so "+3% more damage per stack" on a 4-point minor is 12%
+at the top, and a product grant compounds. A fork is gated on the twig's minor
+holding `forkFrom.at`; `routeTo` in `src/skills-tree.ts` is the ONE router,
+cheapest by points with a gate's copies on the way. Left-click adds a point,
+right-click takes one off, the node prints `held/most`, and the card says
+"Opens once X holds N". **THE SILHOUETTE IS `SHAPES` IN `src/trees/layout.ts`**
+— where the six branches hang, a twist on the twigs, a stretch on the whole —
+eight of them mapped by `SHAPE_OF`, the content identical. **THE CEILING'S WALK
+BUYS A GATE AND ITS NOTABLE AS ONE PACKAGE** (`greedyTree`), scored per point
+with `REACH` on the notable, because a rule is invisible to `buildPower` and a
+walk that cannot see past a gate filled the trunk and died at a tenth of the
+Rot's floor.
+
+**A MAJOR NODE IS A RULE, NEVER A FLAT STAT, AND RIMESPIKE IS THE MODEL.**
+*"For all the major nodes that are just flat stats change them to something
+unique… stacking cast speed that once you reach X stacks the next cast
+immediately freezes and you lose all stacks. Then a small node past it could
+be retain x stacks after freeze per point, and another spell damage per stack
+per point."* SLEET (`spikeTempo`) is exactly that: a stack of Cast Speed a
+cast, kept on the run (`RunSim.sleet`, read in `hasteOf`), and at the bar the
+next cast FREEZES what it hits through the one `freeze()` a full Chill bar
+already uses, then spends them down to `tempoKeep`; `tempoDamage` is the per
+point small node, `tempoStacks` moves the bar, Hail is still the keystone at
+the tip. The other five branches keep their rules and the six trunk notables
+are rules now — Cold Eye (`critVsChilled`), Deep Vein (`refundOnKill`), Sure
+Footing (`freshFaster`, the cast that opened on a new body comes back sooner),
+Hardy (`burstOnKill`), Bite (`moreVsClean`), Measure (`freeNth`) — with
+Frostwork growing the field off what the last cast hit (`fieldFeeds`,
+`RunSim.lastHits`), Whiteout paying the outer half (`rimBite`), Frostfall
+refunding a crowd (`refundOnCrowd`) and Glassing shattering a Critical
+(`shatterShare`, `SHATTER.radius`). **A RULE THE RUN KEEPS reads `[STATS]`**,
+the way a kill's tempo does, so the tree check and the fingerprint both leave it
+to a played descent. **A SKILL MAY HAVE WEATHER**: `WEB_BACKDROPS` in
+`src/render/generated-backdrops.ts`, asked through `tools/art/backdrops.json`
+and imported by `portrait.mts <id> <png> 256 backdrops 0.62` — the top of the
+frame only, because the generator hangs a snowbank under any blizzard — and
+drawn by `src/ui/skills.ts` as one `.web__weather` layer filling the window
+under the web. Rimespike's is the first.
 
 **RIMESPIKE IS AN AREA SKILL, AND RIMEFIELD IS THE ONE MODE SWITCH IN THE GAME.**
 *"Make rimespike a large aoe spike instead of single target + splash… it does an

@@ -58,7 +58,7 @@ const BRANCHES: Branch[] = [
         },
       },
       {
-        minors: 4,
+        minors: 3,
         forkFrom: { twig: 1, at: 2 },
         notable: {
           id: 'rs_killingfrost',
@@ -69,10 +69,9 @@ const BRANCHES: Branch[] = [
       },
     ],
     minors: [
-      { text: '+9% chance to apply Chill', stats: [stat('ailmentChance', 'flat', 9, ['chill'])] },
-      { text: '+6% increased Chill Damage', grants: { ailmentMultiplier: 1.06 } },
-      COMMON[0],
-      COMMON[3],
+      { text: '+8% chance to apply Chill', stats: [stat('ailmentChance', 'flat', 8, ['chill'])] },
+      { text: 'Chills you apply last 10% longer', grants: { ailmentDuration: 1.1 } },
+      { text: 'Chills you apply are 6% stronger', grants: { ailmentMultiplier: 1.06 } },
     ],
   },
   {
@@ -99,12 +98,12 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'rs_glassing',
           name: 'Glassing',
-          description: 'Rimespike has +14% Critical Chance and +70% Critical Damage.',
-          stats: [stat('critChance', 'flat', 14), stat('critMultiplier', 'flat', 70)],
+          description: 'A Critical shatters: 60% of the hit lands on everything within 1.5 tiles of the body it struck.',
+          grants: { shatterShare: 0.6 },
         },
       },
       {
-        minors: 4,
+        minors: 3,
         forkFrom: { twig: 1, at: 2 },
         notable: {
           id: 'rs_avalanche',
@@ -114,7 +113,11 @@ const BRANCHES: Branch[] = [
         },
       },
     ],
-    minors: [COMMON[3], COMMON[4], COMMON[1], COMMON[4]],
+    minors: [
+      { text: '+2% Critical Chance', stats: [stat('critChance', 'flat', 2)] },
+      { text: '+12% Critical Damage', stats: [stat('critMultiplier', 'flat', 12)] },
+      { text: '+6% increased Damage', stats: [stat('damage', 'inc', 6)] },
+    ],
   },
   {
     /**
@@ -130,8 +133,8 @@ const BRANCHES: Branch[] = [
     enabler: {
       id: 'rs_frostwork',
       name: 'Frostwork',
-      description: '+20% increased Area of Effect.',
-      stats: [stat('areaOfEffect', 'inc', 20)],
+      description: 'Rimespike reaches 8% further for every enemy the last cast hit, up to 5 (40%).',
+      grants: { fieldFeeds: { per: 0.08, upTo: 5 } },
     },
     twigs: [
       {
@@ -139,8 +142,8 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'rs_whiteout',
           name: 'Whiteout',
-          description: '+35% increased Area of Effect.',
-          stats: [stat('areaOfEffect', 'inc', 35)],
+          description: 'Enemies in the outer half of the field take 40% more damage.',
+          grants: { rimBite: 0.4 },
         },
       },
       {
@@ -148,13 +151,12 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'rs_frostfall',
           name: 'Frostfall',
-          description: '+25% increased Area of Effect, and Rimespike costs 20% less mana.',
-          stats: [stat('areaOfEffect', 'inc', 25)],
-          grants: { manaMultiplier: 0.8 },
+          description: 'Hitting 4 or more enemies refunds all of the mana the cast cost.',
+          grants: { refundOnCrowd: { hits: 4, share: 1 } },
         },
       },
       {
-        minors: 4,
+        minors: 3,
         forkFrom: { twig: 1, at: 2 },
         notable: {
           id: 'rs_field',
@@ -171,7 +173,11 @@ const BRANCHES: Branch[] = [
         },
       },
     ],
-    minors: [COMMON[1], COMMON[0], COMMON[2], COMMON[1]],
+    minors: [
+      { text: '+7% increased Area of Effect', stats: [stat('areaOfEffect', 'inc', 7)] },
+      { text: '+5% increased Cold Damage', stats: [stat('damage', 'inc', 5, ['cold'])] },
+      { text: 'Rimespike costs 6% less mana', grants: { manaMultiplier: 0.94 } },
+    ],
   },
   {
     // THE IDS ARE THE OLD WARD BRANCH'S: a save points at them. What a Chill
@@ -207,7 +213,7 @@ const BRANCHES: Branch[] = [
         },
       },
       {
-        minors: 4,
+        minors: 3,
         forkFrom: { twig: 1, at: 2 },
         notable: {
           id: 'rs_wellspring',
@@ -217,24 +223,30 @@ const BRANCHES: Branch[] = [
         },
       },
     ],
-    minors: [COMMON[5], COMMON[0], COMMON[4], COMMON[0]],
+    minors: [
+      { text: '+10% Critical Damage', stats: [stat('critMultiplier', 'flat', 10)] },
+      { text: 'A Freeze holds 8% longer', grants: { freezeLonger: 1.08 } },
+      { text: '+5% increased Cold Damage', stats: [stat('damage', 'inc', 5, ['cold'])] },
+    ],
   },
   {
     /**
-     * THE PROJECTILE LINE, and HAIL is its KEYSTONE at the tip: no spike at
-     * all, the cast thrown as ice Projectiles from where you stand, twice as
-     * fast for half the damage each — one enemy takes both, a room takes one
-     * each. Before the keystone a Projectile is one more SPIKE, up under
-     * another enemy, so the line pays on the way as well as at the end. The
-     * ids are the old Tempo branch's, which a save points at.
+     * SLEET, and HAIL is its KEYSTONE at the tip. Every cast stacks Cast
+     * Speed; at the bar the next cast FREEZES what it hits and spends the
+     * stacks, so the branch is a rhythm rather than a number, and the small
+     * nodes past it are what a stack is worth and how many survive the
+     * Freeze. Hail is the mode: no spike at all, the cast thrown as ice
+     * Projectiles from where you stand. The ids are the old Tempo branch's.
      */
     id: 'tempo',
-    theme: 'Hail',
+    theme: 'Sleet',
     enabler: {
       id: 'rs_sleet',
       name: 'Sleet',
-      description: '+1 Projectile.',
-      grants: { extraTargets: 1 },
+      description:
+        'Each cast grants a stack of Sleet, 5% increased Cast Speed each. At 8 stacks ' +
+        'the next cast Freezes what it hits and spends them all.',
+      grants: { spikeTempo: { per: 5, stacks: 8 } },
     },
     twigs: [
       {
@@ -250,14 +262,13 @@ const BRANCHES: Branch[] = [
         minors: 4,
         notable: {
           id: 'rs_thrift',
-          name: 'Drift',
-          description: 'Rimespike costs 30% less mana and is cast 15% faster.',
-          grants: { manaMultiplier: 0.7 },
-          stats: [stat('castSpeed', 'inc', 15)],
+          name: 'Squall',
+          description: 'Sleet Freezes 3 stacks sooner.',
+          grants: { tempoStacks: -3 },
         },
       },
       {
-        minors: 4,
+        minors: 3,
         forkFrom: { twig: 1, at: 2 },
         notable: {
           id: 'rs_tempo',
@@ -271,7 +282,11 @@ const BRANCHES: Branch[] = [
         },
       },
     ],
-    minors: [COMMON[2], COMMON[1], COMMON[2], COMMON[0]],
+    minors: [
+      { text: 'Keep 1 stack of Sleet after a Freeze', grants: { tempoKeep: 1 } },
+      { text: '+3% more damage per stack of Sleet', grants: { tempoDamage: 3 } },
+      { text: '+4% increased Cast Speed', stats: [stat('castSpeed', 'inc', 4)] },
+    ],
   },
   {
     // DEEP COLD is the damage branch, and it is a ramp rather than a number:
@@ -307,7 +322,7 @@ const BRANCHES: Branch[] = [
         },
       },
       {
-        minors: 4,
+        minors: 3,
         forkFrom: { twig: 1, at: 2 },
         notable: {
           id: 'rs_transmutation',
@@ -336,46 +351,52 @@ const BRANCHES: Branch[] = [
         },
       },
     ],
-    minors: [COMMON[0], COMMON[1], COMMON[0], COMMON[4]],
+    minors: [
+      { text: '+5% increased Cold Damage', stats: [stat('damage', 'inc', 5, ['cold'])] },
+      { text: '+1% Critical Chance', stats: [stat('critChance', 'flat', 1)] },
+      { text: '+6% increased Damage', stats: [stat('damage', 'inc', 6)] },
+    ],
   },
 ];
 
+/** Six for any build, and each one a RULE: a flat number here was a node
+ *  every build took and none of them remembered. */
 const TRUNK_NOTABLES: Notable[] = [
   {
     id: 'rs_focus',
     name: 'Cold Eye',
-    description: 'Rimespike has +11% Critical Chance and +45% Critical Damage.',
-    stats: [stat('critChance', 'flat', 11), stat('critMultiplier', 'flat', 45)],
+    description: '+25% Critical Chance against a Chilled enemy.',
+    grants: { critVsChilled: 25 },
   },
   {
     id: 'rs_vein',
     name: 'Deep Vein',
-    description: 'Rimespike costs 30% less mana.',
-    grants: { manaMultiplier: 0.7 },
+    description: 'A kill refunds 50% of the mana the cast cost.',
+    grants: { refundOnKill: 0.5 },
   },
   {
     id: 'rs_footwork',
     name: 'Sure Footing',
-    description: 'Rimespike is cast 18% faster and reaches 12% further.',
-    stats: [stat('castSpeed', 'inc', 18), stat('attackRange', 'inc', 12)],
+    description: 'The first cast at an enemy is 40% faster.',
+    grants: { freshFaster: 40 },
   },
   {
     id: 'rs_hardy',
     name: 'Hardy',
-    description: 'Rimespike has +25% increased Area of Effect.',
-    stats: [stat('areaOfEffect', 'inc', 25)],
+    description: 'An enemy killed by Rimespike bursts: 40% of the hit to everything within 1.5 tiles.',
+    grants: { burstOnKill: 0.4 },
   },
   {
     id: 'rs_bite',
     name: 'Bite',
-    description: '+45% increased Cold Damage.',
-    stats: [stat('damage', 'inc', 45, ['cold'])],
+    description: 'Rimespike deals 25% more damage to enemies carrying no Ailment.',
+    grants: { moreVsClean: 0.25 },
   },
   {
     id: 'rs_measure',
     name: 'Measure',
-    description: 'Rimespike is cast 25% faster.',
-    stats: [stat('castSpeed', 'inc', 25)],
+    description: 'Every 3rd cast at the same enemy costs no mana.',
+    grants: { freeNth: 3 },
   },
 ];
 
@@ -399,5 +420,9 @@ export const RIMESPIKE_SPEC: TreeSpec = {
     // A step on the ramp is nothing without the ramp, and neither is holding it.
     spikeRamp: 'rs_weight',
     rampSticks: 'rs_weight',
+    // A stack of Sleet is nothing without Sleet.
+    tempoKeep: 'rs_sleet',
+    tempoDamage: 'rs_sleet',
+    tempoStacks: 'rs_sleet',
   },
 };

@@ -246,7 +246,13 @@ const baked = new Map<string, string | null>();
 export function bakedIcon(id: string): string | null {
   const held = baked.get(id);
   if (held !== undefined) return held;
-  const art = GENERATED_ICONS[id];
+  const url = bakeRows(GENERATED_ICONS[id]);
+  baked.set(id, url);
+  return url;
+}
+
+/** Any grid of rows and a key, as one PNG data URI — or null with no canvas. */
+export function bakeRows(art: { rows: string[]; key: Record<string, string> } | undefined): string | null {
   const canvas = art ? document.createElement('canvas') : null;
   // No 2d context in jsdom, where the paths below are drawn instead.
   const ctx = canvas?.getContext?.('2d') ?? null;
@@ -270,7 +276,6 @@ export function bakedIcon(id: string): string | null {
     ctx.putImageData(image, 0, 0);
     url = canvas.toDataURL('image/png');
   }
-  baked.set(id, url);
   return url;
 }
 

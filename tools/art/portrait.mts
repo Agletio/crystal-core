@@ -15,6 +15,13 @@ const TABLES = {
   portraits: { file: 'generated-portraits.ts', name: 'GENERATED_PORTRAITS', type: 'GeneratedPortrait', what: 'Generated faces, one frame each and carrying their own colours. The\n * hand-drawn table merges these OVER its own rows.' },
   icons: { file: 'generated-icons.ts', name: 'GENERATED_ICONS', type: 'GeneratedIcon', what: 'Generated UI icons, one frame each and carrying their own colours.\n * The hand-drawn table merges these OVER its own rows.' },
   cast: { file: 'generated-cast.ts', name: 'GENERATED_CAST', type: 'GeneratedCast', what: "A hero's WHOLE FIGURE for the cast hall, one frame and its own colours:\n * the one screen that shows a man at four times his ship size shows a drawing\n * made for it rather than his 48-grid body magnified." },
+  backdrops: {
+    file: 'generated-backdrops.ts', name: 'WEB_BACKDROPS', type: 'GeneratedBackdrop',
+    what:
+      "A plain picture laid faint behind a skill's own web, keyed by skill id:\n" +
+      ' * the top `keep` of the generated frame, as a band `grid` wide and as tall\n' +
+      ' * as that band is, because the generator hangs a ground under any weather.',
+  },
   vfx: {
     file: 'generated-vfx.ts', name: 'VFX_ART', type: 'GeneratedVfx',
     what:
@@ -86,13 +93,19 @@ function square(src: Png, keep: number): Png {
   return { width: side, height: side, rgba: out };
 }
 
-/** Nearest-neighbour down to the grid it ships at, alpha carried through. */
-function resample(src: Png, grid: number) {
-  const out = new Uint8Array(grid * grid * 4);
-  for (let y = 0; y < grid; y++)
+/** The top `keep` of the frame, as it is: no ink crop and no squaring. */
+function band(src: Png, keep: number): Png {
+  const height = Math.max(1, Math.round(src.height * keep));
+  return { width: src.width, height, rgba: src.rgba.slice(0, src.width * height * 4) };
+}
+
+/** Nearest-neighbour down to `grid` wide and `tall` high, alpha carried through. */
+function resample(src: Png, grid: number, tall = grid) {
+  const out = new Uint8Array(grid * tall * 4);
+  for (let y = 0; y < tall; y++)
     for (let x = 0; x < grid; x++) {
       const sx = Math.min(src.width - 1, Math.floor((x * src.width) / grid));
-      const sy = Math.min(src.height - 1, Math.floor((y * src.height) / grid));
+      const sy = Math.min(src.height - 1, Math.floor((y * src.height) / tall));
       const s = (sy * src.width + sx) * 4;
       const d = (y * grid + x) * 4;
       for (let k = 0; k < 4; k++) out[d + k] = src.rgba[s + k];
@@ -109,14 +122,16 @@ if (!table) throw new Error(`no table ${tableArg}`);
 const OUT = new URL(`../../src/render/${table.file}`, import.meta.url).pathname;
 
 const png = debackground(decodePng(readFileSync(file)));
-const rgba = resample(name === 'vfx' ? square(png, Number(keepArg ?? 1)) : png, grid);
+const cut = name === 'vfx' ? square(png, Number(keepArg ?? 1)) : name === 'backdrops' ? band(png, Number(keepArg ?? 1)) : png;
+const tall = Math.max(1, Math.round((grid * cut.height) / cut.width));
+const rgba = resample(cut, grid, tall);
 const fold = quantise(rgba, 40);
 
 const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+*$%&@?!<>[]{}~';
 const char = new Map<string, string>();
 const key: Record<string, string> = {};
 const rows: string[] = [];
-for (let y = 0; y < grid; y++) {
+for (let y = 0; y < tall; y++) {
   let row = '';
   for (let x = 0; x < grid; x++) {
     const i = (y * grid + x) * 4;
