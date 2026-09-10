@@ -1198,7 +1198,7 @@ export const GRANTS: GrantDef[] = [
      *  changes how it is kept: casting at another body no longer ends it. */
     id: 'rampSticks',
     what: 'Deep Cold holds across enemies',
-    reads: [SIM],
+    reads: ['spike', SIM],
     say: (v) => (v === true ? 'Deep Cold holds when you cast at another enemy' : null),
   },
   {
