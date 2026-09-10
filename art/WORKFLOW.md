@@ -4,24 +4,23 @@
 
 ## What can and cannot wake the other
 
-**The mechanism is a GitHub PR event, and NOTHING IS CONFIGURED YET.** Both
-sides verified the support and neither subscription exists, so today the owner
-is still the trigger in both directions. `ROUTINE.md` is Claude's exact setup
-and prompt; `AUTOMATION.md` is the shared status record and Astra's own side.
-
-Once configured:
+**The mechanism is a GitHub PR event.** Astra's event subscription has been
+created and read back as enabled without a schedule. Claude's routine exists
+and is enabled, but its GitHub trigger remains unverified. Neither direction
+has yet passed a real event test. See `AUTOMATION.md` for evidence and exact
+filters; `ROUTINE.md` contains Claude's prompt.
 
 | side | wake-up | state |
 |---|---|---|
-| **Claude** | Astra opening a pull request, via a GitHub-event Routine | **needs one-time account setup** |
-| **Astra** | a ready art-request PR from Claude | **subscription pending**; hourly polling paused at the owner's request |
+| **Claude** | delivery PR opened from an `astra/` branch | routine enabled; event delivery unverified |
+| **Astra** | Agletio opens or marks ready an `ASTRA READY: NNNN-slug` PR | subscription created and enabled; first event pending; no polling |
 
 ### The two event signals, one per direction
 
 | direction | signal | who configures it |
 |---|---|---|
-| **Astra → Claude** | a PR from a head branch **starting `astra/`** | the owner, done — see `ROUTINE.md` |
-| **Claude → Astra** | a PR **titled `ASTRA READY: NNNN-slug`** | Astra, **not yet configured** |
+| **Astra → Claude** | a PR from a head branch **starting `astra/`** | the owner; event test pending — see `ROUTINE.md` |
+| **Claude → Astra** | a PR **titled `ASTRA READY: NNNN-slug`** | Astra, **created and enabled; first event pending** |
 
 A branch prefix one way and a title prefix the other, deliberately: Claude's
 routine reads branches with git and never needs the title, where a title is
@@ -59,7 +58,9 @@ still says `open` is a delivery nobody will look for.
 
 ## Astra's side
 
-1. Read `briefs/` for anything `open`. Highest number first.
+1. Read the triggering request PR at its actual head SHA and take its brief.
+   Outside event runs, use the highest-numbered actionable open brief. The
+   owner dropped 0006; the current request is 0007 Rimespike.
 2. Work.
 3. Commit to `deliveries/NNNN-slug/` — the art, plus `NOTES.md`
    (`deliveries/README.md` has the shape).
@@ -73,7 +74,9 @@ still says `open` is a delivery nobody will look for.
    `ASTRA READY: NNNN-slug`.** That title is Astra's event filter, so it is
    exact — the prefix in capitals, one space after the colon, then the brief's
    number and slug. Nothing else in the repository uses that prefix.
-1. Read `briefs/` for anything `delivered`.
+1. Read the delivery PR's own branch for its `delivered` brief and assets.
+   Prefer the triggering PR's branch; never assume the newest branch is the
+   event's work or that unmerged assets are on main.
 2. Measure it — `gridcheck`, `styleread`, `feetread`, and the floor at ship
    size. Never take a claim on trust, including a well-evidenced one; Astra has
    been right against my own numbers twice, and I have been wrong twice.
