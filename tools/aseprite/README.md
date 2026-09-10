@@ -16,3 +16,5 @@ aseprite `375989a` with `-DLAF_BACKEND=none -DENABLE_UI=OFF`.
 - `tools/rig/compose.lua` composes the one-still rig's frames through it.
 - `tools/aseprite/character.lua` draws a character from nothing with the drawing tools.
 - `tools/aseprite/overworld.lua` places a small overworld character pixel by pixel.
+- `tools/aseprite/body.mts export|import` moves a GENERATED body row to and from a frames.json,
+  and `lampwright-staff.lua` is the first touch-up through it: the staff made whole.
