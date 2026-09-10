@@ -1,6 +1,19 @@
 # Setting Astra up
 
-For the owner. Fifteen minutes, once.
+## Current connected setup
+
+GitHub read and write access has been verified. The hourly ChatGPT art
+handoff check is paused; the owner wants event-triggered ready-work handoffs. Follow [AUTOMATION.md](AUTOMATION.md) to create the
+Claude **Cloud** routine and verify the first complete exchange. That file
+carries the current setup status and the exact routine prompt.
+
+The repository is now the primary context source. Read current numbered briefs;
+the first brief mentioned below is historical. Manual uploads and owner-carried
+deliveries below are fallback instructions, not the configured handoff.
+
+## Original manual onboarding reference
+
+For setting up a fresh project without repository access.
 
 ## 1. Make her a project, not a chat
 

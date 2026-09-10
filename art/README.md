@@ -20,7 +20,8 @@ https://raw.githubusercontent.com/Agletio/crystal-core/refs/heads/main/
 | read this | why |
 |---|---|
 | `art/WORKFLOW.md` | **how work is handed over, and what wakes whom** |
-| `art/ROUTINE.md` | the GitHub trigger: a pull request from Astra starts a Claude session |
+| `art/AUTOMATION.md` | automation status, what is and is not configured, Astra's own loop |
+| `art/ROUTINE.md` | Claude's GitHub-event Routine: setup and the exact prompt |
 | `art/CONTRACT.md` | who owns what, and what to do when a job crosses the line |
 | `art/PIPELINE.md` | **how art actually ships.** Read before drawing anything |
 | `art/decisions/LIGHT.md` | light and colour per zone, measured off the roster |

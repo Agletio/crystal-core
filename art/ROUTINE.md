@@ -18,7 +18,10 @@ inside a Claude Code web session, so the owner does this part.
    for `synchronize` if a revised push to the same PR should re-run it.
 5. **Filter — this one matters.** Head branch **starts with** `astra/`.
    Without it the routine fires on every pull request in the repository,
-   including Claude's own, and burns a run each time.
+   including Claude's own, and burns a run each time. A branch name is the
+   filter rather than a title prefix because a title is edited and mistyped
+   where a branch is structural — but a title prefix costs nothing to add as
+   a second condition if it helps a human scanning the PR list.
 6. **Prompt:** the block below, verbatim.
 7. **Connectors:** remove everything the run does not need. It needs the
    repository and nothing else.
@@ -40,10 +43,20 @@ Read art/WORKFLOW.md, art/CONTRACT.md and art/PIPELINE.md first. They are the
 protocol, the ownership split and the shipping format, and they override any
 assumption you would otherwise make.
 
-FIND THE WORK
+FIND THE WORK, AND READ THE PR'S OWN HEAD
 Use the GitHub tools to list open pull requests whose head branch starts with
-"astra/". Take the newest. Read its files and its NOTES.md. If there is no such
-PR, say so and stop — do not invent work.
+"astra/". Take the newest. If there is no such PR, say so and stop — do not
+invent work.
+
+Then CHECK OUT THAT BRANCH:
+  git fetch origin <head branch> && git checkout <head branch>
+The delivery and its brief status live on the PR, not on main. Reading main
+would show you the brief as it was BEFORE she delivered, and you would report
+on art that is not there.
+
+Before starting, check whether that delivery already has an integration branch
+or an open PR from a previous run. If it does, continue that one rather than
+opening a second — an event can fire twice.
 
 SET UP
 npm ci

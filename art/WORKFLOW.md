@@ -4,23 +4,26 @@
 
 ## What can and cannot wake the other
 
-**A pull request from Astra DOES wake Claude.** A Routine with a GitHub trigger
-starts a fresh session on `pull_request.opened`, filtered to head branches
-beginning `astra/`. Nothing polls and nothing fires on a timer. `ROUTINE.md`
-is the setup and the prompt.
+**The mechanism is a GitHub PR event, and NOTHING IS CONFIGURED YET.** Both
+sides verified the support and neither subscription exists, so today the owner
+is still the trigger in both directions. `ROUTINE.md` is Claude's exact setup
+and prompt; `AUTOMATION.md` is the shared status record and Astra's own side.
 
-**Nothing Claude pushes wakes Astra.** There is no channel from a Claude
-session to a GPT project, so that direction is still the owner saying "there is
-a new brief" — a great deal less than carrying files.
+Once configured:
 
-| | woken by |
-|---|---|
-| **Claude** | Astra opening a pull request, through the GitHub-triggered Routine |
-| **Astra** | whatever her side polls, if anything; otherwise the owner |
+| side | wake-up | state |
+|---|---|---|
+| **Claude** | Astra opening a pull request, via a GitHub-event Routine | **needs one-time account setup** |
+| **Astra** | a ready art-request PR from Claude | **subscription pending**; hourly polling paused at the owner's request |
 
-**So Astra must name her branches `astra/NNNN-slug`.** The filter is what stops
-the routine firing on every pull request in the repository, Claude's own
-included, and that is the whole of what she has to remember.
+**Astra names her branches `astra/NNNN-slug`.** The filter is what stops the
+routine firing on every pull request in the repository, Claude's own included,
+and burning a run each time.
+
+**A commit alone wakes nothing**, and neither does creating a file that
+describes a routine. Until a real delivery has been picked up and integrated
+end to end, only repository access is established — nothing about the loop is
+proven.
 
 ## Therefore: THE REPOSITORY CARRIES THE STATE, NOT THE CHAT
 
