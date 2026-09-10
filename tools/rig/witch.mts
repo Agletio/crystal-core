@@ -104,14 +104,14 @@ const inv = (M: Affine): Affine => {
   const a = M[3] / det, b = -M[1] / det, c = -M[2] / det, d = M[0] / det;
   return [a, b, c, d, -(a * M[4] + c * M[5]), -(b * M[4] + d * M[5])];
 };
-const about = (pivot: Pt, deg: number, dx: number, dy: number): Affine => {
+const about = (pivot: Pt, deg: number, dx: number, dy: number, sx = 1, sy = 1): Affine => {
   const r = (deg * Math.PI) / 180, cs = Math.cos(r), sn = Math.sin(r);
   const [px, py] = pivot;
-  // translate(pivot + d) · rotate · translate(-pivot)
-  return [cs, sn, -sn, cs, px + dx - cs * px + sn * py, py + dy - sn * px - cs * py];
+  // translate(pivot + d) · rotate · scale · translate(-pivot)
+  return [cs * sx, sn * sx, -sn * sy, cs * sy, px + dx - (cs * sx * px - sn * sy * py), py + dy - (sn * sx * px + cs * sy * py)];
 };
 
-interface Pose { [part: string]: { rot?: number; dx?: number; dy?: number } }
+interface Pose { [part: string]: { rot?: number; dx?: number; dy?: number; sx?: number; sy?: number } }
 interface RootPose { rot?: number; dx?: number; dy?: number; pivot?: Pt }
 
 function worlds(pose: Pose, root: RootPose): Map<string, Affine> {
@@ -121,7 +121,8 @@ function worlds(pose: Pose, root: RootPose): Map<string, Affine> {
     const had = out.get(name);
     if (had) return had;
     const p = parts.get(name)!;
-    const local = about(p.pivot, pose[name]?.rot ?? 0, pose[name]?.dx ?? 0, pose[name]?.dy ?? 0);
+    const q = pose[name] ?? {};
+    const local = about(p.pivot, q.rot ?? 0, q.dx ?? 0, q.dy ?? 0, q.sx ?? 1, q.sy ?? 1);
     const w = mul(resolve(p.parent), local);
     out.set(name, w);
     return w;
@@ -155,6 +156,7 @@ function renderSuper(pose: Pose, root: RootPose): Int16Array {
 
 function toGrid(canvas: Int16Array): Int16Array {
   const out = new Int16Array(GRID * GRID).fill(-1);
+  const dark = new Int16Array(GRID * GRID).fill(-1); // the darkest ink each block held
   for (let gy = 0; gy < GRID; gy++) for (let gx = 0; gx < GRID; gx++) {
     const count = new Map<number, number>();
     for (let dy = 0; dy < SUPER; dy++) for (let dx = 0; dx < SUPER; dx++) {
@@ -163,7 +165,26 @@ function toGrid(canvas: Int16Array): Int16Array {
     }
     const total = [...count.values()].reduce((a, b) => a + b, 0);
     if (total < COVER) continue;
-    out[gy * GRID + gx] = [...count.entries()].sort((a, b) => b[1] - a[1] || luma(inks[a[0]]) - luma(inks[b[0]]))[0][0];
+    const i = gy * GRID + gx;
+    out[i] = [...count.entries()].sort((a, b) => b[1] - a[1] || luma(inks[a[0]]) - luma(inks[b[0]]))[0][0];
+    dark[i] = [...count.keys()].sort((a, b) => luma(inks[a]) - luma(inks[b]))[0];
+  }
+  return inkEdges(out, dark);
+}
+
+// What makes a frame read as DRAWN rather than resampled: an orphan pixel is
+// dropped, a one-pixel hole is filled, and a pixel on the silhouette takes the
+// darkest ink its block held, which is the still's own outline coming back.
+function inkEdges(g: Int16Array, dark: Int16Array): Int16Array {
+  const at = (x: number, y: number): number => (x < 0 || y < 0 || x >= GRID || y >= GRID ? -1 : g[y * GRID + x]);
+  const out = Int16Array.from(g);
+  for (let y = 0; y < GRID; y++) for (let x = 0; x < GRID; x++) {
+    const n = [at(x - 1, y), at(x + 1, y), at(x, y - 1), at(x, y + 1)];
+    const inked = n.filter((v) => v >= 0).length;
+    const i = y * GRID + x;
+    if (g[i] >= 0 && inked === 0) { out[i] = -1; continue; }
+    if (g[i] < 0 && inked === 4) { out[i] = n.sort((a, b) => luma(inks[a]) - luma(inks[b]))[0]; continue; }
+    if (g[i] >= 0 && inked < 4 && luma(inks[dark[i]]) < luma(inks[g[i]])) out[i] = dark[i];
   }
   return out;
 }
@@ -182,7 +203,7 @@ const STATES: Record<string, State> = {
       return {
         root: { dy: 1.0 * b },
         pose: {
-          torso: { rot: 0.6 * b }, head: { rot: -0.6 * b, dy: 0.5 * b },
+          torso: { rot: 0.6 * b, sy: 1 + 0.008 * b }, head: { rot: -0.6 * b, dy: 0.5 * b },
           armLeft: { rot: 2.0 * b }, armRight: { rot: -2.0 * b },
           cloakUpper: { rot: -1.5 * Math.sin(TAU * t - 0.8) }, cloakLower: { rot: -2.5 * Math.sin(TAU * t - 1.6) },
           dressHem: { rot: 0.6 * Math.sin(TAU * t - 0.5) },
@@ -200,7 +221,8 @@ const STATES: Record<string, State> = {
         root: { dy: -2.0 * (0.5 - 0.5 * Math.cos(2 * p)), dx: 1.5 * Math.sin(p) },
         pose: {
           torso: { rot: 2.5 * Math.sin(p) }, head: { rot: -1.5 * Math.sin(p), dy: 0.6 * Math.sin(2 * p) },
-          armLeft: { rot: 12 * Math.sin(p - 0.5) }, armRight: { rot: 12 * Math.sin(p - 0.5) },
+          armLeft: { rot: 6 * Math.sin(p - 0.5), sy: 1 - 0.14 * Math.max(0, Math.sin(p)) }, // an arm swung forward is seen shorter
+          armRight: { rot: -6 * Math.sin(p - 0.5), sy: 1 - 0.14 * Math.max(0, -Math.sin(p)) },
           legLeft: { dx: 2 * Math.sin(p), dy: lift(p) },
           legRight: { dx: 2 * Math.sin(p + Math.PI), dy: lift(p + Math.PI) },
           dressUpper: { rot: 2 * Math.sin(p) }, dressHem: { rot: 6 * Math.sin(p - 0.6) },
