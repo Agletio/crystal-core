@@ -63,6 +63,14 @@ an event reaches it is untested.
 - Do not use `ASTRA READY:` on Astra delivery PRs. This avoids self-triggering.
 - Claude may now publish 0007. No separate dummy art request is needed.
 
+**Published 2026-09-10 — the first real request.**
+[PR #16](https://github.com/Agletio/crystal-core/pull/16),
+`ASTRA READY: 0007-rimespike`, non-draft, author `Agletio`, head
+`claude/0007-rimespike-request`, base `main`, one file:
+`art/requests/0007-rimespike.md`. That title matches the stored regex exactly,
+so opening it is the first event either subscription has ever been offered.
+**Nothing here proves it arrived** — a run on Astra's side is what would.
+
 ## Event-triggered handoff plan — supersedes hourly setup below
 
 The owner prefers a ready-work event over polling to avoid idle checks and
