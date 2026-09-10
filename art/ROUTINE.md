@@ -23,8 +23,17 @@ inside a Claude Code web session, so the owner does this part.
    where a branch is structural — but a title prefix costs nothing to add as
    a second condition if it helps a human scanning the PR list.
 6. **Prompt:** the block below, verbatim.
-7. **Connectors:** remove everything the run does not need. It needs the
-   repository and nothing else.
+7. **Connectors: REMOVE ALL OF THEM.** This is not tidiness. A routine may use
+   every tool from an included connector without asking, so an image-generation
+   connector left attached is an image generator handed to the one agent whose
+   whole instruction is *you do not make art*. On the first setup, `visualize`
+   (`imagine_mcp`) was still attached. The run needs the repository and nothing
+   else.
+
+**And its tool list has no GitHub API in it.** The routine's declared tools are
+Bash, Read, Write, Edit, Glob, Grep, WebFetch and WebSearch — no `mcp__github__*`
+— so the prompt below finds the work with **git alone** rather than by listing
+pull requests. A branch is what matters anyway; the PR is only what woke it.
 
 **Astra must name her branches `astra/NNNN-slug`** or the filter never matches.
 That is the whole of what she has to remember.
@@ -43,20 +52,26 @@ Read art/WORKFLOW.md, art/CONTRACT.md and art/PIPELINE.md first. They are the
 protocol, the ownership split and the shipping format, and they override any
 assumption you would otherwise make.
 
-FIND THE WORK, AND READ THE PR'S OWN HEAD
-Use the GitHub tools to list open pull requests whose head branch starts with
-"astra/". Take the newest. If there is no such PR, say so and stop — do not
-invent work.
+FIND THE WORK, AND READ ITS OWN BRANCH
+Use git alone. Do NOT assume GitHub API tools are available in this session.
 
-Then CHECK OUT THAT BRANCH:
-  git fetch origin <head branch> && git checkout <head branch>
-The delivery and its brief status live on the PR, not on main. Reading main
-would show you the brief as it was BEFORE she delivered, and you would report
-on art that is not there.
+  git fetch origin "+refs/heads/astra/*:refs/remotes/origin/astra/*"
+  git for-each-ref --sort=-committerdate \
+    --format='%(refname:short) %(committerdate:iso)' refs/remotes/origin/astra
 
-Before starting, check whether that delivery already has an integration branch
-or an open PR from a previous run. If it does, continue that one rather than
-opening a second — an event can fire twice.
+Take the most recently committed one and check it out:
+
+  git checkout -B <branch> origin/<branch>
+
+If there is no astra/ branch, say so and stop — do not invent work.
+
+The delivery and its brief status live on THAT BRANCH, not on main. Reading
+main would show you the brief as it was BEFORE she delivered, and you would
+report on art that is not there.
+
+An event can fire twice, so before working check whether this delivery already
+has an integration branch:  git ls-remote --heads origin 'claude/*'
+If one exists for the same brief, continue it rather than starting again.
 
 SET UP
 npm ci
@@ -79,7 +94,7 @@ painted rather than transparent.
 
 Then draw it at SHIP SIZE on a real floor beside shipped bodies. A body draws
 at about 27px at 1x zoom; 48 and 54 are the useful sizes. A claim about art
-needs a picture.
+needs a picture, so write the pictures you make into the repository.
 
 WRITE WHAT YOU FOUND
 Put it in the brief's own Outcome section in art/briefs/ — that file is the
@@ -97,13 +112,19 @@ Revert every scratch row before finishing:
 No test rows ship. Then npm run typecheck and npm run comments, both clean.
 
 DELIVER
-Push to a claude/ branch and open a pull request against main describing what
-you measured. Then post ONE comment on Astra's pull request: the measurements,
-what is good, what is still off, and a link to yours. Be specific and brief;
-she acts on numbers, not adjectives.
+Commit to a claude/ branch and push it. If GitHub API tools turn out to be
+available, open a pull request against main and leave ONE comment on Astra's
+pull request with the measurements, what is good, what is still off, and a link
+to yours — specific and brief, she acts on numbers rather than adjectives.
+
+If they are NOT available, that is fine and not a failure: the Outcome you wrote
+into the brief is the durable record. End your run by printing the branch name
+and the compare URL
+  https://github.com/Agletio/crystal-core/compare/main...<your branch>
+so the owner can open the pull request in one click.
 
 DO NOT
-- make or retouch art, or edit her files
+- make or retouch art, or edit her files — you have no image tool and need none
 - push to main, or merge anything
 - change gameplay, the renderer seam, or anything outside the art tables
 - claim a suite passed without running it
