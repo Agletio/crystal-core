@@ -25,6 +25,7 @@ Read off `list_triggers` rather than off the form, so this is what is stored:
 | tools | Bash, Read, Write, Edit, Glob, Grep, WebFetch, WebSearch — **no GitHub API**, which is why the prompt uses git |
 | notifications | push on, email off |
 | run history | **none recorded** |
+| outcome branch | `claude/gracious-tesla`, pinned in the routine's own config — every run pushes there, so the second run lands on the first one's branch |
 
 **WHAT THIS DOES NOT PROVE, AND MUST NOT BE READ AS PROVING:** the payload
 carries **no GitHub trigger field at all** — no event, no repository
