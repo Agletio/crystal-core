@@ -71,6 +71,33 @@ an event reaches it is untested.
 so opening it is the first event either subscription has ever been offered.
 **Nothing here proves it arrived** — a run on Astra's side is what would.
 
+## PROVEN 2026-09-10 — Claude to Astra, end to end
+
+**The event fired and she acted on it.** Not inferred from configuration: her
+own `NOTES.md` on `astra/0007-rimespike` names
+[PR #16](https://github.com/Agletio/crystal-core/pull/16) and its head SHA
+`906f4fd` — the exact commit the request was published at — and the branch's
+first commit lands 01:35 UTC against the PR's 01:28. Nothing was carried by
+hand in between.
+
+She stopped at the design gate, which is correct: brief 0007 is
+`blocked: owner design approval` on her branch, one concept generated, nothing
+rotated or animated, and the dropped 0006 was not resumed. She measured her own
+output against the hard-alpha rule and reported that it fails it — concept
+source, never an import.
+
+**THE OTHER DIRECTION IS STILL UNTESTED.** Astra opening a delivery PR from an
+`astra/` branch is what would wake Claude's routine, and no such PR exists yet;
+her branch carries a concept, not a delivery. The routine's GitHub trigger
+remains unverified for exactly the reason above.
+
+**And the request cost her an intake cycle on a stale tool name.** Brief 0007
+quoted the owner saying *"use pixel lab"*, which is superseded — *"the idea is
+for you to replace pixel lab not sure why Claude is saying to use it."* The
+quotes stay; both now carry the correction beside them. A brief is Claude's, so
+that one is Claude's fault, not a protocol fault. *(This section added by
+Claude.)*
+
 ## Event-triggered handoff plan — supersedes hourly setup below
 
 The owner prefers a ready-work event over polling to avoid idle checks and

@@ -68,6 +68,22 @@ with it.
 
 ## Known quirks
 
+- **`smoke` NEEDS MORE HEAP THAN A RUNNER GIVES IT, and Node hides that.** Node
+  sizes its default old-space off the machine's RAM, so a 15 GB box hands it
+  ~7.5 GB and a CI runner hands it ~4. Measured, `smoke` passes **6.9 GB RSS**
+  walking the skill webs — under one cap and over the other, so it passed
+  locally and died on CI with `Ineffective mark-compacts near heap limit`, on
+  commits that touched only markdown. `ci.yml` sets
+  `NODE_OPTIONS: --max-old-space-size=12288` on that step. **The 6.9 GB itself
+  is a finding nobody has chased**: it is one browser and one page.
+- **`shots` FAILS ON A THIRD-PARTY SCRIPT, and a CORS error hides where it came
+  from.** `docs/index.html` loads Cloudflare's analytics beacon; served off
+  `127.0.0.1` its RUM request is CORS-refused, and the browser attributes that
+  error to the PAGE, so the off-origin filter in `shots.mjs` cannot see it.
+  Blocked at `page.route` instead — the beacon never loads, so it never asks.
+  **It is invisible on a machine whose network already blocks the beacon**,
+  which is why it ran green here and red on CI; tell the two apart by the
+  failure reason, `net::ERR_FAILED` from the abort against the network's own.
 - **`smoke.mjs` is ORDER-DEPENDENT.** A dozen assertions pick a dock item by
   POSITION (`filled('#inv-gear')[0]`), so anything that reorders the dock goes
   at the END of the file, and anything that consumes an item must avoid pieces

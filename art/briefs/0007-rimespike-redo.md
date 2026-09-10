@@ -78,6 +78,9 @@ hit testing.
 
 The owner's words about the current one, which is what started this:
 *"Use pixel lab to make a cool looking ice spike not whatever that is."*
+The judgement is what carries; the tool named in it does not, and quoting it
+here cost an intake cycle — *"the idea is for you to replace pixel lab not sure
+why Claude is saying to use it."* Astra's generator is the generator.
 
 Beyond that: a cast reads as a field erupting, the standing mode reads as a
 place that stays, and a player can tell at a glance which one is happening.
