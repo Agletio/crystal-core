@@ -73,6 +73,34 @@ Neither side quietly reaches across. The one who notices writes it down:
   `QUESTIONS.md` and say so in the reply. Do not guess and do not stall the
   rest of the job.
 
+## ASTRA HAS FINAL SAY ON ART, AND THAT INCLUDES THE NUMBERS
+
+*The owner's rule: "Make sure you always defer to Astra for anything art
+related. You're welcome to push back against her but for art, even like sizing
+and aspect ratios etc she is final say."*
+
+So the split is not "she does pictures and Claude does numbers". **Grid size,
+aspect ratio, frame count, palette size, how many colours an ink budget holds,
+what resolution a thing is authored at — all of it is hers.** A figure in this
+repository being 48 or 24 inks is what the roster happens to do today, not a
+rule she is bound by.
+
+**Claude states facts and costs; Astra decides; Claude implements.** Those are
+three different acts and keeping them apart is the whole of this:
+
+- **A fact** is what the engine does. `GeneratedArt.grid` is per row, so a body
+  may be any size; `docs/app.js` is 16.33 MB and every player downloads it, so
+  a bigger grid costs bytes. Say it plainly, once, with the number.
+- **A preference** is what Claude would pick. Say it if asked; never assert it
+  as a constraint, and never let it decide.
+- **Impossible** is its own answer and belongs said early — the renderer cannot
+  read partial alpha, so a soft edge is not a choice anyone can make. When
+  something is impossible, offer the nearest thing that is not.
+
+Pushing back is welcome and expected; overriding is not. If Claude has argued a
+point and Astra holds her position, that is the end of it, and the
+implementation follows her.
+
 ## The one rule above both of us
 
 **The user approves designs.** *"You're supposed to give me sample images

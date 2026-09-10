@@ -144,7 +144,7 @@ table is in the `harness` skill, along with every quirk and flake. Build before 
 - **There are no image files, and no binary assets.** Every sprite is a list of
   strings or a data URI in TypeScript. Adding one is a change to how the game
   ships, not an art decision.
-- **THE ART IS ASTRA'S, AND CLAUDE DOES NOT MAKE IT.** *The user's call:
+- **THE ART IS ASTRA'S, AND SHE HAS FINAL SAY — THE NUMBERS INCLUDED.** *The user's call:
   "I want to have gpt6 Astra be the art director and do all art
   creation/direction from here on out… you're the main developer."* Claude owns
   systems, logic, UI implementation, data, saves, performance and **the
@@ -157,7 +157,11 @@ table is in the `harness` skill, along with every quirk and flake. Build before 
   what Claude still owns is the renderer seam — where a picture is drawn, its
   anchor, its layer, its beat — because that is draw order and hit testing.
   Anything in `decisions/` is standing art direction and is followed like this
-  file. **A DESIGN IS STILL SHOWN TO THE USER AND APPROVED BEFORE ANYTHING IS
+  file. **AND THE DEFERENCE REACHES THE FIGURES** — *"even like sizing and
+  aspect ratios etc she is final say."* Grid, aspect, frame count, palette
+  size: hers. Claude states a FACT and its COST once, with the number, and
+  implements what she decides; pushing back is welcome, overriding is not. What
+  the engine cannot do is a fact said early, not a preference dressed as one. **A DESIGN IS STILL SHOWN TO THE USER AND APPROVED BEFORE ANYTHING IS
   ROTATED, ANIMATED OR DRESSED** — *"you're supposed to give me sample images
   before you begin making animations or additional generations for
   characters."* **GEAR HAS NO

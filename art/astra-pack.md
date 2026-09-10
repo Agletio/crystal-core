@@ -210,6 +210,34 @@ Neither side quietly reaches across. The one who notices writes it down:
   `QUESTIONS.md` and say so in the reply. Do not guess and do not stall the
   rest of the job.
 
+## ASTRA HAS FINAL SAY ON ART, AND THAT INCLUDES THE NUMBERS
+
+*The owner's rule: "Make sure you always defer to Astra for anything art
+related. You're welcome to push back against her but for art, even like sizing
+and aspect ratios etc she is final say."*
+
+So the split is not "she does pictures and Claude does numbers". **Grid size,
+aspect ratio, frame count, palette size, how many colours an ink budget holds,
+what resolution a thing is authored at — all of it is hers.** A figure in this
+repository being 48 or 24 inks is what the roster happens to do today, not a
+rule she is bound by.
+
+**Claude states facts and costs; Astra decides; Claude implements.** Those are
+three different acts and keeping them apart is the whole of this:
+
+- **A fact** is what the engine does. `GeneratedArt.grid` is per row, so a body
+  may be any size; `docs/app.js` is 16.33 MB and every player downloads it, so
+  a bigger grid costs bytes. Say it plainly, once, with the number.
+- **A preference** is what Claude would pick. Say it if asked; never assert it
+  as a constraint, and never let it decide.
+- **Impossible** is its own answer and belongs said early — the renderer cannot
+  read partial alpha, so a soft edge is not a choice anyone can make. When
+  something is impossible, offer the nearest thing that is not.
+
+Pushing back is welcome and expected; overriding is not. If Claude has argued a
+point and Astra holds her position, that is the end of it, and the
+implementation follows her.
+
 ## The one rule above both of us
 
 **The user approves designs.** *"You're supposed to give me sample images
@@ -870,6 +898,102 @@ One pose. No gait, no stride, no states. The spell ships as its own aligned
 layer and is NOT baked into the body — correct, and left that way.
 
 
+## 0007-rimespike-redo.md
+
+# 0007 — redo Rimespike, whole
+
+**Status:** `open`
+**Astra has final say on all of it**, the numbers included — grid, aspect,
+frame count, palette. Everything below is a fact or a cost, never a preference.
+*"Even like sizing and aspect ratios etc she is final say."*
+
+## Why this one
+
+*The owner's call: "What I want to do is use her to completely redo a skill.
+Let's start with rimespike. If we can get that looking good then I want to try
+to use her to completely redo a character."*
+
+So this is a whole subject rather than one picture, and it is the trial run for
+doing a character the same way.
+
+## What Rimespike IS, mechanically
+
+Ice drives up through the ground under one enemy. **Everything within 1.3 tiles
+takes the whole hit** — not a splash, the full damage to every body in the
+circle. Cold, so it Chills; a Chill stacked eight times Freezes.
+
+It has **one mode switch**, the only one in the game. The Rimefield node puts
+the cast on a 2.5s cooldown, makes it reach 120% further and hit 100% harder,
+and **what it leaves STANDS for 3.5 seconds**, Chilling everything around it
+every 0.5s. That standing spike is the only thing in the game that casts fast
+enough to fill a Freeze bar — measured over one descent: 1 Freeze on a bare
+tree, 331 with the spike standing.
+
+**So the two modes must read as different things**, and the difference is the
+point of the whole skill tree.
+
+## The four pictures it uses today
+
+`0007-rimespike-current.png`, left to right at 6x:
+
+| id | table | grid | inks | drawn |
+|---|---|---|---|---|
+| `sk_rimespike` | `GENERATED_ICONS` | 48 | 8 | Skills screen ~44px, HUD slot ~34px |
+| `spike` | `VFX_ART` | 48 | 15 | in the world, pinned at its FOOT |
+| `db_frozen` | `VFX_ART` | 48 | 12 | over a Frozen body |
+| `db_chill` | `VFX_ART` | 48 | 17 | over a Chilled body |
+
+**All four are in scope.** They are one family and currently only sort of look
+like one.
+
+## How they are drawn, which is Claude's half and is fact
+
+- **A cast fills its circle with blades.** `spikeField` places about
+  `radius² × 5.2` copies of `spike` on a sunflower spiral, each rising on its
+  own beat. At 1.3 tiles that is 9 blades; with +50% Area of Effect, 20.
+- **The standing mode draws ONE big blade** at `radius × 0.52`, plus a ring of
+  broken ground and a blizzard of cold motes.
+- **The blade is pinned at its FOOT** and sized off the radius the sim used, so
+  Area of Effect grows it. It is squashed to 0.8 vertically because the art is
+  drawn tall.
+- **The ring and the motes are BLOCKS, not art** — drawn by the renderer in the
+  damage type's own colour, because a picture cannot carry a damage type.
+
+If a design needs any of that changed — a different anchor, a second layer, a
+frame sequence rather than one still — **say so in `NOTES.md` and Claude does
+it.** The renderer seam is the one thing not yours, and only because it is also
+hit testing.
+
+## Facts and costs, stated once
+
+- `VFX_ART` rows hold **one frame**. A multi-frame effect is possible and needs
+  renderer work; it is not free but it is not hard. Say if you want it.
+- The palette is measured in `decisions/LIGHT.md`. **Cold belongs to the
+  Prism's register** — the coolest, bluest, brightest-highlighted of the three
+  zones — but Rimespike is a HERO skill and is cast in all of them.
+- `docs/app.js` is 16.33 MB and every player downloads it. Four 48px rows are
+  noise against that; a 96px multi-frame set is not. Not a veto, a number.
+- Nothing may be drawn on a body's edge or under it. That is a shipped
+  decision, twice made, and it binds effects that overlap a body.
+
+## What good looks like
+
+The owner's words about the current one, which is what started this:
+*"Use pixel lab to make a cool looking ice spike not whatever that is."*
+
+Beyond that: a cast reads as a field erupting, the standing mode reads as a
+place that stays, and a player can tell at a glance which one is happening.
+
+## Done when
+
+The owner says it looks good. Claude measures, imports under scratch ids, and
+draws it at ship size in both modes on a real floor.
+
+---
+## Outcome
+_not yet_
+
+
 ---
 
 # ── STANDING DECISIONS ──
@@ -946,3 +1070,5 @@ figure.
 - `art/briefs/0001-cave-face.png`
 - `art/briefs/0006-grid-comparison.png`
 - `art/briefs/0006-outcome-witch48.png`
+- `art/briefs/0007-rimespike-current.png`
+- `art/briefs/0007-rimespike-infield.png`

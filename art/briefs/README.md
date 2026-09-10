@@ -50,7 +50,8 @@ suite said, and anything the delivery taught.
 | # | job | status |
 |---|---|---|
 | 0002 | redo three skill icons — the test | `integrated` — the answer was yes |
-| 0006 | 48 pixels, and the walk at that grid | `open` — **the live one** |
+| 0007 | redo Rimespike, whole — icon, blade, Freeze and Chill | `open` — **the live one** |
+| 0006 | 48 pixels, and the walk at that grid | `open` |
 | 0005 | gait and range | `superseded by 0006` |
 | 0004 | the first animation, six frames | `superseded by 0006` |
 | 0003 | the Gale icon | `open` — lower priority |
