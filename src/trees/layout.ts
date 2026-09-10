@@ -47,7 +47,7 @@ const SHAPES: Record<string, Shape> = {
   tall: { anchors: even(), twist: 0, scale: [0.82, 1.45] },
   spiral: { anchors: even(), twist: 0.32, scale: [1.05, 1.05] },
   pinwheel: { anchors: even(TAU / 12), twist: -0.3, scale: [1, 1] },
-  cross: { anchors: [-Math.PI / 2 - 0.34, -Math.PI / 2 + 0.34, 0, Math.PI / 2 + 0.34, Math.PI / 2 - 0.34, Math.PI], twist: 0, scale: [1.1, 1.1] },
+  cross: { anchors: [-Math.PI / 2 - 0.34, -Math.PI / 2 + 0.34, 0, Math.PI / 2 - 0.34, Math.PI / 2 + 0.34, Math.PI], twist: 0, scale: [1.1, 1.1] },
   crescent: { anchors: even(Math.PI, 0.7), twist: 0.12, scale: [1.1, 1.15] },
 };
 /** Each tree its own silhouette; a skill not named here is a ring. */
@@ -295,7 +295,9 @@ export function buildTree(spec: TreeSpec): BuiltTree {
         );
       }
       // A fork grows off the other twig's MINOR, and opens once that minor
-      // holds `at` points — never off a notable, which is a dead end.
+      // holds `at` points — never off a notable, which is a dead end. The
+      // notable itself opens once its own minor is FULL, so what it costs is
+      // the run of points in front of it, exactly as a chain of minors was.
       const parent = twig.forkFrom ? placed[twig.forkFrom.twig] : { id: branch.enabler.id, depth: 0, angle: base };
       const gate = twig.forkFrom
         ? { from: parent.id, points: Math.min(twig.forkFrom.at, branch.twigs[twig.forkFrom.twig].minors) }
@@ -333,6 +335,7 @@ export function buildTree(spec: TreeSpec): BuiltTree {
           ...(last && twig.notable.keystone ? { keystone: true as const } : {}),
           ...(!last ? { points: twig.minors } : {}),
           ...(!last && gate ? { gate } : {}),
+          ...(last && twig.minors > 1 ? { gate: { from: minorId, points: twig.minors } } : {}),
           ...(last
             ? {
                 ...(twig.notable.stats ? { stats: twig.notable.stats } : {}),

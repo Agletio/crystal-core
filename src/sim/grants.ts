@@ -1197,9 +1197,10 @@ export const GRANTS: GrantDef[] = [
     /** Deep Cold's streak is the SIM's, and this is the one thing that
      *  changes how it is kept: casting at another body no longer ends it. */
     id: 'rampSticks',
+    changes: 'scale',
     what: 'Deep Cold holds across enemies',
     reads: ['spike', SIM],
-    say: (v) => (v === true ? 'Deep Cold holds when you cast at another enemy' : null),
+    say: (v) => (v === true ? 'Every cast of Deep Cold holds when you cast at another enemy, all 5' : null),
   },
   {
     id: 'spikeLonger',

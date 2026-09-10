@@ -1058,8 +1058,10 @@ than a chain of identical studs; `SkillProgress.allocated` lists an id ONCE A
 POINT, `pointsIn` counts them and `withoutOne` refunds the last, so
 `allocated.length` is still what was spent and a save written before it is a
 list of ones. `walked()` merges a node's grants once; `treeMod` reads its stats
-per copy, which is what "per point" means. A fork off a twig is `gate`d — the
-link opens once the twig's minor holds `forkFrom.at` — and `routeTo` in
+per copy, which is what "per point" means. The notable past a minor is `gate`d
+on the minor being FULL, and a fork on the twig's minor holding `forkFrom.at`,
+so a notable costs the run of points in front of it exactly as the chain of
+minors did (the far tips are 11 to 12 of the 30); `routeTo` in
 `src/skills-tree.ts` is the ONE router, cheapest by points with the gate's
 copies on the way, so a walk to a fork's keystone costs what it did as a chain.
 Left-click adds a point, right-click takes one off, and the node prints

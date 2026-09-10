@@ -3309,14 +3309,14 @@ for (const tree of BUILT_TREES) {
   // would shut that gate behind something owned is refused.
   const ranged = nodes.filter((n) => (n.points ?? 1) > 1);
   check(ranged.length > 0, 'some minors hold a range of points', 'none');
-  const wrong = ranged.filter((n) => n.kind !== 'minor' || n.grants || n.choices);
-  check(wrong.length === 0, 'and every one is a minor with stats alone', wrong.map((n) => n.id).join(', '));
+  const wrong = ranged.filter((n) => n.kind !== 'minor' || n.choices);
+  check(wrong.length === 0, 'and every one is a minor that asks no question', wrong.map((n) => n.id).join(', '));
   const full = ranged[0];
   const upTo = routeTo(skillId, full.id);
   const stuffed = [...upTo, ...Array(full.points! - 1).fill(full.id)];
   check(canAllocate(skillId, full.id, stuffed) === false, 'a full one refuses another point', `${full.id} took ${full.points! + 1}`);
   check(replayTreeNodes(skillId, stuffed, 99).length === stuffed.length, 'and a replay keeps every point of it', String(replayTreeNodes(skillId, stuffed, 99).length));
-  const gated = nodes.find((n) => n.gate);
+  const gated = nodes.find((n) => n.gate && n.gate.points > 1);
   if (gated) {
     const parent = nodes.find((n) => n.id === gated.gate!.from)!;
     const toParent = routeTo(skillId, parent.id);

@@ -293,7 +293,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'rs_glacier',
           name: 'Glacier',
-          description: 'Deep Cold holds when you cast at another enemy.',
+          description: 'All 5 casts of Deep Cold hold when you cast at another enemy.',
           grants: { rampSticks: true },
         },
       },

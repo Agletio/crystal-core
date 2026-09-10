@@ -167,16 +167,21 @@ function home(): void {
   panY = 0;
 }
 
-/** Frames the whole web with a margin, whatever shape it is. */
+/** Frames the whole web with a margin, whatever shape it is: its own box,
+ *  centred, so a wide tree and a tall one each fill the window. */
 function fit(): void {
   const nodes = viewing ? treeFor(viewing) : [];
   const box = viewport();
   if (nodes.length === 0) return;
 
-  const reach = Math.max(...nodes.map((n) => Math.hypot(n.x, n.y))) + 0.9;
-  panX = 0;
-  panY = 0;
-  scale = clamp(Math.min(box.width, box.height) / (reach * 2), ZOOM.min, ZOOM.max);
+  const pad = 0.9;
+  const left = Math.min(0, ...nodes.map((n) => n.x)) - pad;
+  const right = Math.max(0, ...nodes.map((n) => n.x)) + pad;
+  const top = Math.min(0, ...nodes.map((n) => n.y)) - pad;
+  const bottom = Math.max(0, ...nodes.map((n) => n.y)) + pad;
+  panX = (left + right) / 2;
+  panY = (top + bottom) / 2;
+  scale = clamp(Math.min(box.width / (right - left), box.height / (bottom - top)), ZOOM.min, ZOOM.max);
 }
 
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));

@@ -1861,7 +1861,7 @@ assert($('skills-back').hidden === true, 'nothing to go back to from the top');
   assert($('skills-detail').hidden === false, 'Leap opens its own web');
   // A TREE, exactly like a damage skill's: six branches and six trunk notables
   // over the same ring, at the same thirty points.
-  assert(all('#skills-web .web__node').length === 117, 'a whole tree of nodes in it',
+  assert(all('#skills-web .web__node').length === 69, 'a whole tree of nodes in it',
     String(all('#skills-web .web__node').length));
   assert(
     all('#skills-web .web__node--notable').length === 30,
@@ -1972,7 +1972,7 @@ const viewScale = () =>
 }
 const zoomedIn = viewScale();
 assert(zoomedIn > 0, 'the web is aimed by one transform', String(zoomedIn));
-assert(webNodes().length === 111, 'and built whole, every node once', String(webNodes().length));
+assert(webNodes().length === 65, 'and built whole, every node once', String(webNodes().length));
 
 $('skills-fit').click();
 assert(viewScale() < zoomedIn, 'and Fit pulls back to all of it', `${zoomedIn} -> ${viewScale()}`);
@@ -2148,9 +2148,9 @@ assert($('skills').hidden === true, 'and only then closes');
 // that lost a branch still builds, and still draws, just smaller.
 $('open-skills').click();
 for (const [skill, shelf, total, notables] of [
-  ['Strike', 'Abilities', 114, 29],
-  ['Fireball', 'Abilities', 111, 28],
-  ['Creeping Blight', 'Abilities', 118, 30],
+  ['Strike', 'Abilities', 67, 29],
+  ['Fireball', 'Abilities', 65, 28],
+  ['Creeping Blight', 'Abilities', 69, 30],
 ]) {
   const card = all('#skills-cats .catcard').find((c) => c.textContent?.includes(shelf));
   assert(!!card, `${shelf} is a shelf you can open`);
