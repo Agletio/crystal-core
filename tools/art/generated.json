@@ -4255,19 +4255,19 @@
    ],
    "states": {
     "idle": {
-     "group": "7f96a095-af67-4f12-a2f6-c610ca0223fa"
+     "group": ""
     },
     "walk": {
-     "group": "4c1dcd2e-6c23-45a7-bb5b-0adb505c086b"
+     "group": ""
     },
     "attack": {
-     "group": "6e5975fe-09be-4120-ae80-bba640e8fb8d"
+     "group": ""
     },
     "cast": {
-     "group": "245f7d37-9150-4a1b-b9b5-583e122d9d3a"
+     "group": ""
     },
     "death": {
-     "group": "c2007cc9-c714-4d60-a895-0a188f19893b"
+     "group": ""
     }
    },
    "robed": true,
