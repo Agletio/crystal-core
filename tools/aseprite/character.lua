@@ -3,8 +3,8 @@
 -- layer, shaded by rule, rimmed per part and outlined as a whole.
 --   aseprite -b --script-param out=<dir> --script tools/aseprite/character.lua
 local out = app.params.out or '.'
-local W, H = 72, 72
-local GROUND = 62
+local W, H = 80, 80
+local GROUND = 68
 local pc = app.pixelColor
 
 -- The palette: a ramp a material, shadow / mid / light, all near the same
@@ -121,7 +121,7 @@ end
 local THIGH, SHIN, UPPER, FORE = 11, 11, 8, 8
 local function draw(q)
   for _, n in ipairs(ORDER) do clearLayer(n) end
-  local hipX, hipY = 30 + (q.dx or 0), GROUND - 21 + (q.dy or 0)
+  local hipX, hipY = 27 + (q.dx or 0), GROUND - 21 + (q.dy or 0)
   local lean = q.lean or 0
   local shX, shY = hipX + 15 * math.sin(rad(lean)), hipY - 15 * math.cos(rad(lean))
   local headX, headY = shX + 1 + (q.headDx or 0), shY - 8 + (q.headDy or 0)
