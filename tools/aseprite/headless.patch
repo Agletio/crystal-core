@@ -1,0 +1,67 @@
+diff --git a/cmake/FindJpegTurbo.cmake b/cmake/FindJpegTurbo.cmake
+index 11fc61e..ccb551d 100644
+--- a/cmake/FindJpegTurbo.cmake
++++ b/cmake/FindJpegTurbo.cmake
+@@ -18,6 +18,15 @@ if(LAF_BACKEND STREQUAL "skia")
+     IMPORTED_LOCATION "${LIBJPEG_TURBO_LIBRARY}"
+     INTERFACE_INCLUDE_DIRECTORIES ${LIBJPEG_TURBO_INCLUDE_DIRS})
+ 
++elseif(EXISTS "/usr/include/jpeglib.h")
++
++  # The system's own libjpeg-turbo: the download is not reachable from here.
++  find_library(LIBJPEG_TURBO_LIBRARY NAMES jpeg REQUIRED)
++  add_library(libjpeg-turbo STATIC IMPORTED)
++  set_target_properties(libjpeg-turbo PROPERTIES
++    IMPORTED_LOCATION "${LIBJPEG_TURBO_LIBRARY}"
++    INTERFACE_INCLUDE_DIRECTORIES "/usr/include")
++
+ else()
+ 
+   if(WIN32)
+diff --git a/src/app/script/image_class.cpp b/src/app/script/image_class.cpp
+index 4cac03c..4367395 100644
+--- a/src/app/script/image_class.cpp
++++ b/src/app/script/image_class.cpp
+@@ -32,6 +32,8 @@
+ #include "app/util/shader_helpers.h"
+ #include "base/fs.h"
+ #include "doc/algorithm/flip_image.h"
++#include "doc/algorithm/rotate.h"
++#include "doc/algorithm/rotsprite.h"
+ #include "doc/algorithm/flip_type.h"
+ #include "doc/algorithm/shrink_bounds.h"
+ #include "doc/blend_image.h"
+@@ -625,6 +627,25 @@ int Image_shrinkBounds(lua_State* L)
+   return 1;
+ }
+ 
++// dst:drawQuad(src, x1,y1, x2,y2, x3,y3, x4,y4 [, "rotsprite"|"nearest"])
++// Draws src mapped onto the given parallelogram of dst, RotSprite by default.
++int Image_drawQuad(lua_State* L)
++{
++  auto obj = get_obj<ImageObj>(L, 1);
++  doc::Image* dst = obj->image(L);
++  auto srcObj = get_obj<ImageObj>(L, 2);
++  const doc::Image* src = srcObj->image(L);
++  int c[8];
++  for (int i = 0; i < 8; ++i)
++    c[i] = lua_tointeger(L, 3 + i);
++  const char* method = lua_isstring(L, 11) ? lua_tostring(L, 11) : "rotsprite";
++  if (std::strcmp(method, "nearest") == 0)
++    doc::algorithm::parallelogram(dst, src, nullptr, c[0], c[1], c[2], c[3], c[4], c[5], c[6], c[7]);
++  else
++    doc::algorithm::rotsprite_image(dst, src, nullptr, c[0], c[1], c[2], c[3], c[4], c[5], c[6], c[7]);
++  return 0;
++}
++
+ int Image_flip(lua_State* L)
+ {
+   auto obj = get_obj<ImageObj>(L, 1);
+@@ -774,6 +795,7 @@ const luaL_Reg Image_methods[] = {
+   { "resize",       Image_resize       },
+   { "shrinkBounds", Image_shrinkBounds },
+   { "flip",         Image_flip         },
++  { "drawQuad",     Image_drawQuad     },
+   { "__gc",         Image_gc           },
+   { "__eq",         Image_eq           },
+   { nullptr,        nullptr            }
