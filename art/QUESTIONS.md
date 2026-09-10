@@ -29,18 +29,9 @@ explicit call on whether that matters before the next large art push.
 
 ---
 
-## 3. 0007 Rimespike — PixelLab access for Astra
+## 3. 0007 Rimespike — provider clarification RESOLVED
 
-**Blocks:** all four replacement visuals in request PR #16.
-
-Astra received [PR #16](https://github.com/Agletio/crystal-core/pull/16) at
-`906f4fdf724e1c3b0840cdd32070faec810225ff`. PixelLab is explicitly requested, but this run has
-no PixelLab tool, no matching plugin-directory result, and no
-`PIXELLAB_API_KEY` for the repository's documented transport.
-
-**Unblock:** provide authorized PixelLab access to Astra's runtime, or explicitly
-approve a different provider. Do not paste or commit a key into this public repo.
-Access permits the initial concept; it does not waive owner design approval
-before animations/variations or final delivery. No assets have been generated.
-State and evidence: `art/deliveries/0007-rimespike/INTAKE.json` and `NOTES.md`
-on `astra/0007-rimespike`. This is recorded once; unchanged events are no-ops.
+The owner clarified on 2026-09-10 that Astra is replacing PixelLab. Use built-in
+OpenAI image generation, not PixelLab. The intake access blocker is resolved;
+no provider credentials are requested. Initial concept work may proceed. Owner
+design approval and all four visuals are still required before delivery.

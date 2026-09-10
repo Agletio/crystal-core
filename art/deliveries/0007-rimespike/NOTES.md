@@ -1,4 +1,15 @@
-# 0007 — Rimespike intake / blocked (NOT A DELIVERY)
+# 0007 — Rimespike work in progress (NOT A DELIVERY)
+
+## Owner correction — 2026-09-10
+
+The owner clarified: "So the idea is for you to replace pixel lab not sure why
+Claude is saying to use it". This supersedes the historical PixelLab wording.
+Use built-in OpenAI image generation; no API-key or PixelLab setup is required.
+The provider blocker below is historical and resolved. Astra is making one
+initial spike concept, not animations or a final four-asset delivery.
+
+## Intake history (superseded where noted above)
+
 
 Source: [request PR #16](https://github.com/Agletio/crystal-core/pull/16), head `906f4fdf724e1c3b0840cdd32070faec810225ff`.
 Work branch: `astra/0007-rimespike`. All four visuals remain in scope.

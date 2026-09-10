@@ -1,6 +1,6 @@
 # 0007 — redo Rimespike, whole
 
-**Status:** `blocked: PixelLab access unavailable`
+**Status:** `open`
 **Astra has final say on all of it**, the numbers included — grid, aspect,
 frame count, palette. Everything below is a fact or a cost, never a preference.
 *"Even like sizing and aspect ratios etc she is final say."*
@@ -73,6 +73,15 @@ hit testing.
   noise against that; a 96px multi-frame set is not. Not a veto, a number.
 - Nothing may be drawn on a body's edge or under it. That is a shipped
   decision, twice made, and it binds effects that overlap a body.
+
+## Provider clarification — owner, 2026-09-10
+
+The owner clarified directly after intake: "So the idea is for you to replace
+pixel lab not sure why Claude is saying to use it". Astra uses built-in OpenAI
+image generation; the historical PixelLab wording below is NOT a provider
+requirement. No PixelLab connection or key is needed. First show the design
+sample for approval; this does not authorize animations or variations before
+approval, nor mark the four-visual request delivered.
 
 ## What good looks like
 

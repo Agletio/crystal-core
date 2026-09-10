@@ -1,44 +1,47 @@
 {
-  "schema_version": 1,
+  "active_claim": true,
+  "approval": "No Rimespike replacement design approved; first show a concept, preserve owner approval before animation/variations and final delivery.",
+  "assets_created": [],
+  "base_sha": "796f1711fb4e6ea6dc143f136de518abcf4e1843",
+  "blocker": null,
   "brief": "0007-rimespike",
   "brief_path": "art/briefs/0007-rimespike-redo.md",
-  "source_pr": 16,
-  "source_pr_url": "https://github.com/Agletio/crystal-core/pull/16",
-  "source_sha": "906f4fdf724e1c3b0840cdd32070faec810225ff",
-  "source_branch": "claude/0007-rimespike-request",
-  "work_branch": "astra/0007-rimespike",
-  "base_sha": "796f1711fb4e6ea6dc143f136de518abcf4e1843",
-  "status": "blocked: PixelLab access unavailable",
-  "active_claim": false,
+  "claude_execution_evidence": null,
+  "deduplication": "Match source PR and brief, compare substantive brief text and reference blob SHAs. Ignore Status, Outcome, intake/notes/questions/automation records and manifest-only commits. This receipt and the blocked status do not create a new art revision. Unchanged blocked requests receive no new work or notifications.",
+  "delivery_pr": null,
+  "event_delivery_id": "db83f680-acb6-11f1-80de-8e41c9a5bee6",
+  "notification": "First receipt and blocker reported in the ChatGPT response for this event. Do not add a redundant source-app message.",
   "owner": "Astra",
   "received_date_utc": "2026-09-10",
-  "event_delivery_id": "db83f680-acb6-11f1-80de-8e41c9a5bee6",
+  "relevant_revision": [
+    {
+      "blob_sha": "28f39c7ca711b27ce94a825f47afe67ca083549a",
+      "path": "art/briefs/0007-rimespike-current.png"
+    },
+    {
+      "blob_sha": "faff82e69cf06eb2a64559a340086dd59cda41f7",
+      "path": "art/briefs/0007-rimespike-infield.png"
+    },
+    {
+      "blob_sha": "5c86927735ffa57d710fa9c00ba20a4986561de5",
+      "path": "art/briefs/0007-rimespike-redo.md"
+    }
+  ],
+  "schema_version": 1,
   "scope": [
     "sk_rimespike",
     "spike",
     "db_frozen",
     "db_chill"
   ],
-  "relevant_revision": [
-    {
-      "path": "art/briefs/0007-rimespike-current.png",
-      "blob_sha": "28f39c7ca711b27ce94a825f47afe67ca083549a"
-    },
-    {
-      "path": "art/briefs/0007-rimespike-infield.png",
-      "blob_sha": "faff82e69cf06eb2a64559a340086dd59cda41f7"
-    },
-    {
-      "path": "art/briefs/0007-rimespike-redo.md",
-      "blob_sha": "5c86927735ffa57d710fa9c00ba20a4986561de5"
-    }
-  ],
-  "deduplication": "Match source PR and brief, compare substantive brief text and reference blob SHAs. Ignore Status, Outcome, intake/notes/questions/automation records and manifest-only commits. This receipt and the blocked status do not create a new art revision. Unchanged blocked requests receive no new work or notifications.",
-  "blocker": "No PixelLab tool is exposed; Plugin Management returned no PixelLab plugin; PIXELLAB_API_KEY required by tools/art/mcp.mts is not set in this runtime. No provider request was made.",
-  "unblock_condition": "Provide authorized PixelLab access to Astra's execution environment, or explicitly approve a different provider. Never put credentials in this public repository.",
-  "approval": "No Rimespike replacement design approved; first show a concept, preserve owner approval before animation/variations and final delivery.",
-  "notification": "First receipt and blocker reported in the ChatGPT response for this event. Do not add a redundant source-app message.",
-  "delivery_pr": null,
-  "assets_created": [],
-  "claude_execution_evidence": null
+  "source_branch": "claude/0007-rimespike-request",
+  "source_pr": 16,
+  "source_pr_url": "https://github.com/Agletio/crystal-core/pull/16",
+  "source_sha": "906f4fdf724e1c3b0840cdd32070faec810225ff",
+  "status": "in_progress: initial spike concept",
+  "unblock_condition": null,
+  "work_branch": "astra/0007-rimespike",
+  "provider": "built-in OpenAI image generation",
+  "provider_authorization": "Owner clarified in this thread: 'So the idea is for you to replace pixel lab not sure why Claude is saying to use it'",
+  "relevant_revision_owner_addendum": "PixelLab requirement superseded by direct owner clarification; use Astra image generation."
 }
