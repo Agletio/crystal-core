@@ -3070,8 +3070,9 @@ export class RunSim {
     const castIndex = user.kind === 'hero' ? this.casts++ : 0;
     const heft = user.kind === 'hero' ? this.heftOf(user) : 1;
     if (user.kind === 'hero') {
-      if (primary.id === this.streakOn) this.streak++;
-      else { this.streak = 1; this.streakOn = primary.id; }
+      if (primary.id === this.streakOn || this.grants.rampSticks === true) this.streak++;
+      else this.streak = 1;
+      this.streakOn = primary.id;
     }
 
     // Rolled once for the whole use. Behaviours branch on it (Contagion), and

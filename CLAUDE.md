@@ -1093,7 +1093,9 @@ for 50% less each: one enemy takes them all, a room takes one each, and
 (`needs`). What it costs is the circle. `spikeRamp` is Deep Cold: every cast
 in a row at the SAME body is worth 8% more than the last, to 5, off a streak
 the SIM keeps (`streak` on the use) — a number that pays for standing and
-hammering rather than a number. The ids stay `rs_tempo` and `rs_weight`,
+hammering rather than a number; Glacier (`rampSticks`) is the one rule on
+it, the streak holding across enemies, because a cap the fingerprint's five
+casts never reach is a node the demo cannot see change anything. The ids stay `rs_tempo` and `rs_weight`,
 because a save points at them. **RIMEFIELD TAKES THE CAST OFF YOUR RATE AND PUTS IT ON A COOLDOWN** —
 2.5s, 120% further, 100% more damage, and what it leaves STANDS for 3.5s,
 Chilling everything round it every 0.5s. **CLICKED ALONE IT IS A LOSS** — *"the

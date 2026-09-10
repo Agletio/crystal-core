@@ -293,8 +293,8 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'rs_glacier',
           name: 'Glacier',
-          description: 'Deep Cold climbs 3 casts further, to 8.',
-          grants: { spikeRamp: { upTo: 3 } },
+          description: 'Deep Cold holds when you cast at another enemy.',
+          grants: { rampSticks: true },
         },
       },
       {
@@ -396,7 +396,8 @@ export const RIMESPIKE_SPEC: TreeSpec = {
     freezeSooner: 'rs_ward',
     freezeLonger: 'rs_ward',
     moreVsFrozen: 'rs_ward',
-    // A step on the ramp is nothing without the ramp.
+    // A step on the ramp is nothing without the ramp, and neither is holding it.
     spikeRamp: 'rs_weight',
+    rampSticks: 'rs_weight',
   },
 };
