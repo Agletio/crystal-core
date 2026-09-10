@@ -71,7 +71,24 @@ export const canAllocate = (
   allocated: readonly string[]
 ): boolean =>
   canAllocateIn(treeFor(skillId), nodeId, allocated) &&
-  blockedBy(skillId, nodeId, allocated) === null;
+  blockedBy(skillId, nodeId, allocated) === null &&
+  keystoneRefused(skillId, nodeId, allocated) === null;
+
+/** ONE KEYSTONE A TREE. The keystone already held that refuses this one, or
+ *  null — a node that is not a keystone is never refused here. */
+export function keystoneRefused(
+  skillId: string,
+  nodeId: string,
+  allocated: readonly string[]
+): SkillNodeDef | null {
+  const node = nodeById(skillId, nodeId);
+  if (!node?.keystone) return null;
+  for (const id of allocated) {
+    const held = nodeById(skillId, id);
+    if (held?.keystone && held.id !== nodeId) return held;
+  }
+  return null;
+}
 
 /** Every class a node changes, its chosen option included. */
 function classesOf(node: SkillNodeDef | undefined, chosen?: string): Changes[] {
@@ -127,7 +144,8 @@ export const replayTreeNodes = (
   skillId: string,
   wanted: readonly string[],
   cap: number
-): string[] => replayWeb(treeFor(skillId), wanted, cap);
+): string[] =>
+  replayWeb(treeFor(skillId), wanted, cap, (id, kept) => keystoneRefused(skillId, id, kept) === null);
 
 /** Levels past the cap still arrive; they just stop buying points. */
 export const pointCapFor = (): number => MAX_TREE_POINTS;

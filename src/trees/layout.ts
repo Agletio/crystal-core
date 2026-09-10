@@ -62,8 +62,8 @@ const ART_R = { minor: 0.38, notable: 0.63 };
 const GAP = 0.16;
 const LINE_GAP = 0.08;
 
-const apartFor = (a: SkillNodeDef, b: SkillNodeDef): number =>
-  ART_R[a.kind] + ART_R[b.kind] + GAP;
+const artR = (n: SkillNodeDef): number => (n.keystone ? ART_R.notable * 1.5 : ART_R[n.kind]); // a keystone is half again a notable
+const apartFor = (a: SkillNodeDef, b: SkillNodeDef): number => artR(a) + artR(b) + GAP;
 
 /**
  * Push apart anything that ended up on top of something else.
@@ -123,7 +123,7 @@ function spread(nodes: SkillNodeDef[], links: Map<string, string[]>): SkillNodeD
         const footX = a.x + t * dx;
         const footY = a.y + t * dy;
         const d = Math.hypot(n.x - footX, n.y - footY);
-        const clear = ART_R[n.kind] + LINE_GAP;
+        const clear = artR(n) + LINE_GAP;
         if (d >= clear) continue;
         moved = true;
         const push = clear - Math.max(d, 1e-3);
@@ -297,6 +297,7 @@ export function buildTree(spec: TreeSpec): BuiltTree {
           x: Math.cos(angle) * reach,
           y: Math.sin(angle) * reach,
           links: links.get(id) ?? [],
+          ...(last && twig.notable.keystone ? { keystone: true as const } : {}),
           ...(last
             ? {
                 ...(twig.notable.stats ? { stats: twig.notable.stats } : {}),

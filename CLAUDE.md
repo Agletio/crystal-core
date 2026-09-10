@@ -1070,7 +1070,18 @@ and a size of its own, kept only if it stands `SPIKE_APART` from the rest, so
 it is uneven the way broken ice is and has no hole in it; a sunflower spiral
 of one picture read as a pattern. The one big
 blade and the ring are the STANDING mode's alone, with a blizzard of cold motes
-over it so the Chill it is laying down reads. **HAIL IS THE OTHER MODE, AND DEEP COLD IS THE DAMAGE BRANCH** — *"the cast
+over it so the Chill it is laying down reads. **A NODE THAT CHANGES WHAT THE SKILL IS, IS A KEYSTONE, AND A TREE HOLDS
+ONE.** *"These nodes that convert how the skill works entirely need to be
+limited so you don't pick multiple. Make them the final node in a big line,
+make it an even larger looking node and each tree will be limited to one."*
+`Notable.keystone` is the flag, and it may sit only on the notable at the END
+of a twig — Rimefield at the tip of the area line, Hail at the tip of the
+Projectile line. `keystoneRefused` is the one rule: `canAllocate` refuses a
+keystone while another is held, the replay drops a second one, the card says
+"one Keystone a tree" and names the one you have, and the web draws it half
+again a notable's size. What comes BEFORE a keystone has to be worth taking
+without it — so a Projectile on a plain spike is one more SPIKE under another
+enemy, and the area line sells area. **HAIL IS THE OTHER MODE, AND DEEP COLD IS THE DAMAGE BRANCH** — *"the cast
 speed nodes and the flat damage nodes are boring… instead of just cast speed
 make it convert to a single ice projectile that is shot from the character at
 an extremely high cast speed but lower damage… start with 2 projectiles and

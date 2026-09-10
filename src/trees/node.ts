@@ -16,6 +16,7 @@ export interface SkillNodeDef {
   name: string;
   description: string;
   kind: 'minor' | 'notable'; // notables are the reason to walk in a direction
+  keystone?: true; // changes what the skill IS; the end of a line, and one a tree
   x: number; // web coordinates; units are arbitrary, the view fits what it gets
   y: number;
   /** UNDIRECTED, so only one end need say so. CENTRE means "touches the skill". */

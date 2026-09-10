@@ -82,7 +82,12 @@ export function canDeallocateIn(
  * gone, or its path home went through one that is — falls out, and the caller
  * refunds it. Order does not matter: the pass repeats until nothing more fits.
  */
-export function replayWeb(nodes: Web, wanted: readonly string[], cap: number): string[] {
+export function replayWeb(
+  nodes: Web,
+  wanted: readonly string[],
+  cap: number,
+  allowed: (id: string, kept: readonly string[]) => boolean = () => true
+): string[] {
   const real = wanted.filter((id) => nodes.some((n) => n.id === id));
   const room = Math.min(cap, real.length);
   const kept: string[] = [];
@@ -91,7 +96,7 @@ export function replayWeb(nodes: Web, wanted: readonly string[], cap: number): s
     added = false;
     for (const id of real) {
       if (kept.includes(id)) continue;
-      if (!canAllocateIn(nodes, id, kept)) continue;
+      if (!canAllocateIn(nodes, id, kept) || !allowed(id, kept)) continue;
       kept.push(id);
       added = true;
       if (kept.length >= room) break;

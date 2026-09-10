@@ -22,6 +22,7 @@ import { GRANT_BY_ID } from '../sim/grants';
 import {
   CENTRE,
   blockedBy,
+  keystoneRefused,
   pointCapFor,
   canAllocate,
   canDeallocate,
@@ -638,7 +639,7 @@ function renderWeb(): void {
 
   for (const node of nodes) {
     const pos = at(node);
-    const r = (NODE_R[node.kind] * BUILD) / 46;
+    const r = ((node.keystone ? NODE_R.notable * 1.5 : NODE_R[node.kind]) * BUILD) / 46;
     const owned = taken.has(node.id);
     const reachable = canAllocate(skillId, node.id, progress.allocated);
     const open = reachable && spare > 0;
@@ -648,6 +649,7 @@ function renderWeb(): void {
         'web__node' +
         (owned ? ' web__node--on' : '') +
         (node.kind === 'notable' ? ' web__node--notable' : '') +
+        (node.keystone ? ' web__node--keystone' : '') +
         (open ? ' web__node--open' : '') +
         (!owned && !reachable ? ' web__node--locked' : ''),
       id: skillNodeId(node.id),
@@ -671,13 +673,16 @@ function renderWeb(): void {
       // A refusal says WHO it clashes with and what the pair comes to: "cannot
       // be taken with Rupture" is a decision, where a dark node is a mystery.
       const clash = owned ? null : blockedBy(skillId, node.id, progress.allocated);
+      const other = owned ? null : keystoneRefused(skillId, node.id, progress.allocated);
       const state = owned
         ? canDeallocate(skillId, node.id, progress.allocated)
           ? 'allocated — click to refund'
           : 'allocated — refunding it would strand another node'
         : clash
           ? `cannot be taken with ${clash.node.name} — ${clash.says}`
-          : !reachable
+          : other
+            ? `cannot be taken with ${other.name} — one Keystone a tree`
+            : !reachable
             ? 'not connected to anything you own'
             : spare > 0
               ? 'available'
@@ -687,7 +692,10 @@ function renderWeb(): void {
           ? `Chosen: ${picked.name} — ${picked.description}`
           : 'Click to choose.'
         : '';
-      return nodeCard(node.name, state, [asConverted(node, skillId), cost(node), choice]);
+      return nodeCard(node.name, state, [
+        node.keystone ? 'Keystone. One a tree.' : '',
+        asConverted(node, skillId), cost(node), choice,
+      ]);
     });
 
     const act = () => {

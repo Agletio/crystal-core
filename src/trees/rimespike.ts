@@ -118,26 +118,20 @@ const BRANCHES: Branch[] = [
   },
   {
     /**
-     * THE ONE MODE SWITCH IN THE GAME. Rimespike stops being cast at your rate
-     * and becomes a COOLDOWN: bigger, harder, and what it leaves STANDS,
-     * Chilling everything round it while it does. Everything else in this tree
-     * makes the cast better; this changes what the cast IS, and a build taking
-     * it stops caring about cast speed and starts caring about Skill Cooldown
-     * and Area of Effect — which is the whole decision.
+     * THE AREA LINE, and RIMEFIELD is its KEYSTONE at the tip: Rimespike stops
+     * being cast at your rate and becomes a COOLDOWN — bigger, harder, and
+     * what it leaves STANDS, Chilling everything round it while it does. A
+     * build taking it stops caring about cast speed and starts caring about
+     * Skill Cooldown and Area of Effect, which is the whole decision. One
+     * keystone a tree, so Hail and this are never both live.
      */
     id: 'field',
     theme: 'Rimefield',
     enabler: {
-      id: 'rs_field',
-      name: 'Rimefield',
-      description:
-        'Rimespike runs on a 2.5s cooldown, reaches 120% further, deals 100% ' +
-        'more damage, and the spike stands for 3.5s, Chilling everything round ' +
-        'it every 0.5s.',
-      grants: {
-        spikeStands: { seconds: 3.5, cooldown: 2.5, radius: 2.2, more: 1 },
-        manaMultiplier: 1.2,
-      },
+      id: 'rs_frostwork',
+      name: 'Frostwork',
+      description: '+20% increased Area of Effect.',
+      stats: [stat('areaOfEffect', 'inc', 20)],
     },
     twigs: [
       {
@@ -154,19 +148,26 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'rs_frostfall',
           name: 'Frostfall',
-          description: 'The spike stands 2s longer.',
-          grants: { spikeLonger: 2 },
+          description: '+25% increased Area of Effect, and Rimespike costs 20% less mana.',
+          stats: [stat('areaOfEffect', 'inc', 25)],
+          grants: { manaMultiplier: 0.8 },
         },
       },
       {
         minors: 4,
         forkFrom: { twig: 1, at: 2 },
         notable: {
-          id: 'rs_bloom',
-          name: 'Bloom of Frost',
-          description: 'The spike stands 2.5s longer, and +25% increased Area of Effect.',
-          grants: { spikeLonger: 2.5 },
-          stats: [stat('areaOfEffect', 'inc', 25)],
+          id: 'rs_field',
+          name: 'Rimefield',
+          keystone: true,
+          description:
+            'Rimespike runs on a 2.5s cooldown, reaches 120% further, deals 100% ' +
+            'more damage, and the spike stands for 5s, Chilling everything round ' +
+            'it every 0.5s.',
+          grants: {
+            spikeStands: { seconds: 5, cooldown: 2.5, radius: 2.2, more: 1 },
+            manaMultiplier: 1.2,
+          },
         },
       },
     ],
@@ -220,22 +221,20 @@ const BRANCHES: Branch[] = [
   },
   {
     /**
-     * THE OTHER MODE. Rimespike stops being a spike at all and is thrown as
-     * ice Projectiles from where you stand, cast twice as fast for half the
-     * damage each: one enemy takes both, a room takes one each. What a build
-     * gives up is the circle, and what it buys back is every Projectile line
-     * in the game — the ids are the old Tempo branch's, which a save points at.
+     * THE PROJECTILE LINE, and HAIL is its KEYSTONE at the tip: no spike at
+     * all, the cast thrown as ice Projectiles from where you stand, twice as
+     * fast for half the damage each — one enemy takes both, a room takes one
+     * each. Before the keystone a Projectile is one more SPIKE, up under
+     * another enemy, so the line pays on the way as well as at the end. The
+     * ids are the old Tempo branch's, which a save points at.
      */
     id: 'tempo',
     theme: 'Hail',
     enabler: {
-      id: 'rs_tempo',
-      name: 'Hail',
-      description:
-        'Rimespike is thrown as 2 ice Projectiles from you, cast 100% faster, ' +
-        'each dealing 50% less damage. One enemy takes both; more take one each.',
-      grants: { spikeHail: { projectiles: 2, less: 0.5 }, manaMultiplier: 0.6 },
-      stats: [stat('castSpeed', 'inc', 100)],
+      id: 'rs_sleet',
+      name: 'Sleet',
+      description: '+1 Projectile.',
+      grants: { extraTargets: 1 },
     },
     twigs: [
       {
@@ -251,20 +250,24 @@ const BRANCHES: Branch[] = [
         minors: 4,
         notable: {
           id: 'rs_thrift',
-          name: 'Sleet',
-          description: 'Hail Projectiles Pierce 1 enemy behind their target, for 70% damage.',
-          grants: { pierce: 1 },
+          name: 'Drift',
+          description: 'Rimespike costs 30% less mana and is cast 15% faster.',
+          grants: { manaMultiplier: 0.7 },
+          stats: [stat('castSpeed', 'inc', 15)],
         },
       },
       {
         minors: 4,
         forkFrom: { twig: 1, at: 2 },
         notable: {
-          id: 'rs_relentless',
-          name: 'Blizzard',
-          description: '+1 Projectile, and Rimespike is cast 30% faster.',
-          grants: { extraTargets: 1 },
-          stats: [stat('castSpeed', 'inc', 30)],
+          id: 'rs_tempo',
+          name: 'Hail',
+          keystone: true,
+          description:
+            'Rimespike is thrown as 2 ice Projectiles from you, cast 100% faster, ' +
+            'each dealing 50% less damage. One enemy takes both; more take one each.',
+          grants: { spikeHail: { projectiles: 2, less: 0.5 }, manaMultiplier: 0.6 },
+          stats: [stat('castSpeed', 'inc', 100)],
         },
       },
     ],
@@ -389,16 +392,11 @@ export const RIMESPIKE_SPEC: TreeSpec = {
     ailmentChance: 'rs_rime',
     ailmentMultiplier: 'rs_rime',
     ailmentDuration: 'rs_rime',
-    // And a Cloud is nothing without one to leave.
-    spikeLonger: 'rs_field',
     // A Freeze is worth nothing to a build that never gets a body to the bar.
     freezeSooner: 'rs_ward',
     freezeLonger: 'rs_ward',
     moreVsFrozen: 'rs_ward',
-    // A Projectile switch reaches a spike only once the cast IS Projectiles.
-    extraTargets: 'rs_tempo',
-    pierce: 'rs_tempo',
-    // And a step on the ramp is nothing without the ramp.
+    // A step on the ramp is nothing without the ramp.
     spikeRamp: 'rs_weight',
   },
 };

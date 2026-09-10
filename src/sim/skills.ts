@@ -305,22 +305,31 @@ export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
     const radius =
       use.areaRadius((use.skill.params?.radius as number) ?? 1.3) * (stands?.radius ?? 1);
 
-    for (const enemy of use.enemies) {
-      if (enemy.dead || !within(use.primary, enemy, radius)) continue;
-      use.hit(enemy, scale(enemy));
-      burstFrom(use, enemy, scale, true);
+    // A PROJECTILE is one more spike, up under another enemy in Spread, and
+    // nothing is struck twice by one cast.
+    const struck = new Set<Entity>();
+    const raise = (at: Entity) => {
+      for (const enemy of use.enemies) {
+        if (enemy.dead || struck.has(enemy) || !within(at, enemy, radius)) continue;
+        struck.add(enemy);
+        use.hit(enemy, scale(enemy));
+        burstFrom(use, enemy, scale, true);
+      }
+      // Second point IS the radius, so the renderer draws the size the sim
+      // used, and a spike that STANDS is drawn for as long as it stands there.
+      use.vfx(
+        use.skill.vfxKind ?? 'spikes',
+        [{ x: at.x, y: at.y }, { x: at.x + radius, y: at.y }],
+        stands ? stands.seconds + num(g.spikeLonger, 0) : undefined
+      );
+    };
+    raise(use.primary);
+    const more = num(g.extraTargets, 0);
+    if (more > 0) {
+      for (const other of spreadTargets(use, use.enemies.filter((e) => !e.dead && !struck.has(e)), more)) {
+        if (!struck.has(other)) raise(other);
+      }
     }
-
-    // Second point IS the radius, so the renderer draws the size the sim used,
-    // and a spike that STANDS is drawn for as long as it stands there.
-    use.vfx(
-      use.skill.vfxKind ?? 'spikes',
-      [
-        { x: use.primary.x, y: use.primary.y },
-        { x: use.primary.x + radius, y: use.primary.y },
-      ],
-      stands ? stands.seconds + num(g.spikeLonger, 0) : undefined
-    );
   },
 
   single_target: (use) => {

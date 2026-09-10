@@ -16,6 +16,7 @@ export interface Notable {
   stats?: NodeStat[];
   grants?: Record<string, unknown>;
   choices?: NodeChoice[];
+  keystone?: true; // one a tree, and only ever the last node of a twig
 }
 
 /** A run of minors ending in a notable, which is a DEAD END — nothing past it. */

@@ -363,6 +363,7 @@ import {
   MAX_TREE_POINTS,
   blockedBy,
   canAllocate,
+  replayTreeNodes,
   canDeallocate,
   neighboursOf,
   nodeById,
@@ -6184,6 +6185,24 @@ rule('THE SPIKE — does one cast cover ground, and does buying area cover more?
   line(`  Deep Cold: x${at(1).toFixed(2)} on the first cast, x${at(3).toFixed(2)} on the third, x${at(20).toFixed(2)} on the twentieth`);
   check(at(1) === 1 && at(3) > at(1) && at(20) > at(3), 'Deep Cold is worth nothing on the first cast and climbs with the streak', `${at(1)} ${at(3)} ${at(20)}`);
   check(at(20) === at(6), 'and it stops at its cap', `${at(20)} against ${at(6)}`);
+}
+
+// KEYSTONES. A node that changes what the skill IS sits at the END of a line,
+// and a tree holds ONE: the second is refused, on the web and on a replay.
+{
+  const trees = BUILT_TREES.map((t) => ({ id: t.spec.skillId, keys: t.nodes.filter((n) => n.keystone) }));
+  line(`  keystones: ${trees.filter((t) => t.keys.length).map((t) => `${t.id} ${t.keys.map((k) => k.name).join(' / ')}`).join(', ')}`);
+  const notTips = trees.flatMap((t) => t.keys.filter((k) => neighboursOf(t.id, k.id).size !== 1).map((k) => `${t.id}:${k.id}`));
+  check(notTips.length === 0, 'every keystone is the last node of its line', notTips.join(', '));
+  const rime = trees.find((t) => t.id === 'rimespike')!;
+  check(rime.keys.length === 2 && rime.keys.every((k) => k.kind === 'notable'), 'Rimespike has two keystones, both notables', rime.keys.map((k) => k.id).join(', '));
+  const field = walkTo('rimespike', 'rs_field');
+  const toHail = walkTo('rimespike', 'rs_tempo');
+  const upToHail = toHail.slice(0, -1);
+  check(canAllocate('rimespike', 'rs_tempo', [...new Set([...field, ...upToHail])]) === false, 'and the second keystone is refused while the first is held', 'Hail allowed beside Rimefield');
+  check(canAllocate('rimespike', 'rs_tempo', upToHail), 'though it is open with the first refunded', upToHail.join(' '));
+  const replayed = replayTreeNodes('rimespike', [...new Set([...field, ...toHail])], 99);
+  check(replayed.filter((id) => id === 'rs_field' || id === 'rs_tempo').length === 1, 'and a save holding both keystones keeps one on replay', replayed.join(' '));
 }
 
 // WHAT THE CHILL IS FOR. Eight stacks FREEZE a body, which is out of reach of
