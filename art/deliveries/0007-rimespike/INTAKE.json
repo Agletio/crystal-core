@@ -1,7 +1,9 @@
 {
-  "active_claim": true,
-  "approval": "No Rimespike replacement design approved; first show a concept, preserve owner approval before animation/variations and final delivery.",
-  "assets_created": [],
+  "active_claim": false,
+  "approval": "Awaiting owner approval of spike-concept-v1-source.png shape/direction. No animations or related generations before approval. The other three visuals remain pending.",
+  "assets_created": [
+    "art/deliveries/0007-rimespike/spike-concept-v1-source.png"
+  ],
   "base_sha": "796f1711fb4e6ea6dc143f136de518abcf4e1843",
   "blocker": null,
   "brief": "0007-rimespike",
@@ -12,6 +14,8 @@
   "event_delivery_id": "db83f680-acb6-11f1-80de-8e41c9a5bee6",
   "notification": "First receipt and blocker reported in the ChatGPT response for this event. Do not add a redundant source-app message.",
   "owner": "Astra",
+  "provider": "built-in OpenAI image generation",
+  "provider_authorization": "Owner clarified in this thread: 'So the idea is for you to replace pixel lab not sure why Claude is saying to use it'",
   "received_date_utc": "2026-09-10",
   "relevant_revision": [
     {
@@ -27,6 +31,7 @@
       "path": "art/briefs/0007-rimespike-redo.md"
     }
   ],
+  "relevant_revision_owner_addendum": "PixelLab requirement superseded by direct owner clarification; use Astra image generation.",
   "schema_version": 1,
   "scope": [
     "sk_rimespike",
@@ -38,10 +43,7 @@
   "source_pr": 16,
   "source_pr_url": "https://github.com/Agletio/crystal-core/pull/16",
   "source_sha": "906f4fdf724e1c3b0840cdd32070faec810225ff",
-  "status": "in_progress: initial spike concept",
-  "unblock_condition": null,
-  "work_branch": "astra/0007-rimespike",
-  "provider": "built-in OpenAI image generation",
-  "provider_authorization": "Owner clarified in this thread: 'So the idea is for you to replace pixel lab not sure why Claude is saying to use it'",
-  "relevant_revision_owner_addendum": "PixelLab requirement superseded by direct owner clarification; use Astra image generation."
+  "status": "blocked: owner design approval",
+  "unblock_condition": "Owner approves or gives feedback on the initial spike concept. Approval of the concept is not acceptance of its current technical export.",
+  "work_branch": "astra/0007-rimespike"
 }

@@ -1,0 +1,15 @@
+{
+  "file": "spike-concept-v1-source.png",
+  "bytes": 1115131,
+  "width": 1024,
+  "height": 1536,
+  "mode": "RGBA",
+  "unique_rgb_colors_including_transparent_pixels": 100057,
+  "transparent_pixels": 1290364,
+  "opaque_pixels": 0,
+  "partial_alpha_pixels": 282500,
+  "alpha_min": 0,
+  "alpha_max": 254,
+  "method": "Pillow: image dimensions/mode; Counter over RGBA alpha; unique RGB values across all pixels. No image editing performed.",
+  "assessment": "Concept only; not hard-alpha, not a verified 64x96 grid. Do not import. Soft halo visible on inspection."
+}

@@ -35,3 +35,13 @@ The owner clarified on 2026-09-10 that Astra is replacing PixelLab. Use built-in
 OpenAI image generation, not PixelLab. The intake access blocker is resolved;
 no provider credentials are requested. Initial concept work may proceed. Owner
 design approval and all four visuals are still required before delivery.
+
+## 4. 0007 Rimespike — initial spike design review
+
+**Blocks:** further production, animations and related generations.
+
+Review `art/deliveries/0007-rimespike/spike-concept-v1-source.png` on
+`astra/0007-rimespike`: approve the silhouette/facets or give direction to revise.
+This is one concept, not a four-asset delivery. The raw file has soft glow and
+partial alpha and is NOT import-ready. Approval will guide a hard-pixel source
+and the remaining icon, Frozen and Chill visuals. No delivery PR yet.

@@ -1,6 +1,6 @@
 # 0007 — redo Rimespike, whole
 
-**Status:** `open`
+**Status:** `blocked: owner design approval`
 **Astra has final say on all of it**, the numbers included — grid, aspect,
 frame count, palette. Everything below is a fact or a cost, never a preference.
 *"Even like sizing and aspect ratios etc she is final say."*

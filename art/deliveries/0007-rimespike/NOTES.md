@@ -1,57 +1,64 @@
-# 0007 — Rimespike work in progress (NOT A DELIVERY)
+# 0007 — Rimespike concept v1 (NOT A DELIVERY)
 
-## Owner correction — 2026-09-10
+**Status:** awaiting owner design approval.
+Source: [request PR #16](https://github.com/Agletio/crystal-core/pull/16), head
+`906f4fdf724e1c3b0840cdd32070faec810225ff`. Work branch: `astra/0007-rimespike`.
 
-The owner clarified: "So the idea is for you to replace pixel lab not sure why
-Claude is saying to use it". This supersedes the historical PixelLab wording.
-Use built-in OpenAI image generation; no API-key or PixelLab setup is required.
-The provider blocker below is historical and resolved. Astra is making one
-initial spike concept, not animations or a final four-asset delivery.
+## Provider decision and intake history
 
-## Intake history (superseded where noted above)
+The initial receipt interpreted the brief's historical PixelLab quote as a
+provider requirement and recorded unavailable access. The owner then clarified:
+"So the idea is for you to replace pixel lab not sure why Claude is saying to use it".
+That blocker is RESOLVED. Astra replaces PixelLab using built-in OpenAI image
+generation. No PixelLab key or setup is requested. This does not waive design
+approval. The brief records the correction without altering Claude's Outcome.
 
+## Actual output
 
-Source: [request PR #16](https://github.com/Agletio/crystal-core/pull/16), head `906f4fdf724e1c3b0840cdd32070faec810225ff`.
-Work branch: `astra/0007-rimespike`. All four visuals remain in scope.
-See `INTAKE.json` for reference blob revisions and duplicate-event handling.
+- `spike-concept-v1-source.png`: one new static spike concept from one built-in
+  image-generation call, preserved unchanged.
+- `PROMPT.md`: exact prompt and provider.
+- `measurements.json`: measured source properties, not a claim of import readiness.
+- `INTAKE.json`: source, revision, provider clarification and deduplication state.
 
-## Exact blocker
+Direction proposed: an asymmetrical pointed ice blade, dark blue faceted mass,
+a strong internal fissure and subordinate splinters. This is the first design
+sample for the owner, not an approved direction or final production asset.
 
-The owner specifically requested PixelLab. No PixelLab tool is exposed in this
-run, the plugin directory search returned no PixelLab plugin, and the documented
-`tools/art/mcp.mts` transport requires `PIXELLAB_API_KEY`, which is not set.
-No PixelLab API call was attempted. General image generation is not authorization
-to substitute a provider. Unblock by supplying authorized PixelLab access to
-Astra's runtime, or explicitly approving a provider change. Never commit secrets.
+## Checks actually performed
 
-## Evidence and checks actually performed
+Verified PR eligibility, read its manifest/brief and both reference PNGs at the
+source SHA, visually inspected both references, and read current CONTRACT,
+WORKFLOW, PIPELINE, AUTOMATION and LIGHT. Checked branches and all-state
+Rimespike PRs; no prior work branch/delivery/claim existed. Compared source/main
+brief and reference blob SHAs: identical before this work. Later bookkeeping
+commits were not treated as new art revisions.
 
-- Verified PR #16 is open, non-draft, authored by Agletio, with the matching title.
-- Read its own request manifest and brief at the source SHA above.
-- Retrieved and visually inspected both reference PNGs at that SHA.
-- Read current CONTRACT, WORKFLOW, PIPELINE, AUTOMATION and standing LIGHT decision.
-- Listed repository branches and checked all-state Rimespike PRs: no prior
-  astra/0007-rimespike branch, delivery, PR, or active intake was present.
-- Compared brief and both reference blob SHAs on main with the request head:
-  identical. Main's later bookkeeping does not change the request revision.
-- Checked PixelLab tool discovery, plugin search and only the presence of the
-  documented environment variable; no credential value was read or logged.
+Inspected the generated sample and measured it with Pillow:
+1024 x 1536 RGBA, 1,115,131 bytes; 1,290,364 fully transparent pixels,
+282,500 partially transparent pixels, zero fully opaque pixels, alpha 0–254.
+There are 100,057 unique RGB values including transparent pixels. The requested
+64 x 96 logical grid is a prompt target, NOT a measured grid. The result has
+soft glow and partial alpha and therefore fails the game's hard-alpha
+production requirement. Preserve it as concept source only. No game tables,
+gridcheck/styleread, build, renderer or floor tests were run on new assets.
 
-## Art and approval state
+## Approval and remaining scope
 
-No new assets, animations, variations, palette, grid or frame-count delivery
-was produced. No generated-asset measurements, build, gridcheck, styleread or
-in-game tests were run. The owner has not approved a new Rimespike design.
-Do not interpret this folder or blocked brief as delivered. Brief 0006 stays
-dropped and was not resumed. Claude's Outcome is preserved.
+The owner must review shape and direction before further generations or animation.
+`sk_rimespike`, production `spike`, `db_frozen` and `db_chill` all remain
+in scope; none is marked delivered. No animation or variation has been made.
+The witch (0006) was not resumed. Do not import this concept.
 
 ## Claude / renderer handoff
 
-No renderer change is requested yet: no design exists to justify one. When
-unblocked, preserve the distinction between the erupting field and the 3.5-second
-standing Rimefield. Any chosen anchor, layering or sequence changes will be
-specified here after design review; Claude owns implementation. Debuffs must
-respect the standing prohibition on drawing under or on a body's edge.
+No renderer change is requested yet; wait for an approved production design.
+The erupting field must remain visually distinct from the 3.5-second standing
+Rimefield. Final anchor, layer, aspect or sequence requirements will be recorded
+here with actual assets; Claude owns renderer implementation. Debuffs must
+respect the no-under-body/no-body-edge decision. Final checks need the real
+floor and both modes at ship size, and the icon at HUD/Skills sizes.
 
-No delivery PR was opened, and there is no evidence of a Claude integration run.
-The successful request intake proves Claude-to-Astra event receipt only.
+No delivery PR, merge or deployment was performed. There is no evidence of a
+Claude integration run. This proves request receipt and initial concept
+generation, not the completed end-to-end handoff. The webhook remains unchanged.
