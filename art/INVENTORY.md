@@ -53,7 +53,10 @@ word, and each cost something.
 
 - *"Make sure you're using the pixel lab art generator and not creating art
   yourself. We need it to match the rest of the art."* Seven hand-written
-  icons shipped once and were replaced the same week.
+  icons shipped once and were replaced the same week. **The TOOL in that
+  sentence is superseded and the RULE is not** — *"the idea is for you to
+  replace pixel lab"* — so it now reads: art comes off Astra's generator, and
+  Claude does not draw.
 - *"You're supposed to give me sample images before you begin making
   animations or additional generations for characters."* A body was designed,
   rotated, animated and half-dressed before he saw it.
