@@ -571,6 +571,7 @@ export interface RunState {
   orbs: Array<{ x: number; y: number; targetId: number; left: number; tickIn: number }>; // balls of lightning still drifting
   fuses: Array<{ targetId: number; left: number }>; // arrows stuck in bodies, waiting to burst
   shared: number; // hits a Tether passed on to another body
+  clouds: Array<{ x: number; y: number; radius: number; power: number; seconds: number; spread?: { radius: number; generation: number }; left: number; tickIn: number }>; // Blight's drifting clouds
   gusts: number; // what GALE is holding, which is what its speed is worth
   /** Uses that fired the COMBAT mode: a step away, and a landing on a body. */
   kites: number;
@@ -853,6 +854,7 @@ export class RunSim {
       orbs: [],
       fuses: [],
       shared: 0,
+      clouds: [],
       gusts: 0,
       kites: 0,
       dives: 0,
@@ -1449,6 +1451,7 @@ export class RunSim {
     this.stepTremors(dt);
     this.stepOrbs(dt);
     this.stepFuses(dt);
+    this.stepClouds(dt);
     this.stepFight(dt);
     this.stepHero(dt);
     if (s.status !== 'running') return;
@@ -3162,6 +3165,10 @@ export class RunSim {
       vfx: (kind, points, ttl = 0.3, delay = 0) =>
         this.emit(kind, points, skill.damageTypes[0] ?? 'physical', ttl, delay, user.id),
       blink: (target) => this.stepBehind(user, target),
+      cloud: (at, radius, power, seconds, spread) => {
+        const drift = this.grants.wander as { seconds: number } | undefined;
+        if (drift && user.kind === 'hero') this.state.clouds.push({ x: at.x, y: at.y, radius, power, seconds, spread, left: drift.seconds, tickIn: 0 });
+      },
       fuse: (target) => {
         const lit = this.grants.fuse as { seconds: number } | undefined;
         if (lit && user.kind === 'hero' && !target.dead) this.state.fuses.push({ targetId: target.id, left: lit.seconds });
@@ -3238,6 +3245,37 @@ export class RunSim {
     if (per <= 0) return 1;
     const rate = Math.max(0.01, user.stats.attacksPerSecond);
     return 1 + per * Math.max(0, FASTEST_SWING / rate - 1);
+  }
+
+  /** A WANDERING CLOUD drifts after the nearest living body and Poisons what
+   *  it covers on its own clock, each tick a share of the cast it came from. */
+  private stepClouds(dt: number): void {
+    const live = this.state.clouds;
+    if (live.length === 0) return;
+    const drift = this.grants.wander as { speed: number; every: number; share: number } | undefined;
+    if (!drift) {
+      this.state.clouds = [];
+      return;
+    }
+    for (const c of live) {
+      c.left -= dt;
+      c.tickIn -= dt;
+      const after = this.state.monsters.filter((m) => !m.dead).sort((a, b) => dist(a, c) - dist(b, c))[0];
+      if (after) {
+        const d = Math.max(1e-3, dist(after, c));
+        const step = Math.min(d, drift.speed * dt);
+        c.x += ((after.x - c.x) / d) * step;
+        c.y += ((after.y - c.y) / d) * step;
+      }
+      if (c.tickIn > 0) continue;
+      c.tickIn = drift.every;
+      for (const m of this.state.monsters) {
+        if (m.dead || dist(m, c) - m.radius > c.radius) continue;
+        this.applyAilment(this.state.hero, m, c.power * drift.share, c.seconds, this.skill, c.spread);
+      }
+      this.emit('blight_field', [{ x: c.x, y: c.y }, { x: c.x + c.radius, y: c.y }], this.skill.damageTypes[0] ?? 'poison', drift.every, 0, this.state.hero.id);
+    }
+    this.state.clouds = live.filter((c) => c.left > 0);
   }
 
   /** A FUSED ARROW bursts when its seconds run out, on the body it is stuck in

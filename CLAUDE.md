@@ -1210,6 +1210,26 @@ ARROW (`fuse`, tip of the Broadhead line) hits nothing now: the arrow sticks
 tiles round the body for 100% more, every arrow its own fuse; the Fork, Pierce
 and Arc walked to reach it are a wider or harder burst under it. Measured at
 band 4: the tie alone is +8% of a bare tree, the fuse −23%.
+**BLIGHT'S TWO ARE A HIT AND A CLOUD THAT WALKS.** SPORE BURST (`spore`, tip
+of the Virulence line) Poisons nothing: the circle is one hit for 40% of what
+the Poison would have dealt over its run, so armour blunts it, a Critical is a
+Critical, and a kill can Burst off it — the Harvest nodes walked to reach it
+are `explodeOnKill` under it, the Bloom nodes Area, and a duration line is
+more damage. At 60% it was +57% of a bare tree, because a hit lands now where
+a Poison waits on bodies that may not; at 40% it is +31%. WANDERING ROT
+(`wander`, tip of the Canopy line) lays the Cloud (`SkillUse.cloud`,
+`RunState.clouds`) and `stepClouds` drifts it after the nearest body at 1.6
+tiles a second for 4s, Poisoning what it covers every 0.5s for 25% of the
+cast through the one `applyAilment`. Measured at band 4: +10%.
+
+**EIGHT TREES, SIXTEEN KEYSTONES, AND EVERY ONE IS PLAYED.** Each tree's demo
+section plays three descents at band 4 under each keystone against a bare
+tree and PRINTS the ratio as a gauge, wanting it within 40% either way; the
+one thing that FAILS is the mechanism — a mode that lands a hit it says it
+does not, a fan that misses what stands in it, a cloud that is not laid. A
+keystone is at the tip of a twig and replaces the notable that was there
+under a NEW id, since a save pointing at the old one would otherwise wake up
+holding a mode it never chose.
 
 **RIMESPIKE IS AN AREA SKILL, AND RIMEFIELD WAS THE FIRST MODE SWITCH.**
 *"Make rimespike a large aoe spike instead of single target + splash… it does an

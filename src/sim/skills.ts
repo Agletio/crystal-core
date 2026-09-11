@@ -59,6 +59,8 @@ export interface SkillUse {
   orb(from: Vec2, target: Entity): void;
   /** Stick a FUSED arrow in a body the sim bursts later: no hit now. */
   fuse(target: Entity): void;
+  /** Lay a WANDERING cloud the sim keeps, moves and ticks: Blight's drifting mode. */
+  cloud(at: Vec2, radius: number, power: number, seconds: number, spread?: { radius: number; generation: number }): void;
 }
 
 /** A wedge on the floor: where it opens from, which way, how far and how wide. */
@@ -965,15 +967,24 @@ export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
     // time at any real cast speed, and reads as an aura rather than a spell.
     const cadence = 1 / Math.max(0.1, use.user.stats.attacksPerSecond);
 
+    // THE TWO MODES: one hit instead of a Poison, or a Cloud that drifts.
+    const spore = g.spore as { share: number } | undefined;
+    const wander = g.wander as { seconds: number } | undefined;
+
     const field = (at: Entity): void => {
+      if (wander) {
+        use.cloud({ x: at.x, y: at.y }, radius, power, duration, spread);
+        return;
+      }
       const caught = use.enemies.filter((e) => within(at, e, radius));
       // Always poisoned, even if the radius somehow excludes it.
       if (!caught.includes(at)) caught.push(at);
       for (const enemy of caught) {
-        use.ailment(enemy, power * targetScale(use, enemy), duration, spread);
+        if (spore) use.hit(enemy, spore.share * power * targetScale(use, enemy));
+        else use.ailment(enemy, power * targetScale(use, enemy), duration, spread);
       }
 
-      burstFrom(use, at, (e) => castMultiplier * targetScale(use, e), false);
+      burstFrom(use, at, (e) => castMultiplier * targetScale(use, e), !!spore);
 
       // Second point IS the radius, so the renderer draws what the sim used.
       use.vfx(

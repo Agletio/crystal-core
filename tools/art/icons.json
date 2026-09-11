@@ -883,6 +883,14 @@
    "say": "a curling gust of freezing wind drawn as three swept white streaks, pale ice-blue and white with a blue-black shadow side, NOT a cloud, NOT a feather."
   },
   {
+   "id": "wn_bl_spore",
+   "say": "a single round dark green puffball mushroom bursting open at the top with a spray of pale yellow-green spore dust puffing up and out of it in a spreading cloud, sickly greens and near-black, NOT a flower, NOT a tree, NOT a face, NOT smoke from fire."
+  },
+  {
+   "id": "wn_bl_wander",
+   "say": "three soft round puffs of pale sickly green SMOKE overlapping in a row from small at the left to large at the right, like smoke blown sideways in a wind, made of nothing but smoke with empty transparent space all round, dark bile-green shadows under each puff, NOT a creature, NOT a slime, NOT a monster, NOT eyes, NOT a face, NOT a mouth, NOT a ghost, NOT a skull, NOT a tree, NOT a bush, NOT a cloud in a sky."
+  },
+  {
    "id": "wn_la_tether",
    "say": "two dark round iron shackles side by side joined by a taut crackling chain of gold lightning between them, the chain drawn as a jagged bright gold bolt with a white core, on transparent ground, NOT hands, NOT a person, NOT a rope, NOT blue."
   },

@@ -31,6 +31,8 @@ const BRANCHES: Branch[] = [
         'A Poison ticking Critically plants a fresh Cloud, 1.6 tiles across, ' +
         'around whatever it ticked on.',
       grants: { contagionRadius: 1.6, manaMultiplier: 1.15 },
+      // A hit plants no second Cloud: the Bloom line is Area under the burst.
+      under: { bl_spore: { description: '+15% increased Area of Effect.', stats: [stat('areaOfEffect', 'inc', 15)], grants: { manaMultiplier: 1.15 } } },
     },
     twigs: [
       {
@@ -40,6 +42,7 @@ const BRANCHES: Branch[] = [
           name: 'Epidemic',
           description: 'A Cloud planted by a Critical tick is 0.9 tiles wider.',
           grants: { contagionRadius: 0.9, manaMultiplier: 1.08 },
+          under: { bl_spore: { description: '+10% increased Area of Effect.', stats: [stat('areaOfEffect', 'inc', 10)], grants: { manaMultiplier: 1.08 } } },
         },
       },
       {
@@ -49,6 +52,7 @@ const BRANCHES: Branch[] = [
           name: 'Pandemic',
           description: 'A Cloud a Critical tick plants is +1.2 tiles wider.',
           grants: { contagionRadius: 1.2, manaMultiplier: 1.08 },
+          under: { bl_spore: { description: '+12% increased Area of Effect.', stats: [stat('areaOfEffect', 'inc', 12)], grants: { manaMultiplier: 1.08 } } },
         },
       },
       {
@@ -62,6 +66,7 @@ const BRANCHES: Branch[] = [
             'are 0.8 tiles wider.',
           stats: [stat('critChance', 'flat', 7)],
           grants: { contagionRadius: 0.8, manaMultiplier: 1.08 },
+          under: { bl_spore: { description: '+10% increased Area of Effect.', stats: [stat('areaOfEffect', 'inc', 10)], grants: { manaMultiplier: 1.08 } } },
         },
       },
     ],
@@ -84,6 +89,8 @@ const BRANCHES: Branch[] = [
         'A body dying with an Ailment gives 1 stack of each to the 2 nearest ' +
         'enemies within 3 tiles.',
       grants: { ailmentSpread: { radius: 3, stacks: 1, targets: 2 }, manaMultiplier: 1.15 },
+      // Nothing to pass on when nothing is Poisoned: a kill Bursts instead.
+      under: { bl_spore: { description: 'A body killed by Spore Burst Bursts 1.5 tiles across, for 30% of the damage.', grants: { explodeOnKill: { radius: 1.5, multiplier: 0.3 }, manaMultiplier: 1.15 } } },
     },
     twigs: [
       {
@@ -93,6 +100,7 @@ const BRANCHES: Branch[] = [
           name: 'Seeding',
           description: 'It gives 1 more stack of each, to 1 more enemy.',
           grants: { ailmentSpread: { radius: 0, stacks: 1, targets: 1 } },
+          under: { bl_spore: { description: 'The Burst off a killed enemy deals a further 15% of the damage.', grants: { explodeOnKill: { radius: 0, multiplier: 0.15 } } } },
         },
       },
       {
@@ -102,6 +110,7 @@ const BRANCHES: Branch[] = [
           name: 'Windborne',
           description: 'It reaches 2.5 tiles further, and 1 more enemy.',
           grants: { ailmentSpread: { radius: 2.5, stacks: 0, targets: 1 } },
+          under: { bl_spore: { description: 'The Burst off a killed enemy reaches 0.6 tiles further.', grants: { explodeOnKill: { radius: 0.6, multiplier: 0 } } } },
         },
       },
       {
@@ -115,6 +124,7 @@ const BRANCHES: Branch[] = [
             ailmentSpread: { radius: 1.5, stacks: 1, targets: 2 },
             manaMultiplier: 1.15,
           },
+          under: { bl_spore: { description: 'The Burst off a killed enemy reaches 0.4 tiles further and deals a further 20% of the damage.', grants: { explodeOnKill: { radius: 0.4, multiplier: 0.2 }, manaMultiplier: 1.15 } } },
         },
       },
     ],
@@ -167,8 +177,10 @@ const BRANCHES: Branch[] = [
     enabler: {
       id: 'bl_virulence',
       name: 'Virulence',
-      description: 'The Poison deals 50% more damage over a 35% shorter time.',
+      description: 'The Poison deals 50% more damage and has 35% less duration.',
       grants: { ailmentMultiplier: 1.5, ailmentDuration: 0.65 },
+      // A hit has no duration: the Poison's worth is the hit's, and nothing else.
+      under: { bl_spore: { description: 'Spore Burst deals 50% more damage.', grants: { ailmentMultiplier: 1.5 } } },
     },
     twigs: [
       {
@@ -185,24 +197,37 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'bl_lingering',
           name: 'Lingering Rot',
-          description: 'The Poison lasts 70% longer.',
+          description: 'The Poison has 70% more duration.',
           grants: { ailmentDuration: 1.7 },
+          under: { bl_spore: { description: 'Spore Burst deals 20% more damage.', grants: { ailmentMultiplier: 1.2 } } },
         },
       },
       {
         minors: 4,
         forkFrom: { twig: 1, at: 2 },
         notable: {
-          id: 'bl_necrosis',
-          name: 'Necrosis',
-          description: 'The Poison deals a further 35% more damage.',
-          grants: { ailmentMultiplier: 1.35 },
+          /**
+           * SPORE BURST, the keystone at the tip of the Virulence line: the
+           * circle is one hit, so armour blunts it, a Critical is a Critical,
+           * and a kill can Burst off it. What it costs is everything that only
+           * a Poison could do — the spread, the duration, the tick.
+           */
+          id: 'bl_spore',
+          name: 'Spore Burst',
+          keystone: true,
+          description:
+            'The Cloud Poisons nothing. It hits everything it covers once, for 40% of what ' +
+            'the Poison would have dealt over its whole run.',
+          becomes:
+            'A burst of spores on the enemy: everything within the circle takes one hit, 40% of ' +
+            'what the Poison would have dealt over 5s, and nothing is Poisoned. A kill can Burst off it.',
+          grants: { spore: { share: 0.4 }, manaMultiplier: 1.15 },
         },
       },
     ],
     minors: [
       { text: '+6% increased Poison Damage', grants: { ailmentMultiplier: 1.06 } },
-      { text: '+4% increased Poison Duration', grants: { ailmentDuration: 1.04 } },
+      { text: '+4% increased Poison Duration', grants: { ailmentDuration: 1.04 }, under: { bl_spore: { description: '+3% more damage', grants: { ailmentMultiplier: 1.03 } } } },
       COMMON[1],
       COMMON[0],
     ],
@@ -239,11 +264,21 @@ const BRANCHES: Branch[] = [
         minors: 4,
         forkFrom: { twig: 1, at: 2 },
         notable: {
-          id: 'bl_wildgrowth',
-          name: 'Wildgrowth',
-          description: 'The Cloud covers 25% more ground, and +15% increased Area of Effect.',
-          stats: [stat('areaOfEffect', 'inc', 15)],
-          grants: { fieldRadius: 1.25, manaMultiplier: 1.08 },
+          /**
+           * WANDERING ROT, the keystone at the tip of the Canopy line: the
+           * Cloud is a thing on the floor that follows the pack, so what a
+           * cast is worth is how long bodies stay under it.
+           */
+          id: 'bl_wander',
+          name: 'Wandering Rot',
+          keystone: true,
+          description:
+            'The Cloud drifts after the nearest enemy at 1.6 tiles a second for 4s, Poisoning ' +
+            'what it covers every 0.5s for 25% of the cast.',
+          becomes:
+            'You lay a cloud that drifts after the nearest enemy at 1.6 tiles a second for 4s, ' +
+            'Poisoning everything it covers every 0.5s for 25% of the cast. The cast itself Poisons nothing.',
+          grants: { wander: { seconds: 4, speed: 1.6, every: 0.5, share: 0.25 }, manaMultiplier: 1.2 },
         },
       },
     ],

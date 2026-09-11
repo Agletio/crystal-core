@@ -6252,6 +6252,52 @@ if (rule('DUAL WIELDING — is a pair two weapons or an average of one?')) {
 // ===========================================================================
 }
 
+if (rule('BLIGHT\'S TWO MODES — a burst of spores and a cloud that drifts, played')) {
+
+{
+  const played = (route: string[]) => {
+    const who = ladderCharacter(4, new Rng(88), 'blight');
+    skillProgress(who, 'blight').allocated = route;
+    let killed = 0;
+    let seconds = 0;
+    for (let i = 0; i < 3; i++) {
+      const final = runToCompletion(new RunSim(ladderSet(4, new Rng(400 + i), pool), who, new Rng(404 + i)), 600);
+      killed += final.killed;
+      seconds += final.elapsed;
+    }
+    return killed / Math.max(1, seconds);
+  };
+  const bare = played([]);
+  const spored = played(routeTo('blight', 'bl_spore'));
+  const drifted = played(routeTo('blight', 'bl_wander'));
+  const off = (n: number) => `${n >= bare ? '+' : ''}${Math.round((n / Math.max(0.01, bare) - 1) * 100)}%`;
+  line(`  band 4, three descents: bare tree ${bare.toFixed(2)}, Spore Burst ${spored.toFixed(2)}, Wandering Rot ${drifted.toFixed(2)} kills/s`);
+  gauge(`a burst of spores alone is ${off(spored)} of a bare tree, a drifting cloud ${off(drifted)} — wanted within 40% either way`);
+
+  const dummy = (x: number, y: number) =>
+    ({ x, y, life: 1e6, radius: 0.3, dead: false, ailments: [] as unknown[], stats: { maxLife: 1e6, attacksPerSecond: 1 } }) as any;
+  const cast = (grants: Record<string, unknown>, enemies: any[]) => {
+    const hits: number[] = [];
+    const poisoned: number[] = [];
+    let laid = 0;
+    SKILL_BEHAVIOURS.ailment_burst({
+      skill: SKILL_BY_ID.blight, user: { ...dummy(0, 0), facing: 0, stats: { attacksPerSecond: 1 } }, primary: enemies[0], enemies,
+      rng: new Rng(9), grants, crit: false, castIndex: 0, heft: 1, sinceKill: 0, sinceHit: 0, streak: 1,
+      hit: (who: any) => { hits.push(enemies.indexOf(who)); }, ailment: (who: any) => { poisoned.push(enemies.indexOf(who)); }, cloud: () => { laid++; },
+      leave: () => {}, areaRadius: (b: number) => b, vfx: () => {}, blink: () => {}, tremor: () => {}, wound: () => {}, orb: () => {}, fuse: () => {},
+    } as any);
+    return { hits, poisoned, laid };
+  };
+  const pair = [dummy(3, 0), dummy(3.6, 0.4)];
+  const burst = cast(nodeById('blight', 'bl_spore')?.grants ?? {}, pair);
+  check(burst.hits.length === 2 && burst.poisoned.length === 0, 'Spore Burst hits both bodies in the circle and Poisons neither', `${burst.hits.length} hits, ${burst.poisoned.length} poisoned`);
+  const drift = cast(nodeById('blight', 'bl_wander')?.grants ?? {}, pair);
+  check(drift.hits.length === 0 && drift.poisoned.length === 0 && drift.laid === 1, 'Wandering Rot lays one cloud and does nothing else itself', `${drift.laid} laid`);
+}
+
+// ===========================================================================
+}
+
 if (rule('LIGHTNING ARROW\'S TWO MODES — a tether between bodies and an arrow that bursts later, played')) {
 
 {
@@ -7035,6 +7081,7 @@ if (rule('EVERY TREE — does every notable actually change the cast?')) {
             tremor: (w: any) => marks.push(`t${w.reach.toFixed(2)}:${(w.width ?? w.half).toFixed(2)}`),
             orb: (_f: any, who: any) => marks.push(`o${enemies.indexOf(who)}`),
             fuse: (who: any) => marks.push(`z${enemies.indexOf(who)}`),
+            cloud: (at: any, r: number, p: number) => marks.push(`c${at.x.toFixed(2)},${at.y.toFixed(2)}:${r.toFixed(2)}:${p.toFixed(3)}`),
             hit: (who: any, multiplier: number) => {
               marks.push(`h${enemies.indexOf(who)}:${multiplier.toFixed(3)}`);
               who.life -= multiplier * 5e4;
@@ -7760,6 +7807,7 @@ if (rule('THE SHEET — does every number on it survive being checked?')) {
       tremor: () => {},
       orb: () => {},
       fuse: () => {},
+      cloud: () => {},
       ailment: (_t: any, multiplier: number, seconds: number) => asked.push({ multiplier, seconds }),
       leave: () => {},
       areaRadius: (base: number) => base,

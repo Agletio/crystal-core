@@ -1187,6 +1187,39 @@ export const GRANTS: GrantDef[] = [
     },
   },
   {
+    /** BLIGHT'S FIRST MODE. No Poison: the circle is one HIT for `share` of
+     *  what the Poison would have dealt over its whole run, so armour blunts
+     *  it and a kill can Burst off it. */
+    id: 'spore',
+    changes: 'scale',
+    what: 'the cloud is one hit instead of a Poison',
+    reads: ['ailment_burst'],
+    merge: 'bag',
+    say: (v) => {
+      const o = v as { share?: number } | null;
+      if (!o || typeof o.share !== 'number') return null;
+      return `The Cloud Poisons nothing: it hits everything it covers once, for ${pct(o.share)} of what the Poison would have dealt`;
+    },
+  },
+  {
+    /** BLIGHT'S OTHER MODE. The Cloud is laid and the sim keeps it: it drifts
+     *  after the nearest enemy at `speed` for `seconds`, Poisoning what it
+     *  covers every `every` seconds for `share` of the cast. */
+    id: 'wander',
+    changes: 'field',
+    what: 'the cloud drifts after enemies and keeps poisoning',
+    reads: ['ailment_burst', SIM],
+    merge: 'bag',
+    say: (v) => {
+      const o = v as { seconds?: number; speed?: number; every?: number; share?: number } | null;
+      if (!o || typeof o.seconds !== 'number' || typeof o.speed !== 'number' || typeof o.every !== 'number' || typeof o.share !== 'number') return null;
+      return (
+        `The Cloud drifts after the nearest enemy at ${o.speed} tiles a second for ${o.seconds}s, ` +
+        `Poisoning what it covers every ${o.every}s for ${pct(o.share)} of the cast`
+      );
+    },
+  },
+  {
     /** LIGHTNING ARROW'S FIRST MODE, and the run keeps it: a body the arrow
      *  hits is Tethered for `seconds`, and damage to one Tethered body lands
      *  `share` of itself on every other Tethered body within `reach`. */
@@ -1660,7 +1693,7 @@ export const GRANTS: GrantDef[] = [
     id: 'explodeOnKill',
     changes: 'burst',
     what: 'a killed enemy Bursts, and so does whatever that Burst kills',
-    reads: HITTERS,
+    reads: [...HITTERS, 'ailment_burst'], // a Spore Burst is a hit, so a kill off one may Burst
     merge: 'bag',
     say: (v) => {
       const p = pair(v, 'radius', 'multiplier');
