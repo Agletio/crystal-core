@@ -30,6 +30,7 @@ import {
   treeFor,
   treePointsFor,
   faceOf,
+  heldKeystone,
   routeTo,
 } from '../skills-tree';
 import { categoryIcon, skillIcon } from './icons';
@@ -45,7 +46,7 @@ import { inDescent } from './run';
 import { slotWorkings } from '../skill-text';
 import { ailmentLine } from '../damage-text';
 import type { SkillNodeDef } from '../skills-tree';
-import { characterStats, convertedType, damageDetail, retag, skillBase, treeGrants } from '../sim/stats';
+import { characterStats, convertedType, damageDetail, effectiveSkill, retag, skillBase, treeGrants, walked } from '../sim/stats';
 import {
   addSkillXp,
   equipSkill,
@@ -237,20 +238,23 @@ export function skillCard(skill: SkillDef): HTMLElement {
  * and whether crit is worth anything to you at all, which it is not once
  * Kindling has taken it away.
  */
-function skillSummary(skill: SkillDef): string[] {
+function skillSummary(skill: SkillDef): HTMLElement {
   const stats = characterStats(game.character);
   const progress = skillProgress(game.character, skill.id);
   const grants = treeGrants(game.character);
   const mine = heldAnywhere(skill.id);
 
+  // THE SKILL AS THE TREE HAS MADE IT: a keystone changes what it is, and the
+  // hub says the changed thing — its own words, its tags, its type.
+  const key = heldKeystone(skill.id, progress.allocated);
+  const made = effectiveSkill(skill, mine ? grants : walked(game.character, skill.id));
   const converted = convertedType(skill, grants);
   const dealt = converted ?? skill.damageTypes[0] ?? 'physical';
 
   const lines = [
-    `${skill.name} — level ${progress.level}`,
-    skill.description,
-    '',
-    `tags: ${skill.tags.join(', ')}`,
+    key?.becomes ?? skill.description,
+    key ? `keystone: ${key.name}` : '',
+    `tags: ${made.tags.join(', ')}`,
     `base: ${Math.round(skillBase(skill, game.character.level))} ` +
       `${DAMAGE_TYPE_BY_ID[dealt]?.name ?? dealt}` +
       (converted ? ` (converted from ${skill.damageTypes.join(', ')})` : ''),
@@ -262,30 +266,30 @@ function skillSummary(skill: SkillDef): string[] {
   // Everything below is derived from what you are WEARING, which is only the
   // truth for the skill you actually have equipped.
   if (!mine) {
-    lines.push('', 'Equip to see your numbers.');
-    return lines;
+    lines.push('Equip to see your numbers.');
+    return nodeCard(skill.name, `level ${progress.level}`, lines);
   }
 
   // Through damageDetail, so this and the character sheet cannot disagree.
   // A lasting skill is worth its number over a duration, not per hit.
   const detail = damageDetail(game.character);
   lines.push(
-    '',
     detail.seconds > 0
       ? `damage per cast: ${Math.round(detail.perApplication)} over ${detail.seconds}s`
       : `damage per hit: ${Math.round(detail.perApplication)}`,
-    `rate: ${detail.rate.toFixed(2)}/s  →  ${Math.round(detail.perSecond)} dps`,
-    `crit: ${Math.round(stats.critChance)}% for ${(
-      2 + stats.critMultiplier / 100
-    ).toFixed(2)}x`,
+    detail.cooldown > 0
+      ? `cooldown: ${detail.cooldown.toFixed(2)}s`
+      : `rate: ${detail.rate.toFixed(2)}/s`,
+    `damage per second: ${Math.round(detail.perSecond)}`,
+    `crit: ${Math.round(stats.critChance)}% for ${(2 + stats.critMultiplier / 100).toFixed(2)}x`,
     ailmentLine(dealt, stats) // what its own damage type leaves behind
   );
 
   if (converted) {
     const was = skill.damageTypes.map((t) => DAMAGE_TYPE_BY_ID[t]?.name ?? t).join(' and ');
-    lines.push('', `${was} in this tree counts as ${DAMAGE_TYPE_BY_ID[dealt]?.name ?? dealt}.`);
+    lines.push(`${was} in this tree counts as ${DAMAGE_TYPE_BY_ID[dealt]?.name ?? dealt}.`);
   }
-  return lines;
+  return nodeCard(skill.name, `level ${progress.level}`, lines);
 }
 
 // ---------------------------------------------------------------------------
@@ -660,7 +664,7 @@ function renderWeb(): void {
   art.setAttribute('width', String(hubR * 1.25));
   art.setAttribute('height', String(hubR * 1.25));
   hub.append(art);
-  attachTooltip(hub, () => skillSummary(skill).join('\n'));
+  attachTooltip(hub, () => skillSummary(skill));
   view.append(hub);
 
   for (const node of nodes) {

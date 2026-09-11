@@ -5244,8 +5244,8 @@ export const SKILLS: SkillDef[] = [
     name: 'Rimespike',
     category: 'spell',
     description:
-      'Ice drives up through the ground under one enemy. Everything within ' +
-      '1.3 tiles takes the whole hit.',
+      'Ice drives up through the ground under one enemy. Hits everything in a ' +
+      '1.3 tile radius.',
     tags: ['spell', 'area'],
     behaviour: 'spike',
     damageTypes: ['cold'],

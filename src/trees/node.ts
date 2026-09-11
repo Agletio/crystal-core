@@ -17,6 +17,7 @@ export interface SkillNodeDef {
   description: string;
   kind: 'minor' | 'notable'; // notables are the reason to walk in a direction
   keystone?: true; // changes what the skill IS; the end of a line, and one a tree
+  becomes?: string; // what the skill's own card says while this keystone is held
   points?: number; // how many points it holds; 1 unless said, and a minor may hold a RANGE
   gate?: { from: string; points: number }; // the link from `from` opens once it holds this many
   x: number; // web coordinates; units are arbitrary, the view fits what it gets
@@ -48,6 +49,7 @@ export interface StatConvert {
   stat: string;
   tags?: string[];
   say: [string, string]; // the phrase on a card, and what it becomes
+  flip?: true; // the value changes sign: increased Cast Speed is a NEGATIVE cooldown
 }
 
 export interface NodeChoice {

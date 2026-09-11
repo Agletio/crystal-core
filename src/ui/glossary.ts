@@ -24,6 +24,30 @@ export function keywordLine(text: string, cls?: string): HTMLElement {
   return row;
 }
 
+/** A figure with whatever sign, percent, multiplier or unit rides on it. */
+const FIGURE = /[+\-−]?\d+(?:[.,]\d+)*(?:%|x|×|s|st|nd|rd|th|\/s)?/g;
+
+/** A card line with its keywords marked AND its figures lit, so what a node is
+ *  worth reads off the numbers before the sentence round them is read. */
+export function litLine(text: string, cls?: string): HTMLElement {
+  const row = el('div', cls);
+  for (const piece of cutKeywords(text)) {
+    if (piece.keyword) {
+      row.append(el('span', 'kw', piece.text));
+      continue;
+    }
+    let at = 0;
+    FIGURE.lastIndex = 0;
+    for (let m = FIGURE.exec(piece.text); m; m = FIGURE.exec(piece.text)) {
+      if (m.index > at) row.append(document.createTextNode(piece.text.slice(at, m.index)));
+      row.append(el('span', 'tip__num', m[0]));
+      at = m.index + m[0].length;
+    }
+    if (at < piece.text.length) row.append(document.createTextNode(piece.text.slice(at)));
+  }
+  return row;
+}
+
 /** What every keyword these lines name means, or null when they name none. */
 export function glossaryOf(lines: string[]): HTMLElement | null {
   const found = keywordsIn(lines);
@@ -58,7 +82,11 @@ function echoes(now: string[], was: string[]): boolean {
 export function nodeCard(name: string, state: string, lines: string[]): HTMLElement {
   const card = el('div', 'tip__card tip__card--node');
   const head = el('div', 'tip__name', name);
-  head.append(el('span', 'tip__state', state));
+  // The state is COLOURED by what it means: owned, open to you, or owed.
+  const tone = /^(allocated|equipped|\d+\/\d+ points)$/.test(state)
+    ? 'tip__state--held'
+    : state === 'available' ? 'tip__state--open' : '';
+  head.append(el('span', `tip__state${tone ? ` ${tone}` : ''}`, state));
   card.append(head);
 
   // SAID ONCE: prose and its grant's `say` are one sentence by design.
@@ -67,7 +95,15 @@ export function nodeCard(name: string, state: string, lines: string[]): HTMLElem
     const words = wordsOf(line);
     if (said.some((was) => echoes(words, was) || echoes(was, words))) continue;
     said.push(words);
-    card.append(keywordLine(line, 'tip__body'));
+    // A LABEL LINE — `tags: spell, area` — is a fact with a heading on it.
+    const label = /^([a-z][a-z ]{1,20}):\s/.exec(line);
+    if (label) {
+      const row = litLine(line.slice(label[0].length), 'tip__body tip__fact');
+      row.prepend(el('span', 'tip__key', label[1]));
+      card.append(row);
+      continue;
+    }
+    card.append(litLine(line, 'tip__body'));
   }
 
   const glossary = glossaryOf(lines);

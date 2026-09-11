@@ -114,7 +114,10 @@ minutes**; a silent hour is how this looked stuck.
   is exactly 1, so the Fissure a new character walks into is untouched.
 - **Every number is said out loud.** Nothing describing a quantity in words when
   it has a figure behind it — "35% more damage", never "more damage"; "+1 Cloud",
-  never "an extra cloud". The test is whether a player could act differently
+  never "an extra cloud". **AND A NEGATIVE ONE IS SAID THE RIGHT WAY ROUND**:
+  "40% less damage", "40% less duration", "2 fewer Arcs" — never "-40% more"
+  or "last -40% longer". `moreOrLess` in `src/sim/grants.ts` is the seam, and
+  the glossary entries are *more / less* and *increased / reduced*. The test is whether a player could act differently
   knowing the figure. FLAVOUR is exempt and must not be "fixed": a character's
   lines, a unique's line about a dead man.
 - **A CARD SAYS WHAT IS TRUE, AND NEVER WHY.** *"Really need to stop with the
@@ -1115,13 +1118,24 @@ once that keystone is held (Frostwork's field growth is a Pierce under Hail,
 Whiteout's outer half is the whole hit carried on, Sleet's stacks are reduced
 Skill Cooldown under Rimefield), and a keystone's `converts` reads any other
 node's stat as another — Hail turns Area of Effect into Projectile Damage,
-Rimefield turns Cast Speed into Skill Cooldown — with `say` rewriting the
-card's own words. `treeMod`, `walked()` and the card all read the face, so the
-sheet, the sim and the tooltip cannot disagree, and the demo fails a keystone
-that leaves any line on a stat it retired. **A CARD SAYS THE FACTS AND ONE
+Rimefield turns Cast Speed into Skill Cooldown, `flip` negating the value
+because gear rolls a cooldown NEGATIVE — with `say` rewriting the card's own
+words. `treeMod`, `walked()` and the card all read the face, so the sheet, the
+sim and the tooltip cannot disagree, and the demo fails a keystone that leaves
+any line on a stat it retired. **A KEYSTONE SAYS THE TAG IT ADDS AND THE ONE
+IT DROPS** — *"Gains the projectile tag"* — through `addTags` and `dropTags`,
+which `effectiveSkill` reads, so the hub's tags move with it; **`Notable.becomes`
+is the skill's own description while it is held**, and the hub prints that,
+the tags, the damage with the mode's own multiplier in it, and a COOLDOWN
+where Rimefield has taken the cast off the rate (`DamageDetail.cooldown`).
+**A SWITCH THAT IS ONLY A PROJECTILE UNDER A KEYSTONE SAYS SO ON THAT FACE**:
+Flurry is *Rimespike rises under 1 more enemy* bare and *+1 Projectile* under
+Hail, and the keyword check reads every face. **A CARD SAYS THE FACTS AND ONE
 LINE OF STATE**: `held/most` or `allocated` when owned; for a node you cannot
 take yet, *Requires N more points in X* off the cheapest route in, and nothing
-about what it unlocks or what a refund would strand. **THE WEB IS THE WINDOW
+about what it unlocks or what a refund would strand. **ITS FIGURES ARE LIT
+AND ITS KEYWORDS MARKED** (`litLine`), the name bold, the state coloured by
+what it means, and a `label: fact` line wears the label small. **THE WEB IS THE WINDOW
 EDGE TO EDGE**, like the Fissure: the head and the skill's own lines float over
 the weather and take no clicks themselves.
 

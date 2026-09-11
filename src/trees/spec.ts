@@ -18,6 +18,7 @@ export interface Notable {
   grants?: Record<string, unknown>;
   choices?: NodeChoice[];
   keystone?: true; // one a tree, and only ever the last node of a twig
+  becomes?: string; // a keystone's alone: the skill's own description while it is held
   under?: Record<string, NodeFace>;
   converts?: Record<string, StatConvert>; // a keystone's alone
 }

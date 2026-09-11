@@ -285,21 +285,21 @@ export const KEYWORDS: KeywordDef[] = [
   },
   {
     id: 'increased',
-    name: 'increased',
+    name: 'increased / reduced',
     says: ['increased', 'reduced'],
     means:
-      'Every increased line of one stat adds up, and the total multiplies the ' +
-      'base once. Two +50% increased lines are +100%, not +125%. Reduced is a ' +
-      'negative increase and joins the same sum.',
+      'Every increased line of one stat adds into one sum, and the sum ' +
+      'multiplies the base once. Two 50% increased lines are 100%, not 125%. ' +
+      'Reduced subtracts from the same sum.',
   },
   {
     id: 'more',
-    name: 'more',
+    name: 'more / less',
     says: ['more', 'less'],
     means:
       'Every more line multiplies on its own, on top of everything else. Two ' +
-      '50% more lines are 125% more, not 100% — which is why they are rare ' +
-      'and why a talent charges for one.',
+      '50% more lines are 125% more, not 100%. Less divides the same way: ' +
+      '40% less is 0.6 times.',
   },
   {
     id: 'critical',

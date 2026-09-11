@@ -118,7 +118,9 @@ export function faceOf(skillId: string, node: SkillNodeDef, allocated: readonly 
     const to = map[st.stat];
     if (!to) return st;
     description = description.split(to.say[0]).join(to.say[1]);
-    return { ...st, stat: to.stat, tags: [...(st.tags ?? []), ...(to.tags ?? [])] };
+    // A flipped line keeps its sign on the CARD: "+3% reduced" is the figure.
+    const value = to.flip ? -st.value : st.value;
+    return { ...st, stat: to.stat, value, tags: [...(st.tags ?? []), ...(to.tags ?? [])] };
   });
   return { description, stats, ...(node.grants ? { grants: node.grants } : {}) };
 }

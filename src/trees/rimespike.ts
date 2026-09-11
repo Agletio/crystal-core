@@ -44,7 +44,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'rs_bitter',
           name: 'Bitter Cold',
-          description: 'Chills you apply last 70% longer.',
+          description: 'Chills you apply have 70% more duration.',
           grants: { ailmentDuration: 1.7 },
         },
       },
@@ -70,7 +70,7 @@ const BRANCHES: Branch[] = [
     ],
     minors: [
       { name: 'Numbing', text: '+8% chance to apply Chill', stats: [stat('ailmentChance', 'flat', 8, ['chill'])] },
-      { name: 'Lingering', text: 'Chills you apply last 10% longer', grants: { ailmentDuration: 1.1 } },
+      { name: 'Lingering', text: 'Chills you apply have 10% more duration', grants: { ailmentDuration: 1.1 } },
       { name: 'Deepening', text: 'Chills you apply are 6% stronger', grants: { ailmentMultiplier: 1.06 } },
     ],
   },
@@ -169,12 +169,16 @@ const BRANCHES: Branch[] = [
             'Rimespike runs on a 2.5s cooldown, reaches 120% further, deals 100% ' +
             'more damage, and the spike stands for 5s, Chilling everything round ' +
             'it every 0.5s.',
+          becomes:
+            'Ice drives up through the ground under one enemy every 2.5s and stands ' +
+            'there for 5s, Chilling everything round it every 0.5s. Hits everything ' +
+            'in a 2.9 tile radius.',
           grants: {
             spikeStands: { seconds: 5, cooldown: 2.5, radius: 2.2, more: 1 },
             manaMultiplier: 1.2,
           },
           // On a cooldown, a cast-speed line is dead: it is read as cooldown.
-          converts: { castSpeed: { stat: 'cooldown', say: ['increased Cast Speed', 'reduced Skill Cooldown'] } },
+          converts: { castSpeed: { stat: 'cooldown', flip: true, say: ['increased Cast Speed', 'reduced Skill Cooldown'] } },
         },
       },
     ],
@@ -249,14 +253,14 @@ const BRANCHES: Branch[] = [
       id: 'rs_sleet',
       name: 'Sleet',
       description:
-        'Each cast grants a stack of Sleet, 5% increased Cast Speed each. At 8 stacks ' +
-        'the next cast Freezes what it hits and spends them all.',
+        'Each cast grants a stack of Sleet, 5% increased Cast Speed each. At maximum stacks ' +
+        'the next cast Freezes what it hits and removes all stacks. Maximum 8 stacks.',
       grants: { spikeTempo: { per: 5, stacks: 8 } },
       under: {
         rs_field: {
           description:
-            'Each cast grants a stack of Sleet, 5% reduced Skill Cooldown each. At 8 stacks ' +
-            'the next cast Freezes what it hits and spends them all.',
+            'Each cast grants a stack of Sleet, 5% reduced Skill Cooldown each. At maximum stacks ' +
+            'the next cast Freezes what it hits and removes all stacks. Maximum 8 stacks.',
           grants: { spikeTempo: { per: 5, stacks: 8 } },
         },
       },
@@ -267,8 +271,10 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'rs_flurry',
           name: 'Flurry',
-          description: '+1 Projectile.',
+          // A second spike bare; a Projectile is what the same switch IS under Hail.
+          description: 'Rimespike rises under 1 more enemy.',
           grants: { extraTargets: 1 },
+          under: { rs_tempo: { description: '+1 Projectile.', grants: { extraTargets: 1 } } },
         },
       },
       {
@@ -276,21 +282,40 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'rs_thrift',
           name: 'Squall',
-          description: 'Sleet Freezes 3 stacks sooner.',
+          description: '-3 maximum stacks of Sleet.',
           grants: { tempoStacks: -3 },
         },
       },
       {
-        minors: 3,
+        minors: 2,
         forkFrom: { twig: 1, at: 2 },
+        notable: {
+          id: 'rs_tempest',
+          name: 'Tempest',
+          description: '+3 maximum stacks of Sleet.',
+          grants: { tempoStacks: 3 },
+        },
+      },
+      {
+        minors: 3,
+        forkFrom: { twig: 2, at: 1 },
         notable: {
           id: 'rs_tempo',
           name: 'Hail',
           keystone: true,
           description:
             'Rimespike is thrown as 2 ice Projectiles from you, cast 100% faster, ' +
+            'each dealing 50% less damage. One enemy takes both; more take one each. ' +
+            'Gains the Projectile tag and loses the Area tag.',
+          becomes:
+            'Ice is thrown as 2 Projectiles from where you stand, cast 100% faster, ' +
             'each dealing 50% less damage. One enemy takes both; more take one each.',
-          grants: { spikeHail: { projectiles: 2, less: 0.5 }, manaMultiplier: 0.6 },
+          grants: {
+            spikeHail: { projectiles: 2, less: 0.5 },
+            manaMultiplier: 0.6,
+            addTags: ['projectile'],
+            dropTags: ['area'],
+          },
           stats: [stat('castSpeed', 'inc', 100)],
           // No circle, so an Area line is read as Projectile Damage.
           converts: { areaOfEffect: { stat: 'damage', tags: ['projectile'], say: ['Area of Effect', 'Projectile Damage'] } },

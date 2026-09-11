@@ -8298,9 +8298,12 @@ if (rule('ONE WORD PER MECHANISM — does the game say Arc every time it means A
     ...TRADES.map((t) => ({ id: t.spec.id, nodes: t.nodes })),
   ]) {
     for (const node of web.nodes) {
+      // A switch that is only a Projectile once a KEYSTONE makes the skill
+      // one names it on that face: Flurry is a second spike bare.
+      const faces = [node.description, ...Object.values(node.under ?? {}).map((f) => f.description)];
       for (const id of Object.keys(node.grants ?? {})) {
         const keyword = KEYWORD_BY_GRANT[id];
-        if (keyword && !names(node.description, keyword)) {
+        if (keyword && !faces.some((text) => names(text, keyword))) {
           silent.push(`${web.id}/${node.id} grants ${id} without saying ${keyword.name}`);
         }
       }

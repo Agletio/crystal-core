@@ -67,6 +67,14 @@ const pct = (n: number): string => `${+(n * 100).toFixed(1)}%`;
 /** A multiplier as the change it makes: 1.6 → "60%". */
 const more = (n: number): string => pct(n - 1);
 
+/** A multiplier said either way round: 1.6 → "60% more damage", 0.6 → "40%
+ *  less damage". A figure is never printed with a sign in front of a word. */
+const moreOrLess = (n: number, what: string): string =>
+  n >= 1 ? `${pct(n - 1)} more ${what}` : `${pct(1 - n)} less ${what}`;
+
+/** A tag as a card writes it: `projectile` → "Projectile". */
+const tagName = (t: unknown): string => (typeof t === 'string' ? t.charAt(0).toUpperCase() + t.slice(1) : String(t));
+
 const asNumber = (v: unknown): number | null => (typeof v === 'number' ? v : null);
 
 const pair = (v: unknown, a: string, b: string): [number, number] | null => {
@@ -91,7 +99,20 @@ const MOVERS = ['step', 'leap', 'gale'];
 
 export const GRANTS: GrantDef[] = [
   { id: 'convertTree', what: 'the skill is Converted to another damage type', reads: [STATS], changes: 'type' },
-  { id: 'addTags', what: 'the skill gains a tag, so more modifiers reach it', reads: [STATS], merge: 'append' },
+  {
+    id: 'addTags',
+    what: 'the skill gains a tag, so more modifiers reach it',
+    reads: [STATS],
+    merge: 'append',
+    say: (v) => (Array.isArray(v) && v.length ? `Gains the ${v.map(tagName).join(' and ')} tag` : null),
+  },
+  {
+    id: 'dropTags',
+    what: 'the skill loses a tag, so the lines aimed at it no longer reach',
+    reads: [STATS],
+    merge: 'append',
+    say: (v) => (Array.isArray(v) && v.length ? `Loses the ${v.map(tagName).join(' and ')} tag` : null),
+  },
   {
     id: 'manaMultiplier',
     what: 'the skill costs more mana',
@@ -101,7 +122,7 @@ export const GRANTS: GrantDef[] = [
     merge: 'product',
     say: (v) => {
       const n = asNumber(v);
-      return n === null ? null : `${more(n)} more mana per use`;
+      return n === null ? null : `${moreOrLess(n, 'mana')} per use`;
     },
   },
 
@@ -1239,7 +1260,7 @@ export const GRANTS: GrantDef[] = [
     what: 'the Sleet bar moved',
     reads: ['spike'],
     merge: 'sum',
-    say: (v) => { const n = asNumber(v); return n === null ? null : `Sleet Freezes ${Math.abs(n)} stacks ${n < 0 ? 'sooner' : 'later'}`; },
+    say: (v) => { const n = asNumber(v); return n === null ? null : `${n < 0 ? '' : '+'}${n} maximum stacks of Sleet`; },
   },
   {
     id: 'shatterShare',
@@ -1395,7 +1416,7 @@ export const GRANTS: GrantDef[] = [
     merge: 'product',
     say: (v) => {
       const n = asNumber(v);
-      return n === null ? null : `Ailments you apply deal ${more(n)} more damage`;
+      return n === null ? null : `Ailments you apply deal ${moreOrLess(n, 'damage')}`;
     },
   },
   {
@@ -1406,7 +1427,7 @@ export const GRANTS: GrantDef[] = [
     merge: 'product',
     say: (v) => {
       const n = asNumber(v);
-      return n === null ? null : `Ailments you apply last ${more(n)} longer`;
+      return n === null ? null : `Ailments you apply have ${moreOrLess(n, 'duration')}`;
     },
   },
 
@@ -1548,7 +1569,8 @@ export const GRANTS: GrantDef[] = [
     merge: 'sum',
     say: (v) => {
       const n = asNumber(v);
-      return n === null ? null : `+${n} Arc${n === 1 ? '' : 's'}`;
+      if (n === null) return null;
+      return n < 0 ? `${-n} fewer Arc${n === -1 ? '' : 's'}` : `+${n} Arc${n === 1 ? '' : 's'}`;
     },
   },
   {

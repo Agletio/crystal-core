@@ -2304,10 +2304,17 @@
   /* A tree or trade node. The state rides on the name's line rather than
      under it: it is one word and it is never the thing you came to read. */
   .tip__card--node { border-left-color: var(--edge-lit); }
-  .tip__card--node > .tip__name { color: var(--text); }
   .tip__state { font-size: 9px; letter-spacing: .1em; text-transform: uppercase;
                 color: var(--text-dim); margin-left: 7px; }
+  .tip__state--held { color: var(--verdite); }
+  .tip__state--open { color: var(--citrine); }
+  .tip__card--node > .tip__name { font-weight: 600; color: var(--text); }
   .tip__body { margin-top: 4px; }
+  /* THE FIGURES ARE LIT, so a card reads off its numbers first. */
+  .tip__num { color: var(--citrine); font-weight: 600; }
+  /* A labelled fact: the label small and dim, the fact beside it. */
+  .tip__fact { margin-top: 2px; }
+  .tip__key { font-size: 9px; letter-spacing: .1em; text-transform: uppercase; color: var(--text-dim); margin-right: 6px; }
 
   /*
    * A node is three stacked bitmaps: a dark casing, the stone itself, and a

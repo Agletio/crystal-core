@@ -510,13 +510,19 @@ function mainRows(): StatRow[] {
       unit: detail.seconds > 0 ? 'per cast' : cast ? 'per cast' : 'per hit',
       detail: damagePanel,
     },
-    {
-      key: cast ? 'casts/sec' : 'attacks/sec',
-      value: s.attacksPerSecond.toFixed(2),
-      why: cast
-        ? 'Cast speed. Attack speed does nothing for a spell.'
-        : 'Attack speed, times the skill’s own rate.',
-    },
+    detail.cooldown > 0
+      ? {
+          key: 'cooldown',
+          value: `${detail.cooldown.toFixed(2)}s`,
+          why: 'The skill runs on a cooldown, cut by reduced Skill Cooldown.',
+        }
+      : {
+          key: cast ? 'casts/sec' : 'attacks/sec',
+          value: s.attacksPerSecond.toFixed(2),
+          why: cast
+            ? 'Cast speed. Attack speed does nothing for a spell.'
+            : 'Attack speed, times the skill’s own rate.',
+        },
     {
       key: 'damage/sec',
       value: round(detail.perSecond),

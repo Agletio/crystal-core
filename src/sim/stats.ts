@@ -18,6 +18,7 @@ import {
   TYPELESS,
   MONSTER_BASE,
   SKILLS,
+  STANDING,
   findStat,
   monsterAddedStat,
   monsterResStat,
@@ -301,6 +302,8 @@ export interface DamageDetail {
   breakdown: DamageBreakdown;
   /** Applications per second: casts for a spell, swings for an attack. */
   rate: number;
+  /** Seconds between casts when the skill runs on a COOLDOWN, else 0. */
+  cooldown: number;
   /** Zero for a skill that hits. */
   seconds: number;
   maxStacks: number;
@@ -324,26 +327,32 @@ export function damageDetail(character: Character): DamageDetail {
     overTime && scale !== 1
       ? [{ label: AILMENT_NAMES[skill.damageTypes[0]] ?? 'Ailment', value: scale }]
       : [];
+  // Rimespike's two modes land here too, so the card's number is the sim's.
+  const stands = grants.spikeStands as { cooldown: number; more: number } | undefined;
+  const hail = grants.spikeHail as { less: number } | undefined;
+  if (stands?.more) ailment.push({ label: 'Rimefield', value: 1 + stands.more });
+  if (hail?.less) ailment.push({ label: 'Hail', value: 1 - hail.less });
 
   const breakdown = damageBreakdown(statMods(character), character.level, skill, grants, ailment);
   const perApplication = breakdown.total;
+  // A standing spike goes in on a COOLDOWN and not at the cast rate.
+  const rate = stands
+    ? 1 / (stands.cooldown * Math.max(STANDING.leastCooldown, 1 - stats.cooldown / 100))
+    : stats.attacksPerSecond;
 
   // A lasting skill stacks until the cap or until the oldest stack expires,
   // whichever comes first: casting faster than that buys nothing on ONE target.
-  const stacks = overTime
-    ? Math.min(AILMENT.maxStacks, stats.attacksPerSecond * seconds)
-    : 0;
+  const stacks = overTime ? Math.min(AILMENT.maxStacks, rate * seconds) : 0;
 
   return {
     skill,
     breakdown,
-    rate: stats.attacksPerSecond,
+    rate,
+    cooldown: stands ? 1 / rate : 0,
     seconds,
     maxStacks: AILMENT.maxStacks,
     perApplication,
-    perSecond: overTime
-      ? (stacks * perApplication) / seconds
-      : perApplication * stats.attacksPerSecond,
+    perSecond: overTime ? (stacks * perApplication) / seconds : perApplication * rate,
   };
 }
 
@@ -666,7 +675,7 @@ export function attributeMod(character: Character): RolledMod | null {
 }
 
 /** What ONE skill's own web has been walked to, whichever slot it is in. */
-function walked(character: Character, skillId: string): Record<string, unknown> {
+export function walked(character: Character, skillId: string): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   const progress = character.skills?.[skillId];
   for (const id of progress?.allocated ?? []) { // once a POINT, so a per-point grant adds up
@@ -729,12 +738,13 @@ export function effectiveSkill(
 ): SkillDef {
   const converted = convertedType(skill, grants);
   const added = (grants.addTags as string[] | undefined) ?? [];
-  if (!converted && added.length === 0) return skill;
+  const dropped = (grants.dropTags as string[] | undefined) ?? [];
+  if (!converted && added.length === 0 && dropped.length === 0) return skill;
 
   return {
     ...skill,
     damageTypes: converted ? [converted] : skill.damageTypes,
-    tags: added.length ? [...new Set([...skill.tags, ...added])] : skill.tags,
+    tags: [...new Set([...skill.tags.filter((t) => !dropped.includes(t)), ...added])],
   };
 }
 

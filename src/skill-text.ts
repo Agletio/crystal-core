@@ -27,7 +27,9 @@ export function mainWorkings(character: Character): string[] {
     detail.seconds > 0
       ? `${round(detail.perApplication)} ${type} damage over ${trim(detail.seconds)}s per ${use}`
       : `${round(detail.perApplication)} ${type} damage per ${use}`,
-    `${trim(stats.attacksPerSecond)} ${spell ? 'casts' : 'attacks'} per second`,
+    detail.cooldown > 0
+      ? `one cast every ${trim(detail.cooldown)}s`
+      : `${trim(detail.rate)} ${spell ? 'casts' : 'attacks'} per second`,
     // The two that decide WHICH weapon a skill wants, and neither was said
     // anywhere: a damage total cannot tell fast-and-light from slow-and-heavy.
     `×${trim(detail.skill.rateMultiplier)} ${spell ? 'cast' : 'attack'} speed`,
