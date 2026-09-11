@@ -118,13 +118,13 @@ assert(
 // WHAT HE GIVES FOR NOTHING, on the screen you pick on: a trade you cannot
 // tell from another until level 5 is four figures standing in a room.
 assert(
-  /comes with/i.test(text('pick-say')) && /mana/i.test(text('pick-say')),
+  /traits/i.test(text('pick-say')) && /mana/i.test(text('pick-say')),
   'and says what the trade gives before a point is spent',
   text('pick-say')
 );
 $('pick-rogue').click();
 assert(
-  /comes with/i.test(text('pick-say')) && /two weapons/i.test(text('pick-say')),
+  /traits/i.test(text('pick-say')) && /weapon.*each hand/i.test(text('pick-say')),
   'which is a different line for a different trade',
   text('pick-say')
 );
