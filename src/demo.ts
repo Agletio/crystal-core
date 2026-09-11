@@ -6252,6 +6252,61 @@ if (rule('DUAL WIELDING — is a pair two weapons or an average of one?')) {
 // ===========================================================================
 }
 
+if (rule('FIREBALL\'S TWO MODES — a fall from above and a fan of embers, played')) {
+
+{
+  const played = (route: string[]) => {
+    const who = ladderCharacter(4, new Rng(88), 'fireball');
+    skillProgress(who, 'fireball').allocated = route;
+    let killed = 0;
+    let seconds = 0;
+    for (let i = 0; i < 3; i++) {
+      const final = runToCompletion(new RunSim(ladderSet(4, new Rng(400 + i), pool), who, new Rng(404 + i)), 600);
+      killed += final.killed;
+      seconds += final.elapsed;
+    }
+    return killed / Math.max(1, seconds);
+  };
+  const bare = played([]);
+  const fell = played(routeTo('fireball', 'fb_meteor'));
+  const fanned = played(routeTo('fireball', 'fb_spray'));
+  const off = (n: number) => `${n >= bare ? '+' : ''}${Math.round((n / Math.max(0.01, bare) - 1) * 100)}%`;
+  line(`  band 4, three descents: bare tree ${bare.toFixed(2)}, Meteor ${fell.toFixed(2)}, Ember Spray ${fanned.toFixed(2)} kills/s`);
+  gauge(`a Meteor alone is ${off(fell)} of a bare tree, a fan of embers ${off(fanned)} — wanted within 40% either way`);
+
+  const dummy = (x: number, y: number) =>
+    ({ x, y, life: 1e6, radius: 0.3, dead: false, ailments: [] as unknown[], stats: { maxLife: 1e6, attacksPerSecond: 1 } }) as any;
+  const cast = (grants: Record<string, unknown>, enemies: any[]) => {
+    const hits: Array<[number, number]> = [];
+    SKILL_BEHAVIOURS.projectile({
+      skill: SKILL_BY_ID.fireball, user: { ...dummy(0, 0), facing: 0 }, primary: enemies[0], enemies,
+      rng: new Rng(9), grants, crit: false, castIndex: 0, heft: 1, sinceKill: 0, sinceHit: 0, streak: 1,
+      hit: (who: any, m: number) => { hits.push([enemies.indexOf(who), m]); },
+      ailment: () => {}, leave: () => {}, areaRadius: (b: number) => b, vfx: () => {}, blink: () => {}, tremor: () => {}, wound: () => {},
+    } as any);
+    return hits;
+  };
+  // Beside the target inside 2.2 tiles, and one well out of it.
+  const ring = cast(nodeById('fireball', 'fb_meteor')?.grants ?? {}, [dummy(3, 0), dummy(3.5, 1.2), dummy(3, 4)]);
+  check(
+    ring.some(([i]) => i === 1) && !ring.some(([i]) => i === 2) && ring.every(([, m]) => m > 1.19),
+    'a Meteor hits what stands round the body it fell on, 20% more, and not what stands away',
+    ring.map(([i, m]) => `${i}:${m.toFixed(2)}`).join(' ')
+  );
+  // Five in the fan and a sixth behind you: one ember each, none behind.
+  const fan = [dummy(2, 0), dummy(3, 0.5), dummy(3, -0.6), dummy(4, 1), dummy(4, -1), dummy(-2, 0)];
+  const embers = cast(nodeById('fireball', 'fb_spray')?.grants ?? {}, fan);
+  const direct = embers.filter(([, m]) => m > 0.29 && m < 0.31).map(([i]) => i);
+  check(
+    direct.length === 5 && !direct.includes(5) && new Set(direct).size === 5,
+    'a fan of five embers lands one on each of five bodies in front and none behind',
+    embers.map(([i, m]) => `${i}:${m.toFixed(2)}`).join(' ')
+  );
+}
+
+// ===========================================================================
+}
+
 if (rule('SHOCKWAVE\'S TWO MODES — a crack and a shaking floor, played')) {
 
 {

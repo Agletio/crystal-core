@@ -132,6 +132,8 @@ const BRANCHES: Branch[] = [
       name: 'Split Cast',
       description: 'Fireball throws +1 Projectile.',
       grants: { extraTargets: 1, manaMultiplier: 1.15 },
+      // A Projectile is one more fall under Meteor, and an ember is one already.
+      under: { fb_meteor: { description: '+1 Meteor.', grants: { extraTargets: 1, manaMultiplier: 1.15 } } },
     },
     twigs: [
       {
@@ -143,6 +145,10 @@ const BRANCHES: Branch[] = [
             'Projectiles Spread 60% further, and take the enemies furthest ' +
             'into it rather than the nearest.',
           grants: { spreadRange: 1.6, spreadFar: true, manaMultiplier: 1.08 },
+          under: {
+            fb_meteor: { description: 'Meteors Spread 60% further, and fall on the enemies furthest into it rather than the nearest.', grants: { spreadRange: 1.6, spreadFar: true, manaMultiplier: 1.08 } },
+            fb_spray: { description: 'The fan reaches 2 tiles deeper.', grants: { spray: { reach: 2 }, manaMultiplier: 1.08 } },
+          },
         },
       },
       {
@@ -152,16 +158,29 @@ const BRANCHES: Branch[] = [
           name: 'Volley',
           description: 'Fireball throws +1 Projectile.',
           grants: { extraTargets: 1, manaMultiplier: 1.15 },
+          under: { fb_meteor: { description: '+1 Meteor.', grants: { extraTargets: 1, manaMultiplier: 1.15 } } },
         },
       },
       {
+        /**
+         * EMBER SPRAY, the keystone at the tip of the Salvo line: the ball is a
+         * fan of embers, one body each and the rest lost, so every Projectile
+         * walked to reach it is one more ember. A room in front of you is the
+         * whole of what it is worth.
+         */
         minors: 4,
         forkFrom: { twig: 1, at: 2 },
         notable: {
-          id: 'fb_barrage',
-          name: 'Barrage',
-          description: '+2 Projectiles.',
-          grants: { extraTargets: 2, manaMultiplier: 1.15 },
+          id: 'fb_spray',
+          name: 'Ember Spray',
+          keystone: true,
+          description:
+            'Fireball is 5 embers in a 60° fan at least 5 tiles deep, one enemy each, 70% less ' +
+            'damage apiece; an ember with nobody to land on is lost.',
+          becomes:
+            'You throw 5 embers in a 60° fan at least 5 tiles deep, one enemy each nearest first, ' +
+            'each 70% less damage and Splashing on its own. An ember with nobody to land on is lost.',
+          grants: { spray: { count: 5, arc: 60, reach: 5, less: 0.7 }, manaMultiplier: 1.15 },
         },
       },
     ],
@@ -175,6 +194,11 @@ const BRANCHES: Branch[] = [
       name: 'Piercing Flame',
       description: 'Fireball gains +1 Pierce.',
       grants: { pierce: 1, manaMultiplier: 1.15 },
+      // Nothing flies under either keystone: a Pierce is a wider Burst or an ember.
+      under: {
+        fb_meteor: { description: 'The Meteor Bursts 0.4 tiles wider.', grants: { meteor: { radius: 0.4 }, manaMultiplier: 1.15 } },
+        fb_spray: { description: '+1 ember.', grants: { spray: { count: 1 }, manaMultiplier: 1.15 } },
+      },
     },
     twigs: [
       {
@@ -186,15 +210,30 @@ const BRANCHES: Branch[] = [
           name: 'Clean Through',
           description: 'Pierce deals full damage instead of 70%.',
           grants: { pierceDamage: 1, manaMultiplier: 1.08 },
+          under: {
+            fb_meteor: { description: 'The Meteor deals a further 20% more damage.', grants: { meteor: { more: 0.2 }, manaMultiplier: 1.08 } },
+            fb_spray: { description: 'Embers deal 60% less damage rather than 70%.', grants: { spray: { less: -0.1 }, manaMultiplier: 1.08 } },
+          },
         },
       },
       {
+        /**
+         * METEOR, the keystone at the tip of the Bore line: no shot at all, the
+         * fire falls on the body and Bursts. The Pierce walked to reach it is
+         * width under it, and a Projectile is a second fall.
+         */
         minors: 5,
         notable: {
-          id: 'fb_overpen',
-          name: 'Overpenetration',
-          description: 'Fireball gains +1 Pierce.',
-          grants: { pierce: 1, manaMultiplier: 1.15 },
+          id: 'fb_meteor',
+          name: 'Meteor',
+          keystone: true,
+          description:
+            'Fireball falls from above onto the enemy and Bursts 1.6 tiles round it, for ' +
+            '20% more damage. Nothing Pierces or Arcs. Gains the Area tag and loses the Projectile tag.',
+          becomes:
+            'Fire falls from above onto the enemy you aimed at and Bursts 1.6 tiles round it, ' +
+            '20% more damage to everything it covers. Nothing Pierces or Arcs, and a Projectile is one more fall.',
+          grants: { meteor: { radius: 1.6, more: 0.2 }, manaMultiplier: 1.3, addTags: ['area'], dropTags: ['projectile'] },
         },
       },
     ],
@@ -208,6 +247,10 @@ const BRANCHES: Branch[] = [
       name: 'Arcing Flame',
       description: 'Fireball gains +1 Arc.',
       grants: { chains: 1, manaMultiplier: 1.15 },
+      under: {
+        fb_meteor: { description: 'The Meteor Bursts 0.4 tiles wider.', grants: { meteor: { radius: 0.4 }, manaMultiplier: 1.15 } },
+        fb_spray: { description: 'The fan opens 20° wider.', grants: { spray: { arc: 20 }, manaMultiplier: 1.15 } },
+      },
     },
     twigs: [
       {
@@ -217,6 +260,10 @@ const BRANCHES: Branch[] = [
           name: 'Rebound',
           description: 'Arcs deal full damage instead of 70%.',
           grants: { chainDamage: 1, manaMultiplier: 1.08 },
+          under: {
+            fb_meteor: { description: 'The Meteor deals a further 20% more damage.', grants: { meteor: { more: 0.2 }, manaMultiplier: 1.08 } },
+            fb_spray: { description: 'Embers deal 60% less damage rather than 70%.', grants: { spray: { less: -0.1 }, manaMultiplier: 1.08 } },
+          },
         },
       },
       {
@@ -227,6 +274,10 @@ const BRANCHES: Branch[] = [
           name: 'Leaping Flame',
           description: 'Fireball gains +1 Arc.',
           grants: { chains: 1, manaMultiplier: 1.15 },
+          under: {
+            fb_meteor: { description: 'The Meteor Bursts 0.4 tiles wider.', grants: { meteor: { radius: 0.4 }, manaMultiplier: 1.15 } },
+            fb_spray: { description: 'The fan opens 20° wider.', grants: { spray: { arc: 20 }, manaMultiplier: 1.15 } },
+          },
         },
       },
     ],

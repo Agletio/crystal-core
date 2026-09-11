@@ -883,12 +883,20 @@
    "say": "a curling gust of freezing wind drawn as three swept white streaks, pale ice-blue and white with a blue-black shadow side, NOT a cloud, NOT a feather."
   },
   {
+   "id": "wn_al_ball",
+   "say": "a single crackling ball of lightning floating alone, a bright white-gold core with short jagged gold sparks radiating out from it in every direction and a faint pale glow round the whole, NOT a sun, NOT a star shape, NOT a planet, NOT a face, NOT fire, NOT blue."
+  },
+  {
+   "id": "wn_al_cloudburst",
+   "say": "a single small dark storm cloud with three jagged gold lightning bolts striking straight down out of its flat underside, spaced apart, the cloud dark blue-grey and heavy, the bolts bright gold with white cores, NOT rain, NOT a tornado, NOT one bolt, NOT a face, NOT ground."
+  },
+  {
    "id": "wn_fb_meteor",
    "say": "a single burning rock falling steeply downward, a dark cracked stone ball with orange-red fire streaming up and behind it in a long tapering tail, bright yellow-white at the stone's leading edge, NOT a comet with a blue tail, NOT a planet, NOT a sun, NOT a ground, NOT an explosion."
   },
   {
    "id": "wn_fb_spray",
-   "say": "a fan of five small burning embers spraying outward and upward from one point at the bottom, each ember a small orange-red flame drop with a short yellow trail, spreading apart like a hand of cards, NOT a torch, NOT a campfire, NOT a single flame, NOT fireworks, NOT a hand."
+   "say": "FIVE small separate orange-red teardrop-shaped fire drops flying apart in a spreading fan, each one alone with clear empty transparent space between them, arranged along an arc across the upper half of the frame with their pointed tails all aimed back at one empty point near the bottom, nothing at that point at all, NOT a campfire, NOT logs, NOT wood, NOT a single big flame, NOT a bonfire, NOT a torch, NOT touching each other, NOT fireworks, NOT a hand."
   },
   {
    "id": "wn_sw_fissure",

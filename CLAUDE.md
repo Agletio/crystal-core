@@ -1176,6 +1176,18 @@ every 0.5s for 3s to whatever still stands in it, through `dealDamage` like any
 hit. `inWedge` in `src/sim/skills.ts` is the one answer to who is in a wedge
 or on a line, read by the cast and the tick alike. Measured at band 4: the
 crack alone is +6% of a bare tree, the shaking floor +20%.
+**FIREBALL'S TWO ARE A FALL AND A FAN.** METEOR (`meteor`, tip of the Bore
+line) throws nothing: the fire falls on the body aimed at and Bursts 1.6 tiles
+round it for 20% more, a Projectile is a second fall, nothing Pierces or Arcs
+— the Pierce and Arc nodes walked to reach it are a wider Burst under it — and
+it trades the Projectile tag for Area. EMBER SPRAY (`spray`, tip of the Salvo
+line) is 5 embers in a 60° fan, one body each nearest first and the rest lost,
+70% less apiece, and the fan always reaches the body you aimed at, or a cast
+from range was lost whole and the mode read as broken (0.13 kills/s). Measured
+at band 4: the fall alone is +33% of a bare tree, the fan −22%. **At band 4 the
+damage number is not the lever**: a Meteor at 120%, 50% and 20% more all
+measured 1.76 kills/s, because the floor dies to one cast whatever it is; the
+RADIUS moved it.
 
 **RIMESPIKE IS AN AREA SKILL, AND RIMEFIELD WAS THE FIRST MODE SWITCH.**
 *"Make rimespike a large aoe spike instead of single target + splash… it does an

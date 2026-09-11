@@ -1187,6 +1187,39 @@ export const GRANTS: GrantDef[] = [
     },
   },
   {
+    /** FIREBALL'S FIRST MODE. No shot: the fire falls on the body you aimed at
+     *  and Bursts `radius` round it for `more` more. A Projectile is a second
+     *  fall on another body; nothing Pierces or Arcs. */
+    id: 'meteor',
+    changes: 'burst',
+    what: 'the fireball falls from above and bursts instead of flying',
+    reads: ['projectile'],
+    merge: 'bag',
+    say: (v) => {
+      const o = v as { radius?: number; more?: number } | null;
+      if (!o || typeof o.radius !== 'number' || typeof o.more !== 'number') return null;
+      return `Fireball falls from above and Bursts ${o.radius} tiles round what it lands on, for ${pct(o.more)} more damage`;
+    },
+  },
+  {
+    /** FIREBALL'S OTHER MODE. The cast is `count` embers in a fan `arc` wide
+     *  and `reach` deep, one enemy each nearest first, `less` less apiece; an
+     *  ember with nobody to land on is lost. A Projectile is one more ember. */
+    id: 'spray',
+    changes: 'targets',
+    what: 'the fireball is a fan of embers instead',
+    reads: ['projectile'],
+    merge: 'bag',
+    say: (v) => {
+      const o = v as { count?: number; arc?: number; reach?: number; less?: number } | null;
+      if (!o || typeof o.count !== 'number' || typeof o.arc !== 'number' || typeof o.reach !== 'number' || typeof o.less !== 'number') return null;
+      return (
+        `Fireball is ${o.count} embers in a ${o.arc}° fan ${o.reach} tiles deep, one enemy each, ` +
+        `${pct(o.less)} less damage apiece; an ember with nobody to land on is lost`
+      );
+    },
+  },
+  {
     /** SHOCKWAVE'S FIRST MODE. The wedge is a LINE: a crack `reach` tiles
      *  straight ahead and `width` across, and everything on it takes the hit. */
     id: 'lineWave',

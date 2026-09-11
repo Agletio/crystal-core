@@ -108,7 +108,8 @@ const num = (v: unknown, fallback: number): number =>
 const IMPACT_TTL = 0.8; // what a shot LEAVES boils up and breaks apart, and outlives the shot
 const FLIGHT = { speed: 9, least: 0.3, arrives: 1 / 1.8, hailGap: 0.09 }; // hailGap: seconds between one Hail shard leaving and the next, so a volley reads as a volley // a ball: tiles/s, shortest flight, share of its picture at which `fireBolt` lands
 const CONE_MOUTH = 0.95; // the Burst under a Cone's mouth, in tiles
-const BLADE = { speed: 7, gap: 0.12 }; // a thrown ghost blade: tiles/s each way, and seconds between one leaving and the next
+const BLADE = { speed: 7, gap: 0.12 };
+const METEOR_DROP = 4; // tiles above the body a Meteor is drawn falling from // a thrown ghost blade: tiles/s each way, and seconds between one leaving and the next
 
 /** Which enemies the Projectiles past the first take. Nearest by default; a
  *  node may widen the Spread and turn the pick AROUND, which is the only way a
@@ -279,6 +280,63 @@ function alongRay(
   const py = e.y - origin.y;
   const along = px * ux + py * uy;
   return { along, off: Math.abs(px * uy - py * ux) };
+}
+
+/** METEOR: the fire falls on the body aimed at and on one more for every
+ *  Projectile, and Bursts round each. The body under it takes the hit and the
+ *  Burst both, which is what standing under a falling rock costs. */
+function fallOn(use: SkillUse, meteor: { radius: number; more: number }, scale: (e: Entity) => number): void {
+  const g = use.grants;
+  const more = 1 + meteor.more;
+  const radius = use.areaRadius(meteor.radius);
+  const targets = [
+    use.primary,
+    ...spreadTargets(use, use.enemies.filter((e) => !e.dead && e !== use.primary), num(g.extraTargets, 0)),
+  ];
+  targets.forEach((at, i) => {
+    if (at.dead) return;
+    use.hit(at, more * scale(at));
+    for (const enemy of use.enemies) {
+      if (enemy === at || enemy.dead || !within(at, enemy, radius)) continue;
+      use.hit(enemy, more * scale(enemy));
+    }
+    burstFrom(use, at, scale, true);
+    // Down out of the sky onto the body, then the Burst where it landed.
+    use.vfx(use.skill.vfxKind ?? 'flame', [{ x: at.x, y: at.y - METEOR_DROP }, { x: at.x, y: at.y }], 0.45, i * 0.15);
+    use.vfx('burst', [{ x: at.x, y: at.y }, { x: at.x + radius, y: at.y }], 0.32, 0.45 * FLIGHT.arrives + i * 0.15);
+  });
+}
+
+/** EMBER SPRAY: a fan of embers ahead of you, one enemy each nearest first, and
+ *  the rest lost. What a use is worth is how many bodies stand in the fan. */
+function fanOut(use: SkillUse, spray: { count: number; arc: number; reach: number; less: number }, scale: (e: Entity) => number): void {
+  const g = use.grants;
+  const count = Math.max(1, Math.round(spray.count + num(g.extraTargets, 0)));
+  const share = Math.max(0.05, 1 - spray.less);
+  const dx = use.primary.x - use.user.x;
+  const dy = use.primary.y - use.user.y;
+  const facing = Math.hypot(dx, dy) < 1e-3 ? use.user.facing : Math.atan2(dy, dx);
+  // The fan always reaches the body you aimed at, or a cast from range is lost whole.
+  const reach = Math.max(spray.reach, separation(use.user, use.primary) + use.primary.radius);
+  const wedge: Wedge = { x: use.user.x, y: use.user.y, facing, reach, half: (spray.arc / 2) * (Math.PI / 180) };
+  const inside = use.enemies
+    .filter((e) => !e.dead && inWedge(wedge, e))
+    .sort((a, b) => separation(use.user, a) - separation(use.user, b))
+    .slice(0, count);
+  inside.forEach((e, i) => {
+    use.hit(e, share * scale(e));
+    splashFrom(use, e, (o) => share * scale(o));
+    burstFrom(use, e, scale, true);
+    use.vfx(use.skill.vfxKind ?? 'flame', [{ x: use.user.x, y: use.user.y }, { x: e.x, y: e.y }], 0.3, i * 0.04);
+  });
+  // The lost embers are still thrown, into the empty fan.
+  for (let i = inside.length; i < count; i++) {
+    const turn = facing + (i / Math.max(1, count - 1) - 0.5) * wedge.half * 2;
+    use.vfx(use.skill.vfxKind ?? 'flame', [
+      { x: use.user.x, y: use.user.y },
+      { x: use.user.x + Math.cos(turn) * reach, y: use.user.y + Math.sin(turn) * reach },
+    ], 0.3, i * 0.04);
+  }
 }
 
 /** A wedge's picture: where it opens from and its two rim corners. */
@@ -555,6 +613,18 @@ export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
 
     const castMultiplier = castScale(g, use.castIndex);
     const scale = (e: Entity) => castMultiplier * targetScale(use, e);
+
+    // THE TWO MODES a thrown ball may be instead, each the whole use.
+    const meteor = g.meteor as { radius: number; more: number } | undefined;
+    if (meteor) {
+      fallOn(use, meteor, scale);
+      return;
+    }
+    const spray = g.spray as { count: number; arc: number; reach: number; less: number } | undefined;
+    if (spray) {
+      fanOut(use, spray, scale);
+      return;
+    }
 
     // A BALL flies and a bolt of lightning does not: a flight is timed off the
     // distance so the trail is on screen, and what it leaves waits for it.
