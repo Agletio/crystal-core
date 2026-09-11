@@ -73,7 +73,7 @@ const num = (v: unknown, fallback: number): number =>
   typeof v === 'number' ? v : fallback;
 
 const IMPACT_TTL = 0.8; // what a shot LEAVES boils up and breaks apart, and outlives the shot
-const FLIGHT = { speed: 9, least: 0.3, arrives: 1 / 1.8 }; // a ball: tiles/s, shortest flight, share of its picture at which `fireBolt` lands
+const FLIGHT = { speed: 9, least: 0.3, arrives: 1 / 1.8, hailGap: 0.09 }; // hailGap: seconds between one Hail shard leaving and the next, so a volley reads as a volley // a ball: tiles/s, shortest flight, share of its picture at which `fireBolt` lands
 const CONE_MOUTH = 0.95; // the Burst under a Cone's mouth, in tiles
 
 /** Which enemies the Projectiles past the first take. Nearest by default; a
@@ -264,10 +264,11 @@ function hailOf(use: SkillUse, hail: { projectiles: number; less: number }, scal
     const target = targets[i % targets.length];
     if (target.dead) continue;
     const flight = Math.max(FLIGHT.least, separation(use.user, target) / FLIGHT.speed);
+    const leaves = i * FLIGHT.hailGap; // one after another, never a stack
     use.hit(target, share * scale(target));
     if (freezes) use.freeze(target);
     burstFrom(use, target, (e) => share * scale(e), true);
-    use.vfx('shard', [{ x: use.user.x, y: use.user.y }, { x: target.x, y: target.y }], flight);
+    use.vfx('shard', [{ x: use.user.x, y: use.user.y }, { x: target.x, y: target.y }], flight, leaves);
     if (pierce <= 0) continue;
     const from = separation(use.user, target);
     const behind = use.enemies
@@ -279,7 +280,7 @@ function hailOf(use: SkillUse, hail: { projectiles: number; less: number }, scal
     let last: Entity = target;
     for (const { e } of behind) {
       use.hit(e, pierceShare * share * scale(e));
-      use.vfx('shard', [{ x: last.x, y: last.y }, { x: e.x, y: e.y }], flight, flight * FLIGHT.arrives);
+      use.vfx('shard', [{ x: last.x, y: last.y }, { x: e.x, y: e.y }], flight, leaves + flight * FLIGHT.arrives);
       last = e;
     }
   }

@@ -4,6 +4,7 @@
 import type { NodeChoice, NodeStat, SkillNodeDef } from './node';
 
 export interface Minor {
+  name?: string; // a twig's minor is named, so a gate can say which one it means
   text: string;
   stats?: NodeStat[];
   grants?: Record<string, unknown>;

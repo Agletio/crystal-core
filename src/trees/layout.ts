@@ -34,6 +34,7 @@ const TWIG_STEP = 1.9;
 const BRANCH_ARC = 0.125;
 
 const TAU = Math.PI * 2;
+const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI'];
 
 /** THE SILHOUETTE, per tree: where the six branches hang, how the ways in
  *  turn, how a twig twists as it goes, and how the whole is stretched. The
@@ -208,9 +209,12 @@ export function buildTree(spec: TreeSpec): BuiltTree {
       const angle = slotAngle((i * 2 * OUTER) / count) + (jitter(ring, i, 1) - 0.5) * 0.08;
       const reach = r + (jitter(ring, i, 2) - 0.5) * 0.3;
       const common = spec.common[(ring * 3 + i) % spec.common.length];
+      // Named so a gate can name it: a way in by number, a ring node for the
+      // branch it stands under.
+      const name = ring === 1 ? `${spec.minorName} ${ROMAN[i]}` : `${spec.branches[i].theme} Way`;
       nodes.push({
         id: trunkAt(ring, i),
-        name: spec.minorName,
+        name,
         description: common.text,
         kind: 'minor',
         points,
@@ -307,7 +311,7 @@ export function buildTree(spec: TreeSpec): BuiltTree {
 
         nodes.push({
           id,
-          name: last ? twig.notable.name : branch.theme,
+          name: last ? twig.notable.name : minor.name ?? `${branch.theme} ${ROMAN[t]}`,
           description: last ? twig.notable.description : minor.text,
           kind: last ? 'notable' : 'minor',
           x: Math.cos(angle) * reach,

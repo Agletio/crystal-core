@@ -684,6 +684,9 @@ function renderWeb(): void {
       'data-x': pos.x.toFixed(1),
       'data-y': pos.y.toFixed(1),
     });
+    // A DARK PAD under the frame: the weather behind the web is a picture, and
+    // a ring drawn straight onto it was the same value as a snow streak.
+    group.append(svgEl('circle', { class: 'web__node__pad', cx: pos.x.toFixed(1), cy: pos.y.toFixed(1), r: (r * 1.25).toFixed(1) }));
     for (const part of frame(node.kind, pos, r, 'web__node')) group.append(part);
     const glyphSize = r * 1.24;
     const glyph = nodeGlyph(node, glyphSize);

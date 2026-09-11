@@ -23,7 +23,7 @@ const COMMON: Minor[] = [
   { text: '+5% increased Cold Damage', stats: [stat('damage', 'inc', 5, ['cold'])] },
   { text: '+4% increased Damage', stats: [stat('damage', 'inc', 4)] },
   { text: '+3% increased Cast Speed', stats: [stat('castSpeed', 'inc', 3)] },
-  { text: '+1% Critical Chance', stats: [stat('critChance', 'flat', 1)] },
+  { name: 'Sharp Weight', text: '+1% Critical Chance', stats: [stat('critChance', 'flat', 1)] },
   { text: '+8% Critical Damage', stats: [stat('critMultiplier', 'flat', 8)] },
   { text: '+6% increased Area of Effect', stats: [stat('areaOfEffect', 'inc', 6)] },
 ];
@@ -69,9 +69,9 @@ const BRANCHES: Branch[] = [
       },
     ],
     minors: [
-      { text: '+8% chance to apply Chill', stats: [stat('ailmentChance', 'flat', 8, ['chill'])] },
-      { text: 'Chills you apply last 10% longer', grants: { ailmentDuration: 1.1 } },
-      { text: 'Chills you apply are 6% stronger', grants: { ailmentMultiplier: 1.06 } },
+      { name: 'Numbing', text: '+8% chance to apply Chill', stats: [stat('ailmentChance', 'flat', 8, ['chill'])] },
+      { name: 'Lingering', text: 'Chills you apply last 10% longer', grants: { ailmentDuration: 1.1 } },
+      { name: 'Deepening', text: 'Chills you apply are 6% stronger', grants: { ailmentMultiplier: 1.06 } },
     ],
   },
   {
@@ -114,9 +114,9 @@ const BRANCHES: Branch[] = [
       },
     ],
     minors: [
-      { text: '+2% Critical Chance', stats: [stat('critChance', 'flat', 2)] },
-      { text: '+12% Critical Damage', stats: [stat('critMultiplier', 'flat', 12)] },
-      { text: '+6% increased Damage', stats: [stat('damage', 'inc', 6)] },
+      { name: 'Keen Edge', text: '+2% Critical Chance', stats: [stat('critChance', 'flat', 2)] },
+      { name: 'Cruel Edge', text: '+12% Critical Damage', stats: [stat('critMultiplier', 'flat', 12)] },
+      { name: 'Heavy Ice', text: '+6% increased Damage', stats: [stat('damage', 'inc', 6)] },
     ],
   },
   {
@@ -174,9 +174,9 @@ const BRANCHES: Branch[] = [
       },
     ],
     minors: [
-      { text: '+7% increased Area of Effect', stats: [stat('areaOfEffect', 'inc', 7)] },
-      { text: '+5% increased Cold Damage', stats: [stat('damage', 'inc', 5, ['cold'])] },
-      { text: 'Rimespike costs 6% less mana', grants: { manaMultiplier: 0.94 } },
+      { name: 'Wide Frost', text: '+7% increased Area of Effect', stats: [stat('areaOfEffect', 'inc', 7)] },
+      { name: 'Cold Snap', text: '+5% increased Cold Damage', stats: [stat('damage', 'inc', 5, ['cold'])] },
+      { name: 'Thin Air', text: 'Rimespike costs 6% less mana', grants: { manaMultiplier: 0.94 } },
     ],
   },
   {
@@ -224,9 +224,9 @@ const BRANCHES: Branch[] = [
       },
     ],
     minors: [
-      { text: '+10% Critical Damage', stats: [stat('critMultiplier', 'flat', 10)] },
-      { text: 'A Freeze holds 8% longer', grants: { freezeLonger: 1.08 } },
-      { text: '+5% increased Cold Damage', stats: [stat('damage', 'inc', 5, ['cold'])] },
+      { name: 'Brittle Bones', text: '+10% Critical Damage', stats: [stat('critMultiplier', 'flat', 10)] },
+      { name: 'Long Winter', text: 'A Freeze holds 8% longer', grants: { freezeLonger: 1.08 } },
+      { name: 'Winter\'s Bite', text: '+5% increased Cold Damage', stats: [stat('damage', 'inc', 5, ['cold'])] },
     ],
   },
   {
@@ -283,9 +283,9 @@ const BRANCHES: Branch[] = [
       },
     ],
     minors: [
-      { text: 'Keep 1 stack of Sleet after a Freeze', grants: { tempoKeep: 1 } },
-      { text: '+3% more damage per stack of Sleet', grants: { tempoDamage: 3 } },
-      { text: '+4% increased Cast Speed', stats: [stat('castSpeed', 'inc', 4)] },
+      { name: 'Holdfast', text: 'Keep 1 stack of Sleet after a Freeze', grants: { tempoKeep: 1 } },
+      { name: 'Gathering Storm', text: '+3% more damage per stack of Sleet', grants: { tempoDamage: 3 } },
+      { name: 'Quick Flurries', text: '+4% increased Cast Speed', stats: [stat('castSpeed', 'inc', 4)] },
     ],
   },
   {
@@ -352,9 +352,9 @@ const BRANCHES: Branch[] = [
       },
     ],
     minors: [
-      { text: '+5% increased Cold Damage', stats: [stat('damage', 'inc', 5, ['cold'])] },
+      { name: 'Cold Weight', text: '+5% increased Cold Damage', stats: [stat('damage', 'inc', 5, ['cold'])] },
       { text: '+1% Critical Chance', stats: [stat('critChance', 'flat', 1)] },
-      { text: '+6% increased Damage', stats: [stat('damage', 'inc', 6)] },
+      { name: 'Dead Weight', text: '+6% increased Damage', stats: [stat('damage', 'inc', 6)] },
     ],
   },
 ];
