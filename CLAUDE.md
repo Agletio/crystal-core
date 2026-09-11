@@ -1077,8 +1077,13 @@ holding `forkFrom.at`; `routeTo` in `src/skills-tree.ts` is the ONE router,
 cheapest by points with a gate's copies on the way. Left-click adds a point,
 right-click takes one off, the node prints `held/most`, and the card says
 "Opens once X holds N". **THE SILHOUETTE IS `SHAPES` IN `src/trees/layout.ts`**
-— where the six branches hang, a twist on the twigs, a stretch on the whole —
-eight of them mapped by `SHAPE_OF`, the content identical. **THE CEILING'S WALK
+— where the six branches hang, how far each stands off the ring (`reach`), how
+wide its twigs fan (`arc`), a twist on the twigs (one, or `twists` a branch),
+a stretch on the whole — ELEVEN of them mapped by `SHAPE_OF`, one a tree and
+no two alike, the content identical: *"a unique looking layout for each
+skill."* A shape is judged in a screenshot AND by the geometry demo, because a
+twist that reads well curls one twig under the next; a wheel at 0.95 and a
+vortex at 1.45 both failed it and ship at 0.8 and 0.9. **THE CEILING'S WALK
 BUYS A GATE AND ITS NOTABLE AS ONE PACKAGE** (`greedyTree`), scored per point
 with `REACH` on the notable, because a rule is invisible to `buildPower` and a
 walk that cannot see past a gate filled the trunk and died at a tenth of the
@@ -1103,11 +1108,21 @@ Frostwork growing the field off what the last cast hit (`fieldFeeds`,
 refunding a crowd (`refundOnCrowd`) and Glassing shattering a Critical
 (`shatterShare`, `SHATTER.radius`). **A RULE THE RUN KEEPS reads `[STATS]`**,
 the way a kill's tempo does, so the tree check and the fingerprint both leave it
-to a played descent. **A SKILL MAY HAVE WEATHER**: a whole generated SCENE, `web_<skillId>` in
+to a played descent. **EVERY SKILL HAS WEATHER**: a whole generated SCENE, `web_<skillId>` in
 `tools/art/scenes.json` asked through `scene.mts` like the camp — a wide
 picture, dark and low-contrast, with no focal point — and drawn by
-`src/ui/skills.ts` as one `.web__weather` layer filling the window under the
-web. Rimespike's blizzard is the first.
+`src/ui/skills.ts` as one `.web__weather` layer at 30% filling the window under
+the web. Rimespike's blizzard, Strike's red haze, Shockwave's cracked slab,
+Fireball's embers, Blight's spore-lit fen, Arc Lightning's storm, Lightning
+Arrow's rain, Ambush's purple cave, Blink's void, Leap's cliffs, Gale's wind.
+**EVERY NOTABLE AND KEYSTONE HAS A PICTURE OF ITS OWN** (`wn_<node.id>` in
+`GENERATED_ICONS`, asked in `tools/art/icons.json` with its tree's own colour
+tail) **AND ONLY A MINOR REPEATS ONE**: `GROUPS` in `src/ui/webicons.ts` reads
+a minor's stats and grants and hands it the group's glyph — the skull is always
+Critical Damage, the star Critical Chance, the wing speed, the burst area, the
+hourglass a cooldown — so the same picture means the same thing in every tree.
+`glyphFor` prefers the node's own picture, and a minor falling to `pebble` is a
+group nobody has drawn.
 
 **A KEYSTONE CHANGES WHAT THE SKILL IS, AND EVERY LINE BOUGHT FOR THE OLD
 SKILL IS READ FOR THE NEW ONE.** *"All mods that don't affect existing tags are

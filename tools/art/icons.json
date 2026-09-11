@@ -1124,7 +1124,7 @@
   },
   {
    "id": "wn_sw_transmutation",
-   "say": "a dark stone slab cracking open with three coloured lights coming out of the crack, one red, one blue, one gold Dark grey stone and dust brown with a pale grey highlight, hard black outline, NOT a hand, NOT a person, NOT text."
+   "say": "a round alchemist's flask with a bulb of liquid inside it split into two colours, one half dull grey stone-dust and one half glowing ember orange, swirling into each other, NOT a cube, NOT a face, NOT a block."
   },
   {
    "id": "wn_sw_hammerblow",
@@ -1260,7 +1260,7 @@
   },
   {
    "id": "wn_fb_cauterise",
-   "say": "a glowing red-hot iron brand pressed onto a dark surface with a puff of grey smoke rising Ember orange and deep red with a yellow-white core, hard black outline, NOT a hand, NOT a person, NOT text."
+   "say": "a glowing red-hot iron branding rod pressed flat onto a patch of pale skin with a puff of grey smoke rising, seen from the side, NOT a campfire, NOT logs, NOT rocks drawn in ember orange, flame yellow and dark charcoal with a hard black outline, NOT blue, NOT green, NOT purple."
   },
   {
    "id": "wn_fb_slowburn",
@@ -1292,7 +1292,7 @@
   },
   {
    "id": "wn_fb_focused",
-   "say": "five small balls of fire scattered wide apart across the frame, each with a short trail, the widest spread Ember orange and deep red with a yellow-white core, hard black outline, NOT a hand, NOT a person, NOT text."
+   "say": "a round glass lens held upright with three thin rays of light converging through it to one bright point of flame on the right, NOT a campfire, NOT logs drawn in ember orange, flame yellow and dark charcoal with a hard black outline, NOT blue, NOT green, NOT purple."
   },
   {
    "id": "wn_fb_volley",
@@ -1304,7 +1304,7 @@
   },
   {
    "id": "wn_fb_momentum",
-   "say": "a straight bolt of orange fire passing clean through two dark rings in a row, undimmed Ember orange and deep red with a yellow-white core, hard black outline, NOT a hand, NOT a person, NOT text."
+   "say": "a big ball of fire rolling down a dark slope to the right, a long trail of flame and sparks stretched out behind it up the slope, NOT a campfire, NOT logs drawn in ember orange, flame yellow and dark charcoal with a hard black outline, NOT blue, NOT green, NOT purple."
   },
   {
    "id": "wn_fb_arcing",
@@ -1316,7 +1316,7 @@
   },
   {
    "id": "wn_fb_leaping",
-   "say": "a ball of fire leaping over a gap between two dark stones along a high orange arc Ember orange and deep red with a yellow-white core, hard black outline, NOT a hand, NOT a person, NOT text."
+   "say": "a small ball of fire mid-arc jumping from a dark stone on the left to a dark stone on the right, a dotted arc of sparks behind it, NOT a campfire, NOT logs drawn in ember orange, flame yellow and dark charcoal with a hard black outline, NOT blue, NOT green, NOT purple."
   },
   {
    "id": "wn_fb_immolate",
