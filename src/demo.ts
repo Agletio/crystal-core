@@ -533,14 +533,36 @@ const rooted = (sprite: string): boolean =>
  *  and cutting the wrong one. */
 let ruleAt = Date.now();
 let ruleWas = '';
-const rule = (t: string) => {
+/** Sections that play descents by the dozen: minutes each, and the whole of
+ *  why the demo took an hour. Skipped unless `DEMO_FULL=1`, or `DEMO_ONLY`
+ *  names them. Measured alone with `DEMO_TIME=1`. */
+const SLOW = new Set([
+  'TRADE RULES', 'WHAT A BAND IS WORTH', 'CRAFTING PLANS', 'THE SHARD ECONOMY', 'THE LADDER',
+  'GATHERING', 'DROPS', 'THE COUNTER', 'FAMILIES', 'FLOOR AND CEILING',
+  'WHERE THE GOLD COMES FROM', 'HOW LONG A SLOT TAKES', 'WHAT A SET FARMS',
+  'THE COLLECTION', 'UNIQUES',
+]);
+const only = (process.env.DEMO_ONLY ?? '').split(',').map((s) => s.trim().toLowerCase()).filter(Boolean);
+let skipped = 0;
+/** Opens a section and says whether it RUNS: everything under `DEMO_FULL=1`,
+ *  only the sections `DEMO_ONLY=a,b` names when set, else all but SLOW. */
+const rule = (t: string): boolean => {
   if (process.env.DEMO_TIME && ruleWas) {
     line(`   ${((Date.now() - ruleAt) / 1000).toFixed(1)}s, ${Math.round(process.memoryUsage().heapUsed / 1e6)} MB held — ${ruleWas}`);
   }
   ruleAt = Date.now();
   ruleWas = t;
+  const head = t.split(' — ')[0];
+  const runs =
+    t === 'RESULT' ||
+    (only.length ? only.some((o) => t.toLowerCase().includes(o)) : !!process.env.DEMO_FULL || !SLOW.has(head));
   line();
   line(`── ${t} ${'─'.repeat(Math.max(0, 60 - t.length))}`);
+  if (!runs) {
+    skipped++;
+    line('  · skipped — DEMO_FULL=1 runs it, DEMO_ONLY=<word> picks it');
+  }
+  return runs;
 };
 
 /**
@@ -627,7 +649,7 @@ const filled = (base: string, ilvl: number, seed = 11, mods = 12): Item =>
   rollGear(base, ilvl, mods, pool, new Rng(seed));
 
 // ===========================================================================
-rule('CRAFTING A CRYSTAL');
+if (rule('CRAFTING A CRYSTAL')) {
 
 let crystal = makeCrystal(3);
 line(describeItem(crystal));
@@ -643,7 +665,9 @@ line();
 line(describeItem(crystal));
 
 // ===========================================================================
-rule('THE BENCH SELECTS');
+}
+
+if (rule('THE BENCH SELECTS')) {
 
 // A tier 3 body armour off the floor, with room left on it. What goes in that
 // room is CHOSEN, paid for in the family's own shard, and rolls only its value.
@@ -669,7 +693,9 @@ rule('THE BENCH SELECTS');
 }
 
 // ===========================================================================
-rule('CAPACITY — does the base actually restrict anything?');
+}
+
+if (rule('CAPACITY — does the base actually restrict anything?')) {
 
 // A base's TIER is the whole of how many modifiers it holds, and nothing at
 // the bench raises it: a bigger item means going and finding a better base.
@@ -703,7 +729,9 @@ rule('CAPACITY — does the base actually restrict anything?');
 }
 
 // ===========================================================================
-rule('THE SHARDS — is every modifier bought by exactly one, and does a tier cost?');
+}
+
+if (rule('THE SHARDS — is every modifier bought by exactly one, and does a tier cost?')) {
 
 // Twelve families over sixty-five modifiers. A modifier no family claims is one
 // the bench cannot show, and a family nothing claims is an icon nobody sees.
@@ -738,7 +766,9 @@ rule('THE SHARDS — is every modifier bought by exactly one, and does a tier co
 }
 
 // ===========================================================================
-rule('A LEVEL BUYS LINES AND TIERS, AND NOTHING ELSE');
+}
+
+if (rule('A LEVEL BUYS LINES AND TIERS, AND NOTHING ELSE')) {
 
 {
   // The ladder itself: both halves climb, so a level is never worth less than
@@ -798,7 +828,9 @@ rule('A LEVEL BUYS LINES AND TIERS, AND NOTHING ELSE');
 }
 
 // ===========================================================================
-rule('CRAFTING PLANS — is the third gate one no level and no shard can open?');
+}
+
+if (rule('CRAFTING PLANS — is the third gate one no level and no shard can open?')) {
 
 // *"The cool or really powerful stats should be locked behind crafting plans.
 // You have to find these in higher level zones and they can be locked in the
@@ -908,7 +940,9 @@ rule('CRAFTING PLANS — is the third gate one no level and no shard can open?')
 }
 
 // ===========================================================================
-rule('DISMANTLING — can taking a piece apart print shards?');
+}
+
+if (rule('DISMANTLING — can taking a piece apart print shards?')) {
 
 // *"Dismantle an item and get those stat currencies, and more of them based on
 // the tier of the mods."* Never more than the line cost, or the bench is a
@@ -944,7 +978,9 @@ rule('DISMANTLING — can taking a piece apart print shards?');
 }
 
 // ===========================================================================
-rule('THE SHARD ECONOMY — how many clears is one line?');
+}
+
+if (rule('THE SHARD ECONOMY — how many clears is one line?')) {
 
 // *"They drop at a rate where you can get that on all your gear grinding like
 // a level 4. But t2 you need say like 20 per."* The rate is the balance lever
@@ -1025,7 +1061,9 @@ rule('THE SHARD ECONOMY — how many clears is one line?');
 }
 
 // ===========================================================================
-rule('OPENINGS — does the bench draw exactly what the item can hold?');
+}
+
+if (rule('OPENINGS — does the bench draw exactly what the item can hold?')) {
 
 // The bench draws one facet per opening, so an opening that is not real is a
 // socket you can never fill sitting on screen forever. That is what shipped
@@ -1097,7 +1135,9 @@ rule('OPENINGS — does the bench draw exactly what the item can hold?');
 }
 
 // ===========================================================================
-rule('ARMOUR SETS — is a hybrid a redistribution or a discount?');
+}
+
+if (rule('ARMOUR SETS — is a hybrid a redistribution or a discount?')) {
 
 // Twelve families over TWO budgets. A hybrid spends `HYBRID.lift` of a
 // specialist's, which is the user's own rule and the whole of what two
@@ -1241,7 +1281,9 @@ rule('ARMOUR SETS — is a hybrid a redistribution or a discount?');
 }
 
 // ===========================================================================
-rule('DROPS — does the set decide what the map can give you?');
+}
+
+if (rule('DROPS — does the set decide what the map can give you?')) {
 
 // Run power gates the CEILING, rarity only gates how often you reach it.
 // Without the cap a rarity-stacked bare Fissure would out-drop an honest
@@ -1318,7 +1360,9 @@ rule('DROPS — does the set decide what the map can give you?');
 }
 
 // ===========================================================================
-rule('THE BAG — what comes up out of the Fissure, and can the loop wedge?');
+}
+
+if (rule('THE BAG — what comes up out of the Fissure, and can the loop wedge?')) {
 
 // There is one container: your bag, and everything a cleared descent found
 // lands in it. What has to hold: a run never loses a drop, capacity is read
@@ -1455,7 +1499,9 @@ rule('THE BAG — what comes up out of the Fissure, and can the loop wedge?');
 }
 
 // ===========================================================================
-rule('THE COUNTER — can a sale be taken back, and can it be farmed?');
+}
+
+if (rule('THE COUNTER — can a sale be taken back, and can it be farmed?')) {
 
 // Selling is the one move you cannot undo, so the counter keeps the last few
 // and buys them back at what they paid. That number has to be exact in both
@@ -1545,7 +1591,9 @@ rule('THE COUNTER — can a sale be taken back, and can it be farmed?');
 }
 
 // ===========================================================================
-rule('CARRY LIMIT — where does loot go when the bag is full?');
+}
+
+if (rule('CARRY LIMIT — where does loot go when the bag is full?')) {
 
 // The dock stopped scrolling, which turned capacity into a real rule. The
 // path that matters is the one you only hit after a long session: a full bag
@@ -1630,7 +1678,9 @@ function fillGear(game: ReturnType<typeof createGame>): void {
 }
 
 // ===========================================================================
-rule('EQUIPPING — can you take it back, and can you craft what you wear?');
+}
+
+if (rule('EQUIPPING — can you take it back, and can you craft what you wear?')) {
 
 // A click puts something on, so the whole safety net is that the same click is
 // reversible. Undo has to restore the bag EXACTLY: put the item back where it
@@ -1808,7 +1858,9 @@ rule('EQUIPPING — can you take it back, and can you craft what you wear?');
 }
 
 // ===========================================================================
-rule('SPRITES — is the pixel art well formed?');
+}
+
+if (rule('SPRITES — is the pixel art well formed?')) {
 
 // The sprites are hand-authored character grids. A row one character short
 // does not fail loudly, it silently truncates the figure; one character long
@@ -2840,7 +2892,9 @@ rule('SPRITES — is the pixel art well formed?');
 }
 
 // ===========================================================================
-rule('MAP SHAPE — do chambers, passages and veins survive generation?');
+}
+
+if (rule('MAP SHAPE — do chambers, passages and veins survive generation?')) {
 
 // The renderer colours a corridor differently from a room, which only works
 // if the generator actually labels them. Two things can quietly break that:
@@ -2944,7 +2998,9 @@ rule('MAP SHAPE — do chambers, passages and veins survive generation?');
 }
 
 // ===========================================================================
-rule('THE OPENING — is the first hour walkable with nothing explaining it?');
+}
+
+if (rule('THE OPENING — is the first hour walkable with nothing explaining it?')) {
 
 // Nothing teaches any more. What has to hold is that the road EXISTS: the
 // first clear pays for the one currency the shop sells, the weapon handed
@@ -3022,7 +3078,9 @@ rule('THE OPENING — is the first hour walkable with nothing explaining it?');
 }
 
 // ===========================================================================
-rule('THE WEB — is every node reachable, and is anything a trap?');
+}
+
+if (rule('THE WEB — is every node reachable, and is anything a trap?')) {
 
 // Two questions, and the second is the one that bites. A hundred-node web can
 // look fine and still contain a node nobody can ever buy: too far out to
@@ -3333,7 +3391,9 @@ for (const tree of BUILT_TREES) {
 }
 
 // ===========================================================================
-rule('AILMENTS — does dealing the type, and only that, apply the ailment?');
+}
+
+if (rule('AILMENTS — does dealing the type, and only that, apply the ailment?')) {
 
 {
   const chanceLine = (value: number, tag: string): RolledMod => ({
@@ -3423,7 +3483,9 @@ rule('AILMENTS — does dealing the type, and only that, apply the ailment?');
 }
 
 // ===========================================================================
-rule('WHAT A MONSTER LEAVES — is it felt, and is it answerable?');
+}
+
+if (rule('WHAT A MONSTER LEAVES — is it felt, and is it answerable?')) {
 
 // A monster's hit leaves an Ailment now, which is a second source of damage the
 // danger table does not name. It is inside the danger anyway because it is a
@@ -3576,7 +3638,9 @@ rule('WHAT A MONSTER LEAVES — is it felt, and is it answerable?');
 }
 
 // ===========================================================================
-rule('MATERIALS AND PROFESSIONS — is the table a thing a recipe could read?');
+}
+
+if (rule('MATERIALS AND PROFESSIONS — is the table a thing a recipe could read?')) {
 
 // STEP 1 OF THE CRAFTING ARC: the tables exist and NOTHING reads them yet, so
 // what can be wrong is the table itself — a world with a hole in it, two rows
@@ -3715,7 +3779,9 @@ rule('MATERIALS AND PROFESSIONS — is the table a thing a recipe could read?');
 }
 
 // ===========================================================================
-rule('GATHERING — is a node free, guarded, walked to and equally spread?');
+}
+
+if (rule('GATHERING — is a node free, guarded, walked to and equally spread?')) {
 
 // STEP 2: *"Should there be ore to mine in the area and your character just
 // goes up and mines it?"* — as a LOCK with a family on it, which is the one
@@ -4092,7 +4158,9 @@ rule('GATHERING — is a node free, guarded, walked to and equally spread?');
 }
 
 // ===========================================================================
-rule('THE WORKS — does a job run on the clock, and on nothing else?');
+}
+
+if (rule('THE WORKS — does a job run on the clock, and on nothing else?')) {
 
 // *"Process on a timer."* What has to hold is that NOTHING here moves but the
 // minutes, that a job neither loses nor mints, and that the whole loop runs
@@ -4551,7 +4619,9 @@ rule('THE WORKS — does a job run on the clock, and on nothing else?');
 }
 
 // ===========================================================================
-rule('THE ANVIL — does a level slide the window, and can a dismantle print?');
+}
+
+if (rule('THE ANVIL — does a level slide the window, and can a dismantle print?')) {
 
 // STEP 4: **MATERIALS DECIDE WHAT AN ITEM IS; CURRENCY DECIDES WHAT IS ON IT.**
 // A recipe is DERIVED off the base rather than authored, so what can be wrong
@@ -4762,7 +4832,9 @@ rule('THE ANVIL — does a level slide the window, and can a dismantle print?');
 }
 
 // ===========================================================================
-rule('JEWELLERY — is the amulet slot contested, and is a ring a decision?');
+}
+
+if (rule('JEWELLERY — is the amulet slot contested, and is a ring a decision?')) {
 
 // STEP 5: *"Ten base types, each one an implicit... both a RING and an AMULET
 // of each."* Jewellery used to differ from rung to rung in exactly one way —
@@ -4855,7 +4927,9 @@ rule('JEWELLERY — is the amulet slot contested, and is a ring a decision?');
 }
 
 // ===========================================================================
-rule('THE HYBRID RULE — is breadth worth two professions, and what does it cost?');
+}
+
+if (rule('THE HYBRID RULE — is breadth worth two professions, and what does it cost?')) {
 
 // STEP 6: *"The hybrids can be strictly more overall stat power so for most
 // builds they can be better, but you can get more of one stat going specific."*
@@ -4963,7 +5037,9 @@ rule('THE HYBRID RULE — is breadth worth two professions, and what does it cos
 }
 
 // ===========================================================================
-rule('COOKING — does a meal reach the sheet, and does it burn down?');
+}
+
+if (rule('COOKING — does a meal reach the sheet, and does it burn down?')) {
 
 // STEP 7: **A MEAL IS A BUFF THAT LASTS RUNS**, which is the crystal roll's own
 // shape pointed at the hero. The PROCESSED fish IS the meal, so there is no
@@ -5098,7 +5174,9 @@ rule('COOKING — does a meal reach the sheet, and does it burn down?');
 }
 
 // ===========================================================================
-rule('THE RECKONING — is a harder descent actually harder, and paid for?');
+}
+
+if (rule('THE RECKONING — is a harder descent actually harder, and paid for?')) {
 
 {
   const nodes = trialNodes();
@@ -5407,7 +5485,9 @@ rule('THE RECKONING — is a harder descent actually harder, and paid for?');
 }
 
 // ===========================================================================
-rule('A SKILL TREE BUYS WHAT THE SKILL DOES');
+}
+
+if (rule('A SKILL TREE BUYS WHAT THE SKILL DOES')) {
 
 // *"Remove all the flat stats that aren't related to the skill. So like health,
 // armour and stuff like that — attack and cast speed, crit etc is all fine."*
@@ -5455,7 +5535,9 @@ rule('A SKILL TREE BUYS WHAT THE SKILL DOES');
 }
 
 // ===========================================================================
-rule('SPLASH — every skill that hits ONE thing spills onto what stands by it');
+}
+
+if (rule('SPLASH — every skill that hits ONE thing spills onto what stands by it')) {
 
 // *"The game revolves so much around aoe clearing and single target only being
 // one small part of it, every skill should have at least a little AOE baked
@@ -5581,7 +5663,9 @@ rule('SPLASH — every skill that hits ONE thing spills onto what stands by it')
 }
 
 // ===========================================================================
-rule('FIREBALL — do the notables actually change the cast?');
+}
+
+if (rule('FIREBALL — do the notables actually change the cast?')) {
 
 // The tree's whole claim is that it changes how the skill WORKS, which no
 // stat sheet can show. So this fires the behaviour directly at a fixed set of
@@ -5820,7 +5904,9 @@ rule('FIREBALL — do the notables actually change the cast?');
 }
 
 // ===========================================================================
-rule('THE WEAPON — is its own damage its own?');
+}
+
+if (rule('THE WEAPON — is its own damage its own?')) {
 {
   const inc: RolledMod = {
     entryId: 'probe', defId: 'probe', group: 'probe', slot: 'offence',
@@ -5888,7 +5974,9 @@ rule('THE WEAPON — is its own damage its own?');
 }
 
 // ===========================================================================
-rule('WHAT IT IS SWUNG WITH — does a skill get the weapon it needs?');
+}
+
+if (rule('WHAT IT IS SWUNG WITH — does a skill get the weapon it needs?')) {
 {
   const wants: string[] = [];
   for (const skill of MAIN_SKILLS) {
@@ -6011,7 +6099,9 @@ rule('WHAT IT IS SWUNG WITH — does a skill get the weapon it needs?');
 }
 
 // ===========================================================================
-rule('DUAL WIELDING — is a pair two weapons or an average of one?');
+}
+
+if (rule('DUAL WIELDING — is a pair two weapons or an average of one?')) {
 
 // The user's own shape: every hit is BOTH hands, and the RATE alternates. So
 // what has to hold is that a pair out-damages either weapon alone, that the two
@@ -6128,7 +6218,9 @@ rule('DUAL WIELDING — is a pair two weapons or an average of one?');
 }
 
 // ===========================================================================
-rule('THE SPIKE — does one cast cover ground, and does buying area cover more?');
+}
+
+if (rule('THE SPIKE — does one cast cover ground, and does buying area cover more?')) {
 
 // Rimespike is an AREA skill now: one spike up under a body, and everything
 // round it takes the WHOLE hit. So what is counted is bodies STRUCK, and what
@@ -6431,7 +6523,9 @@ rule('THE SPIKE — does one cast cover ground, and does buying area cover more?
 }
 
 // ===========================================================================
-rule('THE RELAY — does a Critical carry you into the next body?');
+}
+
+if (rule('THE RELAY — does a Critical carry you into the next body?')) {
 
 // The one switch the SIM reads rather than the delivery: it lands after the use
 // that bought it has ended, so firing a behaviour twice cannot see it and only
@@ -6525,7 +6619,9 @@ rule('THE RELAY — does a Critical carry you into the next body?');
 }
 
 // ===========================================================================
-rule('EVERY TREE — does every notable actually change the cast?');
+}
+
+if (rule('EVERY TREE — does every notable actually change the cast?')) {
 
 // The same promise `npm run mods` makes about modifiers, made about talents.
 // A notable that grants a switch nothing reads is invisible: it prints a nice
@@ -6663,7 +6759,9 @@ rule('EVERY TREE — does every notable actually change the cast?');
 }
 
 // ===========================================================================
-rule('COMBINATIONS — is every pair of changing nodes a decided thing?');
+}
+
+if (rule('COMBINATIONS — is every pair of changing nodes a decided thing?')) {
 
 // `mergeGrants` says what two nodes granting the SAME switch fold to. What
 // nothing said is what two nodes changing DIFFERENT things about one cast come
@@ -6856,7 +6954,9 @@ rule('COMBINATIONS — is every pair of changing nodes a decided thing?');
 }
 
 // ===========================================================================
-rule('CONVERSION — one node, two answers, and it moves the tree');
+}
+
+if (rule('CONVERSION — one node, two answers, and it moves the tree')) {
 
 // Conversion is a single node you pick an answer on, not two nodes that fight.
 // Two exclusive nodes would mean taking the wrong one first costs a point to
@@ -6922,7 +7022,9 @@ rule('CONVERSION — one node, two answers, and it moves the tree');
 }
 
 // ===========================================================================
-rule('SKILL TAG CHECK — no damage types hiding in skill tags');
+}
+
+if (rule('SKILL TAG CHECK — no damage types hiding in skill tags')) {
 
 // Skill tags join the context of EVERY damage-type pass. A damage type or
 // group sitting in tags therefore satisfies all of them and silently scales
@@ -7084,7 +7186,9 @@ rule('SKILL TAG CHECK — no damage types hiding in skill tags');
 }
 
 // ===========================================================================
-rule('THE SHEET — does every number on it survive being checked?');
+}
+
+if (rule('THE SHEET — does every number on it survive being checked?')) {
 
 // The sheet is the only place the rules are stated, so a number that is subtly
 // wrong there is worse than no sheet: it teaches a rule the fight does not
@@ -7468,7 +7572,9 @@ rule('THE SHEET — does every number on it survive being checked?');
 }
 
 // ===========================================================================
-rule('FAMILIES — a different fight, or a harder one?');
+}
+
+if (rule('FAMILIES — a different fight, or a harder one?')) {
 
 // A family decides WHICH monsters spawn and nothing else: difficulty is
 // socketed modifiers, all of it. So three sets that differ only in family have
@@ -7633,7 +7739,9 @@ rule('FAMILIES — a different fight, or a harder one?');
 }
 
 // ===========================================================================
-rule('AURAS — do the two worlds multiply each other?');
+}
+
+if (rule('AURAS — do the two worlds multiply each other?')) {
 
 // The claim: one world adds a fixed amount, the other multiplies, and a room
 // holding both multiplies what the other added. That cross term is the whole
@@ -7734,7 +7842,9 @@ rule('AURAS — do the two worlds multiply each other?');
 }
 
 // ===========================================================================
-rule('THEMES — does the composition change the rock you stand on?');
+}
+
+if (rule('THEMES — does the composition change the rock you stand on?')) {
 
 // A theme is a LOOK, decided by the same shares that decide the packs. Two
 // things have to hold: the thresholds are what the design says, and the four
@@ -7863,7 +7973,9 @@ rule('THEMES — does the composition change the rock you stand on?');
 }
 
 // ===========================================================================
-rule('THE FINALE — what is waiting at the exit?');
+}
+
+if (rule('THE FINALE — what is waiting at the exit?')) {
 
 // Rolled per run, so the same crystal doesn't always end the same way. All
 // three should show up across a handful of seeds; if one dominates, the
@@ -7963,7 +8075,9 @@ rule('THE FINALE — what is waiting at the exit?');
 }
 
 // ===========================================================================
-rule('ONE SOCKET — which crystal level does each rung of gear survive?');
+}
+
+if (rule('ONE SOCKET — which crystal level does each rung of gear survive?')) {
 
 // Several seeds per cell — one run is far too noisy to tune against, and a
 // ladder you can't trust is worse than no ladder.
@@ -8015,7 +8129,9 @@ line('and it should stay clearable. The deep end is four sockets, not four');
 line('levels — see THE LADDER below for that.');
 
 // ===========================================================================
-rule('EVERY NUMBER SAID OUT LOUD — does any line withhold its figure?');
+}
+
+if (rule('EVERY NUMBER SAID OUT LOUD — does any line withhold its figure?')) {
 
 // The rule is in CLAUDE.md: nothing a player reads may describe a quantity in
 // words when there is a figure behind it. A digit is a coarse test and a
@@ -8072,7 +8188,9 @@ rule('EVERY NUMBER SAID OUT LOUD — does any line withhold its figure?');
 }
 
 // ===========================================================================
-rule('ONE WORD PER MECHANISM — does the game say Arc every time it means Arc?');
+}
+
+if (rule('ONE WORD PER MECHANISM — does the game say Arc every time it means Arc?')) {
 
 // A keyword is only worth anything if it is the ONLY way the game says that
 // thing. Learn what Pierce means once and every later card saying +1 Pierce is
@@ -8203,7 +8321,9 @@ rule('ONE WORD PER MECHANISM — does the game say Arc every time it means Arc?'
 }
 
 // ===========================================================================
-rule('THREE SLOTS — one that kills, one always on, one that moves you');
+}
+
+if (rule('THREE SLOTS — one that kills, one always on, one that moves you')) {
 
 // A character is three skills now, and the two new ones never cast: a passive
 // is its `grants` and a movement skill is params the sim fires itself. What
@@ -8977,7 +9097,9 @@ rule('THREE SLOTS — one that kills, one always on, one that moves you');
 }
 
 // ===========================================================================
-rule('ATTRIBUTES — does a level buy anything, and only what it paid for?');
+}
+
+if (rule('ATTRIBUTES — does a level buy anything, and only what it paid for?')) {
 
 // A level hands out points, the sheet spends them, and everything downstream
 // has to see them as ordinary stat lines. Three things can break silently: a
@@ -9150,7 +9272,9 @@ rule('ATTRIBUTES — does a level buy anything, and only what it paid for?');
 }
 
 // ===========================================================================
-rule('TRADES — is the part that is not the skill worth keeping a character for?');
+}
+
+if (rule('TRADES — is the part that is not the skill worth keeping a character for?')) {
 
 // A skill tree belongs to the SKILL: change from Strike to Blight and the whole
 // of what your character was is gone. A trade belongs to the character, out of
@@ -9589,7 +9713,9 @@ rule('TRADES — is the part that is not the skill worth keeping a character for
 }
 
 // ===========================================================================
-rule('TRADE RULES — does each one actually change what the sim does?');
+}
+
+if (rule('TRADE RULES — does each one actually change what the sim does?')) {
 
 // A card that says a thing and a sim that does not is the failure mode a table
 // of switches invites. Each of these is the SAME seed and the same character
@@ -9901,7 +10027,9 @@ rule('TRADE RULES — does each one actually change what the sim does?');
 }
 
 // ===========================================================================
-rule('THE ROSTER — is every hero drawn holding what it carries?');
+}
+
+if (rule('THE ROSTER — is every hero drawn holding what it carries?')) {
 
 // A trade is what the hero LOOKS like, and `heroSpriteFor` falls back to the
 // bare body for an arrangement nobody has drawn. That fallback is what lets a
@@ -9971,7 +10099,9 @@ rule('THE ROSTER — is every hero drawn holding what it carries?');
 }
 
 // ===========================================================================
-rule('THE ROGUE — is a second weapon worth the shield it costs?');
+}
+
+if (rule('THE ROGUE — is a second weapon worth the shield it costs?')) {
 
 // *"All characters should just not be able to dual wield and then we just have
 // a trade that can."* So a pair is a thing exactly one character can reach, and
@@ -10238,7 +10368,9 @@ rule('THE ROGUE — is a second weapon worth the shield it costs?');
 }
 
 // ===========================================================================
-rule('THE WARRIOR — does what is in your other hand change anything?');
+}
+
+if (rule('THE WARRIOR — does what is in your other hand change anything?')) {
 
 // Mahthar's whole web asks ONE question and every notable answers it: a shield
 // blunts and a Block pays, or both hands are on one weapon and it swings. What
@@ -10618,7 +10750,9 @@ rule('THE WARRIOR — does what is in your other hand change anything?');
 }
 
 // ===========================================================================
-rule('MANA — is a bare skill just barely sustainable?');
+}
+
+if (rule('MANA — is a bare skill just barely sustainable?')) {
 
 // The calibration this whole resource exists for, and it is measured against
 // real descents rather than against a formula: a level 1 character with no
@@ -10781,7 +10915,9 @@ rule('MANA — is a bare skill just barely sustainable?');
 }
 
 // ===========================================================================
-rule('POTIONS — a budget you spend, and one rule that spends it');
+}
+
+if (rule('POTIONS — a budget you spend, and one rule that spends it')) {
 
 // The one input a descent has. Three things have to hold: it is a budget
 // rather than a stockpile, the same rule fires it whether or not anybody is
@@ -10942,7 +11078,9 @@ rule('POTIONS — a budget you spend, and one rule that spends it');
 }
 
 // ===========================================================================
-rule('TERMINATION CHECK — does every run actually end?');
+}
+
+if (rule('TERMINATION CHECK — does every run actually end?')) {
 
 // Worth its own check because this failure mode has bitten three times now
 // (a corridor that carved only one leg, a fractional exit the hero could
@@ -11002,7 +11140,9 @@ rule('TERMINATION CHECK — does every run actually end?');
 }
 
 // ===========================================================================
-rule('WHAT A BAND IS WORTH — does pushing power actually pay?');
+}
+
+if (rule('WHAT A BAND IS WORTH — does pushing power actually pay?')) {
 
 // Measured by running descents rather than by a formula, so the harness and
 // the game cannot disagree about what a run is worth. Crystals are permanent,
@@ -11107,7 +11247,9 @@ rule('WHAT A BAND IS WORTH — does pushing power actually pay?');
 }
 
 // ===========================================================================
-rule('THE LADDER — is every rung reachable from the one below it?');
+}
+
+if (rule('THE LADDER — is every rung reachable from the one below it?')) {
 
 // Two ways to break this game with a balance number, both of which happened
 // while these numbers were being set, and neither of which anything else here
@@ -11207,7 +11349,9 @@ rule('THE LADDER — is every rung reachable from the one below it?');
 }
 
 // ===========================================================================
-rule('FLOOR AND CEILING — is a difficulty number aimed at anything real?');
+}
+
+if (rule('FLOOR AND CEILING — is a difficulty number aimed at anything real?')) {
 
 // `ladderCharacter` walks its tree at RANDOM and splits its attributes four
 // ways. Nobody plays that, so a difficulty tuned until it dies says nothing:
@@ -11300,7 +11444,9 @@ rule('FLOOR AND CEILING — is a difficulty number aimed at anything real?');
 }
 
 // ===========================================================================
-rule('BODIES — do they stay out of the rock, and does an area hit what it draws?');
+}
+
+if (rule('BODIES — do they stay out of the rock, and does an area hit what it draws?')) {
 
 // Both of these are things you can only see, which is why both went unnoticed:
 // nothing here reads a position against a wall, and nothing reads a damage
@@ -11424,7 +11570,9 @@ rule('BODIES — do they stay out of the rock, and does an area hit what it draw
 }
 
 // ===========================================================================
-rule('ELEMENTS — does a monster bring its own, and does a ward still matter?');
+}
+
+if (rule('ELEMENTS — does a monster bring its own, and does a ward still matter?')) {
 
 // One crystal modifier used to do the whole job: any amount of "of Cinders" at
 // all flipped every monster on the map from physical to fire, so one fire ward
@@ -11753,7 +11901,9 @@ rule('ELEMENTS — does a monster bring its own, and does a ward still matter?')
 }
 
 // ===========================================================================
-rule('MITIGATION — is every reachable set answerable?');
+}
+
+if (rule('MITIGATION — is every reachable set answerable?')) {
 
 // Resistance and armour MULTIPLY, so a plausible-looking pair reduces a hit by
 // more than either number suggests. Nothing hands these out any more — every
@@ -11808,7 +11958,9 @@ rule('MITIGATION — is every reachable set answerable?');
 }
 
 // ===========================================================================
-rule('WHERE THE GOLD COMES FROM — is selling worth the walk to the counter?');
+}
+
+if (rule('WHERE THE GOLD COMES FROM — is selling worth the walk to the counter?')) {
 
 // Crystals are permanent and given, so there is no consumable to divide gold
 // by any more. What is left is the two taps a run opens — coin off the corpses
@@ -11985,7 +12137,9 @@ rule('WHERE THE GOLD COMES FROM — is selling worth the walk to the counter?');
 }
 
 // ===========================================================================
-rule('HOW LONG A SLOT TAKES — the one figure scarcity moves and nothing else');
+}
+
+if (rule('HOW LONG A SLOT TAKES — the one figure scarcity moves and nothing else')) {
 
 // `ladderCharacter` and `bestBuild` both roll their own gear out of thin air,
 // so every difficulty number in this file survives a drop rate of zero. This is
@@ -12033,7 +12187,9 @@ rule('HOW LONG A SLOT TAKES — the one figure scarcity moves and nothing else')
 }
 
 // ===========================================================================
-rule('WHAT A SET FARMS — is where you go a decision or a formality?');
+}
+
+if (rule('WHAT A SET FARMS — is where you go a decision or a formality?')) {
 
 // Three claims to hold: pushing pays but does not make everything below it
 // worthless, each world pays in its own currency, and what a set is pointed at
@@ -12153,7 +12309,9 @@ rule('WHAT A SET FARMS — is where you go a decision or a formality?');
 }
 
 // ===========================================================================
-rule('WARDS — is there a crystal roll your build can ignore?');
+}
+
+if (rule('WARDS — is there a crystal roll your build can ignore?')) {
 
 // *"I just don't want it to be like 90% of mods are irrelevant to specific
 // builds… lightning resistance on monsters are irrelevant to almost all
@@ -12253,7 +12411,9 @@ rule('WARDS — is there a crystal roll your build can ignore?');
 }
 
 // ===========================================================================
-rule('GATES AND HUNTING — can a run be pointed at what you actually want?');
+}
+
+if (rule('GATES AND HUNTING — can a run be pointed at what you actually want?')) {
 
 // Two mechanisms with the same shape: a gate says a thing does not exist here
 // at all, and a finding modifier says which of what does exist you would like.
@@ -12345,7 +12505,9 @@ rule('GATES AND HUNTING — can a run be pointed at what you actually want?');
 }
 
 // ===========================================================================
-rule('PERFECT BASES — is the rarest thing in the game worth the socket?');
+}
+
+if (rule('PERFECT BASES — is the rarest thing in the game worth the socket?')) {
 
 // *"Just a normal armor piece that just has say 25% higher implicit stats. Can
 // only happen to t3 items once you have 3 crystals equipped and is super rare
@@ -12471,7 +12633,9 @@ rule('PERFECT BASES — is the rarest thing in the game worth the socket?');
 }
 
 // ===========================================================================
-rule('THE CLIMB — does a rung open, stay open, and get harder?');
+}
+
+if (rule('THE CLIMB — does a rung open, stay open, and get harder?')) {
 
 // The whole of where difficulty comes from before anything is socketed, and
 // the whole of what the player is shown as progress. What must hold is that
@@ -13039,7 +13203,9 @@ rule('THE CLIMB — does a rung open, stay open, and get harder?');
 }
 
 // ===========================================================================
-rule('THE COLLECTION — do crystals arrive, and do they grow?');
+}
+
+if (rule('THE COLLECTION — do crystals arrive, and do they grow?')) {
 
 // Nothing here can be bought, so if the giving is wrong the game has no way
 // up at all. Three things have to hold: the first four arrive, a socketed
@@ -14452,7 +14618,9 @@ rule('THE ROCK\'S OWN RULES — does a crystal DO something, or just add up?');
 }
 
 // ===========================================================================
-rule('UNIQUES — is every named piece real, reachable and unbreakable?');
+}
+
+if (rule('UNIQUES — is every named piece real, reachable and unbreakable?')) {
 
 // A unique is a fixed identity plus a switch out of the same table the trees
 // use, so the rules that hold a tree together hold here: declared, read by
@@ -14625,7 +14793,9 @@ rule('UNIQUES — is every named piece real, reachable and unbreakable?');
 }
 
 // ===========================================================================
-rule('GRAFTS — do a corpse and a handful of dust buy what no drop can roll?');
+}
+
+if (rule('GRAFTS — do a corpse and a handful of dust buy what no drop can roll?')) {
 
 // A graft is the one thing in the game that makes a piece of gear give a thing
 // UP to get a thing. Everything here is about that trade actually happening:
@@ -14958,7 +15128,9 @@ rule('GRAFTS — do a corpse and a handful of dust buy what no drop can roll?');
 }
 
 // ===========================================================================
-rule('THE SAVE — does a save survive the game changing under it?');
+}
+
+if (rule('THE SAVE — does a save survive the game changing under it?')) {
 {
   const game = createGame('dev');
   equipSkill(game.character, 'fireball');
@@ -15298,12 +15470,17 @@ rule('THE SAVE — does a save survive the game changing under it?');
 // The harness is a report you read AND a check that can fail. Everything
 // above prints numbers to judge by eye; the check() calls are the ones with
 // an answer, and CI needs them to decide red or green.
+}
+
 rule('RESULT');
 line(
   failed === 0
     ? `  ✓ every check passed (${ran})`
     : `  ✗ ${failed} check${failed === 1 ? '' : 's'} failed — see above`
 );
+if (skipped > 0) {
+  line(`  · ${skipped} slow sections skipped — DEMO_FULL=1 runs the lot, DEMO_ONLY=<word> picks one`);
+}
 if (parkedCount > 0) {
   line(`  … and ${parkedCount} parked for the balance pass — each printed above`);
 }

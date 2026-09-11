@@ -217,7 +217,40 @@ const MATCH: [RegExp, string][] = [
   [/attack|damage|strike|blade|sword|force/, 'sword'],
 ];
 
+/** A SMALL NODE'S GROUP, off the stat or switch it carries — one picture a
+ *  group, shared by every tree, so a crit node reads as a crit node anywhere. */
+const GROUPS: [RegExp, string][] = [
+  [/critMultiplier/, 'skull'],
+  [/critChance/, 'star'],
+  [/damage:(cold|chill)|freeze|chill/, 'frost'],
+  [/damage:(fire|burn)|burn/, 'flame'],
+  [/damage:(lightning|shock)|shock/, 'bolt'],
+  [/bleed/, 'g_bleed'],
+  [/damage:poison|poison/, 'droplet'],
+  [/ailment/, 'g_ailment'],
+  [/damage:physical/, 'g_physical'],
+  [/\bdamage\b/, 'g_damage'],
+  [/castSpeed|attackSpeed|gustSpeed/, 'wing'],
+  [/areaOfEffect|cone/, 'burst'],
+  [/attackRange|moveDistance/, 'arrow'],
+  [/mana/, 'orb'],
+  [/moveSpeed/, 'g_move'],
+  [/cooldown/, 'hourglass'],
+  [/tempo/, 'g_stack'],
+  [/guard/, 'shield'],
+];
+
 export function glyphFor(node: SkillNodeDef): string {
+  // A notable may have a picture of its OWN, drawn for it by id.
+  if (GENERATED_ICONS[`wn_${node.id}`]) return node.id;
+  if (node.kind === 'minor') {
+    const keys = [
+      ...(node.stats ?? []).map((st) => `${st.stat}${st.tags?.length ? ':' + st.tags.join(':') : ''}`),
+      ...Object.keys(node.grants ?? {}),
+    ].join(' ');
+    for (const [test, glyph] of GROUPS) if (test.test(keys)) return glyph;
+    return 'pebble';
+  }
   const words = [
     node.name,
     node.description,

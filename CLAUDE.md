@@ -60,16 +60,23 @@ Exactly three things end a session, and a finished phase is not one:
 | `npm run build` | bundle to `docs/app.js` — **committed**, Cloudflare runs no build |
 | `npm run mods` | every modifier rolls, does something, reads |
 | `npm run smoke` | ~7min: headless boot and interaction |
-| `npm run demo` | ~19min alone, 70 min measured beside a smoke run since the ceiling walks gates as packages: sim, economy, trees, balance. `DEMO_TIME=1` times each section and prints the heap |
+| `npm run demo` | **~2min**: every mechanism check that is cheap — trees, grants, saves, the sheet, terminations. The slow sections (`SLOW` in `src/demo.ts`: played descents by the dozen, the economy, the ceiling search) print `skipped`. `DEMO_ONLY=spike,web` runs just the sections whose title holds a word, slow or not; `DEMO_FULL=1` runs the lot (47min alone, measured). `DEMO_TIME=1` times each section |
 | `npm run shots` | ~1min: all 30 screens against a checklist |
 | `npm run drag` | ~13s: the dock reorders, a window goes where you put it |
 | `npm run peek` | a descent, at a zoom, a pan, a crop, a skill, a burst of frames |
 
 **These are MEASURED, and they were wrong by 10x in both directions** — smoke
-was written down as 10 seconds and takes seven minutes, demo as two minutes and
-takes nineteen. **Run what the change can reach, not the whole suite** — the
-table is in the `harness` skill, along with every quirk and flake. Build before `smoke`,
-`shots`, `drag` or `peek`; they load the bundle. Whole suite before a push.
+was written down as 10 seconds and takes seven minutes. **RUN WHAT THE CHANGE
+CAN REACH, AND A FEW MINUTES IS THE CEILING** — *"19 minutes every change is
+way too much… check only things you're directly touching and then maybe
+routine overarching checks on massive changes or if you suspect something may
+break."* Every change: `typecheck`, `comments`, `theme` and the quick `demo`,
+with `DEMO_ONLY=<word>` picking the slow section the change reaches. A screen
+change adds `build`, `drag` and `shots`. `DEMO_FULL=1` and `smoke` are for a
+massive change, a suspicion, or a run behind the next piece of work — never the
+gate on every push. Build before `smoke`, `shots`, `drag` or `peek`; they load
+the bundle. **Long runs go in the background and get a progress line every ten
+minutes**; a silent hour is how this looked stuck.
 
 ## What holds, whatever you are changing
 

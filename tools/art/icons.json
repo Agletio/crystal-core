@@ -1,7 +1,7 @@
 {
  "_": "What to SAY to the generator for a UI ICON, one row per id. `tools/art/icon.mts` reads it and `portrait.mts <id> <png> 48 icons` puts the result in `src/render/generated-icons.ts`, which `skillIcon` and `categoryIcon` merge OVER their hand-drawn grids.",
  "_how": "An icon is read at 24-40px in a socket, so: ONE object, centred, filling the frame, hard silhouette, no scene and no ground. Asked at 64 and shipped at 48.",
- "_inks": "Lamplit stone, oiled timber and tarnished brass, with fire, frost, lightning and poison the ONLY saturated inks \u2014 so an element reads at socket size and everything else stays furniture.",
+ "_inks": "Lamplit stone, oiled timber and tarnished brass, with fire, frost, lightning and poison the ONLY saturated inks — so an element reads at socket size and everything else stays furniture.",
  "size": 64,
  "grid": 48,
  "how": " A single ICON: ONE object centred and filling the frame, seen straight on, BOLD readable silhouette with a hard dark outline, chunky shapes and few colours, dramatic lighting off the object itself. NOT a scene, NOT a landscape, NOT a character, NOT a background, NOT text, NOT a border, NOT a frame, NOT multiple objects. Transparent background.",
@@ -48,7 +48,7 @@
   },
   {
    "id": "cat_passive",
-   "say": "a closed iron sigil-ring set with one dull amber stone, still and unlit \u2014 a thing that is always ON rather than cast."
+   "say": "a closed iron sigil-ring set with one dull amber stone, still and unlit — a thing that is always ON rather than cast."
   },
   {
    "id": "cat_movement",
@@ -548,7 +548,7 @@
   },
   {
    "id": "gear_sword2h",
-   "say": "a single huge two-handed greatsword standing point up and filling the whole frame, its blade VERY BROAD and WIDE \u2014 as wide across as a man's hand \u2014 running the full height of the frame, with a long leather-wrapped grip below a heavy straight crossguard. The blade is a WIDE slab of steel. NOT slim, NOT narrow, NOT thin, NOT a rapier, NOT a one-handed sword, NOT curved."
+   "say": "a single huge two-handed greatsword standing point up and filling the whole frame, its blade VERY BROAD and WIDE — as wide across as a man's hand — running the full height of the frame, with a long leather-wrapped grip below a heavy straight crossguard. The blade is a WIDE slab of steel. NOT slim, NOT narrow, NOT thin, NOT a rapier, NOT a one-handed sword, NOT curved."
   },
   {
    "id": "gear_mace2h",
@@ -556,7 +556,7 @@
   },
   {
    "id": "gear_staff",
-   "say": "a single heavy wooden quarterstaff standing straight upright and filling the whole frame, a THICK dark pole \u2014 as thick as a man's wrist \u2014 the SAME WIDTH all the way up, with three or four FLAT RINGS of pale iron banding wrapped round the top and a pale iron shoe at the foot. NOT thin, NOT a twig, NOT a stick, NOT a wand, NOT a spear, NOT a blade, NOT a mace, NOT wider at the top, NOT a crystal on a pole."
+   "say": "a single heavy wooden quarterstaff standing straight upright and filling the whole frame, a THICK dark pole — as thick as a man's wrist — the SAME WIDTH all the way up, with three or four FLAT RINGS of pale iron banding wrapped round the top and a pale iron shoe at the foot. NOT thin, NOT a twig, NOT a stick, NOT a wand, NOT a spear, NOT a blade, NOT a mace, NOT wider at the top, NOT a crystal on a pole."
   },
   {
    "id": "mat_pale_iron",
@@ -680,7 +680,7 @@
   },
   {
    "id": "tool_knife",
-   "say": "a small skinning blade seen from the side, made of TWO CLEARLY DIFFERENT MATERIALS: the bottom third is a short round handle of DARK BROWN wood, and the top two thirds is ONE SHORT BROAD blade of PALE COLD GREY IRON \u2014 light silvery grey, the colour of bare metal, PLAINLY LIGHTER THAN THE HANDLE \u2014 with a straight back and a belly that swells outward and rounds over to the tip. The handle runs STRAIGHT INTO the blade with NOTHING crossing between them. THE BLADE IS NOT WOOD: NOT brown, NOT tan, NOT wooden, NOT copper, NOT bronze, NOT gold. NOT blue, NOT steel-blue, NOT a crossguard, NOT a guard, NOT a hilt, NOT a dagger, NOT a sword, NOT a club, NOT a stick, NOT long, NOT hooked, NOT a sickle, NOT a pickaxe, NOT an axe."
+   "say": "a small skinning blade seen from the side, made of TWO CLEARLY DIFFERENT MATERIALS: the bottom third is a short round handle of DARK BROWN wood, and the top two thirds is ONE SHORT BROAD blade of PALE COLD GREY IRON — light silvery grey, the colour of bare metal, PLAINLY LIGHTER THAN THE HANDLE — with a straight back and a belly that swells outward and rounds over to the tip. The handle runs STRAIGHT INTO the blade with NOTHING crossing between them. THE BLADE IS NOT WOOD: NOT brown, NOT tan, NOT wooden, NOT copper, NOT bronze, NOT gold. NOT blue, NOT steel-blue, NOT a crossguard, NOT a guard, NOT a hilt, NOT a dagger, NOT a sword, NOT a club, NOT a stick, NOT long, NOT hooked, NOT a sickle, NOT a pickaxe, NOT an axe."
   },
   {
    "id": "tool_rod",
@@ -805,6 +805,150 @@
   {
    "id": "sk_gale",
    "say": "a low wide leather boot seen from the side, squat and much wider than it is tall, with three short white streaks of rushing air trailing back from its heel, NOT a feather, NOT a quill, NOT a wing, NOT a bird, NOT a person, NOT a leg, NOT a sword."
+  },
+  {
+   "id": "wn_rs_rime",
+   "say": "a jagged crust of frost rime growing over a small dark stone, pale ice-blue and white with a blue-black shadow side, NOT a snowflake, NOT a gem."
+  },
+  {
+   "id": "wn_rs_bitter",
+   "say": "a long thin icicle hanging point-down, dripping one frozen drop, pale ice-blue and white with a blue-black shadow side, NOT a sword, NOT a crystal cluster."
+  },
+  {
+   "id": "wn_rs_hoar",
+   "say": "a bare black twig thickly furred with white hoarfrost needles, pale ice-blue and white with a blue-black shadow side, NOT a tree, NOT leaves."
+  },
+  {
+   "id": "wn_rs_killingfrost",
+   "say": "a wilted black flower sheathed in ice, petals frozen mid-droop, pale ice-blue and white with a blue-black shadow side, NOT a rose in bloom, NOT green."
+  },
+  {
+   "id": "wn_rs_shatter",
+   "say": "a block of ice cracking apart into three big shards with a white fracture line, pale ice-blue and white with a blue-black shadow side, NOT glass, NOT a window."
+  },
+  {
+   "id": "wn_rs_splinter",
+   "say": "a fan of thin sharp ice splinters bursting outward from one point, pale ice-blue and white with a blue-black shadow side, NOT a star, NOT a snowflake."
+  },
+  {
+   "id": "wn_rs_glassing",
+   "say": "a smooth clear pane of ice with a spider-web crack radiating from a bright impact point, pale ice-blue and white with a blue-black shadow side, NOT a mirror, NOT a window frame."
+  },
+  {
+   "id": "wn_rs_avalanche",
+   "say": "a tumbling mass of snow boulders rolling downhill, pale ice-blue and white with a blue-black shadow side, NOT a mountain, NOT a cloud."
+  },
+  {
+   "id": "wn_rs_frostwork",
+   "say": "a lace of branching frost ferns spreading outward from the centre in a circle, pale ice-blue and white with a blue-black shadow side, NOT a snowflake, NOT a flower."
+  },
+  {
+   "id": "wn_rs_whiteout",
+   "say": "a swirling white blizzard whorl, a spiral of wind-blown snow, pale ice-blue and white with a blue-black shadow side, NOT a cloud, NOT a tornado funnel."
+  },
+  {
+   "id": "wn_rs_frostfall",
+   "say": "three fat snowflakes falling over a small snow mound, pale ice-blue and white with a blue-black shadow side, NOT a landscape, NOT a house."
+  },
+  {
+   "id": "wn_rs_field",
+   "say": "a great crystalline ice spike rising out of a ring of frost on the ground, glowing from within, pale ice-blue and white with a blue-black shadow side, NOT a tower, NOT a mountain."
+  },
+  {
+   "id": "wn_rs_ward",
+   "say": "a heart-shaped lump of blue ice with frost creeping over it, frozen solid, pale ice-blue and white with a blue-black shadow side, NOT a red heart, NOT a gem."
+  },
+  {
+   "id": "wn_rs_frostplate",
+   "say": "a heavy iron padlock sealed shut under a thick coat of ice, pale ice-blue and white with a blue-black shadow side, NOT a chest, NOT a chain."
+  },
+  {
+   "id": "wn_rs_stillness",
+   "say": "a skull encased in a block of clear ice, pale ice-blue and white with a blue-black shadow side, NOT a ghost, NOT a bone pile."
+  },
+  {
+   "id": "wn_rs_wellspring",
+   "say": "a frozen fountain, water arcs turned to solid ice mid-spray, pale ice-blue and white with a blue-black shadow side, NOT a well, NOT a bucket."
+  },
+  {
+   "id": "wn_rs_sleet",
+   "say": "a slanting volley of small ice pellets driven sideways by wind, pale ice-blue and white with a blue-black shadow side, NOT rain, NOT arrows."
+  },
+  {
+   "id": "wn_rs_flurry",
+   "say": "a burst of many tiny snowflakes scattering from one point, pale ice-blue and white with a blue-black shadow side, NOT one big snowflake, NOT a star."
+  },
+  {
+   "id": "wn_rs_thrift",
+   "say": "a curling gust of freezing wind drawn as three swept white streaks, pale ice-blue and white with a blue-black shadow side, NOT a cloud, NOT a feather."
+  },
+  {
+   "id": "wn_rs_tempo",
+   "say": "a hailstone the size of a fist, knobbly and layered, with a bright glint, pale ice-blue and white with a blue-black shadow side, NOT a snowball, NOT a pearl."
+  },
+  {
+   "id": "wn_rs_weight",
+   "say": "a massive dark blue ice boulder, heavy and dense, sitting alone, pale ice-blue and white with a blue-black shadow side, NOT a gem, NOT a mountain."
+  },
+  {
+   "id": "wn_rs_glacier",
+   "say": "a wedge of layered blue glacier ice with visible strata lines and a cracked face, pale ice-blue and white with a blue-black shadow side, NOT a mountain peak, NOT a wave."
+  },
+  {
+   "id": "wn_rs_permafrost",
+   "say": "a slab of frozen dark earth with ice crystals veining through it, pale ice-blue and white with a blue-black shadow side, NOT a brick, NOT a tombstone."
+  },
+  {
+   "id": "wn_rs_transmutation",
+   "say": "a snowflake half-melting into a flame on one side, cold on one half and warm orange on the other, NOT a sun, NOT a candle."
+  },
+  {
+   "id": "wn_rs_focus",
+   "say": "a single wide-open pale blue eye with a frost-white iris and ice crystals at its corners, NOT a face, NOT a mask."
+  },
+  {
+   "id": "wn_rs_vein",
+   "say": "a seam of glowing blue ore veining through a dark rock chunk, pale ice-blue and white with a blue-black shadow side, NOT a gem, NOT a crystal cluster."
+  },
+  {
+   "id": "wn_rs_footwork",
+   "say": "a single boot print pressed into snow with frost sparkles in it, pale ice-blue and white with a blue-black shadow side, NOT a boot, NOT a shoe."
+  },
+  {
+   "id": "wn_rs_hardy",
+   "say": "a spiked ball of ice bursting outward with shards flying, pale ice-blue and white with a blue-black shadow side, NOT a mace, NOT a sun."
+  },
+  {
+   "id": "wn_rs_bite",
+   "say": "a set of jagged icicle fangs, an open jaw of ice teeth, pale ice-blue and white with a blue-black shadow side, NOT a skull, NOT a monster face."
+  },
+  {
+   "id": "wn_rs_measure",
+   "say": "a three-pointed frost-covered brass balance scale, small and simple, pale ice-blue and white with a blue-black shadow side, NOT a sword, NOT a clock."
+  },
+  {
+   "id": "wn_g_damage",
+   "say": "a clenched iron gauntlet fist, dark steel with a warm brass rim, NOT an arm, NOT a glove with fingers open."
+  },
+  {
+   "id": "wn_g_physical",
+   "say": "a broad iron spearhead alone, dull grey steel with a bright edge, NOT a sword, NOT a shaft."
+  },
+  {
+   "id": "wn_g_bleed",
+   "say": "a single fat drop of dark red blood with a smaller drop beside it, deep crimson, NOT pink, NOT a heart, NOT water."
+  },
+  {
+   "id": "wn_g_ailment",
+   "say": "a small round glass vial of sickly yellow-green liquid, corked, NOT a bottle of wine, NOT a potion flask with a label."
+  },
+  {
+   "id": "wn_g_stack",
+   "say": "three flat stone discs stacked one on another, each slightly offset, warm grey stone, NOT coins, NOT a cake."
+  },
+  {
+   "id": "wn_g_move",
+   "say": "a small leather boot with a tiny wing at its heel, brown leather and pale feather, NOT a sandal, NOT a bird."
   }
  ]
 }
