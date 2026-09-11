@@ -1389,9 +1389,18 @@ keyed by skill id: Strike 45% within 0.9 tiles, Rimespike 25% within 1.4,
 Fireball 35% within 1.3, Lightning Arrow 30% within 1.1, Arc Lightning 20%
 within 1.0. **What a skill already reaches for free is the other half of the
 price**, which is why Arc Lightning's three Arcs buy it the meanest splash of
-the five. **EVERY CARD SAYS ITS OWN TWO FIGURES**, and the demo fails a skill
-whose description does not; the KEYWORD names the spread instead of a number,
-read off the table rather than typed. **AMBUSH IS THE
+the five. **THE KEYWORD SAYS THE SHAPE AND NO FIGURE** — *"that just kinda
+limits it"* — and **THE CARD SAYS THE LIVE ONE**: `splashReading` in
+`src/sim/stats.ts` is the sim's own arithmetic (share added to, radius
+multiplied, then widened by Area of Effect exactly as `areaRadius` widens it)
+and `splashLine` prints it as *Splash for 45%, in 0.9 tiles* on the hub card,
+so a build that bought Splash reads what it bought. A skill's description
+names Splash and carries no number; the demo fails one that does. **EVERY
+KEYWORD SAYS WHAT SCALES IT**: `KeywordDef.scales` is the tags and lines that
+move it — a Splash is Area of Effect, a Pierce is Projectile, a Burn is Fire
+and Ailment — rendered as *Scales with …* under the meaning on every card
+that names the word, so "all area mods should work" is read off the card
+rather than guessed. **AMBUSH IS THE
 ONE EXCEPTION** — *"it can be an exception since it can scale its speed so
 much"* — so its Pace branch is the rate itself and what a kill is worth. **A MONSTER NEVER
 SPLASHES**: a second unweighed source of damage is one no danger number

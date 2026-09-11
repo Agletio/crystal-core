@@ -14,7 +14,7 @@
  * `means` carries its own numbers, out of the same tables the sim reads. A
  * glossary quoting a figure by hand is a glossary that goes stale silently.
  */
-import { AILMENT_BY_ID, BURST, SKILL_BY_ID, DAMAGE_TYPE_BY_ID, DEFENCE, MANA, MELEE, PASSIVE_DAMAGE, POTIONS, PROJECTILE, SPLASH, WARRIOR, stunChanceFor } from './data';
+import { AILMENT_BY_ID, BURST, SKILL_BY_ID, DAMAGE_TYPE_BY_ID, DEFENCE, MANA, MELEE, PASSIVE_DAMAGE, POTIONS, PROJECTILE, WARRIOR, stunChanceFor } from './data';
 
 export interface KeywordDef {
   id: string;
@@ -40,17 +40,24 @@ export interface KeywordDef {
    * word and the better line.
    */
   kin?: string;
+  /**
+   * The TAGS and lines that move it, as the player reads them: a Splash is
+   * Area of Effect, a Pierce is Projectile. Empty for a word that is a stat
+   * itself. Rendered under the meaning on every card that names the word.
+   */
+  scales: string[];
 }
 
 const pct = (n: number): string => `${Math.round(n * 100)}%`;
-/** SPLASH is per skill, so the keyword names the SPREAD rather than a figure
- *  no card would agree with. Read off the table, never typed. */
-const splashRange = (of: 'share' | 'radius'): string => {
-  const all = Object.values(SPLASH).map((r) => r[of]);
-  const low = Math.min(...all);
-  const high = Math.max(...all);
-  return of === 'share' ? `${pct(low)} to ${pct(high)}` : `${low} to ${high}`;
+
+/** A tag as a line writes it; a stat name passes through untouched. */
+const TAG_WORD: Record<string, string> = {
+  attack: 'Attack', spell: 'Spell', melee: 'Melee', projectile: 'Projectile',
+  area: 'Area of Effect', ailment: 'Ailment', overTime: 'Damage over Time',
+  fire: 'Fire', cold: 'Cold', lightning: 'Lightning', physical: 'Physical',
+  poison: 'Poison', dark: 'Dark', light: 'Light', damage: 'increased Damage',
 };
+export const scaleWord = (tag: string): string => TAG_WORD[tag] ?? AILMENT_BY_ID[tag]?.name ?? tag;
 
 /**
  * An ailment's line, out of `AILMENTS` rather than quoted by hand — the table
@@ -70,7 +77,7 @@ function ailmentMeans(id: string): string {
           ? `Each stack is ${a.takenPer}% increased damage taken, from anyone.`
           : a.kind === 'shock'
             ? `${a.dps} damage a second, and every tick throws ${pct(a.arcShare ?? 0)} of it at up to ${a.arcTargets} enemies within ${a.arcRadius} tiles.`
-            : `${a.dps} damage a second. Scaled by ${(a.tags ?? []).join(', ')} and by nothing else — never by Spell, Attack or Critical.`;
+            : `${a.dps} damage a second, never scaled by Spell, Attack or Critical.`;
   return `${applied}, for ${a.seconds}s. ${does}`;
 }
 
@@ -89,6 +96,7 @@ export const KEYWORDS: KeywordDef[] = [
       `first flies at another enemy within ${PROJECTILE.spread} tiles of that ` +
       `target, for full damage. Nothing is hit twice by one use.`,
     grants: ['extraTargets'],
+    scales: ['projectile'],
   },
   {
     id: 'pierce',
@@ -100,6 +108,7 @@ export const KEYWORDS: KeywordDef[] = [
       `along the line and ${PROJECTILE.corridor} tiles either side of it — for ` +
       `${pct(PROJECTILE.pierceDamage)} of the damage.`,
     grants: ['pierce', 'pierceDamage'],
+    scales: ['projectile'],
   },
   {
     id: 'arc',
@@ -110,6 +119,7 @@ export const KEYWORDS: KeywordDef[] = [
       `within ${PROJECTILE.arc} tiles. Each Arc is one more leap, for ` +
       `${pct(PROJECTILE.arcDamage)} of the damage.`,
     grants: ['chains', 'chainDamage'],
+    scales: ['projectile'],
   },
   {
     id: 'fork',
@@ -121,6 +131,7 @@ export const KEYWORDS: KeywordDef[] = [
       `the damage. It is its own bolt, not the shot carrying on, so where the ` +
       `shot came from decides nothing. Nothing is hit twice by one use.`,
     grants: ['forks', 'forkDamage'],
+    scales: ['projectile'],
   },
   {
     id: 'spread',
@@ -130,6 +141,7 @@ export const KEYWORDS: KeywordDef[] = [
       `How far a Projectile past the first looks for its own enemy, from the ` +
       `one you aimed at. ${PROJECTILE.spread} tiles bare.`,
     grants: ['spreadRange'],
+    scales: ['projectile'],
   },
   {
     id: 'repeat',
@@ -139,6 +151,7 @@ export const KEYWORDS: KeywordDef[] = [
       'One more swing at the enemy you aimed at, in the same use and at full ' +
       'damage. Repeats stop the moment that enemy is down.',
     grants: ['doubleStrike'],
+    scales: ['attack', 'melee'],
   },
   {
     id: 'burst',
@@ -151,6 +164,7 @@ export const KEYWORDS: KeywordDef[] = [
       `by a DEATH is a share of the hit that killed it, and sets off the Bursts ` +
       `of whatever IT kills, ${BURST.chainDepth} deep. Bursts overlap freely.`,
     grants: ['burstOnHit', 'explodeOnKill'],
+    scales: ['area', 'damage'],
   },
   {
     id: 'splash',
@@ -158,11 +172,10 @@ export const KEYWORDS: KeywordDef[] = [
     says: ['Splash', 'Splashes'],
     means:
       `Damage in a circle around the body a hit landed on, for a share of that ` +
-      `hit — ${splashRange('share')} of it across ${splashRange('radius')} tiles, ` +
-      `and the skill's own card says which. Every skill that hits ONE enemy ` +
-      `carries it without being asked, and increased Area of Effect from ` +
-      `anywhere widens it.`,
+      `hit. Every skill that hits ONE enemy carries it without being asked, ` +
+      `and its own card says the share and the reach.`,
     grants: ['splashShare', 'splashRadius'],
+    scales: ['area'],
   },
   {
     id: 'convert',
@@ -174,6 +187,7 @@ export const KEYWORDS: KeywordDef[] = [
       'new one, so no point you walked is stranded — and your gear does not, so ' +
       'a line on a ring keeps naming the type it named.',
     grants: ['convertTree'],
+    scales: [],
   },
   {
     id: 'echo',
@@ -186,6 +200,7 @@ export const KEYWORDS: KeywordDef[] = [
       `further, so more Echoes reach deeper into a pack. Nothing is hit twice ` +
       `by one use.`,
     grants: ['echoes', 'echoDamage'],
+    scales: ['attack', 'melee'],
   },
   {
     id: 'cone',
@@ -194,10 +209,11 @@ export const KEYWORDS: KeywordDef[] = [
     means:
       'A wedge in front of you. Everything standing in it takes the WHOLE hit ' +
       'and nothing takes a share, and there is no target limit — so how many ' +
-      'bodies the wedge holds is the whole of what a use is worth. Area of ' +
-      'Effect reaches every Cone further. Opened past 360° it is every ' +
-      'direction at once and what you are facing stops mattering.',
+      'bodies the wedge holds is the whole of what a use is worth. Opened ' +
+      'past 360° it is every direction at once and what you are facing stops ' +
+      'mattering.',
     grants: ['coneArc', 'coneReach'],
+    scales: ['area'],
   },
   {
     id: 'cloud',
@@ -206,8 +222,9 @@ export const KEYWORDS: KeywordDef[] = [
     means:
       'A circle on the ground that leaves an Ailment on everything standing ' +
       'in it. It has no target limit, so a wider Cloud is the whole of how it ' +
-      'hits more. Area of Effect widens every Cloud.',
+      'hits more.',
     grants: ['extraFields', 'fieldRadius', 'contagionRadius'],
+    scales: ['area', 'ailment'],
   },
 
   // --- damage over time ----------------------------------------------------
@@ -221,6 +238,7 @@ export const KEYWORDS: KeywordDef[] = [
       'third. Resistance blunts one and Armour never does, which is what makes ' +
       'an Ailment the answer to something you cannot punch through.',
     grants: ['ailmentChance', 'ailmentMultiplier', 'ailmentDuration', 'bleedOnHit', 'ailmentShare'],
+    scales: ['ailment'],
   },
   {
     id: 'burn',
@@ -228,6 +246,7 @@ export const KEYWORDS: KeywordDef[] = [
     says: ['Burn', 'Burns', 'Burning'],
     means: ailmentMeans('burn'),
     kin: 'ailment',
+    scales: AILMENT_BY_ID.burn.tags ?? ['ailment'],
   },
   {
     id: 'bleed',
@@ -235,6 +254,7 @@ export const KEYWORDS: KeywordDef[] = [
     says: ['Bleed', 'Bleeds', 'Bleeding'],
     means: ailmentMeans('bleed'),
     kin: 'ailment',
+    scales: AILMENT_BY_ID.bleed.tags ?? ['ailment'],
   },
   {
     id: 'poison',
@@ -242,6 +262,7 @@ export const KEYWORDS: KeywordDef[] = [
     says: ['Poison', 'Poisons', 'Poisoned'],
     means: ailmentMeans('poison'),
     kin: 'ailment',
+    scales: AILMENT_BY_ID.poison.tags ?? ['ailment'],
   },
   {
     id: 'chill',
@@ -249,6 +270,7 @@ export const KEYWORDS: KeywordDef[] = [
     says: ['Chill', 'Chills', 'Chilled'],
     means: ailmentMeans('chill'),
     kin: 'ailment',
+    scales: AILMENT_BY_ID.chill.tags ?? ['ailment'],
   },
   {
     id: 'shock',
@@ -256,6 +278,7 @@ export const KEYWORDS: KeywordDef[] = [
     says: ['Shock', 'Shocks', 'Shocked'],
     means: ailmentMeans('shock'),
     kin: 'ailment',
+    scales: AILMENT_BY_ID.shock.tags ?? ['ailment'],
   },
   {
     id: 'curse',
@@ -263,6 +286,7 @@ export const KEYWORDS: KeywordDef[] = [
     says: ['Curse', 'Curses', 'Cursed'],
     means: ailmentMeans('curse'),
     kin: 'ailment',
+    scales: AILMENT_BY_ID.curse.tags ?? ['ailment'],
   },
   {
     id: 'exposure',
@@ -270,6 +294,7 @@ export const KEYWORDS: KeywordDef[] = [
     says: ['Exposure', 'Expose', 'Exposes', 'Exposed'],
     means: ailmentMeans('exposure'),
     kin: 'ailment',
+    scales: AILMENT_BY_ID.exposure.tags ?? ['ailment'],
   },
 
   // --- the stats every line leans on --------------------------------------
@@ -282,6 +307,7 @@ export const KEYWORDS: KeywordDef[] = [
       'further. It grows the ' +
       'AREA, so a radius goes by the square root of it, and it never touches ' +
       'damage.',
+    scales: [],
   },
   {
     id: 'increased',
@@ -291,6 +317,7 @@ export const KEYWORDS: KeywordDef[] = [
       'Every increased line of one stat adds into one sum, and the sum ' +
       'multiplies the base once. Two 50% increased lines are 100%, not 125%. ' +
       'Reduced subtracts from the same sum.',
+    scales: [],
   },
   {
     id: 'more',
@@ -300,6 +327,7 @@ export const KEYWORDS: KeywordDef[] = [
       'Every more line multiplies on its own, on top of everything else. Two ' +
       '50% more lines are 125% more, not 100%. Less divides the same way: ' +
       '40% less is 0.6 times.',
+    scales: [],
   },
   {
     id: 'critical',
@@ -310,6 +338,7 @@ export const KEYWORDS: KeywordDef[] = [
       'have found. Critical Chance is how often: every skill has its own, and ' +
       'increased Critical Chance scales THAT. A spell and an attack count it ' +
       'separately.',
+    scales: ['Critical Chance', 'Critical Damage'],
   },
   {
     id: 'resistance',
@@ -319,6 +348,7 @@ export const KEYWORDS: KeywordDef[] = [
       `Blunts one damage type, Ailments included. It caps at ` +
       `${DEFENCE.resistanceCap}%, and Resistance and Armour multiply rather ` +
       `than adding — at both caps a hit lands for a sixteenth.`,
+    scales: [],
   },
   {
     id: 'block',
@@ -328,6 +358,7 @@ export const KEYWORDS: KeywordDef[] = [
       `A Blocked hit deals nothing at all — there is no second number. Block ` +
       `Chance caps at ${DEFENCE.blockCap}%, comes off a shield in your off ` +
       `hand and from nowhere else, and does nothing against an Ailment.`,
+    scales: [],
   },
   {
     id: 'dodge',
@@ -339,6 +370,7 @@ export const KEYWORDS: KeywordDef[] = [
       `and is TRADED for Armour rather than worn beside it: what stops some ` +
       `hits outright no longer blunts the rest.`,
     grants: ['armourToDodge'],
+    scales: [],
   },
   {
     id: 'armour',
@@ -348,6 +380,7 @@ export const KEYWORDS: KeywordDef[] = [
       `Blunts a HIT, by a share that curves with Armour points rather than ` +
       `with the size of the hit: ${DEFENCE.armourHalfPoint} points is half the ` +
       `${DEFENCE.armourCap}% cap. It does nothing at all against an Ailment.`,
+    scales: [],
   },
 
   // --- mana and flasks -----------------------------------------------------
@@ -360,6 +393,7 @@ export const KEYWORDS: KeywordDef[] = [
       `${pct(MANA.starvedDamage)} of your damage. Running dry is a price, ` +
       `never a wall.`,
     grants: ['starvedDamage'],
+    scales: [],
   },
   // --- what a movement skill does -----------------------------------------
   {
@@ -371,6 +405,7 @@ export const KEYWORDS: KeywordDef[] = [
       'Burst — a Burst is damage in a circle and a Slow deals none, because ' +
       'every damage number in the game belongs to the skill in your main slot.',
     grants: ['landingSlow'],
+    scales: [],
   },
   {
     id: 'charge',
@@ -381,6 +416,7 @@ export const KEYWORDS: KeywordDef[] = [
       `always begins full, and nothing about them survives one — there is ` +
       `nothing to hoard.`,
     grants: ['chargeRegen', 'chargeOnKill'],
+    scales: [],
   },
   {
     /** A flask's Charge and a mover's Gust are two things, so they are two
@@ -393,6 +429,7 @@ export const KEYWORDS: KeywordDef[] = [
       `faster for each one, anything that lands a hit takes one, and one comes ` +
       `back every ${SKILL_BY_ID.gale?.params?.back ?? 0}s.`,
     grants: ['gustSpeed', 'gustMax', 'gustBack'],
+    scales: ['Movement Speed'],
   },
   {
     id: 'stun',
@@ -406,6 +443,7 @@ export const KEYWORDS: KeywordDef[] = [
       'outright always Stuns it, so what a Stun sets off still fires on one you ' +
       'take down in a single blow.',
     grants: ['stunSeconds', 'stunMore', 'stunBurst'],
+    scales: ['attack'],
   },
 ];
 

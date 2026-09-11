@@ -403,7 +403,7 @@ import type { Character } from './sim/character';
 import { bestBuild, buildPower, deepestSet, ladderCharacter, ladderSet, loadoutMods, starterLoadout } from './sim/loadout';
 import type { BuildShape } from './sim/loadout';
 import { composition, crystalFamily, familyPlan, mapTheme, runSet } from './sim/crystal';
-import { armourReduction, dropBias } from './sim/stats';
+import { armourReduction, dropBias, splashLine, splashReading } from './sim/stats';
 import {
   arrowFlight,
   auraLook,
@@ -5638,19 +5638,26 @@ if (rule('SPLASH — every skill that hits ONE thing spills onto what stands by 
     `${widest.sk.name} ${widest.at.share}/${widest.at.radius}, ` +
       `${hardest.sk.name} ${hardest.at.share}/${hardest.at.radius}`
   );
-  // AND EVERY CARD SAYS ITS OWN: a figure a player cannot read is one nobody
-  // balances a build around.
-  // Compared the way a CARD writes it: every one says one decimal, so a radius
-  // of 1 reads "1.0 tiles" and a bare `1` would match nothing.
-  const mute = rows.filter(({ sk, at }) =>
-    !sk.description.includes(`${Math.round(at.share * 100)}%`)
-    || !sk.description.includes(`${at.radius.toFixed(1)} tiles`)
-    || !/Splash/.test(sk.description)
-  );
+  // AND EVERY CARD SAYS ITS OWN, as a LIVE line off `splashReading`: the
+  // description names the word and carries no figure, because a figure typed
+  // there is one that stops moving when the build does.
+  const mute = rows.filter(({ sk }) => !/Splash/.test(sk.description) || /Splash for \d/.test(sk.description));
   check(
     mute.length === 0,
-    'and each one names its share, its radius and the word Splash on its own card',
+    'and each one says Splash on its own card and leaves the figures to the live line',
     mute.map(({ sk }) => sk.name).join(', ')
+  );
+  const off = rows.filter(({ sk, at }) => {
+    const bare = splashReading(sk, {}, 0)!;
+    return Math.abs(bare.share - at.share) > 1e-9 || Math.abs(bare.radius - at.radius) > 1e-9;
+  });
+  check(off.length === 0, 'and the live line reads the table bare', off.map(({ sk }) => sk.name).join(', '));
+  const lit = splashReading(SKILL_BY_ID.strike, { splashShare: 0.25, splashRadius: 1.5 }, 100)!;
+  check(
+    Math.abs(lit.share - (SPLASH.strike.share + 0.25)) < 1e-9
+      && Math.abs(lit.radius - SPLASH.strike.radius * 1.5 * Math.SQRT2) < 1e-9,
+    `and it moves with the share, the radius and Area of Effect: ${splashLine(lit)}`,
+    JSON.stringify(lit)
   );
 
   // AND IT LANDS. Fired through the real behaviour at a body with a neighbour

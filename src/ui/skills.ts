@@ -46,7 +46,7 @@ import { inDescent } from './run';
 import { slotWorkings } from '../skill-text';
 import { ailmentLine } from '../damage-text';
 import type { SkillNodeDef } from '../skills-tree';
-import { characterStats, convertedType, damageDetail, effectiveSkill, retag, skillBase, treeGrants, walked } from '../sim/stats';
+import { characterStats, convertedType, damageDetail, effectiveSkill, retag, skillBase, splashLine, splashReading, treeGrants, walked } from '../sim/stats';
 import {
   addSkillXp,
   equipSkill,
@@ -262,6 +262,9 @@ function skillSummary(skill: SkillDef): HTMLElement {
   ];
   // Before the numbers, because it decides whether any of them apply to you.
   if (skill.requires) lines.push(`swung with: ${weaponWanted(skill)}`);
+  // The Splash as this build lands it; Area of Effect only counts once worn.
+  const splash = splashReading(skill, mine ? grants : walked(game.character, skill.id), mine ? stats.areaOfEffect : 0);
+  if (splash) lines.push(splashLine(splash));
 
   // Everything below is derived from what you are WEARING, which is only the
   // truth for the skill you actually have equipped.

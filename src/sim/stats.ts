@@ -313,6 +313,24 @@ export interface DamageDetail {
   perSecond: number;
 }
 
+/** What a Splash is worth on THIS build, the arithmetic `splashFrom` does:
+ *  share added to, radius multiplied and widened as `areaRadius` widens it. */
+export function splashReading(
+  skill: SkillDef,
+  grants: Record<string, unknown>,
+  areaOfEffect: number
+): { share: number; radius: number } | null {
+  const baked = skill.splash;
+  if (!baked) return null;
+  const share = baked.share + (typeof grants.splashShare === 'number' ? grants.splashShare : 0);
+  const wider = typeof grants.splashRadius === 'number' ? grants.splashRadius : 1;
+  return { share, radius: baked.radius * wider * Math.sqrt(1 + areaOfEffect / 100) };
+}
+
+export function splashLine(reading: { share: number; radius: number }): string {
+  return `Splash for ${Math.round(reading.share * 100)}%, in ${reading.radius.toFixed(1)} tiles.`; // the word, so the glossary defines it
+}
+
 export function damageDetail(character: Character): DamageDetail {
   const stats = characterStats(character);
   const grants = treeGrants(character);

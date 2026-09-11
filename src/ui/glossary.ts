@@ -5,7 +5,7 @@
  * keyword the lines name is defined at the bottom of the same box. Learn Arc
  * once and every card saying +1 Arc after it is free to read.
  */
-import { cutKeywords, keywordsIn } from '../keywords';
+import { cutKeywords, keywordsIn, scaleWord } from '../keywords';
 
 function el(tag: string, cls?: string, text?: string): HTMLElement {
   const node = document.createElement(tag);
@@ -59,6 +59,9 @@ export function glossaryOf(lines: string[]): HTMLElement | null {
     const row = el('div', 'tip__kw');
     row.append(el('span', 'kw', keyword.name));
     row.append(document.createTextNode(` — ${keyword.means}`));
+    if (keyword.scales.length) {
+      row.append(el('span', 'tip__scales', ` Scales with ${keyword.scales.map(scaleWord).join(', ')}.`));
+    }
     box.append(row);
   }
   return box;

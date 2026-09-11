@@ -5166,7 +5166,7 @@ export const SKILLS: SkillDef[] = [
     requires: 'melee',
     name: 'Strike',
     category: 'attack',
-    description: 'A hard melee blow. One enemy, and Splash for 45% within 0.9 tiles.',
+    description: 'A hard melee blow. One enemy, with Splash.',
     tags: ['attack', 'melee'],
     behaviour: 'melee',
     damageTypes: ['physical'],
@@ -5270,7 +5270,7 @@ export const SKILLS: SkillDef[] = [
     name: 'Fireball',
     category: 'spell',
     description:
-      'A ball of fire at range. One enemy, and Splash for 35% within 1.3 tiles.',
+      'A ball of fire at range. One enemy, with Splash.',
     tags: ['spell', 'projectile'],
     behaviour: 'projectile',
     damageTypes: ['fire'],
@@ -5341,8 +5341,8 @@ export const SKILLS: SkillDef[] = [
     name: 'Arc Lightning',
     category: 'spell',
     description:
-      'A bolt of lightning with 3 Arcs, each for 70% of the damage, and Splash ' +
-      'for 20% within 1.0 tiles. It hits one enemy for less than anything else.',
+      'A bolt of lightning with 3 Arcs, each for 70% of the damage, with ' +
+      'Splash. It hits one enemy for less than anything else.',
     tags: ['spell', 'projectile'],
     behaviour: 'projectile',
     damageTypes: ['lightning'],
@@ -5369,7 +5369,7 @@ export const SKILLS: SkillDef[] = [
     category: 'attack',
     description:
       'An arrow of lightning at range. Full damage to what it hits, 2 Forks on ' +
-      'enemies near it for 45% each, and Splash for 30% within 1.1 tiles.',
+      'enemies near it for 45% each, with Splash.',
     tags: ['attack', 'projectile'],
     behaviour: 'projectile',
     damageTypes: ['lightning'],
