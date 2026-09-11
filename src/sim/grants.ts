@@ -1187,6 +1187,41 @@ export const GRANTS: GrantDef[] = [
     },
   },
   {
+    /** LIGHTNING ARROW'S FIRST MODE, and the run keeps it: a body the arrow
+     *  hits is Tethered for `seconds`, and damage to one Tethered body lands
+     *  `share` of itself on every other Tethered body within `reach`. */
+    id: 'tether',
+    what: 'what the arrow hits is tethered, and damage to one is shared to the rest',
+    reads: [STATS], // the run's own rule, like a kill's tempo
+    merge: 'bag',
+    say: (v) => {
+      const o = v as { share?: number; seconds?: number; reach?: number } | null;
+      if (!o || typeof o.share !== 'number' || typeof o.seconds !== 'number' || typeof o.reach !== 'number') return null;
+      return (
+        `What the arrow hits is Tethered for ${o.seconds}s, and damage to one Tethered enemy lands ` +
+        `${pct(o.share)} of itself on every other Tethered enemy within ${o.reach} tiles`
+      );
+    },
+  },
+  {
+    /** LIGHTNING ARROW'S OTHER MODE. No hit: the arrow sticks, and after
+     *  `seconds` it bursts `radius` round the body for `more` more. Every arrow
+     *  in a body is its own fuse; nothing Pierces, Arcs or Forks. */
+    id: 'fuse',
+    changes: 'burst',
+    what: 'the arrow sticks and bursts after a delay instead of hitting',
+    reads: ['projectile', SIM],
+    merge: 'bag',
+    say: (v) => {
+      const o = v as { seconds?: number; radius?: number; more?: number } | null;
+      if (!o || typeof o.seconds !== 'number' || typeof o.radius !== 'number' || typeof o.more !== 'number') return null;
+      return (
+        `The arrow sticks and bursts ${o.seconds}s later, ${o.radius} tiles round the body, ` +
+        `for ${pct(o.more)} more damage; every arrow in a body is its own fuse`
+      );
+    },
+  },
+  {
     /** ARC LIGHTNING'S FIRST MODE. No bolt: a ball of lightning drifts toward
      *  the body you aimed at for `seconds`, Arcing every `every` to whatever
      *  is within `radius`, `less` less each — and every Arc the tree bought is

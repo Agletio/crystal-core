@@ -29,6 +29,7 @@ const BRANCHES: Branch[] = [
       name: 'Storm Call',
       description: 'Lightning Arrow gains +2 Forks.',
       grants: { forks: 2, manaMultiplier: 1.15 },
+      under: { la_fuse: { description: 'Fuses burst 0.4 tiles wider.', grants: { fuse: { radius: 0.4 }, manaMultiplier: 1.15 } } },
     },
     twigs: [
       {
@@ -38,6 +39,7 @@ const BRANCHES: Branch[] = [
           name: 'Thunderhead',
           description: 'Forks deal 80% of the damage instead of 45%.',
           grants: { forkDamage: 0.8, manaMultiplier: 1.08 },
+          under: { la_fuse: { description: 'Fuses burst for a further 20% more damage.', grants: { fuse: { more: 0.2 }, manaMultiplier: 1.08 } } },
         },
       },
       {
@@ -48,6 +50,7 @@ const BRANCHES: Branch[] = [
           name: 'Deluge',
           description: 'Lightning Arrow gains +3 Forks.',
           grants: { forks: 3, manaMultiplier: 1.15 },
+          under: { la_fuse: { description: 'Fuses burst 0.6 tiles wider.', grants: { fuse: { radius: 0.6 }, manaMultiplier: 1.15 } } },
         },
       },
     ],
@@ -61,6 +64,9 @@ const BRANCHES: Branch[] = [
       name: 'Broadhead',
       description: 'Lightning Arrow gains +1 Pierce.',
       grants: { pierce: 1, manaMultiplier: 1.15 },
+      // A stuck arrow flies through nothing: the Pierce walked to reach the
+      // keystone is a harder burst under it.
+      under: { la_fuse: { description: 'Fuses burst for a further 25% more damage.', grants: { fuse: { more: 0.25 }, manaMultiplier: 1.15 } } },
     },
     twigs: [
       {
@@ -70,15 +76,27 @@ const BRANCHES: Branch[] = [
           name: 'Full Draw',
           description: 'Pierce deals full damage instead of 70%.',
           grants: { pierceDamage: 1, manaMultiplier: 1.08 },
+          under: { la_fuse: { description: 'Fuses burst 0.3 tiles wider.', grants: { fuse: { radius: 0.3 }, manaMultiplier: 1.08 } } },
         },
       },
       {
         minors: 5,
         notable: {
-          id: 'la_overdraw',
-          name: 'Overdraw',
-          description: 'Lightning Arrow gains +2 Pierce.',
-          grants: { pierce: 2, manaMultiplier: 1.15 },
+          /**
+           * FUSED ARROW, the keystone at the tip of the Broadhead line: the
+           * arrow sticks and bursts later, every arrow its own fuse, so the
+           * Quiver line is how many fuses a body carries at once.
+           */
+          id: 'la_fuse',
+          name: 'Fused Arrow',
+          keystone: true,
+          description:
+            'The arrow sticks and bursts 1s later, 1.5 tiles round the body, for 100% more ' +
+            'damage. Every arrow in a body is its own fuse. Nothing Pierces, Arcs or Forks.',
+          becomes:
+            'You loose an arrow that sticks and bursts 1s later, 1.5 tiles round the body, for 100% ' +
+            'more damage. Every arrow in a body is its own fuse; nothing Pierces, Arcs or Forks.',
+          grants: { fuse: { seconds: 1, radius: 1.5, more: 1 }, manaMultiplier: 1.2 },
         },
       },
     ],
@@ -125,6 +143,7 @@ const BRANCHES: Branch[] = [
       name: 'Conduction',
       description: 'Lightning Arrow gains +1 Arc.',
       grants: { chains: 1, manaMultiplier: 1.15 },
+      under: { la_fuse: { description: 'Fuses burst 0.3 tiles wider.', grants: { fuse: { radius: 0.3 }, manaMultiplier: 1.15 } } },
     },
     twigs: [
       {
@@ -134,6 +153,7 @@ const BRANCHES: Branch[] = [
           name: 'Rebound',
           description: 'Arcs deal full damage instead of 70%.',
           grants: { chainDamage: 1, manaMultiplier: 1.08 },
+          under: { la_fuse: { description: 'Fuses burst for a further 20% more damage.', grants: { fuse: { more: 0.2 }, manaMultiplier: 1.08 } } },
         },
       },
       {
@@ -144,6 +164,7 @@ const BRANCHES: Branch[] = [
           name: 'Earthing Line',
           description: 'Lightning Arrow gains +2 Arcs.',
           grants: { chains: 2, manaMultiplier: 1.15 },
+          under: { la_fuse: { description: 'Fuses burst 0.5 tiles wider.', grants: { fuse: { radius: 0.5 }, manaMultiplier: 1.15 } } },
         },
       },
     ],
@@ -185,15 +206,24 @@ const BRANCHES: Branch[] = [
         },
       },
       {
+        /**
+         * TETHER, the keystone at the tip of the Mark line: the arrow ties what
+         * it hits, and what lands on one tied body lands a share on the rest.
+         * The run keeps it, so a pack pinned and tied is a pack hit as one.
+         */
         minors: 4,
         forkFrom: { twig: 1, at: 2 },
         notable: {
-          id: 'la_quarry',
-          name: 'Quarry',
+          id: 'la_tether',
+          name: 'Tether',
+          keystone: true,
           description:
-            'What the arrow hits is held for a further 0.6s, and Lightning ' +
-            'Arrow gains +1 Fork.',
-          grants: { pinSeconds: 0.6, forks: 1, manaMultiplier: 1.15 },
+            'What the arrow hits is Tethered for 4s. Damage to one Tethered enemy lands 40% ' +
+            'of itself on every other Tethered enemy within 5 tiles.',
+          becomes:
+            'You loose an arrow that Tethers what it hits for 4s: damage to one Tethered enemy ' +
+            'lands 40% of itself on every other Tethered enemy within 5 tiles. Everything else the bow does, it still does.',
+          grants: { tether: { share: 0.4, seconds: 4, reach: 5 }, manaMultiplier: 1.15 },
         },
       },
     ],

@@ -337,6 +337,7 @@ export interface Entity {
   /** Just out of a Freeze: the next hit on it is a Critical, whatever your
    *  chance is. Crit comes back to an ailment from THIS side and no other. */
   thawed?: boolean;
+  tethered?: number; // seconds a Tether still ties it, under Lightning Arrow's keystone
   /** Where a body that has not seen you paces about: where it was PUT, the spot
    *  it is ambling to, and the pause before the next one. Anchored, so a pack
    *  cannot drift out of the room it stands in. */
@@ -568,6 +569,8 @@ export interface RunState {
   vanished: number; // seconds the hero is unseen for, off a kill under Vanish
   tremors: Array<{ wedge: Wedge; left: number; tickIn: number }>; // ground still shaking under Tremor
   orbs: Array<{ x: number; y: number; targetId: number; left: number; tickIn: number }>; // balls of lightning still drifting
+  fuses: Array<{ targetId: number; left: number }>; // arrows stuck in bodies, waiting to burst
+  shared: number; // hits a Tether passed on to another body
   gusts: number; // what GALE is holding, which is what its speed is worth
   /** Uses that fired the COMBAT mode: a step away, and a landing on a body. */
   kites: number;
@@ -659,6 +662,7 @@ export class RunSim {
   private readonly ailChance: number;
   /** Seconds left of a KILL still covering and quickening you. */
   private sinceKill = 0;
+  private sharing = false; // inside a Tether's share, so a share never shares
   /** Kills stacked up, and the seconds left of the whole stack. Refreshed as one
    *  rather than per stack, exactly as the crit buff is. */
   private tempo = 0;
@@ -847,6 +851,8 @@ export class RunSim {
       vanished: 0,
       tremors: [],
       orbs: [],
+      fuses: [],
+      shared: 0,
       gusts: 0,
       kites: 0,
       dives: 0,
@@ -1442,6 +1448,7 @@ export class RunSim {
     this.stepSpikes(dt);
     this.stepTremors(dt);
     this.stepOrbs(dt);
+    this.stepFuses(dt);
     this.stepFight(dt);
     this.stepHero(dt);
     if (s.status !== 'running') return;
@@ -2336,6 +2343,7 @@ export class RunSim {
   private stepMonster(m: Entity, dt: number): void {
     const hero = this.state.hero;
     if (m.cooldown > 0) m.cooldown -= dt;
+    if ((m.tethered ?? 0) > 0) m.tethered = Math.max(0, (m.tethered ?? 0) - dt);
 
     const d = dist(m, hero);
     if (d > ACTIVE_RANGE) return;
@@ -3154,6 +3162,10 @@ export class RunSim {
       vfx: (kind, points, ttl = 0.3, delay = 0) =>
         this.emit(kind, points, skill.damageTypes[0] ?? 'physical', ttl, delay, user.id),
       blink: (target) => this.stepBehind(user, target),
+      fuse: (target) => {
+        const lit = this.grants.fuse as { seconds: number } | undefined;
+        if (lit && user.kind === 'hero' && !target.dead) this.state.fuses.push({ targetId: target.id, left: lit.seconds });
+      },
       orb: (from, target) => {
         const ball = this.grants.orb as { seconds: number } | undefined;
         if (ball && user.kind === 'hero') this.state.orbs.push({ x: from.x, y: from.y, targetId: target.id, left: ball.seconds, tickIn: 0 });
@@ -3226,6 +3238,28 @@ export class RunSim {
     if (per <= 0) return 1;
     const rate = Math.max(0.01, user.stats.attacksPerSecond);
     return 1 + per * Math.max(0, FASTEST_SWING / rate - 1);
+  }
+
+  /** A FUSED ARROW bursts when its seconds run out, on the body it is stuck in
+   *  and everything round it, unless that body is already down. */
+  private stepFuses(dt: number): void {
+    const live = this.state.fuses;
+    if (live.length === 0) return;
+    const lit = this.grants.fuse as { radius: number; more: number } | undefined;
+    for (const f of live) {
+      f.left -= dt;
+      if (f.left > 0 || !lit) continue;
+      const body = this.byId.get(f.targetId);
+      if (!body || body.dead) continue;
+      const radius = this.areaRadius(this.state.hero, lit.radius);
+      const at = { x: body.x, y: body.y };
+      for (const m of this.state.monsters) {
+        if (m.dead || (m !== body && dist(m, at) - m.radius > radius)) continue;
+        this.dealDamage(this.state.hero, m, 1 + lit.more, this.skill);
+      }
+      this.emit('burst', [at, { x: at.x + radius, y: at.y }], this.skill.damageTypes[0] ?? 'physical', 0.32, 0, this.state.hero.id);
+    }
+    this.state.fuses = live.filter((f) => f.left > 0);
   }
 
   /** A BALL OF LIGHTNING drifts after its body — or the nearest living one once
@@ -3635,6 +3669,26 @@ export class RunSim {
       defender.stunKind = 'pin';
     }
     defender.struck = true; // FIRST BLOOD is spent the moment one lands
+    // A TETHER: the body is tied for a while, and what lands on one tied body
+    // lands a share on the rest. Shared damage is dealt plainly, never shared
+    // again, which is the termination proof.
+    const tie = attacker.kind === 'hero' ? (this.grants.tether as { share: number; seconds: number; reach: number } | undefined) : undefined;
+    if (tie && defender.kind === 'monster' && !this.sharing) {
+      const was = (defender.tethered ?? 0) > 0;
+      defender.tethered = Math.max(defender.tethered ?? 0, tie.seconds);
+      if (was) {
+        this.sharing = true;
+        for (const other of this.state.monsters) {
+          if (other === defender || other.dead || (other.tethered ?? 0) <= 0 || dist(other, defender) > tie.reach) continue;
+          other.life -= dmg * tie.share;
+          this.state.shared++;
+          this.bank(other, dmg * tie.share, false);
+          this.emit('arc', [{ x: defender.x, y: defender.y }, { x: other.x, y: other.y }], 'lightning', 0.2, 0, attacker.id);
+          if (other.life <= 0) this.kill(other);
+        }
+        this.sharing = false;
+      }
+    }
     // A HEAVY HAND, on the ONE Slow seam a landing already writes.
     const heavy = attacker.kind === 'hero' ? ((this.grants.heavyHand as number) ?? 0) : 0;
     if (heavy > 0 && defender.kind !== 'hero' && defender.life > 0) {

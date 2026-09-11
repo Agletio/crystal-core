@@ -57,6 +57,8 @@ export interface SkillUse {
   tremor(wedge: Wedge): void;
   /** Loose a BALL of lightning the sim keeps, moves and ticks, after `target`. */
   orb(from: Vec2, target: Entity): void;
+  /** Stick a FUSED arrow in a body the sim bursts later: no hit now. */
+  fuse(target: Entity): void;
 }
 
 /** A wedge on the floor: where it opens from, which way, how far and how wide. */
@@ -638,7 +640,27 @@ export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
     const castMultiplier = castScale(g, use.castIndex);
     const scale = (e: Entity) => castMultiplier * targetScale(use, e);
 
+
+    // A BALL flies and a bolt of lightning does not: a flight is timed off the
+    // distance so the trail is on screen, and what it leaves waits for it.
+    const flies = kind !== 'arc';
+    const flight = (a: Vec2, b: Vec2): number =>
+      flies ? Math.max(FLIGHT.least, Math.hypot(b.x - a.x, b.y - a.y) / FLIGHT.speed) : 0.3;
+    const lands = (ttl: number): number => (flies ? ttl * FLIGHT.arrives : 0);
+
     // THE MODES a thrown ball may be instead, each the whole use.
+    const fuse = g.fuse as { seconds: number } | undefined;
+    if (fuse) {
+      const stuck = [
+        use.primary,
+        ...spreadTargets(use, use.enemies.filter((e) => !e.dead && e !== use.primary), num(g.extraTargets, 0)),
+      ];
+      stuck.forEach((e, i) => {
+        use.fuse(e);
+        use.vfx(kind, [{ x: use.user.x, y: use.user.y }, { x: e.x, y: e.y }], flight(use.user, e), i * 0.05);
+      });
+      return;
+    }
     const orb = g.orb as { seconds: number } | undefined;
     if (orb) {
       const after = [
@@ -663,13 +685,6 @@ export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
       fanOut(use, spray, scale);
       return;
     }
-
-    // A BALL flies and a bolt of lightning does not: a flight is timed off the
-    // distance so the trail is on screen, and what it leaves waits for it.
-    const flies = kind !== 'arc';
-    const flight = (a: Vec2, b: Vec2): number =>
-      flies ? Math.max(FLIGHT.least, Math.hypot(b.x - a.x, b.y - a.y) / FLIGHT.speed) : 0.3;
-    const lands = (ttl: number): number => (flies ? ttl * FLIGHT.arrives : 0);
 
     const struck = new Set<Entity>();
     const strike = (target: Entity, falloff: number, after = 0): boolean => {

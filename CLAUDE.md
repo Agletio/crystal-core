@@ -1200,6 +1200,16 @@ Arcing or Forking — a Fork walked to reach it is a bolt on an unShocked
 neighbour under it, an Arc is reach, and the Static line is the engine.
 Measured at band 4: the ball alone is −10% of a bare tree and the storm with
 Ionise −20%.
+**LIGHTNING ARROW'S TWO ARE A TIE AND A FUSE.** TETHER (`tether`, tip of the
+Mark line) is a rule the run keeps: what the arrow hits is tied for 4s
+(`Entity.tethered`), and a hit on one tied body lands 40% of itself on every
+other tied body within 5 tiles — dealt plainly in `dealDamage` behind
+`sharing`, so a share never shares, which is the termination proof. FUSED
+ARROW (`fuse`, tip of the Broadhead line) hits nothing now: the arrow sticks
+(`SkillUse.fuse`, `RunState.fuses`) and `stepFuses` bursts it 1s later, 1.5
+tiles round the body for 100% more, every arrow its own fuse; the Fork, Pierce
+and Arc walked to reach it are a wider or harder burst under it. Measured at
+band 4: the tie alone is +8% of a bare tree, the fuse −23%.
 
 **RIMESPIKE IS AN AREA SKILL, AND RIMEFIELD WAS THE FIRST MODE SWITCH.**
 *"Make rimespike a large aoe spike instead of single target + splash… it does an
