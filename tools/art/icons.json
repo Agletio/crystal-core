@@ -1260,7 +1260,7 @@
   },
   {
    "id": "wn_fb_cauterise",
-   "say": "a glowing red-hot iron branding rod pressed flat onto a patch of pale skin with a puff of grey smoke rising, seen from the side, NOT a campfire, NOT logs, NOT rocks drawn in ember orange, flame yellow and dark charcoal with a hard black outline, NOT blue, NOT green, NOT purple."
+   "say": "a red-hot iron poker held diagonally with its glowing orange tip pressed against a dark leather patch, a curl of grey smoke rising from the contact, NOT a fire on the ground, NOT a campfire, NOT logs, NOT rocks drawn in ember orange, flame yellow and dark charcoal with a hard black outline, NOT blue, NOT green, NOT purple."
   },
   {
    "id": "wn_fb_slowburn",
@@ -1316,7 +1316,7 @@
   },
   {
    "id": "wn_fb_leaping",
-   "say": "a small ball of fire mid-arc jumping from a dark stone on the left to a dark stone on the right, a dotted arc of sparks behind it, NOT a campfire, NOT logs drawn in ember orange, flame yellow and dark charcoal with a hard black outline, NOT blue, NOT green, NOT purple."
+   "say": "a small salamander made of fire leaping to the right, body arched mid-jump with all four legs stretched out and a tail of sparks trailing behind, NOT a campfire, NOT logs, NOT rocks, NOT a fire on the ground drawn in ember orange, flame yellow and dark charcoal with a hard black outline, NOT blue, NOT green, NOT purple."
   },
   {
    "id": "wn_fb_immolate",
@@ -1336,7 +1336,7 @@
   },
   {
    "id": "wn_am_reach",
-   "say": "a long thin dark dagger with a dotted line extending far past its point to a small dark X Near-black and dark violet-grey with dull steel and a dark red accent, hard black outline, NOT a hand, NOT a person, NOT text."
+   "say": "two dark boot prints far apart on dark ground joined by a thin dashed violet arc, a long stride, drawn in dark violet-grey and dull steel with dried blood red the only bright ink, hard black outline, NOT blue, NOT green, NOT orange, NOT a dagger, NOT a sword."
   },
   {
    "id": "wn_am_transmutation",
@@ -1344,7 +1344,7 @@
   },
   {
    "id": "wn_am_weight",
-   "say": "a heavy dark iron dagger with a thick weighted pommel, held point down Near-black and dark violet-grey with dull steel and a dark red accent, hard black outline, NOT a hand, NOT a person, NOT text."
+   "say": "a heavy round iron cannonball sitting in a dent it has pressed into cracked dark ground, drawn in dark violet-grey and dull steel with dried blood red the only bright ink, hard black outline, NOT blue, NOT green, NOT orange, NOT a dagger, NOT a sword."
   },
   {
    "id": "wn_am_practice",
@@ -1364,11 +1364,11 @@
   },
   {
    "id": "wn_am_quickening",
-   "say": "a dark dagger with three short pale motion streaks and a small pale violet flash at its point Near-black and dark violet-grey with dull steel and a dark red accent, hard black outline, NOT a hand, NOT a person, NOT text."
+   "say": "a small hourglass with violet sand almost all run through and three short speed streaks beside it, drawn in dark violet-grey and dull steel with dried blood red the only bright ink, hard black outline, NOT blue, NOT green, NOT orange, NOT a dagger, NOT a sword."
   },
   {
    "id": "wn_am_crossing",
-   "say": "a long pale violet dotted arc leaping over a wide gap between two dark daggers standing far apart Near-black and dark violet-grey with dull steel and a dark red accent, hard black outline, NOT a hand, NOT a person, NOT text."
+   "say": "a long thin footbridge of dark planks and rope spanning a wide gap between two dark ledges, drawn in dark violet-grey and dull steel with dried blood red the only bright ink, hard black outline, NOT blue, NOT green, NOT orange, NOT a dagger, NOT a sword."
   },
   {
    "id": "wn_am_relentless",
@@ -1380,7 +1380,7 @@
   },
   {
    "id": "wn_am_throat",
-   "say": "a dark dagger drawn horizontally with a single thin dark red line under its edge Near-black and dark violet-grey with dull steel and a dark red accent, hard black outline, NOT a hand, NOT a person, NOT text."
+   "say": "a dark steel gorget collar seen face-on with a single red gash cut across it, drawn in dark violet-grey and dull steel with dried blood red the only bright ink, hard black outline, NOT blue, NOT green, NOT orange, NOT a dagger, NOT a sword."
   },
   {
    "id": "wn_am_unguarded",
@@ -1388,19 +1388,19 @@
   },
   {
    "id": "wn_am_finisher",
-   "say": "a dark dagger with a bright pale violet burst at its point and a small dark X below Near-black and dark violet-grey with dull steel and a dark red accent, hard black outline, NOT a hand, NOT a person, NOT text."
+   "say": "a dark wooden coffin lid seen face-on with a large red X painted across it, drawn in dark violet-grey and dull steel with dried blood red the only bright ink, hard black outline, NOT blue, NOT green, NOT orange, NOT a dagger, NOT a sword."
   },
   {
    "id": "wn_am_edge",
-   "say": "a dark dagger seen edge-on with a single bright pale line along its sharpened edge Near-black and dark violet-grey with dull steel and a dark red accent, hard black outline, NOT a hand, NOT a person, NOT text."
+   "say": "a flat dark whetstone with a bright violet spark at one edge where a blade has just left it, drawn in dark violet-grey and dull steel with dried blood red the only bright ink, hard black outline, NOT blue, NOT green, NOT orange, NOT a dagger, NOT a sword."
   },
   {
    "id": "wn_am_hairline",
-   "say": "a thin pale hairline crack running across a dark stone with a dagger point resting on it Near-black and dark violet-grey with dull steel and a dark red accent, hard black outline, NOT a hand, NOT a person, NOT text."
+   "say": "a dark pane of glass with a single thin crack running across it, violet light showing through the crack, drawn in dark violet-grey and dull steel with dried blood red the only bright ink, hard black outline, NOT blue, NOT green, NOT orange, NOT a dagger, NOT a sword."
   },
   {
    "id": "wn_am_cruelty",
-   "say": "a dark dagger with a hooked serrated edge and a dark red drop at its tip Near-black and dark violet-grey with dull steel and a dark red accent, hard black outline, NOT a hand, NOT a person, NOT text."
+   "say": "a dark iron barbed hook with three red drops falling from its point, drawn in dark violet-grey and dull steel with dried blood red the only bright ink, hard black outline, NOT blue, NOT green, NOT orange, NOT a dagger, NOT a sword."
   },
   {
    "id": "wn_am_certainty",
@@ -1408,7 +1408,7 @@
   },
   {
    "id": "wn_am_bleeding",
-   "say": "a dark surface cut open in a short slash with dark red welling out of it Near-black and dark violet-grey with dull steel and a dark red accent, hard black outline, NOT a hand, NOT a person, NOT text."
+   "say": "an open red gash on pale skin with three red drops falling from it, drawn in dark violet-grey and dull steel with dried blood red the only bright ink, hard black outline, NOT blue, NOT green, NOT orange, NOT a dagger, NOT a sword."
   },
   {
    "id": "wn_am_hemorrhage",
@@ -1416,7 +1416,7 @@
   },
   {
    "id": "wn_am_deepcut",
-   "say": "a dark dagger sunk to its hilt in a dark surface with a thin dark red line round the blade Near-black and dark violet-grey with dull steel and a dark red accent, hard black outline, NOT a hand, NOT a person, NOT text."
+   "say": "a small hourglass with dark red blood for sand, half run through, drawn in dark violet-grey and dull steel with dried blood red the only bright ink, hard black outline, NOT blue, NOT green, NOT orange, NOT a dagger, NOT a sword."
   },
   {
    "id": "wn_am_footing",
@@ -1424,27 +1424,27 @@
   },
   {
    "id": "wn_am_hide",
-   "say": "a dark dagger with a dark red smear along it and four short pale motion streaks behind Near-black and dark violet-grey with dull steel and a dark red accent, hard black outline, NOT a hand, NOT a person, NOT text."
+   "say": "a dark heart with three short speed streaks behind it, pumping a red drop, drawn in dark violet-grey and dull steel with dried blood red the only bright ink, hard black outline, NOT blue, NOT green, NOT orange, NOT a dagger, NOT a sword."
   },
   {
    "id": "wn_am_wind",
-   "say": "a single dark dagger held perfectly still, balanced upright on its point on a small dark stone Near-black and dark violet-grey with dull steel and a dark red accent, hard black outline, NOT a hand, NOT a person, NOT text."
+   "say": "three flat dark stones balanced in a still stack on top of a thin iron spike, drawn in dark violet-grey and dull steel with dried blood red the only bright ink, hard black outline, NOT blue, NOT green, NOT orange, NOT a dagger, NOT a sword."
   },
   {
    "id": "wn_am_rhythm",
-   "say": "a dark dagger drawn across a thin dark red line at the bottom of a small pale bar, the bar nearly empty Near-black and dark violet-grey with dull steel and a dark red accent, hard black outline, NOT a hand, NOT a person, NOT text."
+   "say": "a curved dark reaping hook held over a small pale skull, drawn in dark violet-grey and dull steel with dried blood red the only bright ink, hard black outline, NOT blue, NOT green, NOT orange, NOT a dagger, NOT a sword."
   },
   {
    "id": "wn_am_cadence",
-   "say": "a small pale bar drained to a thin dark red sliver at its foot with a dagger point touching it Near-black and dark violet-grey with dull steel and a dark red accent, hard black outline, NOT a hand, NOT a person, NOT text."
+   "say": "a dark goblet tipped over on its side with red wine pouring out of it, drawn in dark violet-grey and dull steel with dried blood red the only bright ink, hard black outline, NOT blue, NOT green, NOT orange, NOT a dagger, NOT a sword."
   },
   {
    "id": "wn_am_carried",
-   "say": "a dark dagger laid gently across a small pale open hand-shaped stone, drawn as shapes not a real hand Near-black and dark violet-grey with dull steel and a dark red accent, hard black outline, NOT a hand, NOT a person, NOT text."
+   "say": "a single closed dark eye with one red tear running from its corner, drawn in dark violet-grey and dull steel with dried blood red the only bright ink, hard black outline, NOT blue, NOT green, NOT orange, NOT a dagger, NOT a sword."
   },
   {
    "id": "wn_am_drumming",
-   "say": "a dark dagger drawn point-first into a small dark bar cut down to nothing, with a pale violet glint Near-black and dark violet-grey with dull steel and a dark red accent, hard black outline, NOT a hand, NOT a person, NOT text."
+   "say": "a dark bell-shaped candle snuffer lowered over a small red candle flame, drawn in dark violet-grey and dull steel with dried blood red the only bright ink, hard black outline, NOT blue, NOT green, NOT orange, NOT a dagger, NOT a sword."
   },
   {
    "id": "wn_bl_slowrot",
