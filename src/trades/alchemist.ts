@@ -17,16 +17,15 @@ export const ALCHEMIST: TradeSpec = {
   id: 'alchemist',
   name: 'Alchemist',
   blurb:
-    'A flask carries a buff while it runs, and its Charges come back during a ' +
-    'descent — so 2 Charges are a cooldown rather than the whole budget.',
+    'A flask specialist whose talents grant combat bonuses during flask effects, ' +
+    'improve recovery and replenish Charges.',
   lore:
     'He came down here for the water. Something in the rock changes what is ' +
-    'steeped in it, and he has been steeping things for a long time — his own ' +
-    'blood among them. He does not win a fight so much as outlast it, one ' +
-    'mouthful at a time, and what is in the flask is the only part of him ' +
-    'that has not been used up.',
+    'steeped in it, and he has tested it on everything, including his own ' +
+    'blood. Years of experiments have left him sallow and half-poisoned. ' +
+    'He still trusts his brews to carry him through the next fight.',
   baseline: {
-    short: 'Kills restore flask Charges.',
+    short: `Every ${Math.round(1 / TRADE_BASE.alchemistChargePerKill)} kills restore 1 Charge to each flask.`,
     grants: { chargeOnKill: TRADE_BASE.alchemistChargePerKill },
   },
   attributes: { strength: 6, intelligence: 12, dexterity: 7, acuity: 9, spirit: 15, constitution: 8 },

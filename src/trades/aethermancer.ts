@@ -17,17 +17,17 @@ export const AETHERMANCER: TradeSpec = {
   id: 'aethermancer',
   name: 'Aethermancer',
   blurb:
-    'Mana takes hits before your life does, and a use can spend the pool for ' +
-    'more damage. Every one of the five roads runs through the same pool.',
+    'Uses mana to absorb damage. His talents can strengthen this protection, ' +
+    'spend mana for added Cold damage or recover mana by dealing damage.',
   lore:
-    'He learned young that the pool will hold a wound for you, and he has been ' +
-    'spending it ever since — on damage, on hurts he should have taken, on ' +
-    'the next hour. There is nothing left of him that is not the pool. He is ' +
-    'starved, wired, and entirely certain he has the better end of it.',
+    'He learned young to let aether take the blows meant for his flesh. ' +
+    'Now he draws on it for every battle, pushing his exhausted body beyond ' +
+    'its limits. He knows what the power is costing him. He still believes ' +
+    'he has the better bargain.',
   baseline: {
     short:
-      `Restores ${TRADE_BASE.aethermancerPoolRegen}% of mana a second, and ` +
-      `${Math.round(TRADE_BASE.aethermancerShield * 100)}% of every hit is paid out of mana.`,
+      `Regenerates an additional ${TRADE_BASE.aethermancerPoolRegen}% of maximum Mana per second. ` +
+      `${Math.round(TRADE_BASE.aethermancerShield * 100)}% of damage taken is absorbed by Mana before Life.`,
     grants: {
       poolRegen: TRADE_BASE.aethermancerPoolRegen,
       manaShield: TRADE_BASE.aethermancerShield,

@@ -17,16 +17,17 @@ export const WARRIOR_TRADE: TradeSpec = {
   id: 'warrior',
   name: 'Warrior',
   blurb:
-    'A shield in the off hand blunts every hit and makes a Block worth more ' +
-    'than the hit it stopped; both hands on one weapon deal 30% more damage.',
+    'A weapon specialist with talents for shield defence, retaliation on Block ' +
+    'and powerful two-handed attacks.',
   lore:
-    'He was not brought down here and he is not looking for anything. The ' +
-    'marks on him are older than the workings and he cuts new ones after a ' +
-    'fight that was worth it, which is most of them. He wears no shirt because ' +
-    'the rock is warm and because what is written on him is the only armour he ' +
-    'trusts.',
+    'Mahthar seeks neither riches nor answers in the depths. The marks on his ' +
+    'skin are older than these workings, and he cuts a new one after every ' +
+    'worthy fight. He wears them openly in the warmth of the rock, trusting ' +
+    'them more than any armour.',
   baseline: {
-    short: 'Large hits are capable of Stunning enemies.',
+    short:
+      `Hits can Stun enemies for ${TRADE_BASE.warriorStunSeconds}s. The chance increases with ` +
+      'the proportion of the target\'s maximum Life dealt as damage.',
     grants: { stunSeconds: TRADE_BASE.warriorStunSeconds },
   },
   attributes: { strength: 15, intelligence: 6, dexterity: 8, acuity: 6, spirit: 9, constitution: 13 },

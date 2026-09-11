@@ -21,16 +21,15 @@ export const ROGUE_TRADE: TradeSpec = {
   id: 'rogue',
   name: 'Rogue',
   blurb:
-    'The only trade that may hold two weapons at once. A pair deals 25% more ' +
-    'damage, and every node reads WHICH two you are holding.',
+    'The only character who can dual wield. His talents reward weapon pairings, ' +
+    'strengthen opening hits and grant bonuses after kills.',
   lore:
-    `Obreth, of ${ORDER.name}, which is not a thing he volunteers. They sent ` +
-    'him down to read the rock and he came back up with two knives instead, ' +
-    'and he has been trading them up ever since, one hand at a time. He has ' +
-    'never once been seen carrying a shield and he is unkind about people who ' +
-    'are. What the Order wanted read, he has not said.',
+    `Obreth keeps his ties to ${ORDER.name} quiet. They sent him into the ` +
+    'depths to read the rock; he returned with two knives and has been ' +
+    'trading up ever since. He has little patience for those who hide behind ' +
+    'shields. Whatever the Order sent him to find, he keeps to himself.',
   baseline: {
-    short: 'Dual wield.',
+    short: 'Can equip a one-handed weapon in each hand.',
     says: [
       `Both hands may hold a one-handed weapon. A pair puts ${pct(DUAL.main)} of the main ` +
         `hand and ${pct(DUAL.off)} of the off hand into every hit, and the rate ALTERNATES: ` +
