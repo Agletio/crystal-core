@@ -111,6 +111,7 @@ import {
   AILMENTS,
   AILMENT_BY_ID,
   AILMENT_OF_TYPE,
+  PROJECTILE,
 } from '../data';
 import type { AilmentDef, BossDef, EncounterDef } from '../data';
 import type { MonsterAbilityDef, MonsterDef, MonsterRankDef } from '../types';
@@ -485,6 +486,8 @@ export interface RunLoot {
   plans: string[]; // CRAFTING PLANS found; learned on the way up, never carried
 }
 
+const ORB_SPARK = 0.35; // the ball of lightning's own spark, in tiles, drawn each tick
+
 export interface RunState {
   map: GameMap;
   hero: Entity;
@@ -564,6 +567,7 @@ export interface RunState {
   freezes: number; // bodies a Chill took to the bar and FROZE
   vanished: number; // seconds the hero is unseen for, off a kill under Vanish
   tremors: Array<{ wedge: Wedge; left: number; tickIn: number }>; // ground still shaking under Tremor
+  orbs: Array<{ x: number; y: number; targetId: number; left: number; tickIn: number }>; // balls of lightning still drifting
   gusts: number; // what GALE is holding, which is what its speed is worth
   /** Uses that fired the COMBAT mode: a step away, and a landing on a body. */
   kites: number;
@@ -842,6 +846,7 @@ export class RunSim {
       freezes: 0,
       vanished: 0,
       tremors: [],
+      orbs: [],
       gusts: 0,
       kites: 0,
       dives: 0,
@@ -1436,6 +1441,7 @@ export class RunSim {
     this.stepChains(dt);
     this.stepSpikes(dt);
     this.stepTremors(dt);
+    this.stepOrbs(dt);
     this.stepFight(dt);
     this.stepHero(dt);
     if (s.status !== 'running') return;
@@ -3148,6 +3154,10 @@ export class RunSim {
       vfx: (kind, points, ttl = 0.3, delay = 0) =>
         this.emit(kind, points, skill.damageTypes[0] ?? 'physical', ttl, delay, user.id),
       blink: (target) => this.stepBehind(user, target),
+      orb: (from, target) => {
+        const ball = this.grants.orb as { seconds: number } | undefined;
+        if (ball && user.kind === 'hero') this.state.orbs.push({ x: from.x, y: from.y, targetId: target.id, left: ball.seconds, tickIn: 0 });
+      },
       tremor: (wedge) => {
         const shakes = this.grants.tremor as { seconds: number } | undefined;
         if (shakes && user.kind === 'hero') this.state.tremors.push({ wedge, left: shakes.seconds, tickIn: 0 });
@@ -3216,6 +3226,51 @@ export class RunSim {
     if (per <= 0) return 1;
     const rate = Math.max(0.01, user.stats.attacksPerSecond);
     return 1 + per * Math.max(0, FASTEST_SWING / rate - 1);
+  }
+
+  /** A BALL OF LIGHTNING drifts after its body — or the nearest living one once
+   *  that is down — and every tick Arcs to the nearest bodies round it, one
+   *  more for every Arc the tree bought, each past the first at the chain's
+   *  own falloff or climb. The hit is dealt like any other. */
+  private stepOrbs(dt: number): void {
+    const live = this.state.orbs;
+    if (live.length === 0) return;
+    const ball = this.grants.orb as { every: number; radius: number; less: number; speed?: number } | undefined;
+    if (!ball) {
+      this.state.orbs = [];
+      return;
+    }
+    const share = Math.max(0.05, 1 - ball.less);
+    const reach = 1 + Math.max(0, ((this.grants.chains as number) ?? 0) + ((this.skill.params?.chains as number) ?? 0));
+    const falloff = ((this.grants.chainDamage as number) ?? (this.skill.params?.chainDamage as number) ?? PROJECTILE.arcDamage)
+      * ((this.grants.chainBuild as number) ?? 1);
+    for (const orb of live) {
+      orb.left -= dt;
+      orb.tickIn -= dt;
+      let after = this.byId.get(orb.targetId);
+      if (!after || after.dead) {
+        after = this.state.monsters.filter((m) => !m.dead).sort((a, b) => dist(a, orb) - dist(b, orb))[0];
+        if (after) orb.targetId = after.id;
+      }
+      if (after) {
+        const d = Math.max(1e-3, dist(after, orb));
+        const step = Math.min(d, (ball.speed ?? 2.5) * dt);
+        orb.x += ((after.x - orb.x) / d) * step;
+        orb.y += ((after.y - orb.y) / d) * step;
+      }
+      if (orb.tickIn > 0) continue;
+      orb.tickIn = ball.every;
+      const struck = this.state.monsters
+        .filter((m) => !m.dead && dist(m, orb) - m.radius <= ball.radius)
+        .sort((a, b) => dist(a, orb) - dist(b, orb))
+        .slice(0, reach);
+      struck.forEach((m, i) => {
+        this.dealDamage(this.state.hero, m, share * falloff ** i, this.skill);
+        this.emit('arc', [{ x: orb.x, y: orb.y }, { x: m.x, y: m.y }], 'lightning', 0.25, i * 0.03, this.state.hero.id);
+      });
+      this.emit('burst', [{ x: orb.x, y: orb.y }, { x: orb.x + ORB_SPARK, y: orb.y }], 'lightning', ball.every, 0, this.state.hero.id);
+    }
+    this.state.orbs = live.filter((o) => o.left > 0);
   }
 
   /** SHAKING GROUND deals its share of the hit to whatever stands in the wedge,

@@ -6252,6 +6252,57 @@ if (rule('DUAL WIELDING — is a pair two weapons or an average of one?')) {
 // ===========================================================================
 }
 
+if (rule('ARC LIGHTNING\'S TWO MODES — a drifting ball and a storm on the Shocked, played')) {
+
+{
+  const played = (route: string[]) => {
+    const who = ladderCharacter(4, new Rng(88), 'arc_lightning');
+    skillProgress(who, 'arc_lightning').allocated = route;
+    let killed = 0;
+    let seconds = 0;
+    for (let i = 0; i < 3; i++) {
+      const final = runToCompletion(new RunSim(ladderSet(4, new Rng(400 + i), pool), who, new Rng(404 + i)), 600);
+      killed += final.killed;
+      seconds += final.elapsed;
+    }
+    return killed / Math.max(1, seconds);
+  };
+  const bare = played([]);
+  const ball = played(routeTo('arc_lightning', 'al_ball'));
+  const ionise = routeTo('arc_lightning', 'al_ionise');
+  const storm = played([...ionise, ...routeTo('arc_lightning', 'al_cloudburst', ionise)]);
+  const off = (n: number) => `${n >= bare ? '+' : ''}${Math.round((n / Math.max(0.01, bare) - 1) * 100)}%`;
+  line(`  band 4, three descents: bare tree ${bare.toFixed(2)}, Ball Lightning ${ball.toFixed(2)}, Cloudburst with Ionise ${storm.toFixed(2)} kills/s`);
+  gauge(`a ball alone is ${off(ball)} of a bare tree, a storm with its Shock ${off(storm)} — wanted within 40% either way`);
+
+  const dummy = (x: number, y: number, shocked = false) =>
+    ({ x, y, life: 1e6, radius: 0.3, dead: false, ailments: shocked ? [{ id: 'shock' }] : [], stats: { maxLife: 1e6, attacksPerSecond: 1 } }) as any;
+  const cast = (grants: Record<string, unknown>, enemies: any[]) => {
+    const hits: number[] = [];
+    let loosed = 0;
+    SKILL_BEHAVIOURS.projectile({
+      skill: SKILL_BY_ID.arc_lightning, user: { ...dummy(0, 0), facing: 0 }, primary: enemies[0], enemies,
+      rng: new Rng(9), grants, crit: false, castIndex: 0, heft: 1, sinceKill: 0, sinceHit: 0, streak: 1,
+      hit: (who: any) => { hits.push(enemies.indexOf(who)); }, orb: () => { loosed++; },
+      ailment: () => {}, leave: () => {}, areaRadius: (b: number) => b, vfx: () => {}, blink: () => {}, tremor: () => {}, wound: () => {},
+    } as any);
+    return { hits, loosed };
+  };
+  // The aimed body, a Shocked one near you, a clean one near you, a Shocked one too far.
+  const room = [dummy(3, 0), dummy(-2, 1, true), dummy(1, -2), dummy(9, 0, true)];
+  const storming = cast(nodeById('arc_lightning', 'al_cloudburst')?.grants ?? {}, room);
+  check(
+    storming.hits.includes(0) && storming.hits.includes(1) && !storming.hits.includes(2) && !storming.hits.includes(3),
+    'Cloudburst falls on the aimed body and the Shocked one in reach, not the clean one or the far one',
+    storming.hits.join(' ')
+  );
+  const drifting = cast(nodeById('arc_lightning', 'al_ball')?.grants ?? {}, room);
+  check(drifting.hits.length === 0 && drifting.loosed === 1, 'Ball Lightning hits nothing itself and looses one ball', `${drifting.hits.length} hits, ${drifting.loosed} balls`);
+}
+
+// ===========================================================================
+}
+
 if (rule('FIREBALL\'S TWO MODES — a fall from above and a fan of embers, played')) {
 
 {
@@ -6937,6 +6988,7 @@ if (rule('EVERY TREE — does every notable actually change the cast?')) {
             freeze: (who: any) => marks.push(`f${enemies.indexOf(who)}`),
             wound: (who: any, more: number) => marks.push(`w${enemies.indexOf(who)}:${more.toFixed(3)}`),
             tremor: (w: any) => marks.push(`t${w.reach.toFixed(2)}:${(w.width ?? w.half).toFixed(2)}`),
+            orb: (_f: any, who: any) => marks.push(`o${enemies.indexOf(who)}`),
             hit: (who: any, multiplier: number) => {
               marks.push(`h${enemies.indexOf(who)}:${multiplier.toFixed(3)}`);
               who.life -= multiplier * 5e4;
@@ -7660,6 +7712,7 @@ if (rule('THE SHEET — does every number on it survive being checked?')) {
       hit: (_t: any, multiplier: number) => asked.push({ multiplier, seconds: 0 }),
       wound: (_t: any, more: number) => asked.push({ multiplier: 1 + more, seconds: 0 }),
       tremor: () => {},
+      orb: () => {},
       ailment: (_t: any, multiplier: number, seconds: number) => asked.push({ multiplier, seconds }),
       leave: () => {},
       areaRadius: (base: number) => base,

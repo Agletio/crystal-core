@@ -31,6 +31,8 @@ const BRANCHES: Branch[] = [
       name: 'Conduction',
       description: 'Arc Lightning gains +2 Arcs.',
       grants: { chains: 2, manaMultiplier: 1.15 },
+      // Nothing Arcs under Cloudburst: the chain walked to reach it is reach.
+      under: { al_cloudburst: { description: 'The storm reaches 2 tiles further.', grants: { smite: { reach: 2 }, manaMultiplier: 1.15 } } },
     },
     twigs: [
       {
@@ -40,16 +42,30 @@ const BRANCHES: Branch[] = [
           name: 'Superconductor',
           description: 'Arcs deal full damage instead of 70%.',
           grants: { chainDamage: 1, manaMultiplier: 1.08 },
+          under: { al_cloudburst: { description: 'Bolts deal 25% less damage rather than 40%.', grants: { smite: { less: -0.15 }, manaMultiplier: 1.08 } } },
         },
       },
       {
+        /**
+         * BALL LIGHTNING, the keystone at the tip of the Conduit line: no bolt,
+         * a ball that drifts after the body and keeps Arcing, so every Arc the
+         * line bought is one more body a tick reaches and the climb runs each
+         * tick. What it costs is the hit landing NOW.
+         */
         minors: 4,
         forkFrom: { twig: 0, at: 2 },
         notable: {
-          id: 'al_cascade',
-          name: 'Cascade',
-          description: 'Arc Lightning gains +3 Arcs.',
-          grants: { chains: 3, manaMultiplier: 1.15 },
+          id: 'al_ball',
+          name: 'Ball Lightning',
+          keystone: true,
+          description:
+            'A ball of lightning drifts after the enemy for 3s, Arcing every 0.4s to what is ' +
+            'within 2 tiles of it for 50% less damage. Every Arc is one more body a tick reaches.',
+          becomes:
+            'You loose a ball of lightning that drifts after the enemy for 3s, Arcing every 0.4s ' +
+            'to the nearest bodies within 2 tiles of it for 50% less damage, one more for every Arc. ' +
+            'The cast itself hits nothing.',
+          grants: { orb: { seconds: 3, every: 0.4, radius: 2, less: 0.5, speed: 2.5 }, manaMultiplier: 1.2 },
         },
       },
     ],
@@ -63,6 +79,12 @@ const BRANCHES: Branch[] = [
       name: 'Stormfront',
       description: 'Arc Lightning gains +2 Forks.',
       grants: { forks: 2, manaMultiplier: 1.15 },
+      // A Fork is a bolt on a neighbour, which is what a spare bolt is under
+      // Cloudburst; under the ball nothing forks, so it is time.
+      under: {
+        al_cloudburst: { description: '+2 bolts, on the nearest enemies that are not Shocked.', grants: { smite: { extra: 2 }, manaMultiplier: 1.15 } },
+        al_ball: { description: 'The ball lasts 1s longer.', grants: { orb: { seconds: 1 }, manaMultiplier: 1.15 } },
+      },
     },
     twigs: [
       {
@@ -72,16 +94,31 @@ const BRANCHES: Branch[] = [
           name: 'Thunderhead',
           description: 'Forks deal 75% of the damage instead of 45%.',
           grants: { forkDamage: 0.75, manaMultiplier: 1.08 },
+          under: {
+            al_cloudburst: { description: 'Bolts deal 25% less damage rather than 40%.', grants: { smite: { less: -0.15 }, manaMultiplier: 1.08 } },
+            al_ball: { description: 'Arcs off the ball deal 35% less damage rather than 50%.', grants: { orb: { less: -0.15 }, manaMultiplier: 1.08 } },
+          },
         },
       },
       {
+        /**
+         * CLOUDBURST, the keystone at the tip of the Skyfall line: the bolt
+         * comes down on the body you aimed at and on every Shocked enemy near
+         * you, so the Static line is the engine and the room is the target.
+         */
         minors: 3,
         forkFrom: { twig: 0, at: 1 },
         notable: {
-          id: 'al_downpour',
-          name: 'Downpour',
-          description: 'Arc Lightning gains +2 Forks.',
-          grants: { forks: 2, manaMultiplier: 1.15 },
+          id: 'al_cloudburst',
+          name: 'Cloudburst',
+          keystone: true,
+          description:
+            'The bolt falls from the sky on the enemy you aimed at and on every Shocked enemy ' +
+            'within 6 tiles of you, 40% less damage each. Nothing Arcs or Forks.',
+          becomes:
+            'Lightning falls from the sky on the enemy you aimed at and on every Shocked enemy ' +
+            'within 6 tiles of you, 40% less damage each. Nothing Arcs or Forks: what is Shocked is the target.',
+          grants: { smite: { less: 0.4, reach: 6 }, manaMultiplier: 1.15 },
         },
       },
     ],
@@ -102,6 +139,7 @@ const BRANCHES: Branch[] = [
       name: 'Runaway',
       description: 'Each Arc deals 25% more than the one before it, instead of 30% less.',
       grants: { chainBuild: 1.25, manaMultiplier: 1.15 },
+      under: { al_cloudburst: { description: 'Each bolt deals 10% more than the one before it.', grants: { smite: { build: 0.1 }, manaMultiplier: 1.15 } } },
     },
     twigs: [
       {
@@ -111,6 +149,7 @@ const BRANCHES: Branch[] = [
           name: 'Avalanche',
           description: 'Each Arc deals a further 20% more than the one before it.',
           grants: { chainBuild: 1.2, manaMultiplier: 1.08 },
+          under: { al_cloudburst: { description: 'Each bolt deals a further 8% more than the one before it.', grants: { smite: { build: 0.08 }, manaMultiplier: 1.08 } } },
         },
       },
       {
@@ -120,6 +159,7 @@ const BRANCHES: Branch[] = [
           name: 'Long Line',
           description: 'Arc Lightning gains +2 Arcs, so the climb has further to run.',
           grants: { chains: 2, manaMultiplier: 1.15 },
+          under: { al_cloudburst: { description: 'The storm reaches 2 tiles further.', grants: { smite: { reach: 2 }, manaMultiplier: 1.15 } } },
         },
       },
       {
@@ -131,6 +171,7 @@ const BRANCHES: Branch[] = [
           description: 'Arc Lightning loses 2 Arcs, and deals 45% increased Damage.',
           stats: [stat('damage', 'inc', 45)],
           grants: { chains: -2 },
+          under: { al_cloudburst: { description: 'The storm reaches 2 tiles less, and Arc Lightning deals 45% increased Damage.', stats: [stat('damage', 'inc', 45)], grants: { smite: { reach: -2 } } } },
         },
       },
     ],
@@ -190,6 +231,10 @@ const BRANCHES: Branch[] = [
       name: 'Split Bolt',
       description: 'Arc Lightning throws +1 Projectile.',
       grants: { extraTargets: 1, manaMultiplier: 1.15 },
+      under: {
+        al_ball: { description: '+1 ball of lightning, after another enemy.', grants: { extraTargets: 1, manaMultiplier: 1.15 } },
+        al_cloudburst: { description: '+1 bolt, on the nearest enemy that is not Shocked.', grants: { smite: { extra: 1 }, manaMultiplier: 1.15 } },
+      },
     },
     twigs: [
       {
@@ -201,6 +246,10 @@ const BRANCHES: Branch[] = [
             'Projectiles Spread 60% further, and take the enemies furthest ' +
             'into it rather than the nearest.',
           grants: { spreadRange: 1.6, spreadFar: true, manaMultiplier: 1.08 },
+          under: {
+            al_ball: { description: 'Balls Spread 60% further, after the enemies furthest into it rather than the nearest.', grants: { spreadRange: 1.6, spreadFar: true, manaMultiplier: 1.08 } },
+            al_cloudburst: { description: 'The storm reaches 2 tiles further.', grants: { smite: { reach: 2 }, manaMultiplier: 1.08 } },
+          },
         },
       },
       {
@@ -210,6 +259,10 @@ const BRANCHES: Branch[] = [
           name: 'Fan Out',
           description: 'Arc Lightning throws +1 Projectile.',
           grants: { extraTargets: 1, manaMultiplier: 1.15 },
+          under: {
+            al_ball: { description: '+1 ball of lightning, after another enemy.', grants: { extraTargets: 1, manaMultiplier: 1.15 } },
+            al_cloudburst: { description: '+1 bolt, on the nearest enemy that is not Shocked.', grants: { smite: { extra: 1 }, manaMultiplier: 1.15 } },
+          },
         },
       },
     ],

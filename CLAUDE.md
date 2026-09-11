@@ -1188,6 +1188,18 @@ at band 4: the fall alone is +33% of a bare tree, the fan −22%. **At band 4 th
 damage number is not the lever**: a Meteor at 120%, 50% and 20% more all
 measured 1.76 kills/s, because the floor dies to one cast whatever it is; the
 RADIUS moved it.
+**ARC LIGHTNING'S TWO ARE A BALL THAT DRIFTS AND A STORM ON THE SHOCKED.**
+BALL LIGHTNING (`orb`, tip of the Conduit line) hits nothing itself: the sim
+keeps a ball (`RunState.orbs`, `stepOrbs`) drifting after the body for 3s and
+Arcing every 0.4s to the nearest bodies within 2 tiles for 50% less, ONE MORE
+FOR EVERY ARC the tree bought and each past the first at the chain's own
+falloff or climb, so the whole Conduit and Runaway lines stay live under it.
+CLOUDBURST (`smite`, tip of the Skyfall line) brings the bolt DOWN on the body
+aimed at and on every Shocked enemy within 6 tiles of you for 40% less, nothing
+Arcing or Forking — a Fork walked to reach it is a bolt on an unShocked
+neighbour under it, an Arc is reach, and the Static line is the engine.
+Measured at band 4: the ball alone is −10% of a bare tree and the storm with
+Ionise −20%.
 
 **RIMESPIKE IS AN AREA SKILL, AND RIMEFIELD WAS THE FIRST MODE SWITCH.**
 *"Make rimespike a large aoe spike instead of single target + splash… it does an

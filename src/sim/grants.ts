@@ -1187,6 +1187,44 @@ export const GRANTS: GrantDef[] = [
     },
   },
   {
+    /** ARC LIGHTNING'S FIRST MODE. No bolt: a ball of lightning drifts toward
+     *  the body you aimed at for `seconds`, Arcing every `every` to whatever
+     *  is within `radius`, `less` less each — and every Arc the tree bought is
+     *  one more body a tick reaches. The sim keeps and moves it. */
+    id: 'orb',
+    changes: 'field',
+    what: 'the bolt is a drifting ball of lightning that keeps arcing',
+    reads: ['projectile', SIM],
+    merge: 'bag',
+    say: (v) => {
+      const o = v as { seconds?: number; every?: number; radius?: number; less?: number; speed?: number } | null;
+      if (!o || typeof o.seconds !== 'number' || typeof o.every !== 'number' || typeof o.radius !== 'number' || typeof o.less !== 'number') return null;
+      return (
+        `A ball of lightning drifts after the enemy for ${o.seconds}s, Arcing every ${o.every}s to what ` +
+        `is within ${o.radius} tiles for ${pct(o.less)} less damage`
+      );
+    },
+  },
+  {
+    /** ARC LIGHTNING'S OTHER MODE. The bolt comes DOWN: onto the body you
+     *  aimed at and onto every Shocked enemy within `reach` of you, `less`
+     *  less each, plus `extra` unShocked ones nearest you; each bolt past the
+     *  first is `build` more than the one before. Nothing Arcs or Forks. */
+    id: 'smite',
+    changes: 'targets',
+    what: 'the bolt falls on every Shocked enemy near you instead',
+    reads: ['projectile'],
+    merge: 'bag',
+    say: (v) => {
+      const o = v as { less?: number; reach?: number } | null;
+      if (!o || typeof o.less !== 'number' || typeof o.reach !== 'number') return null;
+      return (
+        `The bolt falls from the sky on the enemy you aimed at and on every Shocked enemy within ` +
+        `${o.reach} tiles of you, ${pct(o.less)} less damage each`
+      );
+    },
+  },
+  {
     /** FIREBALL'S FIRST MODE. No shot: the fire falls on the body you aimed at
      *  and Bursts `radius` round it for `more` more. A Projectile is a second
      *  fall on another body; nothing Pierces or Arcs. */

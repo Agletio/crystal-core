@@ -55,6 +55,8 @@ export interface SkillUse {
   blink(target: Entity): void;
   /** Lay a shaking WEDGE the sim keeps and ticks: Shockwave's standing mode. */
   tremor(wedge: Wedge): void;
+  /** Loose a BALL of lightning the sim keeps, moves and ticks, after `target`. */
+  orb(from: Vec2, target: Entity): void;
 }
 
 /** A wedge on the floor: where it opens from, which way, how far and how wide. */
@@ -280,6 +282,28 @@ function alongRay(
   const py = e.y - origin.y;
   const along = px * ux + py * uy;
   return { along, off: Math.abs(px * uy - py * ux) };
+}
+
+/** CLOUDBURST: a bolt down onto the body aimed at, onto every Shocked enemy
+ *  within reach of you, and onto `extra` unShocked ones nearest you; each bolt
+ *  past the first is `build` more than the last. What a use is worth is what
+ *  the Static line already left on the room. */
+function strikeShocked(use: SkillUse, smite: { less: number; reach: number; extra?: number; build?: number }, scale: (e: Entity) => number): void {
+  const share = Math.max(0.05, 1 - smite.less);
+  const near = use.enemies.filter((e) => !e.dead && e !== use.primary && separation(use.user, e) <= smite.reach);
+  const shocked = near.filter((e) => e.ailments.some((a) => (a as { id?: string }).id === 'shock'));
+  const spare = near
+    .filter((e) => !shocked.includes(e))
+    .sort((a, b) => separation(use.user, a) - separation(use.user, b))
+    .slice(0, Math.max(0, Math.round(num(smite.extra, 0))));
+  const bolts = [use.primary, ...shocked, ...spare];
+  bolts.forEach((e, i) => {
+    const climb = (1 + num(smite.build, 0)) ** i;
+    use.hit(e, share * climb * scale(e));
+    splashFrom(use, e, (o) => share * climb * scale(o));
+    burstFrom(use, e, scale, true);
+    use.vfx('arc', [{ x: e.x, y: e.y - 2 }, { x: e.x, y: e.y }], 0.3, i * 0.05);
+  });
 }
 
 /** METEOR: the fire falls on the body aimed at and on one more for every
@@ -614,7 +638,21 @@ export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
     const castMultiplier = castScale(g, use.castIndex);
     const scale = (e: Entity) => castMultiplier * targetScale(use, e);
 
-    // THE TWO MODES a thrown ball may be instead, each the whole use.
+    // THE MODES a thrown ball may be instead, each the whole use.
+    const orb = g.orb as { seconds: number } | undefined;
+    if (orb) {
+      const after = [
+        use.primary,
+        ...spreadTargets(use, use.enemies.filter((e) => !e.dead && e !== use.primary), num(g.extraTargets, 0)),
+      ];
+      for (const target of after) use.orb({ x: use.user.x, y: use.user.y }, target);
+      return;
+    }
+    const smite = g.smite as { less: number; reach: number; extra?: number; build?: number } | undefined;
+    if (smite) {
+      strikeShocked(use, smite, scale);
+      return;
+    }
     const meteor = g.meteor as { radius: number; more: number } | undefined;
     if (meteor) {
       fallOn(use, meteor, scale);
