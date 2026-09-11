@@ -1187,6 +1187,37 @@ export const GRANTS: GrantDef[] = [
     },
   },
   {
+    /** AMBUSH'S FIRST MODE. No hit at all: the step behind a body leaves a
+     *  Bleed every use, worth `more` more, and stacks are what the rate buys. */
+    id: 'bleedOut',
+    changes: 'ailment',
+    what: 'the hit is a Bleed instead, every use',
+    reads: ['ambush'],
+    merge: 'bag',
+    say: (v) => {
+      const o = v as { more?: number } | null;
+      if (!o || typeof o.more !== 'number') return null;
+      return `Ambush deals no hit: every use leaves a Bleed, worth ${pct(o.more)} more`;
+    },
+  },
+  {
+    /** AMBUSH'S OTHER MODE, and the run keeps it: a kill hides you for
+     *  `seconds`, nothing woken or unwoken can find you, you walk `faster`,
+     *  and the first use out of it lands `more` more. */
+    id: 'vanish',
+    what: 'a kill makes you vanish, and the next use out of it lands harder',
+    reads: [STATS], // the run's own rule, like a kill's tempo
+    merge: 'bag',
+    say: (v) => {
+      const o = v as { seconds?: number; faster?: number; more?: number } | null;
+      if (!o || typeof o.seconds !== 'number' || typeof o.faster !== 'number' || typeof o.more !== 'number') return null;
+      return (
+        `A kill makes you Vanish for ${o.seconds}s: nothing can see you, you move ${pct(o.faster)} faster, ` +
+        `and the next Ambush out of it deals ${pct(o.more)} more damage`
+      );
+    },
+  },
+  {
     /** STRIKE'S FIRST MODE. No swing: a ghost of the weapon is thrown out
      *  `reach` tiles through everything in its line and comes back to the hand
      *  through them again. Read by the delivery; the picture follows the hero. */

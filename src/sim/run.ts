@@ -561,6 +561,7 @@ export interface RunState {
   /** Follow-ups a Critical bought, teleport and all. Zero without the node. */
   relays: number;
   freezes: number; // bodies a Chill took to the bar and FROZE
+  vanished: number; // seconds the hero is unseen for, off a kill under Vanish
   gusts: number; // what GALE is holding, which is what its speed is worth
   /** Uses that fired the COMBAT mode: a step away, and a landing on a body. */
   kites: number;
@@ -837,6 +838,7 @@ export class RunSim {
       overcharges: 0,
       relays: 0,
       freezes: 0,
+      vanished: 0,
       gusts: 0,
       kites: 0,
       dives: 0,
@@ -1851,6 +1853,7 @@ export class RunSim {
     if (this.moveIn > 0) this.moveIn -= dt;
     if (hero.hitFlash > 0) hero.hitFlash -= dt;
     this.sinceHit += dt;
+    if (this.state.vanished > 0) this.state.vanished -= dt;
     if (this.riposte > 0) this.riposte -= dt;
     if (this.sinceKill > 0) this.sinceKill -= dt;
     if (this.tempoIn > 0) {
@@ -2329,7 +2332,7 @@ export class RunSim {
 
     // Woken by sight, and once woken they chase around corners. Waking one
     // wakes whoever is beside it, so a pack turns together.
-    if (!m.aggroed && d <= m.stats.aggroRange && this.canSee(m, hero)) this.wake(m, true);
+    if (!m.aggroed && d <= m.stats.aggroRange && this.canSee(m, hero) && this.state.vanished <= 0) this.wake(m, true);
 
     // Above the aggro gate: a pose an unwoken body was knocked into would hold
     if (m.actionTimer > 0) m.actionTimer -= dt; // for the rest of the descent
@@ -2351,7 +2354,8 @@ export class RunSim {
       return;
     }
 
-    if (!m.aggroed) {
+    // VANISHED: nobody can see him, woken or not, so the pack mills about.
+    if (!m.aggroed || this.state.vanished > 0) {
       this.pace(m, dt);
       return;
     }
@@ -3078,7 +3082,14 @@ export class RunSim {
 
     const grants = user.kind === 'hero' ? this.grants : {};
     const castIndex = user.kind === 'hero' ? this.casts++ : 0;
-    const heft = user.kind === 'hero' ? this.heftOf(user) : 1;
+    let heft = user.kind === 'hero' ? this.heftOf(user) : 1;
+    // VANISH: the first use out of hiding is the one that lands harder, and it
+    // is what ends the hiding.
+    const hidden = this.grants.vanish as { more: number } | undefined;
+    if (hidden && user.kind === 'hero' && this.state.vanished > 0) {
+      heft *= 1 + hidden.more;
+      this.state.vanished = 0;
+    }
     if (user.kind === 'hero') {
       if (primary.id === this.streakOn || this.grants.rampSticks === true) this.streak++;
       else this.streak = 1;
@@ -3118,6 +3129,10 @@ export class RunSim {
       sleet: user.kind === 'hero' ? this.sleet : 0,
       lastHits: user.kind === 'hero' ? this.lastHits : 0,
       freeze: (target) => this.freeze(target),
+      wound: (target, more) => {
+        const def = AILMENT_OF_TYPE[skill.damageTypes[0] ?? 'physical'];
+        if (def && !target.dead) this.strike(user, target, def, 0, 1 + more);
+      },
       hit: (target, multiplier) => {
         if (user.kind === 'hero') this.hitsThisUse++;
         this.dealDamage(user, target, multiplier, skill);
@@ -3287,6 +3302,8 @@ export class RunSim {
     const ramp = this.grants.unhitHaste as { after: number; more: number } | undefined;
     if (ramp && this.sinceHit >= ramp.after) pace *= 1 + ramp.more;
     if (this.sinceKill > 0) pace *= 1 + ((this.grants.killMove as number) ?? 0) / 100;
+    const hidden = this.grants.vanish as { faster: number } | undefined;
+    if (hidden && this.state.vanished > 0) pace *= 1 + hidden.faster;
     // THE MOVERS' OWN TWO: the window a use opened, and what the charges in
     // hand are worth. A pace rather than a stat, so a hit takes it the instant
     // it lands.
@@ -3772,7 +3789,7 @@ export class RunSim {
 
   /** ONE stack. The oldest falls off at the cap rather than the new one being
    *  refused, so re-applying to a saturated target still refreshes. */
-  private strike(attacker: Entity, target: Entity, def: AilmentDef, hit = 0): void {
+  private strike(attacker: Entity, target: Entity, def: AilmentDef, hit = 0, boost = 1): void {
     if (target.ailments.length >= MAX_AILMENT_STACKS) target.ailments.shift();
     // The two switches a tree still hands over: what an ailment is worth and
     // how long it runs. They reach the new ailments exactly as they reached
@@ -3782,7 +3799,7 @@ export class RunSim {
     const longer = (g.ailmentDuration as number) ?? 1;
     const dps =
       attacker.kind === 'hero'
-        ? (attacker.stats.ailmentDps?.[def.id] ?? def.dps ?? 0) * more
+        ? (attacker.stats.ailmentDps?.[def.id] ?? def.dps ?? 0) * more * boost
         : (hit * MONSTER_AILMENT.share) / Math.max(0.01, def.seconds);
     target.ailments.push({
       id: def.id,
@@ -4318,6 +4335,8 @@ export class RunSim {
       this.tempo = Math.min(tempo.most, this.tempo + 1);
       this.tempoIn = tempo.seconds;
     }
+    const vanish = this.grants.vanish as { seconds: number } | undefined;
+    if (vanish) s.vanished = Math.max(s.vanished, vanish.seconds);
     // SHARDFALL first: a crystal can kill, and that death throws its own.
     this.shardfall(victim);
     // TOPPING UP: a kill hands a charge back, rolled only where there is a

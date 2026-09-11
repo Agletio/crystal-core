@@ -2245,7 +2245,8 @@ export function coneWedge(origin: Vec2, left: Vec2, right: Vec2, t: number): Fir
  */
 /** How wide a flying shard is drawn, in tiles. */
 export const SHARD_SPAN = 0.5;
-export const BLADE_SPAN = 0.9; // a thrown ghost blade, in tiles: a sword's length, not a shard's
+export const BLADE_SPAN = 0.9;
+export const VANISHED_ALPHA = 0.35; // how much of a Vanished hero is left to see // a thrown ghost blade, in tiles: a sword's length, not a shard's
 
 /** WHERE A SHARD IS and which way it points, so the sprite Pixi draws and the
  *  blocks canvas2d draws are one answer. Its art is point-UP, so the quarter

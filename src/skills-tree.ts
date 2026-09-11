@@ -120,7 +120,7 @@ export function faceOf(skillId: string, node: SkillNodeDef, allocated: readonly 
     description = description.split(to.say[0]).join(to.say[1]);
     // A flipped line keeps its sign on the CARD: "+3% reduced" is the figure.
     const value = to.flip ? -st.value : st.value;
-    return { ...st, stat: to.stat, value, tags: [...(st.tags ?? []), ...(to.tags ?? [])] };
+    return { ...st, stat: to.stat, value, form: to.form ?? st.form, tags: [...(st.tags ?? []), ...(to.tags ?? [])] };
   });
   return { description, stats, ...(node.grants ? { grants: node.grants } : {}) };
 }

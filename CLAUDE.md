@@ -1155,6 +1155,17 @@ Area under it. Measured at band 4 over three descents: the blade alone is +23%
 of a bare tree and the spin −6%. **A keystone's picture is judged in a descent
 with `NODES=<route> KIND=<vfx kind> CAST=1` on `descent-peek`**, which walks the
 web the way a player does and holds the page on the first effect of that kind.
+**AMBUSH'S TWO ARE A WOUND AND A HIDING.** EXSANGUINATE (`bleedOut`, tip of the
+Bleeding line) lands no hit: every use leaves the skill's own Ailment through
+`SkillUse.wound`, worth 150% more, so the swing rate buys stacks; a Critical
+still Relays, the chance nodes read as Bleed damage under it, and its
+`converts` turns flat Critical Damage into increased Bleed Damage
+(`StatConvert.form`). VANISH (`vanish`, tip of the Pace line) is a rule the run
+keeps (`RunState.vanished`): a kill hides him for 1s — nothing wakes, the woken
+mill about, he walks 40% faster and is drawn at `VANISHED_ALPHA` — and the
+first use out of it lands 150% more through `heft`. Measured at band 4: the
+wound alone is −38% of a bare tree and Vanish +35%, hidden two thirds of the
+descent because every kill re-ups it.
 
 **RIMESPIKE IS AN AREA SKILL, AND RIMEFIELD WAS THE FIRST MODE SWITCH.**
 *"Make rimespike a large aoe spike instead of single target + splash… it does an

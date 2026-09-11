@@ -38,6 +38,7 @@ import {
   shardFlight,
   bladeFlight,
   BLADE_SPAN,
+  VANISHED_ALPHA,
   SHARD_SPAN,
   lightningArc,
   coneWedge,
@@ -894,7 +895,7 @@ export async function createPixiRenderer(
     return s;
   }
 
-  function drawEntity(e: Entity, elapsed: number, sunk = 0): void {
+  function drawEntity(e: Entity, elapsed: number, sunk = 0, hidden = false): void {
     const fade = e.dead ? Math.min(1, e.deathAge / DEATH_FADE) : 0;
     if (e.dead && fade >= 1) {
       const stale = sprites.get(e.id);
@@ -991,6 +992,8 @@ export async function createPixiRenderer(
       e.hitFlash > 0
         ? toHexNumber(phaseTint ? mix(phaseTint, palette.chalk, 0.65) : palette.chalk)
         : toHexNumber(phaseTint ?? '#ffffff');
+    // VANISHED: nothing can see him, and neither quite can you.
+    if (hidden) s.alpha *= VANISHED_ALPHA;
 
     for (const slot of HANDS_DRAWN) drawHeld(e, slot, s, fade, sunk, elapsed);
     drawSwarm(e, s, elapsed);
@@ -1800,7 +1803,7 @@ export async function createPixiRenderer(
     }
     // Never monsters and never in the monster list, so they are drawn apart.
     for (const f of state.folk) drawEntity(f, state.elapsed);
-    if (!state.hero.dead) drawEntity(state.hero, state.elapsed, 1 - emerge);
+    if (!state.hero.dead) drawEntity(state.hero, state.elapsed, 1 - emerge, state.vanished > 0);
 
     drawOverlays(state);
     drawFloaters(state);

@@ -883,6 +883,22 @@
    "say": "a curling gust of freezing wind drawn as three swept white streaks, pale ice-blue and white with a blue-black shadow side, NOT a cloud, NOT a feather."
   },
   {
+   "id": "wn_sw_fissure",
+   "say": "one long straight jagged CRACK splitting dark grey rock, running diagonally corner to corner across the frame, the crack near-black and deep with pale grey broken edges and a few small chips of stone beside it, matte, NOT lava, NOT glow, NOT a lightning bolt, NOT a river, NOT a tree, NOT a road."
+  },
+  {
+   "id": "wn_sw_tremor",
+   "say": "three concentric ragged rings of broken grey stone spreading outward from a centre point on cracked ground seen from directly above, the rings uneven and split with dark cracks between them and pale dust puffs at the edges, matte greys and near-black, NOT water ripples, NOT a target, NOT a bullseye, NOT a spiral, NOT glow, NOT blue."
+  },
+  {
+   "id": "wn_am_exsanguinate",
+   "say": "three long ragged diagonal claw-cut slashes torn side by side across a dark grey surface, each slash a jagged dark red line with thick dark red drops running down from its lower end, deep crimson and near-black red, matte, NOT a heart, NOT an organ, NOT a body part, NOT a knife, NOT a hand, NOT a claw, NOT an animal, NOT pink, NOT bright red, NOT glossy."
+  },
+  {
+   "id": "wn_am_vanish",
+   "say": "a hooded figure dissolving into wisps of dark smoke from the waist down, only the hood and one shoulder still solid, drawn in near-black and dark violet-grey with two faint pale eyes under the hood, NOT a ghost sheet, NOT a skull, NOT fire, NOT white."
+  },
+  {
    "id": "wn_st_ethereal",
    "say": "a translucent ghostly one-handed sword drawn diagonally, made of pale spectral ice-blue light with a white core and a soft glow round it, with three short curved motion streaks behind it showing it spinning, NOT steel, NOT grey, NOT a hand, NOT a shield, NOT fire."
   },

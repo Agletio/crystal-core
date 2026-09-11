@@ -50,6 +50,7 @@ export interface StatConvert {
   tags?: string[];
   say: [string, string]; // the phrase on a card, and what it becomes
   flip?: true; // the value changes sign: increased Cast Speed is a NEGATIVE cooldown
+  form?: StatForm; // the line's form changes too: flat Critical Damage read as increased Bleed Damage
 }
 
 export interface NodeChoice {

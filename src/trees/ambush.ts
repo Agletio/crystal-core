@@ -155,6 +155,8 @@ const BRANCHES: Branch[] = [
       name: 'Opened Up',
       description: '+55% chance to apply Bleed.',
       grants: { ailmentChance: 55 },
+      // A chance is nothing once every use Bleeds: the line is worth instead.
+      under: { am_exsanguinate: { description: 'Bleeds you apply deal 25% more damage.', grants: { ailmentMultiplier: 1.25 } } },
     },
     twigs: [
       {
@@ -162,7 +164,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'am_hemorrhage',
           name: 'Hemorrhage',
-          description: 'Bleeds you apply deal 45% more damage over a 25% shorter time.',
+          description: 'Bleeds you apply deal 45% more damage and have 25% less duration.',
           grants: { ailmentMultiplier: 1.45, ailmentDuration: 0.75 },
         },
       },
@@ -171,18 +173,31 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'am_deepcut',
           name: 'Deep Cut',
-          description: 'Bleeds you apply last 70% longer.',
+          description: 'Bleeds you apply have 70% more duration.',
           grants: { ailmentDuration: 1.7 },
         },
       },
       {
+        /**
+         * EXSANGUINATE, the keystone at the tip of the Bleeding line: no hit at
+         * all, a Bleed every use, and the rate is what stacks them. A Critical
+         * still Relays, so the Edge line keeps its chance and trades its
+         * Critical Damage for Bleed damage.
+         */
         minors: 4,
         forkFrom: { twig: 1, at: 2 },
         notable: {
-          id: 'am_butchery',
-          name: 'Butchery',
-          description: '+45% chance to apply Bleed, and Bleeds deal 20% more damage.',
-          grants: { ailmentChance: 45, ailmentMultiplier: 1.2, manaMultiplier: 1.15 },
+          id: 'am_exsanguinate',
+          name: 'Exsanguinate',
+          keystone: true,
+          description:
+            'Ambush deals no hit. Every use leaves a Bleed, worth 150% more, and ' +
+            'a Critical still Relays.',
+          becomes:
+            'You step behind an enemy and open it: no hit, a Bleed every use worth ' +
+            '150% more, and the stacks are what your swing rate buys. A Critical still Relays.',
+          grants: { bleedOut: { more: 1.5 }, manaMultiplier: 1.15 },
+          converts: { critMultiplier: { stat: 'damage', tags: ['bleed'], form: 'inc', say: ['Critical Damage', 'increased Bleed Damage'] } },
         },
       },
     ],
@@ -226,14 +241,25 @@ const BRANCHES: Branch[] = [
         },
       },
       {
+        /**
+         * VANISH, the keystone at the tip of the Pace line: a kill hides you,
+         * the pack loses you, and the first step out of hiding lands hardest.
+         * The run keeps it, so the sheet cannot see it and a played descent can.
+         */
         minors: 4,
         forkFrom: { twig: 1, at: 2 },
         notable: {
-          id: 'am_ghosting',
-          name: 'Ghosting',
-          description: 'Ambush swings 20% faster and costs 25% less mana.',
-          stats: [stat('attackSpeed', 'inc', 20)],
-          grants: { manaMultiplier: 0.75 },
+          id: 'am_vanish',
+          name: 'Vanish',
+          keystone: true,
+          description:
+            'A kill makes you Vanish for 1s: nothing can see you, you move 40% faster, ' +
+            'and the next Ambush out of it deals 150% more damage.',
+          becomes:
+            'You step behind an enemy and strike it. A kill makes you Vanish for 1s: ' +
+            'nothing can see you, you move 40% faster, and the next Ambush out of it deals ' +
+            '150% more damage.',
+          grants: { vanish: { seconds: 1, faster: 0.4, more: 1.5 }, manaMultiplier: 1.15 },
         },
       },
     ],

@@ -30,6 +30,9 @@ export interface SkillUse {
   lastHits: number; // bodies the last cast hit
   /** Hold a body: the Freeze a Chill ends in, handed out by a rule instead. */
   freeze(target: Entity): void;
+  /** Leave the skill's own Ailment on a body with NO hit and no chance rolled,
+   *  worth `more` more than one the chance would have left. */
+  wound(target: Entity, more: number): void;
   /** `multiplier` is relative to THIS skill's damage, not to anything else. */
   hit(target: Entity, multiplier: number): void;
   /**
@@ -480,6 +483,17 @@ export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
     const castMultiplier = castScale(use.grants, use.castIndex);
     const scale = (e: Entity) => castMultiplier * targetScale(use, e);
     use.blink(use.primary);
+    // EXSANGUINATE: the step, then a wound and nothing else. What the hit would
+    // have been worth against THIS body is what the wound is worth.
+    const bleed = use.grants.bleedOut as { more: number } | undefined;
+    if (bleed) {
+      use.wound(use.primary, (1 + bleed.more) * scale(use.primary) - 1);
+      use.vfx(use.skill.vfxKind ?? 'slash', [
+        { x: use.user.x, y: use.user.y },
+        { x: use.primary.x, y: use.primary.y },
+      ]);
+      return;
+    }
     use.hit(use.primary, scale(use.primary));
     splashFrom(use, use.primary, scale);
     burstFrom(use, use.primary, scale, true);

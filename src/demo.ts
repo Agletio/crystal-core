@@ -6252,6 +6252,58 @@ if (rule('DUAL WIELDING — is a pair two weapons or an average of one?')) {
 // ===========================================================================
 }
 
+if (rule('AMBUSH\'S TWO MODES — a wound instead of a hit, and a kill that hides you')) {
+
+// Neither is a number on a hit, so both are played: Exsanguinate against a bare
+// tree by what a descent comes to, Vanish by whether anything finds him.
+{
+  const played = (route: string[]) => {
+    const who = ladderCharacter(4, new Rng(88), 'ambush');
+    skillProgress(who, 'ambush').allocated = route;
+    let killed = 0;
+    let seconds = 0;
+    let hidden = 0;
+    for (let i = 0; i < 3; i++) {
+      const sim = new RunSim(ladderSet(4, new Rng(400 + i), pool), who, new Rng(404 + i));
+      let guard = 600 / TICK;
+      while (sim.state.status === 'running' && guard-- > 0) {
+        sim.step(TICK);
+        if (sim.state.vanished > 0) hidden += TICK;
+      }
+      killed += sim.state.killed;
+      seconds += sim.state.elapsed;
+    }
+    return { rate: killed / Math.max(1, seconds), hidden, seconds };
+  };
+  const bare = played([]);
+  const bled = played(routeTo('ambush', 'am_exsanguinate'));
+  const gone = played(routeTo('ambush', 'am_vanish'));
+  const off = (n: number) => `${n >= bare.rate ? '+' : ''}${Math.round((n / Math.max(0.01, bare.rate) - 1) * 100)}%`;
+  line(
+    `  band 4, three descents: bare tree ${bare.rate.toFixed(2)}, Exsanguinate ${bled.rate.toFixed(2)}, ` +
+      `Vanish ${gone.rate.toFixed(2)} kills/s; hidden ${gone.hidden.toFixed(0)}s of ${gone.seconds.toFixed(0)} under Vanish`
+  );
+  gauge(`a wound alone is ${off(bled.rate)} of a bare tree, a Vanish ${off(gone.rate)} — wanted within 40% either way`);
+  check(bare.hidden === 0 && gone.hidden > 0, 'only Vanish hides him, and a kill does it', `${bare.hidden} / ${gone.hidden}`);
+
+  // The mechanism: a wound is left with no hit, and a Vanish is not seen.
+  const dummy = (x: number, y: number) =>
+    ({ x, y, life: 1e6, radius: 0, dead: false, ailments: [] as unknown[], stats: { maxLife: 1e6, attacksPerSecond: 1 } }) as any;
+  const hits: number[] = [];
+  const wounds: number[] = [];
+  const body = dummy(1, 0);
+  SKILL_BEHAVIOURS.ambush({
+    skill: SKILL_BY_ID.ambush, user: dummy(0, 0), primary: body, enemies: [body],
+    rng: new Rng(9), grants: nodeById('ambush', 'am_exsanguinate')?.grants ?? {}, crit: false, castIndex: 0, heft: 1, sinceKill: 0, sinceHit: 0, streak: 1,
+    hit: (_w: any, m: number) => { hits.push(m); }, wound: (_w: any, more: number) => { wounds.push(more); },
+    ailment: () => {}, leave: () => {}, areaRadius: (b: number) => b, vfx: () => {}, blink: () => {},
+  } as any);
+  check(hits.length === 0 && wounds.length === 1 && wounds[0] > 1.49, 'Exsanguinate lands no hit and one wound worth 150% more', `${hits.length} hits, ${wounds.join(',')}`);
+}
+
+// ===========================================================================
+}
+
 if (rule('STRIKE\'S TWO MODES — a thrown blade and a spin, played')) {
 
 // Each keystone is the whole use, so the question is what a descent comes to
@@ -6776,6 +6828,7 @@ if (rule('EVERY TREE — does every notable actually change the cast?')) {
             sleet: castIndex * 3,
             lastHits: castIndex * 2,
             freeze: (who: any) => marks.push(`f${enemies.indexOf(who)}`),
+            wound: (who: any, more: number) => marks.push(`w${enemies.indexOf(who)}:${more.toFixed(3)}`),
             hit: (who: any, multiplier: number) => {
               marks.push(`h${enemies.indexOf(who)}:${multiplier.toFixed(3)}`);
               who.life -= multiplier * 5e4;
@@ -7497,6 +7550,7 @@ if (rule('THE SHEET — does every number on it survive being checked?')) {
       skill, user, primary: target, enemies: [target],
       rng: new Rng(3), grants, crit: false, castIndex: 0,
       hit: (_t: any, multiplier: number) => asked.push({ multiplier, seconds: 0 }),
+      wound: (_t: any, more: number) => asked.push({ multiplier: 1 + more, seconds: 0 }),
       ailment: (_t: any, multiplier: number, seconds: number) => asked.push({ multiplier, seconds }),
       leave: () => {},
       areaRadius: (base: number) => base,
