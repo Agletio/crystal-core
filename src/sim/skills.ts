@@ -254,6 +254,17 @@ function alongRay(
  *  target the way any Projectile's does. No spike, so no circle. */
 function hailOf(use: SkillUse, hail: { projectiles: number; less: number }, scale: (e: Entity) => number, freezes: boolean): void {
   const g = use.grants;
+  // A shatter and a kill-burst reach round a shard exactly as round a spike.
+  const shatter = use.crit ? num(g.shatterShare, 0) : 0;
+  const bursts = num(g.burstOnKill, 0);
+  const scattered = new Set<Entity>();
+  const scatter = (from: Entity, share: number) => {
+    for (const other of use.enemies) {
+      if (other.dead || other === from || scattered.has(other) || !within(from, other, SHATTER.radius)) continue;
+      scattered.add(other);
+      use.hit(other, share * scale(other));
+    }
+  };
   const count = Math.max(1, Math.round(hail.projectiles + num(g.extraTargets, 0)));
   const others = spreadTargets(use, use.enemies.filter((e) => !e.dead && e !== use.primary), count - 1);
   const targets = [use.primary, ...others];
@@ -268,6 +279,8 @@ function hailOf(use: SkillUse, hail: { projectiles: number; less: number }, scal
     use.hit(target, share * scale(target));
     if (freezes) use.freeze(target);
     burstFrom(use, target, (e) => share * scale(e), true);
+    if (shatter > 0) scatter(target, shatter * share);
+    if (bursts > 0 && target.dead) scatter(target, bursts * share);
     use.vfx('shard', [{ x: use.user.x, y: use.user.y }, { x: target.x, y: target.y }], flight, leaves);
     if (pierce <= 0) continue;
     const from = separation(use.user, target);

@@ -29,6 +29,8 @@ import {
   neighboursOf,
   treeFor,
   treePointsFor,
+  faceOf,
+  routeTo,
 } from '../skills-tree';
 import { categoryIcon, skillIcon } from './icons';
 import { chain, frame, mount, svgEl } from './webart';
@@ -197,10 +199,11 @@ const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v
  *  unconverted skill and did not move with it. */
 function asConverted(node: SkillNodeDef, skillId: string): string {
   const skill = SKILL_BY_ID[skillId];
+  const face = faceOf(skillId, node, skillProgress(game.character, skillId).allocated);
   const converted = skill && convertedType(skill, treeGrants(game.character));
-  if (!skill || !converted) return node.description;
-  let said = node.description;
-  for (const line of node.stats ?? []) {
+  if (!skill || !converted) return face.description;
+  let said = face.description;
+  for (const line of face.stats ?? []) {
     for (const tag of line.tags ?? []) {
       const was = AILMENT_BY_ID[tag];
       const now = AILMENT_BY_ID[retag(tag, skill, converted)];
@@ -713,24 +716,26 @@ function renderWeb(): void {
       // be taken with Rupture" is a decision, where a dark node is a mystery.
       const clash = owned ? null : blockedBy(skillId, node.id, progress.allocated);
       const other = owned ? null : keystoneRefused(skillId, node.id, progress.allocated);
-      const refund = canDeallocate(skillId, node.id, progress.allocated);
+      // What a node you cannot take yet WANTS: the points still owed on the
+      // node before it, off the cheapest route in.
+      const owed = (): string => {
+        const route = routeTo(skillId, node.id, progress.allocated);
+        if (route.length < 2) return 'not connected to anything you own';
+        const prev = route[route.length - 2];
+        const n = route.filter((id) => id === prev).length;
+        return `Requires ${n} more point${n === 1 ? '' : 's'} in ${byId.get(prev)?.name ?? prev}`;
+      };
       const state = owned
-        ? most > 1
-          ? `${held}/${most} points` +
-            (reachable && spare > 0 ? ' — click to add one' : '') +
-            (refund ? ' — right-click to refund one' : ' — refunding one would shut a gate')
-          : refund
-            ? 'allocated — click to refund'
-            : 'allocated — refunding it would strand another node'
+        ? most > 1 ? `${held}/${most} points` : 'allocated'
         : clash
           ? `cannot be taken with ${clash.node.name} — ${clash.says}`
           : other
             ? `cannot be taken with ${other.name} — one Keystone a tree`
             : !reachable
-            ? 'not connected to anything you own'
-            : spare > 0
-              ? 'available'
-              : 'no points left';
+              ? owed()
+              : spare > 0
+                ? 'available'
+                : 'no points left';
       const choice = node.choices
         ? picked
           ? `Chosen: ${picked.name} — ${picked.description}`
@@ -739,7 +744,6 @@ function renderWeb(): void {
       return nodeCard(node.name, state, [
         node.keystone ? 'Keystone. One a tree.' : '',
         most > 1 ? `Per point, up to ${most}.` : '',
-        node.gate ? `Opens once ${byId.get(node.gate.from)?.name ?? node.gate.from} holds ${node.gate.points}.` : '',
         asConverted(node, skillId), cost(node), choice,
       ]);
     });

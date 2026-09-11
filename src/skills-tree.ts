@@ -28,7 +28,8 @@ import type { SkillNodeDef } from './trees/node';
 import type { BuiltTree } from './trees/spec';
 
 export { CENTRE } from './trees/node';
-export type { NodeStat, SkillNodeDef } from './trees/node';
+export type { NodeFace, NodeStat, SkillNodeDef } from './trees/node';
+import type { NodeFace } from './trees/node';
 
 /** Thirty, whatever your level. A tree you can fill in is not a decision. */
 export const MAX_TREE_POINTS = 30;
@@ -88,6 +89,38 @@ export function keystoneRefused(
     if (held?.keystone && held.id !== nodeId) return held;
   }
   return null;
+}
+
+/** The keystone held in this tree, if any. */
+export const heldKeystone = (skillId: string, allocated: readonly string[]): SkillNodeDef | null => {
+  for (const id of new Set(allocated)) {
+    const node = nodeById(skillId, id);
+    if (node?.keystone) return node;
+  }
+  return null;
+};
+
+/**
+ * THE FACE A NODE WEARS under the keystone held: its own `under` face for that
+ * keystone, else its own lines with every stat the keystone `converts` read
+ * as the other — so a node bought for the skill this was is never dead
+ * weight once the skill is something else.
+ */
+export function faceOf(skillId: string, node: SkillNodeDef, allocated: readonly string[]): NodeFace {
+  const key = heldKeystone(skillId, allocated);
+  if (!key || key.id === node.id) return node;
+  const own = node.under?.[key.id];
+  if (own) return own;
+  const map = key.converts ?? {};
+  if (!node.stats?.some((st) => map[st.stat])) return node;
+  let description = node.description;
+  const stats = node.stats.map((st) => {
+    const to = map[st.stat];
+    if (!to) return st;
+    description = description.split(to.say[0]).join(to.say[1]);
+    return { ...st, stat: to.stat, tags: [...(st.tags ?? []), ...(to.tags ?? [])] };
+  });
+  return { description, stats, ...(node.grants ? { grants: node.grants } : {}) };
 }
 
 /** Every class a node changes, its chosen option included. */

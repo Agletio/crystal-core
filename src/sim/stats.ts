@@ -39,7 +39,7 @@ import {
 } from '../data';
 import { attributeSteps, equippedItems, equippedSkill, mainSkillId } from './character';
 import type { Character } from './character';
-import { nodeById } from '../skills-tree';
+import { nodeById, faceOf } from '../skills-tree';
 import { TRADE_BY_ID, tradeGrants } from '../trades';
 import { trialNodeById } from '../trials';
 import { critBuff, mergeGrants } from './grants';
@@ -495,7 +495,10 @@ export function treeMod(character: Character): RolledMod | null {
   const converted = convertedType(skill, grants);
 
   const stats = progress.allocated
-    .flatMap((id) => nodeById(skillId, id)?.stats ?? [])
+    .flatMap((id) => {
+      const node = nodeById(skillId, id);
+      return node ? faceOf(skillId, node, progress.allocated).stats ?? [] : [];
+    })
     .map((s) => ({
       stat: s.stat,
       form: s.form,
@@ -669,7 +672,8 @@ function walked(character: Character, skillId: string): Record<string, unknown> 
   for (const id of progress?.allocated ?? []) { // once a POINT, so a per-point grant adds up
     const node = nodeById(skillId, id);
     const chosen = node?.choices?.find((c) => c.id === progress?.choices?.[id]);
-    mergeGrants(out, { ...(node?.grants ?? {}), ...(chosen?.grants ?? {}) });
+    const face = node ? faceOf(skillId, node, progress?.allocated ?? []) : null;
+    mergeGrants(out, { ...(face?.grants ?? {}), ...(chosen?.grants ?? {}) });
   }
   return out;
 }

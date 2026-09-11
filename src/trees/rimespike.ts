@@ -135,6 +135,8 @@ const BRANCHES: Branch[] = [
       name: 'Frostwork',
       description: 'Rimespike reaches 8% further for every enemy the last cast hit, up to 5 (40%).',
       grants: { fieldFeeds: { per: 0.08, upTo: 5 } },
+      // No field under Hail, so the reach goes into the shards instead.
+      under: { rs_tempo: { description: 'Each shard Pierces 1 more enemy.', grants: { pierce: 1 } } },
     },
     twigs: [
       {
@@ -144,6 +146,7 @@ const BRANCHES: Branch[] = [
           name: 'Whiteout',
           description: 'Enemies in the outer half of the field take 40% more damage.',
           grants: { rimBite: 0.4 },
+          under: { rs_tempo: { description: 'A shard that Pierces carries 100% of its damage on.', grants: { pierceDamage: 1 } } },
         },
       },
       {
@@ -170,6 +173,8 @@ const BRANCHES: Branch[] = [
             spikeStands: { seconds: 5, cooldown: 2.5, radius: 2.2, more: 1 },
             manaMultiplier: 1.2,
           },
+          // On a cooldown, a cast-speed line is dead: it is read as cooldown.
+          converts: { castSpeed: { stat: 'cooldown', say: ['increased Cast Speed', 'reduced Skill Cooldown'] } },
         },
       },
     ],
@@ -247,6 +252,14 @@ const BRANCHES: Branch[] = [
         'Each cast grants a stack of Sleet, 5% increased Cast Speed each. At 8 stacks ' +
         'the next cast Freezes what it hits and spends them all.',
       grants: { spikeTempo: { per: 5, stacks: 8 } },
+      under: {
+        rs_field: {
+          description:
+            'Each cast grants a stack of Sleet, 5% reduced Skill Cooldown each. At 8 stacks ' +
+            'the next cast Freezes what it hits and spends them all.',
+          grants: { spikeTempo: { per: 5, stacks: 8 } },
+        },
+      },
     },
     twigs: [
       {
@@ -279,6 +292,8 @@ const BRANCHES: Branch[] = [
             'each dealing 50% less damage. One enemy takes both; more take one each.',
           grants: { spikeHail: { projectiles: 2, less: 0.5 }, manaMultiplier: 0.6 },
           stats: [stat('castSpeed', 'inc', 100)],
+          // No circle, so an Area line is read as Projectile Damage.
+          converts: { areaOfEffect: { stat: 'damage', tags: ['projectile'], say: ['Area of Effect', 'Projectile Damage'] } },
         },
       },
     ],

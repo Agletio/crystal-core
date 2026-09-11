@@ -3154,8 +3154,9 @@ export class RunSim {
         tickIn: 0,
       });
     }
+    const stacked = sleet ? 1 + (this.sleet * sleet.per) / 100 : 1; // Sleet under Rimefield: reduced cooldown a stack, since there is no rate
     user.cooldown = stands && user.kind === 'hero' && skill.behaviour === 'spike'
-      ? stands.cooldown * Math.max(STANDING.leastCooldown, 1 - user.stats.cooldown / 100)
+      ? (stands.cooldown * Math.max(STANDING.leastCooldown, 1 - user.stats.cooldown / 100)) / stacked
       : this.swingCooldown(user);
     // Only off the skill in the MAIN slot: a follow-up is another use of it.
     if (user.kind === 'hero' && skill === this.skill) this.maybeChain(primary, crit);

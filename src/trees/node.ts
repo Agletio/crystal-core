@@ -30,6 +30,24 @@ export interface SkillNodeDef {
    * free to change; two exclusive nodes would tax finding out what one does.
    */
   choices?: NodeChoice[];
+  /** The face this node wears under a KEYSTONE, by keystone id: what it says
+   *  and does once the skill is a different thing. */
+  under?: Record<string, NodeFace>;
+  /** A KEYSTONE's own: a stat any other node carries, read as another once
+   *  this is held, and the words that change on its card. */
+  converts?: Record<string, StatConvert>;
+}
+
+export interface NodeFace {
+  description: string;
+  stats?: NodeStat[];
+  grants?: Record<string, unknown>;
+}
+
+export interface StatConvert {
+  stat: string;
+  tags?: string[];
+  say: [string, string]; // the phrase on a card, and what it becomes
 }
 
 export interface NodeChoice {

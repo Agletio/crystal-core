@@ -369,6 +369,7 @@ import {
   nodeById,
   pathToNotable,
   routeTo,
+  faceOf,
   treeFor,
 } from './skills-tree';
 import {
@@ -3364,6 +3365,37 @@ for (const tree of BUILT_TREES) {
     held = withoutOne(held, loose);
   }
   check(held.length === 0, 'and every one of them refunded again', `${held.length} stuck`);
+
+  // A KEYSTONE CHANGES WHAT THE SKILL IS, so a line bought for the old skill
+  // is read for the new one: every `under` face grants what the delivery
+  // reads, every `converts` lands on a stat the sheet knows, and nothing
+  // sits dead — an Area line under Hail is Projectile Damage.
+  {
+    const SELLABLE = new Set(['damage', 'attackSpeed', 'castSpeed', 'critChance', 'critMultiplier', 'attackRange', 'areaOfEffect', 'ailmentChance', 'manaCost', 'moveSpeed', 'cooldown']);
+    const keys = nodes.filter((n) => n.keystone);
+    const faceless: string[] = [];
+    for (const n of nodes) {
+      for (const [k, face] of Object.entries(n.under ?? {})) {
+        if (!keys.some((key) => key.id === k)) faceless.push(`${n.id} under ${k}, which is no keystone here`);
+        for (const key of Object.keys(face.grants ?? {})) {
+          const def = GRANT_BY_ID[key];
+          if (!def || (!def.reads.includes(STATS) && !behaviourReads(behaviour, key))) faceless.push(`${n.id} under ${k}: ${key}`);
+        }
+        if (!/\d/.test(face.description)) faceless.push(`${n.id} under ${k} says no figure`);
+      }
+      for (const [from, to] of Object.entries(n.converts ?? {})) {
+        if (!SELLABLE.has(to.stat)) faceless.push(`${n.id} converts ${from} to ${to.stat}, which a web may not sell`);
+      }
+    }
+    check(faceless.length === 0, 'every keystone face grants what is read and says a figure', faceless.join(', '));
+    for (const key of keys) {
+      if (!key.converts) continue;
+      const held = [...routeTo(skillId, key.id)];
+      const dead = nodes.filter((n) => n.id !== key.id && n.stats?.some((st) => key.converts![st.stat]));
+      const still = dead.filter((n) => faceOf(skillId, n, held).stats?.some((st) => key.converts![st.stat]));
+      check(still.length === 0, `under ${key.name}, no line is left on a stat it retired`, still.map((n) => n.id).join(', '));
+    }
+  }
 
   // A MINOR HOLDS A RANGE. One node a twig, `points` deep, its stats paid per
   // point; a fork off it is GATED on how many it holds, and a refund that

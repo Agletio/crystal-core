@@ -2332,6 +2332,16 @@
      because "why is this dim" has two different answers. */
   .web__node--locked { opacity: .42; cursor: not-allowed; }
   .web__node--keystone .web__node__art { filter: drop-shadow(0 0 5px var(--node-on)); }
+  /* THE WEB IS THE WINDOW, EDGE TO EDGE, like the Fissure: the head and the
+     skill's own lines float over the weather and take no clicks themselves. */
+  #skills .modal__card:has(#skills-detail:not([hidden])) { position: relative; }
+  #skills .modal__card:has(#skills-detail:not([hidden])) .modal__head { position: absolute; left: 0; right: 0; top: 0; z-index: 3; margin: 0; padding: 8px 12px; background: none; border: 0; pointer-events: none; }
+  #skills .modal__card:has(#skills-detail:not([hidden])) .modal__head > * { pointer-events: auto; }
+  #skills .modal__card:has(#skills-detail:not([hidden])) .modal__body { padding: 0; overflow-x: auto; overflow-y: hidden; display: flex; flex-direction: column; min-height: 0; flex: 1 1 auto; }
+  #skills-detail { position: relative; flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+  #skills-detail .skillhead { position: absolute; left: 12px; right: 12px; top: 40px; z-index: 3; margin: 0; pointer-events: none; text-shadow: 0 1px 2px var(--ink), 0 0 6px var(--ink); }
+  #skills-detail .skillhead > * { pointer-events: auto; }
+  #skills-detail .webwrap { flex: 1 1 auto; height: min(80vh, calc(100vh - var(--dock-h, 0px) - 60px)); min-height: 260px; }
   .web__weather { position: absolute; inset: 0; background-size: cover; background-position: center; opacity: .3; pointer-events: none; image-rendering: pixelated; }
   .web__node__pad { fill: var(--ink); opacity: .82; }
   .web__node__pts { font: 700 11px var(--display); fill: var(--text); pointer-events: none; paint-order: stroke; stroke: var(--ink); stroke-width: 4px; }

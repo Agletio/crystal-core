@@ -246,6 +246,7 @@ export function buildTree(spec: TreeSpec): BuiltTree {
       ...(notable.stats ? { stats: notable.stats } : {}),
       ...(notable.grants ? { grants: notable.grants } : {}),
       ...(notable.choices ? { choices: notable.choices } : {}),
+      ...(notable.under ? { under: notable.under } : {}),
     });
   });
 
@@ -265,6 +266,7 @@ export function buildTree(spec: TreeSpec): BuiltTree {
       links: links.get(branch.enabler.id) ?? [],
       ...(branch.enabler.stats ? { stats: branch.enabler.stats } : {}), // dropped here, six enablers printed figures the sim never applied
       ...(branch.enabler.grants ? { grants: branch.enabler.grants } : {}),
+      ...(branch.enabler.under ? { under: branch.enabler.under } : {}),
     });
 
     // Where each twig's minor ends up, so a fork can start from it.
@@ -318,6 +320,8 @@ export function buildTree(spec: TreeSpec): BuiltTree {
           y: Math.sin(angle) * reach,
           links: links.get(id) ?? [],
           ...(last && twig.notable.keystone ? { keystone: true as const } : {}),
+          ...(last && twig.notable.under ? { under: twig.notable.under } : {}),
+          ...(last && twig.notable.converts ? { converts: twig.notable.converts } : {}),
           ...(!last ? { points: twig.minors } : {}),
           ...(!last && gate ? { gate } : {}),
           ...(last && twig.minors > 1 ? { gate: { from: minorId, points: twig.minors } } : {}),

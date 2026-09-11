@@ -1106,6 +1106,25 @@ picture, dark and low-contrast, with no focal point — and drawn by
 `src/ui/skills.ts` as one `.web__weather` layer filling the window under the
 web. Rimespike's blizzard is the first.
 
+**A KEYSTONE CHANGES WHAT THE SKILL IS, AND EVERY LINE BOUGHT FOR THE OLD
+SKILL IS READ FOR THE NEW ONE.** *"All mods that don't affect existing tags are
+converted… if a node removes aoe and adds projectile the previous node could be
+increased AOE and the new node is +proj."* `faceOf` in `src/skills-tree.ts` is
+the one seam: a node's `under[keystoneId]` face is what it says and grants
+once that keystone is held (Frostwork's field growth is a Pierce under Hail,
+Whiteout's outer half is the whole hit carried on, Sleet's stacks are reduced
+Skill Cooldown under Rimefield), and a keystone's `converts` reads any other
+node's stat as another — Hail turns Area of Effect into Projectile Damage,
+Rimefield turns Cast Speed into Skill Cooldown — with `say` rewriting the
+card's own words. `treeMod`, `walked()` and the card all read the face, so the
+sheet, the sim and the tooltip cannot disagree, and the demo fails a keystone
+that leaves any line on a stat it retired. **A CARD SAYS THE FACTS AND ONE
+LINE OF STATE**: `held/most` or `allocated` when owned; for a node you cannot
+take yet, *Requires N more points in X* off the cheapest route in, and nothing
+about what it unlocks or what a refund would strand. **THE WEB IS THE WINDOW
+EDGE TO EDGE**, like the Fissure: the head and the skill's own lines float over
+the weather and take no clicks themselves.
+
 **RIMESPIKE IS AN AREA SKILL, AND RIMEFIELD IS THE ONE MODE SWITCH IN THE GAME.**
 *"Make rimespike a large aoe spike instead of single target + splash… it does an
 aoe hit that looks like one big spike raising up from the ground."* One blade up

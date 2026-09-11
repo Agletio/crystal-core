@@ -1,7 +1,7 @@
 /**
  * A tree is authored as CONTENT here and given coordinates by `layout.ts`.
  */
-import type { NodeChoice, NodeStat, SkillNodeDef } from './node';
+import type { NodeChoice, NodeFace, NodeStat, SkillNodeDef, StatConvert } from './node';
 
 export interface Minor {
   name?: string; // a twig's minor is named, so a gate can say which one it means
@@ -18,6 +18,8 @@ export interface Notable {
   grants?: Record<string, unknown>;
   choices?: NodeChoice[];
   keystone?: true; // one a tree, and only ever the last node of a twig
+  under?: Record<string, NodeFace>;
+  converts?: Record<string, StatConvert>; // a keystone's alone
 }
 
 /** A run of minors ending in a notable, which is a DEAD END — nothing past it. */

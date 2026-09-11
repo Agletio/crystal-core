@@ -1534,7 +1534,7 @@ export const GRANTS: GrantDef[] = [
     id: 'pierceDamage',
     changes: 'targets',
     what: 'Pierce lands for more of the damage',
-    reads: ['projectile'],
+    reads: ['projectile', 'spike'],
     say: (v) => {
       const n = asNumber(v);
       return n === null ? null : `Pierce deals ${pct(n)} of the damage`;
