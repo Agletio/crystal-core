@@ -243,6 +243,56 @@
    "width": 688,
    "height": 384,
    "say": "A wide atmospheric BACKGROUND for a skill tree screen, seen straight on: a night blizzard over a frozen cave floor. Driving snow blown sideways in long pale streaks and swirls of wind across the whole picture, thousands of small white and ice-blue flakes, curls of frost in the air, a faint frozen ground of blue-white ice low along the bottom edge and hanging icicles and pale ice crystals along the very top edge, everything else cold blue-black air. LOW CONTRAST and DARK overall, soft, no focal point, nothing in the middle, no creature, no person, no text, no border, no frame. Ice-blue (#6FC7E8) on blue-black (#0E1420), white flakes."
+  },
+  "web_strike": {
+   "width": 688,
+   "height": 384,
+   "say": "A wide atmospheric BACKGROUND for a skill tree screen, seen straight on: the inside of a dark smithy at night. Dim red forge-glow low along the bottom edge, drifting orange embers and sparks rising through black smoke across the whole picture, faint hanging chains and iron hooks along the very top edge, everything else soot-black air. Dull iron grey, ember orange (#D9A441) on near-black (#0E0B08). LOW CONTRAST and DARK overall, soft, no focal point, nothing in the middle, no creature, no person, no text, no border, no frame. Pixel art."
+  },
+  "web_ambush": {
+   "width": 688,
+   "height": 384,
+   "say": "A wide atmospheric BACKGROUND for a skill tree screen, seen straight on: a moonless alley of shadow. Long drifting streaks of dark violet-grey mist across the whole picture, a faint scatter of tiny pale motes, black silhouettes of ragged cloth hanging along the very top edge, a thin line of wet dark cobbles low along the bottom edge, everything else near-black. Dark violet (#3A2B4A) on black (#0A080D), a few pale grey motes. LOW CONTRAST and DARK overall, soft, no focal point, nothing in the middle, no creature, no person, no text, no border, no frame. Pixel art."
+  },
+  "web_shockwave": {
+   "width": 688,
+   "height": 384,
+   "say": "A wide atmospheric BACKGROUND for a skill tree screen, seen straight on: cracked dark stone ground seen from low, splitting. Long jagged cracks radiating sideways across the whole picture with a dull grey dust rising from them, small chips of broken rock hanging in the air, a strip of broken grey slabs low along the bottom edge and a dark rock ceiling along the very top edge, everything else dark grey-brown dust. Stone grey and dust brown (#6E5A44) on near-black (#0C0A08). LOW CONTRAST and DARK overall, soft, no focal point, nothing in the middle, no creature, no person, no text, no border, no frame. Pixel art."
+  },
+  "web_fireball": {
+   "width": 688,
+   "height": 384,
+   "say": "A wide atmospheric BACKGROUND for a skill tree screen, seen straight on: the heart of a slow fire. Rolling dark smoke with dull orange light glowing through it across the whole picture, thousands of tiny drifting embers, tongues of low flame along the bottom edge only, black smoke thickest along the very top edge. Ember orange (#E08F37) and dull red on smoke-black (#100906). LOW CONTRAST and DARK overall, soft, no focal point, nothing in the middle, no creature, no person, no text, no border, no frame. Pixel art."
+  },
+  "web_arc_lightning": {
+   "width": 688,
+   "height": 384,
+   "say": "A wide atmospheric BACKGROUND for a skill tree screen, seen straight on: the inside of a storm cloud at night. Dark blue-grey cloud banks across the whole picture with faint pale gold lightning flickering deep inside them, a few thin forked filaments of gold light near the edges only, the very top edge darkest, a faint pale glow low along the bottom edge. Storm grey-blue (#2A313A) and faint gold (#8A6C25) on near-black (#07080A). LOW CONTRAST and DARK overall, soft, no focal point, nothing in the middle, no creature, no person, no text, no border, no frame. Pixel art."
+  },
+  "web_lightning_arrow": {
+   "width": 688,
+   "height": 384,
+   "say": "A wide atmospheric BACKGROUND for a skill tree screen, seen straight on: a rain-swept dark sky at night. Long thin diagonal streaks of rain across the whole picture, a faint gold flicker of far lightning behind low black cloud along the very top edge, a dark treeline of thin bare branches low along the bottom edge, everything else blue-black. Blue-black (#0B1A20) with pale grey-blue rain and a faint gold (#8A6C25) flicker. LOW CONTRAST and DARK overall, soft, no focal point, nothing in the middle, no creature, no person, no text, no border, no frame. Pixel art."
+  },
+  "web_blight": {
+   "width": 688,
+   "height": 384,
+   "say": "A wide atmospheric BACKGROUND for a skill tree screen, seen straight on: a rotting marsh at night. Low banks of sickly green mist drifting across the whole picture, a scatter of tiny pale spores hanging in the air, black rotten reeds and dead stalks low along the bottom edge, drooping black roots and moss hanging along the very top edge, everything else dark bile-green air. Bile green (#325E24) and pale yellow-green spores on near-black (#0B0F09). LOW CONTRAST and DARK overall, soft, no focal point, nothing in the middle, no creature, no person, no text, no border, no frame. Pixel art."
+  },
+  "web_blink": {
+   "width": 688,
+   "height": 384,
+   "say": "A wide atmospheric BACKGROUND for a skill tree screen, seen straight on: the dark between two places. Faint violet after-images and thin rings of pale light drifting across the whole picture like a step taken and gone, a scatter of tiny violet motes, black along the very top and bottom edges, everything else deep violet-black. Deep violet (#4A2E6A) on black (#08060C). LOW CONTRAST and DARK overall, soft, no focal point, nothing in the middle, no creature, no person, no text, no border, no frame. Pixel art."
+  },
+  "web_leap": {
+   "width": 688,
+   "height": 384,
+   "say": "A wide atmospheric BACKGROUND for a skill tree screen, seen straight on: a high fall through night air. Long faint vertical streaks of wind across the whole picture, a scatter of small dark leaves and dust blown upward, a dark rocky ledge low along the bottom edge and black overhanging rock along the very top edge, everything else dusk grey-green air. Dusk green-grey (#3D5A44) on near-black (#0A0D0A). LOW CONTRAST and DARK overall, soft, no focal point, nothing in the middle, no creature, no person, no text, no border, no frame. Pixel art."
+  },
+  "web_gale": {
+   "width": 688,
+   "height": 384,
+   "say": "A wide atmospheric BACKGROUND for a skill tree screen, seen straight on: a hard wind at night. Long curling streaks of pale wind sweeping sideways across the whole picture, a scatter of small torn leaves and grit carried in it, bent black grass low along the bottom edge, dark torn cloud along the very top edge, everything else dark teal-grey air. Pale grey-teal (#5E8A8A) wind on near-black (#080D0E). LOW CONTRAST and DARK overall, soft, no focal point, nothing in the middle, no creature, no person, no text, no border, no frame. Pixel art."
   }
  },
  "_seen": "The FIRST round asked the split for violet and got it, and the user's answer was that the glow is the TITLE SCREEN's — measured off `shots/desktop-title.png`, that is pale cream-gold #fcde6f at the core, amber #f0a94b out from it and burnt orange #e08f37 where it washes the rock. The sockets came back as four evenly spread PORTHOLES; they are asked as two VERTICAL pairs tight to the split, chiselled and iron-clawed and no two alike, with `NOT portholes` in the exclusions. The hero reads right at x4 against a scene at x2 — x3 is small and x5 is big. A TALE'S PANELS ARE ONE ROOM AND WORDS DO NOT CARRY IT: *\"between tunnel 2 and 3 the direction of the tunnel changes and the walls kinda change texture\"*. \"The same chamber\" means nothing to a generator with no memory, so a panel that continues another names it in `like` — its shipped PNG goes in as the style image AND as a labelled reference for the chamber, and the words say only what CHANGED. The composition is still written out in full, because a reference is a pull and not a lock.",

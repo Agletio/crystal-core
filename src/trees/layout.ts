@@ -39,24 +39,36 @@ const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI'];
 /** THE SILHOUETTE, per tree: where the six branches hang, how the ways in
  *  turn, how a twig twists as it goes, and how the whole is stretched. The
  *  content is the same shape everywhere; only where it sits differs. */
-interface Shape { anchors: number[]; twist: number; scale: [number, number] }
+interface Shape {
+  anchors: number[]; // where each of the six branches hangs, in radians
+  twist: number; // how far a twig turns off its branch as it goes out; `twists` is the same per branch
+  twists?: number[];
+  scale: [number, number];
+  reach?: number[]; // how far each branch stands off the ring, as a share of the usual
+  arc?: number; // how wide a branch's twigs fan, as a share of the usual
+}
 const even = (turn = 0, over = 1): number[] =>
   Array.from({ length: 6 }, (_, i) => -Math.PI / 2 + turn + (i / 6 - (1 - over) / 2) * TAU * over);
 const SHAPES: Record<string, Shape> = {
   ring: { anchors: even(), twist: 0, scale: [1, 1] },
-  fan: { anchors: even(0, 0.74).map((a) => a - TAU * 0.13), twist: 0, scale: [1.2, 0.95] },
-  wide: { anchors: even(TAU / 12), twist: 0, scale: [1.5, 0.82] },
-  tall: { anchors: even(), twist: 0, scale: [0.82, 1.45] },
-  spiral: { anchors: even(), twist: 0.32, scale: [1.05, 1.05] },
-  pinwheel: { anchors: even(TAU / 12), twist: -0.3, scale: [1, 1] },
-  cross: { anchors: [-Math.PI / 2 - 0.34, -Math.PI / 2 + 0.34, 0, Math.PI / 2 - 0.34, Math.PI / 2 + 0.34, Math.PI], twist: 0, scale: [1.1, 1.1] },
-  crescent: { anchors: even(Math.PI, 0.7), twist: 0.12, scale: [1.1, 1.15] },
+  cross: { anchors: [-Math.PI / 2 - 0.38, -Math.PI / 2 + 0.38, 0, Math.PI / 2 - 0.38, Math.PI / 2 + 0.38, Math.PI], twist: 0, scale: [1.2, 1], reach: [1.1, 1.1, 1.45, 1.1, 1.1, 1.45], arc: 0.5 }, // A blade: two arms straight up and down, four short at the sides.
+  wide: { anchors: even(TAU / 12), twist: 0, scale: [1.65, 0.7], arc: 1.7 }, // A wave: everything low and wide, the twigs fanned flat.
+  // A tall arrow: three branches up in a point, three down as fletching.
+  arrow: { anchors: [-Math.PI / 2 - 0.55, -Math.PI / 2, -Math.PI / 2 + 0.55, Math.PI / 2 - 0.9, Math.PI / 2, Math.PI / 2 + 0.9], twist: 0, scale: [1.3, 1.2], reach: [0.95, 1.5, 0.95, 0.9, 1.05, 0.9], arc: 0.4 },
+  spiral: { anchors: even(), twist: 0.55, scale: [1.05, 1.05], arc: 0.6 }, // A spiral: every twig turning the same way, hard.
+  bolt: { anchors: even(TAU / 12), twists: [0.32, -0.32, 0.32, -0.32, 0.32, -0.32], twist: 0, scale: [1.45, 0.85], arc: 0.6 }, // A bolt: branches thrown alternately up and down along a wide zigzag.
+  fan: { anchors: even(0, 0.74).map((a) => a - TAU * 0.13), twist: 0, scale: [1.2, 0.95] }, // A fan: everything in the upper three quarters, nothing underneath.
+  bloom: { anchors: even(TAU / 12), twist: 0, scale: [1.1, 1.05], reach: [0.75, 0.75, 0.75, 0.75, 0.75, 0.75], arc: 2.1 }, // A bloom: short round petals, each twig fanned wide.
+  wheel: { anchors: even(), twist: 0.8, scale: [1.05, 1.05], arc: 0.5 }, // A wheel: every twig running round rather than out.
+  scatter: { anchors: even(0.2), twist: 0, twists: [0.2, -0.15, 0.3, -0.25, 0.1, -0.3], scale: [1.1, 1], reach: [1.35, 0.7, 1.2, 0.8, 1.3, 0.75], arc: 0.9 }, // A scatter: no two branches the same length.
+  arch: { anchors: even(), twist: 0, scale: [1.35, 0.95], reach: [1.45, 1.2, 0.85, 0.8, 0.85, 1.2], arc: 0.6 }, // An arch: every branch over the top, the hub at the foot.
+  vortex: { anchors: even(TAU / 12), twist: -0.9, scale: [1.25, 0.8], reach: [0.85, 0.85, 0.85, 0.85, 0.85, 0.85], arc: 0.45 }, // A vortex: a wheel turning the other way, pulled tight.
 };
 /** Each tree its own silhouette; a skill not named here is a ring. */
 const SHAPE_OF: Record<string, string> = {
   strike: 'cross', shockwave: 'wide', fireball: 'spiral', rimespike: 'fan',
-  blight: 'crescent', arc_lightning: 'pinwheel', lightning_arrow: 'tall', ambush: 'ring',
-  blink: 'pinwheel', leap: 'tall', gale: 'spiral',
+  blight: 'bloom', arc_lightning: 'bolt', lightning_arrow: 'arrow', ambush: 'wheel',
+  blink: 'scatter', leap: 'arch', gale: 'vortex',
 };
 
 /** How many branches and trunk notables a spec must supply. */
@@ -222,6 +234,7 @@ export function buildTree(spec: TreeSpec): BuiltTree {
         y: Math.sin(angle) * reach,
         links: links.get(trunkAt(ring, i)) ?? [],
         stats: common.stats ?? [],
+        ...(common.grants ? { grants: common.grants } : {}), // a ring node's switch is its own, like an enabler's
       });
     }
   }
@@ -253,6 +266,9 @@ export function buildTree(spec: TreeSpec): BuiltTree {
   // --- the branches ---------------------------------------------------------
   spec.branches.forEach((branch, b) => {
     const base = shape.anchors[b];
+    const far = shape.reach?.[b] ?? 1;
+    const twist = shape.twists?.[b] ?? shape.twist;
+    const fanned = BRANCH_ARC * (shape.arc ?? 1);
     const on = trunkAt(2, ANCHORS[b] / 2);
     join(branch.enabler.id, on);
     nodes.push({
@@ -261,8 +277,8 @@ export function buildTree(spec: TreeSpec): BuiltTree {
       description: branch.enabler.description,
       kind: 'notable',
       gate: { from: on, points: TRUNK[1].points },
-      x: Math.cos(base) * ENABLER_R,
-      y: Math.sin(base) * ENABLER_R,
+      x: Math.cos(base) * ENABLER_R * far,
+      y: Math.sin(base) * ENABLER_R * far,
       links: links.get(branch.enabler.id) ?? [],
       ...(branch.enabler.stats ? { stats: branch.enabler.stats } : {}), // dropped here, six enablers printed figures the sim never applied
       ...(branch.enabler.grants ? { grants: branch.enabler.grants } : {}),
@@ -296,7 +312,7 @@ export function buildTree(spec: TreeSpec): BuiltTree {
       // Each twig aims somewhere of its own inside the wedge, and drifts there
       // as it goes out, so a branch opens like a hand rather than a fan.
       const aim =
-        base + (((t + 0.5) / branch.twigs.length - 0.5) * BRANCH_ARC + 0.012 * t) * TAU + shape.twist;
+        base + (((t + 0.5) / branch.twigs.length - 0.5) * fanned + 0.012 * t) * TAU + twist;
 
       const minor = branch.minors[t % branch.minors.length];
       const minorId = branchId(branch.id, t, 0);
@@ -311,7 +327,7 @@ export function buildTree(spec: TreeSpec): BuiltTree {
           parent.angle +
           (aim - parent.angle) * along +
           (jitter(b, t * 9 + step, 3) - 0.5) * 0.045;
-        const reach = ENABLER_R + depth * TWIG_STEP + (jitter(b, t * 9 + step, 4) - 0.5) * 0.35;
+        const reach = (ENABLER_R + depth * TWIG_STEP) * far + (jitter(b, t * 9 + step, 4) - 0.5) * 0.35;
 
         join(id, step === 0 ? parent.id : minorId);
 

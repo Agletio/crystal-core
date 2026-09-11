@@ -1,7 +1,7 @@
 {
  "_": "What to SAY to the generator for a UI ICON, one row per id. `tools/art/icon.mts` reads it and `portrait.mts <id> <png> 48 icons` puts the result in `src/render/generated-icons.ts`, which `skillIcon` and `categoryIcon` merge OVER their hand-drawn grids.",
  "_how": "An icon is read at 24-40px in a socket, so: ONE object, centred, filling the frame, hard silhouette, no scene and no ground. Asked at 64 and shipped at 48.",
- "_inks": "Lamplit stone, oiled timber and tarnished brass, with fire, frost, lightning and poison the ONLY saturated inks — so an element reads at socket size and everything else stays furniture.",
+ "_inks": "Lamplit stone, oiled timber and tarnished brass, with fire, frost, lightning and poison the ONLY saturated inks \u2014 so an element reads at socket size and everything else stays furniture.",
  "size": 64,
  "grid": 48,
  "how": " A single ICON: ONE object centred and filling the frame, seen straight on, BOLD readable silhouette with a hard dark outline, chunky shapes and few colours, dramatic lighting off the object itself. NOT a scene, NOT a landscape, NOT a character, NOT a background, NOT text, NOT a border, NOT a frame, NOT multiple objects. Transparent background.",
@@ -48,7 +48,7 @@
   },
   {
    "id": "cat_passive",
-   "say": "a closed iron sigil-ring set with one dull amber stone, still and unlit — a thing that is always ON rather than cast."
+   "say": "a closed iron sigil-ring set with one dull amber stone, still and unlit \u2014 a thing that is always ON rather than cast."
   },
   {
    "id": "cat_movement",
@@ -548,7 +548,7 @@
   },
   {
    "id": "gear_sword2h",
-   "say": "a single huge two-handed greatsword standing point up and filling the whole frame, its blade VERY BROAD and WIDE — as wide across as a man's hand — running the full height of the frame, with a long leather-wrapped grip below a heavy straight crossguard. The blade is a WIDE slab of steel. NOT slim, NOT narrow, NOT thin, NOT a rapier, NOT a one-handed sword, NOT curved."
+   "say": "a single huge two-handed greatsword standing point up and filling the whole frame, its blade VERY BROAD and WIDE \u2014 as wide across as a man's hand \u2014 running the full height of the frame, with a long leather-wrapped grip below a heavy straight crossguard. The blade is a WIDE slab of steel. NOT slim, NOT narrow, NOT thin, NOT a rapier, NOT a one-handed sword, NOT curved."
   },
   {
    "id": "gear_mace2h",
@@ -556,7 +556,7 @@
   },
   {
    "id": "gear_staff",
-   "say": "a single heavy wooden quarterstaff standing straight upright and filling the whole frame, a THICK dark pole — as thick as a man's wrist — the SAME WIDTH all the way up, with three or four FLAT RINGS of pale iron banding wrapped round the top and a pale iron shoe at the foot. NOT thin, NOT a twig, NOT a stick, NOT a wand, NOT a spear, NOT a blade, NOT a mace, NOT wider at the top, NOT a crystal on a pole."
+   "say": "a single heavy wooden quarterstaff standing straight upright and filling the whole frame, a THICK dark pole \u2014 as thick as a man's wrist \u2014 the SAME WIDTH all the way up, with three or four FLAT RINGS of pale iron banding wrapped round the top and a pale iron shoe at the foot. NOT thin, NOT a twig, NOT a stick, NOT a wand, NOT a spear, NOT a blade, NOT a mace, NOT wider at the top, NOT a crystal on a pole."
   },
   {
    "id": "mat_pale_iron",
@@ -680,7 +680,7 @@
   },
   {
    "id": "tool_knife",
-   "say": "a small skinning blade seen from the side, made of TWO CLEARLY DIFFERENT MATERIALS: the bottom third is a short round handle of DARK BROWN wood, and the top two thirds is ONE SHORT BROAD blade of PALE COLD GREY IRON — light silvery grey, the colour of bare metal, PLAINLY LIGHTER THAN THE HANDLE — with a straight back and a belly that swells outward and rounds over to the tip. The handle runs STRAIGHT INTO the blade with NOTHING crossing between them. THE BLADE IS NOT WOOD: NOT brown, NOT tan, NOT wooden, NOT copper, NOT bronze, NOT gold. NOT blue, NOT steel-blue, NOT a crossguard, NOT a guard, NOT a hilt, NOT a dagger, NOT a sword, NOT a club, NOT a stick, NOT long, NOT hooked, NOT a sickle, NOT a pickaxe, NOT an axe."
+   "say": "a small skinning blade seen from the side, made of TWO CLEARLY DIFFERENT MATERIALS: the bottom third is a short round handle of DARK BROWN wood, and the top two thirds is ONE SHORT BROAD blade of PALE COLD GREY IRON \u2014 light silvery grey, the colour of bare metal, PLAINLY LIGHTER THAN THE HANDLE \u2014 with a straight back and a belly that swells outward and rounds over to the tip. The handle runs STRAIGHT INTO the blade with NOTHING crossing between them. THE BLADE IS NOT WOOD: NOT brown, NOT tan, NOT wooden, NOT copper, NOT bronze, NOT gold. NOT blue, NOT steel-blue, NOT a crossguard, NOT a guard, NOT a hilt, NOT a dagger, NOT a sword, NOT a club, NOT a stick, NOT long, NOT hooked, NOT a sickle, NOT a pickaxe, NOT an axe."
   },
   {
    "id": "tool_rod",
@@ -916,7 +916,7 @@
   },
   {
    "id": "wn_sw_fissure",
-   "say": "ONE single jagged zigzag CRACK drawn as an object alone in empty transparent space: a long thin near-black fracture line running diagonally, with a narrow rim of pale grey broken stone along both its edges and three small chips of grey stone lying beside it, and nothing else at all — empty transparent space all round it. NOT a texture, NOT a landscape, NOT a ground, NOT a floor, NOT filling the frame, NOT a slab, NOT lava, NOT glow, NOT a lightning bolt, NOT a river, NOT a tree, NOT a road."
+   "say": "ONE single jagged zigzag CRACK drawn as an object alone in empty transparent space: a long thin near-black fracture line running diagonally, with a narrow rim of pale grey broken stone along both its edges and three small chips of grey stone lying beside it, and nothing else at all \u2014 empty transparent space all round it. NOT a texture, NOT a landscape, NOT a ground, NOT a floor, NOT filling the frame, NOT a slab, NOT lava, NOT glow, NOT a lightning bolt, NOT a river, NOT a tree, NOT a road."
   },
   {
    "id": "wn_sw_tremor",
@@ -1009,6 +1009,1110 @@
   {
    "id": "wn_g_move",
    "say": "a small leather boot with a tiny wing at its heel, brown leather and pale feather, NOT a sandal, NOT a bird."
+  },
+  {
+   "id": "wn_st_reach",
+   "say": "a single long straight steel sword blade drawn diagonally with a short arrow-headed reach line extending past its point Dull iron grey and steel with a warm ember-orange edge, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_st_transmutation",
+   "say": "a plain steel sword blade whose upper half changes into three coloured tongues, one red flame, one blue frost, one gold spark, side by side along the blade Dull iron grey and steel with a warm ember-orange edge, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_st_heft",
+   "say": "a heavy square-headed iron sledgehammer standing upright on its haft, thick and blunt Dull iron grey and steel with a warm ember-orange edge, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_st_footwork",
+   "say": "two dark boot prints side by side with three short motion streaks trailing behind them Dull iron grey and steel with a warm ember-orange edge, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_st_focus",
+   "say": "a single open unblinking eye with a narrow slit pupil, a steel dagger point rising from under it Dull iron grey and steel with a warm ember-orange edge, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_st_tempo",
+   "say": "a small steel hourglass tipped on its side with three short speed streaks Dull iron grey and steel with a warm ember-orange edge, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_st_sweep",
+   "say": "a curved steel sword blade drawn mid-swing with two fainter ghost copies of the same blade fanned behind it Dull iron grey and steel with a warm ember-orange edge, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_st_widearc",
+   "say": "a wide sweeping crescent-shaped slash mark drawn as a broad pale arc with a steel blade at its end Dull iron grey and steel with a warm ember-orange edge, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_st_carve",
+   "say": "a broad steel cleaver blade sunk deep into a dark wooden block Dull iron grey and steel with a warm ember-orange edge, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_st_rend",
+   "say": "a single deep jagged diagonal cut with three dark red drops running from it Dull iron grey and steel with a warm ember-orange edge, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_st_hemorrhage",
+   "say": "a wide pool of dark red blood spreading on flat ground seen from above with a small steel blade lying beside it Dull iron grey and steel with a warm ember-orange edge, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_st_deepcut",
+   "say": "a long thin steel knife blade pushed deep into a dark surface, only its hilt showing above a dark red stain Dull iron grey and steel with a warm ember-orange edge, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_st_butchery",
+   "say": "a heavy broad butcher cleaver with a dark red stain along its edge Dull iron grey and steel with a warm ember-orange edge, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_st_onslaught",
+   "say": "two steel sword blades crossed in an X with a small burst of sparks where they meet Dull iron grey and steel with a warm ember-orange edge, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_st_flurry",
+   "say": "three steel sword blades fanned from one hilt like a hand of cards Dull iron grey and steel with a warm ember-orange edge, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_st_frenzy",
+   "say": "a whirl of five short steel blade strokes arranged in a spinning circle round a dark centre Dull iron grey and steel with a warm ember-orange edge, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_st_rhythm",
+   "say": "a huge iron anvil seen from the side, squat and heavy, with a small steel hammer resting on top Dull iron grey and steel with a warm ember-orange edge, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_st_cadence",
+   "say": "a heavy iron barbell weight lifted on a thick bar, the bar bowed by the load Dull iron grey and steel with a warm ember-orange edge, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_st_relentless",
+   "say": "a large iron anvil cracking a dark stone slab under it with cracks radiating out Dull iron grey and steel with a warm ember-orange edge, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_st_followthrough",
+   "say": "a long steel sword blade at the end of a full swing with a wide pale arc trailing behind it and the ground split under it Dull iron grey and steel with a warm ember-orange edge, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_st_bulwark",
+   "say": "a small dark red splash drawn as a round splat with five short spokes, seen from above Dull iron grey and steel with a warm ember-orange edge, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_st_ironhide",
+   "say": "a wide low steel sword blade swept flat with a broad pale sweep arc under it wider than the blade Dull iron grey and steel with a warm ember-orange edge, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_st_secondwind",
+   "say": "a large dark red splash spreading over a wide ring, seen from above, with droplets flying out Dull iron grey and steel with a warm ember-orange edge, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_st_cruelty",
+   "say": "a steel sword blade passing clean through a dark broken shape and continuing on, drawn with a straight motion line through both Dull iron grey and steel with a warm ember-orange edge, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_st_executioner",
+   "say": "a tall steel headsman's sword held upright with a dark block under its point Dull iron grey and steel with a warm ember-orange edge, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_st_ambush",
+   "say": "a curved steel reaping scythe blade sweeping low with dark cut stalks falling from it Dull iron grey and steel with a warm ember-orange edge, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_st_haymaker",
+   "say": "a huge broad steel cleaver swung down with a dark red splash under its edge and small dark pieces flying Dull iron grey and steel with a warm ember-orange edge, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_sw_expanse",
+   "say": "three concentric widening arcs of pale grey stone spreading out from a small dark centre Dark grey stone and dust brown with a pale grey highlight, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_sw_transmutation",
+   "say": "a dark stone slab cracking open with three coloured lights coming out of the crack, one red, one blue, one gold Dark grey stone and dust brown with a pale grey highlight, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_sw_hammerblow",
+   "say": "a huge two-handed iron maul with a square stone-cracking head, held upright Dark grey stone and dust brown with a pale grey highlight, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_sw_bracing",
+   "say": "two heavy dark boots planted wide on cracked grey stone with dust puffs round them Dark grey stone and dust brown with a pale grey highlight, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_sw_keenedge",
+   "say": "a sharp stone flake with a bright pale edge and a single open eye beside it Dark grey stone and dust brown with a pale grey highlight, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_sw_cadence",
+   "say": "a small iron metronome with its arm swung to one side and three short motion streaks Dark grey stone and dust brown with a pale grey highlight, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_sw_wedge",
+   "say": "a wide flat wedge of grey stone opening from a point at the bottom like a fan, cracked across Dark grey stone and dust brown with a pale grey highlight, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_sw_widening",
+   "say": "a very wide flat shallow wedge of grey stone, wider than it is tall, with cracks fanning out Dark grey stone and dust brown with a pale grey highlight, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_sw_longfault",
+   "say": "a long narrow crack in grey stone running from the bottom to the far top of the frame with small chips along it Dark grey stone and dust brown with a pale grey highlight, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_sw_pressure",
+   "say": "a dark crack in grey stone with a low puff of grey dust cloud rising and settling over it Dark grey stone and dust brown with a pale grey highlight, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_sw_bearing",
+   "say": "three small puffs of grey dust in a row over a cracked stone, each one sharper than the last Dark grey stone and dust brown with a pale grey highlight, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_sw_deadweight",
+   "say": "a wide low sinking slab of grey stone with dust spread out flat all round it Dark grey stone and dust brown with a pale grey highlight, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_sw_fracture",
+   "say": "a dark grey stone split by a jagged crack with dark red running out of the crack Dark grey stone and dust brown with a pale grey highlight, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_sw_splinter",
+   "say": "a long sharp splinter of grey stone with a dark red stained point Dark grey stone and dust brown with a pale grey highlight, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_sw_openwound",
+   "say": "a wide shallow dark red gash across grey stone with dark red pooling low Dark grey stone and dust brown with a pale grey highlight, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_sw_shatter",
+   "say": "a grey stone shattered into five flying pieces with dark red flecks between them Dark grey stone and dust brown with a pale grey highlight, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_sw_footing",
+   "say": "a wide flat slab of grey stone seen from above with a ring of smaller slabs round it Dark grey stone and dust brown with a pale grey highlight, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_sw_bedrock",
+   "say": "a deep layered block of dark grey bedrock in cross section with a bright crack running down through it Dark grey stone and dust brown with a pale grey highlight, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_sw_endurance",
+   "say": "a broad flat wall of grey stone blocks seen straight on, wider than tall Dark grey stone and dust brown with a pale grey highlight, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_sw_stonefoot",
+   "say": "a single heavy stone foot print pressed deep into grey ground with cracks round it Dark grey stone and dust brown with a pale grey highlight, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_sw_reverberation",
+   "say": "a dark stone with three thin concentric pale rings spreading out from it like a struck bell Dark grey stone and dust brown with a pale grey highlight, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_sw_swell",
+   "say": "a rising swell of grey stone drawn as a hump with a crest of dust, small at one end and large at the other Dark grey stone and dust brown with a pale grey highlight, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_sw_crest",
+   "say": "a curling grey stone wave crest breaking at its top with dust spray Dark grey stone and dust brown with a pale grey highlight, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_sw_trough",
+   "say": "a deep dark trough sunk into grey stone with broken edges and a small dark shape lying at the bottom Dark grey stone and dust brown with a pale grey highlight, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_sw_ruin",
+   "say": "a fallen broken grey stone column lying in three pieces Dark grey stone and dust brown with a pale grey highlight, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_sw_pulverise",
+   "say": "a grey stone crushed to a heap of dust and gravel under a heavy dark iron block Dark grey stone and dust brown with a pale grey highlight, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_sw_reckoning",
+   "say": "a set of iron balance scales with a grey stone on one pan tipping it down Dark grey stone and dust brown with a pale grey highlight, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_sw_relentless",
+   "say": "a grey stone rolling with three pale motion streaks behind it Dark grey stone and dust brown with a pale grey highlight, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_fb_longfuse",
+   "say": "a long coiled dark rope fuse with a small bright flame burning at its far end and a long way still to burn Ember orange and deep red with a yellow-white core, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_fb_transmutation",
+   "say": "a ball of fire whose one half is fire and whose other half is frost blue and gold spark, split down the middle Ember orange and deep red with a yellow-white core, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_fb_reserves",
+   "say": "a deep dark stone well with orange fire glowing up from far down inside it Ember orange and deep red with a yellow-white core, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_fb_opening",
+   "say": "a single large fireball just leaving a dark hand-shaped launcher with a burst of sparks behind it, the first shot Ember orange and deep red with a yellow-white core, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_fb_focus",
+   "say": "a single open eye with a small orange flame reflected as its pupil Ember orange and deep red with a yellow-white core, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_fb_emberstorm",
+   "say": "a swirl of many small orange embers spinning in a tight storm round a dark centre Ember orange and deep red with a yellow-white core, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_fb_kindling",
+   "say": "a small bundle of dry dark twigs with a single new orange flame catching at one end Ember orange and deep red with a yellow-white core, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_fb_cauterise",
+   "say": "a glowing red-hot iron brand pressed onto a dark surface with a puff of grey smoke rising Ember orange and deep red with a yellow-white core, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_fb_slowburn",
+   "say": "a single short dark candle burnt low with a small steady orange flame and a long wax drip Ember orange and deep red with a yellow-white core, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_fb_wildfire",
+   "say": "a wide line of orange fire spreading across dark ground with flames leaning one way in the wind Ember orange and deep red with a yellow-white core, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_fb_bellows",
+   "say": "a pair of dark leather bellows with a bright gust of orange fire and sparks blasting out of the nozzle Ember orange and deep red with a yellow-white core, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_fb_draught",
+   "say": "a strong gust of orange sparks and fire drawn sideways through an open dark doorway Ember orange and deep red with a yellow-white core, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_fb_furnace",
+   "say": "a squat dark iron furnace with a grate door open and white-orange fire roaring inside Ember orange and deep red with a yellow-white core, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_fb_forgefire",
+   "say": "a wide dark forge hearth with a mound of white-hot coals and tall orange flames Ember orange and deep red with a yellow-white core, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_fb_splitcast",
+   "say": "two small balls of fire flying apart from one point in a V with short trails Ember orange and deep red with a yellow-white core, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_fb_focused",
+   "say": "five small balls of fire scattered wide apart across the frame, each with a short trail, the widest spread Ember orange and deep red with a yellow-white core, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_fb_volley",
+   "say": "three balls of fire flying in a row with short orange trails behind them Ember orange and deep red with a yellow-white core, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_fb_piercing",
+   "say": "a long thin lance of orange fire drawn as a straight spear shape passing through a dark ring Ember orange and deep red with a yellow-white core, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_fb_momentum",
+   "say": "a straight bolt of orange fire passing clean through two dark rings in a row, undimmed Ember orange and deep red with a yellow-white core, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_fb_arcing",
+   "say": "a ball of fire bouncing from one dark peg to another along a curved dotted orange arc Ember orange and deep red with a yellow-white core, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_fb_rebound",
+   "say": "a ball of fire bouncing off a dark wall and coming back the way it came, shown by a bent orange arc Ember orange and deep red with a yellow-white core, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_fb_leaping",
+   "say": "a ball of fire leaping over a gap between two dark stones along a high orange arc Ember orange and deep red with a yellow-white core, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_fb_immolate",
+   "say": "a round orange explosion with a dark ring of scorched ground round it, seen from above Ember orange and deep red with a yellow-white core, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_fb_closequarters",
+   "say": "a wide ring of orange fire spreading outward with a small dark centre, seen from above, wider than tall Ember orange and deep red with a yellow-white core, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_fb_executioner",
+   "say": "a violent orange-white explosion with dark fragments thrown out in every direction Ember orange and deep red with a yellow-white core, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_fb_overload",
+   "say": "an overlarge orange explosion swelling past a dark circle outline drawn round it Ember orange and deep red with a yellow-white core, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_am_reach",
+   "say": "a long thin dark dagger with a dotted line extending far past its point to a small dark X Near-black and dark violet-grey with dull steel and a dark red accent, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_am_transmutation",
+   "say": "a dark dagger whose blade is three coloured stripes along its length, red, blue and gold Near-black and dark violet-grey with dull steel and a dark red accent, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_am_weight",
+   "say": "a heavy dark iron dagger with a thick weighted pommel, held point down Near-black and dark violet-grey with dull steel and a dark red accent, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_am_practice",
+   "say": "two dark daggers crossed with a small pale circle target behind them scored with cut marks Near-black and dark violet-grey with dull steel and a dark red accent, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_am_instinct",
+   "say": "a narrow dark eye with a slit pupil beside a small steel dagger point Near-black and dark violet-grey with dull steel and a dark red accent, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_am_close",
+   "say": "a dark hooded figure's shadow seen only as a silhouette bent close over a small dark heap, drawn as pure shadow Near-black and dark violet-grey with dull steel and a dark red accent, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_am_relay",
+   "say": "two dark daggers with a jagged pale violet flash of light jumping between their points Near-black and dark violet-grey with dull steel and a dark red accent, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_am_quickening",
+   "say": "a dark dagger with three short pale motion streaks and a small pale violet flash at its point Near-black and dark violet-grey with dull steel and a dark red accent, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_am_crossing",
+   "say": "a long pale violet dotted arc leaping over a wide gap between two dark daggers standing far apart Near-black and dark violet-grey with dull steel and a dark red accent, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_am_relentless",
+   "say": "three dark daggers in a row with a pale violet flash chaining from each to the next Near-black and dark violet-grey with dull steel and a dark red accent, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_am_opening",
+   "say": "a dark closed door standing slightly ajar with a thin pale violet light in the gap Near-black and dark violet-grey with dull steel and a dark red accent, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_am_throat",
+   "say": "a dark dagger drawn horizontally with a single thin dark red line under its edge Near-black and dark violet-grey with dull steel and a dark red accent, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_am_unguarded",
+   "say": "a dark round shield lying dropped on its face with a dagger standing in the ground beside it Near-black and dark violet-grey with dull steel and a dark red accent, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_am_finisher",
+   "say": "a dark dagger with a bright pale violet burst at its point and a small dark X below Near-black and dark violet-grey with dull steel and a dark red accent, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_am_edge",
+   "say": "a dark dagger seen edge-on with a single bright pale line along its sharpened edge Near-black and dark violet-grey with dull steel and a dark red accent, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_am_hairline",
+   "say": "a thin pale hairline crack running across a dark stone with a dagger point resting on it Near-black and dark violet-grey with dull steel and a dark red accent, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_am_cruelty",
+   "say": "a dark dagger with a hooked serrated edge and a dark red drop at its tip Near-black and dark violet-grey with dull steel and a dark red accent, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_am_certainty",
+   "say": "a dark dagger standing point-down in the exact centre of a small pale ringed target Near-black and dark violet-grey with dull steel and a dark red accent, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_am_bleeding",
+   "say": "a dark surface cut open in a short slash with dark red welling out of it Near-black and dark violet-grey with dull steel and a dark red accent, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_am_hemorrhage",
+   "say": "a wide dark red pool spreading on dark ground seen from above with a small dark dagger lying in it Near-black and dark violet-grey with dull steel and a dark red accent, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_am_deepcut",
+   "say": "a dark dagger sunk to its hilt in a dark surface with a thin dark red line round the blade Near-black and dark violet-grey with dull steel and a dark red accent, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_am_footing",
+   "say": "two dark soft boot prints close together with two short pale motion streaks Near-black and dark violet-grey with dull steel and a dark red accent, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_am_hide",
+   "say": "a dark dagger with a dark red smear along it and four short pale motion streaks behind Near-black and dark violet-grey with dull steel and a dark red accent, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_am_wind",
+   "say": "a single dark dagger held perfectly still, balanced upright on its point on a small dark stone Near-black and dark violet-grey with dull steel and a dark red accent, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_am_rhythm",
+   "say": "a dark dagger drawn across a thin dark red line at the bottom of a small pale bar, the bar nearly empty Near-black and dark violet-grey with dull steel and a dark red accent, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_am_cadence",
+   "say": "a small pale bar drained to a thin dark red sliver at its foot with a dagger point touching it Near-black and dark violet-grey with dull steel and a dark red accent, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_am_carried",
+   "say": "a dark dagger laid gently across a small pale open hand-shaped stone, drawn as shapes not a real hand Near-black and dark violet-grey with dull steel and a dark red accent, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_am_drumming",
+   "say": "a dark dagger drawn point-first into a small dark bar cut down to nothing, with a pale violet glint Near-black and dark violet-grey with dull steel and a dark red accent, hard black outline, NOT a hand, NOT a person, NOT text."
+  },
+  {
+   "id": "wn_bl_slowrot",
+   "say": "a single fat drop of thick poison hanging from the tip of a twisted dead twig, stretched long and about to fall, drawn in sickly yellow-green and dark olive with a near-black outline, NOT blue, NOT red, NOT pink, NOT brown."
+  },
+  {
+   "id": "wn_bl_transmutation",
+   "say": "a round alchemist's flask with a bulb of liquid inside it split into two colours, one sickly green half and one pale grey half, swirling into each other, drawn in sickly yellow-green and dark olive with a near-black outline, NOT blue, NOT red, NOT pink, NOT brown."
+  },
+  {
+   "id": "wn_bl_reserves",
+   "say": "a bloated dark seed pod cracked open down the middle with dense green rot spilling out, heavy and swollen, drawn in sickly yellow-green and dark olive with a near-black outline, NOT blue, NOT red, NOT pink, NOT brown."
+  },
+  {
+   "id": "wn_bl_sprawl",
+   "say": "a spreading patch of green mould made of many small round blooms growing outward from a centre, wider at the base, drawn in sickly yellow-green and dark olive with a near-black outline, NOT blue, NOT red, NOT pink, NOT brown."
+  },
+  {
+   "id": "wn_bl_focus",
+   "say": "a narrow green eye with a slit pupil, glowing, inside a ring of thorns, drawn in sickly yellow-green and dark olive with a near-black outline, NOT blue, NOT red, NOT pink, NOT brown."
+  },
+  {
+   "id": "wn_bl_quickening",
+   "say": "three green spores in a diagonal line with short speed streaks trailing behind each, moving fast, drawn in sickly yellow-green and dark olive with a near-black outline, NOT blue, NOT red, NOT pink, NOT brown."
+  },
+  {
+   "id": "wn_bl_contagion",
+   "say": "a puffball mushroom bursting, a cloud of tiny green spores puffing out of its split top, drawn in sickly yellow-green and dark olive with a near-black outline, NOT blue, NOT red, NOT pink, NOT brown."
+  },
+  {
+   "id": "wn_bl_epidemic",
+   "say": "two puffball mushrooms side by side both split and puffing green spores, the cloud joined above them, drawn in sickly yellow-green and dark olive with a near-black outline, NOT blue, NOT red, NOT pink, NOT brown."
+  },
+  {
+   "id": "wn_bl_pandemic",
+   "say": "a wide low green spore cloud with three small mushroom caps rising out of it, drawn in sickly yellow-green and dark olive with a near-black outline, NOT blue, NOT red, NOT pink, NOT brown."
+  },
+  {
+   "id": "wn_bl_plaguebearer",
+   "say": "a rat skull in profile with green spores rising out of its eye socket, drawn in sickly yellow-green and dark olive with a near-black outline, NOT blue, NOT red, NOT pink, NOT brown."
+  },
+  {
+   "id": "wn_bl_fixation",
+   "say": "a curved reaping sickle with a green drip hanging off its blade tip, drawn in sickly yellow-green and dark olive with a near-black outline, NOT blue, NOT red, NOT pink, NOT brown."
+  },
+  {
+   "id": "wn_bl_saturation",
+   "say": "a small open hand seen palm-up holding a cluster of green seeds, drawn in sickly yellow-green and dark olive with a near-black outline, NOT blue, NOT red, NOT pink, NOT brown."
+  },
+  {
+   "id": "wn_bl_deepening",
+   "say": "a dandelion seed head with its seeds blowing loose to the right in a green breeze, drawn in sickly yellow-green and dark olive with a near-black outline, NOT blue, NOT red, NOT pink, NOT brown."
+  },
+  {
+   "id": "wn_bl_takehold",
+   "say": "a gnarled root system gripping down into dark soil, green rot in its cracks, drawn in sickly yellow-green and dark olive with a near-black outline, NOT blue, NOT red, NOT pink, NOT brown."
+  },
+  {
+   "id": "wn_bl_miasma",
+   "say": "two round green clouds overlapping, one slightly behind the other, drawn in sickly yellow-green and dark olive with a near-black outline, NOT blue, NOT red, NOT pink, NOT brown."
+  },
+  {
+   "id": "wn_bl_choking",
+   "say": "a thick green cloud with a dark skull shape faintly inside it, drawn in sickly yellow-green and dark olive with a near-black outline, NOT blue, NOT red, NOT pink, NOT brown."
+  },
+  {
+   "id": "wn_bl_smother",
+   "say": "three round green clouds stacked and overlapping in a heap, drawn in sickly yellow-green and dark olive with a near-black outline, NOT blue, NOT red, NOT pink, NOT brown."
+  },
+  {
+   "id": "wn_bl_shroud",
+   "say": "a wide green veil of mist hanging like a curtain, denser at the top and trailing thin tendrils at the bottom, drawn in sickly yellow-green and dark olive with a near-black outline, NOT blue, NOT red, NOT pink, NOT brown."
+  },
+  {
+   "id": "wn_bl_virulence",
+   "say": "a fanged green snake head striking forward with venom dripping from both fangs, drawn in sickly yellow-green and dark olive with a near-black outline, NOT blue, NOT red, NOT pink, NOT brown."
+  },
+  {
+   "id": "wn_bl_septic",
+   "say": "a festering open wound on pale skin, green at the edges, drawn in sickly yellow-green and dark olive with a near-black outline, NOT blue, NOT red, NOT pink, NOT brown."
+  },
+  {
+   "id": "wn_bl_lingering",
+   "say": "a small hourglass with thick green sludge instead of sand, barely moving, drawn in sickly yellow-green and dark olive with a near-black outline, NOT blue, NOT red, NOT pink, NOT brown."
+  },
+  {
+   "id": "wn_bl_canopy",
+   "say": "a wide flat mushroom cap seen from below, gills spread wide, drawn in green and olive, drawn in sickly yellow-green and dark olive with a near-black outline, NOT blue, NOT red, NOT pink, NOT brown."
+  },
+  {
+   "id": "wn_bl_overgrowth",
+   "say": "a thick tangle of green vines and leaves bursting outward in every direction, drawn in sickly yellow-green and dark olive with a near-black outline, NOT blue, NOT red, NOT pink, NOT brown."
+  },
+  {
+   "id": "wn_bl_thicket",
+   "say": "a dense clump of dark thorny bramble with green leaves, drawn in sickly yellow-green and dark olive with a near-black outline, NOT blue, NOT red, NOT pink, NOT brown."
+  },
+  {
+   "id": "wn_bl_spite",
+   "say": "a clenched green-veined fist with poison dripping between the fingers, drawn in sickly yellow-green and dark olive with a near-black outline, NOT blue, NOT red, NOT pink, NOT brown."
+  },
+  {
+   "id": "wn_bl_wither",
+   "say": "a drooping dead flower on a bent stem, petals blackened and falling, drawn in sickly yellow-green and dark olive with a near-black outline, NOT blue, NOT red, NOT pink, NOT brown."
+  },
+  {
+   "id": "wn_bl_dread",
+   "say": "a healthy round green apple with one bite taken out of it and rot spreading from the bite, drawn in sickly yellow-green and dark olive with a near-black outline, NOT blue, NOT red, NOT pink, NOT brown."
+  },
+  {
+   "id": "wn_bl_surge",
+   "say": "a green geyser of thick liquid erupting upward from a crack in dark ground, drawn in sickly yellow-green and dark olive with a near-black outline, NOT blue, NOT red, NOT pink, NOT brown."
+  },
+  {
+   "id": "wn_al_longreach",
+   "say": "a tall thin lightning rod standing alone with a single bolt striking its tip, drawn in electric violet-blue and white-blue light on near-black, NOT yellow, NOT orange, NOT fire, NOT green."
+  },
+  {
+   "id": "wn_al_transformer",
+   "say": "a round glass orb with a bolt inside it splitting into two colours, violet-blue on one side and pale grey on the other, drawn in electric violet-blue and white-blue light on near-black, NOT yellow, NOT orange, NOT fire, NOT green."
+  },
+  {
+   "id": "wn_al_overvolt",
+   "say": "a thick jagged bolt of lightning drawn with a second brighter core, crackling, bulging with charge, drawn in electric violet-blue and white-blue light on near-black, NOT yellow, NOT orange, NOT fire, NOT green."
+  },
+  {
+   "id": "wn_al_saturation",
+   "say": "a bolt of lightning striking a small green-black poison drop, the drop lit from inside, drawn in electric violet-blue and white-blue light on near-black, NOT yellow, NOT orange, NOT fire, NOT green."
+  },
+  {
+   "id": "wn_al_focus",
+   "say": "a narrow slit eye glowing violet-blue with a small bolt for a pupil, drawn in electric violet-blue and white-blue light on near-black, NOT yellow, NOT orange, NOT fire, NOT green."
+  },
+  {
+   "id": "wn_al_stormcall",
+   "say": "a raised open hand with a bolt of lightning leaping upward from the palm, drawn in electric violet-blue and white-blue light on near-black, NOT yellow, NOT orange, NOT fire, NOT green."
+  },
+  {
+   "id": "wn_al_conduction",
+   "say": "a chain of three small bolts linked end to end in a zigzag going right, drawn in electric violet-blue and white-blue light on near-black, NOT yellow, NOT orange, NOT fire, NOT green."
+  },
+  {
+   "id": "wn_al_superconductor",
+   "say": "a straight bar of bright white-blue light with a thin bolt running along its length, unbroken, drawn in electric violet-blue and white-blue light on near-black, NOT yellow, NOT orange, NOT fire, NOT green."
+  },
+  {
+   "id": "wn_al_stormfront",
+   "say": "a bolt that splits into two forks near its top like a Y, drawn in electric violet-blue and white-blue light on near-black, NOT yellow, NOT orange, NOT fire, NOT green."
+  },
+  {
+   "id": "wn_al_thunderhead",
+   "say": "a dark storm cloud with two forked bolts hanging out of its base, drawn in electric violet-blue and white-blue light on near-black, NOT yellow, NOT orange, NOT fire, NOT green."
+  },
+  {
+   "id": "wn_al_potential",
+   "say": "a bolt of lightning growing thicker and brighter along its length from thin at the top to wide at the bottom, drawn in electric violet-blue and white-blue light on near-black, NOT yellow, NOT orange, NOT fire, NOT green."
+  },
+  {
+   "id": "wn_al_capacitor",
+   "say": "two dark metal plates facing each other with a fat arc of lightning jumping between them, drawn in electric violet-blue and white-blue light on near-black, NOT yellow, NOT orange, NOT fire, NOT green."
+  },
+  {
+   "id": "wn_al_reservoir",
+   "say": "a long thin bolt of lightning running the whole height of the frame with five small kinks in it, drawn in electric violet-blue and white-blue light on near-black, NOT yellow, NOT orange, NOT fire, NOT green."
+  },
+  {
+   "id": "wn_al_grounding",
+   "say": "a short thick bolt striking straight down into a dark metal spike in the ground, drawn in electric violet-blue and white-blue light on near-black, NOT yellow, NOT orange, NOT fire, NOT green."
+  },
+  {
+   "id": "wn_al_ionise",
+   "say": "a small sphere ringed by three orbiting sparks, crackling, drawn in electric violet-blue and white-blue light on near-black, NOT yellow, NOT orange, NOT fire, NOT green."
+  },
+  {
+   "id": "wn_al_slowdischarge",
+   "say": "a round glass jar with a slow trickle of lightning pooling at its bottom, drawn in electric violet-blue and white-blue light on near-black, NOT yellow, NOT orange, NOT fire, NOT green."
+  },
+  {
+   "id": "wn_al_searing",
+   "say": "a white-hot brand mark in the shape of a small bolt on dark iron, glowing at the edges, drawn in electric violet-blue and white-blue light on near-black, NOT yellow, NOT orange, NOT fire, NOT green."
+  },
+  {
+   "id": "wn_al_staticcling",
+   "say": "a small cloud of fine sparks gathered round a dark iron ball, sticking to it, drawn in electric violet-blue and white-blue light on near-black, NOT yellow, NOT orange, NOT fire, NOT green."
+  },
+  {
+   "id": "wn_al_split",
+   "say": "two thin parallel bolts of lightning side by side coming down together, drawn in electric violet-blue and white-blue light on near-black, NOT yellow, NOT orange, NOT fire, NOT green."
+  },
+  {
+   "id": "wn_al_scatter",
+   "say": "five small bolts fanning outward from one point at the bottom, drawn in electric violet-blue and white-blue light on near-black, NOT yellow, NOT orange, NOT fire, NOT green."
+  },
+  {
+   "id": "wn_al_fan",
+   "say": "three thin bolts spread in a fan from one point at the bottom, drawn in electric violet-blue and white-blue light on near-black, NOT yellow, NOT orange, NOT fire, NOT green."
+  },
+  {
+   "id": "wn_al_earthed",
+   "say": "a bolt of lightning striking a cracked dark stone slab lying on the ground, drawn in electric violet-blue and white-blue light on near-black, NOT yellow, NOT orange, NOT fire, NOT green."
+  },
+  {
+   "id": "wn_al_pointblank",
+   "say": "a bolt of lightning coiled into a tight spring shape, ready to snap, drawn in electric violet-blue and white-blue light on near-black, NOT yellow, NOT orange, NOT fire, NOT green."
+  },
+  {
+   "id": "wn_al_firstlight",
+   "say": "a single bright spark at the tip of a dark rod, the first flash, small rays round it, drawn in electric violet-blue and white-blue light on near-black, NOT yellow, NOT orange, NOT fire, NOT green."
+  },
+  {
+   "id": "wn_al_dischargecycle",
+   "say": "a ring drawn as a circle of lightning with a fat bolt at its top, a cycle closing on itself, drawn in electric violet-blue and white-blue light on near-black, NOT yellow, NOT orange, NOT fire, NOT green."
+  },
+  {
+   "id": "wn_la_longshot",
+   "say": "a single arrow flying dead straight with a long thin trail behind it, drawn in pale gold-white lightning and dark tarnished bronze, NOT blue, NOT green, NOT red, NOT purple."
+  },
+  {
+   "id": "wn_la_hunter",
+   "say": "a stag's head in profile with an arrow aimed at it from the left, drawn in pale gold-white lightning and dark tarnished bronze, NOT blue, NOT green, NOT red, NOT purple."
+  },
+  {
+   "id": "wn_la_finisher",
+   "say": "an arrow buried to its fletching in a small dark skull, drawn in pale gold-white lightning and dark tarnished bronze, NOT blue, NOT green, NOT red, NOT purple."
+  },
+  {
+   "id": "wn_la_transmutation",
+   "say": "an arrowhead split down the middle, one half gold lightning and the other half dull grey iron, drawn in pale gold-white lightning and dark tarnished bronze, NOT blue, NOT green, NOT red, NOT purple."
+  },
+  {
+   "id": "wn_la_steadyhand",
+   "say": "a gloved hand holding a drawn bowstring perfectly still at full draw, drawn in pale gold-white lightning and dark tarnished bronze, NOT blue, NOT green, NOT red, NOT purple."
+  },
+  {
+   "id": "wn_la_quickdraw",
+   "say": "a bow with its string snapping forward and three motion lines behind it, drawn in pale gold-white lightning and dark tarnished bronze, NOT blue, NOT green, NOT red, NOT purple."
+  },
+  {
+   "id": "wn_la_stormcall",
+   "say": "an arrow whose shaft splits into two forks of lightning behind the head, drawn in pale gold-white lightning and dark tarnished bronze, NOT blue, NOT green, NOT red, NOT purple."
+  },
+  {
+   "id": "wn_la_thunderhead",
+   "say": "a dark storm cloud with an arrow of lightning shooting down out of it, drawn in pale gold-white lightning and dark tarnished bronze, NOT blue, NOT green, NOT red, NOT purple."
+  },
+  {
+   "id": "wn_la_deluge",
+   "say": "four arrows of lightning falling in a diagonal shower, drawn in pale gold-white lightning and dark tarnished bronze, NOT blue, NOT green, NOT red, NOT purple."
+  },
+  {
+   "id": "wn_la_broadhead",
+   "say": "a wide flat triangular arrowhead with a sharp barbed edge, seen face-on, drawn in pale gold-white lightning and dark tarnished bronze, NOT blue, NOT green, NOT red, NOT purple."
+  },
+  {
+   "id": "wn_la_momentum",
+   "say": "a bow drawn all the way back to the ear with the string a straight taut line, drawn in pale gold-white lightning and dark tarnished bronze, NOT blue, NOT green, NOT red, NOT purple."
+  },
+  {
+   "id": "wn_la_volley",
+   "say": "two arrows side by side flying in the same direction, drawn in pale gold-white lightning and dark tarnished bronze, NOT blue, NOT green, NOT red, NOT purple."
+  },
+  {
+   "id": "wn_la_scatter",
+   "say": "five small arrows fanning outward from one point at the bottom, drawn in pale gold-white lightning and dark tarnished bronze, NOT blue, NOT green, NOT red, NOT purple."
+  },
+  {
+   "id": "wn_la_rain",
+   "say": "a quiver full of arrows tipped over with arrows spilling out, drawn in pale gold-white lightning and dark tarnished bronze, NOT blue, NOT green, NOT red, NOT purple."
+  },
+  {
+   "id": "wn_la_conduction",
+   "say": "an arrow in flight with a small bolt of lightning leaping sideways off its head, drawn in pale gold-white lightning and dark tarnished bronze, NOT blue, NOT green, NOT red, NOT purple."
+  },
+  {
+   "id": "wn_la_rebound",
+   "say": "an arrow bouncing off a dark stone wall, its path drawn as a sharp V, drawn in pale gold-white lightning and dark tarnished bronze, NOT blue, NOT green, NOT red, NOT purple."
+  },
+  {
+   "id": "wn_la_earthchain",
+   "say": "a chain of three linked bolts running from an arrowhead into the ground, drawn in pale gold-white lightning and dark tarnished bronze, NOT blue, NOT green, NOT red, NOT purple."
+  },
+  {
+   "id": "wn_la_mark",
+   "say": "an arrow pinning a small dark ragged cloth to a wooden post, drawn in pale gold-white lightning and dark tarnished bronze, NOT blue, NOT green, NOT red, NOT purple."
+  },
+  {
+   "id": "wn_la_ranging",
+   "say": "a long iron nail driven through a dark boot into the ground, drawn in pale gold-white lightning and dark tarnished bronze, NOT blue, NOT green, NOT red, NOT purple."
+  },
+  {
+   "id": "wn_la_deadeye",
+   "say": "an archery target with an arrow dead centre in the bullseye, drawn in pale gold-white lightning and dark tarnished bronze, NOT blue, NOT green, NOT red, NOT purple."
+  },
+  {
+   "id": "wn_la_takeaim",
+   "say": "an arrow shaft made of crackling gold lightning with a dark iron head, drawn in pale gold-white lightning and dark tarnished bronze, NOT blue, NOT green, NOT red, NOT purple."
+  },
+  {
+   "id": "wn_la_slowdischarge",
+   "say": "a round glass jar with a slow trickle of gold lightning pooling at its bottom, drawn in pale gold-white lightning and dark tarnished bronze, NOT blue, NOT green, NOT red, NOT purple."
+  },
+  {
+   "id": "wn_la_searing",
+   "say": "a white-hot brand mark in the shape of a small arrow on dark iron, glowing at the edges, drawn in pale gold-white lightning and dark tarnished bronze, NOT blue, NOT green, NOT red, NOT purple."
+  },
+  {
+   "id": "wn_la_earthingfield",
+   "say": "three small arrows stuck upright in a patch of ground with lightning crawling between them, drawn in pale gold-white lightning and dark tarnished bronze, NOT blue, NOT green, NOT red, NOT purple."
+  },
+  {
+   "id": "wn_bk_stride",
+   "say": "a pair of long striding legs mid-step drawn as a dark silhouette with lilac motion streaks, drawn in deep violet and pale lilac light on near-black, NOT blue, NOT red, NOT green, NOT orange."
+  },
+  {
+   "id": "wn_bk_measure",
+   "say": "a small hourglass with lilac light for sand, half run, drawn in deep violet and pale lilac light on near-black, NOT blue, NOT red, NOT green, NOT orange."
+  },
+  {
+   "id": "wn_bk_longlegs",
+   "say": "a long dashed lilac line with a small dark figure at each end, a jump measured out, drawn in deep violet and pale lilac light on near-black, NOT blue, NOT red, NOT green, NOT orange."
+  },
+  {
+   "id": "wn_bk_wellspring",
+   "say": "a small round pool of lilac water with a ring of ripples spreading from its centre, drawn in deep violet and pale lilac light on near-black, NOT blue, NOT red, NOT green, NOT orange."
+  },
+  {
+   "id": "wn_bk_fleet",
+   "say": "a winged sandal seen from the side, wings spread, drawn in deep violet and pale lilac light on near-black, NOT blue, NOT red, NOT green, NOT orange."
+  },
+  {
+   "id": "wn_bk_braced",
+   "say": "a round dark buckler shield with a faint lilac rune glowing on its face, drawn in deep violet and pale lilac light on near-black, NOT blue, NOT red, NOT green, NOT orange."
+  },
+  {
+   "id": "wn_bk_wake",
+   "say": "a ring of lilac ripples on dark ground round an empty spot where something just stood, drawn in deep violet and pale lilac light on near-black, NOT blue, NOT red, NOT green, NOT orange."
+  },
+  {
+   "id": "wn_bk_undertow",
+   "say": "a wide flat spiral of lilac water pulling inward toward its centre, drawn in deep violet and pale lilac light on near-black, NOT blue, NOT red, NOT green, NOT orange."
+  },
+  {
+   "id": "wn_bk_riptide",
+   "say": "a strong curling lilac wave dragging to the left, drawn in deep violet and pale lilac light on near-black, NOT blue, NOT red, NOT green, NOT orange."
+  },
+  {
+   "id": "wn_bk_deepwake",
+   "say": "a still lilac pool with three concentric rings that reach the frame's edge, drawn in deep violet and pale lilac light on near-black, NOT blue, NOT red, NOT green, NOT orange."
+  },
+  {
+   "id": "wn_bk_current",
+   "say": "a stream of lilac light flowing upward into a small round vessel, drawn in deep violet and pale lilac light on near-black, NOT blue, NOT red, NOT green, NOT orange."
+  },
+  {
+   "id": "wn_bk_aftercurrent",
+   "say": "two thin streams of lilac light braiding together as they rise, drawn in deep violet and pale lilac light on near-black, NOT blue, NOT red, NOT green, NOT orange."
+  },
+  {
+   "id": "wn_bk_syphon",
+   "say": "a curved tube drawing lilac liquid up from a small pool below, drawn in deep violet and pale lilac light on near-black, NOT blue, NOT red, NOT green, NOT orange."
+  },
+  {
+   "id": "wn_bk_quenching",
+   "say": "a dark heart shape with lilac light pouring over it from above, drawn in deep violet and pale lilac light on near-black, NOT blue, NOT red, NOT green, NOT orange."
+  },
+  {
+   "id": "wn_bk_quickening",
+   "say": "a small dark hourglass with lilac sand rushing through it and motion streaks either side, drawn in deep violet and pale lilac light on near-black, NOT blue, NOT red, NOT green, NOT orange."
+  },
+  {
+   "id": "wn_bk_flicker",
+   "say": "a dark candle flame flickering violet, drawn twice slightly offset as if blinking, drawn in deep violet and pale lilac light on near-black, NOT blue, NOT red, NOT green, NOT orange."
+  },
+  {
+   "id": "wn_bk_slipstream",
+   "say": "a dark figure in profile running with a long lilac streak trailing behind, drawn in deep violet and pale lilac light on near-black, NOT blue, NOT red, NOT green, NOT orange."
+  },
+  {
+   "id": "wn_bk_secondwind",
+   "say": "a dark figure leaning forward with a second faint lilac outline of it a step ahead, drawn in deep violet and pale lilac light on near-black, NOT blue, NOT red, NOT green, NOT orange."
+  },
+  {
+   "id": "wn_bk_longstep",
+   "say": "a dark boot at the left and a second dark boot far at the right, joined by a lilac arc, drawn in deep violet and pale lilac light on near-black, NOT blue, NOT red, NOT green, NOT orange."
+  },
+  {
+   "id": "wn_bk_farstep",
+   "say": "a lilac arc leaping from a small dark stone to a far one across a gap, drawn in deep violet and pale lilac light on near-black, NOT blue, NOT red, NOT green, NOT orange."
+  },
+  {
+   "id": "wn_bk_reprisal",
+   "say": "a dark dagger point-down with a lilac glow round its blade, drawn in deep violet and pale lilac light on near-black, NOT blue, NOT red, NOT green, NOT orange."
+  },
+  {
+   "id": "wn_bk_bolt",
+   "say": "a small dark figure snapping sideways out of a lilac flash, only the flash where it stood, drawn in deep violet and pale lilac light on near-black, NOT blue, NOT red, NOT green, NOT orange."
+  },
+  {
+   "id": "wn_bk_afterimage",
+   "say": "a dark figure in profile with three fainter lilac copies of it trailing behind, drawn in deep violet and pale lilac light on near-black, NOT blue, NOT red, NOT green, NOT orange."
+  },
+  {
+   "id": "wn_bk_ghosting",
+   "say": "a translucent lilac silhouette of a figure fading from the feet up, drawn in deep violet and pale lilac light on near-black, NOT blue, NOT red, NOT green, NOT orange."
+  },
+  {
+   "id": "wn_bk_paling",
+   "say": "a thin lilac wall of light standing upright like a pane of glass, drawn in deep violet and pale lilac light on near-black, NOT blue, NOT red, NOT green, NOT orange."
+  },
+  {
+   "id": "wn_bk_vanishing",
+   "say": "a dark hooded figure fading to lilac wisps from the feet up with a faint heart glowing in its chest, drawn in deep violet and pale lilac light on near-black, NOT blue, NOT red, NOT green, NOT orange."
+  },
+  {
+   "id": "wn_bk_distance",
+   "say": "two small dark figures at opposite edges with a wide lilac gap between them, drawn in deep violet and pale lilac light on near-black, NOT blue, NOT red, NOT green, NOT orange."
+  },
+  {
+   "id": "wn_bk_looseleash",
+   "say": "a dark leash slipped off and lying loose in a coil with lilac light on its buckle, drawn in deep violet and pale lilac light on near-black, NOT blue, NOT red, NOT green, NOT orange."
+  },
+  {
+   "id": "wn_bk_cutandrun",
+   "say": "a dark dagger with a lilac slash mark behind it and a running boot below, drawn in deep violet and pale lilac light on near-black, NOT blue, NOT red, NOT green, NOT orange."
+  },
+  {
+   "id": "wn_bk_standoff",
+   "say": "a dark dagger and a dark bolt facing each other across a gap with lilac light between them, drawn in deep violet and pale lilac light on near-black, NOT blue, NOT red, NOT green, NOT orange."
+  },
+  {
+   "id": "wn_lp_stride",
+   "say": "a pair of long striding legs mid-step drawn as a dark silhouette with ochre dust puffs at the feet, drawn in ochre, dark earth-brown and dull stone grey, NOT blue, NOT green, NOT purple, NOT red."
+  },
+  {
+   "id": "wn_lp_measure",
+   "say": "a small stone hourglass with ochre sand, half run, drawn in ochre, dark earth-brown and dull stone grey, NOT blue, NOT green, NOT purple, NOT red."
+  },
+  {
+   "id": "wn_lp_longlegs",
+   "say": "a long dashed ochre arc over a gap in dark ground, a jump measured out, drawn in ochre, dark earth-brown and dull stone grey, NOT blue, NOT green, NOT purple, NOT red."
+  },
+  {
+   "id": "wn_lp_wellspring",
+   "say": "a small round stone well with ochre water welling up over its rim, drawn in ochre, dark earth-brown and dull stone grey, NOT blue, NOT green, NOT purple, NOT red."
+  },
+  {
+   "id": "wn_lp_fleet",
+   "say": "a winged boot seen from the side, wings spread, in ochre and brown, drawn in ochre, dark earth-brown and dull stone grey, NOT blue, NOT green, NOT purple, NOT red."
+  },
+  {
+   "id": "wn_lp_braced",
+   "say": "a round dark iron buckler shield with a stone rim, drawn in ochre, dark earth-brown and dull stone grey, NOT blue, NOT green, NOT purple, NOT red."
+  },
+  {
+   "id": "wn_lp_impact",
+   "say": "a heavy boot print pressed deep into cracked dark ground, drawn in ochre, dark earth-brown and dull stone grey, NOT blue, NOT green, NOT purple, NOT red."
+  },
+  {
+   "id": "wn_lp_pinned",
+   "say": "a heavy iron stake driven down through a dark shape into the ground, drawn in ochre, dark earth-brown and dull stone grey, NOT blue, NOT green, NOT purple, NOT red."
+  },
+  {
+   "id": "wn_lp_crushing",
+   "say": "a great dark boulder pressing down on cracked ground, drawn in ochre, dark earth-brown and dull stone grey, NOT blue, NOT green, NOT purple, NOT red."
+  },
+  {
+   "id": "wn_lp_standing",
+   "say": "a dark figure standing tall over a small fallen figure at its feet, drawn in ochre, dark earth-brown and dull stone grey, NOT blue, NOT green, NOT purple, NOT red."
+  },
+  {
+   "id": "wn_lp_tremor",
+   "say": "cracked dark ground with three concentric rings of fracture spreading from a centre point, drawn in ochre, dark earth-brown and dull stone grey, NOT blue, NOT green, NOT purple, NOT red."
+  },
+  {
+   "id": "wn_lp_faultline",
+   "say": "a long jagged crack running the whole width of dark ground, drawn in ochre, dark earth-brown and dull stone grey, NOT blue, NOT green, NOT purple, NOT red."
+  },
+  {
+   "id": "wn_lp_aftershock",
+   "say": "a small dark boulder at the centre of a ring of tumbling pebbles, drawn in ochre, dark earth-brown and dull stone grey, NOT blue, NOT green, NOT purple, NOT red."
+  },
+  {
+   "id": "wn_lp_lasting",
+   "say": "a broken flagstone floor with weeds growing in the cracks, drawn in ochre, dark earth-brown and dull stone grey, NOT blue, NOT green, NOT purple, NOT red."
+  },
+  {
+   "id": "wn_lp_footing",
+   "say": "a dark boot planted firmly on a flat stone, three short grip lines under it, drawn in ochre, dark earth-brown and dull stone grey, NOT blue, NOT green, NOT purple, NOT red."
+  },
+  {
+   "id": "wn_lp_rebound",
+   "say": "a dark ball bouncing off stone ground, its path drawn as a V with an ochre arc, drawn in ochre, dark earth-brown and dull stone grey, NOT blue, NOT green, NOT purple, NOT red."
+  },
+  {
+   "id": "wn_lp_charge",
+   "say": "a dark figure in profile charging forward with ochre dust flying behind, drawn in ochre, dark earth-brown and dull stone grey, NOT blue, NOT green, NOT purple, NOT red."
+  },
+  {
+   "id": "wn_lp_pounce",
+   "say": "a dark crouching cat silhouette mid-pounce with claws out, drawn in ochre, dark earth-brown and dull stone grey, NOT blue, NOT green, NOT purple, NOT red."
+  },
+  {
+   "id": "wn_lp_longfall",
+   "say": "a small dark figure falling from the top of the frame with a long ochre trail, drawn in ochre, dark earth-brown and dull stone grey, NOT blue, NOT green, NOT purple, NOT red."
+  },
+  {
+   "id": "wn_lp_further",
+   "say": "a dark boot at the left and a second dark boot far at the right, joined by an ochre arc, drawn in ochre, dark earth-brown and dull stone grey, NOT blue, NOT green, NOT purple, NOT red."
+  },
+  {
+   "id": "wn_lp_headlong",
+   "say": "a dark helmeted head thrust forward with ochre motion lines behind it, drawn in ochre, dark earth-brown and dull stone grey, NOT blue, NOT green, NOT purple, NOT red."
+  },
+  {
+   "id": "wn_lp_skyfall",
+   "say": "a dark figure high in the air at the top of a tall ochre arc, drawn in ochre, dark earth-brown and dull stone grey, NOT blue, NOT green, NOT purple, NOT red."
+  },
+  {
+   "id": "wn_lp_reprieve",
+   "say": "a dark heart shape with an ochre bandage wrapped round it, drawn in ochre, dark earth-brown and dull stone grey, NOT blue, NOT green, NOT purple, NOT red."
+  },
+  {
+   "id": "wn_lp_secondbreath",
+   "say": "a dark lung shape with two ochre puffs of breath rising from it, drawn in ochre, dark earth-brown and dull stone grey, NOT blue, NOT green, NOT purple, NOT red."
+  },
+  {
+   "id": "wn_lp_knitting",
+   "say": "a dark bone shape with an ochre crack in it closing up, drawn in ochre, dark earth-brown and dull stone grey, NOT blue, NOT green, NOT purple, NOT red."
+  },
+  {
+   "id": "wn_lp_drawingbreath",
+   "say": "a dark open mouth in profile drawing in a swirl of ochre air, drawn in ochre, dark earth-brown and dull stone grey, NOT blue, NOT green, NOT purple, NOT red."
+  },
+  {
+   "id": "wn_lp_bracing",
+   "say": "a dark figure crouched low with one arm raised over its head under an ochre shield shape, drawn in ochre, dark earth-brown and dull stone grey, NOT blue, NOT green, NOT purple, NOT red."
+  },
+  {
+   "id": "wn_lp_setstance",
+   "say": "two dark boots planted wide apart on stone with a low ochre stance line between them, drawn in ochre, dark earth-brown and dull stone grey, NOT blue, NOT green, NOT purple, NOT red."
+  },
+  {
+   "id": "wn_lp_dugin",
+   "say": "a dark figure sunk to its knees in earth, ochre soil heaped round it, drawn in ochre, dark earth-brown and dull stone grey, NOT blue, NOT green, NOT purple, NOT red."
+  },
+  {
+   "id": "wn_lp_ironfooted",
+   "say": "a heavy dark iron boot with rivets, standing on stone, drawn in ochre, dark earth-brown and dull stone grey, NOT blue, NOT green, NOT purple, NOT red."
+  },
+  {
+   "id": "wn_gl_stride",
+   "say": "a pair of long striding legs mid-step drawn as a dark silhouette with white wind streaks trailing, drawn in pale teal-grey and white wind streaks on dark slate, NOT saturated blue, NOT green, NOT red, NOT orange."
+  },
+  {
+   "id": "wn_gl_measure",
+   "say": "a small hourglass with pale teal mist for sand, half run, drawn in pale teal-grey and white wind streaks on dark slate, NOT saturated blue, NOT green, NOT red, NOT orange."
+  },
+  {
+   "id": "wn_gl_holding",
+   "say": "a small dark glass bottle with a curl of white wind swirling inside it, drawn in pale teal-grey and white wind streaks on dark slate, NOT saturated blue, NOT green, NOT red, NOT orange."
+  },
+  {
+   "id": "wn_gl_gusting",
+   "say": "three curls of white wind stacked one above another, each larger than the last, drawn in pale teal-grey and white wind streaks on dark slate, NOT saturated blue, NOT green, NOT red, NOT orange."
+  },
+  {
+   "id": "wn_gl_fleet",
+   "say": "a winged sandal seen from the side, wings spread, in pale teal and dark slate, drawn in pale teal-grey and white wind streaks on dark slate, NOT saturated blue, NOT green, NOT red, NOT orange."
+  },
+  {
+   "id": "wn_gl_braced",
+   "say": "a round dark buckler shield with a curl of white wind wrapped round its rim, drawn in pale teal-grey and white wind streaks on dark slate, NOT saturated blue, NOT green, NOT red, NOT orange."
+  },
+  {
+   "id": "wn_gl_pace",
+   "say": "a dark figure in profile running with a wide fan of white wind streaks behind, drawn in pale teal-grey and white wind streaks on dark slate, NOT saturated blue, NOT green, NOT red, NOT orange."
+  },
+  {
+   "id": "wn_gl_bolting",
+   "say": "a dark hare silhouette bolting to the right with wind streaks behind it, drawn in pale teal-grey and white wind streaks on dark slate, NOT saturated blue, NOT green, NOT red, NOT orange."
+  },
+  {
+   "id": "wn_gl_headwind",
+   "say": "a dark sword tilted forward with white wind streaming off its edge, drawn in pale teal-grey and white wind streaks on dark slate, NOT saturated blue, NOT green, NOT red, NOT orange."
+  },
+  {
+   "id": "wn_gl_running",
+   "say": "a dark figure leaning hard into a sprint with a long white wind trail, drawn in pale teal-grey and white wind streaks on dark slate, NOT saturated blue, NOT green, NOT red, NOT orange."
+  },
+  {
+   "id": "wn_gl_guard",
+   "say": "a dark shield shape wrapped in three spiralling white wind lines, drawn in pale teal-grey and white wind streaks on dark slate, NOT saturated blue, NOT green, NOT red, NOT orange."
+  },
+  {
+   "id": "wn_gl_hardening",
+   "say": "a dark iron plate with white wind lines pressing flat against its face, drawn in pale teal-grey and white wind streaks on dark slate, NOT saturated blue, NOT green, NOT red, NOT orange."
+  },
+  {
+   "id": "wn_gl_plating",
+   "say": "three overlapping dark iron scales with a curl of white wind above them, drawn in pale teal-grey and white wind streaks on dark slate, NOT saturated blue, NOT green, NOT red, NOT orange."
+  },
+  {
+   "id": "wn_gl_lastwind",
+   "say": "a single thin curl of white wind alone in the dark, small and fading, drawn in pale teal-grey and white wind streaks on dark slate, NOT saturated blue, NOT green, NOT red, NOT orange."
+  },
+  {
+   "id": "wn_gl_renewal",
+   "say": "a dark heart shape with a curl of white wind blowing through it, drawn in pale teal-grey and white wind streaks on dark slate, NOT saturated blue, NOT green, NOT red, NOT orange."
+  },
+  {
+   "id": "wn_gl_mending",
+   "say": "a dark heart shape stitched with pale teal thread, a small wind curl beside it, drawn in pale teal-grey and white wind streaks on dark slate, NOT saturated blue, NOT green, NOT red, NOT orange."
+  },
+  {
+   "id": "wn_gl_drawing",
+   "say": "a dark open mouth in profile drawing in a curl of white wind, drawn in pale teal-grey and white wind streaks on dark slate, NOT saturated blue, NOT green, NOT red, NOT orange."
+  },
+  {
+   "id": "wn_gl_flinch",
+   "say": "a dark figure recoiling sideways with a sharp white gust hitting it, drawn in pale teal-grey and white wind streaks on dark slate, NOT saturated blue, NOT green, NOT red, NOT orange."
+  },
+  {
+   "id": "wn_gl_reserve",
+   "say": "two small dark glass bottles side by side each with a curl of white wind inside, drawn in pale teal-grey and white wind streaks on dark slate, NOT saturated blue, NOT green, NOT red, NOT orange."
+  },
+  {
+   "id": "wn_gl_deepreserve",
+   "say": "a dark barrel with white wind swirling out of its open top, drawn in pale teal-grey and white wind streaks on dark slate, NOT saturated blue, NOT green, NOT red, NOT orange."
+  },
+  {
+   "id": "wn_gl_stormfront",
+   "say": "a wide dark storm cloud front with white wind streaming ahead of it, drawn in pale teal-grey and white wind streaks on dark slate, NOT saturated blue, NOT green, NOT red, NOT orange."
+  },
+  {
+   "id": "wn_gl_topping",
+   "say": "a dark cup being filled from above with a pouring stream of white wind, drawn in pale teal-grey and white wind streaks on dark slate, NOT saturated blue, NOT green, NOT red, NOT orange."
+  },
+  {
+   "id": "wn_gl_recovery",
+   "say": "a curl of white wind rising up out of dark ground, drawn in pale teal-grey and white wind streaks on dark slate, NOT saturated blue, NOT green, NOT red, NOT orange."
+  },
+  {
+   "id": "wn_gl_secondwind",
+   "say": "two curls of white wind rising side by side, the second brighter, drawn in pale teal-grey and white wind streaks on dark slate, NOT saturated blue, NOT green, NOT red, NOT orange."
+  },
+  {
+   "id": "wn_gl_squall",
+   "say": "a sudden dense burst of white wind lines all blowing one way from the left, drawn in pale teal-grey and white wind streaks on dark slate, NOT saturated blue, NOT green, NOT red, NOT orange."
+  },
+  {
+   "id": "wn_gl_untouched",
+   "say": "a dark figure standing still inside a calm ring of white wind circling round it, drawn in pale teal-grey and white wind streaks on dark slate, NOT saturated blue, NOT green, NOT red, NOT orange."
+  },
+  {
+   "id": "wn_gl_anchor",
+   "say": "a dark iron ship's anchor with white wind blowing past it and not moving it, drawn in pale teal-grey and white wind streaks on dark slate, NOT saturated blue, NOT green, NOT red, NOT orange."
+  },
+  {
+   "id": "wn_gl_ballast",
+   "say": "a heavy dark sack tied shut with white wind straining against it, drawn in pale teal-grey and white wind streaks on dark slate, NOT saturated blue, NOT green, NOT red, NOT orange."
+  },
+  {
+   "id": "wn_gl_settled",
+   "say": "a small dark glass bottle corked shut with a still curl of white mist resting inside, drawn in pale teal-grey and white wind streaks on dark slate, NOT saturated blue, NOT green, NOT red, NOT orange."
+  },
+  {
+   "id": "wn_gl_ironwind",
+   "say": "a curl of wind drawn as dark riveted iron with a pale teal edge, drawn in pale teal-grey and white wind streaks on dark slate, NOT saturated blue, NOT green, NOT red, NOT orange."
   }
  ]
 }
