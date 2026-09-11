@@ -2245,10 +2245,28 @@ export function coneWedge(origin: Vec2, left: Vec2, right: Vec2, t: number): Fir
  */
 /** How wide a flying shard is drawn, in tiles. */
 export const SHARD_SPAN = 0.5;
+export const BLADE_SPAN = 0.9; // a thrown ghost blade, in tiles: a sword's length, not a shard's
 
 /** WHERE A SHARD IS and which way it points, so the sprite Pixi draws and the
  *  blocks canvas2d draws are one answer. Its art is point-UP, so the quarter
  *  turn is the drawing's and belongs here rather than at the call. */
+/** A THROWN GHOST BLADE: out to `far` for the first half of its life and back
+ *  to `home` — the thrower's LIVE position — for the second, spinning the whole
+ *  way. The return follows the hero, so a blade thrown on the move still lands
+ *  in his hand. */
+export function bladeFlight(from: Vec2, far: Vec2, home: Vec2, t: number): Flight {
+  const out = t < 0.5;
+  const k = out ? t * 2 : (t - 0.5) * 2;
+  const a = out ? from : far;
+  const b = out ? far : home;
+  return {
+    x: a.x + (b.x - a.x) * k,
+    y: a.y + (b.y - a.y) * k,
+    angle: t * Math.PI * 12, // six turns over the flight
+    alpha: t < 0.9 ? 1 : Math.max(0, (1 - t) * 10),
+  };
+}
+
 export function shardFlight(from: Vec2, to: Vec2, t: number): Flight {
   const travel = Math.min(1, t * 1.9);
   return {

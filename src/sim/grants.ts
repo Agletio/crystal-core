@@ -1187,6 +1187,38 @@ export const GRANTS: GrantDef[] = [
     },
   },
   {
+    /** STRIKE'S FIRST MODE. No swing: a ghost of the weapon is thrown out
+     *  `reach` tiles through everything in its line and comes back to the hand
+     *  through them again. Read by the delivery; the picture follows the hero. */
+    id: 'ghostBlade',
+    changes: 'targets',
+    what: 'the swing is a thrown ghost blade that pierces out and back',
+    reads: ['melee'],
+    merge: 'bag',
+    say: (v) => {
+      const o = v as { less?: number; reach?: number } | null;
+      if (!o || typeof o.less !== 'number' || typeof o.reach !== 'number') return null;
+      return (
+        `A ghost of your weapon is thrown ${o.reach} tiles, through every enemy in its ` +
+        `line for ${pct(o.less)} less damage, and comes back through them again`
+      );
+    },
+  },
+  {
+    /** STRIKE'S OTHER MODE. No target: everything within `radius` of YOU is hit
+     *  at once, and a Splash lands on nothing because nothing is left out. */
+    id: 'whirl',
+    changes: 'targets',
+    what: 'the swing hits everything round you',
+    reads: ['melee'],
+    merge: 'bag',
+    say: (v) => {
+      const o = v as { less?: number; radius?: number } | null;
+      if (!o || typeof o.less !== 'number' || typeof o.radius !== 'number') return null;
+      return `You spin: everything within ${o.radius} tiles is hit for ${pct(o.less)} less damage`;
+    },
+  },
+  {
     /** THE OTHER MODE. No spike: the cast is thrown as ice Projectiles from
      *  where you stand, one each while there are enemies to take one and the
      *  rest on what you aimed at. What it costs is the circle. */
@@ -1511,7 +1543,7 @@ export const GRANTS: GrantDef[] = [
     id: 'extraTargets',
     changes: 'targets',
     what: 'the skill throws more Projectiles',
-    reads: ['projectile', 'single_target', 'spike'],
+    reads: ['projectile', 'single_target', 'spike', 'melee'],
     merge: 'sum',
     say: (v) => {
       const n = asNumber(v);

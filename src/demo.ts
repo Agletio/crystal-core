@@ -6252,6 +6252,65 @@ if (rule('DUAL WIELDING — is a pair two weapons or an average of one?')) {
 // ===========================================================================
 }
 
+if (rule('STRIKE\'S TWO MODES — a thrown blade and a spin, played')) {
+
+// Each keystone is the whole use, so the question is what a descent comes to
+// under one against a bare tree: a gauge, printed, never a number that fails.
+{
+  const played = (route: string[]) => {
+    const who = ladderCharacter(4, new Rng(88), 'strike');
+    skillProgress(who, 'strike').allocated = route;
+    let killed = 0;
+    let seconds = 0;
+    for (let i = 0; i < 3; i++) {
+      const set = ladderSet(4, new Rng(400 + i), pool);
+      const final = runToCompletion(new RunSim(set, who, new Rng(404 + i)), 600);
+      killed += final.killed;
+      seconds += final.elapsed;
+    }
+    return killed / Math.max(1, seconds);
+  };
+  const bare = played([]);
+  const ethereal = played(routeTo('strike', 'st_ethereal'));
+  const whirl = played(routeTo('strike', 'st_whirl'));
+  line(
+    `  band 4, three descents: bare tree ${bare.toFixed(2)}, Ethereal Strike ${ethereal.toFixed(2)}, ` +
+      `Whirlwind ${whirl.toFixed(2)} kills/s`
+  );
+  const off = (n: number) => `${n >= bare ? '+' : ''}${Math.round((n / Math.max(0.01, bare) - 1) * 100)}%`;
+  gauge(`a thrown blade alone is ${off(ethereal)} of a bare tree, a spin ${off(whirl)} — wanted within 40% either way`);
+
+  // The mechanism: a blade hits a line twice and a spin hits a ring once.
+  const dummy = (x: number, y: number) =>
+    ({ x, y, life: 1e6, radius: 0, dead: false, ailments: [] as unknown[], stats: { maxLife: 1e6, attacksPerSecond: 1 } }) as any;
+  const cast = (grants: Record<string, unknown>, enemies: any[]) => {
+    const hits: number[] = [];
+    SKILL_BEHAVIOURS.melee({
+      skill: SKILL_BY_ID.strike, user: dummy(0, 0), primary: enemies[0], enemies,
+      rng: new Rng(9), grants, crit: false, castIndex: 0, heft: 1, sinceKill: 0, sinceHit: 0, streak: 1,
+      hit: (who: any) => { hits.push(enemies.indexOf(who)); },
+      ailment: () => {}, leave: () => {}, areaRadius: (b: number) => b, vfx: () => {},
+    } as any);
+    return hits;
+  };
+  const inLine = [dummy(1, 0), dummy(3, 0.2), dummy(5, -0.3), dummy(3, 3)];
+  const blade = cast(nodeById('strike', 'st_ethereal')?.grants ?? {}, inLine);
+  check(
+    blade.filter((i) => i === 2).length === 2 && !blade.includes(3),
+    'a thrown blade hits a body in its line on the way out and again on the way back, and nothing off the line',
+    blade.join(' ')
+  );
+  const ring = cast(nodeById('strike', 'st_whirl')?.grants ?? {}, [dummy(1, 0), dummy(-1, 0.5), dummy(0, -1.2), dummy(4, 0)]);
+  check(
+    ring.includes(1) && ring.includes(2) && !ring.includes(3),
+    'and a spin hits everything round you, whichever way it stands, and nothing out of reach',
+    ring.join(' ')
+  );
+}
+
+// ===========================================================================
+}
+
 if (rule('THE SPIKE — does one cast cover ground, and does buying area cover more?')) {
 
 // Rimespike is an AREA skill now: one spike up under a body, and everything

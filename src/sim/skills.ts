@@ -75,6 +75,7 @@ const num = (v: unknown, fallback: number): number =>
 const IMPACT_TTL = 0.8; // what a shot LEAVES boils up and breaks apart, and outlives the shot
 const FLIGHT = { speed: 9, least: 0.3, arrives: 1 / 1.8, hailGap: 0.09 }; // hailGap: seconds between one Hail shard leaving and the next, so a volley reads as a volley // a ball: tiles/s, shortest flight, share of its picture at which `fireBolt` lands
 const CONE_MOUTH = 0.95; // the Burst under a Cone's mouth, in tiles
+const BLADE = { speed: 7, gap: 0.12 }; // a thrown ghost blade: tiles/s each way, and seconds between one leaving and the next
 
 /** Which enemies the Projectiles past the first take. Nearest by default; a
  *  node may widen the Spread and turn the pick AROUND, which is the only way a
@@ -245,6 +246,73 @@ function alongRay(
   const py = e.y - origin.y;
   const along = px * ux + py * uy;
   return { along, off: Math.abs(px * uy - py * ux) };
+}
+
+/** ETHEREAL STRIKE: a ghost of the weapon thrown `reach` tiles through the body
+ *  you aimed at, hitting everything in its corridor on the way OUT and again on
+ *  the way BACK. A Repeat is one more blade at the same body; a Projectile is a
+ *  blade at another. Hits land now; the picture takes the flight. */
+function throwBlades(use: SkillUse, ghost: { less: number; reach: number }, scale: (e: Entity) => number): void {
+  const g = use.grants;
+  const share = Math.max(0.05, 1 - ghost.less);
+  const reach = Math.max(1, ghost.reach);
+  const each = 1 + num(g.doubleStrike, 0);
+  const targets = [
+    use.primary,
+    ...spreadTargets(use, use.enemies.filter((e) => !e.dead && e !== use.primary), num(g.extraTargets, 0)),
+  ];
+  const flight = (2 * reach) / BLADE.speed;
+  let thrown = 0;
+  for (const target of targets) {
+    const span = Math.max(1e-3, separation(use.user, target));
+    const far = {
+      x: use.user.x + ((target.x - use.user.x) / span) * reach,
+      y: use.user.y + ((target.y - use.user.y) / span) * reach,
+    };
+    const line = use.enemies
+      .filter((e) => !e.dead)
+      .map((e) => ({ e, ...alongRay(use.user, target, e) }))
+      .filter((c) => c.off <= PROJECTILE.corridor && c.along > 0 && c.along <= reach)
+      .sort((a, b) => a.along - b.along)
+      .map((c) => c.e);
+    for (let i = 0; i < each; i++) {
+      for (const pass of [line, [...line].reverse()]) {
+        for (const e of pass) {
+          if (e.dead) continue;
+          use.hit(e, share * scale(e));
+          splashFrom(use, e, (o) => share * scale(o));
+          burstFrom(use, e, scale, true);
+        }
+      }
+      use.vfx('blade', [{ x: use.user.x, y: use.user.y }, far], flight, thrown * BLADE.gap);
+      thrown++;
+    }
+  }
+}
+
+/** WHIRLWIND: everything within `radius` of YOU takes the hit, no Splash, and a
+ *  Repeat is another spin. A spin that kills spins on off the Cleave budget,
+ *  which is spent per spin and is the termination proof. */
+function spin(use: SkillUse, whirl: { less: number; radius: number }, scale: (e: Entity) => number): void {
+  const g = use.grants;
+  const radius = use.areaRadius(whirl.radius);
+  const share = Math.max(0.05, 1 - whirl.less);
+  let spins = 1 + num(g.doubleStrike, 0);
+  let carries = num(g.carryOnKill, 0);
+  for (let s = 0; s < spins; s++) {
+    let killed = false;
+    for (const enemy of use.enemies) {
+      if (enemy.dead || !within(use.user, enemy, radius)) continue;
+      use.hit(enemy, share * scale(enemy));
+      burstFrom(use, enemy, scale, true);
+      if (enemy.dead) killed = true;
+    }
+    use.vfx('sweep', [{ x: use.user.x, y: use.user.y }, { x: use.user.x + radius, y: use.user.y }], 0.35, s * 0.15);
+    if (killed && carries > 0) {
+      carries--;
+      spins++;
+    }
+  }
 }
 
 /** HAIL: the cast as ice Projectiles thrown from where you stand. ONE EACH
@@ -567,6 +635,18 @@ export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
     const kind = use.skill.vfxKind ?? 'slash';
 
     const scale = (e: Entity) => castMultiplier * targetScale(use, e);
+
+    // THE TWO MODES, each the whole use: a thrown blade or a spin.
+    const ghost = g.ghostBlade as { less: number; reach: number } | undefined;
+    if (ghost) {
+      throwBlades(use, ghost, scale);
+      return;
+    }
+    const whirl = g.whirl as { less: number; radius: number } | undefined;
+    if (whirl) {
+      spin(use, whirl, scale);
+      return;
+    }
 
     const swing = (target: Entity, falloff: number): void => {
       if (target.dead) return;

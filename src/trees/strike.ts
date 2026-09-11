@@ -31,6 +31,11 @@ const BRANCHES: Branch[] = [
       name: 'Answering Blow',
       description: '+2 Echoes.',
       grants: { echoes: 2, manaMultiplier: 1.15 },
+      // An Echo is a blade at another body under one keystone and reach under the other.
+      under: {
+        st_ethereal: { description: '+1 Projectile.', grants: { extraTargets: 1, manaMultiplier: 1.15 } },
+        st_whirl: { description: '+12% increased Area of Effect.', stats: [stat('areaOfEffect', 'inc', 12)], grants: { manaMultiplier: 1.15 } },
+      },
     },
     twigs: [
       {
@@ -40,6 +45,10 @@ const BRANCHES: Branch[] = [
           name: 'Carrying',
           description: '+2 Echoes.',
           grants: { echoes: 2, manaMultiplier: 1.08 },
+          under: {
+            st_ethereal: { description: '+1 Projectile.', grants: { extraTargets: 1, manaMultiplier: 1.08 } },
+            st_whirl: { description: '+10% increased Area of Effect.', stats: [stat('areaOfEffect', 'inc', 10)], grants: { manaMultiplier: 1.08 } },
+          },
         },
       },
       {
@@ -49,16 +58,39 @@ const BRANCHES: Branch[] = [
           name: 'Full Weight',
           description: 'Echoes land for 100% of the swing rather than 70%.',
           grants: { echoDamage: 1, manaMultiplier: 1.08 },
+          under: {
+            st_ethereal: { description: 'Thrown blades fly 2 tiles further.', grants: { ghostBlade: { reach: 2 }, manaMultiplier: 1.08 } },
+            st_whirl: { description: 'Whirlwind deals 30% less damage rather than 45%.', grants: { whirl: { less: -0.15 }, manaMultiplier: 1.08 } },
+          },
         },
       },
       {
+        /**
+         * ETHEREAL STRIKE, the keystone at the tip of the Carry line: no swing
+         * at all, a ghost of the weapon thrown through the pack and back. The
+         * Echoes walked to reach it are thrown blades under it, and every
+         * Repeat is one more blade at the body you aimed at.
+         */
         minors: 4,
         forkFrom: { twig: 1, at: 2 },
         notable: {
-          id: 'st_whirlwind',
-          name: 'Chorus',
-          description: '+3 Echoes.',
-          grants: { echoes: 3, manaMultiplier: 1.08 },
+          id: 'st_ethereal',
+          name: 'Ethereal Strike',
+          keystone: true,
+          description:
+            'A ghost of your weapon is thrown 6 tiles, through every enemy in its line ' +
+            'for 75% less damage, and comes back to your hand through them again. ' +
+            'Gains the Projectile tag and loses the Melee tag.',
+          becomes:
+            'A ghost of your weapon is thrown 6 tiles, spinning through every enemy in ' +
+            'its line for 75% less damage, and comes back to your hand hitting them ' +
+            'again on the way. A Repeat throws one more at the same enemy.',
+          grants: {
+            ghostBlade: { less: 0.75, reach: 6 },
+            manaMultiplier: 1.15,
+            addTags: ['projectile'],
+            dropTags: ['melee'],
+          },
         },
       },
     ],
@@ -218,6 +250,8 @@ const BRANCHES: Branch[] = [
       name: 'Spill',
       description: 'Splash lands for 15% more of the hit.',
       grants: { splashShare: 0.15 },
+      // Nothing Splashes under Whirlwind: the circle is what a Splash was for.
+      under: { st_whirl: { description: '+10% increased Area of Effect.', stats: [stat('areaOfEffect', 'inc', 10)] } },
     },
     twigs: [
       {
@@ -227,6 +261,7 @@ const BRANCHES: Branch[] = [
           name: 'Wide Swing',
           description: 'Splash is 40% wider.',
           grants: { splashRadius: 1.4 },
+          under: { st_whirl: { description: '+15% increased Area of Effect.', stats: [stat('areaOfEffect', 'inc', 15)] } },
         },
       },
       {
@@ -236,16 +271,28 @@ const BRANCHES: Branch[] = [
           name: 'Overspill',
           description: 'Splash lands for 25% more of the hit.',
           grants: { splashShare: 0.25 },
+          under: { st_whirl: { description: 'Whirlwind deals 35% less damage rather than 45%.', grants: { whirl: { less: -0.1 } } } },
         },
       },
       {
+        /**
+         * WHIRLWIND, the keystone at the tip of the Spill line: no target and
+         * no Splash, everything round you hit at once. The Splash nodes walked
+         * to reach it are Area under it, which is what a Splash was buying.
+         */
         minors: 4,
         forkFrom: { twig: 1, at: 2 },
         notable: {
-          id: 'st_immovable',
-          name: 'Shockfront',
-          description: 'Splash lands for 20% more of the hit and is 25% wider.',
-          grants: { splashShare: 0.2, splashRadius: 1.25, manaMultiplier: 1.08 },
+          id: 'st_whirl',
+          name: 'Whirlwind',
+          keystone: true,
+          description:
+            'You spin: everything within 1.6 tiles of you is hit for 45% less damage, ' +
+            'and nothing Splashes. Gains the Area tag.',
+          becomes:
+            'You spin, hitting everything within 1.6 tiles of you for 45% less damage. ' +
+            'Nothing Splashes: everything near is already hit. A Repeat is another spin.',
+          grants: { whirl: { less: 0.45, radius: 1.6 }, manaMultiplier: 1.15, addTags: ['area'] },
         },
       },
     ],
@@ -273,6 +320,12 @@ const BRANCHES: Branch[] = [
         'A blow that kills swings on into the nearest enemy within 1.8 tiles at ' +
         'full damage, up to 1 time.',
       grants: { carryOnKill: 1, manaMultiplier: 1.15 },
+      // A thrown blade carries on whatever it kills, so a carry is reach; a
+      // spin that kills spins on, so the word changes and the switch does not.
+      under: {
+        st_ethereal: { description: 'Thrown blades fly 1 tile further.', grants: { ghostBlade: { reach: 1 }, manaMultiplier: 1.15 } },
+        st_whirl: { description: 'A spin that kills spins 1 more time.', grants: { carryOnKill: 1, manaMultiplier: 1.15 } },
+      },
     },
     twigs: [
       {
@@ -282,6 +335,10 @@ const BRANCHES: Branch[] = [
           name: 'Through and Through',
           description: 'A blow that kills swings on 2 more times.',
           grants: { carryOnKill: 2, manaMultiplier: 1.08 },
+          under: {
+            st_ethereal: { description: 'Thrown blades fly 2 tiles further.', grants: { ghostBlade: { reach: 2 }, manaMultiplier: 1.08 } },
+            st_whirl: { description: 'A spin that kills spins 2 more times.', grants: { carryOnKill: 2, manaMultiplier: 1.08 } },
+          },
         },
       },
       {
@@ -291,6 +348,10 @@ const BRANCHES: Branch[] = [
           name: 'Reaping',
           description: 'A blow that kills swings on 1 more time, and Strike Splashes for 20% more.',
           grants: { carryOnKill: 1, splashShare: 0.2 },
+          under: {
+            st_ethereal: { description: 'Thrown blades fly 1 tile further, and Strike Splashes for 20% more.', grants: { ghostBlade: { reach: 1 }, splashShare: 0.2 } },
+            st_whirl: { description: 'A spin that kills spins 1 more time, and Whirlwind deals 10% more damage.', grants: { carryOnKill: 1, whirl: { less: -0.1 } } },
+          },
         },
       },
       {
@@ -303,6 +364,16 @@ const BRANCHES: Branch[] = [
             'A blow that kills swings on 3 more times, and Strike deals 35% more ' +
             'damage to enemies below 33% of their life.',
           grants: { carryOnKill: 3, moreVsLow: { below: 0.33, more: 0.35 }, manaMultiplier: 1.15 },
+          under: {
+            st_ethereal: {
+              description: 'Thrown blades fly 3 tiles further, and Strike deals 35% more damage to enemies below 33% of their life.',
+              grants: { ghostBlade: { reach: 3 }, moreVsLow: { below: 0.33, more: 0.35 }, manaMultiplier: 1.15 },
+            },
+            st_whirl: {
+              description: 'A spin that kills spins 3 more times, and Strike deals 35% more damage to enemies below 33% of their life.',
+              grants: { carryOnKill: 3, moreVsLow: { below: 0.33, more: 0.35 }, manaMultiplier: 1.15 },
+            },
+          },
         },
       },
     ],

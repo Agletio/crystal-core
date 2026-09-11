@@ -36,6 +36,8 @@ import {
   clampOffset,
   fireBolt,
   shardFlight,
+  bladeFlight,
+  BLADE_SPAN,
   SHARD_SPAN,
   lightningArc,
   coneWedge,
@@ -1497,6 +1499,28 @@ export async function createPixiRenderer(
 
       if (fx.kind === 'bolt') {
         blocks(fireBolt(from, to, t), fx.damageType, 1);
+        continue;
+      }
+
+      // A THROWN GHOST BLADE: out to the far point and back to the hero's
+      // LIVE position, spinning. The picture is the whole of it; a hairline
+      // stands in for a picture nobody has imported.
+      if (fx.kind === 'blade') {
+        const flight = bladeFlight(from, to, { x: state.hero.x, y: state.hero.y }, t);
+        const texture = flight.alpha > 0 ? vfxTexture('ghost_blade') : null;
+        if (texture) {
+          const s = effectSprite(texture, BLADE_SPAN);
+          s.anchor.set(0.5, 0.5);
+          s.rotation = flight.angle;
+          s.x = cx(flight.x);
+          s.y = cy(flight.y);
+          s.alpha = flight.alpha;
+        } else if (flight.alpha > 0) {
+          vfxLayer
+            .moveTo(cx(flight.x) - Math.cos(flight.angle) * 0.4, cy(flight.y) - Math.sin(flight.angle) * 0.4)
+            .lineTo(cx(flight.x) + Math.cos(flight.angle) * 0.4, cy(flight.y) + Math.sin(flight.angle) * 0.4)
+            .stroke({ width: Math.max(hair, 0.14), color: colour, alpha: flight.alpha });
+        }
         continue;
       }
 

@@ -1139,7 +1139,24 @@ what it means, and a `label: fact` line wears the label small. **THE WEB IS THE 
 EDGE TO EDGE**, like the Fissure: the head and the skill's own lines float over
 the weather and take no clicks themselves.
 
-**RIMESPIKE IS AN AREA SKILL, AND RIMEFIELD IS THE ONE MODE SWITCH IN THE GAME.**
+**EVERY TREE GETS TWO KEYSTONES, EACH THE WHOLE USE, AND STRIKE'S ARE THE
+MODEL FOR A SWING.** *"I want to do a full deep dive like we've done to rimespike
+here for every skill so they each at a minimum have 2 cool keystones."*
+ETHEREAL STRIKE (`ghostBlade`, tip of the Carry line) throws a ghost of the
+weapon 6 tiles through every body in its corridor for 75% less and back through
+them again — *"a ghost weapon out ranged and it spins piercing targets and then
+returns to you hitting targets again on the way back"* — a Repeat is one more
+blade, an Echo is a blade at another body (`extraTargets`, read by `melee` under
+it), and the picture (`blade`, `VFX_ART.ghost_blade`) flies out and back to the
+hero's LIVE position, so a blade thrown on the move still lands in his hand.
+WHIRLWIND (`whirl`, tip of the Spill line) hits everything within 1.6 tiles of
+YOU for 45% less and Splashes nothing, the Splash nodes walked to reach it being
+Area under it. Measured at band 4 over three descents: the blade alone is +23%
+of a bare tree and the spin −6%. **A keystone's picture is judged in a descent
+with `NODES=<route> KIND=<vfx kind> CAST=1` on `descent-peek`**, which walks the
+web the way a player does and holds the page on the first effect of that kind.
+
+**RIMESPIKE IS AN AREA SKILL, AND RIMEFIELD WAS THE FIRST MODE SWITCH.**
 *"Make rimespike a large aoe spike instead of single target + splash… it does an
 aoe hit that looks like one big spike raising up from the ground."* One blade up
 under the body it aimed at, everything within 1.3 tiles taking the WHOLE hit, and

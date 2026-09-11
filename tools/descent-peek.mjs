@@ -221,6 +221,40 @@ if (process.env.LEVELS) {
   await page.waitForTimeout(200);
 }
 
+// NODES=<id,id,…> walks the MAIN skill's web the way a player does, one click a
+// point, so a keystone's picture can be judged in a descent. The ids come off
+// `routeTo` in `src/skills-tree.ts`; a click on a node not yet reachable does
+// nothing, which is the web's own rule.
+if (process.env.NODES) {
+  await page.evaluate(() => document.getElementById('open-skills')?.click());
+  await page.waitForTimeout(250);
+  await page.evaluate(() => {
+    for (const shelf of document.querySelectorAll('#skills-cats .catcard')) {
+      shelf.click();
+      const on = [...document.querySelectorAll('#skills-list .skilltile')].find((t) => t.classList.contains('skilltile--on'));
+      if (on) { on.click(); return; }
+    }
+  });
+  await page.waitForTimeout(300);
+  // A web's points come off the SKILL's level, so the web's own dev button
+  // levels it far enough to walk anywhere: thirty points is the whole tree.
+  await page.evaluate(() => { for (let i = 0; i < 30; i++) document.getElementById('skills-devlevel')?.click(); });
+  await page.waitForTimeout(200);
+  let took = 0;
+  for (const id of process.env.NODES.split(',')) {
+    took += await page.evaluate((id) => {
+      const node = document.querySelector(`#skills-web [data-node="${id}"]`);
+      if (!node) return 0;
+      node.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      return 1;
+    }, id);
+    await page.waitForTimeout(60);
+  }
+  console.log(`descent-peek: ${took} node clicks, ${await page.evaluate(() => document.getElementById('skills-sub')?.textContent)}`);
+  await page.evaluate(() => document.getElementById('skills-close')?.click());
+  await page.waitForTimeout(300);
+}
+
 // What the main hand is holding is drawn ON the body, so judging it means
 // putting one there: the kit carries one of every family, in the dock.
 if (hold) {
@@ -412,10 +446,11 @@ const APART = 220;
 // that instant — an effect is over in a fifth of a second and a screenshot
 // takes most of that, so a poll from out here would always be a frame late.
 if (process.env.CAST) {
-  await page.evaluate((after) => {
+  await page.evaluate(([after, kind]) => {
     document.body.dataset.holdOn = 'cast';
     document.body.dataset.holdDelay = after; // AFTER=<sim seconds> past the first effect, for a flight
-  }, process.env.AFTER ?? '0');
+    if (kind) document.body.dataset.holdKind = kind; // KIND=<vfx kind>: the first effect OF THAT KIND, so a mode's own picture is what is held
+  }, [process.env.AFTER ?? '0', process.env.KIND ?? '']);
   for (let i = 0; i < 1200; i++) {
     if (await page.evaluate(() => document.body.dataset.hold)) break;
     await page.waitForTimeout(40);

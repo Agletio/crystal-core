@@ -883,6 +883,14 @@
    "say": "a curling gust of freezing wind drawn as three swept white streaks, pale ice-blue and white with a blue-black shadow side, NOT a cloud, NOT a feather."
   },
   {
+   "id": "wn_st_ethereal",
+   "say": "a translucent ghostly one-handed sword drawn diagonally, made of pale spectral ice-blue light with a white core and a soft glow round it, with three short curved motion streaks behind it showing it spinning, NOT steel, NOT grey, NOT a hand, NOT a shield, NOT fire."
+  },
+  {
+   "id": "wn_st_whirl",
+   "say": "a whirlwind seen from the side, a tight spinning vortex of pale grey-white wind drawn as three stacked swept rings widening toward the top, with two small dark curved blade shapes caught in it, NOT a tornado touching ground, NOT a cloud, NOT water, NOT a spiral shell."
+  },
+  {
    "id": "wn_rs_tempest",
    "say": "a tall towering thunderhead of snow, a stacked column of white storm cloud piling upward with a dark blue-black underside, pale ice-blue and white, NOT a lightning bolt, NOT a tornado, NOT rain."
   },

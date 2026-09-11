@@ -140,6 +140,13 @@
    "size": 96,
    "detail": "low detail",
    "shading": "flat shading"
+  },
+  {
+   "id": "ghost_blade",
+   "say": "ONE single one-handed SWORD lying on its SIDE and pointing RIGHT, drawn horizontally across the middle of the frame, the whole sword a translucent GHOST made of pale spectral light: a straight double-edged blade tapering to a point at the RIGHT, a short straight crossguard, a plain grip and a round pommel at the LEFT end. The blade is a pale glowing ice-blue and white, brightest along its middle, the edges and hilt a deeper blue, with a soft haze of the same pale blue light close round the whole of it. Drawn in only FOUR colours: one pale ice blue, one mid blue, one deep blue-black, and white. Hard readable silhouette. NOT metal, NOT steel, NOT grey, NOT gold, NOT brown, NOT a hand, NOT a scabbard, NOT a shield, NOT two swords, NOT a dagger, NOT an axe, NOT lightning, NOT fire, NOT sparks, NOT a trail, NOT motion lines, NOT a ground, NOT a shadow, NOT text.",
+   "size": 96,
+   "detail": "low detail",
+   "shading": "flat shading"
   }
  ],
  "_sweep": "A centred radial EFFECT is the one ask this generator would not take. Five variants of the melee sweep came back a beaded wreath, a saw blade, a clock face, a directional cut and a closed sunburst: 'arranged around an empty middle, seen from directly above' is a decorative RING to it, whatever it is told not to draw. The sweep stays procedural, and `sweepRing` breaks its ring on purpose because a closed hoop reads as a shield. Do not spend another generation on it without a genuinely different framing."
