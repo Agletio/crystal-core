@@ -57,6 +57,10 @@ export interface GrantDef {
    * would have ignored in silence. `what` stays the generic description.
    */
   say?: (value: unknown) => string | null;
+  /** What ONE HIT of the skill is multiplied by under this switch, for the
+   *  sheet: a mode that lands harder or softer says so here, so the card's
+   *  number is the sim's. Null for a shape it cannot read. */
+  hitScale?: (value: unknown) => number | null;
 }
 
 /** 0.35 → "35%". Grants carry fractions; nothing player-facing may. */
@@ -1176,6 +1180,7 @@ export const GRANTS: GrantDef[] = [
     changes: 'field',
     what: 'the spike stands where it went in, and the skill runs on a cooldown',
     reads: ['spike', SIM],
+    hitScale: (v) => typeof (v as { more?: number })?.more === 'number' ? 1 + (v as { more: number }).more : null,
     say: (v) => {
       const o = v as { seconds?: number; cooldown?: number; radius?: number; more?: number } | null;
       if (!o || typeof o.seconds !== 'number' || typeof o.cooldown !== 'number') return null;
@@ -1195,6 +1200,7 @@ export const GRANTS: GrantDef[] = [
     what: 'the cloud is one hit instead of a Poison',
     reads: ['ailment_burst'],
     merge: 'bag',
+    hitScale: (v) => typeof (v as { share?: number })?.share === 'number' ? (v as { share: number }).share : null,
     say: (v) => {
       const o = v as { share?: number } | null;
       if (!o || typeof o.share !== 'number') return null;
@@ -1245,6 +1251,7 @@ export const GRANTS: GrantDef[] = [
     what: 'the arrow sticks and bursts after a delay instead of hitting',
     reads: ['projectile', SIM],
     merge: 'bag',
+    hitScale: (v) => typeof (v as { more?: number })?.more === 'number' ? 1 + (v as { more: number }).more : null,
     say: (v) => {
       const o = v as { seconds?: number; radius?: number; more?: number } | null;
       if (!o || typeof o.seconds !== 'number' || typeof o.radius !== 'number' || typeof o.more !== 'number') return null;
@@ -1264,6 +1271,7 @@ export const GRANTS: GrantDef[] = [
     what: 'the bolt is a drifting ball of lightning that keeps arcing',
     reads: ['projectile', SIM],
     merge: 'bag',
+    hitScale: (v) => typeof (v as { less?: number })?.less === 'number' ? 1 - (v as { less: number }).less : null,
     say: (v) => {
       const o = v as { seconds?: number; every?: number; radius?: number; less?: number; speed?: number } | null;
       if (!o || typeof o.seconds !== 'number' || typeof o.every !== 'number' || typeof o.radius !== 'number' || typeof o.less !== 'number') return null;
@@ -1283,6 +1291,7 @@ export const GRANTS: GrantDef[] = [
     what: 'the bolt falls on every Shocked enemy near you instead',
     reads: ['projectile'],
     merge: 'bag',
+    hitScale: (v) => typeof (v as { less?: number })?.less === 'number' ? 1 - (v as { less: number }).less : null,
     say: (v) => {
       const o = v as { less?: number; reach?: number } | null;
       if (!o || typeof o.less !== 'number' || typeof o.reach !== 'number') return null;
@@ -1301,6 +1310,7 @@ export const GRANTS: GrantDef[] = [
     what: 'the fireball falls from above and bursts instead of flying',
     reads: ['projectile'],
     merge: 'bag',
+    hitScale: (v) => typeof (v as { more?: number })?.more === 'number' ? 1 + (v as { more: number }).more : null,
     say: (v) => {
       const o = v as { radius?: number; more?: number } | null;
       if (!o || typeof o.radius !== 'number' || typeof o.more !== 'number') return null;
@@ -1316,6 +1326,7 @@ export const GRANTS: GrantDef[] = [
     what: 'the fireball is a fan of embers instead',
     reads: ['projectile'],
     merge: 'bag',
+    hitScale: (v) => typeof (v as { less?: number })?.less === 'number' ? 1 - (v as { less: number }).less : null,
     say: (v) => {
       const o = v as { count?: number; arc?: number; reach?: number; less?: number } | null;
       if (!o || typeof o.count !== 'number' || typeof o.arc !== 'number' || typeof o.reach !== 'number' || typeof o.less !== 'number') return null;
@@ -1333,6 +1344,7 @@ export const GRANTS: GrantDef[] = [
     what: 'the Cone is a straight crack instead',
     reads: ['cone'],
     merge: 'bag',
+    hitScale: (v) => typeof (v as { more?: number })?.more === 'number' ? 1 + (v as { more: number }).more : null,
     say: (v) => {
       const o = v as { reach?: number; width?: number; more?: number } | null;
       if (!o || typeof o.reach !== 'number' || typeof o.width !== 'number' || typeof o.more !== 'number') return null;
@@ -1397,6 +1409,7 @@ export const GRANTS: GrantDef[] = [
     what: 'the swing is a thrown ghost blade that pierces out and back',
     reads: ['melee'],
     merge: 'bag',
+    hitScale: (v) => typeof (v as { less?: number })?.less === 'number' ? 1 - (v as { less: number }).less : null,
     say: (v) => {
       const o = v as { less?: number; reach?: number } | null;
       if (!o || typeof o.less !== 'number' || typeof o.reach !== 'number') return null;
@@ -1414,6 +1427,7 @@ export const GRANTS: GrantDef[] = [
     what: 'the swing hits everything round you',
     reads: ['melee'],
     merge: 'bag',
+    hitScale: (v) => typeof (v as { less?: number })?.less === 'number' ? 1 - (v as { less: number }).less : null,
     say: (v) => {
       const o = v as { less?: number; radius?: number } | null;
       if (!o || typeof o.less !== 'number' || typeof o.radius !== 'number') return null;
@@ -1429,6 +1443,7 @@ export const GRANTS: GrantDef[] = [
     what: 'the spike is thrown as ice Projectiles instead',
     reads: ['spike'],
     merge: 'bag',
+    hitScale: (v) => typeof (v as { less?: number })?.less === 'number' ? 1 - (v as { less: number }).less : null,
     say: (v) => {
       const o = v as { projectiles?: number; less?: number } | null;
       if (!o || typeof o.projectiles !== 'number' || typeof o.less !== 'number') return null;

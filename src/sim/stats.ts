@@ -43,7 +43,7 @@ import type { Character } from './character';
 import { nodeById, faceOf } from '../skills-tree';
 import { TRADE_BY_ID, tradeGrants } from '../trades';
 import { trialNodeById } from '../trials';
-import { critBuff, mergeGrants } from './grants';
+import { critBuff, mergeGrants, GRANT_BY_ID } from './grants';
 import { isTwoHanded } from '../economy';
 import type {
   BranchBonusDef, Item, MonsterAbilityDef, MonsterDef, RolledMod, SkillDef, StatRoll,
@@ -327,11 +327,13 @@ export function damageDetail(character: Character): DamageDetail {
     overTime && scale !== 1
       ? [{ label: AILMENT_NAMES[skill.damageTypes[0]] ?? 'Ailment', value: scale }]
       : [];
-  // Rimespike's two modes land here too, so the card's number is the sim's.
-  const stands = grants.spikeStands as { cooldown: number; more: number } | undefined;
-  const hail = grants.spikeHail as { less: number } | undefined;
-  if (stands?.more) ailment.push({ label: 'Rimefield', value: 1 + stands.more });
-  if (hail?.less) ailment.push({ label: 'Hail', value: 1 - hail.less });
+  // A MODE that lands harder or softer says so on its grant, so the card's
+  // number is the sim's whichever keystone is held.
+  const stands = grants.spikeStands as { cooldown: number } | undefined;
+  for (const [id, value] of Object.entries(grants)) {
+    const scale = GRANT_BY_ID[id]?.hitScale?.(value);
+    if (typeof scale === 'number' && scale !== 1) ailment.push({ label: GRANT_BY_ID[id].what, value: scale });
+  }
 
   const breakdown = damageBreakdown(statMods(character), character.level, skill, grants, ailment);
   const perApplication = breakdown.total;
