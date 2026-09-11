@@ -170,9 +170,9 @@ const BRANCHES: Branch[] = [
             'more damage, and the spike stands for 5s, Chilling everything round ' +
             'it every 0.5s.',
           becomes:
-            'Ice drives up through the ground under one enemy every 2.5s and stands ' +
-            'there for 5s, Chilling everything round it every 0.5s. Hits everything ' +
-            'in a 2.9 tile radius.',
+            'Ice drives up from the ground every 2.5s, hitting every enemy in a ' +
+            '2.9 tile radius, and stands there for 5s, Chilling everything round ' +
+            'it every 0.5s.',
           grants: {
             spikeStands: { seconds: 5, cooldown: 2.5, radius: 2.2, more: 1 },
             manaMultiplier: 1.2,
