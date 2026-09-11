@@ -27,6 +27,8 @@ const BRANCHES: Branch[] = [
       name: 'Broad Front',
       description: 'The Cone opens 30° wider.',
       grants: { coneArc: 30, manaMultiplier: 1.08 },
+      // A crack has no opening to widen, so what was width is length under it.
+      under: { sw_fissure: { description: 'The crack reaches 15% further.', grants: { coneReach: 1.15, manaMultiplier: 1.08 } } },
     },
     twigs: [
       {
@@ -36,6 +38,7 @@ const BRANCHES: Branch[] = [
           name: 'Widening',
           description: 'The Cone opens 30° wider still.',
           grants: { coneArc: 30, manaMultiplier: 1.08 },
+          under: { sw_fissure: { description: 'The crack reaches 15% further.', grants: { coneReach: 1.15, manaMultiplier: 1.08 } } },
         },
       },
       {
@@ -48,18 +51,33 @@ const BRANCHES: Branch[] = [
         },
       },
       {
+        /**
+         * FISSURE, the keystone at the tip of the Front line: the wedge is a
+         * straight crack, long and narrow, and the width walked to reach it is
+         * length under it. The trade is a pack against a corridor.
+         */
         minors: 3,
         forkFrom: { twig: 1, at: 2 },
         notable: {
-          id: 'sw_encirclement',
-          name: 'Encirclement',
-          description: 'The Cone opens 150° wider.',
-          grants: { coneArc: 150, manaMultiplier: 1.15 },
+          id: 'sw_fissure',
+          name: 'Fissure',
+          keystone: true,
+          description:
+            'The Cone is a straight crack 7 tiles long and 1.2 wide, and everything ' +
+            'on it takes 30% more damage.',
+          becomes:
+            'You split the ground in a straight crack 7 tiles long and 1.2 wide, and ' +
+            'everything standing on it takes the whole hit, 30% more.',
+          grants: { lineWave: { reach: 7, width: 1.2, more: 0.3 }, manaMultiplier: 1.15 },
         },
       },
     ],
     minors: [
-      { text: 'The Cone opens 6° wider', grants: { coneArc: 6 } },
+      {
+        text: 'The Cone opens 6° wider',
+        grants: { coneArc: 6 },
+        under: { sw_fissure: { description: 'The crack reaches 3% further.', grants: { coneReach: 1.03 } } },
+      },
       COMMON[1],
       { text: 'The Cone reaches 5% further', grants: { coneReach: 1.05 } },
       COMMON[0],
@@ -101,13 +119,25 @@ const BRANCHES: Branch[] = [
         },
       },
       {
+        /**
+         * TREMOR, the keystone at the tip of the Fault line: the wedge deals no
+         * hit and the ground it covered keeps shaking, so what a cast is worth
+         * is what STAYS standing in it. The Clouds walked to reach it still
+         * fall, on their own seam.
+         */
         minors: 4,
         forkFrom: { twig: 1, at: 2 },
         notable: {
-          id: 'sw_carrythrough',
-          name: 'Shear',
-          description: 'The Cone drops 2 more Clouds, on other enemies.',
-          grants: { extraFields: 2, manaMultiplier: 1.15 },
+          id: 'sw_tremor',
+          name: 'Tremor',
+          keystone: true,
+          description:
+            'The Cone deals no hit. The ground it covered shakes for 3s, dealing 30% of ' +
+            'the hit every 0.5s to whatever stands in it.',
+          becomes:
+            'You break the ground in a wedge in front of you and it keeps shaking for 3s, ' +
+            'dealing 30% of the hit every 0.5s to whatever stands in it. The wedge itself hits nothing.',
+          grants: { tremor: { seconds: 3, share: 0.3, every: 0.5 }, manaMultiplier: 1.15 },
         },
       },
     ],
@@ -186,8 +216,9 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'sw_endurance',
           name: 'Broadside',
-          description: 'The Cone opens 40 degrees wider.',
+          description: 'The Cone opens 40° wider.',
           grants: { coneArc: 40 },
+          under: { sw_fissure: { description: 'The crack reaches 20% further.', grants: { coneReach: 1.2 } } },
         },
       },
       {

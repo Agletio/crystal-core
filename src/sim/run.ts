@@ -36,7 +36,8 @@ import {
   trialMod,
 } from './stats';
 import type { CombatStats, Grip } from './stats';
-import { SKILL_BEHAVIOURS } from './skills';
+import { SKILL_BEHAVIOURS, inWedge, wedgeCorners } from './skills';
+import type { Wedge } from './skills';
 import { bleedOf, critBuff, overchargeOf, shieldShare, starvedMultiplier } from './grants';
 import { moverReading } from './movers';
 import type { MoverReading, MoverSlow } from './movers';
@@ -562,6 +563,7 @@ export interface RunState {
   relays: number;
   freezes: number; // bodies a Chill took to the bar and FROZE
   vanished: number; // seconds the hero is unseen for, off a kill under Vanish
+  tremors: Array<{ wedge: Wedge; left: number; tickIn: number }>; // ground still shaking under Tremor
   gusts: number; // what GALE is holding, which is what its speed is worth
   /** Uses that fired the COMBAT mode: a step away, and a landing on a body. */
   kites: number;
@@ -839,6 +841,7 @@ export class RunSim {
       relays: 0,
       freezes: 0,
       vanished: 0,
+      tremors: [],
       gusts: 0,
       kites: 0,
       dives: 0,
@@ -1432,6 +1435,7 @@ export class RunSim {
 
     this.stepChains(dt);
     this.stepSpikes(dt);
+    this.stepTremors(dt);
     this.stepFight(dt);
     this.stepHero(dt);
     if (s.status !== 'running') return;
@@ -3144,6 +3148,10 @@ export class RunSim {
       vfx: (kind, points, ttl = 0.3, delay = 0) =>
         this.emit(kind, points, skill.damageTypes[0] ?? 'physical', ttl, delay, user.id),
       blink: (target) => this.stepBehind(user, target),
+      tremor: (wedge) => {
+        const shakes = this.grants.tremor as { seconds: number } | undefined;
+        if (shakes && user.kind === 'hero') this.state.tremors.push({ wedge, left: shakes.seconds, tickIn: 0 });
+      },
     });
 
     this.useCrit = null;
@@ -3208,6 +3216,27 @@ export class RunSim {
     if (per <= 0) return 1;
     const rate = Math.max(0.01, user.stats.attacksPerSecond);
     return 1 + per * Math.max(0, FASTEST_SWING / rate - 1);
+  }
+
+  /** SHAKING GROUND deals its share of the hit to whatever stands in the wedge,
+   *  every tick, until its seconds run out. The hit is dealt like any other,
+   *  so armour, crit and every conditional read the body as it is NOW. */
+  private stepTremors(dt: number): void {
+    const live = this.state.tremors;
+    if (live.length === 0) return;
+    const shakes = this.grants.tremor as { share: number; every: number } | undefined;
+    for (const t of live) {
+      t.left -= dt;
+      t.tickIn -= dt;
+      if (t.tickIn > 0 || !shakes) continue;
+      t.tickIn = shakes.every;
+      for (const m of this.state.monsters) {
+        if (m.dead || !inWedge(t.wedge, m)) continue;
+        this.dealDamage(this.state.hero, m, shakes.share, this.skill);
+      }
+      this.emit('wedge', wedgeCorners(t.wedge), this.skill.damageTypes[0] ?? 'physical', shakes.every, 0, this.state.hero.id);
+    }
+    this.state.tremors = live.filter((t) => t.left > 0);
   }
 
   /** A STANDING SPIKE Chills what is inside it on its own clock and goes when

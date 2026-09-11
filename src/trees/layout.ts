@@ -326,6 +326,7 @@ export function buildTree(spec: TreeSpec): BuiltTree {
           ...(last && twig.notable.keystone ? { keystone: true as const } : {}),
           ...(last && twig.notable.becomes ? { becomes: twig.notable.becomes } : {}),
           ...(last && twig.notable.under ? { under: twig.notable.under } : {}),
+          ...(!last && minor.under ? { under: minor.under } : {}),
           ...(last && twig.notable.converts ? { converts: twig.notable.converts } : {}),
           ...(!last ? { points: twig.minors } : {}),
           ...(!last && gate ? { gate } : {}),

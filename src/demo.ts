@@ -6252,6 +6252,58 @@ if (rule('DUAL WIELDING — is a pair two weapons or an average of one?')) {
 // ===========================================================================
 }
 
+if (rule('SHOCKWAVE\'S TWO MODES — a crack and a shaking floor, played')) {
+
+{
+  const played = (route: string[]) => {
+    const who = ladderCharacter(4, new Rng(88), 'shockwave');
+    skillProgress(who, 'shockwave').allocated = route;
+    let killed = 0;
+    let seconds = 0;
+    for (let i = 0; i < 3; i++) {
+      const final = runToCompletion(new RunSim(ladderSet(4, new Rng(400 + i), pool), who, new Rng(404 + i)), 600);
+      killed += final.killed;
+      seconds += final.elapsed;
+    }
+    return killed / Math.max(1, seconds);
+  };
+  const bare = played([]);
+  const crack = played(routeTo('shockwave', 'sw_fissure'));
+  const shook = played(routeTo('shockwave', 'sw_tremor'));
+  const off = (n: number) => `${n >= bare ? '+' : ''}${Math.round((n / Math.max(0.01, bare) - 1) * 100)}%`;
+  line(`  band 4, three descents: bare tree ${bare.toFixed(2)}, Fissure ${crack.toFixed(2)}, Tremor ${shook.toFixed(2)} kills/s`);
+  gauge(`a crack alone is ${off(crack)} of a bare tree, a shaking floor ${off(shook)} — wanted within 40% either way`);
+
+  const dummy = (x: number, y: number) =>
+    ({ x, y, life: 1e6, radius: 0.3, dead: false, ailments: [] as unknown[], stats: { maxLife: 1e6, attacksPerSecond: 1 } }) as any;
+  const cast = (grants: Record<string, unknown>, enemies: any[]) => {
+    const hits: number[] = [];
+    let laid: any = null;
+    SKILL_BEHAVIOURS.cone({
+      skill: SKILL_BY_ID.shockwave, user: { ...dummy(0, 0), facing: 0 }, primary: enemies[0], enemies,
+      rng: new Rng(9), grants, crit: false, castIndex: 0, heft: 1, sinceKill: 0, sinceHit: 0, streak: 1,
+      hit: (who: any) => { hits.push(enemies.indexOf(who)); }, tremor: (w: any) => { laid = w; },
+      ailment: () => {}, leave: () => {}, areaRadius: (b: number) => b, vfx: () => {}, blink: () => {},
+    } as any);
+    return { hits, laid };
+  };
+  // Straight ahead 6 tiles is on the crack and off the bare wedge; 2 tiles
+  // ahead and 1.5 aside is in the wedge and off the crack.
+  const bodies = [dummy(2, 0), dummy(6, 0.2), dummy(2, 1.5)];
+  const wedge = cast({}, bodies);
+  const line_ = cast(nodeById('shockwave', 'sw_fissure')?.grants ?? {}, bodies);
+  check(
+    wedge.hits.includes(2) && !wedge.hits.includes(1) && line_.hits.includes(1) && !line_.hits.includes(2),
+    'a crack reaches what the wedge cannot and misses what the wedge holds',
+    `wedge ${wedge.hits.join(' ')}, crack ${line_.hits.join(' ')}`
+  );
+  const laid = cast(nodeById('shockwave', 'sw_tremor')?.grants ?? {}, bodies);
+  check(laid.hits.length === 0 && laid.laid !== null, 'Tremor hits nothing and lays a wedge', `${laid.hits.length} hits`);
+}
+
+// ===========================================================================
+}
+
 if (rule('AMBUSH\'S TWO MODES — a wound instead of a hit, and a kill that hides you')) {
 
 // Neither is a number on a hit, so both are played: Exsanguinate against a bare
@@ -6829,6 +6881,7 @@ if (rule('EVERY TREE — does every notable actually change the cast?')) {
             lastHits: castIndex * 2,
             freeze: (who: any) => marks.push(`f${enemies.indexOf(who)}`),
             wound: (who: any, more: number) => marks.push(`w${enemies.indexOf(who)}:${more.toFixed(3)}`),
+            tremor: (w: any) => marks.push(`t${w.reach.toFixed(2)}:${(w.width ?? w.half).toFixed(2)}`),
             hit: (who: any, multiplier: number) => {
               marks.push(`h${enemies.indexOf(who)}:${multiplier.toFixed(3)}`);
               who.life -= multiplier * 5e4;
@@ -7551,6 +7604,7 @@ if (rule('THE SHEET — does every number on it survive being checked?')) {
       rng: new Rng(3), grants, crit: false, castIndex: 0,
       hit: (_t: any, multiplier: number) => asked.push({ multiplier, seconds: 0 }),
       wound: (_t: any, more: number) => asked.push({ multiplier: 1 + more, seconds: 0 }),
+      tremor: () => {},
       ailment: (_t: any, multiplier: number, seconds: number) => asked.push({ multiplier, seconds }),
       leave: () => {},
       areaRadius: (base: number) => base,

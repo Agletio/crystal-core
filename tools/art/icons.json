@@ -883,8 +883,16 @@
    "say": "a curling gust of freezing wind drawn as three swept white streaks, pale ice-blue and white with a blue-black shadow side, NOT a cloud, NOT a feather."
   },
   {
+   "id": "wn_fb_meteor",
+   "say": "a single burning rock falling steeply downward, a dark cracked stone ball with orange-red fire streaming up and behind it in a long tapering tail, bright yellow-white at the stone's leading edge, NOT a comet with a blue tail, NOT a planet, NOT a sun, NOT a ground, NOT an explosion."
+  },
+  {
+   "id": "wn_fb_spray",
+   "say": "a fan of five small burning embers spraying outward and upward from one point at the bottom, each ember a small orange-red flame drop with a short yellow trail, spreading apart like a hand of cards, NOT a torch, NOT a campfire, NOT a single flame, NOT fireworks, NOT a hand."
+  },
+  {
    "id": "wn_sw_fissure",
-   "say": "one long straight jagged CRACK splitting dark grey rock, running diagonally corner to corner across the frame, the crack near-black and deep with pale grey broken edges and a few small chips of stone beside it, matte, NOT lava, NOT glow, NOT a lightning bolt, NOT a river, NOT a tree, NOT a road."
+   "say": "ONE single jagged zigzag CRACK drawn as an object alone in empty transparent space: a long thin near-black fracture line running diagonally, with a narrow rim of pale grey broken stone along both its edges and three small chips of grey stone lying beside it, and nothing else at all — empty transparent space all round it. NOT a texture, NOT a landscape, NOT a ground, NOT a floor, NOT filling the frame, NOT a slab, NOT lava, NOT glow, NOT a lightning bolt, NOT a river, NOT a tree, NOT a road."
   },
   {
    "id": "wn_sw_tremor",

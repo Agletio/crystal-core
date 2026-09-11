@@ -53,6 +53,36 @@ export interface SkillUse {
   vfx(kind: string, points: Vec2[], ttl?: number, delay?: number): void; // delay: seconds before it shows
   /** BEHIND a body, if there is anywhere to stand: only the sim knows tiles. */
   blink(target: Entity): void;
+  /** Lay a shaking WEDGE the sim keeps and ticks: Shockwave's standing mode. */
+  tremor(wedge: Wedge): void;
+}
+
+/** A wedge on the floor: where it opens from, which way, how far and how wide. */
+export interface Wedge {
+  x: number;
+  y: number;
+  facing: number;
+  reach: number;
+  half: number; // half the opening, in radians; a LINE carries its half-width in `width` instead
+  width?: number;
+}
+
+/** Whether a body stands in a wedge — or on a line, when the wedge has a
+ *  `width`. The BODY counts at the flank, or the picture lies about who is in it. */
+export function inWedge(w: Wedge, e: Entity): boolean {
+  const dx = e.x - w.x;
+  const dy = e.y - w.y;
+  const away = Math.hypot(dx, dy);
+  if (w.width !== undefined) {
+    const along = dx * Math.cos(w.facing) + dy * Math.sin(w.facing);
+    const off = Math.abs(dx * Math.sin(w.facing) - dy * Math.cos(w.facing));
+    return along > -e.radius && along - e.radius <= w.reach && off - e.radius <= w.width;
+  }
+  if (away - e.radius > w.reach) return false;
+  if (w.half >= Math.PI) return true;
+  let off = Math.abs(Math.atan2(dy, dx) - w.facing);
+  if (off > Math.PI) off = Math.PI * 2 - off;
+  return off - Math.asin(Math.min(1, e.radius / Math.max(away, 1e-3))) <= w.half;
 }
 
 export type SkillBehaviour = (use: SkillUse) => void;
@@ -249,6 +279,16 @@ function alongRay(
   const py = e.y - origin.y;
   const along = px * ux + py * uy;
   return { along, off: Math.abs(px * uy - py * ux) };
+}
+
+/** A wedge's picture: where it opens from and its two rim corners. */
+export function wedgeCorners(w: Wedge): Vec2[] {
+  const half = w.width !== undefined ? Math.atan2(w.width, w.reach) : w.half;
+  return [
+    { x: w.x, y: w.y },
+    { x: w.x + Math.cos(w.facing - half) * w.reach, y: w.y + Math.sin(w.facing - half) * w.reach },
+    { x: w.x + Math.cos(w.facing + half) * w.reach, y: w.y + Math.sin(w.facing + half) * w.reach },
+  ];
 }
 
 /** ETHEREAL STRIKE: a ghost of the weapon thrown `reach` tiles through the body
@@ -740,22 +780,25 @@ export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
     const dy = use.primary.y - use.user.y;
     const facing = Math.hypot(dx, dy) < 1e-3 ? use.user.facing : Math.atan2(dy, dx);
 
-    const scale = (e: Entity) => castMultiplier * targetScale(use, e);
+    // FISSURE: the wedge is a LINE, its reach the crack's and its opening gone.
+    const line = g.lineWave as { reach: number; width: number; more: number } | undefined;
+    const wedge: Wedge = line
+      ? { x: use.user.x, y: use.user.y, facing, reach: use.areaRadius(line.reach * num(g.coneReach, 1)), half: 0, width: line.width / 2 }
+      : { x: use.user.x, y: use.user.y, facing, reach, half };
+    const more = line ? 1 + line.more : 1;
+    const scale = (e: Entity) => castMultiplier * targetScale(use, e) * more;
+    const inside = (e: Entity): boolean => inWedge(wedge, e);
 
-    const inside = (e: Entity): boolean => {
-      if (!within(use.user, e, reach)) return false;
-      if (arc >= 360) return true;
-      let off = Math.abs(Math.atan2(e.y - use.user.y, e.x - use.user.x) - facing);
-      if (off > Math.PI) off = Math.PI * 2 - off;
-      // The BODY counts at the flank too, or the wedge lies about who is in it.
-      const away = Math.max(separation(use.user, e), 1e-3);
-      return off - Math.asin(Math.min(1, e.radius / away)) <= half;
-    };
-
-    for (const enemy of use.enemies) {
-      if (enemy.dead || !inside(enemy)) continue;
-      use.hit(enemy, scale(enemy));
-      burstFrom(use, enemy, scale, true);
+    // TREMOR: no hit; the wedge is laid and the sim shakes it.
+    const shakes = g.tremor as { seconds: number; share: number; every: number } | undefined;
+    if (shakes) {
+      use.tremor(wedge);
+    } else {
+      for (const enemy of use.enemies) {
+        if (enemy.dead || !inside(enemy)) continue;
+        use.hit(enemy, scale(enemy));
+        burstFrom(use, enemy, scale, true);
+      }
     }
 
     // BROKEN GROUND, on the Cloud's own seam: the wedge says who it caught.
@@ -769,12 +812,9 @@ export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
     ], 0.26);
 
     // Where you stand, then the two RIM corners. Reach and opening are both
-    // bought, so both have to be readable off the picture.
-    use.vfx(use.skill.vfxKind ?? 'wedge', [
-      { x: use.user.x, y: use.user.y },
-      { x: use.user.x + Math.cos(facing - half) * reach, y: use.user.y + Math.sin(facing - half) * reach },
-      { x: use.user.x + Math.cos(facing + half) * reach, y: use.user.y + Math.sin(facing + half) * reach },
-    ]);
+    // bought, so both have to be readable off the picture; a crack is drawn as
+    // a wedge as wide at the far end as the crack is.
+    use.vfx(use.skill.vfxKind ?? 'wedge', wedgeCorners(wedge));
   },
 
   /**

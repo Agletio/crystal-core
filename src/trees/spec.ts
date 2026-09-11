@@ -8,6 +8,7 @@ export interface Minor {
   text: string;
   stats?: NodeStat[];
   grants?: Record<string, unknown>;
+  under?: Record<string, NodeFace>; // per point, like the rest of it
 }
 
 export interface Notable {

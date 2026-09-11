@@ -1166,6 +1166,16 @@ mill about, he walks 40% faster and is drawn at `VANISHED_ALPHA` — and the
 first use out of it lands 150% more through `heft`. Measured at band 4: the
 wound alone is −38% of a bare tree and Vanish +35%, hidden two thirds of the
 descent because every kill re-ups it.
+**SHOCKWAVE'S TWO ARE A CRACK AND A FLOOR THAT KEEPS SHAKING.** FISSURE
+(`lineWave`, tip of the Front line) makes the wedge a straight crack 7 tiles
+long and 1.2 wide for 30% more, and every "opens wider" walked to reach it is
+"reaches further" under it — a MINOR wears a face too now (`Minor.under`).
+TREMOR (`tremor`, tip of the Fault line) hits nothing: the wedge is laid
+(`SkillUse.tremor`, `RunState.tremors`) and `stepTremors` deals 30% of the hit
+every 0.5s for 3s to whatever still stands in it, through `dealDamage` like any
+hit. `inWedge` in `src/sim/skills.ts` is the one answer to who is in a wedge
+or on a line, read by the cast and the tick alike. Measured at band 4: the
+crack alone is +6% of a bare tree, the shaking floor +20%.
 
 **RIMESPIKE IS AN AREA SKILL, AND RIMEFIELD WAS THE FIRST MODE SWITCH.**
 *"Make rimespike a large aoe spike instead of single target + splash… it does an

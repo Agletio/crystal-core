@@ -1187,6 +1187,38 @@ export const GRANTS: GrantDef[] = [
     },
   },
   {
+    /** SHOCKWAVE'S FIRST MODE. The wedge is a LINE: a crack `reach` tiles
+     *  straight ahead and `width` across, and everything on it takes the hit. */
+    id: 'lineWave',
+    changes: 'targets',
+    what: 'the Cone is a straight crack instead',
+    reads: ['cone'],
+    merge: 'bag',
+    say: (v) => {
+      const o = v as { reach?: number; width?: number; more?: number } | null;
+      if (!o || typeof o.reach !== 'number' || typeof o.width !== 'number' || typeof o.more !== 'number') return null;
+      return `The Cone is a crack ${o.reach} tiles long and ${o.width} wide, for ${pct(o.more)} more damage`;
+    },
+  },
+  {
+    /** SHOCKWAVE'S OTHER MODE. No hit: the ground the wedge covered SHAKES for
+     *  `seconds`, dealing `share` of the hit every `every` seconds to whatever
+     *  stands in it. The sim keeps the wedge; the delivery only lays it. */
+    id: 'tremor',
+    changes: 'field',
+    what: 'the Cone shakes the ground it covered instead of hitting',
+    reads: ['cone', SIM],
+    merge: 'bag',
+    say: (v) => {
+      const o = v as { seconds?: number; share?: number; every?: number } | null;
+      if (!o || typeof o.seconds !== 'number' || typeof o.share !== 'number' || typeof o.every !== 'number') return null;
+      return (
+        `The Cone deals no hit: the ground it covered shakes for ${o.seconds}s, dealing ${pct(o.share)} ` +
+        `of the hit every ${o.every}s to whatever stands in it`
+      );
+    },
+  },
+  {
     /** AMBUSH'S FIRST MODE. No hit at all: the step behind a body leaves a
      *  Bleed every use, worth `more` more, and stacks are what the rate buys. */
     id: 'bleedOut',
