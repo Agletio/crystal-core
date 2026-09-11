@@ -327,8 +327,7 @@ export function damageDetail(character: Character): DamageDetail {
     overTime && scale !== 1
       ? [{ label: AILMENT_NAMES[skill.damageTypes[0]] ?? 'Ailment', value: scale }]
       : [];
-  // A MODE that lands harder or softer says so on its grant, so the card's
-  // number is the sim's whichever keystone is held.
+  // A mode that lands harder or softer says so on its grant: the card's number is the sim's.
   const stands = grants.spikeStands as { cooldown: number } | undefined;
   for (const [id, value] of Object.entries(grants)) {
     const scale = GRANT_BY_ID[id]?.hitScale?.(value);
