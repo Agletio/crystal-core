@@ -284,6 +284,7 @@ import { PORTRAITS } from './render/portraits';
 import { BEASTIARY, MONSTER_FRAMES } from './render/bestiary';
 import { GENERATED } from './render/generated-art';
 import { GENERATED_ICONS } from './render/generated-icons';
+import { glyphFor } from './ui/webicons';
 import { HELD, HERO_HANDS } from './render/held';
 import { heldFor } from './sim/appearance';
 import { IDLE_CALM, animates, generatedFrame, idleTravel } from './render/sprites';
@@ -3305,6 +3306,13 @@ for (const tree of BUILT_TREES) {
       }
     }
     check(crossed.length === 0, 'no link crosses another', crossed.join(', '));
+
+    // A notable wears a picture of its own; a minor wears its GROUP's, so one
+    // glyph means one thing in every tree.
+    const unpictured = nodes.filter((n) => n.kind === 'notable' && !GENERATED_ICONS[`wn_${n.id}`]).map((n) => n.id);
+    check(unpictured.length === 0, 'every notable has its own picture', unpictured.join(', '));
+    const pebbled = nodes.filter((n) => n.kind === 'minor' && glyphFor(n) === 'pebble').map((n) => n.id);
+    check(pebbled.length === 0, 'and every minor has a group glyph', pebbled.join(', '));
 
     // Roughly a notable's radius: closer than this and the line is drawn under
     // the stud, which reads as a connection to it.
