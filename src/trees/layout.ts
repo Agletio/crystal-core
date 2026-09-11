@@ -269,10 +269,14 @@ export function buildTree(spec: TreeSpec): BuiltTree {
       ...(branch.enabler.under ? { under: branch.enabler.under } : {}),
     });
 
-    // Where each twig's minor ends up, so a fork can start from it.
+    // Where each twig's minor ends up, so a fork can start from it. The
+    // straight twigs are placed FIRST, so two forks may hang off one minor on
+    // either side of it whichever order they are written in.
     const placed: Array<{ id: string; depth: number; angle: number }> = [];
+    const order = branch.twigs.map((twig, t) => t).sort((a, b) => +!!branch.twigs[a].forkFrom - +!!branch.twigs[b].forkFrom);
 
-    branch.twigs.forEach((twig, t) => {
+    for (const t of order) {
+      const twig = branch.twigs[t];
       // Twigs are aimed across the wedge in the order they are written, so a
       // fork from a twig further away than its neighbour has to sweep over
       // everything between the two to get where it is pointing.
@@ -339,9 +343,9 @@ export function buildTree(spec: TreeSpec): BuiltTree {
                 ...(minor.grants ? { grants: minor.grants } : {}),
               }),
         });
-        if (step === 0) placed.push({ id, depth, angle });
+        if (step === 0) placed[t] = { id, depth, angle };
       });
-    });
+    }
   });
 
   // Links are collected while the shape is worked out, so every node picks up

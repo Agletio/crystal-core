@@ -265,16 +265,17 @@ const BRANCHES: Branch[] = [
         },
       },
     },
+    // Squall and Tempest hang off ONE minor, either side of it: taking both is
+    // a wash, and nothing needs to forbid what nobody would do.
     twigs: [
       {
-        minors: 3,
+        minors: 2,
+        forkFrom: { twig: 1, at: 2 },
         notable: {
-          id: 'rs_flurry',
-          name: 'Flurry',
-          // A second spike bare; a Projectile is what the same switch IS under Hail.
-          description: 'Rimespike rises under 1 more enemy.',
-          grants: { extraTargets: 1 },
-          under: { rs_tempo: { description: '+1 Projectile.', grants: { extraTargets: 1 } } },
+          id: 'rs_tempest',
+          name: 'Tempest',
+          description: '+3 maximum stacks of Sleet.',
+          grants: { tempoStacks: 3 },
         },
       },
       {
@@ -287,18 +288,8 @@ const BRANCHES: Branch[] = [
         },
       },
       {
-        minors: 2,
-        forkFrom: { twig: 1, at: 2 },
-        notable: {
-          id: 'rs_tempest',
-          name: 'Tempest',
-          description: '+3 maximum stacks of Sleet.',
-          grants: { tempoStacks: 3 },
-        },
-      },
-      {
         minors: 3,
-        forkFrom: { twig: 2, at: 1 },
+        forkFrom: { twig: 1, at: 2 },
         notable: {
           id: 'rs_tempo',
           name: 'Hail',
@@ -319,6 +310,17 @@ const BRANCHES: Branch[] = [
           stats: [stat('castSpeed', 'inc', 100)],
           // No circle, so an Area line is read as Projectile Damage.
           converts: { areaOfEffect: { stat: 'damage', tags: ['projectile'], say: ['Area of Effect', 'Projectile Damage'] } },
+        },
+      },
+      {
+        minors: 3,
+        notable: {
+          id: 'rs_flurry',
+          name: 'Flurry',
+          // A second spike bare; a Projectile is what the same switch IS under Hail.
+          description: 'Rimespike rises under 1 more enemy.',
+          grants: { extraTargets: 1 },
+          under: { rs_tempo: { description: '+1 Projectile.', grants: { extraTargets: 1 } } },
         },
       },
     ],
