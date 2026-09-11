@@ -1600,7 +1600,7 @@
   },
   {
    "id": "wn_al_potential",
-   "say": "a bolt of lightning growing thicker and brighter along its length from thin at the top to wide at the bottom, drawn in electric violet-blue and white-blue light on near-black, NOT yellow, NOT orange, NOT fire, NOT green."
+   "say": "a dark coiled metal spring pressed down tight with violet sparks jumping between its coils drawn in electric violet-blue and white-blue light on near-black, NOT yellow, NOT orange, NOT fire, NOT green, NOT a plain single bolt."
   },
   {
    "id": "wn_al_capacitor",
@@ -1608,7 +1608,7 @@
   },
   {
    "id": "wn_al_reservoir",
-   "say": "a long thin bolt of lightning running the whole height of the frame with five small kinks in it, drawn in electric violet-blue and white-blue light on near-black, NOT yellow, NOT orange, NOT fire, NOT green."
+   "say": "a tall dark glass battery jar filled to the brim with bright violet-blue liquid lightning, a metal cap on top drawn in electric violet-blue and white-blue light on near-black, NOT yellow, NOT orange, NOT fire, NOT green, NOT a plain single bolt."
   },
   {
    "id": "wn_al_grounding",
@@ -1624,7 +1624,7 @@
   },
   {
    "id": "wn_al_searing",
-   "say": "a white-hot brand mark in the shape of a small bolt on dark iron, glowing at the edges, drawn in electric violet-blue and white-blue light on near-black, NOT yellow, NOT orange, NOT fire, NOT green."
+   "say": "a cattle branding iron with a dark wooden handle and a white-hot glowing bolt-shaped iron at its end, a curl of smoke drawn in electric violet-blue and white-blue light on near-black, NOT yellow, NOT orange, NOT fire, NOT green, NOT a plain single bolt."
   },
   {
    "id": "wn_al_staticcling",
@@ -1632,7 +1632,7 @@
   },
   {
    "id": "wn_al_split",
-   "say": "two thin parallel bolts of lightning side by side coming down together, drawn in electric violet-blue and white-blue light on near-black, NOT yellow, NOT orange, NOT fire, NOT green."
+   "say": "two dark iron rods standing side by side each struck from above by its own separate bolt of lightning drawn in electric violet-blue and white-blue light on near-black, NOT yellow, NOT orange, NOT fire, NOT green, NOT a plain single bolt."
   },
   {
    "id": "wn_al_scatter",
@@ -1640,7 +1640,7 @@
   },
   {
    "id": "wn_al_fan",
-   "say": "three thin bolts spread in a fan from one point at the bottom, drawn in electric violet-blue and white-blue light on near-black, NOT yellow, NOT orange, NOT fire, NOT green."
+   "say": "a hand-held folding paper fan opened wide, each of its five ribs a thin bolt of lightning, a dark handle at the bottom drawn in electric violet-blue and white-blue light on near-black, NOT yellow, NOT orange, NOT fire, NOT green, NOT a plain single bolt."
   },
   {
    "id": "wn_al_earthed",
