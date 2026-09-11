@@ -26,7 +26,7 @@ export const ALCHEMIST: TradeSpec = {
     'mouthful at a time, and what is in the flask is the only part of him ' +
     'that has not been used up.',
   baseline: {
-    short: 'Kills put flask Charges back, so the flasks are never a descent’s whole budget.',
+    short: 'Kills restore flask Charges.',
     grants: { chargeOnKill: TRADE_BASE.alchemistChargePerKill },
   },
   attributes: { strength: 6, intelligence: 12, dexterity: 7, acuity: 9, spirit: 15, constitution: 8 },

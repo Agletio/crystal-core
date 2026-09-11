@@ -30,7 +30,7 @@ export const ROGUE_TRADE: TradeSpec = {
     'never once been seen carrying a shield and he is unkind about people who ' +
     'are. What the Order wanted read, he has not said.',
   baseline: {
-    short: 'Capable of holding two weapons at once — no other trade may.',
+    short: 'Dual wield.',
     says: [
       `Both hands may hold a one-handed weapon. A pair puts ${pct(DUAL.main)} of the main ` +
         `hand and ${pct(DUAL.off)} of the off hand into every hit, and the rate ALTERNATES: ` +

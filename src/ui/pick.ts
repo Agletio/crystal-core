@@ -10,7 +10,7 @@
  * it shows a drawing made for it rather than his floor sprite magnified. The
  * idle breath went with it — *"the idle thing honestly looks bad"*.
  */
-import { ATTRIBUTES, SKILL_BY_ID, TRADE } from '../data';
+import { ATTRIBUTES, SKILL_BY_ID } from '../data';
 import { TRADES, TRADE_BY_ID } from '../trades';
 import { GENERATED_CAST } from '../render/generated-cast';
 import { HERO_SPRITE } from '../sim/appearance';
@@ -163,9 +163,8 @@ function look(tradeId: string): void {
   box.append(el('h3', 'picksay__name', trade.spec.name));
   box.append(el('p', 'picksay__lore', trade.spec.lore));
   box.append(el('p', 'picksay__rule', trade.spec.blurb));
-  // WHAT IT GIVES FOR NOTHING, loosely: the figures are the web's middle.
-  const free = el('p', 'picksay__free');
-  free.append(el('span', 'picksay__freelabel', 'Comes with: '));
+  const free = el('p', 'picksay__free'); // loosely: the figures are the web's middle
+  free.append(el('span', 'picksay__freelabel', 'Traits: '));
   free.append(el('span', 'picksay__freesaid', trade.spec.baseline.short));
   box.append(free);
   // HIS SPREAD, highest first. A trade's attributes are the trade's, so what
@@ -189,14 +188,6 @@ function look(tradeId: string): void {
     box.append(line);
   }
   box.append(roads(trade));
-  box.append(
-    el(
-      'p',
-      'picksay__cost',
-      `${TRADE.maxPoints} points, ${TRADE.pointsPerGrant} at a time from level ` +
-        `${TRADE.firstAt}. A notable is always ${TRADE.pointsPerGrant} away.`
-    )
-  );
 
   const take = el('button', 'mini mini--go', `Play the ${trade.spec.name}`) as HTMLButtonElement;
   take.id = 'pick-take';

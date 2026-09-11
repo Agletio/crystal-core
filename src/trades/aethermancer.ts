@@ -26,8 +26,8 @@ export const AETHERMANCER: TradeSpec = {
     'starved, wired, and entirely certain he has the better end of it.',
   baseline: {
     short:
-      'The pool refills on its own, and part of every hit is paid out of it before ' +
-      'your life.',
+      `Restores ${TRADE_BASE.aethermancerPoolRegen}% of mana a second, and ` +
+      `${Math.round(TRADE_BASE.aethermancerShield * 100)}% of every hit is paid out of mana.`,
     grants: {
       poolRegen: TRADE_BASE.aethermancerPoolRegen,
       manaShield: TRADE_BASE.aethermancerShield,

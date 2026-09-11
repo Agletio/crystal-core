@@ -26,7 +26,7 @@ export const WARRIOR_TRADE: TradeSpec = {
     'the rock is warm and because what is written on him is the only armour he ' +
     'trusts.',
   baseline: {
-    short: 'A hit big enough for the body it lands on Stuns it.',
+    short: 'Large hits are capable of Stunning enemies.',
     grants: { stunSeconds: TRADE_BASE.warriorStunSeconds },
   },
   attributes: { strength: 15, intelligence: 6, dexterity: 8, acuity: 6, spirit: 9, constitution: 13 },
