@@ -275,12 +275,17 @@ export function generatedBeat(sprite: string, e: Cel): Beat {
       at: Math.floor(e.walked / strideOf(sprite, walk.length)) % walk.length,
     };
   }
-  const idle = states.idle;
-  if (idle) {
-    if (idleTravel(sprite) > IDLE_CALM) return { state: 'idle', at: 0 };
-    return { state: 'idle', at: Math.floor(e.elapsed * IDLE_CYCLE) % idle.length };
-  }
+  if (states.idle) return { state: 'idle', at: idleAt(sprite, e.elapsed) };
   return { state: 'walk', at: 0 };
+}
+
+/** WHICH IDLE FRAME, for every place a body stands: a breath cycles, a restless
+ *  idle holds its first frame. The camp's drawer reads it too, or a body the
+ *  floor holds still flaps in the picture. */
+export function idleAt(sprite: string, seconds: number): number {
+  const run = GENERATED[sprite]?.states?.idle ?? [0];
+  if (idleTravel(sprite) > IDLE_CALM) return 0;
+  return Math.floor(seconds * IDLE_CYCLE) % run.length;
 }
 
 export function generatedFrame(sprite: string, e: Cel): number {

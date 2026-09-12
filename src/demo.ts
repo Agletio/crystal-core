@@ -287,7 +287,7 @@ import { GENERATED_ICONS } from './render/generated-icons';
 import { glyphFor } from './ui/webicons';
 import { HELD, HERO_HANDS } from './render/held';
 import { heldFor } from './sim/appearance';
-import { IDLE_CALM, animates, generatedFrame, idleTravel } from './render/sprites';
+import { IDLE_CALM, animates, generatedFrame, idleAt, idleTravel } from './render/sprites';
 import { HERO_SCALE } from './sim/appearance';
 import type { Cel } from './render/sprites';
 
@@ -2097,6 +2097,16 @@ if (rule('SPRITES — is the pixel art well formed?')) {
     const restless = Object.keys(GENERATED).filter((id) => idleTravel(id) > IDLE_CALM);
     line(`  ${restless.length} idles shift their box past ${IDLE_CALM} cells and hold one frame instead`);
     check(stranded.length === 0, 'and every frame that ships is one something reaches', stranded.join(', '));
+    // THE CAMP READS THE SAME PICK: a wand hand flung back held still on the
+    // floor and flapping in the picture was the Aethermancer's first hour.
+    const flapping = restless.filter((id) => [0.2, 0.6, 1.1, 1.7].some((t) => idleAt(id, t) !== 0));
+    const breathing = Object.keys(GENERATED).filter((id) => (GENERATED[id].states.idle?.length ?? 0) > 1 && idleTravel(id) <= IDLE_CALM);
+    const held = breathing.filter((id) => ![0.2, 0.6, 1.1, 1.7].some((t) => idleAt(id, t) !== 0));
+    check(
+      flapping.length === 0 && held.length === 0,
+      'and `idleAt` holds every restless idle still and lets every calm one breathe',
+      `flapping ${flapping.join(', ')} held ${held.join(', ')}`
+    );
     // AND A CALM IDLE IS STILL AN IDLE: the median must stay under the line, or
     // the rule is holding the whole roster still rather than the loud few.
     const travels = Object.keys(GENERATED).map((id) => idleTravel(id)).sort((a, b) => a - b);

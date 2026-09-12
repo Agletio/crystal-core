@@ -1575,7 +1575,10 @@ recoloured the body's own outermost pixels, which is the silhouette. A rank's
 **An IDLE is a breath,
 never a gesture**: `idleTravel` measures how far a body's inked box shifts
 between idle frames and anything past `IDLE_CALM` holds its first frame, so the
-loud few stand still while the calm majority still moves.
+loud few stand still while the calm majority still moves. **`idleAt` IS THE ONE
+PICK, and the camp's drawer reads it too** — the wand hand the floor held still
+was flung back every half second in the picture: *"the aethermancer idle
+animation sucks it just moves the arm way back."*
 
 **Every damage type leaves something behind.** `AILMENTS` in `src/data.ts` is
 one row per type — Burn, Bleed, Chill, Shock, Poison, Curse, Exposure, and

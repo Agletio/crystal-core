@@ -4,6 +4,7 @@
  * canvas is one function rather than one per screen.
  */
 import { GENERATED } from '../render/generated-art';
+import { idleAt } from '../render/sprites';
 
 /** `--citrine`, which the canvas cannot read a token for. */
 const RIM = '#fcde6f';
@@ -24,7 +25,7 @@ export function drawBody(
   const art = GENERATED[sprite];
   if (!art) return;
   const idle = art.states.idle ?? art.states.walk ?? [0];
-  const which = idle[Math.floor((at + offset) * 2.2) % idle.length] ?? 0;
+  const which = idle[idleAt(sprite, at + offset)] ?? 0;
   const frames = art.frames[which];
   if (!frames) return;
 
