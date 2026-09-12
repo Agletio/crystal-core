@@ -163,8 +163,10 @@ export function castScale(grants: Record<string, unknown>, castIndex: number): n
   return nth && (castIndex + 1) % nth.n === 0 ? nth.multiplier : 1;
 }
 
-/** Each asks about the enemy in front of you, not about your sheet. */
-export function targetScale(use: SkillUse, target: Entity): number {
+/** Each asks about the enemy in front of you, not about your sheet. Takes
+ *  only what a hit landing LATER can still supply, so a delayed mode reads
+ *  the same conditions an immediate one does. */
+export function targetScale(use: Pick<SkillUse, 'grants' | 'sinceKill' | 'sinceHit' | 'heft'>, target: Entity): number {
   const g = use.grants;
   let m = 1;
 
@@ -980,11 +982,13 @@ export const SKILL_BEHAVIOURS: Record<string, SkillBehaviour> = {
       // Always poisoned, even if the radius somehow excludes it.
       if (!caught.includes(at)) caught.push(at);
       for (const enemy of caught) {
-        if (spore) use.hit(enemy, spore.share * power * targetScale(use, enemy));
-        else use.ailment(enemy, power * targetScale(use, enemy), duration, spread);
+        if (spore) {
+          // The kill Burst is a share of THIS hit, off EVERY body it put down.
+          const bite = (e: Entity): number => spore.share * power * targetScale(use, e);
+          use.hit(enemy, bite(enemy));
+          burstFrom(use, enemy, bite, true);
+        } else use.ailment(enemy, power * targetScale(use, enemy), duration, spread);
       }
-
-      burstFrom(use, at, (e) => castMultiplier * targetScale(use, e), !!spore);
 
       // Second point IS the radius, so the renderer draws what the sim used.
       use.vfx(

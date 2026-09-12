@@ -1237,6 +1237,35 @@ a Poison waits on bodies that may not; at 40% it is +31%. WANDERING ROT
 tiles a second for 4s, Poisoning what it covers every 0.5s for 25% of the
 cast through the one `applyAilment`. Measured at band 4: +10%.
 
+**A DELAYED HIT IS THE CAST'S, AND THE TARGET IS READ WHEN IT LANDS.**
+`CastMark` in `src/sim/run.ts` is taken in `useSkill` before the behaviour
+runs — the every-nth multiplier, the heft, the Critical, Starved and Overcharge
+— and rides every queued Tremor, Ball, Fuse and Wandering Cloud; `asCast` puts
+the cast back for the moment the hit lands and `targetScaleNow` reads the
+body as it stands then. Without it a Starved cast's ticks landed at full
+price and no conditional reached a delayed mode. **A KILL'S WINDOW IS THE
+SKILL'S OWN**: `killMoreIn` runs `killMore.seconds` and is what `SkillUse.
+sinceKill` carries; the Rogue's kill clock is separate. **CULL READS A TICK
+AS IT READS A HIT**, so the line is live under Exsanguinate; **BACKDRAFT EATS
+THE TYPES THE HIT CARRIES, BEFORE IT LEAVES ITS OWN**, resisted as the ticks
+would have been; **A CRITICAL THAT BUFFS HITS FOR NO MORE**; **A CONTAGION
+JUMPS ON A TICK THAT ROLLED A CRITICAL** (a tick never DEALS one);
+**`ailmentMultiplier` REACHES CHILL'S SLOW**; **HEFT CAPS AT THE LINE'S OWN
+FIGURE**, full at half the fastest swing; **BALL LIGHTNING COUNTS ARCS AS THE
+BOLT DOES**; and **`guarded()` IS THE ONE SEAM FOR WHAT A BUILD TAKES OFF A
+HIT** — a flask, a shield, the paint, a kill's cover, the Brink — read by a
+swing and a boss's slam alike and never by an Ailment. Every one of these was
+a finding in `writing/BLOCKERS.md`, where each decision is written down.
+
+**THE WRITING LEDGER IS ASTRA'S, AND THE MECHANICS ARE CLAUDE'S.**
+`writing/README.md` is the workflow: after any change to text or mechanics,
+`npm run writing:sync` and commit `writing/entries.json` with it; a blocked
+entry is a mechanics question in `writing/BLOCKERS.md` answered under its
+W-number and returned to pending, never rewritten to fit the prose; a request
+for wording goes in `writing/REQUESTS.md` with the IDs and the commit. A
+change to `run.ts`, `skills.ts` or `grants.ts` makes every reviewed entry
+stale, by design — the tool over-reports rather than approves.
+
 **EIGHT TREES, SIXTEEN KEYSTONES, AND EVERY ONE IS PLAYED.** Each tree's demo
 section plays three descents at band 4 under each keystone against a bare
 tree and PRINTS the ratio as a gauge, wanting it within 40% either way; the
