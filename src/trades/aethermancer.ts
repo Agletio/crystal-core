@@ -49,8 +49,7 @@ export const AETHERMANCER: TradeSpec = {
         id: 'aet_ward',
         name: 'Aether Ward',
         description:
-          '20% of every hit, Ailments included, is paid out of mana before it ' +
-          'reaches your life.',
+          "Adds 20 percentage points to the share of damage absorbed by Mana before Life, up to 60%. Includes Ailment damage and requires available Mana.",
         grants: { manaShield: 0.2 },
       },
       branches: [
@@ -65,13 +64,13 @@ export const AETHERMANCER: TradeSpec = {
             {
               id: 'aet_standing',
               name: 'Standing Ward',
-              description: '12% of every hit comes off mana before it reaches your life.',
+              description: "Adds 12 percentage points to the share of damage absorbed by Mana before Life, up to 60%.",
               grants: { manaShield: 0.12 },
             },
             {
               id: 'aet_bulwark',
               name: 'Bulwark of Aether',
-              description: '25% of every hit comes off mana before it reaches your life.',
+              description: "Adds 25 percentage points to the share of damage absorbed by Mana before Life, up to 60%.",
               grants: { manaShield: 0.25 },
             },
           ],
@@ -87,13 +86,13 @@ export const AETHERMANCER: TradeSpec = {
             {
               id: 'aet_coldcomfort',
               name: 'Cold Comfort',
-              description: '10% of your maximum life is added to your maximum mana.',
+              description: "Adds 10% of maximum Life to base Mana. Modifiers to maximum Mana apply to this amount.",
               grants: { poolFromLife: 0.1 },
             },
             {
               id: 'aet_shell',
               name: 'The Outer Shell',
-              description: 'Mana pays 100% of an Ailment rather than the 20% a hit pays.',
+              description: "Mana absorbs 100% of Ailment damage before Life, while you have enough Mana to pay for it.",
               grants: { wardWhole: true },
             },
           ],
@@ -109,7 +108,7 @@ export const AETHERMANCER: TradeSpec = {
       gate: {
         id: 'aet_overcharge',
         name: 'Overcharge',
-        description: 'Each use spends 10% of your maximum mana and adds that much Cold damage.',
+        description: "After paying the skill's Mana cost, spend 10% of maximum Mana to add the same amount of Cold damage to its hits. Requires enough Mana for the full extra cost.",
         grants: { overcharge: 0.1 },
       },
       branches: [
@@ -124,13 +123,13 @@ export const AETHERMANCER: TradeSpec = {
             {
               id: 'aet_kindling',
               name: 'Kindling',
-              description: 'Overcharge spends 5% more of the pool per use, and adds 5% more.',
+              description: "Overcharge spends an additional 5% of maximum Mana per use and adds the amount spent as Cold damage.",
               grants: { overcharge: 0.05 },
             },
             {
               id: 'aet_cataclysm',
               name: 'Cataclysm',
-              description: 'Overcharge spends 8% more of the pool per use, and adds 8% more.',
+              description: "Overcharge spends an additional 8% of maximum Mana per use and adds the amount spent as Cold damage.",
               grants: { overcharge: 0.08 },
             },
           ],
@@ -168,7 +167,7 @@ export const AETHERMANCER: TradeSpec = {
       gate: {
         id: 'aet_siphon',
         name: 'Siphon',
-        description: '4% of the damage you deal returns to you as mana.',
+        description: "Recover Mana equal to an additional 4% of damage dealt by hits.",
         grants: { manaLeech: 0.04 },
       },
       branches: [
@@ -183,13 +182,13 @@ export const AETHERMANCER: TradeSpec = {
             {
               id: 'aet_firstdraw',
               name: 'The First Draw',
-              description: '2.5% of the damage you deal returns to you as mana.',
+              description: "Recover Mana equal to an additional 2.5% of damage dealt by hits.",
               grants: { manaLeech: 0.025 },
             },
             {
               id: 'aet_deep_draw',
               name: 'Deep Draw',
-              description: '5% of the damage you deal returns as mana.',
+              description: "Recover Mana equal to an additional 5% of damage dealt by hits.",
               grants: { manaLeech: 0.05 },
             },
           ],
@@ -205,13 +204,13 @@ export const AETHERMANCER: TradeSpec = {
             {
               id: 'aet_trickle',
               name: 'Trickle',
-              description: 'Every kill returns 2% of your maximum mana.',
+              description: "Kills restore an additional 2% of maximum Mana.",
               grants: { manaOnKill: 0.02 },
             },
             {
               id: 'aet_wellspring',
               name: 'Wellspring',
-              description: 'Every kill returns 4% of your maximum mana.',
+              description: "Kills restore an additional 4% of maximum Mana.",
               grants: { manaOnKill: 0.04 },
             },
           ],
@@ -227,7 +226,7 @@ export const AETHERMANCER: TradeSpec = {
       gate: {
         id: 'aet_dry_season',
         name: 'Dry Season',
-        description: 'A Starved use lands for 65% of your damage rather than 50%.',
+        description: "Deal 30% more damage while Starved, up to your normal damage.",
         grants: { starvedDamage: 1.3 },
       },
       branches: [
@@ -242,13 +241,13 @@ export const AETHERMANCER: TradeSpec = {
             {
               id: 'aet_rationed',
               name: 'Rationed',
-              description: 'A Starved use lands for 73% of your damage rather than 65%.',
+              description: "Deal 12% more damage while Starved, up to your normal damage. Multiplies with Dry Season.",
               grants: { starvedDamage: 1.12 },
             },
             {
               id: 'aet_last_drop',
               name: 'The Last Drop',
-              description: '81% rather than 65% of your damage while Starved.',
+              description: "Deal 25% more damage while Starved, up to your normal damage. Multiplies with other Starved damage bonuses.",
               grants: { starvedDamage: 1.25 },
             },
           ],
@@ -264,15 +263,14 @@ export const AETHERMANCER: TradeSpec = {
             {
               id: 'aet_sparing',
               name: 'Sparing',
-              description: '2% of the damage you deal returns to you as mana.',
+              description: "Recover Mana equal to an additional 2% of damage dealt by hits.",
               grants: { manaLeech: 0.02 },
             },
             {
               id: 'aet_thrift',
               name: 'Never Dry',
               description:
-                'A use you cannot pay for spends life instead, 2 life for every point ' +
-                'of mana.',
+                "When Mana cannot cover a skill's cost, spend all remaining Mana and pay 2 Life per missing Mana. The skill is not Starved. This can kill you.",
               grants: { payWithLife: 2 },
             },
           ],
@@ -288,7 +286,7 @@ export const AETHERMANCER: TradeSpec = {
       gate: {
         id: 'aet_vessel',
         name: 'The Vessel',
-        description: '15% of your maximum life is added to your maximum mana.',
+        description: "Adds 15% of maximum Life to base Mana. Modifiers to maximum Mana apply to this amount.",
         grants: { poolFromLife: 0.15 },
       },
       branches: [
@@ -303,13 +301,13 @@ export const AETHERMANCER: TradeSpec = {
             {
               id: 'aet_deepening',
               name: 'Deepening',
-              description: '10% of your maximum life is added to the pool.',
+              description: "Adds 10% of maximum Life to base Mana. Modifiers to maximum Mana apply to this amount.",
               grants: { poolFromLife: 0.1 },
             },
             {
               id: 'aet_confluence',
               name: 'Confluence',
-              description: '20% of your maximum life is added to the pool.',
+              description: "Adds 20% of maximum Life to base Mana. Modifiers to maximum Mana apply to this amount.",
               grants: { poolFromLife: 0.2 },
             },
           ],
@@ -325,13 +323,13 @@ export const AETHERMANCER: TradeSpec = {
             {
               id: 'aet_boredout',
               name: 'Bored Out',
-              description: 'Overcharge adds 1.25x what it spent rather than matching it.',
+              description: "Overcharge adds 25% more Cold damage per Mana spent.",
               grants: { overchargeYield: 1.25 },
             },
             {
               id: 'aet_widening',
               name: 'The Wider Bore',
-              description: 'Overcharge adds 1.6x what it spent rather than matching it.',
+              description: "Overcharge adds 60% more Cold damage per Mana spent. Multiplies with Bored Out.",
               grants: { overchargeYield: 1.6 },
             },
           ],

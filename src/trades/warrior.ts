@@ -58,13 +58,13 @@ export const WARRIOR_TRADE: TradeSpec = {
             {
               id: 'mah_boss',
               name: 'Barbed Boss',
-              description: 'A Block deals 45% of your damage back to what you blocked.',
+              description: "Blocking a hit deals Physical damage to the attacker equal to 45% of your main skill's damage.",
               grants: { blockThorns: 0.45 },
             },
             {
               id: 'mah_teeth',
               name: 'Teeth in the Rim',
-              description: 'A Block deals a further 110% of your damage back to what you blocked.',
+              description: "Blocking a hit deals additional Physical damage to the attacker equal to 110% of your main skill's damage.",
               grants: { blockThorns: 1.1 },
             },
           ],
@@ -80,15 +80,14 @@ export const WARRIOR_TRADE: TradeSpec = {
             {
               id: 'mah_wind',
               name: 'Second Wind',
-              description: 'A Block restores 2% of your maximum life.',
+              description: "Blocking a hit restores 2% of maximum Life.",
               grants: { blockHeal: 0.02 },
             },
             {
               id: 'mah_unshaken',
               name: 'Unshaken',
               description:
-                'A Block Slows what you blocked by 45% for 3s, and restores a further 3% ' +
-                'of your maximum life.',
+                "Blocking a hit Slows the attacker by 45% for 3s and restores an additional 3% of maximum Life.",
               grants: { blockStagger: 45, blockHeal: 0.03 },
             },
           ],
@@ -118,13 +117,13 @@ export const WARRIOR_TRADE: TradeSpec = {
             {
               id: 'mah_backhand',
               name: 'Backhand',
-              description: 'A further 30% more damage for 4s after a Block.',
+              description: "Adds 30 percentage points to your damage bonus for hits during the 4s after a Block.",
               grants: { blockRiposte: 30 },
             },
             {
               id: 'mah_reprisal',
               name: 'Reprisal',
-              description: 'A further 70% more damage for 4s after a Block.',
+              description: "Adds 70 percentage points to your damage bonus for hits during the 4s after a Block.",
               grants: { blockRiposte: 70 },
             },
           ],
@@ -140,13 +139,13 @@ export const WARRIOR_TRADE: TradeSpec = {
             {
               id: 'mah_secondskin',
               name: 'Second Skin',
-              description: '35% of what your Armour blunts also blunts Ailments.',
+              description: "Gain Ailment damage and effect reduction equal to 35% of your Armour's damage reduction.",
               grants: { secondSkin: 0.35 },
             },
             {
               id: 'mah_thickhide',
               name: 'Thick Hide',
-              description: 'A further 40% of what your Armour blunts also blunts Ailments.',
+              description: "An additional 40% of your Armour's damage reduction applies to Ailment damage and effects, up to 100% of that reduction.",
               grants: { secondSkin: 0.4 },
             },
           ],
@@ -176,13 +175,13 @@ export const WARRIOR_TRADE: TradeSpec = {
             {
               id: 'mah_overwhelm',
               name: 'Overwhelm',
-              description: 'Your hits ignore 35% of what a body’s Armour blunts.',
+              description: "Your hits ignore 35% of the enemy's damage reduction from Armour.",
               grants: { overwhelm: 0.35 },
             },
             {
               id: 'mah_shatterplate',
               name: 'Shatter the Plate',
-              description: 'Your hits ignore 70% of what a body’s Armour blunts.',
+              description: "Your hits ignore 70% of the enemy's damage reduction from Armour. Replaces Overwhelm's 35%.",
               grants: { overwhelm: 0.7 },
             },
           ],
@@ -259,7 +258,7 @@ export const WARRIOR_TRADE: TradeSpec = {
             {
               id: 'mah_feed',
               name: 'Feed',
-              description: 'Every kill restores 2% of your maximum life.',
+              description: "Kills restore 2% of maximum Life.",
               grants: { killHeal: 0.02 },
             },
             {
@@ -268,8 +267,7 @@ export const WARRIOR_TRADE: TradeSpec = {
               id: 'mah_glut',
               name: 'Glut',
               description:
-                'Every kill restores a further 3% of your maximum life, and 1.5% ' +
-                'of the damage you deal returns to you as life.',
+                "Kills restore an additional 3% of maximum Life. Recover Life equal to an additional 1.5% of damage dealt by hits.",
               grants: { killHeal: 0.03, lifeLeech: 0.015 },
             },
           ],
@@ -330,8 +328,7 @@ export const WARRIOR_TRADE: TradeSpec = {
               id: 'mah_aftershock',
               name: 'Aftershock',
               description:
-                'A Stun Bursts for 55% of your damage — including on a body your hit killed ' +
-                'outright, which always Stuns.',
+                "Stunning an enemy triggers a Burst with a 2.6-tile radius around it, dealing 55% of your main skill's damage to other enemies. Hits that kill also trigger the Burst.",
               grants: { stunBurst: 0.55 },
             },
           ],

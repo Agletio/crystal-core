@@ -39,7 +39,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'am_quickening',
           name: 'Quickening',
-          description: 'The follow-up lands 35% sooner.',
+          description: "Relay has 35% less delay before its follow-up attack.",
           grants: { chainSooner: 0.65 },
         },
       },
@@ -48,7 +48,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'am_crossing',
           name: 'Long Crossing',
-          description: 'The follow-up crosses 60% further to find a body.',
+          description: "Relay has 60% more range when choosing its next enemy.",
           grants: { chainReach: 1.6 },
         },
       },
@@ -58,7 +58,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'am_relentless',
           name: 'Relentless',
-          description: 'The follow-up lands a further 30% sooner, and crosses 40% further.',
+          description: "Relay has 30% less delay and 40% more range when choosing its next enemy.",
           grants: { chainSooner: 0.7, chainReach: 1.4 },
         },
       },
@@ -71,7 +71,7 @@ const BRANCHES: Branch[] = [
     enabler: {
       id: 'am_opening',
       name: 'The Opening',
-      description: 'Ambush deals 30% more damage to enemies above 80% of their life.',
+      description: "Ambush deals 30% more damage to enemies at 80% of maximum Life or more.",
       grants: { moreVsFull: { above: 0.8, more: 0.3 } },
     },
     twigs: [
@@ -80,7 +80,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'am_throat',
           name: 'Throat',
-          description: 'Ambush deals 40% more damage to enemies below 33% of their life.',
+          description: "Ambush deals 40% more damage to enemies at 33% of maximum Life or less.",
           grants: { moreVsLow: { below: 0.33, more: 0.4 } },
         },
       },
@@ -89,7 +89,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'am_unguarded',
           name: 'Unguarded',
-          description: 'Ambush deals 35% more damage to enemies carrying an Ailment.',
+          description: "Ambush deals 35% more damage to enemies affected by an Ailment.",
           grants: { moreVsAiling: 0.35 },
         },
       },
@@ -191,11 +191,11 @@ const BRANCHES: Branch[] = [
           name: 'Exsanguinate',
           keystone: true,
           description:
-            'Ambush deals no hit. Every use leaves a Bleed, worth 150% more, and ' +
-            'a Critical still Relays.',
+            'Ambush deals no hit damage. Every use applies Bleed with 150% more damage. ' +
+            'Critical uses can still trigger Relay.',
           becomes:
-            'You step behind an enemy and open it: no hit, a Bleed every use worth ' +
-            '150% more, and the stacks are what your swing rate buys. A Critical still Relays.',
+            'You step behind an enemy and apply Bleed with 150% more damage, dealing no hit damage. ' +
+            'Faster attacks apply more stacks. Critical uses can still trigger Relay.',
           grants: { bleedOut: { more: 1.5 }, manaMultiplier: 1.15 },
           converts: { critMultiplier: { stat: 'damage', tags: ['bleed'], form: 'inc', say: ['Critical Damage', 'increased Bleed Damage'] } },
         },
@@ -203,7 +203,7 @@ const BRANCHES: Branch[] = [
     ],
     minors: [
       { text: '+9% chance to apply Bleed', stats: [stat('ailmentChance', 'flat', 9, ['bleed'])] },
-      { text: '+6% increased Bleed Damage', grants: { ailmentMultiplier: 1.06 } },
+      { text: "+6% more Bleed Damage", grants: { ailmentMultiplier: 1.06 } },
       COMMON[0],
       COMMON[1],
     ],
@@ -218,7 +218,7 @@ const BRANCHES: Branch[] = [
     enabler: {
       id: 'am_footing',
       name: 'Quick Hands',
-      description: 'Ambush swings 15% faster.',
+      description: "Ambush has 15% increased Attack Speed.",
       stats: [stat('attackSpeed', 'inc', 15)],
     },
     twigs: [
@@ -227,7 +227,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'am_hide',
           name: 'Bloodrush',
-          description: 'Ambush swings 25% faster.',
+          description: "Ambush has 25% increased Attack Speed.",
           stats: [stat('attackSpeed', 'inc', 25)],
         },
       },
@@ -283,7 +283,7 @@ const BRANCHES: Branch[] = [
     enabler: {
       id: 'am_rhythm',
       name: 'Cull',
-      description: 'A hit that leaves an enemy under 8% of its life kills it.',
+      description: "Hits kill enemies left at 8% or less of maximum Life.",
       grants: { execute: 0.08, manaMultiplier: 1.15 },
     },
     twigs: [
@@ -292,7 +292,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'am_cadence',
           name: 'Bled Out',
-          description: 'A hit that leaves an enemy under a further 7% of its life kills it.',
+          description: "Adds 7 percentage points to the Life threshold at which your hits kill enemies.",
           grants: { execute: 0.07 },
         },
       },
@@ -302,8 +302,8 @@ const BRANCHES: Branch[] = [
           id: 'am_carried',
           name: 'Mercy',
           description:
-            'A hit that leaves an enemy under a further 5% of its life kills it, ' +
-            'and Ambush crits 8% more often.',
+            "Adds 5 percentage points to the Life threshold at which your hits kill enemies. Ambush has +8% " +
+          "Critical Chance.",
           grants: { execute: 0.05 },
           stats: [stat('critChance', 'flat', 8)],
         },
@@ -315,8 +315,8 @@ const BRANCHES: Branch[] = [
           id: 'am_drumming',
           name: 'The Quiet Part',
           description:
-            'A hit that leaves an enemy under a further 10% of its life kills it, ' +
-            'and Ambush has +45% Critical Damage.',
+            "Adds 10 percentage points to the Life threshold at which your hits kill enemies. Ambush has " +
+          "+45% Critical Damage.",
           grants: { execute: 0.1, manaMultiplier: 1.15 },
           stats: [stat('critMultiplier', 'flat', 45)],
         },
@@ -330,7 +330,7 @@ const TRUNK_NOTABLES: Notable[] = [
   {
     id: 'am_reach',
     name: 'Long Step',
-    description: 'Ambush reaches 30% further, and swings 6% faster.',
+    description: "Ambush has 30% increased Attack Range, and has 6% increased Attack Speed.",
     stats: [stat('attackRange', 'inc', 30), stat('attackSpeed', 'inc', 6)],
   },
   {
@@ -361,13 +361,13 @@ const TRUNK_NOTABLES: Notable[] = [
   {
     id: 'am_weight',
     name: 'Weight',
-    description: 'Ambush deals 45% more damage and swings 20% slower.',
+    description: "Ambush deals 45% more damage and has 20% reduced Attack Speed.",
     stats: [stat('damage', 'more', 45), stat('attackSpeed', 'inc', -20)],
   },
   {
     id: 'am_practice',
     name: 'Practice',
-    description: 'Ambush swings 25% faster.',
+    description: "Ambush has 25% increased Attack Speed.",
     stats: [stat('attackSpeed', 'inc', 25)],
   },
   {

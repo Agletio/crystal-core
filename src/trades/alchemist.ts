@@ -141,13 +141,13 @@ export const ALCHEMIST: TradeSpec = {
             {
               id: 'alc_surefoot',
               name: 'Sure Footing',
-              description: 'While a flask is running you move 18% faster.',
+              description: 'Gain 18% more Movement Speed during flask effects.',
               grants: { potionMove: 18 },
             },
             {
               id: 'alc_lightfoot',
               name: 'Light on the Rock',
-              description: 'While a flask is running you move 30% faster.',
+              description: 'Adds 30 percentage points to your Movement Speed bonus during flask effects.',
               grants: { potionMove: 30 },
             },
           ],
@@ -222,7 +222,7 @@ export const ALCHEMIST: TradeSpec = {
       gate: {
         id: 'alc_slow_burn',
         name: 'Slow Burn',
-        description: 'Flasks run 50% longer.',
+        description: "Flask effects have 50% more duration.",
         grants: { potionDuration: 1.5 },
       },
       branches: [
@@ -237,13 +237,13 @@ export const ALCHEMIST: TradeSpec = {
             {
               id: 'alc_reduced',
               name: 'Reduced',
-              description: 'Flasks restore 20% more per second.',
+              description: "Flasks recover 20% more Life or Mana per second.",
               grants: { potionPotency: 1.2 },
             },
             {
               id: 'alc_thickened',
               name: 'Thickened',
-              description: 'Flasks restore 40% more per second.',
+              description: "Flasks recover 40% more Life or Mana per second. Multiplies with Reduced.",
               grants: { potionPotency: 1.4 },
             },
           ],
@@ -296,15 +296,14 @@ export const ALCHEMIST: TradeSpec = {
             {
               id: 'alc_runoff',
               name: 'Runoff',
-              description: 'Each flask regains a Charge every 20s of a descent.',
+              description: "Adds 0.05 Charges per second to each flask's recovery rate. Combines with The Still for 1 Charge every 8.3s.",
               grants: { chargeRegen: 0.05 },
             },
             {
               id: 'alc_cascade',
               name: 'Cascade',
               description:
-                'Another Charge every 12.5s on its own, and one every 6.7s with ' +
-                'the Still in front of it.',
+                "Adds 0.08 Charges per second to each flask's recovery rate. With The Still and Runoff, each flask recovers 1 Charge every 5s.",
               grants: { chargeRegen: 0.08 },
             },
           ],
@@ -320,13 +319,13 @@ export const ALCHEMIST: TradeSpec = {
             {
               id: 'alc_measured',
               name: 'A Measured Draught',
-              description: 'Flasks run 30% longer.',
+              description: "Flask effects have 30% more duration.",
               grants: { potionDuration: 1.3 },
             },
             {
               id: 'alc_frugal',
               name: 'Nothing Wasted',
-              description: 'While a flask is running your uses cost 0 mana.',
+              description: "Your main skill costs 0 Mana during flask effects. Overcharge still costs Mana.",
               grants: { potionFree: true },
             },
           ],

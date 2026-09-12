@@ -10,6 +10,12 @@ touch that domain, not before.
 **Claude builds the game and its art.** PixelLab generates a picture, Aseprite
 touches up a frame, and the user approves a design before it is animated.
 
+**Astra reviews player-facing writing.** See `writing/README.md` for the ledger
+and `writing/BLOCKERS.md` for mechanics questions. After changing tracked text
+or its mechanics, run `npm run writing:sync`; new entries are pending and
+affected reviews become stale. Do not mark them reviewed without checking both
+the implementation and the displayed copy.
+
 | skill | load before |
 |---|---|
 | `art` | a picture: the generator, its costs and every trap it has already paid for |

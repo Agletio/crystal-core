@@ -14,7 +14,11 @@
     "drag": "node dragprobe.mjs",
     "peek": "node tools/descent-peek.mjs",
     "comments": "node tools/comment-budget.mjs",
-    "theme": "node tools/theme-check.mjs"
+    "theme": "node tools/theme-check.mjs",
+    "writing": "tsx tools/writing.mts",
+    "writing:sync": "tsx tools/writing.mts sync",
+    "writing:check": "tsx tools/writing.mts check",
+    "writing:test": "tsx --test tools/writing.test.mts"
   },
   "devDependencies": {
     "@babel/parser": "^8.0.4",

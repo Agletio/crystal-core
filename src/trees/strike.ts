@@ -60,7 +60,7 @@ const BRANCHES: Branch[] = [
           grants: { echoDamage: 1, manaMultiplier: 1.08 },
           under: {
             st_ethereal: { description: 'Thrown blades fly 2 tiles further.', grants: { ghostBlade: { reach: 2 }, manaMultiplier: 1.08 } },
-            st_whirl: { description: 'Whirlwind deals 30% less damage rather than 45%.', grants: { whirl: { less: -0.15 }, manaMultiplier: 1.08 } },
+            st_whirl: { description: "Reduces Whirlwind's damage penalty by 15 percentage points.", grants: { whirl: { less: -0.15 }, manaMultiplier: 1.08 } },
           },
         },
       },
@@ -116,7 +116,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'st_hemorrhage',
           name: 'Hemorrhage',
-          description: 'Bleeds you apply deal 40% more damage over a 25% shorter time.',
+          description: "Bleeds you apply deal 40% more damage per second and have 25% less duration.",
           grants: { ailmentMultiplier: 1.4, ailmentDuration: 0.75 },
         },
       },
@@ -141,7 +141,7 @@ const BRANCHES: Branch[] = [
       },
     ],
     minors: [
-      { text: '+6% increased Bleed Damage', grants: { ailmentMultiplier: 1.06 } },
+      { text: "+6% more Bleed Damage", grants: { ailmentMultiplier: 1.06 } },
       { text: '+9% chance to apply Bleed', stats: [stat('ailmentChance', 'flat', 9, ['bleed'])] },
       COMMON[0],
       COMMON[3],
@@ -213,7 +213,7 @@ const BRANCHES: Branch[] = [
           name: 'Anvil Weight',
           description:
             'A further 25% as your swing rate falls below 1.55/s, and Strike ' +
-            'Splashes for 15% more.',
+            'Splash deals an additional 15% of hit damage.',
           grants: { slowMore: 0.25, splashShare: 0.15 },
         },
       },
@@ -224,8 +224,7 @@ const BRANCHES: Branch[] = [
           id: 'st_followthrough',
           name: 'Follow-Through',
           description:
-            'A further 45% as your swing rate falls below 1.55/s, and Strike is ' +
-            'swung 15% slower.',
+            "A further 45% as your swing rate falls below 1.55/s, and Strike has 15% reduced Attack Speed.",
           grants: { slowMore: 0.45 },
           stats: [stat('attackSpeed', 'inc', -15)],
         },
@@ -248,7 +247,7 @@ const BRANCHES: Branch[] = [
     enabler: {
       id: 'st_bulwark',
       name: 'Spill',
-      description: 'Splash lands for 15% more of the hit.',
+      description: "Adds 15 percentage points to Splash damage as a share of the hit.",
       grants: { splashShare: 0.15 },
       // Nothing Splashes under Whirlwind: the circle is what a Splash was for.
       under: { st_whirl: { description: '+10% increased Area of Effect.', stats: [stat('areaOfEffect', 'inc', 10)] } },
@@ -259,7 +258,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'st_ironhide',
           name: 'Wide Swing',
-          description: 'Splash is 40% wider.',
+          description: "Splash has 40% more radius.",
           grants: { splashRadius: 1.4 },
           under: { st_whirl: { description: '+15% increased Area of Effect.', stats: [stat('areaOfEffect', 'inc', 15)] } },
         },
@@ -269,9 +268,9 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'st_secondwind',
           name: 'Overspill',
-          description: 'Splash lands for 25% more of the hit.',
+          description: "Adds 25 percentage points to Splash damage as a share of the hit.",
           grants: { splashShare: 0.25 },
-          under: { st_whirl: { description: 'Whirlwind deals 35% less damage rather than 45%.', grants: { whirl: { less: -0.1 } } } },
+          under: { st_whirl: { description: "Reduces Whirlwind's damage penalty by 10 percentage points.", grants: { whirl: { less: -0.1 } } } },
         },
       },
       {
@@ -317,8 +316,8 @@ const BRANCHES: Branch[] = [
       id: 'st_cruelty',
       name: 'Cleave',
       description:
-        'A blow that kills swings on into the nearest enemy within 1.8 tiles at ' +
-        'full damage, up to 1 time.',
+        "When Strike kills its target, it hits the nearest enemy within 1.8 tiles for full damage. Can " +
+      "continue once per use.",
       grants: { carryOnKill: 1, manaMultiplier: 1.15 },
       // A thrown blade carries on whatever it kills, so a carry is reach; a
       // spin that kills spins on, so the word changes and the switch does not.
@@ -333,7 +332,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'st_executioner',
           name: 'Through and Through',
-          description: 'A blow that kills swings on 2 more times.',
+          description: "Cleave can continue through 2 more kills per use.",
           grants: { carryOnKill: 2, manaMultiplier: 1.08 },
           under: {
             st_ethereal: { description: 'Thrown blades fly 2 tiles further.', grants: { ghostBlade: { reach: 2 }, manaMultiplier: 1.08 } },
@@ -346,11 +345,11 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'st_ambush',
           name: 'Reaping',
-          description: 'A blow that kills swings on 1 more time, and Strike Splashes for 20% more.',
+          description: 'A blow that kills swings 1 more time. Splash deals an additional 20% of hit damage.',
           grants: { carryOnKill: 1, splashShare: 0.2 },
           under: {
-            st_ethereal: { description: 'Thrown blades fly 1 tile further, and Strike Splashes for 20% more.', grants: { ghostBlade: { reach: 1 }, splashShare: 0.2 } },
-            st_whirl: { description: 'A spin that kills spins 1 more time, and Whirlwind deals 10% more damage.', grants: { carryOnKill: 1, whirl: { less: -0.1 } } },
+            st_ethereal: { description: 'Thrown blades fly 1 tile further. Splash deals an additional 20% of hit damage.', grants: { ghostBlade: { reach: 1 }, splashShare: 0.2 } },
+            st_whirl: { description: "A spin that kills spins 1 more time. Reduces Whirlwind's damage penalty by 10 percentage points.", grants: { carryOnKill: 1, whirl: { less: -0.1 } } },
           },
         },
       },
@@ -361,16 +360,18 @@ const BRANCHES: Branch[] = [
           id: 'st_haymaker',
           name: 'Butcher',
           description:
-            'A blow that kills swings on 3 more times, and Strike deals 35% more ' +
-            'damage to enemies below 33% of their life.',
+            "A blow that kills swings on 3 more times, and Strike deals 35% more damage to enemies at 33% of " +
+          "maximum Life or less.",
           grants: { carryOnKill: 3, moreVsLow: { below: 0.33, more: 0.35 }, manaMultiplier: 1.15 },
           under: {
             st_ethereal: {
-              description: 'Thrown blades fly 3 tiles further, and Strike deals 35% more damage to enemies below 33% of their life.',
+              description: "Thrown blades fly 3 tiles further, and Strike deals 35% more damage to enemies at 33% of " +
+              "maximum Life or less.",
               grants: { ghostBlade: { reach: 3 }, moreVsLow: { below: 0.33, more: 0.35 }, manaMultiplier: 1.15 },
             },
             st_whirl: {
-              description: 'A spin that kills spins 3 more times, and Strike deals 35% more damage to enemies below 33% of their life.',
+              description: "A spin that kills spins 3 more times, and Strike deals 35% more damage to enemies at 33% of " +
+              "maximum Life or less.",
               grants: { carryOnKill: 3, moreVsLow: { below: 0.33, more: 0.35 }, manaMultiplier: 1.15 },
             },
           },
@@ -385,7 +386,7 @@ const TRUNK_NOTABLES: Notable[] = [
   {
     id: 'st_reach',
     name: 'Long Reach',
-    description: 'Strike reaches 25% further, and swings 6% faster.',
+    description: "Strike has 25% increased Attack Range, and has 6% increased Attack Speed.",
     stats: [stat('attackRange', 'inc', 25), stat('attackSpeed', 'inc', 6)],
   },
   {
@@ -416,13 +417,13 @@ const TRUNK_NOTABLES: Notable[] = [
   {
     id: 'st_heft',
     name: 'Heft',
-    description: 'Strike deals 45% more damage and swings 20% slower.',
+    description: "Strike deals 45% more damage and has 20% reduced Attack Speed.",
     stats: [stat('damage', 'more', 45), stat('attackSpeed', 'inc', -20)],
   },
   {
     id: 'st_footwork',
     name: 'Footwork',
-    description: 'Strike swings 18% faster and reaches 10% further.',
+    description: "Strike has 18% increased Attack Speed and has 10% increased Attack Range.",
     stats: [stat('attackSpeed', 'inc', 18), stat('attackRange', 'inc', 10)],
   },
   {
@@ -434,7 +435,7 @@ const TRUNK_NOTABLES: Notable[] = [
   {
     id: 'st_tempo',
     name: 'Tempo',
-    description: 'Strike swings 25% faster.',
+    description: "Strike has 25% increased Attack Speed.",
     stats: [stat('attackSpeed', 'inc', 25)],
   },
 ];

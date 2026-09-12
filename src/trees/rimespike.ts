@@ -80,7 +80,7 @@ const BRANCHES: Branch[] = [
     enabler: {
       id: 'rs_shatter',
       name: 'Shatter',
-      description: 'Rimespike deals 30% more damage to enemies carrying an Ailment.',
+      description: "Rimespike deals 30% more damage to enemies affected by an Ailment.",
       grants: { moreVsAiling: 0.3 },
     },
     twigs: [
@@ -89,7 +89,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'rs_splinter',
           name: 'Splintering',
-          description: 'Rimespike deals 35% more damage to enemies below 33% of their life.',
+          description: "Rimespike deals 35% more damage to enemies at 33% of maximum Life or less.",
           grants: { moreVsLow: { below: 0.33, more: 0.35 } },
         },
       },
@@ -133,7 +133,7 @@ const BRANCHES: Branch[] = [
     enabler: {
       id: 'rs_frostwork',
       name: 'Frostwork',
-      description: 'Rimespike reaches 8% further for every enemy the last cast hit, up to 5 (40%).',
+      description: "Rimespike gains 8% more radius per hit from its previous cast, up to 40% more radius.",
       grants: { fieldFeeds: { per: 0.08, upTo: 5 } },
       // No field under Hail, so the reach goes into the shards instead.
       under: { rs_tempo: { description: 'Each shard Pierces 1 more enemy.', grants: { pierce: 1 } } },
@@ -144,7 +144,8 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'rs_whiteout',
           name: 'Whiteout',
-          description: 'Enemies in the outer half of the field take 40% more damage.',
+          description: "Rimespike deals 40% more damage to enemies farther than halfway from the centre to the edge of " +
+          "its radius.",
           grants: { rimBite: 0.4 },
           under: { rs_tempo: { description: 'A shard that Pierces carries 100% of its damage on.', grants: { pierceDamage: 1 } } },
         },
@@ -154,7 +155,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'rs_frostfall',
           name: 'Frostfall',
-          description: 'Hitting 4 or more enemies refunds all of the mana the cast cost.',
+          description: "A cast that hits at least 4 times restores Mana equal to its Mana cost.",
           grants: { refundOnCrowd: { hits: 4, share: 1 } },
         },
       },
@@ -199,7 +200,7 @@ const BRANCHES: Branch[] = [
     enabler: {
       id: 'rs_ward',
       name: 'Deepfreeze',
-      description: 'A Freeze takes 2 fewer stacks of Chill.',
+      description: "Freeze requires 2 fewer Chill stacks, to a minimum of 1.",
       grants: { freezeSooner: 2 },
     },
     twigs: [
@@ -208,7 +209,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'rs_frostplate',
           name: 'Lockjaw',
-          description: 'A Freeze holds 60% longer.',
+          description: "Freeze has 60% more duration.",
           grants: { freezeLonger: 1.6 },
         },
       },
@@ -227,7 +228,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'rs_wellspring',
           name: 'Everfrost',
-          description: 'A Freeze takes 2 fewer stacks of Chill and holds 40% longer.',
+          description: "Freeze requires 2 fewer Chill stacks, to a minimum of 1, and has 40% more duration.",
           grants: { freezeSooner: 2, freezeLonger: 1.4 },
         },
       },
@@ -295,11 +296,11 @@ const BRANCHES: Branch[] = [
           name: 'Hail',
           keystone: true,
           description:
-            'Rimespike is thrown as 2 ice Projectiles from you, cast 100% faster, ' +
+            'Rimespike is thrown as 2 ice Projectiles from you with 100% increased Cast Speed, ' +
             'each dealing 50% less damage. One enemy takes both; more take one each. ' +
             'Gains the Projectile tag and loses the Area tag.',
           becomes:
-            'Ice is thrown as 2 Projectiles from where you stand, cast 100% faster, ' +
+            'Ice is thrown as 2 Projectiles from where you stand with 100% increased Cast Speed, ' +
             'each dealing 50% less damage. One enemy takes both; more take one each.',
           grants: {
             spikeHail: { projectiles: 2, less: 0.5 },
@@ -340,8 +341,8 @@ const BRANCHES: Branch[] = [
       id: 'rs_weight',
       name: 'Deep Cold',
       description:
-        'Each cast of Rimespike in a row at the same enemy deals 8% more damage ' +
-        'than the last, up to 5 (40%).',
+        "Consecutive casts at the same enemy add 8 percentage points to the Deep Cold damage bonus, up " +
+      "to 40% more damage. The first cast grants no bonus.",
       grants: { spikeRamp: { per: 0.08, upTo: 5 } },
     },
     twigs: [
@@ -350,7 +351,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'rs_glacier',
           name: 'Glacier',
-          description: 'All 5 casts of Deep Cold hold when you cast at another enemy.',
+          description: "Keep all 5 stacks of Deep Cold when you switch targets.",
           grants: { rampSticks: true },
         },
       },
@@ -359,7 +360,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'rs_permafrost',
           name: 'Permafrost',
-          description: 'Each Deep Cold cast is worth 4% more, 12% in all.',
+          description: "Deep Cold grants 12% more damage per consecutive cast instead of 8%, up to 60% more damage.",
           grants: { spikeRamp: { per: 0.04 } },
         },
       },
@@ -407,19 +408,19 @@ const TRUNK_NOTABLES: Notable[] = [
   {
     id: 'rs_focus',
     name: 'Cold Eye',
-    description: '+25% Critical Chance against a Chilled enemy.',
+    description: "+25 percentage points to Critical Chance when the targeted enemy is Chilled.",
     grants: { critVsChilled: 25 },
   },
   {
     id: 'rs_vein',
     name: 'Deep Vein',
-    description: 'A kill refunds 50% of the mana the cast cost.',
+    description: "Each kill restores Mana equal to 50% of your most recent cast's Mana cost.",
     grants: { refundOnKill: 0.5 },
   },
   {
     id: 'rs_footwork',
     name: 'Sure Footing',
-    description: 'The first cast at an enemy is 40% faster.',
+    description: "The first cast after switching targets has 40% more Cast Speed.",
     grants: { freshFaster: 40 },
   },
   {
@@ -431,7 +432,7 @@ const TRUNK_NOTABLES: Notable[] = [
   {
     id: 'rs_bite',
     name: 'Bite',
-    description: 'Rimespike deals 25% more damage to enemies carrying no Ailment.',
+    description: "Rimespike deals 25% more damage to enemies with no Ailments.",
     grants: { moreVsClean: 0.25 },
   },
   {

@@ -87,13 +87,13 @@ export const ROGUE_TRADE: TradeSpec = {
             {
               id: 'rog_evenly',
               name: 'Evenly Weighted',
-              description: 'Your off hand puts a further 15% of its own damage into every hit.',
+              description: "While dual wielding, your off-hand weapon contributes an additional 15% of its damage to each attack hit.",
               grants: { offHandShare: 0.15 },
             },
             {
               id: 'rog_ambidextrous',
               name: 'Ambidextrous',
-              description: 'Your off hand puts a further 35% of its own damage into every hit.',
+              description: "While dual wielding, your off-hand weapon contributes an additional 35% of its damage to each attack hit.",
               grants: { offHandShare: 0.35 },
             },
           ],
@@ -111,7 +111,7 @@ export const ROGUE_TRADE: TradeSpec = {
         description:
           'Every weapon you hold grants what its family is for — 4% Critical Chance per ' +
           'dagger, 7% increased Attack Speed per sword, 12% increased Damage per mace, ' +
-          '9% increased Cast Speed per wand or staff, 7% per bow.',
+          '9% increased Cast Speed per wand or staff, 7% increased Attack Speed per bow.',
         grants: { weaponSpecialist: 1 },
       },
       branches: [
@@ -133,8 +133,8 @@ export const ROGUE_TRADE: TradeSpec = {
               id: 'rog_mirror',
               name: 'Mirror Work',
               description:
-                'While both your weapons are the same family you deal a further 45% more ' +
-                'damage, and every weapon grants half its family’s line again.',
+                'Adds 45 percentage points to your damage bonus while dual wielding weapons of the same family. ' +
+                'Weapons grant an additional 50% of their base Weapon Specialist bonuses.',
               grants: { matchedPair: 45, weaponSpecialist: 0.5 },
             },
           ],
@@ -157,8 +157,8 @@ export const ROGUE_TRADE: TradeSpec = {
               id: 'rog_improviser',
               name: 'Improviser',
               description:
-                'While your two weapons are different families you deal a further 40% more ' +
-                'damage, and every weapon grants half its family’s line again.',
+                'Adds 40 percentage points to your damage bonus while dual wielding weapons of different families. ' +
+                'Weapons grant an additional 50% of their base Weapon Specialist bonuses.',
               grants: { oddPair: 40, weaponSpecialist: 0.5 },
             },
           ],
@@ -173,7 +173,7 @@ export const ROGUE_TRADE: TradeSpec = {
       gate: {
         id: 'rog_unseen',
         name: 'Unseen',
-        description: 'The first hit you land on a body deals 60% more damage.',
+        description: "Your first hit against each enemy deals 60% more damage.",
         grants: { firstBlood: 60 },
       },
       branches: [
@@ -188,13 +188,13 @@ export const ROGUE_TRADE: TradeSpec = {
             {
               id: 'rog_opener',
               name: 'The Opener',
-              description: 'The first hit you land on a body deals a further 40% more damage.',
+              description: "Adds 40 percentage points to the damage bonus on your first hit against each enemy.",
               grants: { firstBlood: 40 },
             },
             {
               id: 'rog_assassin',
               name: 'Assassination',
-              description: 'The first hit you land on a body deals a further 90% more damage.',
+              description: "Adds 90 percentage points to the damage bonus on your first hit against each enemy.",
               grants: { firstBlood: 90 },
             },
           ],
@@ -268,13 +268,13 @@ export const ROGUE_TRADE: TradeSpec = {
             {
               id: 'rog_carried',
               name: 'Carried On',
-              description: 'For 3s after a kill you move 15% faster.',
+              description: 'For 3s after a kill, gain 15% more Movement Speed.',
               grants: { killMove: 15 },
             },
             {
               id: 'rog_running',
               name: 'Running Work',
-              description: 'For 3s after a kill you move a further 30% faster.',
+              description: 'Adds 30 percentage points to your Movement Speed bonus for 3s after a kill.',
               grants: { killMove: 30 },
             },
           ],
@@ -326,13 +326,13 @@ export const ROGUE_TRADE: TradeSpec = {
             {
               id: 'rog_follow',
               name: 'Follow Through',
-              description: 'A Critical strikes again with your off hand for 25% of the hit.',
+              description: "While dual wielding, Critical hits deal an additional 25% of their damage to the same enemy.",
               grants: { critEcho: 25 },
             },
             {
               id: 'rog_flurry',
               name: 'Flurry',
-              description: 'A Critical strikes again with your off hand for a further 55% of the hit.',
+              description: "While dual wielding, Critical hits deal an additional 55% of their damage to the same enemy. Adds to Follow Through.",
               grants: { critEcho: 55 },
             },
           ],

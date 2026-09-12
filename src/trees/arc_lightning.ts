@@ -42,7 +42,7 @@ const BRANCHES: Branch[] = [
           name: 'Superconductor',
           description: 'Arcs deal full damage instead of 70%.',
           grants: { chainDamage: 1, manaMultiplier: 1.08 },
-          under: { al_cloudburst: { description: 'Bolts deal 25% less damage rather than 40%.', grants: { smite: { less: -0.15 }, manaMultiplier: 1.08 } } },
+          under: { al_cloudburst: { description: "Reduces Cloudburst's damage penalty by 15 percentage points.", grants: { smite: { less: -0.15 }, manaMultiplier: 1.08 } } },
         },
       },
       {
@@ -95,8 +95,8 @@ const BRANCHES: Branch[] = [
           description: 'Forks deal 75% of the damage instead of 45%.',
           grants: { forkDamage: 0.75, manaMultiplier: 1.08 },
           under: {
-            al_cloudburst: { description: 'Bolts deal 25% less damage rather than 40%.', grants: { smite: { less: -0.15 }, manaMultiplier: 1.08 } },
-            al_ball: { description: 'Arcs off the ball deal 35% less damage rather than 50%.', grants: { orb: { less: -0.15 }, manaMultiplier: 1.08 } },
+            al_cloudburst: { description: "Reduces Cloudburst's damage penalty by 15 percentage points.", grants: { smite: { less: -0.15 }, manaMultiplier: 1.08 } },
+            al_ball: { description: "Reduces Ball Lightning's damage penalty by 15 percentage points.", grants: { orb: { less: -0.15 }, manaMultiplier: 1.08 } },
           },
         },
       },
@@ -157,7 +157,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'al_reservoir',
           name: 'Long Line',
-          description: 'Arc Lightning gains +2 Arcs, so the climb has further to run.',
+          description: "Arc Lightning gains +2 Arcs.",
           grants: { chains: 2, manaMultiplier: 1.15 },
           under: { al_cloudburst: { description: 'The storm reaches 2 tiles further.', grants: { smite: { reach: 2 }, manaMultiplier: 1.15 } } },
         },
@@ -168,7 +168,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'al_grounding',
           name: 'Short Circuit',
-          description: 'Arc Lightning loses 2 Arcs, and deals 45% increased Damage.',
+          description: "Arc Lightning loses 2 Arcs and has 45% increased Damage.",
           stats: [stat('damage', 'inc', 45)],
           grants: { chains: -2 },
           under: { al_cloudburst: { description: 'The storm reaches 2 tiles less, and Arc Lightning deals 45% increased Damage.', stats: [stat('damage', 'inc', 45)], grants: { smite: { reach: -2 } } } },
@@ -201,7 +201,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'al_searing',
           name: 'Searing Charge',
-          description: 'Ailments you apply deal 35% more damage over a 25% shorter time.',
+          description: "Ailments you apply deal 35% more damage per second and have 25% less duration.",
           grants: { ailmentMultiplier: 1.35, ailmentDuration: 0.75 },
         },
       },
@@ -217,7 +217,7 @@ const BRANCHES: Branch[] = [
       },
     ],
     minors: [
-      { text: '+6% increased Ailment Damage', grants: { ailmentMultiplier: 1.06 } },
+      { text: "+6% more Ailment Damage", grants: { ailmentMultiplier: 1.06 } },
       { text: '+9% chance to apply Shock', stats: [stat('ailmentChance', 'flat', 9, ['shock'])] },
       COMMON[0],
       { text: '+1% Critical Chance', stats: [stat('critChance', 'flat', 1)] },
@@ -274,7 +274,7 @@ const BRANCHES: Branch[] = [
     enabler: {
       id: 'al_earthed',
       name: 'Earthed',
-      description: 'Arc Lightning deals 25% more damage to enemies below 50% of their life.',
+      description: "Arc Lightning deals 25% more damage to enemies at 50% of maximum Life or less.",
       grants: { moreVsLow: { below: 0.5, more: 0.25 } },
     },
     twigs: [
@@ -292,7 +292,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'al_firstlight',
           name: 'First Light',
-          description: 'Arc Lightning deals 35% more damage to enemies above 80% of their life.',
+          description: "Arc Lightning deals 35% more damage to enemies at 80% of maximum Life or more.",
           grants: { moreVsFull: { above: 0.8, more: 0.35 } },
         },
       },
@@ -351,7 +351,7 @@ const TRUNK_NOTABLES: Notable[] = [
   {
     id: 'al_saturation',
     name: 'Saturation',
-    description: 'Arc Lightning deals 30% more damage to enemies carrying an Ailment.',
+    description: "Arc Lightning deals 30% more damage to enemies affected by an Ailment.",
     grants: { moreVsAiling: 0.3 },
   },
   {
@@ -363,7 +363,7 @@ const TRUNK_NOTABLES: Notable[] = [
   {
     id: 'al_stormcall',
     name: 'Storm Call',
-    description: 'Arc Lightning is cast 25% faster.',
+    description: "Arc Lightning has 25% increased Cast Speed.",
     stats: [stat('castSpeed', 'inc', 25)],
   },
 ];

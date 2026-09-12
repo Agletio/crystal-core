@@ -86,11 +86,11 @@ const BRANCHES: Branch[] = [
       id: 'bl_fixation',
       name: 'Harvest',
       description:
-        'A body dying with an Ailment gives 1 stack of each to the 2 nearest ' +
-        'enemies within 3 tiles.',
+        "When an enemy with Ailments dies, it applies 1 stack of each Ailment it had to the 2 nearest " +
+      "enemies within 3 tiles.",
       grants: { ailmentSpread: { radius: 3, stacks: 1, targets: 2 }, manaMultiplier: 1.15 },
       // Nothing to pass on when nothing is Poisoned: a kill Bursts instead.
-      under: { bl_spore: { description: 'A body killed by Spore Burst Bursts 1.5 tiles across, for 30% of the damage.', grants: { explodeOnKill: { radius: 1.5, multiplier: 0.3 }, manaMultiplier: 1.15 } } },
+      under: { bl_spore: { description: 'A body killed by Spore Burst triggers a Burst with a 1.5-tile radius, for 30% of the damage.', grants: { explodeOnKill: { radius: 1.5, multiplier: 0.3 }, manaMultiplier: 1.15 } } },
     },
     twigs: [
       {
@@ -98,7 +98,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'bl_saturation',
           name: 'Seeding',
-          description: 'It gives 1 more stack of each, to 1 more enemy.',
+          description: "Ailments spread on death apply 1 additional stack of each Ailment and affect 1 more enemy.",
           grants: { ailmentSpread: { radius: 0, stacks: 1, targets: 1 } },
           under: { bl_spore: { description: 'The Burst off a killed enemy deals a further 15% of the damage.', grants: { explodeOnKill: { radius: 0, multiplier: 0.15 } } } },
         },
@@ -108,7 +108,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'bl_deepening',
           name: 'Windborne',
-          description: 'It reaches 2.5 tiles further, and 1 more enemy.',
+          description: "Ailments spread on death reach 2.5 tiles farther and affect 1 more enemy.",
           grants: { ailmentSpread: { radius: 2.5, stacks: 0, targets: 1 } },
           under: { bl_spore: { description: 'The Burst off a killed enemy reaches 0.6 tiles further.', grants: { explodeOnKill: { radius: 0.6, multiplier: 0 } } } },
         },
@@ -119,7 +119,8 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'bl_takehold',
           name: 'Taking Hold',
-          description: 'It reaches 1.5 tiles further, gives 1 more stack of each, and 2 more enemies.',
+          description: "Ailments spread on death reach 1.5 tiles farther, apply 1 additional stack of each Ailment and " +
+          "affect 2 more enemies.",
           grants: {
             ailmentSpread: { radius: 1.5, stacks: 1, targets: 2 },
             manaMultiplier: 1.15,
@@ -164,7 +165,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'bl_shroud',
           name: 'Shroud',
-          description: '+2 Clouds, and every Cloud covers 15% more ground.',
+          description: "+2 Clouds. Clouds have 15% more radius.",
           grants: { extraFields: 2, fieldRadius: 1.15, manaMultiplier: 1.15 },
         },
       },
@@ -226,8 +227,8 @@ const BRANCHES: Branch[] = [
       },
     ],
     minors: [
-      { text: '+6% increased Poison Damage', grants: { ailmentMultiplier: 1.06 } },
-      { text: '+4% increased Poison Duration', grants: { ailmentDuration: 1.04 }, under: { bl_spore: { description: '+3% more damage', grants: { ailmentMultiplier: 1.03 } } } },
+      { text: "+6% more Poison Damage", grants: { ailmentMultiplier: 1.06 } },
+      { text: "+4% more Poison Duration", grants: { ailmentDuration: 1.04 }, under: { bl_spore: { description: '+3% more damage', grants: { ailmentMultiplier: 1.03 } } } },
       COMMON[1],
       COMMON[0],
     ],
@@ -238,7 +239,7 @@ const BRANCHES: Branch[] = [
     enabler: {
       id: 'bl_canopy',
       name: 'Canopy',
-      description: 'The Cloud covers 55% more ground, and its Poison deals 12% less damage.',
+      description: "Clouds have 55% more radius. Blight's Poison deals 12% less damage.",
       grants: { fieldRadius: 1.55, ailmentMultiplier: 0.88, manaMultiplier: 1.08 },
     },
     twigs: [
@@ -247,7 +248,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'bl_overgrowth',
           name: 'Overgrowth',
-          description: 'The Cloud covers 30% more ground again.',
+          description: "Clouds have 30% more radius.",
           grants: { fieldRadius: 1.3, manaMultiplier: 1.08 },
         },
       },
@@ -299,7 +300,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'bl_wither',
           name: 'Wither',
-          description: 'Blight deals 40% more damage to enemies below 33% of their life.',
+          description: "Blight deals 40% more damage to enemies at 33% of maximum Life or less.",
           grants: { moreVsLow: { below: 0.33, more: 0.4 } },
         },
       },
@@ -308,7 +309,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'bl_dread',
           name: 'Dread',
-          description: 'Blight deals 35% more damage to enemies above 80% of their life.',
+          description: "Blight deals 35% more damage to enemies at 80% of maximum Life or more.",
           grants: { moreVsFull: { above: 0.8, more: 0.35 } },
         },
       },
@@ -356,7 +357,7 @@ const TRUNK_NOTABLES: Notable[] = [
   {
     id: 'bl_reserves',
     name: 'Deep Rot',
-    description: 'Blight deals 45% more damage and is cast 20% slower.',
+    description: "Blight deals 45% more damage and has 20% reduced Cast Speed.",
     stats: [stat('damage', 'more', 45), stat('castSpeed', 'inc', -20)],
   },
   {
@@ -374,7 +375,7 @@ const TRUNK_NOTABLES: Notable[] = [
   {
     id: 'bl_quickening',
     name: 'Quickening',
-    description: 'Blight is cast 25% faster.',
+    description: "Blight has 25% increased Cast Speed.",
     stats: [stat('castSpeed', 'inc', 25)],
   },
 ];

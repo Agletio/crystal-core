@@ -199,7 +199,7 @@ export const GRANTS: GrantDef[] = [
     merge: 'product',
     say: (v) => {
       const n = asNumber(v);
-      return n === null ? null : `Flasks run ${more(n)} longer`;
+      return n === null ? null : `Flask effects have ${more(n)} more duration`;
     },
   },
   {
@@ -209,7 +209,7 @@ export const GRANTS: GrantDef[] = [
     merge: 'product',
     say: (v) => {
       const n = asNumber(v);
-      return n === null ? null : `Flasks restore ${more(n)} more per second`;
+      return n === null ? null : `Flasks recover ${more(n)} more Life or Mana per second`;
     },
   },
   {
@@ -223,7 +223,7 @@ export const GRANTS: GrantDef[] = [
       const n = asNumber(v);
       return n === null || n <= 0
         ? null
-        : `Each flask regains a Charge every ${(1 / n).toFixed(1)}s`;
+        : `Adds ${+(n * 100).toFixed(2)}% of a Charge per second to each flask's Charge recovery`;
     },
   },
   {
@@ -250,9 +250,9 @@ export const GRANTS: GrantDef[] = [
       const n = asNumber(v);
       return n === null || n <= 0
         ? null
-        : `A hit Stuns for ${n}s, at ${pct(stunChanceFor(0.1))} for a tenth of a body’s ` +
-          `maximum life and ${pct(stunChanceFor(0.8))} for four fifths of it — always on a ` +
-          'hit that kills outright';
+        : `Adds ${n}s to Stun duration. Base Stun chance depends on damage dealt: ` +
+          `${pct(stunChanceFor(0.1))} at 10% of the enemy's maximum Life, ` +
+          `${pct(stunChanceFor(0.8))} at 80%. Killing hits always Stun`;
     },
   },
   {
@@ -274,7 +274,7 @@ export const GRANTS: GrantDef[] = [
       const n = asNumber(v);
       return n === null
         ? null
-        : `A Stun Bursts for ${pct(n)} of your damage, ${WARRIOR.stunBurstRadius} tiles across`;
+        : `Stunning an enemy deals ${pct(n)} of your main skill's damage to other enemies within ${WARRIOR.stunBurstRadius} tiles, using your main damage type`;
     },
   },
   {
@@ -299,7 +299,7 @@ export const GRANTS: GrantDef[] = [
     merge: 'sum',
     say: (v) => {
       const n = asNumber(v);
-      return n === null ? null : `${pct(n)} of damage taken, Ailments included, is paid out of mana first`;
+      return n === null ? null : `Adds ${+(n * 100).toFixed(1)} percentage points to the share of damage absorbed by Mana before Life, including Ailments; capped at ${pct(MANA.shieldCap)}`;
     },
   },
   {
@@ -321,7 +321,7 @@ export const GRANTS: GrantDef[] = [
     merge: 'sum',
     say: (v) => {
       const n = asNumber(v);
-      return n === null ? null : `${pct(n)} of the damage you deal returns to you as mana`;
+      return n === null ? null : `Recover Mana equal to an additional ${pct(n)} of damage dealt by hits`;
     },
   },
   // --- what a BRANCH of a trade hands over ---------------------------------
@@ -337,7 +337,7 @@ export const GRANTS: GrantDef[] = [
     merge: 'sum',
     say: (v) => {
       const n = asNumber(v);
-      return n === null ? null : `While a flask is running you move ${Math.round(n)}% faster`;
+      return n === null ? null : `Adds ${Math.round(n)} percentage points to your Movement Speed bonus during flask effects`;
     },
   },
   {
@@ -354,14 +354,14 @@ export const GRANTS: GrantDef[] = [
     id: 'potionFree',
     what: 'a running flask pays for your uses',
     reads: [STATS],
-    say: () => 'While a flask is running your uses cost no mana',
+    say: () => 'Your main skill costs 0 Mana during flask effects. Overcharge still costs Mana',
   },
   {
     id: 'wardWhole',
     what: 'mana pays the WHOLE of an Ailment rather than a share',
     reads: [STATS],
     say: () =>
-      'Mana pays the whole of an Ailment rather than its share, while there is mana to pay with',
+      'Mana absorbs all Ailment damage before Life, while you have enough Mana to pay for it',
   },
   // --- what a PASSIVE hands over -------------------------------------------
   //
@@ -440,7 +440,7 @@ export const GRANTS: GrantDef[] = [
     merge: 'sum',
     say: (v) => {
       const n = asNumber(v);
-      return n === null ? null : `${pct(n)} of the damage you deal returns to you as life`;
+      return n === null ? null : `Recover Life equal to an additional ${pct(n)} of damage dealt by hits`;
     },
   },
   {
@@ -513,7 +513,7 @@ export const GRANTS: GrantDef[] = [
       const n = asNumber(v);
       return n === null
         ? null
-        : `A use you cannot pay for spends life instead, ${n} life for every point of mana — so you are never Starved, only bleeding`;
+        : `When you cannot pay your main skill's Mana cost, spend your remaining Mana and pay ${n} Life per missing Mana instead of becoming Starved. This can kill you`;
     },
   },
   {
@@ -523,7 +523,7 @@ export const GRANTS: GrantDef[] = [
     merge: 'product',
     say: (v) => {
       const n = asNumber(v);
-      return n === null ? null : `Overcharge adds ${n}x what it spent rather than matching it`;
+      return n === null ? null : `Multiplies the Cold damage added per Mana spent on Overcharge by ${n}`;
     },
   },
   {
@@ -533,7 +533,7 @@ export const GRANTS: GrantDef[] = [
     merge: 'sum',
     say: (v) => {
       const n = asNumber(v);
-      return n === null ? null : `${pct(n)} of your maximum life is added to your mana pool`;
+      return n === null ? null : `Adds ${pct(n)} of maximum Life to base Mana, before modifiers to maximum Mana`;
     },
   },
 
@@ -564,7 +564,7 @@ export const GRANTS: GrantDef[] = [
     merge: 'sum',
     say: (v) => {
       const n = asNumber(v);
-      return n === null ? null : `A Block deals ${pct(n)} of your damage back to what you blocked`;
+      return n === null ? null : `Blocking a hit deals additional Physical damage to the attacker equal to ${pct(n)} of your main skill's damage`;
     },
   },
   {
@@ -586,7 +586,7 @@ export const GRANTS: GrantDef[] = [
       const n = asNumber(v);
       return n === null
         ? null
-        : `For ${WARRIOR.riposteSeconds}s after a Block your hits deal ${Math.round(n)}% more damage`;
+        : `Adds ${Math.round(n)} percentage points to your hit damage bonus for ${WARRIOR.riposteSeconds}s after a Block`;
     },
   },
   {
@@ -598,7 +598,7 @@ export const GRANTS: GrantDef[] = [
       const n = asNumber(v);
       return n === null
         ? null
-        : `A Block Slows what you blocked by ${Math.round(n)}% for ${WARRIOR.staggerSeconds}s`;
+        : `Blocking a hit Slows the attacker by ${Math.round(n)}% for ${WARRIOR.staggerSeconds}s`;
     },
   },
   {
@@ -632,7 +632,7 @@ export const GRANTS: GrantDef[] = [
     merge: 'max',
     say: (v) => {
       const n = asNumber(v);
-      return n === null ? null : `Your hits ignore ${pct(n)} of what a body's Armour blunts`;
+      return n === null ? null : `Your hits ignore ${pct(n)} of the enemy's damage reduction from Armour`;
     },
   },
   {
@@ -646,7 +646,7 @@ export const GRANTS: GrantDef[] = [
       const n = asNumber(v);
       return n === null
         ? null
-        : `Your body armour's rating counts for nothing, and your maximum life is ${pct(n)} higher`;
+        : `Your body armour provides no base Armour rating. Gain ${pct(n)} more maximum Life`;
     },
   },
   {
@@ -656,7 +656,7 @@ export const GRANTS: GrantDef[] = [
     merge: 'sum',
     say: (v) => {
       const n = asNumber(v);
-      return n === null ? null : `${pct(n)} of what your Armour blunts also blunts Ailments`;
+      return n === null ? null : `Gain Ailment damage and effect reduction equal to ${pct(n)} of your Armour's damage reduction`;
     },
   },
   {
@@ -747,14 +747,14 @@ export const GRANTS: GrantDef[] = [
   },
   {
     id: 'offHandShare',
-    what: 'the off hand puts more of itself into every hit',
+    what: 'the off-hand weapon contributes additional damage to attack hits',
     reads: [STATS],
     merge: 'sum',
     say: (v) => {
       const n = asNumber(v);
       return n === null
         ? null
-        : `Your off hand puts a further ${pct(n)} of its own damage into every hit`;
+        : `While dual wielding, your off-hand weapon contributes an additional ${pct(n)} of its damage to each attack hit`;
     },
   },
   {
@@ -765,10 +765,13 @@ export const GRANTS: GrantDef[] = [
     say: (v) => {
       const n = asNumber(v);
       if (n === null) return null;
+      const labels: Record<string, string> = {
+        critChance: 'Critical Chance', attackSpeed: 'increased Attack Speed',
+        damage: 'increased Damage', castSpeed: 'increased Cast Speed',
+      };
       const each = Object.entries(WEAPON_SPECIALITY)
-        .filter(([, s], i, all) => all.findIndex(([, o]) => o.stat === s.stat) === i)
-        .map(([family, s]) => `${Math.round(s.per * n)}% per ${family}`);
-      return `Every weapon you hold grants what its family is for — ${each.join(', ')}`;
+        .map(([family, s]) => `+${+(s.per * n).toFixed(2)}% ${labels[s.stat] ?? s.stat} per ${family}`);
+      return `Each equipped weapon grants its family bonus: ${each.join('; ')}`;
     },
   },
   {
@@ -780,7 +783,7 @@ export const GRANTS: GrantDef[] = [
       const n = asNumber(v);
       return n === null
         ? null
-        : `While both your weapons are the same family you deal ${Math.round(n)}% more damage`;
+        : `Adds ${Math.round(n)} percentage points to your damage bonus while dual wielding weapons of the same family`;
     },
   },
   {
@@ -792,7 +795,7 @@ export const GRANTS: GrantDef[] = [
       const n = asNumber(v);
       return n === null
         ? null
-        : `While your two weapons are different families you deal ${Math.round(n)}% more damage`;
+        : `Adds ${Math.round(n)} percentage points to your damage bonus while dual wielding weapons of different families`;
     },
   },
   {
@@ -816,7 +819,7 @@ export const GRANTS: GrantDef[] = [
       const n = asNumber(v);
       return n === null
         ? null
-        : `The first hit you land on a body deals ${Math.round(n)}% more damage`;
+        : `Your first hit against each enemy deals ${Math.round(n)}% more damage`;
     },
   },
   {
@@ -828,7 +831,7 @@ export const GRANTS: GrantDef[] = [
       const n = asNumber(v);
       return n === null
         ? null
-        : `A Critical strikes again with your off hand for ${Math.round(n)}% of the hit`;
+        : `While dual wielding, Critical hits deal an additional ${Math.round(n)}% of their damage to the same enemy`;
     },
   },
   {
@@ -864,7 +867,7 @@ export const GRANTS: GrantDef[] = [
       const n = asNumber(v);
       return n === null
         ? null
-        : `For ${ROGUE.hasteSeconds}s after a kill you move ${Math.round(n)}% faster`;
+        : `Adds ${Math.round(n)} percentage points to your Movement Speed bonus for ${ROGUE.hasteSeconds}s after a kill`;
     },
   },
 
