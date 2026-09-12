@@ -14,12 +14,12 @@ const COMMON: Minor[] = [
   { text: '+5% increased Movement Speed', stats: [stat('moveSpeed', 'inc', 5)] },
   { text: '3% reduced Skill Cooldown', stats: [stat('cooldown', 'inc', -3)] },
   {
-    text: 'Your movement skill carries you 8% more tiles',
+    text: "Leap has 8% more maximum travel distance",
     grants: { moveDistance: 1.08 },
   },
   { text: '+6% increased Movement Speed', stats: [stat('moveSpeed', 'inc', 6)] },
   {
-    text: 'Each use of your movement skill restores 2% of your mana pool',
+    text: "Each use of your movement skill restores 2% of your maximum Mana",
     grants: { moveMana: 0.02 },
   },
   { text: '4% reduced Skill Cooldown', stats: [stat('cooldown', 'inc', -4)] },
@@ -32,7 +32,7 @@ const BRANCHES: Branch[] = [
     enabler: {
       id: 'lp_impact',
       name: 'Impact',
-      description: 'Landing Slows what you came down on by 45% for 5s.',
+      description: "Leap Slows the enemy you land on by 45% for 5s.",
       grants: { landingPin: { slow: 0.45, seconds: 5 } },
     },
     twigs: [
@@ -41,7 +41,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'lp_pinned',
           name: 'Pinned',
-          description: 'What you came down on is Slowed by a further 20%.',
+          description: "Adds 20 percentage points to the Slow from Impact, up to a maximum Slow of 90%.",
           grants: { pinSlow: 0.2 },
         },
       },
@@ -50,7 +50,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'lp_crushing',
           name: 'Crushing Weight',
-          description: 'What you came down on is Slowed for 4s longer.',
+          description: "The Slow from Impact lasts 4s longer.",
           grants: { pinLonger: 4 },
         },
       },
@@ -60,7 +60,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'lp_standing',
           name: 'Standing Over',
-          description: 'For 3s after landing you deal 25% more damage.',
+          description: "For 3s after Leap, your hits deal 25% more damage. Adds to other damage bonuses after Leap.",
           grants: { afterStepDamage: 0.25 },
         },
       },
@@ -82,7 +82,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'lp_faultline',
           name: 'Fault',
-          description: 'The tremor reaches 60% further.',
+          description: "Tremor has 60% more radius.",
           grants: { landingRadius: 1.6 },
         },
       },
@@ -91,7 +91,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'lp_aftershock',
           name: 'Aftershock',
-          description: 'The tremor Slows by a further 25%.',
+          description: "Adds 25 percentage points to the Slow from Tremor, up to a maximum Slow of 90%.",
           grants: { landingMore: 0.25 },
         },
       },
@@ -101,7 +101,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'lp_lasting',
           name: 'Lasting Ground',
-          description: 'The tremor lasts 4s longer.',
+          description: "The Slow from Tremor lasts 4s longer.",
           grants: { landingSeconds: 4 },
         },
       },
@@ -114,7 +114,7 @@ const BRANCHES: Branch[] = [
     enabler: {
       id: 'lp_footing',
       name: 'Sure Footing',
-      description: '35% reduced movement skill cooldown.',
+      description: "Leap has 35% less cooldown.",
       grants: { moveCooldown: 0.65 },
     },
     twigs: [
@@ -123,7 +123,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'lp_rebound',
           name: 'Rebound',
-          description: 'A further 25% reduced movement skill cooldown.',
+          description: "Leap has 25% less cooldown. Multiplies with Sure Footing.",
           grants: { moveCooldown: 0.75 },
         },
       },
@@ -132,7 +132,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'lp_charge',
           name: 'Charging In',
-          description: 'For 3s after landing you move 30% faster.',
+          description: "For 3s after landing you have 30% more Movement Speed.",
           grants: { afterStepSpeed: 0.3 },
         },
       },
@@ -142,7 +142,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'lp_pounce',
           name: 'Pounce',
-          description: 'A Leap that comes down on an enemy comes back 40% sooner.',
+          description: "Leap has 40% less cooldown when you land on an enemy.",
           grants: { pressedCooldown: 0.6 },
         },
       },
@@ -155,7 +155,7 @@ const BRANCHES: Branch[] = [
     enabler: {
       id: 'lp_longfall',
       name: 'Long Fall',
-      description: 'Your movement skill carries you 60% more tiles.',
+      description: "Leap has 60% more maximum travel distance.",
       grants: { moveDistance: 1.6 },
     },
     twigs: [
@@ -164,7 +164,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'lp_further',
           name: 'Further',
-          description: 'Your movement skill carries you a further 40% of its tiles.',
+          description: "Leap has 40% more maximum travel distance.",
           grants: { moveDistance: 1.4 },
         },
       },
@@ -173,7 +173,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'lp_headlong',
           name: 'Headlong',
-          description: 'For 3s after landing you deal 20% more damage.',
+          description: "For 3s after Leap, your hits deal 20% more damage. Adds to other damage bonuses after Leap.",
           grants: { afterStepDamage: 0.2 },
         },
       },
@@ -183,7 +183,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'lp_skyfall',
           name: 'Skyfall',
-          description: 'Your movement skill carries you a further 30% of its tiles.',
+          description: "Leap has 30% more maximum travel distance.",
           grants: { moveDistance: 1.3 },
         },
       },
@@ -196,7 +196,7 @@ const BRANCHES: Branch[] = [
     enabler: {
       id: 'lp_reprieve',
       name: 'Reprieve',
-      description: 'Landing restores 8% of your life.',
+      description: "Landing restores 8% of your maximum Life.",
       grants: { moveHeal: 0.08 },
     },
     twigs: [
@@ -205,7 +205,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'lp_secondbreath',
           name: 'Second Breath',
-          description: 'Landing restores a further 6% of your life.',
+          description: "Landing restores a further 6% of your maximum Life.",
           grants: { moveHeal: 0.06 },
         },
       },
@@ -214,7 +214,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'lp_knitting',
           name: 'Knitting',
-          description: 'For 3s after landing you regenerate 3% of your life a second.',
+          description: "For 3s after landing you regenerate 3% of your maximum Life a second.",
           grants: { afterStepRegen: { life: 0.03 } },
         },
       },
@@ -224,7 +224,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'lp_drawingbreath',
           name: 'Drawing Breath',
-          description: 'For 3s after landing you regenerate 4% of your mana pool a second.',
+          description: "For 3s after landing you regenerate 4% of your maximum Mana a second.",
           grants: { afterStepRegen: { mana: 0.04 } },
         },
       },
@@ -237,7 +237,8 @@ const BRANCHES: Branch[] = [
     enabler: {
       id: 'lp_bracing',
       name: 'Bracing',
-      description: 'For 3s after landing you take 25% less damage.',
+      description: "For 3s after Leap, take 25% less damage from hits and boss drains. Movement damage reductions " +
+      "add, up to 80%.",
       grants: { afterStepGuard: 0.25 },
     },
     twigs: [
@@ -246,7 +247,8 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'lp_setstance',
           name: 'Set Stance',
-          description: 'A further 20% less damage taken after landing.',
+          description: "For 3s after Leap, take 20% less damage from hits and boss drains. Movement damage reductions " +
+          "add, up to 80%.",
           grants: { afterStepGuard: 0.2 },
         },
       },
@@ -255,7 +257,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'lp_dugin',
           name: 'Dug In',
-          description: 'The window after landing lasts 2s longer.',
+          description: "Bonuses granted after Leap last 2s longer.",
           grants: { afterStepLonger: 2 },
         },
       },
@@ -265,7 +267,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'lp_ironfooted',
           name: 'Iron Footed',
-          description: 'The window after landing lasts 2s longer.',
+          description: "Bonuses granted after Leap last 2s longer.",
           grants: { afterStepLonger: 2 },
         },
       },
@@ -290,25 +292,26 @@ const TRUNK_NOTABLES: Notable[] = [
   {
     id: 'lp_longlegs',
     name: 'Longlegs',
-    description: 'Your movement skill carries you 25% more tiles.',
+    description: "Leap has 25% more maximum travel distance.",
     grants: { moveDistance: 1.25 },
   },
   {
     id: 'lp_wellspring',
     name: 'Wellspring',
-    description: 'Each use of your movement skill restores 10% of your mana pool.',
+    description: "Each use of your movement skill restores 10% of your maximum Mana.",
     grants: { moveMana: 0.1 },
   },
   {
     id: 'lp_fleet',
     name: 'Fleet',
-    description: 'For 3s after your movement skill you move 20% faster.',
+    description: "For 3s after your movement skill you have 20% more Movement Speed.",
     grants: { afterStepSpeed: 0.2 },
   },
   {
     id: 'lp_braced',
     name: 'Braced',
-    description: 'For 3s after your movement skill you take 15% less damage.',
+    description: "For 3s after Leap, take 15% less damage from hits and boss drains. Movement damage reductions " +
+    "add, up to 80%.",
     grants: { afterStepGuard: 0.15 },
   },
 ];

@@ -45,7 +45,7 @@ export const ALCHEMIST: TradeSpec = {
       gate: {
         id: 'alc_volatile',
         name: 'Volatile Mixture',
-        description: 'While a flask is running you deal 20% more damage.',
+        description: "While a flask is running, your hits deal 20% more damage.",
         grants: { potionMore: 1.2 },
       },
       branches: [
@@ -60,13 +60,15 @@ export const ALCHEMIST: TradeSpec = {
             {
               id: 'alc_touchpaper',
               name: 'Touchpaper',
-              description: '15% more damage while a flask is running.',
+              description: "While a flask is running, your hits deal 15% more damage. Multiplies with other flask damage " +
+              "bonuses.",
               grants: { potionMore: 1.15 },
             },
             {
               id: 'alc_detonation',
               name: 'Detonation',
-              description: '30% more damage while a flask is running.',
+              description: "While a flask is running, your hits deal 30% more damage. Multiplies with other flask damage " +
+              "bonuses.",
               grants: { potionMore: 1.3 },
             },
           ],
@@ -104,7 +106,7 @@ export const ALCHEMIST: TradeSpec = {
       gate: {
         id: 'alc_quicksilver',
         name: 'Quicksilver',
-        description: 'While a flask is running you attack and cast 15% faster.',
+        description: "While a flask is running, you have 15% more Attack and Cast Speed.",
         grants: { potionHaste: 15 },
       },
       branches: [
@@ -119,13 +121,13 @@ export const ALCHEMIST: TradeSpec = {
             {
               id: 'alc_rising',
               name: 'Rising Fever',
-              description: '+10% increased attack and cast speed while a flask is running.',
+              description: "Adds 10 percentage points to your Attack and Cast Speed bonus while a flask is running.",
               grants: { potionHaste: 10 },
             },
             {
               id: 'alc_fever',
               name: 'Fever',
-              description: '+20% increased attack and cast speed while a flask is running.',
+              description: "Adds 20 percentage points to your Attack and Cast Speed bonus while a flask is running.",
               grants: { potionHaste: 20 },
             },
           ],
@@ -141,13 +143,13 @@ export const ALCHEMIST: TradeSpec = {
             {
               id: 'alc_surefoot',
               name: 'Sure Footing',
-              description: 'While a flask is running you move 18% faster.',
+              description: 'Gain 18% more Movement Speed during flask effects.',
               grants: { potionMove: 18 },
             },
             {
               id: 'alc_lightfoot',
               name: 'Light on the Rock',
-              description: 'While a flask is running you move 30% faster.',
+              description: 'Adds 30 percentage points to your Movement Speed bonus during flask effects.',
               grants: { potionMove: 30 },
             },
           ],
@@ -206,7 +208,7 @@ export const ALCHEMIST: TradeSpec = {
             {
               id: 'alc_deepcut',
               name: 'The Long Cut',
-              description: 'A Critical leaves you dealing 35% more damage for 4s.',
+              description: "Critical hits deal no extra damage. Landing one grants 35% more hit damage for 4s.",
               grants: { critIntoBuff: { more: 35, seconds: 4 } },
             },
           ],
@@ -222,7 +224,7 @@ export const ALCHEMIST: TradeSpec = {
       gate: {
         id: 'alc_slow_burn',
         name: 'Slow Burn',
-        description: 'Flasks run 50% longer.',
+        description: "Flask effects have 50% more duration.",
         grants: { potionDuration: 1.5 },
       },
       branches: [
@@ -237,13 +239,13 @@ export const ALCHEMIST: TradeSpec = {
             {
               id: 'alc_reduced',
               name: 'Reduced',
-              description: 'Flasks restore 20% more per second.',
+              description: "Flasks recover 20% more Life or Mana per second.",
               grants: { potionPotency: 1.2 },
             },
             {
               id: 'alc_thickened',
               name: 'Thickened',
-              description: 'Flasks restore 40% more per second.',
+              description: "Flasks recover 40% more Life or Mana per second. Multiplies with Reduced.",
               grants: { potionPotency: 1.4 },
             },
           ],
@@ -259,13 +261,15 @@ export const ALCHEMIST: TradeSpec = {
             {
               id: 'alc_annealed',
               name: 'Annealed',
-              description: 'While a flask is running you take 18% less damage.',
+              description: "While a flask is running, you take 18% less damage from hits and boss drains. Adds to other " +
+              "flask damage reduction, up to 80%.",
               grants: { potionLess: 0.18 },
             },
             {
               id: 'alc_tempered',
               name: 'Tempered Glass',
-              description: 'While a flask is running you take 30% less damage.',
+              description: "Adds 30 percentage points to your damage reduction from hits and boss drains while a flask is " +
+              "running, up to 80%.",
               grants: { potionLess: 0.3 },
             },
           ],
@@ -296,15 +300,14 @@ export const ALCHEMIST: TradeSpec = {
             {
               id: 'alc_runoff',
               name: 'Runoff',
-              description: 'Each flask regains a Charge every 20s of a descent.',
+              description: "Adds 0.05 Charges per second to each flask's recovery rate. Combines with The Still for 1 Charge every 8.3s.",
               grants: { chargeRegen: 0.05 },
             },
             {
               id: 'alc_cascade',
               name: 'Cascade',
               description:
-                'Another Charge every 12.5s on its own, and one every 6.7s with ' +
-                'the Still in front of it.',
+                "Adds 0.08 Charges per second to each flask's recovery rate. With The Still and Runoff, each flask recovers 1 Charge every 5s.",
               grants: { chargeRegen: 0.08 },
             },
           ],
@@ -320,13 +323,13 @@ export const ALCHEMIST: TradeSpec = {
             {
               id: 'alc_measured',
               name: 'A Measured Draught',
-              description: 'Flasks run 30% longer.',
+              description: "Flask effects have 30% more duration.",
               grants: { potionDuration: 1.3 },
             },
             {
               id: 'alc_frugal',
               name: 'Nothing Wasted',
-              description: 'While a flask is running your uses cost 0 mana.',
+              description: "Your main skill costs 0 Mana during flask effects. Overcharge still costs Mana.",
               grants: { potionFree: true },
             },
           ],

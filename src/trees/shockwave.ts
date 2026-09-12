@@ -96,7 +96,7 @@ const BRANCHES: Branch[] = [
     enabler: {
       id: 'sw_pressure',
       name: 'Fault Line',
-      description: 'Every 3rd Cone leaves a Cloud reaching 2.2 tiles where it lands.',
+      description: "Every 3rd use creates a Cloud with a 2.2-tile radius around the target.",
       grants: { fieldOnCast: { every: 3, radius: 2.2 }, manaMultiplier: 1.15 },
     },
     twigs: [
@@ -114,7 +114,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'sw_deadweight',
           name: 'Subsidence',
-          description: 'Clouds cover 45% more ground.',
+          description: "Clouds have 45% more radius.",
           grants: { fieldRadius: 1.45, manaMultiplier: 1.08 },
         },
       },
@@ -183,7 +183,7 @@ const BRANCHES: Branch[] = [
       },
     ],
     minors: [
-      { text: '+6% increased Bleed Damage', grants: { ailmentMultiplier: 1.06 } },
+      { text: "+6% more Bleed Damage", grants: { ailmentMultiplier: 1.06 } },
       { text: '+9% chance to apply Bleed', stats: [stat('ailmentChance', 'flat', 9, ['bleed'])] },
       COMMON[0],
       COMMON[3],
@@ -263,7 +263,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'sw_crest',
           name: 'Crest',
-          description: 'Shockwave deals 35% more damage to enemies above 80% of their life.',
+          description: "Shockwave deals 35% more damage to enemies at 80% of maximum Life or more.",
           grants: { moreVsFull: { above: 0.8, more: 0.35 } },
         },
       },
@@ -273,7 +273,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'sw_trough',
           name: 'Trough',
-          description: 'Shockwave deals 35% more damage to enemies below 33% of their life.',
+          description: "Shockwave deals 35% more damage to enemies at 33% of maximum Life or less.",
           grants: { moreVsLow: { below: 0.33, more: 0.35 } },
         },
       },
@@ -286,7 +286,7 @@ const BRANCHES: Branch[] = [
     enabler: {
       id: 'sw_ruin',
       name: 'Ruin',
-      description: 'Shockwave deals 25% more damage to enemies carrying an Ailment.',
+      description: "Shockwave deals 25% more damage to enemies affected by an Ailment.",
       grants: { moreVsAiling: 0.25 },
     },
     twigs: [
@@ -295,7 +295,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'sw_pulverise',
           name: 'Pulverise',
-          description: 'Shockwave deals 30% more damage and swings 15% slower.',
+          description: "Shockwave deals 30% more damage and has 15% reduced Attack Speed.",
           stats: [stat('damage', 'more', 30), stat('attackSpeed', 'inc', -15)],
         },
       },
@@ -314,7 +314,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'sw_relentless',
           name: 'Relentless',
-          description: 'Shockwave swings 30% faster.',
+          description: "Shockwave has 30% increased Attack Speed.",
           stats: [stat('attackSpeed', 'inc', 30)],
         },
       },
@@ -358,13 +358,13 @@ const TRUNK_NOTABLES: Notable[] = [
   {
     id: 'sw_hammerblow',
     name: 'Hammer Blow',
-    description: 'Shockwave deals 45% more damage and swings 20% slower.',
+    description: "Shockwave deals 45% more damage and has 20% reduced Attack Speed.",
     stats: [stat('damage', 'more', 45), stat('attackSpeed', 'inc', -20)],
   },
   {
     id: 'sw_bracing',
     name: 'Bracing',
-    description: 'Shockwave swings 18% faster and reaches 10% further.',
+    description: "Shockwave has 18% increased Attack Speed and has 10% increased Attack Range.",
     stats: [stat('attackSpeed', 'inc', 18), stat('attackRange', 'inc', 10)],
   },
   {
@@ -376,7 +376,7 @@ const TRUNK_NOTABLES: Notable[] = [
   {
     id: 'sw_cadence',
     name: 'Cadence',
-    description: 'Shockwave swings 25% faster.',
+    description: "Shockwave has 25% increased Attack Speed.",
     stats: [stat('attackSpeed', 'inc', 25)],
   },
 ];

@@ -15,12 +15,12 @@ const COMMON: Minor[] = [
   { text: '+5% increased Movement Speed', stats: [stat('moveSpeed', 'inc', 5)] },
   { text: '3% reduced Skill Cooldown', stats: [stat('cooldown', 'inc', -3)] },
   {
-    text: 'Your movement skill carries you 8% more tiles',
+    text: "Blink has 8% more maximum travel distance",
     grants: { moveDistance: 1.08 },
   },
   { text: '+6% increased Movement Speed', stats: [stat('moveSpeed', 'inc', 6)] },
   {
-    text: 'Each use of your movement skill restores 2% of your mana pool',
+    text: "Each use of your movement skill restores 2% of your maximum Mana",
     grants: { moveMana: 0.02 },
   },
   { text: '4% reduced Skill Cooldown', stats: [stat('cooldown', 'inc', -4)] },
@@ -33,7 +33,7 @@ const BRANCHES: Branch[] = [
     enabler: {
       id: 'bk_wake',
       name: 'Backwash',
-      description: 'Blink Slows enemies within 3 tiles of where it LEFT by 30% for 4s.',
+      description: "Blink Slows enemies within 3 tiles of your starting position by 30% for 4s.",
       grants: { blinkWake: { radius: 3, slow: 0.3, seconds: 4 } },
     },
     twigs: [
@@ -42,7 +42,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'bk_undertow',
           name: 'Undertow',
-          description: 'The wake reaches 60% further.',
+          description: "Backwash has 60% more radius.",
           grants: { wakeRadius: 1.6 },
         },
       },
@@ -51,7 +51,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'bk_riptide',
           name: 'Riptide',
-          description: 'The wake Slows by a further 25%.',
+          description: "Adds 25 percentage points to the Slow from Backwash, up to a maximum Slow of 90%.",
           grants: { wakeSlow: 0.25 },
         },
       },
@@ -61,7 +61,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'bk_deepwake',
           name: 'Deep Water',
-          description: 'The wake lasts 3s longer.',
+          description: "The Slow from Backwash lasts 3s longer.",
           grants: { wakeSeconds: 3 },
         },
       },
@@ -74,7 +74,7 @@ const BRANCHES: Branch[] = [
     enabler: {
       id: 'bk_current',
       name: 'Aftercurrent',
-      description: 'Each Blink restores 8% of your mana pool.',
+      description: "Each Blink restores 8% of your maximum Mana.",
       grants: { moveMana: 0.08 },
     },
     twigs: [
@@ -83,7 +83,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'bk_aftercurrent',
           name: 'Undercurrent',
-          description: 'Each Blink restores a further 7% of your mana pool.',
+          description: "Each Blink restores a further 7% of your maximum Mana.",
           grants: { moveMana: 0.07 },
         },
       },
@@ -92,7 +92,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'bk_syphon',
           name: 'Syphon',
-          description: 'For 3s after a Blink you regenerate 4% of your mana pool a second.',
+          description: "For 3s after a Blink you regenerate 4% of your maximum Mana a second.",
           grants: { afterStepRegen: { mana: 0.04 } },
         },
       },
@@ -102,7 +102,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'bk_quenching',
           name: 'Quenching',
-          description: 'For 3s after a Blink you regenerate 3% of your life a second.',
+          description: "For 3s after a Blink you regenerate 3% of your maximum Life a second.",
           grants: { afterStepRegen: { life: 0.03 } },
         },
       },
@@ -115,7 +115,7 @@ const BRANCHES: Branch[] = [
     enabler: {
       id: 'bk_quickening',
       name: 'Quickening',
-      description: '35% reduced movement skill cooldown.',
+      description: "Blink has 35% less cooldown.",
       grants: { moveCooldown: 0.65 },
     },
     twigs: [
@@ -124,7 +124,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'bk_flicker',
           name: 'Flicker',
-          description: 'A further 25% reduced movement skill cooldown.',
+          description: "Blink has 25% less cooldown. Multiplies with Quickening.",
           grants: { moveCooldown: 0.75 },
         },
       },
@@ -133,7 +133,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'bk_slipstream',
           name: 'Slipstream',
-          description: 'For 3s after a Blink you move 30% faster.',
+          description: "For 3s after a Blink you have 30% more Movement Speed.",
           grants: { afterStepSpeed: 0.3 },
         },
       },
@@ -143,7 +143,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'bk_secondwind',
           name: 'Second Wind',
-          description: 'A Blink taken while something is in reach of you comes back 40% sooner.',
+          description: "Blink has 40% less cooldown when it teleports you away from a nearby enemy.",
           grants: { pressedCooldown: 0.6 },
         },
       },
@@ -156,7 +156,7 @@ const BRANCHES: Branch[] = [
     enabler: {
       id: 'bk_longstep',
       name: 'Longstep',
-      description: 'Your movement skill carries you 60% more tiles.',
+      description: "Blink has 60% more maximum travel distance.",
       grants: { moveDistance: 1.6 },
     },
     twigs: [
@@ -165,7 +165,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'bk_farstep',
           name: 'Farstep',
-          description: 'Your movement skill carries you a further 40% of its tiles.',
+          description: "Blink has 40% more maximum travel distance.",
           grants: { moveDistance: 1.4 },
         },
       },
@@ -174,7 +174,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'bk_reprisal',
           name: 'Reprisal',
-          description: 'For 3s after a Blink you deal 25% more damage.',
+          description: "For 3s after Blink, your hits deal 25% more damage. Adds to other damage bonuses after Blink.",
           grants: { afterStepDamage: 0.25 },
         },
       },
@@ -184,7 +184,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'bk_bolt',
           name: 'Boltstep',
-          description: 'A Blink fires when something is within 1.6 tiles, hit or not.',
+          description: "Blink can teleport you away from an enemy within 1.6 tiles without waiting for you to be hit.",
           grants: { kiteUnhurt: true },
         },
       },
@@ -197,7 +197,8 @@ const BRANCHES: Branch[] = [
     enabler: {
       id: 'bk_afterimage',
       name: 'Afterimage',
-      description: 'For 3s after a Blink you take 25% less damage.',
+      description: "For 3s after Blink, take 25% less damage from hits and boss drains. Movement damage reductions " +
+      "add, up to 80%.",
       grants: { afterStepGuard: 0.25 },
     },
     twigs: [
@@ -206,7 +207,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'bk_ghosting',
           name: 'Ghosting',
-          description: 'The window after a Blink lasts 2s longer.',
+          description: "Bonuses granted after Blink last 2s longer.",
           grants: { afterStepLonger: 2 },
         },
       },
@@ -215,7 +216,8 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'bk_paling',
           name: 'Paling',
-          description: 'A further 20% less damage taken after a Blink.',
+          description: "For 3s after Blink, take 20% less damage from hits and boss drains. Movement damage reductions " +
+          "add, up to 80%.",
           grants: { afterStepGuard: 0.2 },
         },
       },
@@ -225,7 +227,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'bk_vanishing',
           name: 'Vanishing',
-          description: 'For 3s after a Blink you regenerate 4% of your life a second.',
+          description: "For 3s after a Blink you regenerate 4% of your maximum Life a second.",
           grants: { afterStepRegen: { life: 0.04 } },
         },
       },
@@ -238,7 +240,7 @@ const BRANCHES: Branch[] = [
     enabler: {
       id: 'bk_distance',
       name: 'Keeping Distance',
-      description: 'Blink keeps 40% more ground between you and what pushed you.',
+      description: "Blink teleports you up to 40% farther when retreating from an enemy.",
       grants: { kiteFurther: 1.4 },
     },
     twigs: [
@@ -247,7 +249,8 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'bk_looseleash',
           name: 'Loose Leash',
-          description: 'A further 40% ground kept between you and what pushed you.',
+          description: "Blink teleports you up to 40% farther when retreating from an enemy. Multiplies with Keeping " +
+          "Distance.",
           grants: { kiteFurther: 1.4 },
         },
       },
@@ -256,7 +259,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'bk_cutandrun',
           name: 'Cut and Run',
-          description: 'For 3s after a Blink you move 25% faster.',
+          description: "For 3s after a Blink you have 25% more Movement Speed.",
           grants: { afterStepSpeed: 0.25 },
         },
       },
@@ -266,7 +269,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'bk_standoff',
           name: 'Standoff',
-          description: 'For 3s after a Blink you deal 20% more damage.',
+          description: "For 3s after Blink, your hits deal 20% more damage. Adds to other damage bonuses after Blink.",
           grants: { afterStepDamage: 0.2 },
         },
       },
@@ -291,25 +294,26 @@ const TRUNK_NOTABLES: Notable[] = [
   {
     id: 'bk_longlegs',
     name: 'Longlegs',
-    description: 'Your movement skill carries you 25% more tiles.',
+    description: "Blink has 25% more maximum travel distance.",
     grants: { moveDistance: 1.25 },
   },
   {
     id: 'bk_wellspring',
     name: 'Wellspring',
-    description: 'Each use of your movement skill restores 10% of your mana pool.',
+    description: "Each use of your movement skill restores 10% of your maximum Mana.",
     grants: { moveMana: 0.1 },
   },
   {
     id: 'bk_fleet',
     name: 'Fleet',
-    description: 'For 3s after your movement skill you move 20% faster.',
+    description: "For 3s after your movement skill you have 20% more Movement Speed.",
     grants: { afterStepSpeed: 0.2 },
   },
   {
     id: 'bk_braced',
     name: 'Braced',
-    description: 'For 3s after your movement skill you take 15% less damage.',
+    description: "For 3s after Blink, take 15% less damage from hits and boss drains. Movement damage reductions " +
+    "add, up to 80%.",
     grants: { afterStepGuard: 0.15 },
   },
 ];

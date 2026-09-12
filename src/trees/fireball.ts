@@ -43,7 +43,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'fb_cauterise',
           name: 'Cauterise',
-          description: 'Burns you apply deal 35% more damage over a 25% shorter time.',
+          description: "Burns you apply deal 35% more damage per second and have 25% less duration.",
           grants: { ailmentMultiplier: 1.35, ailmentDuration: 0.75 },
         },
       },
@@ -68,7 +68,7 @@ const BRANCHES: Branch[] = [
       },
     ],
     minors: [
-      { text: '+6% increased Burn Damage', grants: { ailmentMultiplier: 1.06 } },
+      { text: "+6% more Burn Damage", grants: { ailmentMultiplier: 1.06 } },
       { text: '+9% chance to apply Burn', stats: [stat('ailmentChance', 'flat', 9, ['burn'])] },
       COMMON[0],
       { text: '+1% Critical Chance', stats: [stat('critChance', 'flat', 1)] },
@@ -88,8 +88,8 @@ const BRANCHES: Branch[] = [
       id: 'fb_bellows',
       name: 'Backdraft',
       description:
-        'A hit on an enemy carrying your Ailment consumes every stack and deals ' +
-        '60% of what they had left, at once.',
+        "Before a hit applies Ailments, it consumes existing Ailments matching the hit's damage types and " +
+      "deals 60% of their remaining damage at once. Resistance applies to this damage.",
       grants: { consumeAilment: 0.6, manaMultiplier: 1.15 },
     },
     twigs: [
@@ -98,7 +98,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'fb_draught',
           name: 'Draught',
-          description: 'It consumes them for a further 45% of what they had left.',
+          description: "Adds 45 percentage points to the share of remaining Ailment damage dealt by Backdraft.",
           grants: { consumeAilment: 0.45 },
         },
       },
@@ -107,7 +107,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'fb_furnace',
           name: 'Furnace',
-          description: 'It consumes them for a further 30%.',
+          description: "Adds 30 percentage points to the share of remaining Ailment damage dealt by Backdraft.",
           grants: { consumeAilment: 0.3 },
         },
       },
@@ -117,7 +117,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'fb_forgefire',
           name: 'Forge-Fire',
-          description: 'It consumes them for a further 65%.',
+          description: "Adds 65 percentage points to the share of remaining Ailment damage dealt by Backdraft.",
           grants: { consumeAilment: 0.65, manaMultiplier: 1.15 },
         },
       },
@@ -196,7 +196,7 @@ const BRANCHES: Branch[] = [
       grants: { pierce: 1, manaMultiplier: 1.15 },
       // Nothing flies under either keystone: a Pierce is a wider Burst or an ember.
       under: {
-        fb_meteor: { description: 'The Meteor Bursts 0.4 tiles wider.', grants: { meteor: { radius: 0.4 }, manaMultiplier: 1.15 } },
+        fb_meteor: { description: "Adds 0.4 tiles to the radius of the Meteor Burst.", grants: { meteor: { radius: 0.4 }, manaMultiplier: 1.15 } },
         fb_spray: { description: '+1 ember.', grants: { spray: { count: 1 }, manaMultiplier: 1.15 } },
       },
     },
@@ -211,8 +211,8 @@ const BRANCHES: Branch[] = [
           description: 'Pierce deals full damage instead of 70%.',
           grants: { pierceDamage: 1, manaMultiplier: 1.08 },
           under: {
-            fb_meteor: { description: 'The Meteor deals a further 20% more damage.', grants: { meteor: { more: 0.2 }, manaMultiplier: 1.08 } },
-            fb_spray: { description: 'Embers deal 60% less damage rather than 70%.', grants: { spray: { less: -0.1 }, manaMultiplier: 1.08 } },
+            fb_meteor: { description: "Adds 20 percentage points to Meteor's damage bonus.", grants: { meteor: { more: 0.2 }, manaMultiplier: 1.08 } },
+            fb_spray: { description: "Reduces the damage penalty on embers by 10 percentage points.", grants: { spray: { less: -0.1 }, manaMultiplier: 1.08 } },
           },
         },
       },
@@ -248,7 +248,7 @@ const BRANCHES: Branch[] = [
       description: 'Fireball gains +1 Arc.',
       grants: { chains: 1, manaMultiplier: 1.15 },
       under: {
-        fb_meteor: { description: 'The Meteor Bursts 0.4 tiles wider.', grants: { meteor: { radius: 0.4 }, manaMultiplier: 1.15 } },
+        fb_meteor: { description: "Adds 0.4 tiles to the radius of the Meteor Burst.", grants: { meteor: { radius: 0.4 }, manaMultiplier: 1.15 } },
         fb_spray: { description: 'The fan opens 20° wider.', grants: { spray: { arc: 20 }, manaMultiplier: 1.15 } },
       },
     },
@@ -261,8 +261,8 @@ const BRANCHES: Branch[] = [
           description: 'Arcs deal full damage instead of 70%.',
           grants: { chainDamage: 1, manaMultiplier: 1.08 },
           under: {
-            fb_meteor: { description: 'The Meteor deals a further 20% more damage.', grants: { meteor: { more: 0.2 }, manaMultiplier: 1.08 } },
-            fb_spray: { description: 'Embers deal 60% less damage rather than 70%.', grants: { spray: { less: -0.1 }, manaMultiplier: 1.08 } },
+            fb_meteor: { description: "Adds 20 percentage points to Meteor's damage bonus.", grants: { meteor: { more: 0.2 }, manaMultiplier: 1.08 } },
+            fb_spray: { description: "Reduces the damage penalty on embers by 10 percentage points.", grants: { spray: { less: -0.1 }, manaMultiplier: 1.08 } },
           },
         },
       },
@@ -275,7 +275,7 @@ const BRANCHES: Branch[] = [
           description: 'Fireball gains +1 Arc.',
           grants: { chains: 1, manaMultiplier: 1.15 },
           under: {
-            fb_meteor: { description: 'The Meteor Bursts 0.4 tiles wider.', grants: { meteor: { radius: 0.4 }, manaMultiplier: 1.15 } },
+            fb_meteor: { description: "Adds 0.4 tiles to the radius of the Meteor Burst.", grants: { meteor: { radius: 0.4 }, manaMultiplier: 1.15 } },
             fb_spray: { description: 'The fan opens 20° wider.', grants: { spray: { arc: 20 }, manaMultiplier: 1.15 } },
           },
         },
@@ -297,7 +297,7 @@ const BRANCHES: Branch[] = [
     enabler: {
       id: 'fb_immolate',
       name: 'Detonation',
-      description: 'A killed enemy Bursts 2 tiles across, for 30% of the damage.',
+      description: "Enemies killed by Fireball Burst in a 2-tile radius, dealing 30% of Fireball's damage.",
       grants: { explodeOnKill: { radius: 2, multiplier: 0.3 }, manaMultiplier: 1.15 },
     },
     twigs: [
@@ -306,7 +306,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'fb_closequarters',
           name: 'Firestorm',
-          description: 'The Burst off a killed enemy reaches 0.8 tiles further.',
+          description: "Adds 0.8 tiles to the radius of the Burst triggered by kills.",
           grants: { explodeOnKill: { radius: 0.8, multiplier: 0 } },
         },
       },
@@ -315,7 +315,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'fb_executioner',
           name: 'Fuel Air',
-          description: 'The Burst off a killed enemy deals a further 25% of the damage.',
+          description: "Adds 25 percentage points to the damage share of the Burst triggered by kills.",
           grants: { explodeOnKill: { radius: 0, multiplier: 0.25 } },
         },
       },
@@ -326,8 +326,8 @@ const BRANCHES: Branch[] = [
           id: 'fb_overload',
           name: 'Overload',
           description:
-            'The Burst off a killed enemy reaches 0.6 tiles further and deals a ' +
-            'further 20% of the damage.',
+            "Adds 0.6 tiles to the radius and 20 percentage points to the damage share of the Burst " +
+          "triggered by kills.",
           grants: { explodeOnKill: { radius: 0.6, multiplier: 0.2 }, manaMultiplier: 1.15 },
         },
       },
@@ -370,13 +370,13 @@ const TRUNK_NOTABLES: Notable[] = [
   {
     id: 'fb_reserves',
     name: 'Deep Reserves',
-    description: 'Fireball deals 45% more damage and is cast 20% slower.',
+    description: "Fireball deals 45% more damage and has 20% reduced Cast Speed.",
     stats: [stat('damage', 'more', 45), stat('castSpeed', 'inc', -20)],
   },
   {
     id: 'fb_opening',
     name: 'Opening Salvo',
-    description: 'Fireball deals 35% more damage to enemies above 80% of their life.',
+    description: "Fireball deals 35% more damage to enemies at 80% of maximum Life or more.",
     grants: { moreVsFull: { above: 0.8, more: 0.35 } },
   },
   {
@@ -388,7 +388,7 @@ const TRUNK_NOTABLES: Notable[] = [
   {
     id: 'fb_emberstorm',
     name: 'Ember Storm',
-    description: 'Fireball is cast 25% faster.',
+    description: "Fireball has 25% increased Cast Speed.",
     stats: [stat('castSpeed', 'inc', 25)],
   },
 ];

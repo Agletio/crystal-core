@@ -17,12 +17,14 @@ const COMMON: Minor[] = [
   { text: '+5% increased Movement Speed', stats: [stat('moveSpeed', 'inc', 5)] },
   { text: '3% reduced Skill Cooldown', stats: [stat('cooldown', 'inc', -3)] },
   {
-    text: '+2% increased Movement Speed for each Gust held',
+    text: "Adds 2 percentage points to Gale's Movement Speed bonus per Gust. Bonuses from all held Gusts " +
+    "add together.",
     grants: { gustSpeed: 2 },
   },
   { text: '+6% increased Movement Speed', stats: [stat('moveSpeed', 'inc', 6)] },
   {
-    text: '+1.5% less damage taken for each Gust held',
+    text: "Each Gust adds 1.5 percentage points to your damage reduction from hits and boss drains. " +
+    "Movement damage reductions add, up to 80%.",
     grants: { gustGuard: 0.015 },
   },
   { text: '4% reduced Skill Cooldown', stats: [stat('cooldown', 'inc', -4)] },
@@ -35,7 +37,8 @@ const BRANCHES: Branch[] = [
     enabler: {
       id: 'gl_pace',
       name: 'Headlong',
-      description: 'A further 5% increased Movement Speed for each Gust held.',
+      description: "Adds 5 percentage points to Gale's Movement Speed bonus per Gust. Bonuses from all held Gusts " +
+      "add together.",
       grants: { gustSpeed: 5 },
     },
     twigs: [
@@ -44,7 +47,8 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'gl_bolting',
           name: 'Bolting',
-          description: 'A further 4% increased Movement Speed for each Gust held.',
+          description: "Adds 4 percentage points to Gale's Movement Speed bonus per Gust. Bonuses from all held Gusts " +
+          "add together.",
           grants: { gustSpeed: 4 },
         },
       },
@@ -53,7 +57,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'gl_headwind',
           name: 'Headwind',
-          description: 'A further 6% increased Attack and Cast Speed for each Gust held.',
+          description: "Each Gust grants 6% more Attack and Cast Speed. Bonuses from all held Gusts add together.",
           grants: { gustHaste: 6 },
         },
       },
@@ -63,7 +67,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'gl_running',
           name: 'Running Start',
-          description: 'A further 7% more damage for each Gust held.',
+          description: "Hits deal 7% more damage per Gust. Bonuses from all held Gusts add together.",
           grants: { gustDamage: 0.07 },
         },
       },
@@ -76,7 +80,8 @@ const BRANCHES: Branch[] = [
     enabler: {
       id: 'gl_guard',
       name: 'Windguard',
-      description: 'You take 6% less damage for each Gust held.',
+      description: "Each Gust adds 6 percentage points to your damage reduction from hits and boss drains. Movement " +
+      "damage reductions add, up to 80%.",
       grants: { gustGuard: 0.06 },
     },
     twigs: [
@@ -85,7 +90,8 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'gl_hardening',
           name: 'Hardening',
-          description: 'A further 4% less damage taken for each Gust held.',
+          description: "Each Gust adds 4 percentage points to your damage reduction from hits and boss drains. Movement " +
+          "damage reductions add, up to 80%.",
           grants: { gustGuard: 0.04 },
         },
       },
@@ -94,7 +100,8 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'gl_plating',
           name: 'Plating',
-          description: 'For 3s after losing a Gust you take 25% less damage.',
+          description: "For 3s after losing a Gust, take 25% less damage from hits and boss drains. Movement damage " +
+          "reductions add, up to 80%.",
           grants: { afterStepGuard: 0.25 },
         },
       },
@@ -104,7 +111,8 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'gl_lastwind',
           name: 'Last Wind',
-          description: 'You take 10% less damage while you hold no Gusts at all.',
+          description: "While you have no Gusts, take 10% less damage from hits and boss drains. Movement damage " +
+          "reductions add, up to 80%.",
           grants: { gustlessGuard: 0.1 },
         },
       },
@@ -117,7 +125,7 @@ const BRANCHES: Branch[] = [
     enabler: {
       id: 'gl_renewal',
       name: 'Renewal',
-      description: 'Losing a Gust restores 6% of your life.',
+      description: "Losing a Gust restores 6% of your maximum Life.",
       grants: { gustHeal: 0.06 },
     },
     twigs: [
@@ -126,7 +134,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'gl_mending',
           name: 'Mending',
-          description: 'Losing a Gust restores a further 5% of your life.',
+          description: "Losing a Gust restores a further 5% of your maximum Life.",
           grants: { gustHeal: 0.05 },
         },
       },
@@ -135,7 +143,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'gl_drawing',
           name: 'Drawing Breath',
-          description: 'Losing a Gust restores 8% of your mana pool.',
+          description: "Losing a Gust restores 8% of your maximum Mana.",
           grants: { gustMana: 0.08 },
         },
       },
@@ -145,7 +153,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'gl_flinch',
           name: 'Flinch',
-          description: 'For 3s after losing a Gust you move 30% faster.',
+          description: "For 3s after losing a Gust you have 30% more Movement Speed.",
           grants: { afterStepSpeed: 0.3 },
         },
       },
@@ -158,7 +166,7 @@ const BRANCHES: Branch[] = [
     enabler: {
       id: 'gl_reserve',
       name: 'Reserve',
-      description: '+1 Gust.',
+      description: "+1 maximum Gust.",
       grants: { gustMax: 1 },
     },
     twigs: [
@@ -167,7 +175,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'gl_deepreserve',
           name: 'Deep Reserve',
-          description: '+2 Gusts.',
+          description: "+2 maximum Gusts.",
           grants: { gustMax: 2 },
         },
       },
@@ -176,7 +184,8 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'gl_stormfront',
           name: 'Stormfront',
-          description: 'A further 3% increased Movement Speed for each Gust held.',
+          description: "Adds 3 percentage points to Gale's Movement Speed bonus per Gust. Bonuses from all held Gusts " +
+          "add together.",
           grants: { gustSpeed: 3 },
         },
       },
@@ -186,7 +195,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'gl_topping',
           name: 'Topping Up',
-          description: 'A kill has a 25% chance to hand back a Gust.',
+          description: "Kills have a 25% chance to restore 1 Gust.",
           grants: { gustOnKill: 0.25 },
         },
       },
@@ -199,7 +208,7 @@ const BRANCHES: Branch[] = [
     enabler: {
       id: 'gl_recovery',
       name: 'Recovery',
-      description: 'A Gust comes back 35% sooner.',
+      description: "Gale takes 35% less time to recover a Gust.",
       grants: { gustBack: 0.65 },
     },
     twigs: [
@@ -208,7 +217,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'gl_secondwind',
           name: 'Second Wind',
-          description: 'A Gust comes back a further 25% sooner.',
+          description: "Gale takes 25% less time to recover a Gust. Multiplies with other Gust recovery modifiers.",
           grants: { gustBack: 0.75 },
         },
       },
@@ -217,7 +226,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'gl_squall',
           name: 'Squall',
-          description: 'A Gust comes back a further 20% sooner.',
+          description: "Gale takes 20% less time to recover a Gust. Multiplies with other Gust recovery modifiers.",
           grants: { gustBack: 0.8 },
         },
       },
@@ -227,7 +236,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'gl_untouched',
           name: 'Untouched',
-          description: 'Every Gust comes back at once after 6s with nothing landing on you.',
+          description: "Recover all Gusts after 6s without being hit.",
           grants: { gustRefill: 6 },
         },
       },
@@ -240,7 +249,8 @@ const BRANCHES: Branch[] = [
     enabler: {
       id: 'gl_anchor',
       name: 'Anchored',
-      description: 'A hit no longer takes a Gust, and each Gust is worth 40% less.',
+      description: "Hits no longer remove Gusts. Gust bonuses to speed, damage and damage reduction are 40% less " +
+      "effective.",
       grants: { gustKeep: 0.6 },
     },
     twigs: [
@@ -249,7 +259,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'gl_ballast',
           name: 'Ballast',
-          description: 'A Gust you keep is worth 20% more.',
+          description: "Gust bonuses to speed, damage and damage reduction are 20% more effective.",
           grants: { gustKept: 1.2 },
         },
       },
@@ -258,7 +268,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'gl_settled',
           name: 'Settled',
-          description: '+1 Gust.',
+          description: "+1 maximum Gust.",
           grants: { gustMax: 1 },
         },
       },
@@ -268,7 +278,8 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'gl_ironwind',
           name: 'Iron Wind',
-          description: 'A Gust you keep is worth a further 15% more.',
+          description: "Gust bonuses to speed, damage and damage reduction are 15% more effective. Multiplies with " +
+          "Ballast.",
           grants: { gustKept: 1.15 },
         },
       },
@@ -293,25 +304,27 @@ const TRUNK_NOTABLES: Notable[] = [
   {
     id: 'gl_holding',
     name: 'Holding',
-    description: '+1 Gust.',
+    description: "+1 maximum Gust.",
     grants: { gustMax: 1 },
   },
   {
     id: 'gl_gusting',
     name: 'Gusting',
-    description: 'A further 4% increased Movement Speed for each Gust held.',
+    description: "Adds 4 percentage points to Gale's Movement Speed bonus per Gust. Bonuses from all held Gusts " +
+    "add together.",
     grants: { gustSpeed: 4 },
   },
   {
     id: 'gl_fleet',
     name: 'Fleet',
-    description: 'For 3s after losing a Gust you move 20% faster.',
+    description: "For 3s after losing a Gust you have 20% more Movement Speed.",
     grants: { afterStepSpeed: 0.2 },
   },
   {
     id: 'gl_braced',
     name: 'Braced',
-    description: 'You take a further 3% less damage for each Gust held.',
+    description: "Each Gust adds 3 percentage points to your damage reduction from hits and boss drains. Movement " +
+    "damage reductions add, up to 80%.",
     grants: { gustGuard: 0.03 },
   },
 ];

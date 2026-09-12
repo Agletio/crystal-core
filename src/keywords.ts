@@ -158,12 +158,12 @@ export const KEYWORDS: KeywordDef[] = [
     name: 'Burst',
     says: ['Burst', 'Bursts'],
     means:
-      `Damage in a circle. A Burst you carry goes off around YOU on a cooldown, ` +
+      `An instant effect in a circle. Contagion's Burst applies Poison; other Bursts deal damage. A Burst you carry goes off around YOU on a cooldown, ` +
       `${PASSIVE_DAMAGE.sunderRadius} tiles across, for a figure off your ` +
       `character level that nothing but increased Damage moves. A Burst set off ` +
       `by a DEATH is a share of the hit that killed it, and sets off the Bursts ` +
       `of whatever IT kills, ${BURST.chainDepth} deep. Bursts overlap freely.`,
-    grants: ['burstOnHit', 'explodeOnKill'],
+    grants: ['burstOnHit', 'explodeOnKill', 'contagionRadius'],
     scales: ['area', 'damage'],
   },
   {
@@ -223,7 +223,7 @@ export const KEYWORDS: KeywordDef[] = [
       'A circle on the ground that leaves an Ailment on everything standing ' +
       'in it. It has no target limit, so a wider Cloud is the whole of how it ' +
       'hits more.',
-    grants: ['extraFields', 'fieldRadius', 'contagionRadius'],
+    grants: ['extraFields', 'fieldRadius'],
     scales: ['area', 'ailment'],
   },
 

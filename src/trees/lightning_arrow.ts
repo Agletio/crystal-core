@@ -29,7 +29,7 @@ const BRANCHES: Branch[] = [
       name: 'Storm Call',
       description: 'Lightning Arrow gains +2 Forks.',
       grants: { forks: 2, manaMultiplier: 1.15 },
-      under: { la_fuse: { description: 'Fuses burst 0.4 tiles wider.', grants: { fuse: { radius: 0.4 }, manaMultiplier: 1.15 } } },
+      under: { la_fuse: { description: "Adds 0.4 tiles to the radius of Fused Arrow Bursts.", grants: { fuse: { radius: 0.4 }, manaMultiplier: 1.15 } } },
     },
     twigs: [
       {
@@ -39,7 +39,7 @@ const BRANCHES: Branch[] = [
           name: 'Thunderhead',
           description: 'Forks deal 80% of the damage instead of 45%.',
           grants: { forkDamage: 0.8, manaMultiplier: 1.08 },
-          under: { la_fuse: { description: 'Fuses burst for a further 20% more damage.', grants: { fuse: { more: 0.2 }, manaMultiplier: 1.08 } } },
+          under: { la_fuse: { description: "Adds 20 percentage points to the damage bonus of Fused Arrow Bursts.", grants: { fuse: { more: 0.2 }, manaMultiplier: 1.08 } } },
         },
       },
       {
@@ -50,7 +50,7 @@ const BRANCHES: Branch[] = [
           name: 'Deluge',
           description: 'Lightning Arrow gains +3 Forks.',
           grants: { forks: 3, manaMultiplier: 1.15 },
-          under: { la_fuse: { description: 'Fuses burst 0.6 tiles wider.', grants: { fuse: { radius: 0.6 }, manaMultiplier: 1.15 } } },
+          under: { la_fuse: { description: "Adds 0.6 tiles to the radius of Fused Arrow Bursts.", grants: { fuse: { radius: 0.6 }, manaMultiplier: 1.15 } } },
         },
       },
     ],
@@ -66,7 +66,7 @@ const BRANCHES: Branch[] = [
       grants: { pierce: 1, manaMultiplier: 1.15 },
       // A stuck arrow flies through nothing: the Pierce walked to reach the
       // keystone is a harder burst under it.
-      under: { la_fuse: { description: 'Fuses burst for a further 25% more damage.', grants: { fuse: { more: 0.25 }, manaMultiplier: 1.15 } } },
+      under: { la_fuse: { description: "Adds 25 percentage points to the damage bonus of Fused Arrow Bursts.", grants: { fuse: { more: 0.25 }, manaMultiplier: 1.15 } } },
     },
     twigs: [
       {
@@ -76,7 +76,7 @@ const BRANCHES: Branch[] = [
           name: 'Full Draw',
           description: 'Pierce deals full damage instead of 70%.',
           grants: { pierceDamage: 1, manaMultiplier: 1.08 },
-          under: { la_fuse: { description: 'Fuses burst 0.3 tiles wider.', grants: { fuse: { radius: 0.3 }, manaMultiplier: 1.08 } } },
+          under: { la_fuse: { description: "Adds 0.3 tiles to the radius of Fused Arrow Bursts.", grants: { fuse: { radius: 0.3 }, manaMultiplier: 1.08 } } },
         },
       },
       {
@@ -143,7 +143,7 @@ const BRANCHES: Branch[] = [
       name: 'Conduction',
       description: 'Lightning Arrow gains +1 Arc.',
       grants: { chains: 1, manaMultiplier: 1.15 },
-      under: { la_fuse: { description: 'Fuses burst 0.3 tiles wider.', grants: { fuse: { radius: 0.3 }, manaMultiplier: 1.15 } } },
+      under: { la_fuse: { description: "Adds 0.3 tiles to the radius of Fused Arrow Bursts.", grants: { fuse: { radius: 0.3 }, manaMultiplier: 1.15 } } },
     },
     twigs: [
       {
@@ -153,7 +153,7 @@ const BRANCHES: Branch[] = [
           name: 'Rebound',
           description: 'Arcs deal full damage instead of 70%.',
           grants: { chainDamage: 1, manaMultiplier: 1.08 },
-          under: { la_fuse: { description: 'Fuses burst for a further 20% more damage.', grants: { fuse: { more: 0.2 }, manaMultiplier: 1.08 } } },
+          under: { la_fuse: { description: "Adds 20 percentage points to the damage bonus of Fused Arrow Bursts.", grants: { fuse: { more: 0.2 }, manaMultiplier: 1.08 } } },
         },
       },
       {
@@ -164,7 +164,7 @@ const BRANCHES: Branch[] = [
           name: 'Earthing Line',
           description: 'Lightning Arrow gains +2 Arcs.',
           grants: { chains: 2, manaMultiplier: 1.15 },
-          under: { la_fuse: { description: 'Fuses burst 0.5 tiles wider.', grants: { fuse: { radius: 0.5 }, manaMultiplier: 1.15 } } },
+          under: { la_fuse: { description: "Adds 0.5 tiles to the radius of Fused Arrow Bursts.", grants: { fuse: { radius: 0.5 }, manaMultiplier: 1.15 } } },
         },
       },
     ],
@@ -183,7 +183,7 @@ const BRANCHES: Branch[] = [
     enabler: {
       id: 'la_mark',
       name: 'Pinning Shot',
-      description: 'What the arrow hits is held where it stands for 0.5s.',
+      description: "Hits Pin enemies for 0.5s, preventing movement and attacks.",
       grants: { pinSeconds: 0.5, manaMultiplier: 1.15 },
     },
     twigs: [
@@ -192,7 +192,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'la_ranging',
           name: 'Nailed Down',
-          description: 'What the arrow hits is held for a further 0.4s.',
+          description: "Pin lasts 0.4s longer.",
           grants: { pinSeconds: 0.4 },
         },
       },
@@ -218,8 +218,8 @@ const BRANCHES: Branch[] = [
           name: 'Tether',
           keystone: true,
           description:
-            'What the arrow hits is Tethered for 4s. Damage to one Tethered enemy lands 40% ' +
-            'of itself on every other Tethered enemy within 5 tiles.',
+            "Hits Tether enemies for 4s. Hitting an already Tethered enemy deals 40% of that hit's damage to " +
+          "every other Tethered enemy within 5 tiles. Shared damage cannot trigger more sharing.",
           becomes:
             'You loose an arrow that Tethers what it hits for 4s: damage to one Tethered enemy ' +
             'lands 40% of itself on every other Tethered enemy within 5 tiles. Everything else the bow does, it still does.',
@@ -253,7 +253,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'la_searing',
           name: 'Searing Shaft',
-          description: 'Ailments you apply deal 35% more damage over a 25% shorter time.',
+          description: "Ailments you apply deal 35% more damage per second and have 25% less duration.",
           grants: { ailmentMultiplier: 1.35, ailmentDuration: 0.75 },
         },
       },
@@ -269,7 +269,7 @@ const BRANCHES: Branch[] = [
       },
     ],
     minors: [
-      { text: '+6% increased Ailment Damage', grants: { ailmentMultiplier: 1.06 } },
+      { text: "+6% more Ailment Damage", grants: { ailmentMultiplier: 1.06 } },
       { text: '+9% chance to apply Shock', stats: [stat('ailmentChance', 'flat', 9, ['shock'])] },
       COMMON[3],
       { text: '+1% Critical Chance', stats: [stat('critChance', 'flat', 1)] },
@@ -289,13 +289,13 @@ const TRUNK_NOTABLES: Notable[] = [
   {
     id: 'la_hunter',
     name: "Hunter's Opening",
-    description: 'Lightning Arrow deals 35% more damage to enemies above 80% of their life.',
+    description: "Lightning Arrow deals 35% more damage to enemies at 80% of maximum Life or more.",
     grants: { moreVsFull: { above: 0.8, more: 0.35 } },
   },
   {
     id: 'la_finisher',
     name: 'Finisher',
-    description: 'Lightning Arrow deals 35% more damage to enemies below 33% of their life.',
+    description: "Lightning Arrow deals 35% more damage to enemies at 33% of maximum Life or less.",
     grants: { moreVsLow: { below: 0.33, more: 0.35 } },
   },
   {
@@ -326,7 +326,7 @@ const TRUNK_NOTABLES: Notable[] = [
   {
     id: 'la_quickdraw',
     name: 'Quick Draw',
-    description: 'Lightning Arrow is loosed 25% faster.',
+    description: "Lightning Arrow has 25% increased Attack Speed.",
     stats: [stat('attackSpeed', 'inc', 25)],
   },
 ];
