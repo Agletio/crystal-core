@@ -1119,8 +1119,9 @@ the way a kill's tempo does, so the tree check and the fingerprint both leave it
 to a played descent. **EVERY SKILL HAS WEATHER**: a whole generated SCENE, `web_<skillId>` in
 `tools/art/scenes.json` asked through `scene.mts` like the camp — a wide
 picture, dark and low-contrast, with no focal point — and drawn by
-`src/ui/skills.ts` as one `.web__weather` layer at 30% filling the window under
-the web. Rimespike's blizzard, Strike's red haze, Shockwave's cracked slab,
+`src/ui/skills.ts` as one `.web__weather` layer at 30% under the web, FITTED
+WHOLE at the largest scale the window allows, like the camp — never cropped;
+what the window has over the picture's shape is its own dark ground. Rimespike's blizzard, Strike's red haze, Shockwave's cracked slab,
 Fireball's embers, Blight's spore-lit fen, Arc Lightning's storm, Lightning
 Arrow's rain, Ambush's purple cave, Blink's void, Leap's cliffs, Gale's wind.
 **EVERY NOTABLE AND KEYSTONE HAS A PICTURE OF ITS OWN** (`wn_<node.id>` in

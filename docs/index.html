@@ -2349,7 +2349,9 @@
   #skills-detail .skillhead { position: absolute; left: 12px; right: 12px; top: 40px; z-index: 3; margin: 0; pointer-events: none; text-shadow: 0 1px 2px var(--ink), 0 0 6px var(--ink); }
   #skills-detail .skillhead > * { pointer-events: auto; }
   #skills-detail .webwrap { flex: 1 1 auto; height: min(80vh, calc(100vh - var(--dock-h, 0px) - 60px)); min-height: 260px; }
-  .web__weather { position: absolute; inset: 0; background-size: cover; background-position: center; opacity: .3; pointer-events: none; image-rendering: pixelated; }
+  /* WHOLE, at the largest scale that fits, like the camp: never cropped, and what
+     the window has over the picture is its own dark ground. */
+  .web__weather { position: absolute; inset: 0; background-size: contain; background-repeat: no-repeat; background-position: center; opacity: .3; pointer-events: none; image-rendering: pixelated; }
   .web__node__pad { fill: var(--ink); opacity: .82; }
   .web__node__pts { font: 700 11px var(--display); fill: var(--text); pointer-events: none; paint-order: stroke; stroke: var(--ink); stroke-width: 4px; }
   .web__node--on .web__node__pts { fill: var(--citrine); }
