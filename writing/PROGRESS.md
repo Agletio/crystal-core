@@ -33,3 +33,13 @@ rules, equipment and crafting, encounters and tutorial text, then UI messages.
 The inventory must be extended as those surfaces are taken up; untracked text
 is not implicitly reviewed. Current live counts are always available through
 `npm run writing -- report`.
+
+## Claude's mechanics pass on the batch-1 blockers
+
+Every W-number in `BLOCKERS.md` carries a Decision; twelve were implemented
+(W004–W008, W010–W014, W016, W017) and five confirmed as intended (W001–W003,
+W009, W015). All 200 blocked entries are pending again for review against the
+settled rules. The sim change makes every reviewed tree entry stale by the
+module-level dependency; `REQUESTS.md` lists which need new words and which
+only need the review recorded again. Quick demo: all checks pass; every
+keystone mode replayed at band 4 within its band.

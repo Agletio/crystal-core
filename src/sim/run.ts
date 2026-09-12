@@ -36,7 +36,7 @@ import {
   trialMod,
 } from './stats';
 import type { CombatStats, Grip } from './stats';
-import { SKILL_BEHAVIOURS, inWedge, wedgeCorners } from './skills';
+import { SKILL_BEHAVIOURS, castScale, inWedge, targetScale, wedgeCorners } from './skills';
 import type { Wedge } from './skills';
 import { bleedOf, critBuff, overchargeOf, shieldShare, starvedMultiplier } from './grants';
 import { moverReading } from './movers';
@@ -489,6 +489,17 @@ export interface RunLoot {
 
 const ORB_SPARK = 0.35; // the ball of lightning's own spark, in tiles, drawn each tick
 
+/** WHAT A CAST WAS WORTH, carried to a hit that lands later: its every-nth
+ *  multiplier, its heft, its Critical and what it paid. The target is read
+ *  when the hit lands; the cast is read when it was made. */
+export interface CastMark {
+  scale: number;
+  heft: number;
+  crit: boolean;
+  starved: boolean;
+  overcharged: number;
+}
+
 export interface RunState {
   map: GameMap;
   hero: Entity;
@@ -567,11 +578,11 @@ export interface RunState {
   relays: number;
   freezes: number; // bodies a Chill took to the bar and FROZE
   vanished: number; // seconds the hero is unseen for, off a kill under Vanish
-  tremors: Array<{ wedge: Wedge; left: number; tickIn: number }>; // ground still shaking under Tremor
-  orbs: Array<{ x: number; y: number; targetId: number; left: number; tickIn: number }>; // balls of lightning still drifting
-  fuses: Array<{ targetId: number; left: number }>; // arrows stuck in bodies, waiting to burst
+  tremors: Array<{ wedge: Wedge; left: number; tickIn: number; cast: CastMark }>; // ground still shaking under Tremor
+  orbs: Array<{ x: number; y: number; targetId: number; left: number; tickIn: number; cast: CastMark }>; // balls of lightning still drifting
+  fuses: Array<{ targetId: number; left: number; cast: CastMark }>; // arrows stuck in bodies, waiting to burst
   shared: number; // hits a Tether passed on to another body
-  clouds: Array<{ x: number; y: number; radius: number; power: number; seconds: number; spread?: { radius: number; generation: number }; left: number; tickIn: number }>; // Blight's drifting clouds
+  clouds: Array<{ x: number; y: number; radius: number; power: number; seconds: number; spread?: { radius: number; generation: number }; left: number; tickIn: number; cast: CastMark }>; // Blight's drifting clouds
   gusts: number; // what GALE is holding, which is what its speed is worth
   /** Uses that fired the COMBAT mode: a step away, and a landing on a body. */
   kites: number;
@@ -663,6 +674,7 @@ export class RunSim {
   private readonly ailChance: number;
   /** Seconds left of a KILL still covering and quickening you. */
   private sinceKill = 0;
+  private killMoreIn = 0; // the skill's own window after a kill, `killMore.seconds` long
   private sharing = false; // inside a Tether's share, so a share never shares
   /** Kills stacked up, and the seconds left of the whole stack. Refreshed as one
    *  rather than per stack, exactly as the crit buff is. */
@@ -1848,7 +1860,7 @@ export class RunSim {
     if (hero.dead) return;
     const marked = 1 + this.state.marks * BOSS_FIGHT.markMore;
     const blunt = hit ? 1 - this.blunting(hero) / 100 : 1;
-    let total = this.afterResistance(hero, raw * marked * this.rage, type) * blunt * this.softened();
+    let total = this.afterResistance(hero, raw * marked * this.rage, type) * blunt * this.softened() * this.guarded(hero);
     const before = total;
     total = this.absorb(hero, total);
     const kept = before > 0 ? total / before : 1;
@@ -1876,6 +1888,7 @@ export class RunSim {
     if (this.state.vanished > 0) this.state.vanished -= dt;
     if (this.riposte > 0) this.riposte -= dt;
     if (this.sinceKill > 0) this.sinceKill -= dt;
+    if (this.killMoreIn > 0) this.killMoreIn -= dt;
     if (this.tempoIn > 0) {
       this.tempoIn -= dt;
       if (this.tempoIn <= 0) this.tempo = 0;
@@ -2806,6 +2819,27 @@ export class RunSim {
     this.openWindow();
   }
 
+  /** WHAT A BUILD TAKES OFF A HIT — a flask, a shield, the paint, a kill's
+   *  cover, a passive's scale and the Brink — in ONE place, so a swing and a
+   *  boss's slam read the same answer. Never an Ailment's tick: like Armour,
+   *  every one of these is a rule about a HIT. */
+  private guarded(hero: Entity): number {
+    let scale = 1;
+    if (this.flasked()) scale *= 1 - Math.min(0.8, (this.grants.potionLess as number) ?? 0);
+    if (this.grip === 'shield') scale *= 1 - Math.min(WARRIOR.shieldLessCap, (this.grants.shieldLess as number) ?? 0);
+    // THE PAINT: a blow that lands blunts the next ones, in the same window
+    // that sharpens what you swing back.
+    const painted = (this.grants.struckLess as number) ?? 0;
+    if (painted > 0 && this.sinceHit <= WARRIOR.paintSeconds) scale *= Math.max(0, 1 - painted / 100);
+    const guard = (this.grants.killGuard as number) ?? 0; // what a KILL bought, for as long as it lasts
+    if (guard > 0 && this.sinceKill > 0) scale *= Math.max(0, 1 - guard / 100);
+    scale *= (this.grants.takenScale as number) ?? 1;
+    // THE BRINK from the other side: near death is where it covers you.
+    const edge = this.grants.atBrink as { under: number; less: number } | undefined;
+    if (edge && hero.life < hero.stats.maxLife * edge.under) scale *= Math.max(0, 1 - edge.less);
+    return scale;
+  }
+
   /** WHAT THE MOVERS TAKE OFF A HIT, in one place: the window a use opened, and
    *  what the charges in hand are worth. Clamped, so no walk makes you immune. */
   private softened(): number {
@@ -3125,6 +3159,7 @@ export class RunSim {
 
     this.useCrit = crit;
     this.hitsThisUse = 0;
+    const mark: CastMark = { scale: castScale(grants, castIndex), heft, crit, starved: this.starved, overcharged: this.overcharged };
     // SLEET: the bar this cast Freezes at, and what is kept past it.
     const sleet = this.grants.spikeTempo as { per: number; stacks: number } | undefined;
     const bar = sleet ? Math.max(1, sleet.stacks + ((this.grants.tempoStacks as number) ?? 0)) : Infinity;
@@ -3144,7 +3179,7 @@ export class RunSim {
           : [this.state.hero],
       rng: this.rng,
       heft,
-      sinceKill: this.sinceKill,
+      sinceKill: this.killMoreIn,
       sinceHit: this.sinceHit,
       streak: user.kind === 'hero' ? this.streak : 1,
       sleet: user.kind === 'hero' ? this.sleet : 0,
@@ -3167,19 +3202,19 @@ export class RunSim {
       blink: (target) => this.stepBehind(user, target),
       cloud: (at, radius, power, seconds, spread) => {
         const drift = this.grants.wander as { seconds: number } | undefined;
-        if (drift && user.kind === 'hero') this.state.clouds.push({ x: at.x, y: at.y, radius, power, seconds, spread, left: drift.seconds, tickIn: 0 });
+        if (drift && user.kind === 'hero') this.state.clouds.push({ x: at.x, y: at.y, radius, power, seconds, spread, left: drift.seconds, tickIn: 0, cast: mark });
       },
       fuse: (target) => {
         const lit = this.grants.fuse as { seconds: number } | undefined;
-        if (lit && user.kind === 'hero' && !target.dead) this.state.fuses.push({ targetId: target.id, left: lit.seconds });
+        if (lit && user.kind === 'hero' && !target.dead) this.state.fuses.push({ targetId: target.id, left: lit.seconds, cast: mark });
       },
       orb: (from, target) => {
         const ball = this.grants.orb as { seconds: number } | undefined;
-        if (ball && user.kind === 'hero') this.state.orbs.push({ x: from.x, y: from.y, targetId: target.id, left: ball.seconds, tickIn: 0 });
+        if (ball && user.kind === 'hero') this.state.orbs.push({ x: from.x, y: from.y, targetId: target.id, left: ball.seconds, tickIn: 0, cast: mark });
       },
       tremor: (wedge) => {
         const shakes = this.grants.tremor as { seconds: number } | undefined;
-        if (shakes && user.kind === 'hero') this.state.tremors.push({ wedge, left: shakes.seconds, tickIn: 0 });
+        if (shakes && user.kind === 'hero') this.state.tremors.push({ wedge, left: shakes.seconds, tickIn: 0, cast: mark });
       },
     });
 
@@ -3206,9 +3241,12 @@ export class RunSim {
         tickIn: 0,
       });
     }
-    const stacked = sleet ? 1 + (this.sleet * sleet.per) / 100 : 1; // Sleet under Rimefield: reduced cooldown a stack, since there is no rate
+    // Under Rimefield there is no rate for Sleet or Sure Footing to multiply,
+    // so each divides the cooldown by the same figure it would multiply a rate.
+    let quicker = sleet ? 1 + (this.sleet * sleet.per) / 100 : 1;
+    if (this.streak === 1) quicker *= 1 + ((this.grants.freshFaster as number) ?? 0) / 100;
     user.cooldown = stands && user.kind === 'hero' && skill.behaviour === 'spike'
-      ? (stands.cooldown * Math.max(STANDING.leastCooldown, 1 - user.stats.cooldown / 100)) / stacked
+      ? (stands.cooldown * Math.max(STANDING.leastCooldown, 1 - user.stats.cooldown / 100)) / quicker
       : this.swingCooldown(user);
     // Only off the skill in the MAIN slot: a follow-up is another use of it.
     if (user.kind === 'hero' && skill === this.skill) this.maybeChain(primary, crit);
@@ -3244,7 +3282,27 @@ export class RunSim {
     const per = (this.grants.slowMore as number) ?? 0;
     if (per <= 0) return 1;
     const rate = Math.max(0.01, user.stats.attacksPerSecond);
-    return 1 + per * Math.max(0, FASTEST_SWING / rate - 1);
+    return 1 + per * Math.min(1, Math.max(0, FASTEST_SWING / rate - 1)); // full at half the fastest swing, never past it
+  }
+
+  /** A DELAYED hit is the CAST'S: its Critical and what it paid are put back
+   *  for as long as the hit takes, so a Starved cast stays Starved on every
+   *  tick it leaves behind. */
+  private asCast(cast: CastMark, land: () => void): void {
+    const was = { crit: this.useCrit, starved: this.starved, over: this.overcharged };
+    this.useCrit = cast.crit;
+    this.starved = cast.starved;
+    this.overcharged = cast.overcharged;
+    land();
+    this.useCrit = was.crit;
+    this.starved = was.starved;
+    this.overcharged = was.over;
+  }
+
+  /** What the TARGET is worth NOW to a cast made earlier: the same conditions
+   *  an immediate hit reads, off the body as it stands when the hit lands. */
+  private targetScaleNow(target: Entity, cast: CastMark): number {
+    return cast.scale * targetScale({ grants: this.grants, sinceKill: this.killMoreIn, sinceHit: this.sinceHit, heft: cast.heft }, target);
   }
 
   /** A WANDERING CLOUD drifts after the nearest living body and Poisons what
@@ -3269,10 +3327,13 @@ export class RunSim {
       }
       if (c.tickIn > 0) continue;
       c.tickIn = drift.every;
-      for (const m of this.state.monsters) {
-        if (m.dead || dist(m, c) - m.radius > c.radius) continue;
-        this.applyAilment(this.state.hero, m, c.power * drift.share, c.seconds, this.skill, c.spread);
-      }
+      this.asCast(c.cast, () => {
+        for (const m of this.state.monsters) {
+          if (m.dead || dist(m, c) - m.radius > c.radius) continue;
+          // `power` already carries the cast's own multiplier: the target's is read now.
+          this.applyAilment(this.state.hero, m, c.power * drift.share * this.targetScaleNow(m, { ...c.cast, scale: 1 }), c.seconds, this.skill, c.spread);
+        }
+      });
       this.emit('blight_field', [{ x: c.x, y: c.y }, { x: c.x + c.radius, y: c.y }], this.skill.damageTypes[0] ?? 'poison', drift.every, 0, this.state.hero.id);
     }
     this.state.clouds = live.filter((c) => c.left > 0);
@@ -3291,10 +3352,12 @@ export class RunSim {
       if (!body || body.dead) continue;
       const radius = this.areaRadius(this.state.hero, lit.radius);
       const at = { x: body.x, y: body.y };
-      for (const m of this.state.monsters) {
-        if (m.dead || (m !== body && dist(m, at) - m.radius > radius)) continue;
-        this.dealDamage(this.state.hero, m, 1 + lit.more, this.skill);
-      }
+      this.asCast(f.cast, () => {
+        for (const m of this.state.monsters) {
+          if (m.dead || (m !== body && dist(m, at) - m.radius > radius)) continue;
+          this.dealDamage(this.state.hero, m, (1 + lit.more) * this.targetScaleNow(m, f.cast), this.skill);
+        }
+      });
       this.emit('burst', [at, { x: at.x + radius, y: at.y }], this.skill.damageTypes[0] ?? 'physical', 0.32, 0, this.state.hero.id);
     }
     this.state.fuses = live.filter((f) => f.left > 0);
@@ -3314,8 +3377,11 @@ export class RunSim {
     }
     const share = Math.max(0.05, 1 - ball.less);
     const reach = 1 + Math.max(0, ((this.grants.chains as number) ?? 0) + ((this.skill.params?.chains as number) ?? 0));
-    const falloff = ((this.grants.chainDamage as number) ?? (this.skill.params?.chainDamage as number) ?? PROJECTILE.arcDamage)
-      * ((this.grants.chainBuild as number) ?? 1);
+    // The first body is the ball's own hit; every one after it is an Arc, at
+    // the chain's share and climb exactly as `projectile` counts them.
+    const hop = (this.grants.chainDamage as number) ?? (this.skill.params?.chainDamage as number) ?? PROJECTILE.arcDamage;
+    const build = (this.grants.chainBuild as number) ?? 1;
+    const arcShare = (i: number): number => (i === 0 ? 1 : hop * build ** (i - 1));
     for (const orb of live) {
       orb.left -= dt;
       orb.tickIn -= dt;
@@ -3336,9 +3402,11 @@ export class RunSim {
         .filter((m) => !m.dead && dist(m, orb) - m.radius <= ball.radius)
         .sort((a, b) => dist(a, orb) - dist(b, orb))
         .slice(0, reach);
-      struck.forEach((m, i) => {
-        this.dealDamage(this.state.hero, m, share * falloff ** i, this.skill);
-        this.emit('arc', [{ x: orb.x, y: orb.y }, { x: m.x, y: m.y }], 'lightning', 0.25, i * 0.03, this.state.hero.id);
+      this.asCast(orb.cast, () => {
+        struck.forEach((m, i) => {
+          this.dealDamage(this.state.hero, m, share * arcShare(i) * this.targetScaleNow(m, orb.cast), this.skill);
+          this.emit('arc', [{ x: orb.x, y: orb.y }, { x: m.x, y: m.y }], 'lightning', 0.25, i * 0.03, this.state.hero.id);
+        });
       });
       this.emit('burst', [{ x: orb.x, y: orb.y }, { x: orb.x + ORB_SPARK, y: orb.y }], 'lightning', ball.every, 0, this.state.hero.id);
     }
@@ -3357,10 +3425,12 @@ export class RunSim {
       t.tickIn -= dt;
       if (t.tickIn > 0 || !shakes) continue;
       t.tickIn = shakes.every;
-      for (const m of this.state.monsters) {
-        if (m.dead || !inWedge(t.wedge, m)) continue;
-        this.dealDamage(this.state.hero, m, shakes.share, this.skill);
-      }
+      this.asCast(t.cast, () => {
+        for (const m of this.state.monsters) {
+          if (m.dead || !inWedge(t.wedge, m)) continue;
+          this.dealDamage(this.state.hero, m, shakes.share * this.targetScaleNow(m, t.cast), this.skill);
+        }
+      });
       this.emit('wedge', wedgeCorners(t.wedge), this.skill.damageTypes[0] ?? 'physical', shakes.every, 0, this.state.hero.id);
     }
     this.state.tremors = live.filter((t) => t.left > 0);
@@ -3545,32 +3615,9 @@ export class RunSim {
           : this.weak();
       scale *= 1 + (exposed * (AILMENT_BY_ID.exposure?.takenPer ?? 0) * worth) / 100;
     }
-    // A flask that blunts what reaches you. The window is the trade.
-    if (defender.kind === 'hero' && this.flasked()) {
-      scale *= 1 - Math.min(0.8, (this.grants.potionLess as number) ?? 0);
-    }
-    // A shield blunts every hit: what the other hand bought.
-    if (defender.kind === 'hero') {
-      if (this.grip === 'shield') {
-        scale *= 1 - Math.min(WARRIOR.shieldLessCap, (this.grants.shieldLess as number) ?? 0);
-      }
-      // THE PAINT: a blow that lands blunts the next ones, in the same window
-      // that sharpens what you swing back.
-      const painted = (this.grants.struckLess as number) ?? 0;
-      if (painted > 0 && this.sinceHit <= WARRIOR.paintSeconds) {
-        scale *= Math.max(0, 1 - painted / 100);
-      }
-      // What a KILL bought: cover, for as long as it lasts.
-      const guard = (this.grants.killGuard as number) ?? 0;
-      if (guard > 0 && this.sinceKill > 0) scale *= Math.max(0, 1 - guard / 100);
-      scale *= (this.grants.takenScale as number) ?? 1;
-      // THE BRINK from the other side: near death is where it covers you.
-      const edge = this.grants.atBrink as { under: number; less: number } | undefined;
-      if (edge && defender.life < defender.stats.maxLife * edge.under) {
-        scale *= Math.max(0, 1 - edge.less);
-      }
-    }
-    if (crit) scale *= 2 + attacker.stats.critMultiplier / 100;
+    if (defender.kind === 'hero') scale *= this.guarded(defender);
+    // THE LONG CUT: a Critical that buffs is a Critical that hits for no more.
+    if (crit && !(attacker.kind === 'hero' && critBuff(this.grants))) scale *= 2 + attacker.stats.critMultiplier / 100;
     // Ailments and bursts too: no corner of a build runs dry for free.
     if (this.starved && attacker.kind === 'hero') scale *= starvedMultiplier(this.grants);
     // Conditions on the WHOLE use: a burst is worth what made it.
@@ -3674,6 +3721,23 @@ export class RunSim {
     }
     if (attacker.kind === 'hero') this.leech(attacker, dmg);
 
+    // BACKDRAFT, before this hit leaves anything of its own: what the Ailments
+    // of the types it carries had LEFT to tick, resisted as the ticks would
+    // have been, landed at once. A hit that Burns eats the Burn, never a Bleed.
+    const eat = attacker.kind === 'hero' ? ((this.grants.consumeAilment as number) ?? 0) : 0;
+    let eaten = 0;
+    if (eat > 0 && defender.kind === 'monster' && defender.ailments.length > 0) {
+      const carried = new Set(Object.keys(dealt));
+      const keep: Ailment[] = [];
+      for (const a of defender.ailments) {
+        if (!carried.has(a.type)) { keep.push(a); continue; }
+        for (const [type, n] of Object.entries(a.dps)) {
+          eaten += this.afterResistance(defender, n * a.remaining, type) * this.hide(defender, a.type);
+        }
+      }
+      if (eaten > 0) defender.ailments = keep;
+    }
+
     this.applyTyped(attacker, defender, byType); // what the types carried, on a body still up
 
     // Being hit is the most reliable way to notice someone, whatever the
@@ -3687,18 +3751,9 @@ export class RunSim {
       && defender.life <= defender.stats.maxLife * cull) {
       defender.life = 0;
     }
-    // BACKDRAFT: what the Ailments had LEFT, landed at once and taken off.
-    const eat = attacker.kind === 'hero' ? ((this.grants.consumeAilment as number) ?? 0) : 0;
-    if (eat > 0 && defender.kind === 'monster' && defender.life > 0 && defender.ailments.length > 0) {
-      let left = 0;
-      for (const a of defender.ailments) {
-        for (const n of Object.values(a.dps)) left += n * a.remaining;
-      }
-      if (left > 0) {
-        defender.ailments = [];
-        defender.life -= left * eat;
-        this.bank(defender, left * eat, false);
-      }
+    if (eaten > 0) {
+      defender.life -= eaten * eat;
+      this.bank(defender, eaten * eat, false);
     }
     // A PIN, on the same seam a Freeze writes: monsters only, never stacked.
     const pin = attacker.kind === 'hero' ? ((this.grants.pinSeconds as number) ?? 0) : 0;
@@ -3992,7 +4047,11 @@ export class RunSim {
   private chill(target: Entity, def: AilmentDef): void {
     const stacks = stacksOf(target, 'chill');
     // `weak()` is the HERO'S own, so it reaches a monster alone.
-    const worth = target.kind === 'hero' ? this.hide(target, def.type) : this.weak();
+    // Worth what any Ailment the hero applies is worth: the same multiplier a
+    // Burn's damage reads, on the Slow instead of a number.
+    const worth = target.kind === 'hero'
+      ? this.hide(target, def.type)
+      : this.weak() * ((this.grants.ailmentMultiplier as number) ?? 1);
     target.slowed = Math.min(0.75, (stacks * (def.slowPer ?? 0) * worth) / 100);
     const live = target.effects.find((x) => x.id === SLOWED);
     if (live) live.remaining = Math.max(live.remaining, def.seconds);
@@ -4240,9 +4299,11 @@ export class RunSim {
       ailment.tickIn += AILMENT_TICK;
       if (slice <= 0) continue;
 
-      // Crit never reaches an ailment: it is not in one's tags.
+      // Crit never reaches an ailment's DAMAGE: it is not in one's tags. A tick
+      // still ROLLS one, at the hero's own chance, and that is what a Contagion
+      // jumps on — so the chance nodes on its line buy jumps and nothing else.
       const scale = slice;
-      if (ailment.spread) contagious.push(ailment.spread);
+      if (ailment.spread && this.rng.chance(this.critChanceOf(ailment.spread.source) / 100)) contagious.push(ailment.spread);
 
       // Resisted per type, never armoured — which is what lets an ailment
       // threaten a build no hit can get through.
@@ -4285,6 +4346,10 @@ export class RunSim {
     this.wake(e, true);
 
     e.life -= total;
+    // CULL reads a tick as it reads a hit: a wound that leaves a body under the
+    // bar finishes it, so the line is worth something to a build that never hits.
+    const cull = (this.grants.execute as number) ?? 0;
+    if (cull > 0 && e.kind === 'monster' && e.life > 0 && e.life <= e.stats.maxLife * cull) e.life = 0;
     // AFTERSHOCK: the same tick, dealt again round the body carrying it. It
     // applies nothing, so there is no second Ailment to tick and no cascade.
     const share = this.grants.ailmentShare as { share: number; radius: number } | undefined;
@@ -4506,6 +4571,8 @@ export class RunSim {
     if (this.grants.killGuard || this.grants.killHaste || this.grants.killMove) {
       this.sinceKill = Math.max(ROGUE.guardSeconds, ROGUE.hasteSeconds);
     }
+    const after = this.grants.killMore as { seconds: number } | undefined;
+    if (after) this.killMoreIn = Math.max(this.killMoreIn, after.seconds);
     const tempo = this.grants.killTempo as { most: number; seconds: number } | undefined;
     if (tempo) {
       this.tempo = Math.min(tempo.most, this.tempo + 1);

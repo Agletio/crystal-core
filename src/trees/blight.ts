@@ -191,6 +191,7 @@ const BRANCHES: Branch[] = [
           name: 'Septic',
           description: 'The Poison deals 30% more damage.',
           grants: { ailmentMultiplier: 1.3 },
+          under: { bl_spore: { description: 'Spore Burst deals 30% more damage.', grants: { ailmentMultiplier: 1.3 } } },
         },
       },
       {
@@ -241,6 +242,7 @@ const BRANCHES: Branch[] = [
       name: 'Canopy',
       description: "Clouds have 55% more radius. Blight's Poison deals 12% less damage.",
       grants: { fieldRadius: 1.55, ailmentMultiplier: 0.88, manaMultiplier: 1.08 },
+      under: { bl_spore: { description: 'Spore Burst has 55% more radius and deals 12% less damage.', grants: { fieldRadius: 1.55, ailmentMultiplier: 0.88, manaMultiplier: 1.08 } } },
     },
     twigs: [
       {
@@ -334,6 +336,7 @@ const TRUNK_NOTABLES: Notable[] = [
     name: 'Slow Rot',
     description: 'The Poison Blight applies lasts 30% longer.',
     grants: { ailmentDuration: 1.3 },
+    under: { bl_spore: { description: 'Spore Burst deals 10% more damage.', grants: { ailmentMultiplier: 1.1 } } }, // a hit has no duration
   },
   {
     id: 'bl_transmutation',

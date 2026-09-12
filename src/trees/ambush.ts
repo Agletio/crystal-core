@@ -197,7 +197,10 @@ const BRANCHES: Branch[] = [
             'You step behind an enemy and apply Bleed with 150% more damage, dealing no hit damage. ' +
             'Faster attacks apply more stacks. Critical uses can still trigger Relay.',
           grants: { bleedOut: { more: 1.5 }, manaMultiplier: 1.15 },
-          converts: { critMultiplier: { stat: 'damage', tags: ['bleed'], form: 'inc', say: ['Critical Damage', 'increased Bleed Damage'] } },
+          converts: {
+            critMultiplier: { stat: 'damage', tags: ['bleed'], form: 'inc', say: ['Critical Damage', 'increased Bleed Damage'] },
+            ailmentChance: { stat: 'damage', tags: ['bleed'], form: 'inc', say: ['chance to apply Bleed', 'increased Bleed Damage'] },
+          },
         },
       },
     ],
@@ -285,6 +288,9 @@ const BRANCHES: Branch[] = [
       name: 'Cull',
       description: "Hits kill enemies left at 8% or less of maximum Life.",
       grants: { execute: 0.08, manaMultiplier: 1.15 },
+      // The wound's ticks read the bar too, so the line is worth something to
+      // a build that never hits.
+      under: { am_exsanguinate: { description: 'Bleed ticks kill enemies left at 8% or less of maximum Life.', grants: { execute: 0.08, manaMultiplier: 1.15 } } },
     },
     twigs: [
       {
@@ -294,6 +300,7 @@ const BRANCHES: Branch[] = [
           name: 'Bled Out',
           description: "Adds 7 percentage points to the Life threshold at which your hits kill enemies.",
           grants: { execute: 0.07 },
+          under: { am_exsanguinate: { description: 'Adds 7 percentage points to the Life threshold at which Bleed ticks kill enemies.', grants: { execute: 0.07 } } },
         },
       },
       {
@@ -306,6 +313,7 @@ const BRANCHES: Branch[] = [
           "Critical Chance.",
           grants: { execute: 0.05 },
           stats: [stat('critChance', 'flat', 8)],
+          under: { am_exsanguinate: { description: 'Adds 5 percentage points to the Life threshold at which Bleed ticks kill enemies. Ambush has +8% Critical Chance.', grants: { execute: 0.05 }, stats: [stat('critChance', 'flat', 8)] } },
         },
       },
       {
@@ -319,6 +327,7 @@ const BRANCHES: Branch[] = [
           "+45% Critical Damage.",
           grants: { execute: 0.1, manaMultiplier: 1.15 },
           stats: [stat('critMultiplier', 'flat', 45)],
+          under: { am_exsanguinate: { description: 'Adds 10 percentage points to the Life threshold at which Bleed ticks kill enemies. Bleeds you apply deal 45% increased damage.', grants: { execute: 0.1, manaMultiplier: 1.15 }, stats: [stat('damage', 'inc', 45, ['bleed'])] } },
         },
       },
     ],
