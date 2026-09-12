@@ -1,5 +1,23 @@
 # Writing batches
 
+## Batch 2 — entire glossary
+
+All **33 keyword definitions** in `src/keywords.ts` were reviewed against main
+`726e1417` and rewritten for clear targeting, amounts, timing and exceptions.
+`GLOSSARY.md` records individual implementation evidence. **28 are reviewed;
+five remain blocked** on mechanics questions (W005 and W018–W021). Their copy
+clarifies confirmed behavior without approving the disputed rules. Shock's
+secondary-target description is intentionally deferred to Claude.
+
+The ledger now has **1,783 reviewed, 31 blocked, 39 pending, no stale entries**.
+Pending entries are skill cards and character introductions, not glossary
+definitions. Keyword IDs, names, aliases, grants, relationships and scaling
+labels are preserved. Only glossary prose and its string formatter change in
+game source; the generated browser bundle is rebuilt for publication.
+
+Validation and publication are recorded in the glossary pull request. The
+earlier sections below describe completed tree work, not the current queue.
+
 ## Current publication follow-up
 
 Reconciled draft PR #17 with main `2e13ebb1`. Claude's mechanics fixes were on
