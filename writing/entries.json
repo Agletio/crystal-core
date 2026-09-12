@@ -7049,7 +7049,7 @@
     },
     "text": {
       "name": "Avalanche",
-      "description": "Raises Potential's damage growth from 25% to 50% per Arc after the first."
+      "description": "Raises Runaway's damage growth from 25% to 50% per Arc after the first."
     },
     "implementation": [
       "src/trees/arc_lightning.ts",
@@ -7068,10 +7068,10 @@
       "src/sim/character.ts"
     ],
     "mechanicsRevision": "b881c87cd031a87a041e34832c4ffa55c8f6d3ebdcd50ac0e843be962328d972",
-    "textRevision": "dd7e3110b1bea91af36766830b7e9637383fac92f3be77423708c05dd95ebaaf",
+    "textRevision": "21645b5116840a207c58e399d176fec92c5962bf197a29eee17dbcf08dd91fa6",
     "status": "reviewed",
     "reviewedMechanicsRevision": "b881c87cd031a87a041e34832c4ffa55c8f6d3ebdcd50ac0e843be962328d972",
-    "reviewedTextRevision": "dd7e3110b1bea91af36766830b7e9637383fac92f3be77423708c05dd95ebaaf",
+    "reviewedTextRevision": "21645b5116840a207c58e399d176fec92c5962bf197a29eee17dbcf08dd91fa6",
     "reviewedAtCommit": "802c6ca69382e3b4b68976e1637c78c12ff09a95",
     "notes": "Astra re-reviewed against Claude mechanics 898e902f (also main 57cae729), the implementation diff, W001–W017 decisions, current grant merge rules and consumers. Text-only follow-up is captured by reviewedTextRevision. Unchanged entries retain the initial implementation review; changed modes, stacking and generated tooltip lines were checked individually. W005/W008 exceptions remain blocked separately."
   },
@@ -7082,7 +7082,7 @@
       "selector": "node:al_capacitor/converted:al_ball"
     },
     "text": {
-      "description": "Raises Potential's damage growth from 25% to 50% per Arc after the first."
+      "description": "Raises Runaway's damage growth from 25% to 50% per Arc after the first."
     },
     "implementation": [
       "src/trees/arc_lightning.ts",
@@ -7101,10 +7101,10 @@
       "src/sim/character.ts"
     ],
     "mechanicsRevision": "b881c87cd031a87a041e34832c4ffa55c8f6d3ebdcd50ac0e843be962328d972",
-    "textRevision": "6be065c8bdcd4e27264d1d9e506a54bf46bddf1636a7e2f7dfbaa227636bdd02",
+    "textRevision": "529a08dd8d4eff333a412df7dfe42447ed7c88cb0371302348f146e1a4dc54a3",
     "status": "reviewed",
     "reviewedMechanicsRevision": "b881c87cd031a87a041e34832c4ffa55c8f6d3ebdcd50ac0e843be962328d972",
-    "reviewedTextRevision": "6be065c8bdcd4e27264d1d9e506a54bf46bddf1636a7e2f7dfbaa227636bdd02",
+    "reviewedTextRevision": "529a08dd8d4eff333a412df7dfe42447ed7c88cb0371302348f146e1a4dc54a3",
     "reviewedAtCommit": "802c6ca69382e3b4b68976e1637c78c12ff09a95",
     "notes": "Astra re-reviewed against Claude mechanics 898e902f (also main 57cae729), the implementation diff, W001–W017 decisions, current grant merge rules and consumers. Text-only follow-up is captured by reviewedTextRevision. Unchanged entries retain the initial implementation review; changed modes, stacking and generated tooltip lines were checked individually. W005/W008 exceptions remain blocked separately."
   },
@@ -7115,7 +7115,7 @@
       "selector": "node:al_capacitor/under:al_cloudburst"
     },
     "text": {
-      "description": "Adds 8 percentage points to Potential's damage growth per bolt, for 18% more damage with each successive bolt."
+      "description": "Adds 8 percentage points to Runaway's damage growth per bolt, for 18% more damage with each successive bolt."
     },
     "implementation": [
       "src/trees/arc_lightning.ts",
@@ -7134,10 +7134,10 @@
       "src/sim/character.ts"
     ],
     "mechanicsRevision": "a624038dec454ddc925bf9ee5fbcc6653d989e22e6f51491ee836290e1d88b10",
-    "textRevision": "8eb85ae07923ff487312a82551e0d37eb4337c1d044af05a09731b9391c66dc3",
+    "textRevision": "541cddf00fda4bb912ac40e63ef60f64683040e4e6bb61473cd13d9392f87d2a",
     "status": "reviewed",
     "reviewedMechanicsRevision": "a624038dec454ddc925bf9ee5fbcc6653d989e22e6f51491ee836290e1d88b10",
-    "reviewedTextRevision": "8eb85ae07923ff487312a82551e0d37eb4337c1d044af05a09731b9391c66dc3",
+    "reviewedTextRevision": "541cddf00fda4bb912ac40e63ef60f64683040e4e6bb61473cd13d9392f87d2a",
     "reviewedAtCommit": "802c6ca69382e3b4b68976e1637c78c12ff09a95",
     "notes": "Astra re-reviewed against Claude mechanics 898e902f (also main 57cae729), the implementation diff, W001–W017 decisions, current grant merge rules and consumers. Text-only follow-up is captured by reviewedTextRevision. Unchanged entries retain the initial implementation review; changed modes, stacking and generated tooltip lines were checked individually. W005/W008 exceptions remain blocked separately."
   },
@@ -46582,7 +46582,7 @@
     },
     "text": {
       "name": "Dead Lift",
-      "description": "Raises Rhythm's maximum damage bonus by 35 percentage points."
+      "description": "Raises Heft's maximum damage bonus by 35 percentage points."
     },
     "implementation": [
       "src/trees/strike.ts",
@@ -46601,10 +46601,10 @@
       "src/sim/character.ts"
     ],
     "mechanicsRevision": "3f322be97b746b038ae7e12412ebb753ed6bc34c0fcd369cc0628150f0b27142",
-    "textRevision": "f6541db6e433b381a0a8fe0157130f6ee9f67d9fb55abb223a645e7c5b3c2d96",
+    "textRevision": "91340b657074e361b9c8e9d971ccb000710dbba8f2d1eb525e579d7e333388ff",
     "status": "reviewed",
     "reviewedMechanicsRevision": "3f322be97b746b038ae7e12412ebb753ed6bc34c0fcd369cc0628150f0b27142",
-    "reviewedTextRevision": "f6541db6e433b381a0a8fe0157130f6ee9f67d9fb55abb223a645e7c5b3c2d96",
+    "reviewedTextRevision": "91340b657074e361b9c8e9d971ccb000710dbba8f2d1eb525e579d7e333388ff",
     "reviewedAtCommit": "802c6ca69382e3b4b68976e1637c78c12ff09a95",
     "notes": "Astra re-reviewed against Claude mechanics 898e902f (also main 57cae729), the implementation diff, W001–W017 decisions, current grant merge rules and consumers. Text-only follow-up is captured by reviewedTextRevision. Unchanged entries retain the initial implementation review; changed modes, stacking and generated tooltip lines were checked individually. W005/W008 exceptions remain blocked separately."
   },
@@ -46615,7 +46615,7 @@
       "selector": "node:st_cadence/converted:st_ethereal"
     },
     "text": {
-      "description": "Raises Rhythm's maximum damage bonus by 35 percentage points."
+      "description": "Raises Heft's maximum damage bonus by 35 percentage points."
     },
     "implementation": [
       "src/trees/strike.ts",
@@ -46634,10 +46634,10 @@
       "src/sim/character.ts"
     ],
     "mechanicsRevision": "3f322be97b746b038ae7e12412ebb753ed6bc34c0fcd369cc0628150f0b27142",
-    "textRevision": "34226d1b43298262578b074a70f903443f946c992f4e12beede518878c0b00dd",
+    "textRevision": "835d646ab8893df8a9a5c62ed3a7bc2fb3861b03c759da532a53d6955e22cac4",
     "status": "reviewed",
     "reviewedMechanicsRevision": "3f322be97b746b038ae7e12412ebb753ed6bc34c0fcd369cc0628150f0b27142",
-    "reviewedTextRevision": "34226d1b43298262578b074a70f903443f946c992f4e12beede518878c0b00dd",
+    "reviewedTextRevision": "835d646ab8893df8a9a5c62ed3a7bc2fb3861b03c759da532a53d6955e22cac4",
     "reviewedAtCommit": "802c6ca69382e3b4b68976e1637c78c12ff09a95",
     "notes": "Astra re-reviewed against Claude mechanics 898e902f (also main 57cae729), the implementation diff, W001–W017 decisions, current grant merge rules and consumers. Text-only follow-up is captured by reviewedTextRevision. Unchanged entries retain the initial implementation review; changed modes, stacking and generated tooltip lines were checked individually. W005/W008 exceptions remain blocked separately."
   },
@@ -46648,7 +46648,7 @@
       "selector": "node:st_cadence/converted:st_whirl"
     },
     "text": {
-      "description": "Raises Rhythm's maximum damage bonus by 35 percentage points."
+      "description": "Raises Heft's maximum damage bonus by 35 percentage points."
     },
     "implementation": [
       "src/trees/strike.ts",
@@ -46667,10 +46667,10 @@
       "src/sim/character.ts"
     ],
     "mechanicsRevision": "3f322be97b746b038ae7e12412ebb753ed6bc34c0fcd369cc0628150f0b27142",
-    "textRevision": "34226d1b43298262578b074a70f903443f946c992f4e12beede518878c0b00dd",
+    "textRevision": "835d646ab8893df8a9a5c62ed3a7bc2fb3861b03c759da532a53d6955e22cac4",
     "status": "reviewed",
     "reviewedMechanicsRevision": "3f322be97b746b038ae7e12412ebb753ed6bc34c0fcd369cc0628150f0b27142",
-    "reviewedTextRevision": "34226d1b43298262578b074a70f903443f946c992f4e12beede518878c0b00dd",
+    "reviewedTextRevision": "835d646ab8893df8a9a5c62ed3a7bc2fb3861b03c759da532a53d6955e22cac4",
     "reviewedAtCommit": "802c6ca69382e3b4b68976e1637c78c12ff09a95",
     "notes": "Astra re-reviewed against Claude mechanics 898e902f (also main 57cae729), the implementation diff, W001–W017 decisions, current grant merge rules and consumers. Text-only follow-up is captured by reviewedTextRevision. Unchanged entries retain the initial implementation review; changed modes, stacking and generated tooltip lines were checked individually. W005/W008 exceptions remain blocked separately."
   },
@@ -47617,7 +47617,7 @@
     },
     "text": {
       "name": "Follow-Through",
-      "description": "Raises Rhythm's maximum damage bonus by 45 percentage points. Strike has 15% reduced Attack Speed."
+      "description": "Raises Heft's maximum damage bonus by 45 percentage points. Strike has 15% reduced Attack Speed."
     },
     "implementation": [
       "src/trees/strike.ts",
@@ -47636,10 +47636,10 @@
       "src/sim/character.ts"
     ],
     "mechanicsRevision": "aaf133f420a4b5038177b9f693a5cb66741916dc4069c09733e73b828b392d37",
-    "textRevision": "0d44963e2e2c298a69cb49ebeba77407ce6f3924479b0f0ff0640045d935ef81",
+    "textRevision": "c0cd63dd670f94a7ae461131f19ebe03f08444ab5359c3633395d57af56c372c",
     "status": "reviewed",
     "reviewedMechanicsRevision": "aaf133f420a4b5038177b9f693a5cb66741916dc4069c09733e73b828b392d37",
-    "reviewedTextRevision": "0d44963e2e2c298a69cb49ebeba77407ce6f3924479b0f0ff0640045d935ef81",
+    "reviewedTextRevision": "c0cd63dd670f94a7ae461131f19ebe03f08444ab5359c3633395d57af56c372c",
     "reviewedAtCommit": "802c6ca69382e3b4b68976e1637c78c12ff09a95",
     "notes": "Astra re-reviewed against Claude mechanics 898e902f (also main 57cae729), the implementation diff, W001–W017 decisions, current grant merge rules and consumers. Text-only follow-up is captured by reviewedTextRevision. Unchanged entries retain the initial implementation review; changed modes, stacking and generated tooltip lines were checked individually. W005/W008 exceptions remain blocked separately."
   },
@@ -47650,7 +47650,7 @@
       "selector": "node:st_followthrough/converted:st_ethereal"
     },
     "text": {
-      "description": "Raises Rhythm's maximum damage bonus by 45 percentage points. Strike has 15% reduced Attack Speed."
+      "description": "Raises Heft's maximum damage bonus by 45 percentage points. Strike has 15% reduced Attack Speed."
     },
     "implementation": [
       "src/trees/strike.ts",
@@ -47669,10 +47669,10 @@
       "src/sim/character.ts"
     ],
     "mechanicsRevision": "aaf133f420a4b5038177b9f693a5cb66741916dc4069c09733e73b828b392d37",
-    "textRevision": "e92286818890ffbf8db87d853184bb84a2a7a2e2585f33eb95d9cc827f2a7164",
+    "textRevision": "80b4435076a2448e595117fd5f03cba74ee3102fb5c65bb2780d8373ea69a2da",
     "status": "reviewed",
     "reviewedMechanicsRevision": "aaf133f420a4b5038177b9f693a5cb66741916dc4069c09733e73b828b392d37",
-    "reviewedTextRevision": "e92286818890ffbf8db87d853184bb84a2a7a2e2585f33eb95d9cc827f2a7164",
+    "reviewedTextRevision": "80b4435076a2448e595117fd5f03cba74ee3102fb5c65bb2780d8373ea69a2da",
     "reviewedAtCommit": "802c6ca69382e3b4b68976e1637c78c12ff09a95",
     "notes": "Astra re-reviewed against Claude mechanics 898e902f (also main 57cae729), the implementation diff, W001–W017 decisions, current grant merge rules and consumers. Text-only follow-up is captured by reviewedTextRevision. Unchanged entries retain the initial implementation review; changed modes, stacking and generated tooltip lines were checked individually. W005/W008 exceptions remain blocked separately."
   },
@@ -47683,7 +47683,7 @@
       "selector": "node:st_followthrough/converted:st_whirl"
     },
     "text": {
-      "description": "Raises Rhythm's maximum damage bonus by 45 percentage points. Strike has 15% reduced Attack Speed."
+      "description": "Raises Heft's maximum damage bonus by 45 percentage points. Strike has 15% reduced Attack Speed."
     },
     "implementation": [
       "src/trees/strike.ts",
@@ -47702,10 +47702,10 @@
       "src/sim/character.ts"
     ],
     "mechanicsRevision": "aaf133f420a4b5038177b9f693a5cb66741916dc4069c09733e73b828b392d37",
-    "textRevision": "e92286818890ffbf8db87d853184bb84a2a7a2e2585f33eb95d9cc827f2a7164",
+    "textRevision": "80b4435076a2448e595117fd5f03cba74ee3102fb5c65bb2780d8373ea69a2da",
     "status": "reviewed",
     "reviewedMechanicsRevision": "aaf133f420a4b5038177b9f693a5cb66741916dc4069c09733e73b828b392d37",
-    "reviewedTextRevision": "e92286818890ffbf8db87d853184bb84a2a7a2e2585f33eb95d9cc827f2a7164",
+    "reviewedTextRevision": "80b4435076a2448e595117fd5f03cba74ee3102fb5c65bb2780d8373ea69a2da",
     "reviewedAtCommit": "802c6ca69382e3b4b68976e1637c78c12ff09a95",
     "notes": "Astra re-reviewed against Claude mechanics 898e902f (also main 57cae729), the implementation diff, W001–W017 decisions, current grant merge rules and consumers. Text-only follow-up is captured by reviewedTextRevision. Unchanged entries retain the initial implementation review; changed modes, stacking and generated tooltip lines were checked individually. W005/W008 exceptions remain blocked separately."
   },
@@ -49017,7 +49017,7 @@
     },
     "text": {
       "name": "Anvil Weight",
-      "description": "Raises Rhythm's maximum damage bonus by 25 percentage points. Strike Splash deals an additional 15% of hit damage."
+      "description": "Raises Heft's maximum damage bonus by 25 percentage points. Strike Splash deals an additional 15% of hit damage."
     },
     "implementation": [
       "src/trees/strike.ts",
@@ -49036,10 +49036,10 @@
       "src/sim/character.ts"
     ],
     "mechanicsRevision": "b27a4ac966122b32a191cd12e7b0bcaa32990dc169581796691ebce679c954f6",
-    "textRevision": "c923715ba5ff17a12622ca9b617a2fd6804f89861f1c5e4abc1b75d820c4b0d7",
+    "textRevision": "b1bbcddd98941de9a426060ff6e955b43712dd8a68972339b51e9c8fc940053f",
     "status": "reviewed",
     "reviewedMechanicsRevision": "b27a4ac966122b32a191cd12e7b0bcaa32990dc169581796691ebce679c954f6",
-    "reviewedTextRevision": "c923715ba5ff17a12622ca9b617a2fd6804f89861f1c5e4abc1b75d820c4b0d7",
+    "reviewedTextRevision": "b1bbcddd98941de9a426060ff6e955b43712dd8a68972339b51e9c8fc940053f",
     "reviewedAtCommit": "802c6ca69382e3b4b68976e1637c78c12ff09a95",
     "notes": "Astra re-reviewed against Claude mechanics 898e902f (also main 57cae729), the implementation diff, W001–W017 decisions, current grant merge rules and consumers. Text-only follow-up is captured by reviewedTextRevision. Unchanged entries retain the initial implementation review; changed modes, stacking and generated tooltip lines were checked individually. W005/W008 exceptions remain blocked separately."
   },
@@ -49050,7 +49050,7 @@
       "selector": "node:st_relentless/converted:st_ethereal"
     },
     "text": {
-      "description": "Raises Rhythm's maximum damage bonus by 25 percentage points. Strike Splash deals an additional 15% of hit damage."
+      "description": "Raises Heft's maximum damage bonus by 25 percentage points. Strike Splash deals an additional 15% of hit damage."
     },
     "implementation": [
       "src/trees/strike.ts",
@@ -49069,10 +49069,10 @@
       "src/sim/character.ts"
     ],
     "mechanicsRevision": "b27a4ac966122b32a191cd12e7b0bcaa32990dc169581796691ebce679c954f6",
-    "textRevision": "4e6b6ec40caea83d9a6bc1dde2c97b1788550e44839aa17e8c594eb4931b30d8",
+    "textRevision": "a49a139219ee5ce47ea711aff264ad914d8af459e2af869982db95a4bf891aaa",
     "status": "reviewed",
     "reviewedMechanicsRevision": "b27a4ac966122b32a191cd12e7b0bcaa32990dc169581796691ebce679c954f6",
-    "reviewedTextRevision": "4e6b6ec40caea83d9a6bc1dde2c97b1788550e44839aa17e8c594eb4931b30d8",
+    "reviewedTextRevision": "a49a139219ee5ce47ea711aff264ad914d8af459e2af869982db95a4bf891aaa",
     "reviewedAtCommit": "802c6ca69382e3b4b68976e1637c78c12ff09a95",
     "notes": "Astra re-reviewed against Claude mechanics 898e902f (also main 57cae729), the implementation diff, W001–W017 decisions, current grant merge rules and consumers. Text-only follow-up is captured by reviewedTextRevision. Unchanged entries retain the initial implementation review; changed modes, stacking and generated tooltip lines were checked individually. W005/W008 exceptions remain blocked separately."
   },
@@ -49083,7 +49083,7 @@
       "selector": "node:st_relentless/converted:st_whirl"
     },
     "text": {
-      "description": "Raises Rhythm's maximum damage bonus by 25 percentage points. Strike Splash deals an additional 15% of hit damage."
+      "description": "Raises Heft's maximum damage bonus by 25 percentage points. Strike Splash deals an additional 15% of hit damage."
     },
     "implementation": [
       "src/trees/strike.ts",
@@ -49102,10 +49102,10 @@
       "src/sim/character.ts"
     ],
     "mechanicsRevision": "b27a4ac966122b32a191cd12e7b0bcaa32990dc169581796691ebce679c954f6",
-    "textRevision": "4e6b6ec40caea83d9a6bc1dde2c97b1788550e44839aa17e8c594eb4931b30d8",
+    "textRevision": "a49a139219ee5ce47ea711aff264ad914d8af459e2af869982db95a4bf891aaa",
     "status": "reviewed",
     "reviewedMechanicsRevision": "b27a4ac966122b32a191cd12e7b0bcaa32990dc169581796691ebce679c954f6",
-    "reviewedTextRevision": "4e6b6ec40caea83d9a6bc1dde2c97b1788550e44839aa17e8c594eb4931b30d8",
+    "reviewedTextRevision": "a49a139219ee5ce47ea711aff264ad914d8af459e2af869982db95a4bf891aaa",
     "reviewedAtCommit": "802c6ca69382e3b4b68976e1637c78c12ff09a95",
     "notes": "Astra re-reviewed against Claude mechanics 898e902f (also main 57cae729), the implementation diff, W001–W017 decisions, current grant merge rules and consumers. Text-only follow-up is captured by reviewedTextRevision. Unchanged entries retain the initial implementation review; changed modes, stacking and generated tooltip lines were checked individually. W005/W008 exceptions remain blocked separately."
   },

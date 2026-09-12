@@ -7,6 +7,9 @@ with main `2e13ebb1` (the same mechanics arrived there as `57cae729`). W001–W0
 W006–W007 and W009–W017 are resolved for the tree batch. W005 and W008 are
 partially resolved, with **26 entries still blocked** as described below.
 The historical findings and Claude's decisions remain below for context.
+The current names are **Heft** (`st_rhythm`) and **Runaway** (`al_potential`);
+the historical findings call them Rhythm and Potential. Keep the saved IDs and
+use the current names in player-facing cross-references.
 
 - **W005, remaining:** `RunSim.applyAilment` computes Blight DPS from
   `attacker.stats.damageByType * multiplier / seconds`; it never reads

@@ -148,9 +148,9 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'al_capacitor',
           name: 'Avalanche',
-          description: "Raises Potential's damage growth from 25% to 50% per Arc after the first.",
+          description: "Raises Runaway's damage growth from 25% to 50% per Arc after the first.",
           grants: { chainBuild: 1.2, manaMultiplier: 1.08 },
-          under: { al_cloudburst: { description: "Adds 8 percentage points to Potential's damage growth per bolt, for 18% more damage with each " +
+          under: { al_cloudburst: { description: "Adds 8 percentage points to Runaway's damage growth per bolt, for 18% more damage with each " +
                                     "successive bolt.", grants: { smite: { build: 0.08 }, manaMultiplier: 1.08 } } },
         },
       },

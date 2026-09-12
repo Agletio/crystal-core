@@ -203,7 +203,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'st_cadence',
           name: 'Dead Lift',
-          description: "Raises Rhythm's maximum damage bonus by 35 percentage points.",
+          description: "Raises Heft's maximum damage bonus by 35 percentage points.",
           grants: { slowMore: 0.35 },
         },
       },
@@ -213,7 +213,7 @@ const BRANCHES: Branch[] = [
           id: 'st_relentless',
           name: 'Anvil Weight',
           description:
-            "Raises Rhythm's maximum damage bonus by 25 percentage points. Strike Splash deals an additional " +
+            "Raises Heft's maximum damage bonus by 25 percentage points. Strike Splash deals an additional " +
           "15% of hit damage.",
           grants: { slowMore: 0.25, splashShare: 0.15 },
         },
@@ -225,7 +225,7 @@ const BRANCHES: Branch[] = [
           id: 'st_followthrough',
           name: 'Follow-Through',
           description:
-            "Raises Rhythm's maximum damage bonus by 45 percentage points. Strike has 15% reduced Attack " +
+            "Raises Heft's maximum damage bonus by 45 percentage points. Strike has 15% reduced Attack " +
           "Speed.",
           grants: { slowMore: 0.45 },
           stats: [stat('attackSpeed', 'inc', -15)],
