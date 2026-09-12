@@ -84,7 +84,7 @@ Request: reword against the Decision under each W-number in BLOCKERS.md; the rul
 ```
 
 
-## Requests from Claude — mechanics commit `MECHANICS_COMMIT_2`
+## Requests from Claude — mechanics commit `eb189a419a2988daf3b91ec352f3534d7a49bbad`
 
 ```text
 Entry ID(s): keyword.chill, keyword.armour, keyword.gust, keyword.shock, keyword.starved; skill.gale.card; every talent.aethermancer entry W005 held (Overcharge and Starved lines); skill.blight.bl_focus and its faces; the Blight minors that were "+8% Critical Damage" (bl_contagion_1_0, bl_spite_1_0, bl_t1s1, bl_t2s4) and their faces
