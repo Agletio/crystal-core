@@ -1263,8 +1263,14 @@ JUMPS ON A TICK THAT ROLLED A CRITICAL** (a tick never DEALS one);
 FIGURE**, full at half the fastest swing; **BALL LIGHTNING COUNTS ARCS AS THE
 BOLT DOES**; and **`guarded()` IS THE ONE SEAM FOR WHAT A BUILD TAKES OFF A
 HIT** — a flask, a shield, the paint, a kill's cover, the Brink — read by a
-swing and a boss's slam alike and never by an Ailment. Every one of these was
-a finding in `writing/BLOCKERS.md`, where each decision is written down.
+swing and a boss's slam alike and never by an Ailment. **A CHILL SLOWS THE
+WALK AS IT SLOWS THE SWING AND TRACKS ITS LIVE STACKS** (`Entity.chill`,
+`chillShare`, `rechill`); **A DRAIN TAKES NO GUST**, only a slam does; **A
+SHOCK ARCS OFF A SHOCKED MONSTER TO THE MONSTERS ROUND IT** and off the hero
+to nobody; **WHAT A CAST PAID REACHES A POISON AND A WOUND** — Starved cuts
+them and Overcharge lifts them as it would a hit; and **BLIGHT SELLS NO
+CRITICAL DAMAGE** where no tick could ever read it. Every one of these was a
+finding in `writing/BLOCKERS.md`, where each decision is written down.
 
 **THE WRITING LEDGER IS ASTRA'S, AND THE MECHANICS ARE CLAUDE'S.**
 `writing/README.md` is the workflow: after any change to text or mechanics,

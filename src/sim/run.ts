@@ -319,6 +319,7 @@ export interface Entity {
   hitFlash: number; // seconds of "just got hit" left, for the renderer to flash
   /** Share off this one's swing rate while a Slow is running. Absent is none. */
   slowed?: number;
+  chill?: number; // Chill's own share of the Slow, tracked with its live stacks; slows the walk too
   /** Tiles this body has actually walked, for the walk cycle to read. */
   walked: number;
   /** Which HOARD this body guards. The last guard down is what opens it. */
@@ -1867,7 +1868,7 @@ export class RunSim {
     this.state.damageTaken[type] = (this.state.damageTaken[type] ?? 0) + before * kept;
     if (total <= 0) return;
     this.sinceHit = 0;
-    this.spendGust(hero);
+    if (hit) this.spendGust(hero); // a drain is not a hit, and takes none
     hero.life -= total;
     if (hero.life <= 0) this.kill(hero);
   }
@@ -3187,7 +3188,18 @@ export class RunSim {
       freeze: (target) => this.freeze(target),
       wound: (target, more) => {
         const def = AILMENT_OF_TYPE[skill.damageTypes[0] ?? 'physical'];
-        if (def && !target.dead) this.strike(user, target, def, 0, 1 + more);
+        if (!def || target.dead) return;
+        // What the cast paid reaches the wound as it reaches a hit: Starved
+        // cuts it, and Overcharge lifts it by the share it would add to a swing.
+        let boost = 1 + more;
+        if (user.kind === 'hero') {
+          if (this.starved) boost *= starvedMultiplier(this.grants);
+          const swing = Object.values(user.stats.damageByType).reduce((n, v) => n + v, 0);
+          if (this.overcharged > 0 && swing > 0) {
+            boost *= (swing + this.overcharged * ((this.grants.overchargeYield as number) ?? 1)) / swing;
+          }
+        }
+        this.strike(user, target, def, 0, boost);
       },
       hit: (target, multiplier) => {
         if (user.kind === 'hero') this.hitsThisUse++;
@@ -3521,8 +3533,8 @@ export class RunSim {
 
   /** What a step is multiplied by: a running flask, and nothing else yet. */
   private paceOf(e: Entity): number {
-    if (e.kind !== 'hero') return 1;
-    let pace = this.flasked() ? 1 + ((this.grants.potionMove as number) ?? 0) / 100 : 1;
+    if (e.kind !== 'hero') return 1 - (e.chill ?? 0); // a Chill slows the walk as it slows the swing
+    let pace = (1 - (e.chill ?? 0)) * (this.flasked() ? 1 + ((this.grants.potionMove as number) ?? 0) / 100 : 1);
     // Untouched for long enough, and speed IS the defence. It is a pace rather
     // than a stat so that being hit takes it away the instant it happens.
     const ramp = this.grants.unhitHaste as { after: number; more: number } | undefined;
@@ -4039,23 +4051,44 @@ export class RunSim {
       remaining: def.seconds * longer,
       tickIn: AILMENT_TICK * this.rng.float(0.5, 1),
     });
-    if (def.kind === 'chill') this.chill(target, def);
+    if (def.kind === 'chill') this.chill(target, def, def.seconds * longer);
   }
 
   /** CHILL slows and enough of it FREEZES, riding `Entity.slowed` — the one
    *  place a swing rate is multiplied, so there is no second slow. */
-  private chill(target: Entity, def: AilmentDef): void {
-    const stacks = stacksOf(target, 'chill');
-    // `weak()` is the HERO'S own, so it reaches a monster alone.
-    // Worth what any Ailment the hero applies is worth: the same multiplier a
-    // Burn's damage reads, on the Slow instead of a number.
+  /** What the Chill on a body is worth as a Slow: its live stacks, at what any
+   *  Ailment the hero applies is worth — the same multiplier a Burn reads.
+   *  `weak()` is the HERO'S own, so it reaches a monster alone. */
+  private chillShare(target: Entity, def: AilmentDef): number {
     const worth = target.kind === 'hero'
       ? this.hide(target, def.type)
       : this.weak() * ((this.grants.ailmentMultiplier as number) ?? 1);
-    target.slowed = Math.min(0.75, (stacks * (def.slowPer ?? 0) * worth) / 100);
+    return Math.min(0.75, (stacksOf(target, 'chill') * (def.slowPer ?? 0) * worth) / 100);
+  }
+
+  /** A stack expiring takes its share of the Slow with it. The swing Slow
+   *  follows it down where Chill was what set it; a landing's or a Heavy
+   *  Hand's own Slow keeps its own clock. */
+  private rechill(e: Entity): void {
+    const def = AILMENT_BY_ID.chill;
+    const before = e.chill ?? 0;
+    const now = def ? this.chillShare(e, def) : 0;
+    if (now > 0) e.chill = now;
+    else delete e.chill;
+    if ((e.slowed ?? 0) > before + 1e-9) return;
+    if (now > 0) e.slowed = now;
+    else if (!e.effects.some((x) => x.id === SLOWED)) delete e.slowed;
+  }
+
+  private chill(target: Entity, def: AilmentDef, seconds: number): void {
+    const stacks = stacksOf(target, 'chill');
+    const share = this.chillShare(target, def);
+    const worth = target.kind === 'hero' ? this.hide(target, def.type) : 1;
+    target.chill = share;
+    target.slowed = Math.max(target.slowed ?? 0, share);
     const live = target.effects.find((x) => x.id === SLOWED);
-    if (live) live.remaining = Math.max(live.remaining, def.seconds);
-    else target.effects.push({ id: SLOWED, remaining: def.seconds });
+    if (live) live.remaining = Math.max(live.remaining, seconds);
+    else target.effects.push({ id: SLOWED, remaining: seconds });
 
     // A FREEZE HOLDS THE HERO TOO, and the WARD answers it: the bar is his own
     // `hide` away, so a full ward is never Frozen and half a one is twice the
@@ -4096,7 +4129,9 @@ export class RunSim {
   private shockArc(from: Entity, ailment: Ailment, scale: number): void {
     const def = AILMENT_BY_ID.shock;
     if (!def?.arcShare) return;
-    const near = (from.kind === 'hero' ? this.state.monsters : [this.state.hero])
+    // Off a Shocked MONSTER, to the monsters round it; the hero has no neighbour
+    // on his side, so a Shock he carries arcs to nobody.
+    const near = (from.kind === 'monster' ? this.state.monsters : [])
       .filter((m) => m !== from && !m.dead && dist(m, from) <= (def.arcRadius ?? 2))
       .slice(0, def.arcTargets ?? 3);
     const each = (ailment.dps[def.type] ?? 0) * scale * def.arcShare;
@@ -4247,9 +4282,19 @@ export class RunSim {
 
     // A cast's typed parts tick as themselves: a cold ring on Blight is cold
     // damage over time, resisted as cold, not more poison.
+    // What the cast PAID reaches a Poison as it reaches a hit: Starved cuts
+    // it, and Overcharge adds its mana as damage before anything multiplies.
+    const dealt = { ...attacker.stats.damageByType };
+    let paid = 1;
+    if (attacker.kind === 'hero') {
+      if (this.starved) paid = starvedMultiplier(this.grants);
+      if (this.overcharged > 0) {
+        dealt[OVERCHARGE_TYPE] = (dealt[OVERCHARGE_TYPE] ?? 0) + this.overcharged * ((this.grants.overchargeYield as number) ?? 1);
+      }
+    }
     const dps: Record<string, number> = {};
-    for (const [t, amount] of Object.entries(attacker.stats.damageByType)) {
-      dps[t] = (amount * multiplier) / seconds;
+    for (const [t, amount] of Object.entries(dealt)) {
+      dps[t] = (amount * multiplier * paid) / seconds;
     }
 
     // Oldest stack falls off rather than refusing the new one, so re-applying
@@ -4318,6 +4363,7 @@ export class RunSim {
       if (ailment.id === 'shock') this.shockArc(e, ailment, scale);
     }
     e.ailments = e.ailments.filter((a) => a.remaining > 0);
+    if (e.chill !== undefined) this.rechill(e);
 
     // The pool eats a poison exactly as it eats a hit. Armour never could,
     // which is the whole reason letting mana do it is worth a trade.

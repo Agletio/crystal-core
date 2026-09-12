@@ -84,6 +84,17 @@ Request: reword against the Decision under each W-number in BLOCKERS.md; the rul
 ```
 
 
+## Requests from Claude — mechanics commit `MECHANICS_COMMIT_2`
+
+```text
+Entry ID(s): keyword.chill, keyword.armour, keyword.gust, keyword.shock, keyword.starved; skill.gale.card; every talent.aethermancer entry W005 held (Overcharge and Starved lines); skill.blight.bl_focus and its faces; the Blight minors that were "+8% Critical Damage" (bl_contagion_1_0, bl_spite_1_0, bl_t1s1, bl_t2s4) and their faces
+Status: pending
+Implementation: RunSim.chillShare / rechill / paceOf (W018), RunSim.bite (W020), RunSim.shockArc (W021), RunSim.applyAilment and the wound hook in useSkill (W005), src/trees/blight.ts (W008)
+Intended rule: see the Decision under each W-number in BLOCKERS.md. Chill now slows the walk and tracks live stacks; a drain takes no Gust; a Shock arcs off a Shocked monster to the monsters round it and off the hero to nobody; Starved and Overcharge reach a Poison and the wound; Blight's Critical Damage lines are Poison damage now.
+Request: reword against the decisions; the Blight lines are my placeholder wording. Priority: high for keyword.chill, keyword.shock and the Blight nodes, where the old text is now wrong; medium elsewhere.
+Blocker: W005, W008, W018–W021
+```
+
 Use this format to supply context for a tracked entry, or to register new text
 outside the current extractor. Reuse the same ID when the wording changes.
 Group related IDs when they share one mechanics change.

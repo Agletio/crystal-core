@@ -16,7 +16,7 @@ const COMMON: Minor[] = [
   { text: '+4% increased Damage', stats: [stat('damage', 'inc', 4)] },
   { text: '+3% increased Cast Speed', stats: [stat('castSpeed', 'inc', 3)] },
   { text: '+1% Critical Chance', stats: [stat('critChance', 'flat', 1)] },
-  { text: '+8% Critical Damage', stats: [stat('critMultiplier', 'flat', 8)] },
+  { text: '+4% more Poison Damage', grants: { ailmentMultiplier: 1.04 }, under: { bl_spore: { description: '+4% more damage', grants: { ailmentMultiplier: 1.04 } } } },
   { text: '+4% increased Area of Effect', stats: [stat('areaOfEffect', 'inc', 4)] },
 ];
 
@@ -374,8 +374,10 @@ const TRUNK_NOTABLES: Notable[] = [
   {
     id: 'bl_focus',
     name: 'Malign Focus',
-    description: 'Blight has +10% Critical Chance and +45% Critical Damage.',
-    stats: [stat('critChance', 'flat', 10), stat('critMultiplier', 'flat', 45)],
+    description: 'Blight has +10% Critical Chance, and its Poison deals 20% more damage.',
+    stats: [stat('critChance', 'flat', 10)],
+    grants: { ailmentMultiplier: 1.2 },
+    under: { bl_spore: { description: 'Blight has +10% Critical Chance, and Spore Burst deals 20% more damage.', stats: [stat('critChance', 'flat', 10)], grants: { ailmentMultiplier: 1.2 } } },
   },
   {
     id: 'bl_quickening',

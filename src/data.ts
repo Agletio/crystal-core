@@ -240,7 +240,7 @@ export const DEFENCE = {
   /** A Block stops a HIT outright, so the chance is the whole of it. Short of
    *  certain, or a shield would be the only defence worth wearing. */
   blockCap: 60,
-  /** Armour points at which reduction reaches half the cap. */
+  /** Armour points at which a hit is blunted by HALF; the curve caps at `armourCap`. */
   armourHalfPoint: 300,
   /** Where reduced Effect of Ailments stops, and 100 is nothing at all. */
   ailmentWardCap: 100,

@@ -29,6 +29,17 @@ hit even while the enemy remains Frozen. The old “coming out” wording was
 incorrect. The new definition states the verified next-hit timing and keeps
 the separate hero/enemy Freeze thresholds.
 
+**Decision (implemented).** Both: a Chill slows the walk as it slows the
+swing, and its Slow tracks its live stacks. `Entity.chill` is Chill's own share
+(`chillShare`: live stacks × `slowPer` × what an Ailment is worth, capped at
+75%); `paceOf` reads it for a monster's walk and the hero's, `hasteOf` still
+reads `slowed`, which Chill keeps at least its share. A stack expiring
+(`rechill` in `stepAilments`) recomputes the share and the swing Slow follows
+it down where Chill was what set it; a landing's or a Heavy Hand's Slow keeps
+its own clock. The Slow's clock is the stack's, `seconds × ailmentDuration`.
+`thawed` is consumed by the next hit whether or not the body is still Frozen:
+intended, and the glossary's wording of it stands.
+
 ### W019 — Armour's half-point example
 
 Blocked: `keyword.armour`. `DEFENCE.armourHalfPoint = 300` is documented as
@@ -39,6 +50,11 @@ Confirm the formula is intended, or correct it. The revised copy preserves
 the verified diminishing returns, 75% cap and hit-only scope; it omits the
 disputed example.
 
+**Decision (no code change).** The formula is intended: `armour / (armour +
+300)` is the curve, 300 is where a hit is blunted by HALF, and the cap is 75%.
+The table's comment said "half the cap" and was wrong; it now says half. The
+glossary omits the example, which is fine.
+
 ### W020 — Gale loses Gusts to boss drains
 
 Blocked: `keyword.gust`. Gale's source description specifies losing Gusts on
@@ -48,6 +64,10 @@ consume Gusts every simulation tick and restart their recovery timer. Confirm
 that drains should count; otherwise route the loss through the intended hit
 condition. The glossary includes this observed exception pending the decision.
 Also check `skill.gale.card` and hit-only Gale talent promises when settling it.
+
+**Decision (implemented).** A drain is not a hit and takes no Gust: `bite`
+spends one only when `hit` is true (a slam). Gale's card and its hit-only lines
+are true as written.
 
 ### W021 — Shock secondary damage targets the opposite side
 
@@ -65,6 +85,12 @@ bypasses the usual hit path. Confirm the intended recipients and protection
 rules, then implement them. The new definition explains the verified base
 Lightning damage over time and omits the disputed secondary-target promise.
 Do not treat that omission as a request to remove the mechanic.
+
+**Decision (implemented).** A Shock arcs off a Shocked MONSTER to the
+monsters round it — up to `arcTargets` within `arcRadius`, each for `arcShare`
+of the tick, resisted per type and never armoured, like the tick it came from.
+A Shock the hero carries arcs to nobody: he has no neighbour on his side. The
+old code had the sides swapped.
 
 ## Current review after Claude's mechanics pass
 
@@ -205,6 +231,13 @@ stands then. So a Starved cast stays Starved on every tick it leaves, a
 Critical cast crits every tick, and Overcharge pays out on the delayed damage.
 `targetScale` now takes only what a delayed hit can supply.
 
+**Addendum (implemented).** What the cast PAID reaches everything the use
+deals, not hits alone: `applyAilment` cuts a Poison by the Starved multiplier
+and adds Overcharge's mana as damage before the multiplier, exactly as a hit
+does; Exsanguinate's wound is cut by Starved and lifted by the share Overcharge
+would have added to the swing. So the Starved and Overcharge talent lines are
+true under every mode.
+
 ## W006 — Chill strength ignores ailmentMultiplier
 
 Rimespike's Hoar and Deepening minors grant `ailmentMultiplier`. `strike` uses
@@ -267,6 +300,13 @@ that line are live and buy jumps. What is planted is an instant application in
 a circle — a Burst, not a lingering Cloud — and `contagionRadius` is a RADIUS
 (1.6 tiles round the body), not a width. Slow Rot, Septic and Canopy now carry
 Spore Burst faces (a hit has no duration, so a duration line is more damage).
+
+**Addendum (implemented, content change).** Critical Damage had no reader in
+ordinary Blight or Wandering Rot — a tick never deals a Critical — so the tree
+no longer sells it there: the "+8% Critical Damage" minor is "+4% more Poison
+Damage" and Malign Focus is "+10% Critical Chance, and its Poison deals 20%
+more damage", each with a Spore Burst face. `ailmentMultiplier` is live in all
+three modes. The owner may veto the figures; the point was a dead line.
 
 ## W009 — Attack-only speed wording also affects spells
 
