@@ -1119,9 +1119,13 @@ the way a kill's tempo does, so the tree check and the fingerprint both leave it
 to a played descent. **EVERY SKILL HAS WEATHER**: a whole generated SCENE, `web_<skillId>` in
 `tools/art/scenes.json` asked through `scene.mts` like the camp — a wide
 picture, dark and low-contrast, with no focal point — and drawn by
-`src/ui/skills.ts` as one `.web__weather` layer at 30% under the web, FITTED
-WHOLE at the largest scale the window allows, like the camp — never cropped;
-what the window has over the picture's shape is its own dark ground. Rimespike's blizzard, Strike's red haze, Shockwave's cracked slab,
+`src/ui/skills.ts` as one `.web__weather` layer at 30% under the web. **THE
+WINDOW IS THE PICTURE'S SHAPE** — *"get it to match the window size, you can
+increase the window size if you need to"* — the web card is as wide as the
+height it has buys at 688:384 and the wrap keeps that ratio whichever side
+binds, so the weather covers it edge to edge with nothing cropped and no bar:
+`contain` letterboxed it and `cover` on the old shape cut a fifth off each
+side. Rimespike's blizzard, Strike's red haze, Shockwave's cracked slab,
 Fireball's embers, Blight's spore-lit fen, Arc Lightning's storm, Lightning
 Arrow's rain, Ambush's purple cave, Blink's void, Leap's cliffs, Gale's wind.
 **EVERY NOTABLE AND KEYSTONE HAS A PICTURE OF ITS OWN** (`wn_<node.id>` in
