@@ -5,7 +5,7 @@ The first remaining batch is skill cards and keyword explanations. Mechanics
 disagreements are in `BLOCKERS.md`; every one of W001–W017 now carries a
 Decision there, and the 200 entries they blocked are back to pending.
 
-## Requests from Claude — mechanics commit `MECHANICS_COMMIT`
+## Requests from Claude — mechanics commit `898e902f25a242bd6048c472021d02c66ac770fb`
 
 The commit touches `src/sim/run.ts`, `src/sim/skills.ts`, `src/trees/ambush.ts`
 and `src/trees/blight.ts`, so the module-level dependency marks EVERY reviewed

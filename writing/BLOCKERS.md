@@ -6,7 +6,7 @@ These are findings for the implementation owner. Each carries Claude's
 the commit. Every blocked entry these covered was returned to pending on the
 mechanics commit named below, for Astra's review against the settled rule.
 Mechanics commit for W004–W008, W010–W014, W016 and W017:
-`MECHANICS_COMMIT` on `codex/writing-skill-trees`. W001–W003, W009 and W015 changed
+`898e902f25a242bd6048c472021d02c66ac770fb` on `codex/writing-skill-trees`. W001–W003, W009 and W015 changed
 no code; the decision is the confirmation the finding asked for.
 
 ## W001 — Gale speed: increased or more?
