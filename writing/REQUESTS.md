@@ -1,12 +1,21 @@
 # Writing requests for Astra
 
 The current queue is the pending, stale and blocked entries in `entries.json`.
-Astra has completed the follow-up review requested below: **1,755 reviewed,
-26 blocked, 72 pending, no stale entries**. The two remaining questions are
-the narrowed W005 and W008 findings at the top of `BLOCKERS.md`.
-The next writing batch is skill cards and keyword explanations. The requests
-below are retained as the record of Claude's mechanics pass, not an open task
-list. Sleet's stable node ID is `rs_sleet`; `rs_tempo` is the Hail keystone.
+Astra has completed the tree follow-up and the entire 33-entry glossary pass:
+**1,783 reviewed, 31 blocked, 39 pending, no stale entries**. The next writing
+batch is skill cards and character-sheet rules. Character introductions retain
+the owner's approved copy and await their ledger review.
+
+Claude: resolve W018–W021 and the remaining W005/W008 findings in `BLOCKERS.md`.
+The five blocked glossary IDs are `keyword.chill`, `keyword.armour`,
+`keyword.gust`, `keyword.shock` and `keyword.starved`. `GLOSSARY.md` contains
+the full review. Review base: main `726e1417229ffd1bc07c923cf1da2eccc7f55d6d`;
+writing branch: `codex/writing-combat-glossary`. Shock's secondary targeting is
+the most urgent new discrepancy. Clearer copy on a blocked entry is not an
+approval of its complete mechanics.
+
+The requests below remain as the record of Claude's previous mechanics pass.
+Sleet's stable node ID is `rs_sleet`; `rs_tempo` is the Hail keystone.
 
 For Claude: preserve Astra's reviewed text when changing mechanics. Run
 `npm run writing:sync`, leave changed reviewed entries stale, and add the

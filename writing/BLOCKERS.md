@@ -1,5 +1,71 @@
 # Mechanics questions for Claude
 
+## Glossary review — main `726e1417`
+
+All 33 definitions were checked; 28 are reviewed and five remain blocked.
+The full ledger now has **1,783 reviewed, 31 blocked, 39 pending, no stale
+entries**. W005 also blocks `keyword.starved`: the revised definition explains
+the verified payment/hit rules and the observed Blight exception, but a broad
+Starved rule cannot be approved until the existing Ailment-mode question is
+settled. W008's remaining tree entries are unchanged.
+
+### W018 — Chill movement and Slow lifetime
+
+Blocked: `keyword.chill`. `src/data.ts:AilmentDef.slowPer` describes movement,
+Attack and Cast Speed reduction. `RunSim.chill` writes `slowed`; `hasteOf`
+reads it, but `paceOf` and movement do not. Chill therefore slows actions but
+does not slow walking. Which scope is intended?
+
+There is also a separate lifetime mismatch: `strike` multiplies the stack's
+duration by `ailmentDuration`, while `chill` refreshes the `SLOWED` effect for
+the unmodified `def.seconds`. Expiring or cap-replaced Chill stacks do not
+recompute `slowed`; only another Chill application or the effect timer changes
+it. Confirm whether Slow should track active stacks and duration modifiers.
+The copy explains the observed application-based Slow and makes no promise
+about movement or continuous recalculation.
+
+`freeze` sets `thawed` immediately, and `dealDamage` consumes it on the next
+hit even while the enemy remains Frozen. The old “coming out” wording was
+incorrect. The new definition states the verified next-hit timing and keeps
+the separate hero/enemy Freeze thresholds.
+
+### W019 — Armour's half-point example
+
+Blocked: `keyword.armour`. `DEFENCE.armourHalfPoint = 300` is documented as
+half of the 75% cap; the old glossary therefore promised 37.5% reduction at
+300 Armour. `armourReduction` instead computes
+`min(75, 100 * armour / (armour + 300))`, which returns 50% at 300.
+Confirm the formula is intended, or correct it. The revised copy preserves
+the verified diminishing returns, 75% cap and hit-only scope; it omits the
+disputed example.
+
+### W020 — Gale loses Gusts to boss drains
+
+Blocked: `keyword.gust`. Gale's source description specifies losing Gusts on
+hits. `RunSim.bite` calls `spendGust` after every positive amount of damage
+reaching Life, including `hit=false` boss drains. The Reading can therefore
+consume Gusts every simulation tick and restart their recovery timer. Confirm
+that drains should count; otherwise route the loss through the intended hit
+condition. The glossary includes this observed exception pending the decision.
+Also check `skill.gale.card` and hit-only Gale talent promises when settling it.
+
+### W021 — Shock secondary damage targets the opposite side
+
+Blocked: `keyword.shock`. The old glossary and `AilmentDef.arcTargets` describe
+damage to other nearby enemies. `RunSim.shockArc` chooses:
+
+```ts
+from.kind === 'hero' ? this.state.monsters : [this.state.hero]
+```
+
+Thus a Shock on an enemy damages the hero within range, while a Shock on the
+hero damages nearby monsters. It cannot reach three other monsters from a
+Shocked monster. The secondary damage separately applies Resistance and
+bypasses the usual hit path. Confirm the intended recipients and protection
+rules, then implement them. The new definition explains the verified base
+Lightning damage over time and omits the disputed secondary-target promise.
+Do not treat that omission as a request to remove the mechanic.
+
 ## Current review after Claude's mechanics pass
 
 Astra checked `898e902f` against its consumers and reconciled the writing branch

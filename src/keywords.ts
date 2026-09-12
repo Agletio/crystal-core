@@ -14,7 +14,7 @@
  * `means` carries its own numbers, out of the same tables the sim reads. A
  * glossary quoting a figure by hand is a glossary that goes stale silently.
  */
-import { AILMENT_BY_ID, BURST, SKILL_BY_ID, DAMAGE_TYPE_BY_ID, DEFENCE, MANA, MELEE, PASSIVE_DAMAGE, POTIONS, PROJECTILE, WARRIOR, stunChanceFor } from './data';
+import { AILMENT, AILMENT_BY_ID, MONSTER_AILMENT, BURST, SKILL_BY_ID, DAMAGE_TYPE_BY_ID, DEFENCE, MANA, MELEE, POTIONS, PROJECTILE, stunChanceFor } from './data';
 
 export interface KeywordDef {
   id: string;
@@ -65,20 +65,27 @@ export const scaleWord = (tag: string): string => TAG_WORD[tag] ?? AILMENT_BY_ID
  */
 function ailmentMeans(id: string): string {
   const a = AILMENT_BY_ID[id];
-  const applied = a.bySource
-    ? 'Applied only by something that says it applies one'
-    : `Applied by a hit dealing ${DAMAGE_TYPE_BY_ID[a.type]?.name ?? a.type} damage, at whatever chance you have bought`;
-  const does =
-    a.kind === 'chill'
-      ? `Each stack takes ${a.slowPer}% off movement, attack and cast speed. ${a.freezeAt} stacks FREEZE it for ${a.freezeSeconds}s and clear them, and the next hit on a body coming out of one is a Critical whatever your chance is.`
-      : a.kind === 'curse'
-        ? `When the body dies it bursts for ${a.burstShare}% of its maximum life per stack, ${a.burstRadius} tiles across.`
-        : a.kind === 'exposure'
-          ? `Each stack is ${a.takenPer}% increased damage taken, from anyone.`
-          : a.kind === 'shock'
-            ? `${a.dps} damage a second, and every tick throws ${pct(a.arcShare ?? 0)} of it at up to ${a.arcTargets} enemies within ${a.arcRadius} tiles.`
-            : `${a.dps} damage a second, never scaled by Spell, Attack or Critical.`;
-  return `${applied}, for ${a.seconds}s. ${does}`;
+  const type = DAMAGE_TYPE_BY_ID[a.type]?.name ?? a.type;
+  if (a.bySource) return 'Poison deals damage over time. You apply it through skills and effects that specifically inflict it. ' +
+    'Its source determines its damage and duration. Poison ticks do not ' +
+    'deal Critical damage. With Contagion, each tick uses your Critical Chance to try to spread Poison.';
+  const applied = `${type} hits use your chance to apply ${a.name}. `;
+  if (a.kind === 'chill') return applied +
+    `Chill stacks normally last ${a.seconds}s. Each application Slows Attack and Cast Speed for ${a.seconds}s, ` +
+    `based on the current stack count: ${a.slowPer}% per stack, up to 75%. ` +
+    `Enemies normally Freeze at ${a.freezeAt} stacks for ${a.freezeSeconds}s: they cannot move, attack or cast, ` +
+    'and their Chill stacks are removed. The next hit against that enemy is a guaranteed Critical, ' +
+    'even while it is Frozen. ' +
+    `You Freeze at ${MONSTER_AILMENT.freezeAt} stacks instead; protection against Chill raises this threshold.`;
+  if (a.kind === 'curse') return applied +
+    `By default, each stack lasts ${a.seconds}s. When a Cursed enemy dies, it deals Dark damage equal to ` +
+    `${a.burstShare}% of its maximum Life per stack to other enemies within ${a.burstRadius} tiles.`;
+  if (a.kind === 'exposure') return applied +
+    `By default, each stack lasts ${a.seconds}s and causes ${a.takenPer}% increased damage taken from hits. ` +
+    'Stack bonuses add together. Exposure does not increase damage taken from Ailment ticks.';
+  const damage = `Each stack you apply deals ${a.dps} base ${type} damage per second for ${a.seconds}s, ` +
+    'before Ailment damage and duration modifiers. ';
+  return applied + damage + 'Spell Damage, Attack Damage and Critical Damage do not increase this damage.';
 }
 
 /**
@@ -92,9 +99,10 @@ export const KEYWORDS: KeywordDef[] = [
     name: 'Projectile',
     says: ['Projectile', 'Projectiles'],
     means:
-      `A skill throws one Projectile at what you aimed at. Each one beyond the ` +
-      `first flies at another enemy within ${PROJECTILE.spread} tiles of that ` +
-      `target, for full damage. Nothing is hit twice by one use.`,
+      'The standard Projectile use hits your target. Each additional Projectile hits a different ' +
+      `enemy within ${PROJECTILE.spread} tiles of that target for full damage, before Spread modifiers. ` +
+      'These direct hits do not hit the same enemy twice in one use. Splash and Bursts can overlap. ' +
+      'Alternate skill modes can change this targeting and damage.',
     grants: ['extraTargets'],
     scales: ['projectile'],
   },
@@ -103,10 +111,10 @@ export const KEYWORDS: KeywordDef[] = [
     name: 'Pierce',
     says: ['Pierce', 'Pierces', 'Pierced'],
     means:
-      `A Projectile carries on through what it hits. Each Pierce catches one ` +
-      `more enemy behind the target — up to ${PROJECTILE.pierce} tiles further ` +
-      `along the line and ${PROJECTILE.corridor} tiles either side of it — for ` +
-      `${pct(PROJECTILE.pierceDamage)} of the damage.`,
+      'Allows a Projectile to hit additional enemies behind its target. Each Pierce adds one target ' +
+      `within ${PROJECTILE.pierce} tiles beyond the original target and ${PROJECTILE.corridor} tiles ` +
+      `either side of the shot's path. Each Pierced enemy takes ${pct(PROJECTILE.pierceDamage)} ` +
+      'of the full hit damage unless a skill or modifier changes that share.',
     grants: ['pierce', 'pierceDamage'],
     scales: ['projectile'],
   },
@@ -115,9 +123,10 @@ export const KEYWORDS: KeywordDef[] = [
     name: 'Arc',
     says: ['Arc', 'Arcs'],
     means:
-      `A Projectile leaps from what it hits to the nearest enemy it has not, ` +
-      `within ${PROJECTILE.arc} tiles. Each Arc is one more leap, for ` +
-      `${pct(PROJECTILE.arcDamage)} of the damage.`,
+      'Allows a Projectile to jump from the last enemy hit to the nearest enemy it has not hit, ' +
+      `within ${PROJECTILE.arc} tiles. Each Arc adds one jump. By default, every Arc deals ` +
+      `${pct(PROJECTILE.arcDamage)} of the full hit damage; this share does not decrease on each jump. ` +
+      'Skills and modifiers can change the share or make successive Arcs stronger.',
     grants: ['chains', 'chainDamage'],
     scales: ['projectile'],
   },
@@ -126,10 +135,10 @@ export const KEYWORDS: KeywordDef[] = [
     name: 'Fork',
     says: ['Fork', 'Forks'],
     means:
-      `A bolt falls from above on an enemy near the one you hit — within ` +
-      `${PROJECTILE.fork} tiles of it — for ${pct(PROJECTILE.forkDamage)} of ` +
-      `the damage. It is its own bolt, not the shot carrying on, so where the ` +
-      `shot came from decides nothing. Nothing is hit twice by one use.`,
+      'Each Fork creates a separate bolt that strikes an enemy near your original target, within ' +
+      `${PROJECTILE.fork} tiles. It deals ${pct(PROJECTILE.forkDamage)} of the full hit damage unless ` +
+      'modified. Forks choose the nearest enemies that the use has not already hit directly. ' +
+      'They can strike in any direction from the original target.',
     grants: ['forks', 'forkDamage'],
     scales: ['projectile'],
   },
@@ -138,8 +147,9 @@ export const KEYWORDS: KeywordDef[] = [
     name: 'Spread',
     says: ['Spread', 'Spreads'],
     means:
-      `How far a Projectile past the first looks for its own enemy, from the ` +
-      `one you aimed at. ${PROJECTILE.spread} tiles bare.`,
+      'The distance from your original target within which additional Projectiles can choose enemies. ' +
+      `The base distance is ${PROJECTILE.spread} tiles. Spread modifiers scale this distance directly; ` +
+      'Area of Effect does not affect it.',
     grants: ['spreadRange'],
     scales: ['projectile'],
   },
@@ -148,8 +158,9 @@ export const KEYWORDS: KeywordDef[] = [
     name: 'Repeat',
     says: ['Repeat', 'Repeats'],
     means:
-      'One more swing at the enemy you aimed at, in the same use and at full ' +
-      'damage. Repeats stop the moment that enemy is down.',
+      'Each Repeat adds another attack within the same use, without another Mana cost. A standard ' +
+      'melee Repeat hits your original target for full damage and stops if that target dies. ' +
+      'Alternate modes can repeat the whole attack pattern, such as a spin or thrown blade.',
     grants: ['doubleStrike'],
     scales: ['attack', 'melee'],
   },
@@ -158,11 +169,10 @@ export const KEYWORDS: KeywordDef[] = [
     name: 'Burst',
     says: ['Burst', 'Bursts'],
     means:
-      `An instant effect in a circle. Contagion's Burst applies Poison; other Bursts deal damage. A Burst you carry goes off around YOU on a cooldown, ` +
-      `${PASSIVE_DAMAGE.sunderRadius} tiles across, for a figure off your ` +
-      `character level that nothing but increased Damage moves. A Burst set off ` +
-      `by a DEATH is a share of the hit that killed it, and sets off the Bursts ` +
-      `of whatever IT kills, ${BURST.chainDepth} deep. Bursts overlap freely.`,
+      'An instant circular effect. Damage Bursts hit nearby enemies; Contagion Bursts apply Poison. ' +
+      'The source determines the trigger, damage and radius. Effects that make killed enemies Burst ' +
+      `can chain through further kills for up to ${BURST.chainDepth} generations. Overlapping Bursts ` +
+      'can affect the same enemy.',
     grants: ['burstOnHit', 'explodeOnKill', 'contagionRadius'],
     scales: ['area', 'damage'],
   },
@@ -171,9 +181,9 @@ export const KEYWORDS: KeywordDef[] = [
     name: 'Splash',
     says: ['Splash', 'Splashes'],
     means:
-      `Damage in a circle around the body a hit landed on, for a share of that ` +
-      `hit. Every skill that hits ONE enemy carries it without being asked, ` +
-      `and its own card says the share and the reach.`,
+      'A skill with Splash deals a share of its hit damage to other enemies in a circle around the ' +
+      'enemy hit. The skill lists its base damage share and radius. Splash does not hit the central ' +
+      'target again, but Splashes from separate hits can overlap.',
     grants: ['splashShare', 'splashRadius'],
     scales: ['area'],
   },
@@ -182,10 +192,10 @@ export const KEYWORDS: KeywordDef[] = [
     name: 'Convert',
     says: ['Convert', 'Converts', 'Converted'],
     means:
-      'The skill stops dealing its own damage type and deals another instead. ' +
-      'Its OWN tree follows the change — a node reading the old type reads the ' +
-      'new one, so no point you walked is stranded — and your gear does not, so ' +
-      'a line on a ring keeps naming the type it named.',
+      "A tree conversion changes the skill's base damage to the stated type. Damage-type and Ailment " +
+      "modifiers in that skill's tree change to match. Gear modifiers keep their original types, and " +
+      'added damage of other types remains unless a separate conversion applies. A conversion of ' +
+      'a stated share moves only that share of the specified damage; the converted part scales with its new type.',
     grants: ['convertTree'],
     scales: [],
   },
@@ -194,11 +204,10 @@ export const KEYWORDS: KeywordDef[] = [
     name: 'Echo',
     says: ['Echo', 'Echoes'],
     means:
-      `The swing landing again on the next enemy out from the one you struck, ` +
-      `for ${pct(MELEE.echoDamage)} of it. The first looks ${MELEE.echo} tiles ` +
-      `from that enemy and each one after it looks ${MELEE.echoStep} tiles ` +
-      `further, so more Echoes reach deeper into a pack. Nothing is hit twice ` +
-      `by one use.`,
+      'Each Echo hits a different enemy near your original melee target, choosing the nearest first. ' +
+      `By default, it deals ${pct(MELEE.echoDamage)} of the full hit damage. The first Echo can reach ` +
+      `${MELEE.echo} tiles from the original target; each additional Echo extends this limit by ` +
+      `${MELEE.echoStep} tiles. Echoes do not target the original enemy.`,
     grants: ['echoes', 'echoDamage'],
     scales: ['attack', 'melee'],
   },
@@ -207,11 +216,9 @@ export const KEYWORDS: KeywordDef[] = [
     name: 'Cone',
     says: ['Cone', 'Cones'],
     means:
-      'A wedge in front of you. Everything standing in it takes the WHOLE hit ' +
-      'and nothing takes a share, and there is no target limit — so how many ' +
-      'bodies the wedge holds is the whole of what a use is worth. Opened ' +
-      'past 360° it is every direction at once and what you are facing stops ' +
-      'mattering.',
+      'A wedge aimed toward your target. A standard Cone hit deals full damage to every enemy inside ' +
+      'it, with no target limit. Reach determines its distance and angle determines its width. At ' +
+      '360°, it covers every direction. Alternate modes can replace the wedge or its initial hit.',
     grants: ['coneArc', 'coneReach'],
     scales: ['area'],
   },
@@ -220,9 +227,10 @@ export const KEYWORDS: KeywordDef[] = [
     name: 'Cloud',
     says: ['Cloud', 'Clouds'],
     means:
-      'A circle on the ground that leaves an Ailment on everything standing ' +
-      'in it. It has no target limit, so a wider Cloud is the whole of how it ' +
-      'hits more.',
+      'A circular area that applies an Ailment to enemies inside it, with no target limit. An ordinary ' +
+      'Blight Cloud applies Poison once when cast; the Poison then lasts for its own duration. Wandering ' +
+      'Rot creates a moving Cloud that applies Poison repeatedly. Spore Burst replaces the Poison with a hit. ' +
+      'Overlapping Clouds can affect the same enemy.',
     grants: ['extraFields', 'fieldRadius'],
     scales: ['area', 'ailment'],
   },
@@ -233,10 +241,11 @@ export const KEYWORDS: KeywordDef[] = [
     name: 'Ailment',
     says: ['Ailment', 'Ailments'],
     means:
-      'What a DAMAGE TYPE leaves behind. Dealing a type applies its Ailment at ' +
-      `that Ailment's own chance; past 100% you apply a second, past 200% a ` +
-      'third. Resistance blunts one and Armour never does, which is what makes ' +
-      'an Ailment the answer to something you cannot punch through.',
+      'A temporary effect that deals damage over time or weakens a target. Your hits can apply the ' +
+      'Ailment associated with their damage type; Poison requires a source that specifically applies it. ' +
+      'Each 100% application chance guarantees one stack, with the remainder rolled for another. ' +
+      `A target can carry ${AILMENT.maxStacks} Ailment stacks in total; a new stack replaces the oldest at the cap. ` +
+      'Resistance reduces Ailment damage of the corresponding type. Armour does not normally reduce Ailment damage.',
     grants: ['ailmentChance', 'ailmentMultiplier', 'ailmentDuration', 'bleedOnHit', 'ailmentShare'],
     scales: ['ailment'],
   },
@@ -303,10 +312,9 @@ export const KEYWORDS: KeywordDef[] = [
     name: 'Area of Effect',
     says: ['Area of Effect'],
     means:
-      'Widens every Burst and Cloud the skill makes, and reaches a Cone ' +
-      'further. It grows the ' +
-      'AREA, so a radius goes by the square root of it, and it never touches ' +
-      'damage.',
+      'Scales the area covered by skill effects such as Splash, Clouds and skill-created Bursts. ' +
+      'It also extends Cone reach. The bonus applies to area: 100% increased Area of Effect doubles ' +
+      'the area and increases radius by about 41%. Area of Effect does not increase damage.',
     scales: [],
   },
   {
@@ -314,9 +322,10 @@ export const KEYWORDS: KeywordDef[] = [
     name: 'increased / reduced',
     says: ['increased', 'reduced'],
     means:
-      'Every increased line of one stat adds into one sum, and the sum ' +
-      'multiplies the base once. Two 50% increased lines are 100%, not 125%. ' +
-      'Reduced subtracts from the same sum.',
+      'For stats with a base value, increased and reduced modifiers add together before multiplying ' +
+      'that base, including flat additions. Two 50% increased modifiers give 100% increased, doubling ' +
+      'the value. Reduced modifiers subtract from that total. Added chance bonuses, such as +10% ' +
+      'chance to apply an Ailment, add percentage points instead.',
     scales: [],
   },
   {
@@ -324,9 +333,9 @@ export const KEYWORDS: KeywordDef[] = [
     name: 'more / less',
     says: ['more', 'less'],
     means:
-      'Every more line multiplies on its own, on top of everything else. Two ' +
-      '50% more lines are 125% more, not 100%. Less divides the same way: ' +
-      '40% less is 0.6 times.',
+      'Separate more and less modifiers multiply. Two 50% more modifiers give 2.25 times the original ' +
+      'value, or 125% more. A 40% less modifier multiplies the value by 0.6. Bonuses that a description ' +
+      'says add together, such as bonuses per stack, are combined before their multiplier applies.',
     scales: [],
   },
   {
@@ -334,10 +343,10 @@ export const KEYWORDS: KeywordDef[] = [
     name: 'Critical',
     says: ['Critical', 'Critically', 'Criticals'],
     means:
-      'A Critical hit deals ×2 your damage, plus whatever Critical Damage you ' +
-      'have found. Critical Chance is how often: every skill has its own, and ' +
-      'increased Critical Chance scales THAT. A spell and an attack count it ' +
-      'separately.',
+      'A Critical hit normally deals 200% of its usual damage. Critical Damage adds to that total: ' +
+      '+50% Critical Damage makes it 250%. Critical Chance determines how often a skill is Critical. ' +
+      'Increased Critical Chance scales the base chance; 10% base chance with 50% increased becomes 15%. ' +
+      'Ailment ticks do not deal Critical damage.',
     scales: ['Critical Chance', 'Critical Damage'],
   },
   {
@@ -345,9 +354,9 @@ export const KEYWORDS: KeywordDef[] = [
     name: 'Resistance',
     says: ['Resistance', 'Resistances'],
     means:
-      `Blunts one damage type, Ailments included. It caps at ` +
-      `${DEFENCE.resistanceCap}%, and Resistance and Armour multiply rather ` +
-      `than adding — at both caps a hit lands for a sixteenth.`,
+      'Resistance reduces damage from the corresponding damage type, including damage over time. ' +
+      `Each Resistance is capped at ${DEFENCE.resistanceCap}%. Resistance and Armour apply separately ` +
+      'to hits: 50% damage reduction from each leaves you taking 25% of the incoming damage.',
     scales: [],
   },
   {
@@ -355,9 +364,8 @@ export const KEYWORDS: KeywordDef[] = [
     name: 'Block',
     says: ['Block', 'Blocks', 'Blocked'],
     means:
-      `A Blocked hit deals nothing at all — there is no second number. Block ` +
-      `Chance caps at ${DEFENCE.blockCap}%, comes off a shield in your off ` +
-      `hand and from nowhere else, and does nothing against an Ailment.`,
+      'Blocking prevents all damage from an ordinary enemy hit. ' +
+      `Block Chance is capped at ${DEFENCE.blockCap}%. Ailment damage, boss room attacks and boss drains bypass Block.`,
     scales: [],
   },
   {
@@ -365,10 +373,9 @@ export const KEYWORDS: KeywordDef[] = [
     name: 'Dodge',
     says: ['Dodge', 'Dodges', 'Dodged'],
     means:
-      `A Dodged hit deals nothing at all, exactly as a Blocked one does, and ` +
-      `does nothing against an Ailment either. It caps at ${DEFENCE.dodgeCap}% ` +
-      `and is TRADED for Armour rather than worn beside it: what stops some ` +
-      `hits outright no longer blunts the rest.`,
+      'Dodging avoids all damage from an ordinary enemy hit. ' +
+      `Dodge Chance is capped at ${DEFENCE.dodgeCap}%. Ailment damage, boss room attacks and boss drains bypass Dodge. ` +
+      'Converting Armour to Dodge removes the damage reduction that Armour would have provided.',
     grants: ['armourToDodge'],
     scales: [],
   },
@@ -377,9 +384,9 @@ export const KEYWORDS: KeywordDef[] = [
     name: 'Armour',
     says: ['Armour'],
     means:
-      `Blunts a HIT, by a share that curves with Armour points rather than ` +
-      `with the size of the hit: ${DEFENCE.armourHalfPoint} points is half the ` +
-      `${DEFENCE.armourCap}% cap. It does nothing at all against an Ailment.`,
+      'Armour reduces damage from hits of every damage type. Additional Armour gives diminishing ' +
+      `returns, up to ${DEFENCE.armourCap}% damage reduction. Armour does not normally reduce Ailment ` +
+      'damage and does not reduce boss drains.',
     scales: [],
   },
 
@@ -389,9 +396,9 @@ export const KEYWORDS: KeywordDef[] = [
     name: 'Starved',
     says: ['Starved'],
     means:
-      `With nothing left in the pool the use happens anyway and lands for ` +
-      `${pct(MANA.starvedDamage)} of your damage. Running dry is a price, ` +
-      `never a wall.`,
+      'When you cannot pay the full Mana cost, you spend your remaining Mana and use the skill anyway. ' +
+      `Starved hits deal ${pct(MANA.starvedDamage)} of their normal damage before modifiers to the penalty. ` +
+      "An effect that pays the missing cost with Life prevents Starved. Blight's Poison bypasses this penalty.",
     grants: ['starvedDamage'],
     scales: [],
   },
@@ -401,9 +408,8 @@ export const KEYWORDS: KeywordDef[] = [
     name: 'Slow',
     says: ['Slow', 'Slows', 'Slowed'],
     means:
-      'An enemy swings and casts more slowly for a duration. It is NOT a ' +
-      'Burst — a Burst is damage in a circle and a Slow deals none, because ' +
-      'every damage number in the game belongs to the skill in your main slot.',
+      'Temporarily reduces Attack and Cast Speed by the amount stated on the effect. A 30% Slow ' +
+      'makes attacks and casts occur at 70% of their normal rate. Slow deals no damage.',
     grants: ['landingSlow'],
     scales: [],
   },
@@ -412,9 +418,9 @@ export const KEYWORDS: KeywordDef[] = [
     name: 'Charge',
     says: ['Charge', 'Charges'],
     means:
-      `What a flask holds. Each carries ${POTIONS[0]?.charges ?? 2}, a descent ` +
-      `always begins full, and nothing about them survives one — there is ` +
-      `nothing to hoard.`,
+      `Each flask holds ${POTIONS[0]?.charges ?? 2} Charges, and each use spends one. Flasks start every ` +
+      'descent with full Charges. Charge recovery effects can refill them during a descent, up to ' +
+      'their capacity. Unspent Charges do not carry over as extras on the next descent.',
     grants: ['chargeRegen', 'chargeOnKill'],
     scales: [],
   },
@@ -425,9 +431,11 @@ export const KEYWORDS: KeywordDef[] = [
     name: 'Gust',
     says: ['Gust', 'Gusts'],
     means:
-      `What GALE holds. You move ${SKILL_BY_ID.gale?.params?.speed ?? 0}% ` +
-      `faster for each one, anything that lands a hit takes one, and one comes ` +
-      `back every ${SKILL_BY_ID.gale?.params?.back ?? 0}s.`,
+      `Gale starts with ${SKILL_BY_ID.gale?.params?.gusts ?? 0} Gusts. Each grants ` +
+      `${SKILL_BY_ID.gale?.params?.speed ?? 0}% more Movement Speed by default; these bonuses add together. ` +
+      'Taking a hit removes one Gust and restarts the recovery timer. Boss drains remove Gusts too. ' +
+      `One Gust returns every ${SKILL_BY_ID.gale?.params?.back ?? 0}s, up to your maximum. ` +
+      'Gale talents can change these values or prevent Gust loss.',
     grants: ['gustSpeed', 'gustMax', 'gustBack'],
     scales: ['Movement Speed'],
   },
@@ -436,12 +444,11 @@ export const KEYWORDS: KeywordDef[] = [
     name: 'Stun',
     says: ['Stun', 'Stuns', 'Stunned', 'Stunning'],
     means:
-      'An enemy neither swings nor closes for a duration. The chance is the ' +
-      `share of its MAXIMUM life the one hit took, raised to the power ` +
-      `${WARRIOR.stunPower} — ${pct(stunChanceFor(0.1))} for a tenth of it, ` +
-      `${pct(stunChanceFor(0.8))} for four fifths — and a hit that kills a body ` +
-      'outright always Stuns it, so what a Stun sets off still fires on one you ' +
-      'take down in a single blow.',
+      'Prevents an enemy from moving, attacking or casting for the stated duration. If you have an ' +
+      'effect that grants Stun, hits dealing a larger share of maximum Life have a higher Stun chance. ' +
+      `Before Stun chance modifiers, a hit dealing 10% of maximum Life has about ${pct(stunChanceFor(0.1))} ` +
+      `chance to Stun; a hit dealing 80% has about ${pct(stunChanceFor(0.8))}. Killing hits always trigger ` +
+      'your Stun effects when you can Stun.',
     grants: ['stunSeconds', 'stunMore', 'stunBurst'],
     scales: ['attack'],
   },

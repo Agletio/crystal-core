@@ -76,7 +76,8 @@ When adding a new implementation module, add its dependency here in
 1. All 11 skill trees, including Blink, Leap and Gale, and all four character
    talent trees. Include choices, explicit alternate faces and stat conversions.
 2. Skill cards, generated grant lines, keyword explanations and character-sheet
-   rules. Cards and keywords are already inventoried as pending.
+   rules. The complete 33-entry glossary pass is recorded in `GLOSSARY.md`:
+   28 reviewed and five blocked on mechanics questions. Cards remain pending.
 3. Equipment, modifiers, flasks and crafting.
 4. Quests, tutorial and encounter text; then navigation, empty states and errors.
 

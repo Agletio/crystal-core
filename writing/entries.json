@@ -154,7 +154,7 @@
     },
     "text": {
       "name": "Ailment",
-      "means": "What a DAMAGE TYPE leaves behind. Dealing a type applies its Ailment at that Ailment's own chance; past 100% you apply a second, past 200% a third. Resistance blunts one and Armour never does, which is what makes an Ailment the answer to something you cannot punch through."
+      "means": "A temporary effect that deals damage over time or weakens a target. Your hits can apply the Ailment associated with their damage type; Poison requires a source that specifically applies it. Each 100% application chance guarantees one stack, with the remainder rolled for another. A target can carry 12 Ailment stacks in total; a new stack replaces the oldest at the cap. Resistance reduces Ailment damage of the corresponding type. Armour does not normally reduce Ailment damage."
     },
     "implementation": [
       "src/keywords.ts",
@@ -172,13 +172,13 @@
       "src/webgraph.ts",
       "src/sim/character.ts"
     ],
-    "mechanicsRevision": "77517b362e141e8b97b546c8f954713760cc5d93f8ece7e16a940e98abe2e109",
-    "textRevision": "c488a51aca90c99466bee9b8294a17e8a6de8a7e5c3b90162c015db896e1c92a",
-    "status": "pending",
-    "reviewedMechanicsRevision": null,
-    "reviewedTextRevision": null,
-    "reviewedAtCommit": null,
-    "notes": ""
+    "mechanicsRevision": "61ccd3cdc9b98f14e3c79753d3e1548866a5525dc35134ac5823bc047c6da079",
+    "textRevision": "162a6bc1760f91a778a4861f18eada77a7c96593e59997facda01e8856e5bf96",
+    "status": "reviewed",
+    "reviewedMechanicsRevision": "61ccd3cdc9b98f14e3c79753d3e1548866a5525dc35134ac5823bc047c6da079",
+    "reviewedTextRevision": "162a6bc1760f91a778a4861f18eada77a7c96593e59997facda01e8856e5bf96",
+    "reviewedAtCommit": "726e1417229ffd1bc07c923cf1da2eccc7f55d6d",
+    "notes": "Full glossary batch; writing/GLOSSARY.md. `src/data.ts`: `AILMENT`, `AILMENTS`; `src/sim/run.ts`: `applyTyped`, `strike`, `applyAilment`, `stepAilments`, `hide`; hero typed-hit chance, guaranteed stacks plus remainder, shared 12-stack cap with oldest replacement, resistance and Second Skin exception."
   },
   {
     "id": "keyword.arc",
@@ -188,7 +188,7 @@
     },
     "text": {
       "name": "Arc",
-      "means": "A Projectile leaps from what it hits to the nearest enemy it has not, within 4.5 tiles. Each Arc is one more leap, for 70% of the damage."
+      "means": "Allows a Projectile to jump from the last enemy hit to the nearest enemy it has not hit, within 4.5 tiles. Each Arc adds one jump. By default, every Arc deals 70% of the full hit damage; this share does not decrease on each jump. Skills and modifiers can change the share or make successive Arcs stronger."
     },
     "implementation": [
       "src/keywords.ts",
@@ -206,13 +206,13 @@
       "src/webgraph.ts",
       "src/sim/character.ts"
     ],
-    "mechanicsRevision": "5248b1ea0a475ac5a114b5a8db3406c93df1b17132e9091de566771de56bfdde",
-    "textRevision": "e117f3afe0bc67e917d40cdf3f0fdef028ca5d3c9c548598bfa773416cec426f",
-    "status": "pending",
-    "reviewedMechanicsRevision": null,
-    "reviewedTextRevision": null,
-    "reviewedAtCommit": null,
-    "notes": ""
+    "mechanicsRevision": "3e5a56e6278d3ce9e57af116cd281076118b6e74e6af5cfc97182b11ba0d01da",
+    "textRevision": "c960216e1afb0c810503b717b5eea9ef49ee1f6e175c8f446d89d549332c44e7",
+    "status": "reviewed",
+    "reviewedMechanicsRevision": "3e5a56e6278d3ce9e57af116cd281076118b6e74e6af5cfc97182b11ba0d01da",
+    "reviewedTextRevision": "c960216e1afb0c810503b717b5eea9ef49ee1f6e175c8f446d89d549332c44e7",
+    "reviewedAtCommit": "726e1417229ffd1bc07c923cf1da2eccc7f55d6d",
+    "notes": "Full glossary batch; writing/GLOSSARY.md. `src/sim/skills.ts`: `projectile`; `src/sim/run.ts`: `stepOrbs`; nearest unhit target from last hit, 4.5 tiles, default 70% of full hit rather than repeated 30% loss; explicit growth overrides."
   },
   {
     "id": "keyword.area",
@@ -222,7 +222,7 @@
     },
     "text": {
       "name": "Area of Effect",
-      "means": "Widens every Burst and Cloud the skill makes, and reaches a Cone further. It grows the AREA, so a radius goes by the square root of it, and it never touches damage."
+      "means": "Scales the area covered by skill effects such as Splash, Clouds and skill-created Bursts. It also extends Cone reach. The bonus applies to area: 100% increased Area of Effect doubles the area and increases radius by about 41%. Area of Effect does not increase damage."
     },
     "implementation": [
       "src/keywords.ts",
@@ -240,13 +240,13 @@
       "src/webgraph.ts",
       "src/sim/character.ts"
     ],
-    "mechanicsRevision": "7323df302eccd82cfa56be71770992d0a7ce28db1c7157cffa3d56aa7347717e",
-    "textRevision": "3ecab263b88659cbd1eb6634fd779ba25373cf580ae5a5e28cb52d2b289dd216",
-    "status": "pending",
-    "reviewedMechanicsRevision": null,
-    "reviewedTextRevision": null,
-    "reviewedAtCommit": null,
-    "notes": ""
+    "mechanicsRevision": "142dfdfb77fe1d2219744e8cc0686b6ed90de9883ed49bd1c0b34f65edbbf4b5",
+    "textRevision": "0f4275e450f529e0648ebf63baef7b9676dbf3257472c14855db519b203deaf8",
+    "status": "reviewed",
+    "reviewedMechanicsRevision": "142dfdfb77fe1d2219744e8cc0686b6ed90de9883ed49bd1c0b34f65edbbf4b5",
+    "reviewedTextRevision": "0f4275e450f529e0648ebf63baef7b9676dbf3257472c14855db519b203deaf8",
+    "reviewedAtCommit": "726e1417229ffd1bc07c923cf1da2eccc7f55d6d",
+    "notes": "Full glossary batch; writing/GLOSSARY.md. `src/sim/run.ts`: `areaRadius`; `src/sim/skills.ts`: Splash, Cloud, death Burst and Cone consumers; radius uses square root of area multiplier, 100% area gives about 41% radius, no damage multiplier. Fixed-radius passives are not included in the blanket promise."
   },
   {
     "id": "keyword.armour",
@@ -256,7 +256,7 @@
     },
     "text": {
       "name": "Armour",
-      "means": "Blunts a HIT, by a share that curves with Armour points rather than with the size of the hit: 300 points is half the 75% cap. It does nothing at all against an Ailment."
+      "means": "Armour reduces damage from hits of every damage type. Additional Armour gives diminishing returns, up to 75% damage reduction. Armour does not normally reduce Ailment damage and does not reduce boss drains."
     },
     "implementation": [
       "src/keywords.ts",
@@ -274,13 +274,13 @@
       "src/webgraph.ts",
       "src/sim/character.ts"
     ],
-    "mechanicsRevision": "bfba4716e616403596104cb419d5da5ece91f39e83b98ed9c9ad7bf303bb1e40",
-    "textRevision": "3921fe135fd2ff57c6ca0dd2b46bb10e2065301c46e43db2f497370aecb72f7e",
-    "status": "pending",
+    "mechanicsRevision": "15543e84f322ab984545efb976f7b970553ad04fdde4b614436514288e1ceb24",
+    "textRevision": "a8083c48d3424f372b0a02c4ac6ac50402eeb845a761a9a3d813a035f7c2a56e",
+    "status": "blocked",
     "reviewedMechanicsRevision": null,
     "reviewedTextRevision": null,
     "reviewedAtCommit": null,
-    "notes": ""
+    "notes": "Full glossary batch; writing/GLOSSARY.md. W019: `src/data.ts` says 300 Armour reaches half the 75% cap, but `src/sim/stats.ts:armourReduction` returns 50%. Rewrite confirms hit/type scope, diminishing returns and cap, omitting the disputed example."
   },
   {
     "id": "keyword.bleed",
@@ -290,7 +290,7 @@
     },
     "text": {
       "name": "Bleed",
-      "means": "Applied by a hit dealing Physical damage, at whatever chance you have bought, for 5s. 22 damage a second, never scaled by Spell, Attack or Critical."
+      "means": "Physical hits use your chance to apply Bleed. Each stack you apply deals 22 base Physical damage per second for 5s, before Ailment damage and duration modifiers. Spell Damage, Attack Damage and Critical Damage do not increase this damage."
     },
     "implementation": [
       "src/keywords.ts",
@@ -308,13 +308,13 @@
       "src/webgraph.ts",
       "src/sim/character.ts"
     ],
-    "mechanicsRevision": "033bb8620215ab14bd52bd910db7e981b1b263f5da592764870ed49ad72359fb",
-    "textRevision": "08c566629c38fa4c77c8e471717287a7ccb27e9b82aaf04f1c1020e185c6871c",
-    "status": "pending",
-    "reviewedMechanicsRevision": null,
-    "reviewedTextRevision": null,
-    "reviewedAtCommit": null,
-    "notes": ""
+    "mechanicsRevision": "6f0aedec971dc57122e90fa8760ce611f513e1977dd08041b85e20d3122b9af2",
+    "textRevision": "1352cb7404bbc243f08dea58501035789c50c2a150efbbeb650428e53fdc6246",
+    "status": "reviewed",
+    "reviewedMechanicsRevision": "6f0aedec971dc57122e90fa8760ce611f513e1977dd08041b85e20d3122b9af2",
+    "reviewedTextRevision": "1352cb7404bbc243f08dea58501035789c50c2a150efbbeb650428e53fdc6246",
+    "reviewedAtCommit": "726e1417229ffd1bc07c923cf1da2eccc7f55d6d",
+    "notes": "Full glossary batch; writing/GLOSSARY.md. `src/data.ts`: Bleed definition; `src/sim/stats.ts`: `ailmentDamage`; `src/sim/run.ts`: `strike`, `stepAilments`, `useSkill.wound`; 22 base Physical DPS for 5s, source modifiers including Exsanguinate apply; no Critical tick damage."
   },
   {
     "id": "keyword.block",
@@ -324,7 +324,7 @@
     },
     "text": {
       "name": "Block",
-      "means": "A Blocked hit deals nothing at all — there is no second number. Block Chance caps at 60%, comes off a shield in your off hand and from nowhere else, and does nothing against an Ailment."
+      "means": "Blocking prevents all damage from an ordinary enemy hit. Block Chance is capped at 60%. Ailment damage, boss room attacks and boss drains bypass Block."
     },
     "implementation": [
       "src/keywords.ts",
@@ -342,13 +342,13 @@
       "src/webgraph.ts",
       "src/sim/character.ts"
     ],
-    "mechanicsRevision": "1522464211ee97f3a0e58270ca0a9c2d8b01f9f8ca9f62362fe25fbc5270c0ca",
-    "textRevision": "faf9c1098a2e6e6e364db08ec73053beb180d7312bdea6a5a023e5e8f34c7a1a",
-    "status": "pending",
-    "reviewedMechanicsRevision": null,
-    "reviewedTextRevision": null,
-    "reviewedAtCommit": null,
-    "notes": ""
+    "mechanicsRevision": "c7f458559ae762bb8aff8e1bf7be4d871f2b2c856ea5046ac0fcc6f346518b1e",
+    "textRevision": "3c3b815633eab777ce085ef3a590d5bef44ed6c865c7915cdcbc16ad01b7de7b",
+    "status": "reviewed",
+    "reviewedMechanicsRevision": "c7f458559ae762bb8aff8e1bf7be4d871f2b2c856ea5046ac0fcc6f346518b1e",
+    "reviewedTextRevision": "3c3b815633eab777ce085ef3a590d5bef44ed6c865c7915cdcbc16ad01b7de7b",
+    "reviewedAtCommit": "726e1417229ffd1bc07c923cf1da2eccc7f55d6d",
+    "notes": "Full glossary batch; writing/GLOSSARY.md. `src/sim/stats.ts`: `blockChance`; `src/sim/run.ts`: `dealDamage`, `bite`, `stepAilments`; 60% cap, ordinary hit negation; boss room damage and Ailment ticks do not roll Block."
   },
   {
     "id": "keyword.burn",
@@ -358,7 +358,7 @@
     },
     "text": {
       "name": "Burn",
-      "means": "Applied by a hit dealing Fire damage, at whatever chance you have bought, for 4s. 26 damage a second, never scaled by Spell, Attack or Critical."
+      "means": "Fire hits use your chance to apply Burn. Each stack you apply deals 26 base Fire damage per second for 4s, before Ailment damage and duration modifiers. Spell Damage, Attack Damage and Critical Damage do not increase this damage."
     },
     "implementation": [
       "src/keywords.ts",
@@ -376,13 +376,13 @@
       "src/webgraph.ts",
       "src/sim/character.ts"
     ],
-    "mechanicsRevision": "1aa80e5a73d31b3f75c5802f0b643f8c707df4b5a18cf2ba60224c1fb63ae0ff",
-    "textRevision": "ea260fdd9d5744e728d6edfa89e0faa5a514871971696ddf45d0d5d64a632c86",
-    "status": "pending",
-    "reviewedMechanicsRevision": null,
-    "reviewedTextRevision": null,
-    "reviewedAtCommit": null,
-    "notes": ""
+    "mechanicsRevision": "5c50105f01a288ab70446b12183cc1991125487dc709bd4da77a289e84dd6600",
+    "textRevision": "0237e46a41cdbc00912bbe5b001a06669bfafb7ade8b0f866ed926a3fd026f07",
+    "status": "reviewed",
+    "reviewedMechanicsRevision": "5c50105f01a288ab70446b12183cc1991125487dc709bd4da77a289e84dd6600",
+    "reviewedTextRevision": "0237e46a41cdbc00912bbe5b001a06669bfafb7ade8b0f866ed926a3fd026f07",
+    "reviewedAtCommit": "726e1417229ffd1bc07c923cf1da2eccc7f55d6d",
+    "notes": "Full glossary batch; writing/GLOSSARY.md. `src/data.ts`: Burn definition; `src/sim/stats.ts`: `ailmentDamage`, `ailmentChances`; `src/sim/run.ts`: `strike`, `stepAilments`; 26 base Fire DPS per stack for 4s before Ailment modifiers, independent of Attack/Spell/Critical Damage."
   },
   {
     "id": "keyword.burst",
@@ -392,7 +392,7 @@
     },
     "text": {
       "name": "Burst",
-      "means": "An instant effect in a circle. Contagion's Burst applies Poison; other Bursts deal damage. A Burst you carry goes off around YOU on a cooldown, 2.4 tiles across, for a figure off your character level that nothing but increased Damage moves. A Burst set off by a DEATH is a share of the hit that killed it, and sets off the Bursts of whatever IT kills, 8 deep. Bursts overlap freely."
+      "means": "An instant circular effect. Damage Bursts hit nearby enemies; Contagion Bursts apply Poison. The source determines the trigger, damage and radius. Effects that make killed enemies Burst can chain through further kills for up to 8 generations. Overlapping Bursts can affect the same enemy."
     },
     "implementation": [
       "src/keywords.ts",
@@ -410,13 +410,13 @@
       "src/webgraph.ts",
       "src/sim/character.ts"
     ],
-    "mechanicsRevision": "c8cf47b6157290b2ab820fc10c18b8ff01c717707a4a396743dfadacefb075d7",
-    "textRevision": "cc013a4b4280653037e3017cf57bf36d307ddd9b88602689caa1704a69e805d1",
-    "status": "pending",
-    "reviewedMechanicsRevision": null,
-    "reviewedTextRevision": null,
-    "reviewedAtCommit": null,
-    "notes": ""
+    "mechanicsRevision": "1dae9327ccff73d30f3cb510c1f16115eaf85f586b2d240a85828c43a957bfb4",
+    "textRevision": "74adda1213eaf2b36414dd1876a2a202a93ca6fcc6638e6db7d871a61e6e1cf9",
+    "status": "reviewed",
+    "reviewedMechanicsRevision": "1dae9327ccff73d30f3cb510c1f16115eaf85f586b2d240a85828c43a957bfb4",
+    "reviewedTextRevision": "74adda1213eaf2b36414dd1876a2a202a93ca6fcc6638e6db7d871a61e6e1cf9",
+    "reviewedAtCommit": "726e1417229ffd1bc07c923cf1da2eccc7f55d6d",
+    "notes": "Full glossary batch; writing/GLOSSARY.md. `src/sim/skills.ts`: `burstFrom`, `blastAround`; `src/sim/run.ts`: `sunder`, `spreadAilment`, `burstCurse`; sources differ in damage, radius and trigger. Death-hit chains stop after 8 generations. Removed false blanket claims about passive scaling and diameter."
   },
   {
     "id": "keyword.charge",
@@ -426,7 +426,7 @@
     },
     "text": {
       "name": "Charge",
-      "means": "What a flask holds. Each carries 2, a descent always begins full, and nothing about them survives one — there is nothing to hoard."
+      "means": "Each flask holds 2 Charges, and each use spends one. Flasks start every descent with full Charges. Charge recovery effects can refill them during a descent, up to their capacity. Unspent Charges do not carry over as extras on the next descent."
     },
     "implementation": [
       "src/keywords.ts",
@@ -444,13 +444,13 @@
       "src/webgraph.ts",
       "src/sim/character.ts"
     ],
-    "mechanicsRevision": "6efbc478181d1bd9e3c386f4450fa2f79b757f5aa26ae7677b718d8a74343f15",
-    "textRevision": "d1aa07b2d20f9d900541b76de04d8f69800a14ff519556a731555f6c0111f0e3",
-    "status": "pending",
-    "reviewedMechanicsRevision": null,
-    "reviewedTextRevision": null,
-    "reviewedAtCommit": null,
-    "notes": ""
+    "mechanicsRevision": "dd6cd53b6bac2d9178f595aacfc7737ffabb32004ef4117d91d855157f9cdae0",
+    "textRevision": "ebdcd0d331e4b1c29714300718ae372a1ca462d5352d72551d42b5f5f76f0b8b",
+    "status": "reviewed",
+    "reviewedMechanicsRevision": "dd6cd53b6bac2d9178f595aacfc7737ffabb32004ef4117d91d855157f9cdae0",
+    "reviewedTextRevision": "ebdcd0d331e4b1c29714300718ae372a1ca462d5352d72551d42b5f5f76f0b8b",
+    "reviewedAtCommit": "726e1417229ffd1bc07c923cf1da2eccc7f55d6d",
+    "notes": "Full glossary batch; writing/GLOSSARY.md. `src/data.ts`: `POTIONS`; `src/sim/run.ts`: constructor, `drink`, `bankCharges`, `stepRecharge`; two per flask per descent, one per use, restoration capped individually, no extra stockpile across descents."
   },
   {
     "id": "keyword.chill",
@@ -460,7 +460,7 @@
     },
     "text": {
       "name": "Chill",
-      "means": "Applied by a hit dealing Cold damage, at whatever chance you have bought, for 3s. Each stack takes 6% off movement, attack and cast speed. 8 stacks FREEZE it for 1.4s and clear them, and the next hit on a body coming out of one is a Critical whatever your chance is."
+      "means": "Cold hits use your chance to apply Chill. Chill stacks normally last 3s. Each application Slows Attack and Cast Speed for 3s, based on the current stack count: 6% per stack, up to 75%. Enemies normally Freeze at 8 stacks for 1.4s: they cannot move, attack or cast, and their Chill stacks are removed. The next hit against that enemy is a guaranteed Critical, even while it is Frozen. You Freeze at 3 stacks instead; protection against Chill raises this threshold."
     },
     "implementation": [
       "src/keywords.ts",
@@ -478,13 +478,13 @@
       "src/webgraph.ts",
       "src/sim/character.ts"
     ],
-    "mechanicsRevision": "307723cb9a29a155197a451ec5dfbaed613398eda0d79cc87d94a258f9ae1d98",
-    "textRevision": "f11d0a0e6f40990f03cb8282f4e33670500ebfa3356d1306771fb2c7d9118bcc",
-    "status": "pending",
+    "mechanicsRevision": "77ca9f409b6acd3531beb6dea5bcc52f81f6d9a6335d51d5988d93eb256aa55a",
+    "textRevision": "42d18bd07b1428331f473c4bbef679be1deb803de4bb61d3d547bc9262c8c50a",
+    "status": "blocked",
     "reviewedMechanicsRevision": null,
     "reviewedTextRevision": null,
     "reviewedAtCommit": null,
-    "notes": ""
+    "notes": "Full glossary batch; writing/GLOSSARY.md. W018: `src/data.ts` promises movement Slow; `RunSim.chill`, `hasteOf`, `paceOf`, `stepEffects`, `stepAilments`, `freeze` disagree on movement and Slow duration. Confirmed base stacks, Attack/Cast Slow, distinct hero threshold and immediately available guaranteed Critical are clarified; no movement claim added."
   },
   {
     "id": "keyword.cloud",
@@ -494,7 +494,7 @@
     },
     "text": {
       "name": "Cloud",
-      "means": "A circle on the ground that leaves an Ailment on everything standing in it. It has no target limit, so a wider Cloud is the whole of how it hits more."
+      "means": "A circular area that applies an Ailment to enemies inside it, with no target limit. An ordinary Blight Cloud applies Poison once when cast; the Poison then lasts for its own duration. Wandering Rot creates a moving Cloud that applies Poison repeatedly. Spore Burst replaces the Poison with a hit. Overlapping Clouds can affect the same enemy."
     },
     "implementation": [
       "src/keywords.ts",
@@ -512,13 +512,13 @@
       "src/webgraph.ts",
       "src/sim/character.ts"
     ],
-    "mechanicsRevision": "91fce47ec43fb34893baab007bd157be4d923132f9da6fbcd69ed964932193ec",
-    "textRevision": "05519bf8d012912297e077ecfd7875e2e3615c70c91c678dad3e79afa9083291",
-    "status": "pending",
-    "reviewedMechanicsRevision": null,
-    "reviewedTextRevision": null,
-    "reviewedAtCommit": null,
-    "notes": ""
+    "mechanicsRevision": "ed9612025b5b274355328bcfe335b3aea3ed32a66754187886ecde6b78c5f617",
+    "textRevision": "cf5ca41b035172b4d96086a24b9541186362917a3f1b522ad703496693ab5c0b",
+    "status": "reviewed",
+    "reviewedMechanicsRevision": "ed9612025b5b274355328bcfe335b3aea3ed32a66754187886ecde6b78c5f617",
+    "reviewedTextRevision": "cf5ca41b035172b4d96086a24b9541186362917a3f1b522ad703496693ab5c0b",
+    "reviewedAtCommit": "726e1417229ffd1bc07c923cf1da2eccc7f55d6d",
+    "notes": "Full glossary batch; writing/GLOSSARY.md. `src/sim/skills.ts`: `ailment_burst`, `leaveClouds`; `src/sim/run.ts`: `stepClouds`; ordinary Blight applies once, Wandering Rot persists and reapplies, Spore Burst hits, overlapping areas may affect the same enemy."
   },
   {
     "id": "keyword.cone",
@@ -528,7 +528,7 @@
     },
     "text": {
       "name": "Cone",
-      "means": "A wedge in front of you. Everything standing in it takes the WHOLE hit and nothing takes a share, and there is no target limit — so how many bodies the wedge holds is the whole of what a use is worth. Opened past 360° it is every direction at once and what you are facing stops mattering."
+      "means": "A wedge aimed toward your target. A standard Cone hit deals full damage to every enemy inside it, with no target limit. Reach determines its distance and angle determines its width. At 360°, it covers every direction. Alternate modes can replace the wedge or its initial hit."
     },
     "implementation": [
       "src/keywords.ts",
@@ -546,13 +546,13 @@
       "src/webgraph.ts",
       "src/sim/character.ts"
     ],
-    "mechanicsRevision": "6ed286117010524640d2fa9dd53788430b7a6855d4cbdd39ee91c0b6627db117",
-    "textRevision": "45693838204e0870b56d1d4e8634e6d01225c55213412a9d7f5ec7390155e666",
-    "status": "pending",
-    "reviewedMechanicsRevision": null,
-    "reviewedTextRevision": null,
-    "reviewedAtCommit": null,
-    "notes": ""
+    "mechanicsRevision": "ce584b6d1a347da927169345515ebdf1077c7a00a28e5e478a5670337cc1ce62",
+    "textRevision": "fbee73f814285ec7c85720c5bc66b353d73fdc32434cf00328391fe4cc42f2af",
+    "status": "reviewed",
+    "reviewedMechanicsRevision": "ce584b6d1a347da927169345515ebdf1077c7a00a28e5e478a5670337cc1ce62",
+    "reviewedTextRevision": "fbee73f814285ec7c85720c5bc66b353d73fdc32434cf00328391fe4cc42f2af",
+    "reviewedAtCommit": "726e1417229ffd1bc07c923cf1da2eccc7f55d6d",
+    "notes": "Full glossary batch; writing/GLOSSARY.md. `src/sim/skills.ts`: `cone`, `inWedge`; uncapped targets, full standard hit, angle capped at 360 degrees; Fissure and Tremor replace geometry/delivery."
   },
   {
     "id": "keyword.convert",
@@ -562,7 +562,7 @@
     },
     "text": {
       "name": "Convert",
-      "means": "The skill stops dealing its own damage type and deals another instead. Its OWN tree follows the change — a node reading the old type reads the new one, so no point you walked is stranded — and your gear does not, so a line on a ring keeps naming the type it named."
+      "means": "A tree conversion changes the skill's base damage to the stated type. Damage-type and Ailment modifiers in that skill's tree change to match. Gear modifiers keep their original types, and added damage of other types remains unless a separate conversion applies. A conversion of a stated share moves only that share of the specified damage; the converted part scales with its new type."
     },
     "implementation": [
       "src/keywords.ts",
@@ -580,13 +580,13 @@
       "src/webgraph.ts",
       "src/sim/character.ts"
     ],
-    "mechanicsRevision": "0c92a9175da517bcb0a7a25cd007cf52af1005d028cad5fd06deb2b9b7298242",
-    "textRevision": "fc482f4c8d6f0b005e0f7ccf443ebd9e3f22fee39eec3012e6289a828c530ccb",
-    "status": "pending",
-    "reviewedMechanicsRevision": null,
-    "reviewedTextRevision": null,
-    "reviewedAtCommit": null,
-    "notes": ""
+    "mechanicsRevision": "1bc27ca35892753dcadc079f40d84a80d98b04d3cad5cc51034a803cd578f7f7",
+    "textRevision": "0f1c3be01a37b4d5e7d0f7e6d4c685a3ffd2697e3c289fa4d8d8923d15a6070e",
+    "status": "reviewed",
+    "reviewedMechanicsRevision": "1bc27ca35892753dcadc079f40d84a80d98b04d3cad5cc51034a803cd578f7f7",
+    "reviewedTextRevision": "0f1c3be01a37b4d5e7d0f7e6d4c685a3ffd2697e3c289fa4d8d8923d15a6070e",
+    "reviewedAtCommit": "726e1417229ffd1bc07c923cf1da2eccc7f55d6d",
+    "notes": "Full glossary batch; writing/GLOSSARY.md. `src/sim/stats.ts`: `damageBreakdown`, `convertedType`, `retag`, `treeMod`, `effectiveSkill`; base/tree conversion differs from partial added-damage conversion. Gear keeps tags; unrelated added damage survives."
   },
   {
     "id": "keyword.critical",
@@ -596,7 +596,7 @@
     },
     "text": {
       "name": "Critical",
-      "means": "A Critical hit deals ×2 your damage, plus whatever Critical Damage you have found. Critical Chance is how often: every skill has its own, and increased Critical Chance scales THAT. A spell and an attack count it separately."
+      "means": "A Critical hit normally deals 200% of its usual damage. Critical Damage adds to that total: +50% Critical Damage makes it 250%. Critical Chance determines how often a skill is Critical. Increased Critical Chance scales the base chance; 10% base chance with 50% increased becomes 15%. Ailment ticks do not deal Critical damage."
     },
     "implementation": [
       "src/keywords.ts",
@@ -614,13 +614,13 @@
       "src/webgraph.ts",
       "src/sim/character.ts"
     ],
-    "mechanicsRevision": "66d618c20c60e609fb4519653eedec707544b22b2c19b74f1f506bffde8dbb42",
-    "textRevision": "31b48309b0fda6dffd939542d5731ff66524c43ddb608ed08bbe365a3973d78e",
-    "status": "pending",
-    "reviewedMechanicsRevision": null,
-    "reviewedTextRevision": null,
-    "reviewedAtCommit": null,
-    "notes": ""
+    "mechanicsRevision": "07e90a1f34f4dbbd845ea6908f59a4afc2fd395df0c69be4751f223897731012",
+    "textRevision": "4cb90e8b12b19589e31f97198e9b9d45ae6d73478e99b9d2c8cacf144fe687c6",
+    "status": "reviewed",
+    "reviewedMechanicsRevision": "07e90a1f34f4dbbd845ea6908f59a4afc2fd395df0c69be4751f223897731012",
+    "reviewedTextRevision": "4cb90e8b12b19589e31f97198e9b9d45ae6d73478e99b9d2c8cacf144fe687c6",
+    "reviewedAtCommit": "726e1417229ffd1bc07c923cf1da2eccc7f55d6d",
+    "notes": "Full glossary batch; writing/GLOSSARY.md. `src/sim/stats.ts`: `playerStats`; `src/sim/run.ts`: `dealDamage`, `critChanceOf`, `stepAilments`; normal hit multiplier 2 + Critical Damage / 100, increased base Critical Chance, no Critical damage on ticks, crit-into-buff is an exception."
   },
   {
     "id": "keyword.curse",
@@ -630,7 +630,7 @@
     },
     "text": {
       "name": "Curse",
-      "means": "Applied by a hit dealing Dark damage, at whatever chance you have bought, for 8s. When the body dies it bursts for 4% of its maximum life per stack, 2.2 tiles across."
+      "means": "Dark hits use your chance to apply Curse. By default, each stack lasts 8s. When a Cursed enemy dies, it deals Dark damage equal to 4% of its maximum Life per stack to other enemies within 2.2 tiles."
     },
     "implementation": [
       "src/keywords.ts",
@@ -648,13 +648,13 @@
       "src/webgraph.ts",
       "src/sim/character.ts"
     ],
-    "mechanicsRevision": "3551d0b82b2a5efbf9529fa7d12b6e2ca1712df110b995828111fe2baddf32f7",
-    "textRevision": "37e2d28b43ca75976c84902ac07224f9b4ce5249f9fb61ed3f972ed0179806f5",
-    "status": "pending",
-    "reviewedMechanicsRevision": null,
-    "reviewedTextRevision": null,
-    "reviewedAtCommit": null,
-    "notes": ""
+    "mechanicsRevision": "7a382ebf9cafad97fe7e5692972d0bd8208ef64349709092559f89d9fbed3df7",
+    "textRevision": "5393bca4169bbca59e21fd5adf575e623ee4f2e77f609df38f3d744c7c46e497",
+    "status": "reviewed",
+    "reviewedMechanicsRevision": "7a382ebf9cafad97fe7e5692972d0bd8208ef64349709092559f89d9fbed3df7",
+    "reviewedTextRevision": "5393bca4169bbca59e21fd5adf575e623ee4f2e77f609df38f3d744c7c46e497",
+    "reviewedAtCommit": "726e1417229ffd1bc07c923cf1da2eccc7f55d6d",
+    "notes": "Full glossary batch; writing/GLOSSARY.md. `src/data.ts`: Curse definition; `src/sim/run.ts`: `strike`, `burstCurse`; base 8s, enemy death releases Dark damage of 4% maximum Life per stack, 2.2-tile radius, each recipient's Resistance; Starved can scale it."
   },
   {
     "id": "keyword.dodge",
@@ -664,7 +664,7 @@
     },
     "text": {
       "name": "Dodge",
-      "means": "A Dodged hit deals nothing at all, exactly as a Blocked one does, and does nothing against an Ailment either. It caps at 50% and is TRADED for Armour rather than worn beside it: what stops some hits outright no longer blunts the rest."
+      "means": "Dodging avoids all damage from an ordinary enemy hit. Dodge Chance is capped at 50%. Ailment damage, boss room attacks and boss drains bypass Dodge. Converting Armour to Dodge removes the damage reduction that Armour would have provided."
     },
     "implementation": [
       "src/keywords.ts",
@@ -682,13 +682,13 @@
       "src/webgraph.ts",
       "src/sim/character.ts"
     ],
-    "mechanicsRevision": "eabe531595b2feaf605574703efc2f436a86ac97d2594e08b72be3ec6800f82f",
-    "textRevision": "770ceaffdf04dd49e4189d13ce7529935d1c28b76cd00523a1dc673d573d27a8",
-    "status": "pending",
-    "reviewedMechanicsRevision": null,
-    "reviewedTextRevision": null,
-    "reviewedAtCommit": null,
-    "notes": ""
+    "mechanicsRevision": "fed3721d61ae9b0949b3f1bbb76af8036fd29959cc152914141a704f168fd30c",
+    "textRevision": "07f42025c57d4088c3afaa399be82c803347a2c9f753ef366051c5fcfbaf45a5",
+    "status": "reviewed",
+    "reviewedMechanicsRevision": "fed3721d61ae9b0949b3f1bbb76af8036fd29959cc152914141a704f168fd30c",
+    "reviewedTextRevision": "07f42025c57d4088c3afaa399be82c803347a2c9f753ef366051c5fcfbaf45a5",
+    "reviewedAtCommit": "726e1417229ffd1bc07c923cf1da2eccc7f55d6d",
+    "notes": "Full glossary batch; writing/GLOSSARY.md. `src/sim/stats.ts`: `playerStats`; `src/sim/run.ts`: `dealDamage`, `bite`, `stepAilments`; 50% cap, ordinary hit avoidance, Armour conversion removes reduction; boss room damage and ticks do not roll Dodge."
   },
   {
     "id": "keyword.echo",
@@ -698,7 +698,7 @@
     },
     "text": {
       "name": "Echo",
-      "means": "The swing landing again on the next enemy out from the one you struck, for 70% of it. The first looks 1.5 tiles from that enemy and each one after it looks 0.6 tiles further, so more Echoes reach deeper into a pack. Nothing is hit twice by one use."
+      "means": "Each Echo hits a different enemy near your original melee target, choosing the nearest first. By default, it deals 70% of the full hit damage. The first Echo can reach 1.5 tiles from the original target; each additional Echo extends this limit by 0.6 tiles. Echoes do not target the original enemy."
     },
     "implementation": [
       "src/keywords.ts",
@@ -716,13 +716,13 @@
       "src/webgraph.ts",
       "src/sim/character.ts"
     ],
-    "mechanicsRevision": "a778bed7d4092c22e99ae10d07a15ec1dfa4f1ecaf5899189b4e2416a4ce9ad9",
-    "textRevision": "541d25278116692c865dc183e56a14554a1a8eb2bec6468a1db3403f52a76cb4",
-    "status": "pending",
-    "reviewedMechanicsRevision": null,
-    "reviewedTextRevision": null,
-    "reviewedAtCommit": null,
-    "notes": ""
+    "mechanicsRevision": "cf98adb6fe50790f5adb30202139a09980e2711992fb7c99a76e98cd971065b5",
+    "textRevision": "0cae210b612b85e07cd8c8667fba9c71e27120eca622e4707a7a433626e5a41c",
+    "status": "reviewed",
+    "reviewedMechanicsRevision": "cf98adb6fe50790f5adb30202139a09980e2711992fb7c99a76e98cd971065b5",
+    "reviewedTextRevision": "0cae210b612b85e07cd8c8667fba9c71e27120eca622e4707a7a433626e5a41c",
+    "reviewedAtCommit": "726e1417229ffd1bc07c923cf1da2eccc7f55d6d",
+    "notes": "Full glossary batch; writing/GLOSSARY.md. `src/sim/skills.ts`: `melee`; nearest other enemies, 70% default share, 1.5 + 0.6 times prior Echo count in tiles, measured from original target. Removed whole-use uniqueness claim because Repeats/carry/Splash can hit again."
   },
   {
     "id": "keyword.exposure",
@@ -732,7 +732,7 @@
     },
     "text": {
       "name": "Exposure",
-      "means": "Applied by a hit dealing Light damage, at whatever chance you have bought, for 5s. Each stack is 4% increased damage taken, from anyone."
+      "means": "Light hits use your chance to apply Exposure. By default, each stack lasts 5s and causes 4% increased damage taken from hits. Stack bonuses add together. Exposure does not increase damage taken from Ailment ticks."
     },
     "implementation": [
       "src/keywords.ts",
@@ -750,13 +750,13 @@
       "src/webgraph.ts",
       "src/sim/character.ts"
     ],
-    "mechanicsRevision": "37068f1a3cb8c8be2fe05481bb1f57fe5c5de4a93e45a0bf740441be57f95ed2",
-    "textRevision": "5653462e9e9b7d743c0fd613c2c38e87246df58fc18684fd24f2ac763feba11d",
-    "status": "pending",
-    "reviewedMechanicsRevision": null,
-    "reviewedTextRevision": null,
-    "reviewedAtCommit": null,
-    "notes": ""
+    "mechanicsRevision": "934276ed9753c6c5789602a89beb891ee9be918d136dabc83039875f889d5f12",
+    "textRevision": "9ffc814a81ca45615da5b10fb7e624c09cc6d280d00b2d1f59377860b349b266",
+    "status": "reviewed",
+    "reviewedMechanicsRevision": "934276ed9753c6c5789602a89beb891ee9be918d136dabc83039875f889d5f12",
+    "reviewedTextRevision": "9ffc814a81ca45615da5b10fb7e624c09cc6d280d00b2d1f59377860b349b266",
+    "reviewedAtCommit": "726e1417229ffd1bc07c923cf1da2eccc7f55d6d",
+    "notes": "Full glossary batch; writing/GLOSSARY.md. `src/data.ts`: Exposure definition; `src/sim/run.ts`: `dealDamage`, `stepAilments`; base 5s, additive 4% increased hit damage taken per stack, no increased Ailment tick damage; magnitude/protection modifiers may apply."
   },
   {
     "id": "keyword.fork",
@@ -766,7 +766,7 @@
     },
     "text": {
       "name": "Fork",
-      "means": "A bolt falls from above on an enemy near the one you hit — within 3.2 tiles of it — for 45% of the damage. It is its own bolt, not the shot carrying on, so where the shot came from decides nothing. Nothing is hit twice by one use."
+      "means": "Each Fork creates a separate bolt that strikes an enemy near your original target, within 3.2 tiles. It deals 45% of the full hit damage unless modified. Forks choose the nearest enemies that the use has not already hit directly. They can strike in any direction from the original target."
     },
     "implementation": [
       "src/keywords.ts",
@@ -784,13 +784,13 @@
       "src/webgraph.ts",
       "src/sim/character.ts"
     ],
-    "mechanicsRevision": "a712331f7f961ee8945712c0701f980a431542fd003a9418fb07f8ab2eb3d4c4",
-    "textRevision": "83bd3bb314043345590055fddf99a6322fae63d4dd886211a4228eb2b1e2e66e",
-    "status": "pending",
-    "reviewedMechanicsRevision": null,
-    "reviewedTextRevision": null,
-    "reviewedAtCommit": null,
-    "notes": ""
+    "mechanicsRevision": "fc991c6d512df628fca0faabab133c743b7ae5e77ad1e122bd6fed583442c527",
+    "textRevision": "f653c3001c9b9e40393cc90d67116cd836dbd6abe068c3c9b1e7e1ffa380671a",
+    "status": "reviewed",
+    "reviewedMechanicsRevision": "fc991c6d512df628fca0faabab133c743b7ae5e77ad1e122bd6fed583442c527",
+    "reviewedTextRevision": "f653c3001c9b9e40393cc90d67116cd836dbd6abe068c3c9b1e7e1ffa380671a",
+    "reviewedAtCommit": "726e1417229ffd1bc07c923cf1da2eccc7f55d6d",
+    "notes": "Full glossary batch; writing/GLOSSARY.md. `src/sim/skills.ts`: `projectile`; nearest unhit targets within 3.2 tiles of original target, one per Fork, default 45% share, independent of shot direction."
   },
   {
     "id": "keyword.gust",
@@ -800,7 +800,7 @@
     },
     "text": {
       "name": "Gust",
-      "means": "What GALE holds. You move 10% faster for each one, anything that lands a hit takes one, and one comes back every 6s."
+      "means": "Gale starts with 3 Gusts. Each grants 10% more Movement Speed by default; these bonuses add together. Taking a hit removes one Gust and restarts the recovery timer. Boss drains remove Gusts too. One Gust returns every 6s, up to your maximum. Gale talents can change these values or prevent Gust loss."
     },
     "implementation": [
       "src/keywords.ts",
@@ -818,13 +818,13 @@
       "src/webgraph.ts",
       "src/sim/character.ts"
     ],
-    "mechanicsRevision": "fa9a0e8159abb34d41f22c3c6518c7fc8542b21cf9791787b68dd8e464788bf8",
-    "textRevision": "65ae3d5f8156e77ebd5babaebcd0710132033e663aeea601b258db78a1250831",
-    "status": "pending",
+    "mechanicsRevision": "ccfc4d2a391f6e70f30679e1ef56ea8ae3a708383345cf40714295fe52c513f9",
+    "textRevision": "4c7cf2cc581d85d9adcf0e41b4f9a6bb5d9ba27ea55d192f045510cf0ad08499",
+    "status": "blocked",
     "reviewedMechanicsRevision": null,
     "reviewedTextRevision": null,
     "reviewedAtCommit": null,
-    "notes": ""
+    "notes": "Full glossary batch; writing/GLOSSARY.md. W020: `src/sim/movers.ts`: `moverStats`; `RunSim.stepGusts`, `spendGust`, `paceOf`, `bite`; base three, additive 10% per Gust within separate movement multiplier, six-second recovery restarted on loss; boss drains also consume Gusts despite hit-only source wording."
   },
   {
     "id": "keyword.increased",
@@ -834,7 +834,7 @@
     },
     "text": {
       "name": "increased / reduced",
-      "means": "Every increased line of one stat adds into one sum, and the sum multiplies the base once. Two 50% increased lines are 100%, not 125%. Reduced subtracts from the same sum."
+      "means": "For stats with a base value, increased and reduced modifiers add together before multiplying that base, including flat additions. Two 50% increased modifiers give 100% increased, doubling the value. Reduced modifiers subtract from that total. Added chance bonuses, such as +10% chance to apply an Ailment, add percentage points instead."
     },
     "implementation": [
       "src/keywords.ts",
@@ -852,13 +852,13 @@
       "src/webgraph.ts",
       "src/sim/character.ts"
     ],
-    "mechanicsRevision": "f398f2590ad7c390bd1f700ee38b9296b1d3afbc43e6961575cd27c7c3d222c0",
-    "textRevision": "518730aa69ba0327a923b0ee9d82915e874b66101fbb2f50a4a70b1f55576ef1",
-    "status": "pending",
-    "reviewedMechanicsRevision": null,
-    "reviewedTextRevision": null,
-    "reviewedAtCommit": null,
-    "notes": ""
+    "mechanicsRevision": "e664a649a464a400a04cdceee1ef26b8c4a94e293b32824463221594b5641957",
+    "textRevision": "90e1e22089e629ebd23fd60e85da1168f3f8feca76c9823ff5fd89be305e6a56",
+    "status": "reviewed",
+    "reviewedMechanicsRevision": "e664a649a464a400a04cdceee1ef26b8c4a94e293b32824463221594b5641957",
+    "reviewedTextRevision": "90e1e22089e629ebd23fd60e85da1168f3f8feca76c9823ff5fd89be305e6a56",
+    "reviewedAtCommit": "726e1417229ffd1bc07c923cf1da2eccc7f55d6d",
+    "notes": "Full glossary batch; writing/GLOSSARY.md. `src/mods.ts`: `aggregate`, `computeStat`, `percentStat`; additive increases/reductions multiply base plus flats; added chance bonuses use percentage points."
   },
   {
     "id": "keyword.more",
@@ -868,7 +868,7 @@
     },
     "text": {
       "name": "more / less",
-      "means": "Every more line multiplies on its own, on top of everything else. Two 50% more lines are 125% more, not 100%. Less divides the same way: 40% less is 0.6 times."
+      "means": "Separate more and less modifiers multiply. Two 50% more modifiers give 2.25 times the original value, or 125% more. A 40% less modifier multiplies the value by 0.6. Bonuses that a description says add together, such as bonuses per stack, are combined before their multiplier applies."
     },
     "implementation": [
       "src/keywords.ts",
@@ -886,13 +886,13 @@
       "src/webgraph.ts",
       "src/sim/character.ts"
     ],
-    "mechanicsRevision": "0d92816b2c3177a221eb040245c71dda9d5f5ae8f73d968793ecc7fefcc5226a",
-    "textRevision": "207fb007387e2c4df22cda9850d75864d8868fb967e0f0ff85540d60046bc424",
-    "status": "pending",
-    "reviewedMechanicsRevision": null,
-    "reviewedTextRevision": null,
-    "reviewedAtCommit": null,
-    "notes": ""
+    "mechanicsRevision": "b63280a0d9f25c1dd952ee2242db77093530561609a7222418ac8e27ca94e223",
+    "textRevision": "cbe021f34a260e2c6d331a61163575f1cb0f9b1fbda9ecf09eb96d4b67e7f572",
+    "status": "reviewed",
+    "reviewedMechanicsRevision": "b63280a0d9f25c1dd952ee2242db77093530561609a7222418ac8e27ca94e223",
+    "reviewedTextRevision": "cbe021f34a260e2c6d331a61163575f1cb0f9b1fbda9ecf09eb96d4b67e7f572",
+    "reviewedAtCommit": "726e1417229ffd1bc07c923cf1da2eccc7f55d6d",
+    "notes": "Full glossary batch; writing/GLOSSARY.md. `src/mods.ts`: `computeStat`; `src/sim/grants.ts`: family merge rules; `src/sim/run.ts`: `hasteOf`, `paceOf`; separate factors multiply, explicitly summed per-stack/family bonuses combine first."
   },
   {
     "id": "keyword.pierce",
@@ -902,7 +902,7 @@
     },
     "text": {
       "name": "Pierce",
-      "means": "A Projectile carries on through what it hits. Each Pierce catches one more enemy behind the target — up to 4.5 tiles further along the line and 0.85 tiles either side of it — for 70% of the damage."
+      "means": "Allows a Projectile to hit additional enemies behind its target. Each Pierce adds one target within 4.5 tiles beyond the original target and 0.85 tiles either side of the shot's path. Each Pierced enemy takes 70% of the full hit damage unless a skill or modifier changes that share."
     },
     "implementation": [
       "src/keywords.ts",
@@ -920,13 +920,13 @@
       "src/webgraph.ts",
       "src/sim/character.ts"
     ],
-    "mechanicsRevision": "f0c614478a223ce31249f8c0683207cddfcc836255bddce146d47698c1b87290",
-    "textRevision": "c142f13ab178356a5a2514a330013941ffc1c29ff03bf4403aaee1acec350488",
-    "status": "pending",
-    "reviewedMechanicsRevision": null,
-    "reviewedTextRevision": null,
-    "reviewedAtCommit": null,
-    "notes": ""
+    "mechanicsRevision": "3fe8c122b8e8970b60ff640c479fe175686ac0e4cc77f6e752565fc02ee0a368",
+    "textRevision": "2e3cca26af1e0e48c8b471f850828d85228378486c774b4e66c1f517ea849a47",
+    "status": "reviewed",
+    "reviewedMechanicsRevision": "3fe8c122b8e8970b60ff640c479fe175686ac0e4cc77f6e752565fc02ee0a368",
+    "reviewedTextRevision": "2e3cca26af1e0e48c8b471f850828d85228378486c774b4e66c1f517ea849a47",
+    "reviewedAtCommit": "726e1417229ffd1bc07c923cf1da2eccc7f55d6d",
+    "notes": "Full glossary batch; writing/GLOSSARY.md. `src/data.ts`: `PROJECTILE`; `src/sim/skills.ts`: `alongRay`, `projectile`, `hailOf`; target count, original-target corridor, 4.5-tile extension and default 70% share confirmed."
   },
   {
     "id": "keyword.poison",
@@ -936,7 +936,7 @@
     },
     "text": {
       "name": "Poison",
-      "means": "Applied only by something that says it applies one, for 6s. 19 damage a second, never scaled by Spell, Attack or Critical."
+      "means": "Poison deals damage over time. You apply it through skills and effects that specifically inflict it. Its source determines its damage and duration. Poison ticks do not deal Critical damage. With Contagion, each tick uses your Critical Chance to try to spread Poison."
     },
     "implementation": [
       "src/keywords.ts",
@@ -954,13 +954,13 @@
       "src/webgraph.ts",
       "src/sim/character.ts"
     ],
-    "mechanicsRevision": "cc1b62392cfe83b49895f055f5d286e8c29b52ce53f9e249bb17eaa1648722e5",
-    "textRevision": "dfe3efdf1b8e0f07e4f1d60454329dcfd6301ee89b2046200645d01168cf7a67",
-    "status": "pending",
-    "reviewedMechanicsRevision": null,
-    "reviewedTextRevision": null,
-    "reviewedAtCommit": null,
-    "notes": ""
+    "mechanicsRevision": "d0bc9c887de8c69e32406e4db5efb53421dcd419dc811351a4e60e07da27bd89",
+    "textRevision": "b1e88defd95429cf25877a6a2e6d89bff51f01393a4e9d4086651a83632538ad",
+    "status": "reviewed",
+    "reviewedMechanicsRevision": "d0bc9c887de8c69e32406e4db5efb53421dcd419dc811351a4e60e07da27bd89",
+    "reviewedTextRevision": "b1e88defd95429cf25877a6a2e6d89bff51f01393a4e9d4086651a83632538ad",
+    "reviewedAtCommit": "726e1417229ffd1bc07c923cf1da2eccc7f55d6d",
+    "notes": "Full glossary batch; writing/GLOSSARY.md. `src/sim/skills.ts`: `ailment_burst`; `src/sim/run.ts`: `applyAilment`, `stepAilments`, `spreadAilment`; source defines damage/duration, including typed added damage; tick Critical Chance only triggers Contagion and never Critical Damage."
   },
   {
     "id": "keyword.projectile",
@@ -970,7 +970,7 @@
     },
     "text": {
       "name": "Projectile",
-      "means": "A skill throws one Projectile at what you aimed at. Each one beyond the first flies at another enemy within 3.5 tiles of that target, for full damage. Nothing is hit twice by one use."
+      "means": "The standard Projectile use hits your target. Each additional Projectile hits a different enemy within 3.5 tiles of that target for full damage, before Spread modifiers. These direct hits do not hit the same enemy twice in one use. Splash and Bursts can overlap. Alternate skill modes can change this targeting and damage."
     },
     "implementation": [
       "src/keywords.ts",
@@ -988,13 +988,13 @@
       "src/webgraph.ts",
       "src/sim/character.ts"
     ],
-    "mechanicsRevision": "05991ebef414c7d0893808fd64d0b1d4887825d0106a921d4747843f5319d8ab",
-    "textRevision": "aacbac9f5bf8de7c900aa896879e85d4eaf66c8861a3ebc9f4d6c9e6afb87782",
-    "status": "pending",
-    "reviewedMechanicsRevision": null,
-    "reviewedTextRevision": null,
-    "reviewedAtCommit": null,
-    "notes": ""
+    "mechanicsRevision": "3d73bb941c5053aa70f6d097238879cdbbd967623fcd6f321d1275985e0c126c",
+    "textRevision": "ee0a3c1268ff627d13aa941b3efe6629a32a71f2329506abd713fe6ab128e1ce",
+    "status": "reviewed",
+    "reviewedMechanicsRevision": "3d73bb941c5053aa70f6d097238879cdbbd967623fcd6f321d1275985e0c126c",
+    "reviewedTextRevision": "ee0a3c1268ff627d13aa941b3efe6629a32a71f2329506abd713fe6ab128e1ce",
+    "reviewedAtCommit": "726e1417229ffd1bc07c923cf1da2eccc7f55d6d",
+    "notes": "Full glossary batch; writing/GLOSSARY.md. `src/sim/skills.ts`: `projectile`, `spreadTargets`, `fanOut`, `fallOn`, `strikeShocked`; ordinary direct hits share a visited set, extra shots have full share, Splash/Bursts can overlap, alternate modes replace delivery."
   },
   {
     "id": "keyword.repeat",
@@ -1004,7 +1004,7 @@
     },
     "text": {
       "name": "Repeat",
-      "means": "One more swing at the enemy you aimed at, in the same use and at full damage. Repeats stop the moment that enemy is down."
+      "means": "Each Repeat adds another attack within the same use, without another Mana cost. A standard melee Repeat hits your original target for full damage and stops if that target dies. Alternate modes can repeat the whole attack pattern, such as a spin or thrown blade."
     },
     "implementation": [
       "src/keywords.ts",
@@ -1022,13 +1022,13 @@
       "src/webgraph.ts",
       "src/sim/character.ts"
     ],
-    "mechanicsRevision": "f642b4b1548a40b18d3516bc79a765f9c75eb630440aff5673d6f80bad474a3d",
-    "textRevision": "322081b46570a3e1cf53a5f88874a9a5e55c731f9f8226928558459c4030d9f6",
-    "status": "pending",
-    "reviewedMechanicsRevision": null,
-    "reviewedTextRevision": null,
-    "reviewedAtCommit": null,
-    "notes": ""
+    "mechanicsRevision": "51b9ccdca95c1c5a16be32dc5814d8871b25a87f5d73d554cdda3f750ad07d05",
+    "textRevision": "137953cd413bc8b9e25a5c4e98150ebe7ca5c1629169be3db0243fc972da99c8",
+    "status": "reviewed",
+    "reviewedMechanicsRevision": "51b9ccdca95c1c5a16be32dc5814d8871b25a87f5d73d554cdda3f750ad07d05",
+    "reviewedTextRevision": "137953cd413bc8b9e25a5c4e98150ebe7ca5c1629169be3db0243fc972da99c8",
+    "reviewedAtCommit": "726e1417229ffd1bc07c923cf1da2eccc7f55d6d",
+    "notes": "Full glossary batch; writing/GLOSSARY.md. `src/sim/skills.ts`: `melee`, `throwBlades`, `spin`; `src/sim/run.ts`: `swing`; one Mana payment per use, ordinary repeated hits stop on primary death, alternate attacks repeat their pattern."
   },
   {
     "id": "keyword.resistance",
@@ -1038,7 +1038,7 @@
     },
     "text": {
       "name": "Resistance",
-      "means": "Blunts one damage type, Ailments included. It caps at 75%, and Resistance and Armour multiply rather than adding — at both caps a hit lands for a sixteenth."
+      "means": "Resistance reduces damage from the corresponding damage type, including damage over time. Each Resistance is capped at 75%. Resistance and Armour apply separately to hits: 50% damage reduction from each leaves you taking 25% of the incoming damage."
     },
     "implementation": [
       "src/keywords.ts",
@@ -1056,13 +1056,13 @@
       "src/webgraph.ts",
       "src/sim/character.ts"
     ],
-    "mechanicsRevision": "bcb1fd00f0c130361b1be5042abb29ed4feaff70767a06f8a059202365bc7201",
-    "textRevision": "41aba11730117dfb13720b30b78efeda149f27470f7f71939c22672247918664",
-    "status": "pending",
-    "reviewedMechanicsRevision": null,
-    "reviewedTextRevision": null,
-    "reviewedAtCommit": null,
-    "notes": ""
+    "mechanicsRevision": "960391e9a0bda696edefa47fa502b6eef5a8a2c025834c6493210f319ffa5067",
+    "textRevision": "62d78e6e64ac730e7aafd441ed28ec8bf5d75a01828a714d693a33341a16ec82",
+    "status": "reviewed",
+    "reviewedMechanicsRevision": "960391e9a0bda696edefa47fa502b6eef5a8a2c025834c6493210f319ffa5067",
+    "reviewedTextRevision": "62d78e6e64ac730e7aafd441ed28ec8bf5d75a01828a714d693a33341a16ec82",
+    "reviewedAtCommit": "726e1417229ffd1bc07c923cf1da2eccc7f55d6d",
+    "notes": "Full glossary batch; writing/GLOSSARY.md. `src/sim/stats.ts`: `resistancesFrom`; `src/sim/run.ts`: `afterResistance`, `dealDamage`, `bite`, `stepAilments`; per-type 75% cap, applies to damage over time, multiplies separately from Armour."
   },
   {
     "id": "keyword.shock",
@@ -1072,7 +1072,7 @@
     },
     "text": {
       "name": "Shock",
-      "means": "Applied by a hit dealing Lightning damage, at whatever chance you have bought, for 4s. 7 damage a second, and every tick throws 80% of it at up to 3 enemies within 2.4 tiles."
+      "means": "Lightning hits use your chance to apply Shock. Each stack you apply deals 7 base Lightning damage per second for 4s, before Ailment damage and duration modifiers. Spell Damage, Attack Damage and Critical Damage do not increase this damage."
     },
     "implementation": [
       "src/keywords.ts",
@@ -1090,13 +1090,13 @@
       "src/webgraph.ts",
       "src/sim/character.ts"
     ],
-    "mechanicsRevision": "4e8393c858dda8b8d3db372444f8541a2ea8549eed7cb891339c5b8bd6e23b9d",
-    "textRevision": "f1ae21f98aa11a21a0f4a76010fcc0adab0fdbbf13b7745db4da722c18d824d7",
-    "status": "pending",
+    "mechanicsRevision": "2a5b7dbd3f7d7f1743eed880142d7ee081934b338d484fd413720d0408936705",
+    "textRevision": "79bf77a5e5fb6cba2ae8614ed798d277c13477664ef8d2271ff1fddb48dbdd2b",
+    "status": "blocked",
     "reviewedMechanicsRevision": null,
     "reviewedTextRevision": null,
     "reviewedAtCommit": null,
-    "notes": ""
+    "notes": "Full glossary batch; writing/GLOSSARY.md. W021: `RunSim.shockArc` selects monsters when carrier is hero, but only the hero when carrier is monster. This contradicts the nearby-enemy rule. Confirmed base 7 Lightning DPS for 4s is rewritten; secondary targeting awaits Claude."
   },
   {
     "id": "keyword.slow",
@@ -1106,7 +1106,7 @@
     },
     "text": {
       "name": "Slow",
-      "means": "An enemy swings and casts more slowly for a duration. It is NOT a Burst — a Burst is damage in a circle and a Slow deals none, because every damage number in the game belongs to the skill in your main slot."
+      "means": "Temporarily reduces Attack and Cast Speed by the amount stated on the effect. A 30% Slow makes attacks and casts occur at 70% of their normal rate. Slow deals no damage."
     },
     "implementation": [
       "src/keywords.ts",
@@ -1124,13 +1124,13 @@
       "src/webgraph.ts",
       "src/sim/character.ts"
     ],
-    "mechanicsRevision": "0197a5b47029fcb9afc7c44d90764c4151bb30381057f78c57a6aa36095c31af",
-    "textRevision": "86205838fd695ba8f2262ab48342cee02d456bc23fc50b0c82b8c15866c95076",
-    "status": "pending",
-    "reviewedMechanicsRevision": null,
-    "reviewedTextRevision": null,
-    "reviewedAtCommit": null,
-    "notes": ""
+    "mechanicsRevision": "47e4316722e16c26465dd8a11b2eec46b420a2d4e06219b785dc66db32a9a852",
+    "textRevision": "c1cf0698fea8d556cc5d335793823f39541413367a001a10626a86cfd3cd0ea4",
+    "status": "reviewed",
+    "reviewedMechanicsRevision": "47e4316722e16c26465dd8a11b2eec46b420a2d4e06219b785dc66db32a9a852",
+    "reviewedTextRevision": "c1cf0698fea8d556cc5d335793823f39541413367a001a10626a86cfd3cd0ea4",
+    "reviewedAtCommit": "726e1417229ffd1bc07c923cf1da2eccc7f55d6d",
+    "notes": "Full glossary batch; writing/GLOSSARY.md. `src/sim/run.ts`: `slowFor`, `hasteOf`, `stepEffects`, Heavy Hand and Block Stagger consumers; reduces Attack/Cast rate by stated share for effect duration; does not reduce damage. Movement is not claimed (W018)."
   },
   {
     "id": "keyword.splash",
@@ -1140,7 +1140,7 @@
     },
     "text": {
       "name": "Splash",
-      "means": "Damage in a circle around the body a hit landed on, for a share of that hit. Every skill that hits ONE enemy carries it without being asked, and its own card says the share and the reach."
+      "means": "A skill with Splash deals a share of its hit damage to other enemies in a circle around the enemy hit. The skill lists its base damage share and radius. Splash does not hit the central target again, but Splashes from separate hits can overlap."
     },
     "implementation": [
       "src/keywords.ts",
@@ -1158,13 +1158,13 @@
       "src/webgraph.ts",
       "src/sim/character.ts"
     ],
-    "mechanicsRevision": "0c0555e57229a545b99915d69517ab9953b3e3d7f11595eb2cc7f422fd5b9df7",
-    "textRevision": "a8afae890909c40098eb23aca1aa97a2dea3702f23093b4b38fe5f5911408cb7",
-    "status": "pending",
-    "reviewedMechanicsRevision": null,
-    "reviewedTextRevision": null,
-    "reviewedAtCommit": null,
-    "notes": ""
+    "mechanicsRevision": "2bef01f65c5f14683a5a607f0f7fd83586b49fa76d07f4e34e5d84bbbe765806",
+    "textRevision": "e2c6e641d60ffc58680649bcc4d7cee0b4a5b1f3913edd446c9d5b77ff27110e",
+    "status": "reviewed",
+    "reviewedMechanicsRevision": "2bef01f65c5f14683a5a607f0f7fd83586b49fa76d07f4e34e5d84bbbe765806",
+    "reviewedTextRevision": "e2c6e641d60ffc58680649bcc4d7cee0b4a5b1f3913edd446c9d5b77ff27110e",
+    "reviewedAtCommit": "726e1417229ffd1bc07c923cf1da2eccc7f55d6d",
+    "notes": "Full glossary batch; writing/GLOSSARY.md. `src/sim/skills.ts`: `splashFrom`; requires a skill's `splash` definition, excludes the central target, uses listed share and area-scaled radius; repeated hits can overlap their Splashes."
   },
   {
     "id": "keyword.spread",
@@ -1174,7 +1174,7 @@
     },
     "text": {
       "name": "Spread",
-      "means": "How far a Projectile past the first looks for its own enemy, from the one you aimed at. 3.5 tiles bare."
+      "means": "The distance from your original target within which additional Projectiles can choose enemies. The base distance is 3.5 tiles. Spread modifiers scale this distance directly; Area of Effect does not affect it."
     },
     "implementation": [
       "src/keywords.ts",
@@ -1192,13 +1192,13 @@
       "src/webgraph.ts",
       "src/sim/character.ts"
     ],
-    "mechanicsRevision": "40ca55ff98ece789d629631cbeb3b2ce13e520ce304d9a2c4e5a6d1483345540",
-    "textRevision": "afe375c49dc8fa6121cf65c3c8da7407727af3ce8be24df23dc5bd67656e07cf",
-    "status": "pending",
-    "reviewedMechanicsRevision": null,
-    "reviewedTextRevision": null,
-    "reviewedAtCommit": null,
-    "notes": ""
+    "mechanicsRevision": "599ffb685f4806de8fd426012e6b49fb30b4b387e64e04e988b80d794aaf502f",
+    "textRevision": "84d0fb15eaa58f5f9e4e3399c3d82a7f1926c09f3a2aefcf7284b67240d3f04e",
+    "status": "reviewed",
+    "reviewedMechanicsRevision": "599ffb685f4806de8fd426012e6b49fb30b4b387e64e04e988b80d794aaf502f",
+    "reviewedTextRevision": "84d0fb15eaa58f5f9e4e3399c3d82a7f1926c09f3a2aefcf7284b67240d3f04e",
+    "reviewedAtCommit": "726e1417229ffd1bc07c923cf1da2eccc7f55d6d",
+    "notes": "Full glossary batch; writing/GLOSSARY.md. `src/sim/skills.ts`: `spreadTargets`; `PROJECTILE.spread * spreadRange`, measured from original target; no `areaRadius` call."
   },
   {
     "id": "keyword.starved",
@@ -1208,7 +1208,7 @@
     },
     "text": {
       "name": "Starved",
-      "means": "With nothing left in the pool the use happens anyway and lands for 50% of your damage. Running dry is a price, never a wall."
+      "means": "When you cannot pay the full Mana cost, you spend your remaining Mana and use the skill anyway. Starved hits deal 50% of their normal damage before modifiers to the penalty. An effect that pays the missing cost with Life prevents Starved. Blight's Poison bypasses this penalty."
     },
     "implementation": [
       "src/keywords.ts",
@@ -1226,13 +1226,13 @@
       "src/webgraph.ts",
       "src/sim/character.ts"
     ],
-    "mechanicsRevision": "22a24589e7a74b40bcf1c09a63d7c487e919f737e4f47277266c0159bb4070c3",
-    "textRevision": "bc9f39e49cd333d8d13641e6363067abaae3156b857a506c75ab6022dc768304",
-    "status": "pending",
+    "mechanicsRevision": "c1a0047404903d91c38991995f2c0fd390c12d36b5ac60cf39ddd528cd9ce0b0",
+    "textRevision": "7cf87b57ef4de8806062d42ff8a22d8fbf86acb24676fe3d5d2e78bc7c45bbed",
+    "status": "blocked",
     "reviewedMechanicsRevision": null,
     "reviewedTextRevision": null,
     "reviewedAtCommit": null,
-    "notes": ""
+    "notes": "Full glossary batch; writing/GLOSSARY.md. W005: `RunSim.swing`, `weak`, `dealDamage`, `applyAilment`; confirmed insufficient-Mana trigger, remaining-Mana payment, 50% default hit share and Life-payment exception; Blight Poison bypasses the penalty, contrary to broad talent promises."
   },
   {
     "id": "keyword.stun",
@@ -1242,7 +1242,7 @@
     },
     "text": {
       "name": "Stun",
-      "means": "An enemy neither swings nor closes for a duration. The chance is the share of its MAXIMUM life the one hit took, raised to the power 1.5 — 3% for a tenth of it, 72% for four fifths — and a hit that kills a body outright always Stuns it, so what a Stun sets off still fires on one you take down in a single blow."
+      "means": "Prevents an enemy from moving, attacking or casting for the stated duration. If you have an effect that grants Stun, hits dealing a larger share of maximum Life have a higher Stun chance. Before Stun chance modifiers, a hit dealing 10% of maximum Life has about 3% chance to Stun; a hit dealing 80% has about 72%. Killing hits always trigger your Stun effects when you can Stun."
     },
     "implementation": [
       "src/keywords.ts",
@@ -1260,13 +1260,13 @@
       "src/webgraph.ts",
       "src/sim/character.ts"
     ],
-    "mechanicsRevision": "1f77ad3b05e516eac809600b23718a5ed932bde8004e892b442545da6b15addc",
-    "textRevision": "e3ca6f5050fe96850c82eab924c6034517cb3a14f2d234b23d68aa1f2d13b83c",
-    "status": "pending",
-    "reviewedMechanicsRevision": null,
-    "reviewedTextRevision": null,
-    "reviewedAtCommit": null,
-    "notes": ""
+    "mechanicsRevision": "954338de3b92f3baf3b5c45fd2bd37dc200ed386a3d2c8ccf51009227f13ba24",
+    "textRevision": "0db11e0b680404a639cbab9a73e39cad905517fe3ca0848fbb4924f379283ffa",
+    "status": "reviewed",
+    "reviewedMechanicsRevision": "954338de3b92f3baf3b5c45fd2bd37dc200ed386a3d2c8ccf51009227f13ba24",
+    "reviewedTextRevision": "0db11e0b680404a639cbab9a73e39cad905517fe3ca0848fbb4924f379283ffa",
+    "reviewedAtCommit": "726e1417229ffd1bc07c923cf1da2eccc7f55d6d",
+    "notes": "Full glossary batch; writing/GLOSSARY.md. `src/data.ts`: `stunChanceFor`; `src/sim/run.ts`: `stun`, `stepMonster`, `dealDamage`; requires Stun grant, chance is damage/maxLife to power 1.5 before modifiers, killing-hit trigger, movement/action lock for duration."
   },
   {
     "id": "skill.aftershock.card",
