@@ -1,5 +1,31 @@
 # Writing batches
 
+## Current publication follow-up
+
+Reconciled draft PR #17 with main `2e13ebb1`. Claude's mechanics fixes were on
+main, but the writing branch and its bundle had not been merged. The only merge
+conflict was the generated `docs/app.js`; rebuilding it includes both sets of
+changes. This follow-up changes text and Contagion's glossary association only.
+
+- **1,755 reviewed**, including the revised movement, talent and alternate-mode
+  descriptions and their generated tooltip lines. Clear copy was retained.
+- **26 blocked**, limited to the remaining W005 and W008 questions documented
+  at the top of `BLOCKERS.md`. Their disputed text remains unapproved.
+- **72 pending**, covering skill cards, keyword explanations and the previously
+  owner-approved character introductions. **No stale entries** remain.
+
+The source comparison confirms no new gameplay, IDs, names or lore changes in
+the 13 source files edited in this follow-up. The explicit presentation-only
+exception moves Contagion's glossary lookup from Cloud to Burst. Parsed source
+comparison verifies every other non-copy field and expression is unchanged.
+Typechecking, comment/theme budgets, all five writing-workflow tests and all
+1,248 default demo checks pass (15 slow balance sections skipped, two parked).
+The modifier check exposed an existing missing tooltip for Permafrost's partial
+`spikeRamp` grant. Its display function now describes the added four percentage
+points without requiring the stack cap to be repeated in the upgrade's data.
+
+The earlier counts below describe the initial pass and Claude's handoff.
+
 ## Batch 1 — skill and character talent trees
 
 Reviewed against main `e1413d520e265eb950b4ea83f86c9fa961441fe1`, using the

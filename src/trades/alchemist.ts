@@ -45,7 +45,7 @@ export const ALCHEMIST: TradeSpec = {
       gate: {
         id: 'alc_volatile',
         name: 'Volatile Mixture',
-        description: 'While a flask is running you deal 20% more damage.',
+        description: "While a flask is running, your hits deal 20% more damage.",
         grants: { potionMore: 1.2 },
       },
       branches: [
@@ -60,13 +60,15 @@ export const ALCHEMIST: TradeSpec = {
             {
               id: 'alc_touchpaper',
               name: 'Touchpaper',
-              description: '15% more damage while a flask is running.',
+              description: "While a flask is running, your hits deal 15% more damage. Multiplies with other flask damage " +
+              "bonuses.",
               grants: { potionMore: 1.15 },
             },
             {
               id: 'alc_detonation',
               name: 'Detonation',
-              description: '30% more damage while a flask is running.',
+              description: "While a flask is running, your hits deal 30% more damage. Multiplies with other flask damage " +
+              "bonuses.",
               grants: { potionMore: 1.3 },
             },
           ],
@@ -104,7 +106,7 @@ export const ALCHEMIST: TradeSpec = {
       gate: {
         id: 'alc_quicksilver',
         name: 'Quicksilver',
-        description: 'While a flask is running you attack and cast 15% faster.',
+        description: "While a flask is running, you have 15% more Attack and Cast Speed.",
         grants: { potionHaste: 15 },
       },
       branches: [
@@ -119,13 +121,13 @@ export const ALCHEMIST: TradeSpec = {
             {
               id: 'alc_rising',
               name: 'Rising Fever',
-              description: '+10% increased attack and cast speed while a flask is running.',
+              description: "Adds 10 percentage points to your Attack and Cast Speed bonus while a flask is running.",
               grants: { potionHaste: 10 },
             },
             {
               id: 'alc_fever',
               name: 'Fever',
-              description: '+20% increased attack and cast speed while a flask is running.',
+              description: "Adds 20 percentage points to your Attack and Cast Speed bonus while a flask is running.",
               grants: { potionHaste: 20 },
             },
           ],
@@ -206,7 +208,7 @@ export const ALCHEMIST: TradeSpec = {
             {
               id: 'alc_deepcut',
               name: 'The Long Cut',
-              description: 'A Critical leaves you dealing 35% more damage for 4s.',
+              description: "Critical hits deal no extra damage. Landing one grants 35% more hit damage for 4s.",
               grants: { critIntoBuff: { more: 35, seconds: 4 } },
             },
           ],
@@ -259,13 +261,15 @@ export const ALCHEMIST: TradeSpec = {
             {
               id: 'alc_annealed',
               name: 'Annealed',
-              description: 'While a flask is running you take 18% less damage.',
+              description: "While a flask is running, you take 18% less damage from hits and boss drains. Adds to other " +
+              "flask damage reduction, up to 80%.",
               grants: { potionLess: 0.18 },
             },
             {
               id: 'alc_tempered',
               name: 'Tempered Glass',
-              description: 'While a flask is running you take 30% less damage.',
+              description: "Adds 30 percentage points to your damage reduction from hits and boss drains while a flask is " +
+              "running, up to 80%.",
               grants: { potionLess: 0.3 },
             },
           ],

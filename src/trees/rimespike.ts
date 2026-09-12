@@ -53,7 +53,8 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'rs_hoar',
           name: 'Hoar',
-          description: 'Chills you apply are 45% stronger.',
+          description: "Chill's Slow is 45% stronger, up to a maximum Slow of 75%. This does not change the number of " +
+          "stacks needed to Freeze.",
           grants: { ailmentMultiplier: 1.45 },
         },
       },
@@ -71,7 +72,7 @@ const BRANCHES: Branch[] = [
     minors: [
       { name: 'Numbing', text: '+8% chance to apply Chill', stats: [stat('ailmentChance', 'flat', 8, ['chill'])] },
       { name: 'Lingering', text: 'Chills you apply have 10% more duration', grants: { ailmentDuration: 1.1 } },
-      { name: 'Deepening', text: 'Chills you apply are 6% stronger', grants: { ailmentMultiplier: 1.06 } },
+      { name: 'Deepening', text: "Chill's Slow is 6% stronger, up to a maximum Slow of 75%", grants: { ailmentMultiplier: 1.06 } },
     ],
   },
   {
@@ -133,7 +134,8 @@ const BRANCHES: Branch[] = [
     enabler: {
       id: 'rs_frostwork',
       name: 'Frostwork',
-      description: "Rimespike gains 8% more radius per hit from its previous cast, up to 40% more radius.",
+      description: "Rimespike's initial hit gains 8% more radius per hit from its previous cast, up to 40% more " +
+      "radius. Under Rimefield, the standing field keeps its normal radius.",
       grants: { fieldFeeds: { per: 0.08, upTo: 5 } },
       // No field under Hail, so the reach goes into the shards instead.
       under: { rs_tempo: { description: 'Each shard Pierces 1 more enemy.', grants: { pierce: 1 } } },
@@ -254,14 +256,15 @@ const BRANCHES: Branch[] = [
       id: 'rs_sleet',
       name: 'Sleet',
       description:
-        'Each cast grants a stack of Sleet, 5% increased Cast Speed each. At maximum stacks ' +
-        'the next cast Freezes what it hits and removes all stacks. Maximum 8 stacks.',
+        "Each cast grants a stack of Sleet, giving 5% more Cast Speed per stack. Bonuses add, up to 40% " +
+      "at 8 stacks. At maximum stacks, the next cast Freezes what it hits and removes all stacks.",
       grants: { spikeTempo: { per: 5, stacks: 8 } },
       under: {
         rs_field: {
           description:
-            'Each cast grants a stack of Sleet, 5% reduced Skill Cooldown each. At maximum stacks ' +
-            'the next cast Freezes what it hits and removes all stacks. Maximum 8 stacks.',
+            "Each cast grants a stack of Sleet, giving 5% faster cooldown recovery per stack. Bonuses add, up " +
+          "to 40% at 8 stacks. At maximum stacks, the next cast Freezes what it hits and removes all " +
+          "stacks.",
           grants: { spikeTempo: { per: 5, stacks: 8 } },
         },
       },
@@ -319,7 +322,8 @@ const BRANCHES: Branch[] = [
           id: 'rs_flurry',
           name: 'Flurry',
           // A second spike bare; a Projectile is what the same switch IS under Hail.
-          description: 'Rimespike rises under 1 more enemy.',
+          description: "Rimespike rises under 1 more enemy on the initial cast. Under Rimefield, only the primary target " +
+          "leaves a standing field.",
           grants: { extraTargets: 1 },
           under: { rs_tempo: { description: '+1 Projectile.', grants: { extraTargets: 1 } } },
         },
@@ -420,7 +424,8 @@ const TRUNK_NOTABLES: Notable[] = [
   {
     id: 'rs_footwork',
     name: 'Sure Footing',
-    description: "The first cast after switching targets has 40% more Cast Speed.",
+    description: "The first cast after switching targets has 40% more Cast Speed. Under Rimefield, that cast's " +
+    "cooldown also recovers 40% faster.",
     grants: { freshFaster: 40 },
   },
   {

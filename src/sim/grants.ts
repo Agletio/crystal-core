@@ -153,7 +153,7 @@ export const GRANTS: GrantDef[] = [
     reads: [STATS],
     say: (v) => {
       const p = pair(v, 'more', 'seconds');
-      return p && `A Critical deals no extra damage; landing one grants ${p[0]}% more damage for ${p[1]}s`;
+      return p && `A Critical deals no extra damage; landing one grants ${p[0]}% more hit damage for ${p[1]}s`;
     },
   },
 
@@ -169,7 +169,7 @@ export const GRANTS: GrantDef[] = [
     merge: 'product',
     say: (v) => {
       const n = asNumber(v);
-      return n === null ? null : `${more(n)} more damage while a flask is running`;
+      return n === null ? null : `Hits deal ${more(n)} more damage while a flask is running; flask damage bonuses multiply`;
     },
   },
   {
@@ -179,7 +179,7 @@ export const GRANTS: GrantDef[] = [
     merge: 'sum',
     say: (v) => {
       const n = asNumber(v);
-      return n === null ? null : `${n}% increased attack and cast speed while a flask is running`;
+      return n === null ? null : `Adds ${n} percentage points to your Attack and Cast Speed bonus while a flask is running`;
     },
   },
   {
@@ -347,7 +347,7 @@ export const GRANTS: GrantDef[] = [
     merge: 'sum',
     say: (v) => {
       const n = asNumber(v);
-      return n === null ? null : `While a flask is running you take ${pct(n)} less damage`;
+      return n === null ? null : `Adds ${pct(n)} damage reduction from hits and boss drains while a flask is running; flask reductions add, up to 80%`;
     },
   },
   {
@@ -554,7 +554,7 @@ export const GRANTS: GrantDef[] = [
       const n = asNumber(v);
       return n === null
         ? null
-        : `While your off hand holds a shield you take ${pct(n)} less damage from hits`;
+        : `While your off hand holds a shield you take ${pct(n)} less damage from hits and boss drains`;
     },
   },
   {
@@ -622,7 +622,7 @@ export const GRANTS: GrantDef[] = [
       const n = asNumber(v);
       return n === null
         ? null
-        : `While both hands are on one weapon you attack ${Math.round(n)}% faster`;
+        : `Adds ${Math.round(n)} percentage points to your Attack and Cast Speed bonus while holding a two-handed weapon`;
     },
   },
   {
@@ -678,7 +678,7 @@ export const GRANTS: GrantDef[] = [
       const n = asNumber(v);
       return n === null
         ? null
-        : `Below ${WARRIOR.corneredBelow}% of your maximum life you deal ${Math.round(n)}% more damage`;
+        : `Below ${WARRIOR.corneredBelow}% of your maximum life your hits deal ${Math.round(n)}% more damage; bonuses under this condition add`;
     },
   },
   // THE PAINT ANSWERS A BLOW. Both fire on being HIT, which is the one thing a
@@ -692,7 +692,7 @@ export const GRANTS: GrantDef[] = [
       const n = asNumber(v);
       return n === null
         ? null
-        : `For ${WARRIOR.paintSeconds}s after you are hit you take ${Math.round(n)}% less damage`;
+        : `For ${WARRIOR.paintSeconds}s after you are hit gain ${Math.round(n)} percentage points of damage reduction from hits and boss drains`;
     },
   },
   {
@@ -704,7 +704,7 @@ export const GRANTS: GrantDef[] = [
       const n = asNumber(v);
       return n === null
         ? null
-        : `For ${WARRIOR.paintSeconds}s after you are hit you deal ${Math.round(n)}% more damage`;
+        : `For ${WARRIOR.paintSeconds}s after you are hit your hits deal ${Math.round(n)}% more damage; bonuses under this condition add`;
     },
   },
   {
@@ -742,7 +742,7 @@ export const GRANTS: GrantDef[] = [
     merge: 'sum',
     say: (v) => {
       const n = asNumber(v);
-      return n === null ? null : `While you hold two weapons you attack ${Math.round(n)}% faster`;
+      return n === null ? null : `Adds ${Math.round(n)} percentage points to your Attack and Cast Speed bonus while holding two weapons`;
     },
   },
   {
@@ -843,7 +843,7 @@ export const GRANTS: GrantDef[] = [
       const n = asNumber(v);
       return n === null
         ? null
-        : `For ${ROGUE.guardSeconds}s after a kill you take ${Math.round(n)}% less damage`;
+        : `For ${ROGUE.guardSeconds}s after a kill gain ${Math.round(n)} percentage points of damage reduction from hits and boss drains`;
     },
   },
   {
@@ -855,7 +855,7 @@ export const GRANTS: GrantDef[] = [
       const n = asNumber(v);
       return n === null
         ? null
-        : `For ${ROGUE.hasteSeconds}s after a kill you attack ${Math.round(n)}% faster`;
+        : `For ${ROGUE.hasteSeconds}s after a kill gain ${Math.round(n)} percentage points of Attack and Cast Speed bonus`;
     },
   },
   {
@@ -1464,8 +1464,9 @@ export const GRANTS: GrantDef[] = [
     merge: 'bag',
     say: (v) => {
       const o = v as { per?: number; upTo?: number } | null;
-      if (!o || typeof o.per !== 'number' || typeof o.upTo !== 'number') return null;
-      return `Each cast in a row at the same enemy deals ${pct(o.per)} more damage, up to ${o.upTo} (${pct(o.per * o.upTo)})`;
+      if (!o || typeof o.per !== 'number') return null;
+      if (typeof o.upTo !== 'number') return `Adds ${Math.round(o.per * 100)} percentage points to Deep Cold's damage bonus per consecutive cast`;
+      return `After the first cast at an enemy, each consecutive cast adds ${Math.round(o.per * 100)} percentage points to the damage bonus, up to ${o.upTo} stacks (${pct(o.per * o.upTo)} more damage)`;
     },
   },
   {
@@ -1996,12 +1997,12 @@ export const GRANTS: GrantDef[] = [
   {
     id: 'contagionRadius',
     changes: 'field',
-    what: 'a Critical tick plants a fresh Cloud',
+    what: 'a successful Critical Chance roll spreads Poison in a Burst',
     reads: ['ailment_burst'],
     merge: 'sum',
     say: (v) => {
       const n = asNumber(v);
-      return n === null ? null : `A Critical tick plants a Cloud ${n} tiles across`;
+      return n === null ? null : `Adds ${n} tiles to the radius of the Burst that spreads Poison on a successful Critical Chance roll`;
     },
   },
   // ---- THE MOVERS ---------------------------------------------------------
@@ -2144,7 +2145,7 @@ export const GRANTS: GrantDef[] = [
     merge: 'sum',
     say: (v) => {
       const n = asNumber(v);
-      return n === null ? null : `You deal ${pct(n)} more damage for ${AFTER.seconds}s after your movement skill`;
+      return n === null ? null : `Your hits deal ${pct(n)} more damage for ${AFTER.seconds}s after your movement skill`;
     },
   },
   {
@@ -2154,7 +2155,7 @@ export const GRANTS: GrantDef[] = [
     merge: 'sum',
     say: (v) => {
       const n = asNumber(v);
-      return n === null ? null : `You take ${pct(n)} less damage for ${AFTER.seconds}s after your movement skill`;
+      return n === null ? null : `Take ${pct(n)} less damage from hits and boss drains for ${AFTER.seconds}s after your movement skill; movement reductions add, up to 80%`;
     },
   },
   {
@@ -2191,7 +2192,7 @@ export const GRANTS: GrantDef[] = [
     merge: 'sum',
     say: (v) => {
       const n = asNumber(v);
-      return n === null ? null : `+${n}% increased Movement Speed for each charge held`;
+      return n === null ? null : `Adds ${n} percentage points to Gale's Movement Speed bonus per Gust; Gust bonuses add together`;
     },
   },
   {
@@ -2201,7 +2202,7 @@ export const GRANTS: GrantDef[] = [
     merge: 'sum',
     say: (v) => {
       const n = asNumber(v);
-      return n === null ? null : `+${n}% increased Attack and Cast Speed for each charge held`;
+      return n === null ? null : `${n}% more Attack and Cast Speed per Gust; Gust bonuses add together`;
     },
   },
   {
@@ -2211,7 +2212,7 @@ export const GRANTS: GrantDef[] = [
     merge: 'sum',
     say: (v) => {
       const n = asNumber(v);
-      return n === null ? null : `${pct(n)} more damage for each charge held`;
+      return n === null ? null : `Hits deal ${pct(n)} more damage per Gust; Gust bonuses add together`;
     },
   },
   {
@@ -2221,7 +2222,7 @@ export const GRANTS: GrantDef[] = [
     merge: 'sum',
     say: (v) => {
       const n = asNumber(v);
-      return n === null ? null : `${pct(n)} less damage taken for each charge held`;
+      return n === null ? null : `${pct(n)} less damage from hits and boss drains per Gust; movement reductions add, up to 80%`;
     },
   },
   {
@@ -2231,7 +2232,7 @@ export const GRANTS: GrantDef[] = [
     merge: 'sum',
     say: (v) => {
       const n = asNumber(v);
-      return n === null ? null : `${pct(n)} less damage taken while you hold no charges`;
+      return n === null ? null : `${pct(n)} less damage from hits and boss drains while you have no Gusts; movement reductions add, up to 80%`;
     },
   },
   {

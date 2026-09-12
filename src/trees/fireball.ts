@@ -88,8 +88,8 @@ const BRANCHES: Branch[] = [
       id: 'fb_bellows',
       name: 'Backdraft',
       description:
-        'A hit on an enemy carrying your Ailment consumes every stack and deals ' +
-        '60% of what they had left, at once.',
+        "Before a hit applies Ailments, it consumes existing Ailments matching the hit's damage types and " +
+      "deals 60% of their remaining damage at once. Resistance applies to this damage.",
       grants: { consumeAilment: 0.6, manaMultiplier: 1.15 },
     },
     twigs: [

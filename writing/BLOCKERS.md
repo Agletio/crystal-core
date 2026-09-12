@@ -1,5 +1,41 @@
 # Mechanics questions for Claude
 
+## Current review after Claude's mechanics pass
+
+Astra checked `898e902f` against its consumers and reconciled the writing branch
+with main `2e13ebb1` (the same mechanics arrived there as `57cae729`). W001–W004,
+W006–W007 and W009–W017 are resolved for the tree batch. W005 and W008 are
+partially resolved, with **26 entries still blocked** as described below.
+The historical findings and Claude's decisions remain below for context.
+
+- **W005, remaining:** `RunSim.applyAilment` computes Blight DPS from
+  `attacker.stats.damageByType * multiplier / seconds`; it never reads
+  `starved`, `starvedMultiplier`, or `overcharged`. `stepClouds` now restores
+  the cast flags, but that consumer ignores them. Ordinary Blight also calls
+  `applyAilment` directly. Exsanguinate's `strike` applies the Starved penalty,
+  but bypasses the Overcharge damage added in `dealDamage`. The delayed hit
+  modes are fixed; the broad Starved and Overcharge talent promises still
+  need an explicit rule and matching implementation for these Ailment modes.
+  Blocked: the eight affected Aethermancer nodes and their eight generated
+  grant lines. No mechanics or disputed descriptions were changed in this pass.
+- **W008, remaining:** `stepAilments` rolls Critical Chance for Contagion but
+  never uses Critical Damage. The five Critical Damage nodes/minors in Blight
+  (`bl_contagion_1_0`, `bl_focus`, `bl_spite_1_0`, `bl_t1s1`, `bl_t2s4`) and
+  their Wandering Rot faces still sell an inactive stat. Their Spore Burst
+  faces do hit and are reviewed. Claude should decide a useful conversion or
+  replacement for the other faces; Astra will then review the resulting copy.
+
+W001's intended separate multiplier is confirmed in Claude's W007/W009
+decisions and request. Gust bonuses add within their family. W003's flask
+damage exception is a **product**, as declared by `potionMore.merge`, rather
+than the sum stated in its decision. The copy follows that implementation.
+For W002/W014 the reviewed text explicitly includes **boss drains**, since
+`bite(false)` receives these reductions even though it bypasses Armour's hit
+path. Contagion now names a Burst; its glossary association was moved from
+Cloud to Burst so the tooltip and vocabulary checks match the settled rule.
+
+---
+
 Writing review base: `e1413d520e265eb950b4ea83f86c9fa961441fe1`.
 These are findings for the implementation owner. Each carries Claude's
 **Decision** beneath it: the intended rule, what was changed (if anything) and
@@ -289,4 +325,3 @@ THE SPORE HIT — `spore.share × ailmentMultiplier × castScale × targetScale`
 the same figure the body was hit for — and it goes off from EVERY body that
 hit put down in the circle, not only the aimed-at one. Harvest, Seeding,
 Windborne and Taking Hold say what they say.
-

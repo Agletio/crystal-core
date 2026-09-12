@@ -193,7 +193,8 @@ const BRANCHES: Branch[] = [
     enabler: {
       id: 'st_rhythm',
       name: 'Heft',
-      description: 'Up to 30% more damage as your swing rate falls below 1.55/s.',
+      description: "Strike hits deal up to 30% more damage as your attack rate falls below 1.55 attacks/s. The " +
+      "maximum bonus applies at 0.775 attacks/s or slower.",
       grants: { slowMore: 0.3 },
     },
     twigs: [
@@ -202,7 +203,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'st_cadence',
           name: 'Dead Lift',
-          description: 'A further 35% as your swing rate falls below 1.55/s.',
+          description: "Raises Rhythm's maximum damage bonus by 35 percentage points.",
           grants: { slowMore: 0.35 },
         },
       },
@@ -212,8 +213,8 @@ const BRANCHES: Branch[] = [
           id: 'st_relentless',
           name: 'Anvil Weight',
           description:
-            'A further 25% as your swing rate falls below 1.55/s, and Strike ' +
-            'Splash deals an additional 15% of hit damage.',
+            "Raises Rhythm's maximum damage bonus by 25 percentage points. Strike Splash deals an additional " +
+          "15% of hit damage.",
           grants: { slowMore: 0.25, splashShare: 0.15 },
         },
       },
@@ -224,7 +225,8 @@ const BRANCHES: Branch[] = [
           id: 'st_followthrough',
           name: 'Follow-Through',
           description:
-            "A further 45% as your swing rate falls below 1.55/s, and Strike has 15% reduced Attack Speed.",
+            "Raises Rhythm's maximum damage bonus by 45 percentage points. Strike has 15% reduced Attack " +
+          "Speed.",
           grants: { slowMore: 0.45 },
           stats: [stat('attackSpeed', 'inc', -15)],
         },

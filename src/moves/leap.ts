@@ -60,7 +60,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'lp_standing',
           name: 'Standing Over',
-          description: 'For 3s after landing you deal 25% more damage.',
+          description: "For 3s after Leap, your hits deal 25% more damage. Adds to other damage bonuses after Leap.",
           grants: { afterStepDamage: 0.25 },
         },
       },
@@ -173,7 +173,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'lp_headlong',
           name: 'Headlong',
-          description: 'For 3s after landing you deal 20% more damage.',
+          description: "For 3s after Leap, your hits deal 20% more damage. Adds to other damage bonuses after Leap.",
           grants: { afterStepDamage: 0.2 },
         },
       },
@@ -237,7 +237,8 @@ const BRANCHES: Branch[] = [
     enabler: {
       id: 'lp_bracing',
       name: 'Bracing',
-      description: 'For 3s after landing you take 25% less damage.',
+      description: "For 3s after Leap, take 25% less damage from hits and boss drains. Movement damage reductions " +
+      "add, up to 80%.",
       grants: { afterStepGuard: 0.25 },
     },
     twigs: [
@@ -246,7 +247,8 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'lp_setstance',
           name: 'Set Stance',
-          description: 'A further 20% less damage taken after landing.',
+          description: "For 3s after Leap, take 20% less damage from hits and boss drains. Movement damage reductions " +
+          "add, up to 80%.",
           grants: { afterStepGuard: 0.2 },
         },
       },
@@ -308,7 +310,8 @@ const TRUNK_NOTABLES: Notable[] = [
   {
     id: 'lp_braced',
     name: 'Braced',
-    description: 'For 3s after your movement skill you take 15% less damage.',
+    description: "For 3s after Leap, take 15% less damage from hits and boss drains. Movement damage reductions " +
+    "add, up to 80%.",
     grants: { afterStepGuard: 0.15 },
   },
 ];

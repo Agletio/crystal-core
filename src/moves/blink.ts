@@ -174,7 +174,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'bk_reprisal',
           name: 'Reprisal',
-          description: 'For 3s after a Blink you deal 25% more damage.',
+          description: "For 3s after Blink, your hits deal 25% more damage. Adds to other damage bonuses after Blink.",
           grants: { afterStepDamage: 0.25 },
         },
       },
@@ -197,7 +197,8 @@ const BRANCHES: Branch[] = [
     enabler: {
       id: 'bk_afterimage',
       name: 'Afterimage',
-      description: 'For 3s after a Blink you take 25% less damage.',
+      description: "For 3s after Blink, take 25% less damage from hits and boss drains. Movement damage reductions " +
+      "add, up to 80%.",
       grants: { afterStepGuard: 0.25 },
     },
     twigs: [
@@ -215,7 +216,8 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'bk_paling',
           name: 'Paling',
-          description: 'A further 20% less damage taken after a Blink.',
+          description: "For 3s after Blink, take 20% less damage from hits and boss drains. Movement damage reductions " +
+          "add, up to 80%.",
           grants: { afterStepGuard: 0.2 },
         },
       },
@@ -267,7 +269,7 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'bk_standoff',
           name: 'Standoff',
-          description: 'For 3s after a Blink you deal 20% more damage.',
+          description: "For 3s after Blink, your hits deal 20% more damage. Adds to other damage bonuses after Blink.",
           grants: { afterStepDamage: 0.2 },
         },
       },
@@ -310,7 +312,8 @@ const TRUNK_NOTABLES: Notable[] = [
   {
     id: 'bk_braced',
     name: 'Braced',
-    description: 'For 3s after your movement skill you take 15% less damage.',
+    description: "For 3s after Blink, take 15% less damage from hits and boss drains. Movement damage reductions " +
+    "add, up to 80%.",
     grants: { afterStepGuard: 0.15 },
   },
 ];

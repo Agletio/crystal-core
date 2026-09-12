@@ -43,7 +43,7 @@ export const WARRIOR_TRADE: TradeSpec = {
       gate: {
         id: 'mah_wall',
         name: 'The Wall',
-        description: 'While your off hand holds a shield you take 18% less damage from hits.',
+        description: "While holding a shield in your off hand, you take 18% less damage from hits and boss drains.",
         grants: { shieldLess: 0.18 },
       },
       branches: [
@@ -197,15 +197,15 @@ export const WARRIOR_TRADE: TradeSpec = {
             {
               id: 'mah_followthrough',
               name: 'Follow Through',
-              description: 'While both hands are on one weapon you attack 12% faster.',
+              description: "While holding a two-handed weapon, you have 12% more Attack and Cast Speed.",
               grants: { twoHandRate: 12 },
             },
             {
               id: 'mah_widearc',
               name: 'Wide Arc',
               description:
-                'While both hands are on one weapon you attack a further 22% faster, and ' +
-                'your hits Slow what they land on by 25% for 2s.',
+                "Adds 22 percentage points to your Attack and Cast Speed bonus while holding a two-handed weapon. " +
+              "Your hits Slow enemies by 25% for 2s.",
               grants: { twoHandRate: 22, heavyHand: 25 },
             },
           ],
@@ -236,13 +236,13 @@ export const WARRIOR_TRADE: TradeSpec = {
             {
               id: 'mah_cornered',
               name: 'Cornered',
-              description: 'Below 50% of your maximum life you deal 25% more damage.',
+              description: "Below 50% of your maximum Life, your hits deal 25% more damage.",
               grants: { cornered: 25 },
             },
             {
               id: 'mah_laststand',
               name: 'Last Stand',
-              description: 'Below 50% of your maximum life you deal a further 60% more damage.',
+              description: "Adds 60 percentage points to your hit damage bonus below 50% of your maximum Life.",
               grants: { cornered: 60 },
             },
           ],
@@ -282,7 +282,7 @@ export const WARRIOR_TRADE: TradeSpec = {
       gate: {
         id: 'mah_paint',
         name: 'War Paint',
-        description: 'For 4s after you are hit, you deal 25% more damage.',
+        description: "For 4s after you are hit, your hits deal 25% more damage.",
         grants: { struckMore: 25 },
       },
       branches: [
@@ -297,13 +297,14 @@ export const WARRIOR_TRADE: TradeSpec = {
             {
               id: 'mah_dread',
               name: 'Dread',
-              description: 'For 4s after you are hit, you take 12% less damage.',
+              description: "For 4s after you are hit, you take 12% less damage from hits and boss drains.",
               grants: { struckLess: 12 },
             },
             {
               id: 'mah_terror',
               name: 'Terror',
-              description: 'For 4s after you are hit, you take a further 22% less damage.',
+              description: "Adds 22 percentage points to your damage reduction from hits and boss drains for 4s after you " +
+              "are hit.",
               grants: { struckLess: 22 },
             },
           ],

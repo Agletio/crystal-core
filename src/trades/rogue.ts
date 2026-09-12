@@ -65,13 +65,13 @@ export const ROGUE_TRADE: TradeSpec = {
             {
               id: 'rog_rhythm',
               name: 'Rhythm',
-              description: 'While you hold two weapons you attack 10% faster.',
+              description: "While holding two weapons, you have 10% more Attack and Cast Speed.",
               grants: { pairRate: 10 },
             },
             {
               id: 'rog_blur',
               name: 'Blur',
-              description: 'While you hold two weapons you attack a further 22% faster.',
+              description: "Adds 22 percentage points to your Attack and Cast Speed bonus while holding two weapons.",
               grants: { pairRate: 22 },
             },
           ],
@@ -210,13 +210,14 @@ export const ROGUE_TRADE: TradeSpec = {
             {
               id: 'rog_cover',
               name: 'Cover',
-              description: 'For 3s after a kill you take 12% less damage.',
+              description: "For 3s after a kill, you take 12% less damage from hits and boss drains.",
               grants: { killGuard: 12 },
             },
             {
               id: 'rog_gone',
               name: 'Gone',
-              description: 'For 3s after a kill you take a further 25% less damage.',
+              description: "Adds 25 percentage points to your damage reduction from hits and boss drains for 3s after a " +
+              "kill.",
               grants: { killGuard: 25 },
             },
           ],
@@ -231,7 +232,7 @@ export const ROGUE_TRADE: TradeSpec = {
       gate: {
         id: 'rog_quickening',
         name: 'Quickening',
-        description: 'For 3s after a kill you attack 15% faster.',
+        description: "For 3s after a kill, you have 15% more Attack and Cast Speed.",
         grants: { killHaste: 15 },
       },
       branches: [
@@ -246,13 +247,13 @@ export const ROGUE_TRADE: TradeSpec = {
             {
               id: 'rog_cascade',
               name: 'Cascade',
-              description: 'For 3s after a kill you attack a further 12% faster.',
+              description: "Adds 12 percentage points to your Attack and Cast Speed bonus for 3s after a kill.",
               grants: { killHaste: 12 },
             },
             {
               id: 'rog_spree',
               name: 'Spree',
-              description: 'For 3s after a kill you attack a further 28% faster.',
+              description: "Adds 28 percentage points to your Attack and Cast Speed bonus for 3s after a kill.",
               grants: { killHaste: 28 },
             },
           ],

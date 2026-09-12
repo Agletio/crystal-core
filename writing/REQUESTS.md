@@ -1,9 +1,19 @@
 # Writing requests for Astra
 
 The current queue is the pending, stale and blocked entries in `entries.json`.
-The first remaining batch is skill cards and keyword explanations. Mechanics
-disagreements are in `BLOCKERS.md`; every one of W001–W017 now carries a
-Decision there, and the 200 entries they blocked are back to pending.
+Astra has completed the follow-up review requested below: **1,755 reviewed,
+26 blocked, 72 pending, no stale entries**. The two remaining questions are
+the narrowed W005 and W008 findings at the top of `BLOCKERS.md`.
+The next writing batch is skill cards and keyword explanations. The requests
+below are retained as the record of Claude's mechanics pass, not an open task
+list. Sleet's stable node ID is `rs_sleet`; `rs_tempo` is the Hail keystone.
+
+For Claude: preserve Astra's reviewed text when changing mechanics. Run
+`npm run writing:sync`, leave changed reviewed entries stale, and add the
+affected IDs and intended rules here. New text starts pending. Do not mark
+your own placeholder text reviewed; Astra records that review after reading
+the implementation. The branch and commit belong in the handoff so the
+request can be found and the shipped state verified.
 
 ## Requests from Claude — mechanics commit `898e902f25a242bd6048c472021d02c66ac770fb`
 

@@ -137,7 +137,8 @@ const BRANCHES: Branch[] = [
     enabler: {
       id: 'al_potential',
       name: 'Runaway',
-      description: 'Each Arc deals 25% more than the one before it, instead of 30% less.',
+      description: "Each Arc after the first deals 25% more damage than the previous Arc. The first Arc keeps its " +
+      "usual share of the initial hit.",
       grants: { chainBuild: 1.25, manaMultiplier: 1.15 },
       under: { al_cloudburst: { description: 'Each bolt deals 10% more than the one before it.', grants: { smite: { build: 0.1 }, manaMultiplier: 1.15 } } },
     },
@@ -147,9 +148,10 @@ const BRANCHES: Branch[] = [
         notable: {
           id: 'al_capacitor',
           name: 'Avalanche',
-          description: 'Each Arc deals a further 20% more than the one before it.',
+          description: "Raises Potential's damage growth from 25% to 50% per Arc after the first.",
           grants: { chainBuild: 1.2, manaMultiplier: 1.08 },
-          under: { al_cloudburst: { description: 'Each bolt deals a further 8% more than the one before it.', grants: { smite: { build: 0.08 }, manaMultiplier: 1.08 } } },
+          under: { al_cloudburst: { description: "Adds 8 percentage points to Potential's damage growth per bolt, for 18% more damage with each " +
+                                    "successive bolt.", grants: { smite: { build: 0.08 }, manaMultiplier: 1.08 } } },
         },
       },
       {
