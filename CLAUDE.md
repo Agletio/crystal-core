@@ -167,7 +167,9 @@ minutes**; a silent hour is how this looked stuck.
   body row to a frames file and back, and a headless Aseprite (`setup.sh`,
   seconds) runs the script that fixes it. The Lampwright's staff was the first.
 - **THERE IS NO ART DIRECTOR BUT THE USER.** *"Just forget Astra, I'm cutting
-  it, she doesn't help much."* Claude asks the generator, judges what came
+  it, she doesn't help much."* That was Astra as art director; **ASTRA IS THE
+  WRITING EDITOR NOW**, for player-facing text through the ledger in
+  `writing/`, and has no say in art. Claude asks the generator, judges what came
   back, touches up a frame, and wires the picture; what the user approves is
   what ships. **A DESIGN IS STILL SHOWN TO THE USER AND APPROVED BEFORE ANYTHING IS
   ROTATED, ANIMATED OR DRESSED** — *"you're supposed to give me sample images
