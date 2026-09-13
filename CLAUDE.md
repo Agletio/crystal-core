@@ -1565,6 +1565,9 @@ sort on the same spot takes the new damage and starts its rise again, because
 a pool ticking eight times a second printed a column of figures up the body it
 was killing. **It is sized off the TILE and capped well under a body** — a
 number taller than what it happened to was the biggest thing in a fight.
+**A CRITICAL HAS A CAP OF ITS OWN AND LANDS OVERSIZED** (`CRIT_POP`): under
+the one cap it was the same figure in yellow — *"it doesn't even look like a
+crit."* A TICK is smaller and wears its Ailment's damage-type colour.
 **NOTHING IS DRAWN UNDER A BODY AND NOTHING ON ITS EDGE.** A contact shadow
 was drawn under every body and DELETED at the user's word — *"there is a shadow
 behind the character looks weird just remove it"* — so a body meets the floor

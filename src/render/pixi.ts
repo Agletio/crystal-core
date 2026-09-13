@@ -170,6 +170,7 @@ function rockMarks(grid: number, rock: string): Texture {
 const AURA_GLOW = { span: 3, alpha: 5, px: 96 };
 
 const FLOATER_LIFE = 1.1;
+const CRIT_POP = 0.16; // seconds a Critical lands oversized before it settles
 
 /** The face's own geometry is `vignettes`': the grid refuses to stand a body
  *  inside it, so the two cannot drift. Drawn from the tile's CENTRE. */
@@ -1641,16 +1642,21 @@ export async function createPixiRenderer(
       // A TICK is smaller and wears its ailment's colour, so a stream of them
       // reads as the poison working rather than as the swing landing.
       const ticked = f.tick ? AILMENT_BY_ID[f.tick] : undefined;
-      const size = f.crit ? 0.5 : ticked ? 0.28 : 0.4;
+      const size = f.crit ? 0.58 : ticked ? 0.28 : 0.4;
       // NEVER taller than what it happened to: a floor of 9px over 8px bodies
       // made the number the biggest thing in a fight at the zoom people watch at.
-      const px = Math.max(7, Math.min(19, tile * size));
+      // A CRITICAL'S cap is its own: under one cap it was a hit in yellow.
+      const px = Math.max(7, Math.min(f.crit ? 27 : 19, tile * size));
+      // AND IT LANDS OVERSIZED, settling in CRIT_POP seconds, so it hits the eye
+      // the way it hit the body.
+      const pop = f.crit && f.age < CRIT_POP ? 1 + 0.7 * (1 - f.age / CRIT_POP) : 1;
+      label.scale.set(pop);
       const ink = floaterInk(palette, f, ticked ? damageColour(palette, ticked.type) : undefined);
       label.style.fontSize = px;
       label.style.fill = toHexNumber(ink.fill);
       // THE EDGE lifts it off the floor, scaled with the glyph: fixed, a
       // zoomed-out number is all outline with no letter left inside it.
-      label.style.stroke = { color: toHexNumber(ink.edge), width: Math.max(1, px * 0.14) };
+      label.style.stroke = { color: toHexNumber(ink.edge), width: Math.max(1, px * (f.crit ? 0.18 : 0.14)) };
       label.alpha = Math.max(0, 1 - t);
       label.x = sx(f.x);
       label.y = sy(f.y) - tile * (0.5 + t * 1.2);
