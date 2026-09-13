@@ -4117,6 +4117,10 @@
     "walk": {
      "group": "2557abc2-21ce-4c9b-9a7b-c297f645cf93",
      "frames": 9
+    },
+    "attack": {
+     "group": "d904ce73-2d4d-46f2-a64b-af6f3aa9174f",
+     "frames": 5
     }
    }
   },

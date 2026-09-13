@@ -2158,7 +2158,12 @@ if (rule('SPRITES — is the pixel art well formed?')) {
     // that has them they are a second motion fighting the first, which reads
     // as the model being shoved forward — so both are off for every state a
     // generated body actually draws.
-    const never = new Set(WORKERS.map((w) => w.sprite)); // a worker is rescued and walks out; it never swings
+    // A worker is rescued and walks out, and a person whose beats never WORK
+    // is talked to and walks out: neither ever swings, so neither has frames.
+    const never = new Set([
+      ...WORKERS.map((w) => w.sprite),
+      ...SCENES.filter((sc) => !sc.beats?.some((b) => b.act === 'work')).map((sc) => sc.who),
+    ]);
     const shoved = Object.entries(GENERATED).flatMap(([id, art]) =>
       ['move', 'attack']
         .filter((action) => !(action === 'move' && rooted(id)))

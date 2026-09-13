@@ -3752,6 +3752,10 @@
     "walk": {
      "frames": 6,
      "say": "rolling forward toward the viewer at a three-quarter angle on heavy legs, one boot swinging past the other and planting, the knee lifting, the opposite arm swinging, the apron shifting with each step"
+    },
+    "attack": {
+     "frames": 4,
+     "say": "raising one thick arm high above his head at a three-quarter angle and bringing it down hard in front of him, stepping onto the front foot and the shoulder turning into it, ending at the bottom of the blow and not straightening up"
     }
    },
    "inks": "smith",
