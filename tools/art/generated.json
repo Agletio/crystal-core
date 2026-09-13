@@ -4141,10 +4141,6 @@
     "walk": {
      "group": "c06e1192-b1ff-4395-b8e2-b2bf958f5766",
      "frames": 7
-    },
-    "attack": {
-     "group": "605e2f09-801e-4d40-b434-57d0adb50886",
-     "frames": 5
     }
    }
   },
@@ -4153,7 +4149,7 @@
    "inks": 24,
    "luma": 32,
    "sprite": "nell",
-   "character": "04fd726b-937f-42da-abfb-8df7d872bbd8",
+   "character": "273b15d7-b92f-4b5b-8505-f28cfe3e83b5",
    "dirs": [
     "south-east"
    ],
@@ -4165,10 +4161,6 @@
     "walk": {
      "group": "54f3cf24-fdc0-406d-8171-187274c44abf",
      "frames": 7
-    },
-    "attack": {
-     "group": "3bb4df79-19c1-4073-bc83-9ce49382755f",
-     "frames": 5
     }
    }
   },
@@ -4177,7 +4169,7 @@
    "inks": 24,
    "luma": 32,
    "sprite": "ida",
-   "character": "c0426a7f-68fa-47ef-a9cc-0926e77a59e3",
+   "character": "603395f8-92a5-468e-af4d-e27b75025742",
    "dirs": [
     "south-east"
    ],
@@ -4189,10 +4181,6 @@
     "walk": {
      "group": "a1f95b52-3baf-4b6d-9a1d-d4a00d319cb0",
      "frames": 7
-    },
-    "attack": {
-     "group": "f93774da-0de3-499f-8f62-5676401b972e",
-     "frames": 5
     }
    }
   },
@@ -4225,7 +4213,7 @@
    "inks": 24,
    "luma": 32,
    "sprite": "wat",
-   "character": "28ea65d1-00c4-4ad4-93b2-308d4edc8476",
+   "character": "12855abd-ec8f-4248-82eb-931423401ff8",
    "dirs": [
     "south-east"
    ],
@@ -4237,10 +4225,6 @@
     "walk": {
      "group": "b65c9d02-1e15-4049-b62b-b498e45c4773",
      "frames": 7
-    },
-    "attack": {
-     "group": "5c82fcd4-c1e4-4a17-acba-17a5825116d0",
-     "frames": 5
     }
    }
   }

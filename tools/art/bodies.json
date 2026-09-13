@@ -3765,7 +3765,7 @@
    "sprite": "hob",
    "name": "Hob",
    "size": 96,
-   "look": "a short WIRY MINER, hard and compact, standing squarely: a battered dark leather cap with a small BRASS LAMP riveted to the front of it, its glass glowing warm AMBER, a sleeveless quilted jerkin of dark RUST-RED canvas worn through at the elbows over a grey shirt, heavy soot-black trousers tied at the knee with cord, bare forearms corded with muscle and grey with rock dust, a coil of rope over one shoulder. Short grey stubble, a broken nose, deep-set eyes. Dark clothes with ONE warm accent: the RUST-RED jerkin and the AMBER lamp. NOT yellow, NOT orange all over, NOT bright, NOT fat, NOT a dwarf, NOT a hood, NOT a helmet. Realistic ADULT proportions: a SMALL head on a tall long-limbed body, at least eight heads tall, lean rather than round. Seen at a STRONG three-quarter angle, turned well round toward the viewer. Warm olive SKIN at the face, neck and bare arms. NOT anime, NOT manga, NOT chibi, NOT cute, NOT a big head, NOT a child, NOT a doll, NOT a cartoon, NOT fat, NOT round-bellied, NOT a hero pose, NOT armoured, NOT a soldier, NOT holding anything, NOT red skin, NOT blue skin, NOT purple skin. No ground, NO SHADOW under the feet, no ellipse, no base.",
+   "look": "a DWARF MINER, grim and weathered: short and very BROAD, dense with muscle, a great grey BEARD braided into two forks bound with iron rings reaching his belt, a heavy brow, a broad flat nose, small hard eyes under the brim of a battered dark leather cap with a small BRASS LAMP riveted to the front of it, its glass glowing warm amber. A sleeveless jerkin of dark RUST-RED canvas worn through at the elbows over a soot-grey shirt, a wide iron-buckled belt, heavy dark trousers, iron-shod boots, thick bare forearms grey with rock dust, a coil of rope over one shoulder. Dirty, scarred, unsmiling. Dark clothes with ONE warm accent: the RUST-RED jerkin and the amber lamp. DWARF proportions: about five heads tall, shoulders twice the width of his head, short thick legs, a NORMAL-sized head with a hard adult face. Gritty realistic pixel art in the style of a dark fantasy game. NOT a cartoon, NOT a kids cartoon, NOT cute, NOT smiling, NOT chubby cheeks, NOT a fat belly, NOT round, NOT a bobblehead, NOT a big head, NOT big eyes, NOT anime, NOT chibi, NOT a doll, NOT a toy, NOT yellow skin, NOT orange all over, NOT bright, NOT a helmet, NOT a hood, NOT armoured, NOT a soldier, NOT holding anything. Warm olive SKIN at the face and forearms. Seen at a STRONG three-quarter angle, turned well round toward the viewer. No ground, NO SHADOW under the feet, no ellipse, no base.",
    "states": {
     "idle": {
      "frames": 4,
@@ -3793,7 +3793,9 @@
      "say": "walking toward the viewer at a three-quarter angle, one leg swinging past the other and the opposite arm coming forward"
     }
    },
-   "inks": "nell"
+   "inks": "nell",
+   "approved": "cache/designs/nell-0.png",
+   "character": "273b15d7-b92f-4b5b-8505-f28cfe3e83b5"
   },
   {
    "sprite": "wat",
@@ -3810,7 +3812,9 @@
      "say": "walking toward the viewer at a three-quarter angle, one leg swinging past the other and the opposite arm coming forward"
     }
    },
-   "inks": "wat"
+   "inks": "wat",
+   "approved": "cache/designs/wat-2.png",
+   "character": "12855abd-ec8f-4248-82eb-931423401ff8"
   },
   {
    "sprite": "ida",
@@ -3827,7 +3831,9 @@
      "say": "walking toward the viewer at a three-quarter angle, one leg swinging past the other and the opposite arm coming forward"
     }
    },
-   "inks": "ida"
+   "inks": "ida",
+   "approved": "cache/designs/ida-0.png",
+   "character": "603395f8-92a5-468e-af4d-e27b75025742"
   },
   {
    "sprite": "osteomancer",
@@ -3907,8 +3913,8 @@
    "#A87A5A",
    "#5A2214",
    "#7A2E1A",
-   "#8C6A2E",
-   "#E8B24A"
+   "#6E5230",
+   "#B8862A"
   ],
   "nell": [
    "#0A0908",
