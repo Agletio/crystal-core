@@ -3764,9 +3764,8 @@
   {
    "sprite": "hob",
    "name": "Hob",
-   "size": "48",
-   "look": "a short thickset MINER, wiry and weather-beaten, standing squarely: a battered leather skullcap with a spent lamp bracket still riveted to the front of it, a sleeveless quilted jerkin worn through at the elbows, heavy canvas trousers tied at the knee with cord, bare forearms corded with muscle and grey with rock dust. Short grey stubble, a broken nose, deep-set eyes. Soot black, dull umber leather, iron grey, one worn brass rivet. NOT tall, NOT thin, NOT armoured, NOT a soldier, NOT a hood, NOT holding anything. Realistic ADULT proportions: a SMALL head on a tall long-limbed body, at least eight heads tall. Seen at a STRONG three-quarter angle, turned well round toward the viewer. NOT anime, NOT manga, NOT chibi, NOT cute, NOT a big head, NOT a child, NOT a doll, NOT a cartoon. No ground, NO SHADOW under him, no ellipse, no base.",
-   "approved": "cache/designs/hob-1.png",
+   "size": 96,
+   "look": "a short WIRY MINER, hard and compact, standing squarely: a battered dark leather cap with a small BRASS LAMP riveted to the front of it, its glass glowing warm AMBER, a sleeveless quilted jerkin of dark RUST-RED canvas worn through at the elbows over a grey shirt, heavy soot-black trousers tied at the knee with cord, bare forearms corded with muscle and grey with rock dust, a coil of rope over one shoulder. Short grey stubble, a broken nose, deep-set eyes. Dark clothes with ONE warm accent: the RUST-RED jerkin and the AMBER lamp. NOT yellow, NOT orange all over, NOT bright, NOT fat, NOT a dwarf, NOT a hood, NOT a helmet. Realistic ADULT proportions: a SMALL head on a tall long-limbed body, at least eight heads tall, lean rather than round. Seen at a STRONG three-quarter angle, turned well round toward the viewer. Warm olive SKIN at the face, neck and bare arms. NOT anime, NOT manga, NOT chibi, NOT cute, NOT a big head, NOT a child, NOT a doll, NOT a cartoon, NOT fat, NOT round-bellied, NOT a hero pose, NOT armoured, NOT a soldier, NOT holding anything, NOT red skin, NOT blue skin, NOT purple skin. No ground, NO SHADOW under the feet, no ellipse, no base.",
    "states": {
     "idle": {
      "frames": 4,
@@ -3775,20 +3774,15 @@
     "walk": {
      "frames": 6,
      "say": "walking toward the viewer at a three-quarter angle, one leg swinging past the other and the opposite arm coming forward"
-    },
-    "attack": {
-     "frames": 4,
-     "say": "lunging onto the front foot at a three-quarter angle and driving one fist forward at chest height, ending at full extension and facing the same way in every frame"
     }
    },
-   "character": "41cf55ad-0e58-45c7-8075-d09438c2b0b1"
+   "inks": "hob"
   },
   {
    "sprite": "nell",
    "name": "Nell",
-   "size": "48",
-   "look": "a lean WOMAN of middle age standing straight, hands empty: dark hair scraped back and tied short at the nape, a long sleeveless work apron of coarse cloth over a patched tunic with the sleeves rolled to the elbow, a wide leather belt hung with a needle case, shears and a small hook, forearms scarred with old burns. A hard set jaw, level eyes. Dull umber, bone, iron grey, dried blood red at the belt. NOT armoured, NOT a soldier, NOT a robe, NOT a hood, NOT long loose hair, NOT holding anything. Realistic ADULT proportions: a SMALL head on a tall long-limbed body, at least eight heads tall. Seen at a STRONG three-quarter angle, turned well round toward the viewer. NOT anime, NOT manga, NOT chibi, NOT cute, NOT a big head, NOT a child, NOT a doll, NOT a cartoon. No ground, NO SHADOW under him, no ellipse, no base.",
-   "approved": "cache/designs/nell-1.png",
+   "size": 96,
+   "look": "a lean WOMAN of middle age standing straight with her hands empty, a WEAVER: dark hair scraped back and tied short at the nape, a long sleeveless work apron of deep TEAL cloth over a patched soot-grey tunic with the sleeves rolled to the elbow, three small hanks of dyed thread in SCARLET, teal and gold hanging from a wide dark leather belt beside a pair of shears, forearms scarred with old burns. A hard set jaw, level eyes, warm olive skin. Dark clothes with ONE cool accent: the TEAL apron; the SCARLET is only the thread at her belt. NOT red skin, NOT red clothes, NOT a robe, NOT a hood, NOT long loose hair, NOT a dress. Realistic ADULT proportions: a SMALL head on a tall long-limbed body, at least eight heads tall, lean rather than round. Seen at a STRONG three-quarter angle, turned well round toward the viewer. Warm olive SKIN at the face, neck and bare arms. NOT anime, NOT manga, NOT chibi, NOT cute, NOT a big head, NOT a child, NOT a doll, NOT a cartoon, NOT fat, NOT round-bellied, NOT a hero pose, NOT armoured, NOT a soldier, NOT holding anything, NOT red skin, NOT blue skin, NOT purple skin. No ground, NO SHADOW under the feet, no ellipse, no base.",
    "states": {
     "idle": {
      "frames": 4,
@@ -3797,19 +3791,15 @@
     "walk": {
      "frames": 6,
      "say": "walking toward the viewer at a three-quarter angle, one leg swinging past the other and the opposite arm coming forward"
-    },
-    "attack": {
-     "frames": 4,
-     "say": "lunging onto the front foot at a three-quarter angle and driving one fist forward at chest height, ending at full extension and facing the same way in every frame"
     }
    },
-   "character": "04fd726b-937f-42da-abfb-8df7d872bbd8"
+   "inks": "nell"
   },
   {
    "sprite": "wat",
    "name": "Wat",
-   "size": "48",
-   "look": "a tall gangling young MAN standing slightly hunched, hands empty: a long ragged coat gone stiff and pale where crystal DUST has worked into the cloth, one sleeve torn away, cloth wound round both hands as makeshift gloves and worn through at the fingers, small faceted VIOLET crystal shards caught and glinting in the seams of the coat and along one boot. Lank pale hair, hollow cheeks, wide staring eyes. Cold grey-violet, dull bone, soot black, small violet glints. A SMALL head on a tall long-limbed body, at least eight heads tall. NOT armoured, NOT a soldier, NOT a hood, NOT holding anything. Seen at a STRONG three-quarter angle, turned well round toward the viewer. The figure is CUT OFF at the ankles with nothing under the feet: NO GROUND, NO FLOOR, NO SHADOW, NO ellipse, NO disc, NO base, NO platform, NO dirt, NOTHING beneath the boots. The background is EMPTY. NOT anime, NOT manga, NOT chibi, NOT cute, NOT a big head, NOT a child, NOT a doll, NOT a cartoon.",
+   "size": 96,
+   "look": "a HOLLOW-CHEEKED MAN of THIRTY standing stooped, a GLASS-CUTTER: a long bony clean-shaven face with sunken tired eyes, thinning ash-grey hair cropped short, a long ragged coat of pale FROST-BLUE cloth gone stiff where crystal dust has worked into it, a heavy dark leather apron over it, a few small faceted VIOLET crystal shards strung on a cord round his neck, a loupe on a strap at his chest, thin gloved hands. Warm olive skin, grey with fatigue. Dark clothes with ONE cold accent: the FROST-BLUE coat; the VIOLET is only the shards at his neck. NOT old, NOT a beard, NOT a white beard, NOT a wizard, NOT a robe, NOT a hood, NOT purple skin, NOT blue skin, NOT young, NOT pretty. Realistic ADULT proportions: a SMALL head on a tall long-limbed body, at least eight heads tall, lean rather than round. Seen at a STRONG three-quarter angle, turned well round toward the viewer. Warm olive SKIN at the face, neck and bare arms. NOT anime, NOT manga, NOT chibi, NOT cute, NOT a big head, NOT a child, NOT a doll, NOT a cartoon, NOT fat, NOT round-bellied, NOT a hero pose, NOT armoured, NOT a soldier, NOT holding anything, NOT red skin, NOT blue skin, NOT purple skin. No ground, NO SHADOW under the feet, no ellipse, no base.",
    "states": {
     "idle": {
      "frames": 4,
@@ -3818,21 +3808,15 @@
     "walk": {
      "frames": 6,
      "say": "walking toward the viewer at a three-quarter angle, one leg swinging past the other and the opposite arm coming forward"
-    },
-    "attack": {
-     "frames": 4,
-     "say": "lunging onto the front foot at a three-quarter angle and driving one fist forward at chest height, ending at full extension and facing the same way in every frame"
     }
    },
-   "approved": "cache/designs/wat-2.png",
-   "character": "28ea65d1-00c4-4ad4-93b2-308d4edc8476"
+   "inks": "wat"
   },
   {
    "sprite": "ida",
    "name": "Ida",
-   "size": "48",
-   "look": "a HARD GAUNT WEATHERED WOMAN in her forties, sinewy and underfed, standing balanced on the balls of her feet as if about to move: hair hacked short and uneven, a hollow lined face with deep-set eyes and a set mouth, dirt ground into the skin. A close-cut sleeveless jerkin of cracked boiled leather bound tight at the waist and wrists so nothing catches, leggings wrapped to the knee in filthy strips, everything cut close and nothing loose or hanging anywhere. Old raking SCARS across one bare shoulder and down the forearm. Everything is DARK and MUTED: rot brown, dried blood red gone almost black, soot black, dull grey bone. A SMALL head on a tall long-limbed body, at least eight heads tall. NOT pretty, NOT young, NOT clean, NOT bright, NOT colourful, NOT armoured, NOT plate, NOT a soldier, NOT a robe, NOT a hood, NOT a cloak, NOT holding anything, NOT a weapon. Seen at a STRONG three-quarter angle, turned well round toward the viewer. The figure is CUT OFF at the ankles with nothing under the feet: NO GROUND, NO FLOOR, NO SHADOW, NO ellipse, NO disc, NO base, NO platform, NO dirt, NOTHING beneath the boots. The background is EMPTY. NOT anime, NOT manga, NOT chibi, NOT cute, NOT a big head, NOT a child, NOT a doll, NOT a cartoon.",
-   "approved": "cache/designs/ida-0.png",
+   "size": 96,
+   "look": "a HARD GAUNT WEATHERED WOMAN in her forties, sinewy and underfed, standing balanced on the balls of her feet as if about to move, a SKINNER: hair hacked short and uneven, a hollow lined face with deep-set eyes, dirt ground into the skin, a close-cut sleeveless jerkin of cracked BLOOD-RED boiled leather over a sleeveless bone-coloured shirt, a wide belt hung with a skinning knife in a sheath, a coil of gut cord and a string of yellowed BONE charms, old raking scars across one bare shoulder, wrapped forearms, a MOSS-GREEN rag tied round the neck. Her colours are dried BLOOD RED, BONE and MOSS GREEN on soot black. NOT a man, NO beard, NOT long hair, NOT drab, NOT brown all over, NOT a dress. Realistic ADULT proportions: a SMALL head on a tall long-limbed body, at least eight heads tall. Seen at a STRONG three-quarter angle, turned well round toward the viewer. NOT anime, NOT manga, NOT chibi, NOT cute, NOT a big head, NOT a child, NOT a doll, NOT a cartoon, NOT a hero pose, NOT armoured, NOT a soldier, NOT holding anything. No ground, NO SHADOW under the feet, no ellipse, no base.",
    "states": {
     "idle": {
      "frames": 4,
@@ -3841,13 +3825,9 @@
     "walk": {
      "frames": 6,
      "say": "walking toward the viewer at a three-quarter angle, one leg swinging past the other and the opposite arm coming forward"
-    },
-    "attack": {
-     "frames": 4,
-     "say": "lunging onto the front foot at a three-quarter angle and driving one fist forward at chest height, ending at full extension and facing the same way in every frame"
     }
    },
-   "character": "c0426a7f-68fa-47ef-a9cc-0926e77a59e3"
+   "inks": "ida"
   },
   {
    "sprite": "osteomancer",
@@ -3915,6 +3895,62 @@
    "#2C2046",
    "#5E4382",
    "#9C7FCC"
+  ],
+  "hob": [
+   "#0A0908",
+   "#14110F",
+   "#211C18",
+   "#2E2722",
+   "#3D342C",
+   "#4E4238",
+   "#5F5145",
+   "#A87A5A",
+   "#5A2214",
+   "#7A2E1A",
+   "#8C6A2E",
+   "#E8B24A"
+  ],
+  "nell": [
+   "#0A0908",
+   "#14110F",
+   "#211C18",
+   "#2E2722",
+   "#3D342C",
+   "#4E4238",
+   "#5F5145",
+   "#A87A5A",
+   "#12363C",
+   "#1F5E66",
+   "#2A2F6B",
+   "#C62A2E"
+  ],
+  "wat": [
+   "#0A0908",
+   "#14110F",
+   "#211C18",
+   "#2E2722",
+   "#3D342C",
+   "#4E4238",
+   "#5F5145",
+   "#A87A5A",
+   "#4E5F73",
+   "#7C8FA8",
+   "#B7C8DC",
+   "#6A4C9C"
+  ],
+  "ida": [
+   "#0A0908",
+   "#14110F",
+   "#211C18",
+   "#2E2722",
+   "#3D342C",
+   "#4E4238",
+   "#5F5145",
+   "#6E5F51",
+   "#5A1A18",
+   "#8C2A22",
+   "#C9B99A",
+   "#4F6B3A"
   ]
  },
  "_props": "What a prop must SAY. `view` already defaults to high top-down and does not carry the framing on its own — the description has to, in capitals, or an object comes back 3/4-projected and reads as furniture from a different game. Naming a thing gets you ONE of it, so a scatter says 'spread apart with gaps'. And the palette words are the zone's own, by exclusion as well as by number, or a prop lands warmer and more cheerful than the stone around it. A `view` of `side` is for what hangs on the WALL FACE: the face is seen straight on, so a top-down picture of it lies flat against a cliff and reads as a sticker.",
