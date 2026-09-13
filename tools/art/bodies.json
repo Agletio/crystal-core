@@ -3776,7 +3776,9 @@
      "say": "walking toward the viewer at a three-quarter angle, one leg swinging past the other and the opposite arm coming forward"
     }
    },
-   "inks": "hob"
+   "inks": "hob",
+   "approved": "cache/designs/hob-0.png",
+   "character": "7dfe928f-4770-416d-80f6-6277dd4347b9"
   },
   {
    "sprite": "nell",

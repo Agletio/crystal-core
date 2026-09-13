@@ -4129,7 +4129,7 @@
    "inks": 24,
    "luma": 32,
    "sprite": "hob",
-   "character": "41cf55ad-0e58-45c7-8075-d09438c2b0b1",
+   "character": "7dfe928f-4770-416d-80f6-6277dd4347b9",
    "dirs": [
     "south-east"
    ],
@@ -4155,11 +4155,11 @@
    ],
    "states": {
     "idle": {
-     "group": "8a180ddc-3d37-4edf-a270-0ea383d7ed9e",
+     "group": "744cea51-dc27-4499-a5fd-d455fce9cb3a",
      "frames": 5
     },
     "walk": {
-     "group": "54f3cf24-fdc0-406d-8171-187274c44abf",
+     "group": "a4f4db0e-b852-418e-892a-d16c9c86cf60",
      "frames": 7
     }
    }

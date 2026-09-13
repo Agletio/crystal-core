@@ -1,12 +1,14 @@
--- The second wand taken off a shield. The generator drew the shield's lit
--- edge in the wand's own bone-white, so beside a wand held upright the rim
--- read as another wand. Each frame: find the largest run of board ink, and
--- every bone-white pixel within three of it that is not beside a hand — the
--- wand's hand is skin — becomes the rim's own paler ink. The shield keeps its
--- shape, its rim and its highlight; only the white goes.
+-- The second wand taken off a shield. The generator drew a pale diagonal
+-- along the shield's lit edge in the wand's own bone-white and ran it out
+-- past the rim, so beside a wand held upright it read as another wand held
+-- behind the shield. Each frame: find the largest run of board ink, which
+-- side of the body the shield is on, and every pale pixel that overhangs the
+-- shield on that side goes back to what lies under it; pale pixels on the
+-- shield's own edge take its darker rim ink, and the strip past the rim on
+-- that side is cleared whole. The shield keeps its shape.
 --   aseprite -b --script-param dir=<dir with frames.json> --script-param boards=C
---     --script-param white=G --script-param rim=M --script tools/aseprite/shield-rim.lua
-local dir, BOARDS, WHITE, RIM = app.params.dir, app.params.boards, app.params.white, app.params.rim
+--     --script-param pale=GMT --script-param rim=H --script tools/aseprite/shield-rim.lua
+local dir, BOARDS, PALE, RIM = app.params.dir, app.params.boards, app.params.pale, app.params.rim
 local function readAll(p) local f = assert(io.open(p, 'rb')); local s = f:read('a'); f:close(); return s end
 local B = json.decode(readAll(dir .. '/frames.json'))
 local G = B.grid
@@ -16,7 +18,9 @@ for ch, hex in pairs(B.key) do
   rgbOf[ch] = pc.rgba(tonumber(hex:sub(2, 3), 16), tonumber(hex:sub(4, 5), 16), tonumber(hex:sub(6, 7), 16), 255)
 end
 local SKIN = { F = true, K = true }
+local function isPale(ch) return ch ~= nil and PALE:find(ch, 1, true) ~= nil end
 local NEAR = { { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 }, { 1, 1 }, { -1, -1 }, { 1, -1 }, { -1, 1 } }
+local OVERHANG = 6 -- how far past the rim the stroke was drawn
 
 local sprite = Sprite(G, G)
 local layer = sprite.layers[1]; layer.name = 'body'
@@ -24,9 +28,10 @@ local report = {}
 for fi, rows in ipairs(B.frames) do
   if fi > 1 then sprite:newEmptyFrame(fi) end
   local at = function(x, y) if x < 0 or y < 0 or x >= G or y >= G then return nil end local c = rows[y + 1]:sub(x + 1, x + 1); return c ~= '.' and c or nil end
-  local function nearSkin(x, y) for _, d in ipairs(NEAR) do if SKIN[at(x + d[1], y + d[2])] then return true end end return false end
   local seen, best = {}, nil
+  local bodyX, bodyN = 0, 0
   for y = 0, G - 1 do for x = 0, G - 1 do
+    if at(x, y) then bodyX = bodyX + x; bodyN = bodyN + 1 end
     if at(x, y) == BOARDS and not seen[y * G + x] then
       local run, stack = {}, { { x, y } }
       seen[y * G + x] = true
@@ -44,19 +49,27 @@ for fi, rows in ipairs(B.frames) do
   local out = {}
   for y = 1, G do out[y] = rows[y] end
   local function put(x, y, ch) out[y + 1] = out[y + 1]:sub(1, x) .. ch .. out[y + 1]:sub(x + 2) end
-  local dimmed = 0
+  local cut, dimmed = 0, 0
   if best and #best >= 6 then
-    local done = {}
+    local x0, x1, y0, y1, sx = G, -1, G, -1, 0
     for _, p in ipairs(best) do
-      for dx = -3, 3 do for dy = -3, 3 do
-        local nx, ny = p[1] + dx, p[2] + dy
-        if nx >= 0 and ny >= 0 and nx < G and ny < G and not done[ny * G + nx] and at(nx, ny) == WHITE and not nearSkin(nx, ny) then
-          done[ny * G + nx] = true; put(nx, ny, RIM); dimmed = dimmed + 1
-        end
-      end end
+      x0 = math.min(x0, p[1]); x1 = math.max(x1, p[1]); y0 = math.min(y0, p[2]); y1 = math.max(y1, p[2]); sx = sx + p[1]
+    end
+    local away = (sx / #best >= bodyX / bodyN) and 1 or -1 -- the side of the shield the body is not on
+    for y = y0 - 1, y1 + 1 do
+      -- on the rim: darkened. Past it, on the far side: gone.
+      for x = x0 - 1, x1 + 1 do
+        if isPale(at(x, y)) and not SKIN[at(x, y)] then put(x, y, RIM); dimmed = dimmed + 1 end
+      end
+      for k = 2, OVERHANG + 1 do
+        local x = (away > 0) and (x1 + k) or (x0 - k)
+        -- nothing but the stroke lies past the rim on the far side, so the
+        -- zone is cleared whole rather than refilled from a neighbour
+        if x >= 0 and x < G and at(x, y) and not SKIN[at(x, y)] then put(x, y, '.'); cut = cut + 1 end
+      end
     end
   end
-  report[#report + 1] = string.format('frame %d: boards %d, %d white dimmed', fi - 1, best and #best or 0, dimmed)
+  report[#report + 1] = string.format('frame %d: boards %d, %d on the rim darkened, %d overhanging cut', fi - 1, best and #best or 0, dimmed, cut)
   B.frames[fi] = out
   local img = Image(G, G)
   for y = 1, G do for x = 1, G do local c = out[y]:sub(x, x); if c ~= '.' then img:drawPixel(x - 1, y - 1, rgbOf[c]) end end end

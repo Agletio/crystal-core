@@ -19,5 +19,6 @@ writes the row's frames to a frames.json, a script or a hand in Aseprite
 edits them, and `body.mts import <sprite> <frames.json>` puts them back,
 rewriting only the frames and the key of that one row. `lampwright-staff.lua`
 is the first: the staff made whole in every frame. `shield-rim.lua` is the
-second: the bone-white the generator put on a shield's edge, which read as a
-second wand, turned to the rim's own paler ink over every frame of a variant.
+second: the pale stroke the generator ran along a shield's edge and out past
+its rim, which read as a second wand, cleared past the rim and darkened on it
+over every frame of a variant.

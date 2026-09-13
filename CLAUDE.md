@@ -166,10 +166,11 @@ minutes**; a silent hour is how this looked stuck.
   is repaired in the frames, never re-rolled: `tools/aseprite/body.mts` moves a
   body row to a frames file and back, and a headless Aseprite (`setup.sh`,
   seconds) runs the script that fixes it. The Lampwright's staff was the first, and the
-  Aethermancer's wand-and-shield the second: the shield's lit edge was drawn in
-  the wand's own bone-white and read as a second wand, and `shield-rim.lua`
-  turns that white to the rim's paler ink and touches nothing else — a disc
-  drawn over it was tried and *"looks super weird"*.
+  Aethermancer's wand-and-shield the second: a pale stroke ran along the
+  shield's lit edge and out past its rim, and read as a second wand held
+  behind it; `shield-rim.lua` clears the strip past the rim on the side away
+  from the body and darkens what lies on the edge, touching nothing else — a
+  disc drawn over the shield was tried and *"looks super weird"*.
 - **THERE IS NO ART DIRECTOR BUT THE USER.** *"Just forget Astra, I'm cutting
   it, she doesn't help much."* That was Astra as art director; **ASTRA IS THE
   WRITING EDITOR NOW**, for player-facing text through the ledger in
