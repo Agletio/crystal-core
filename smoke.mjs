@@ -2709,8 +2709,8 @@ $('dev-kit').click();
 }
 
 // --- the trade: the part of a character that is not the skill -------------
-// Last, because it grants character levels to reach the first point and every
-// check above reads a character this one has moved.
+// Last, because it clears a zone to reach the first points and every check
+// above reads a character this one has moved.
 {
   // A row for a rule you do not have is a row about nothing.
   assert(
@@ -2726,26 +2726,25 @@ $('dev-kit').click();
     String(all('#trade-pick .catcard').length)
   );
   assert(
-    all('#trade-pick .catcard').every((c) => c.disabled === true),
-    'and none can be taken up before a level has paid for a point'
+    all('#trade-pick .catcard').every((c) => c.disabled === false),
+    'and any of them can be taken up: choosing what to be costs nothing'
   );
   assert($('trade-webwrap').hidden === true, 'no web is drawn before one is taken up');
   assert(
     $('open-trade').querySelector('.tabbadge') === null,
-    'and nothing is waiting before a level pays for it'
+    'and nothing is waiting before the climb pays for it'
   );
-  const before = text('trade-sub');
-  assert(/\d/.test(before), 'the screen says which level hands over the first point', before);
 
-  // Five character levels buy the first PAIR, and a pair is what they come in:
-  // a notable is always two steps on, so an odd number would strand a build.
+  // THE CLIMB PAYS THE TRADE, two at a time: The Shallows cleared whole is its
+  // two steps, 6 and 12, so two PAIRS — a notable is always two steps on, so an
+  // odd number would strand a build.
   $('trade-close').click();
-  $('open-character').click();
-  for (let i = 0; i < 6; i++) $('sheet-devlevel').click();
-  $('sheet-close').click();
+  $('open-dev').click(); // the kit builds its buttons as it opens
+  $('dev-climb-0').click();
+  $('dev-close').click();
   assert(
-    $('open-trade').querySelector('.tabbadge')?.textContent === '2',
-    'the header says a PAIR of trade points is waiting',
+    $('open-trade').querySelector('.tabbadge')?.textContent === '4',
+    'the header says two PAIRS of trade points are waiting after The Shallows',
     $('open-trade').querySelector('.tabbadge')?.textContent ?? 'none'
   );
 
@@ -2787,7 +2786,7 @@ $('dev-kit').click();
     String(all('#trade-web .web__node--on').length)
   );
   assert(
-    $('open-trade').querySelector('.tabbadge')?.textContent === '1',
+    $('open-trade').querySelector('.tabbadge')?.textContent === '3',
     'and the badge counts the other one of the pair down',
     $('open-trade').querySelector('.tabbadge')?.textContent ?? 'none'
   );
@@ -2803,15 +2802,24 @@ $('dev-kit').click();
     String(all('#trade-web .web__node--on.web__node--notable').length)
   );
   assert(
+    text('trade-sub').includes('2/4') && /The Shallows|The Prism/.test(text('trade-sub')),
+    'the screen counts what is spent and names the depth the next pair waits on',
+    text('trade-sub')
+  );
+  // The second pair, spent the same way, and then the badge is GONE.
+  open()[0].dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+  open()[0].dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+  assert(
     $('open-trade').querySelector('.tabbadge') === null,
     'and the badge goes away rather than reading 0'
   );
 
-  all('#trade-web .web__node--on.web__node--notable')[0].dispatchEvent(
+  // The LAST notable taken: the gate cannot be refunded under the branch it carries.
+  all('#trade-web .web__node--on.web__node--notable').slice(-1)[0].dispatchEvent(
     new window.MouseEvent('click', { bubbles: true })
   );
   assert(
-    all('#trade-web .web__node--on').length === 1 &&
+    all('#trade-web .web__node--on').length === 3 &&
       $('open-trade').querySelector('.tabbadge')?.textContent === '1',
     'clicking it again refunds the point',
     String(all('#trade-web .web__node--on').length)

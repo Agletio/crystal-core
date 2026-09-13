@@ -21,8 +21,8 @@ import type { BuiltTrade, TradeSpec } from './spec';
 
 /** How far out the stem's minor and its gate sit. */
 const STEM_R = [1.7, 3.2];
-/** And the four nodes of a branch past it: minor, notable, minor, notable. */
-const BRANCH_R = [4.5, 5.7, 6.9, 8.1];
+/** And the nodes of a branch past it, minor then notable, up to two pairs. */
+const BRANCH_R = [4.5, 5.9, 7.1, 8.3];
 /** How far a branch leans off the spoke's own line, in radians. */
 const SPLIT = 0.34;
 /** How far a spoke leans off straight by the time it reaches its gate. */
@@ -32,10 +32,8 @@ const TAU = Math.PI * 2;
 
 export const SPOKE_COUNT = 5;
 export const STEM_STEPS = STEM_R.length;
-export const BRANCH_STEPS = BRANCH_R.length;
-/** Ten a spoke: a minor, a gate, and two branches of four. */
-export const SPOKE_NODES = STEM_STEPS + BRANCH_STEPS * 2;
-export const TRADE_NODES = SPOKE_COUNT * SPOKE_NODES;
+/** A branch is one pair or two: `[minor, notable]` or `[minor, notable, minor, notable]`. */
+export const BRANCH_PAIRS = [1, 2];
 
 /** Stable 0..1 wobble. Perfect rows read as a diagram rather than a web. */
 const jitter = (a: number, b: number, salt: number): number => {
@@ -107,9 +105,15 @@ export function buildTrade(spec: TradeSpec): BuiltTrade {
     // cost as well as what they are reached through.
     const gateId = previous;
     spoke.branches.forEach((branch, b) => {
+      if (
+        branch.notables.length !== branch.minors.length
+        || !BRANCH_PAIRS.includes(branch.notables.length)
+      ) {
+        throw new Error(`${spec.id}: branch ${branch.id} must be one or two minor-notable pairs`);
+      }
       const away = base + lean + (b === 0 ? -SPLIT : SPLIT);
       let from = gateId;
-      for (let step = 0; step < BRANCH_STEPS; step++) {
+      for (let step = 0; step < branch.notables.length * 2; step++) {
         // ODD steps are the notables, which is what puts one at every even
         // depth from the middle: minor, notable, minor, notable.
         const tip = step % 2 === 1;
@@ -129,6 +133,7 @@ export function buildTrade(spec: TradeSpec): BuiltTrade {
             ? {
                 ...(notable!.stats ? { stats: notable!.stats } : {}),
                 ...(notable!.grants ? { grants: notable!.grants } : {}),
+                ...(notable!.keystone ? { keystone: true as const } : {}),
               }
             : { stats: minor!.stats ?? [] }
         );

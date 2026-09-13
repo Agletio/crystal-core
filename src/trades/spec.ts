@@ -1,7 +1,8 @@
 /**
  * A trade is authored as CONTENT here and given coordinates by `layout.ts`.
  * Five spokes: one minor, a GATE everybody on that spoke takes, then a fork
- * into two branches of minor, notable, minor, notable. Ten a spoke, fifty.
+ * into two branches, each a run of minor-then-notable — ONE pair on a tree
+ * whose notables are KEYSTONES, two on one not yet rebuilt that way.
  *
  * EVERY NOTABLE SITS AT AN EVEN DEPTH: points come two at a time, so a grant is
  * a minor and the notable behind it and the last pair finishes a branch.
@@ -12,8 +13,15 @@ import type { SkillNodeDef } from '../trees/node';
 export interface Branch {
   id: string;
   theme: string; // what its minors are called
-  minors: [Minor, Minor];
-  notables: [Notable, Notable]; // the branch's middle and its tip, each behind a minor
+  minors: Minor[]; // one behind each notable
+  notables: Notable[]; // one keystone, or a middle and a tip; `buildTrade` refuses any other count
+}
+
+/** Two keystones that do not work together: refused, and the card says why. */
+export interface Clash {
+  a: string;
+  b: string;
+  why: string;
 }
 
 export interface Spoke {
@@ -47,6 +55,7 @@ export interface TradeSpec {
   dualWields?: boolean; // DUAL WIELDING IS ONE TRADE'S PRIVILEGE: this grants it
   spokes: Spoke[]; // five; buildTrade refuses anything else
   needs: Record<string, string>; // grant -> the node it is useless without
+  clashes?: Clash[]; // pairs that may never both be held
 }
 
 export interface BuiltTrade {

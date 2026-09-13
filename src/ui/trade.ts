@@ -21,6 +21,7 @@ import {
   canDeallocateTrade,
   neighboursOfTrade,
   tradeNodes,
+  tradeClash,
   tradeNextAt,
   tradePointsFor,
 } from '../trades';
@@ -109,18 +110,8 @@ function renderPicker(): void {
     head.append(el('span', 'catcard__name', trade.spec.name));
     card.append(head);
     card.append(el('span', 'catcard__blurb', trade.spec.blurb));
-    // Nothing to spend is nothing to choose with: taking one up before a level
-    // has paid for a point would be a decision made on no information at all.
-    const earned = tradePointsFor(game.character.level);
-    card.disabled = earned <= 0;
     card.append(
-      el(
-        'span',
-        'catcard__count',
-        earned > 0
-          ? `${TRADE_RULES.maxPoints} points, ${TRADE_RULES.pointsPerGrant} at a time`
-          : `not until level ${TRADE_RULES.firstAt}`
-      )
+      el('span', 'catcard__count', `${TRADE_RULES.maxPoints} points, ${TRADE_RULES.pointsPerGrant} a clear on the climb`)
     );
     card.onclick = () => choose(trade.spec.id);
     host.append(card);
@@ -174,7 +165,8 @@ function renderWeb(): void {
   const at = (n: { x: number; y: number }) => cam.place(n.x, n.y);
   const middle = cam.place(0, 0);
   const byId = new Map(nodes.map((n) => [n.id, n]));
-  const rOf = (kind: 'minor' | 'notable') => NODE_R[kind] * BUILD;
+  // A KEYSTONE is drawn half again a notable's size, as it is on a skill web.
+  const rOf = (kind: 'minor' | 'notable', keystone = false) => NODE_R[kind] * (keystone ? 1.5 : 1) * BUILD;
   const hubR = HUB_R * BUILD;
 
   // Edges first, so studs sit on top of them, and trimmed to each end's rim: a
@@ -197,8 +189,8 @@ function renderWeb(): void {
       const dx = to.x - from.x;
       const dy = to.y - from.y;
       const len = Math.max(1e-3, Math.hypot(dx, dy));
-      const rFrom = rOf(node.kind);
-      const rTo = other === CENTRE ? hubR : rOf(far!.kind);
+      const rFrom = rOf(node.kind, !!node.keystone);
+      const rTo = other === CENTRE ? hubR : rOf(far!.kind, !!far!.keystone);
       links.push({
         a: { x: from.x + (dx / len) * rFrom, y: from.y + (dy / len) * rFrom },
         b: { x: to.x - (dx / len) * rTo, y: to.y - (dy / len) * rTo },
@@ -226,8 +218,9 @@ function renderWeb(): void {
 
   for (const node of nodes) {
     const pos = at(node);
-    const r = rOf(node.kind);
+    const r = rOf(node.kind, !!node.keystone);
     const owned = taken.has(node.id);
+    const clash = owned ? null : tradeClash(tradeId, node.id, allocated);
     const reachable = canAllocateTrade(tradeId, node.id, allocated);
     const open = reachable && spare > 0;
 
@@ -236,6 +229,7 @@ function renderWeb(): void {
         'web__node' +
         (owned ? ' web__node--on' : '') +
         (node.kind === 'notable' ? ' web__node--notable' : '') +
+        (node.keystone ? ' web__node--keystone' : '') +
         (open ? ' web__node--open' : '') +
         (!owned && !reachable ? ' web__node--locked' : ''),
       id: tradeNodeId(node.id),
@@ -255,12 +249,14 @@ function renderWeb(): void {
         ? canDeallocateTrade(tradeId, node.id, allocated)
           ? 'allocated — click to refund'
           : 'allocated — refunding it would strand another node'
-        : !reachable
-          ? 'not connected to anything you own'
-          : spare > 0
-            ? 'available'
-            : 'no points left';
-      return nodeCard(node.name, state, [node.description, ...saidBy(node)]);
+        : clash
+          ? `cannot be held with ${clash.node.name}`
+          : !reachable
+            ? 'not connected to anything you own'
+            : spare > 0
+              ? 'available'
+              : 'no points left';
+      return nodeCard(node.name, state, [node.description, ...saidBy(node), ...(clash ? [clash.why] : [])]);
     });
 
     const act = () => {
@@ -297,19 +293,17 @@ function render(): void {
   hideTooltip();
 
   const { character } = game;
-  const earned = tradePointsFor(character.level);
+  const earned = tradePointsFor(character);
   const chosen = character.trade ? TRADE_BY_ID[character.trade] : null;
-  const nextAt = tradeNextAt(character.level);
+  const nextAt = tradeNextAt(character);
 
   $('trade-modal-title').textContent = chosen ? chosen.spec.name : 'Trade';
   $('trade-sub').textContent = chosen
     ? `${character.tradeAllocated.length}/${earned} points spent` +
       (nextAt !== null
-        ? ` · ${TRADE.pointsPerGrant} more at level ${nextAt} · ${TRADE.maxPoints} in all`
+        ? ` · ${TRADE.pointsPerGrant} more for clearing ${nextAt.zone} ${nextAt.rung} · ${TRADE.maxPoints} in all`
         : ' · every point earned')
-    : earned > 0
-      ? `${earned} point${earned === 1 ? '' : 's'} waiting — choose what to be.`
-      : `A trade is yours at level ${TRADE.firstAt}. You are ${character.level}.`;
+    : 'Choose what to be.';
 
   // Who you ARE is chosen once, so this screen is where one is WALKED.
   $('trade-placeholder').textContent = chosen

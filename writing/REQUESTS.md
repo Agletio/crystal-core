@@ -128,3 +128,16 @@ Intended rule: flavour throughout. Three things are new in this commit and are m
 Request: review all dialogue; reword lampwright.journal.* first. Priority: high for lampwright.journal, medium for the rest.
 Blocker: none
 ```
+
+
+## Requests from Claude — the Aethermancer's keystones, commit `TRADE_COMMIT`
+
+```text
+Entry ID(s): talent.aethermancer.aet_refraction, aet_shell, aet_surge, aet_deepwinter, aet_bloodletting, aet_secondwind, aet_slowburn, aet_dust, aet_thrift, aet_undertow, and each one's .grant.* line; character.aethermancer (the blurb now understates the trade)
+Status: pending
+Text location: src/trades/aethermancer.ts, one notable per branch; the grant lines are GRANT_BY_ID[...].say in src/sim/grants.ts (wardHeals, overchargeSurge, overchargeChills, leechOnTaken, killFloor, starvedSlow, starvedGuard, lifeFromMana)
+Implementation: RunSim.absorb (Refraction), overchargeOf and RunSim.spendOvercharge (Cataclysm), RunSim.applyTyped (Deep Winter), RunSim.drinkTaken (Bloodletting), the kill handler (Second Wind), RunSim.hasteOf and starvedMultiplier (Slow Burn), RunSim.softened and the new `parched` state (Dust), the hero regen step (Undertow); TradeSpec.clashes and tradeClash for Never Dry against Dry Season
+Intended rule: every notable past a gate is a keystone-grade rule on the pool; the descriptions are my placeholder wording and every number in them is the number the sim reads. Points are paid by the climb now (two at Shallows 6 and 12, Prism 7 and 14, the Rot's 16), which the trade screen says as "2 more for clearing <zone> <depth>".
+Request: reword the ten keystones and the clash reason; the blurb could name that the talents are rules on the pool rather than "strengthen this protection". Priority: high for the ten, medium for the blurb.
+Blocker: none
+```

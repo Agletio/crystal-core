@@ -197,7 +197,7 @@ export function deallocateTrial(character: Character, nodeId: string): boolean {
 
 /** Points a character level has bought toward a trade, and what is left of them. */
 export const tradePointsLeft = (character: Character): number =>
-  tradePointsFor(character.level) - (character.tradeAllocated?.length ?? 0);
+  tradePointsFor(character) - (character.tradeAllocated?.length ?? 0);
 
 /** IN PLACE, and ONCE: a trade is taken up and never swapped. */
 /** WHO MAY HOLD TWO WEAPONS: one read, so nothing can disagree with it. */

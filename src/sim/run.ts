@@ -590,6 +590,14 @@ export interface RunState {
   dives: number;
   /** Damage the mana pool paid for instead of your life. */
   absorbed: number;
+  /** WHAT THE AETHERMANCER'S KEYSTONES DID, each counted where its rule fires. */
+  refracted: number; // life returned by Refraction
+  chilledByCold: number; // Chills Deep Winter forced
+  drunkTaken: number; // mana Bloodletting drew off damage taken
+  secondWinds: number; // kills that refilled the pool to its floor
+  slowBurns: number; // Starved uses Slow Burn landed whole
+  dusted: number; // damage Dust took off Starved hits
+  pumped: number; // mana Undertow turned into life
 }
 
 const FLOATER_LIFE = 1.1;
@@ -622,6 +630,10 @@ export class RunSim {
   private useCrit: boolean | null = null;
   /** True for the length of a cast the hero could not pay for. */
   private starved = false;
+  /** STARVED AS A STATE, not a cast: true from a use the pool could not pay
+   *  for until the next one it can. `starved` is the mark on one cast and is
+   *  cleared as it lands; a rule about "while Starved" reads this. */
+  private parched = false;
   /** True for the length of a cast that bought extra damage with the pool. */
   /** Mana this cast spent overcharging, which is also what it ADDS. */
   private overcharged = 0;
@@ -872,6 +884,13 @@ export class RunSim {
       kites: 0,
       dives: 0,
       absorbed: 0,
+      refracted: 0,
+      chilledByCold: 0,
+      drunkTaken: 0,
+      secondWinds: 0,
+      slowBurns: 0,
+      dusted: 0,
+      pumped: 0,
       folk: [],
       meeting: false,
       found: null,
@@ -1869,6 +1888,7 @@ export class RunSim {
     if (total <= 0) return;
     this.sinceHit = 0;
     if (hit) this.spendGust(hero); // a drain is not a hit, and takes none
+    this.drinkTaken(hero, total);
     hero.life -= total;
     if (hero.life <= 0) this.kill(hero);
   }
@@ -1901,6 +1921,20 @@ export class RunSim {
     }
     if (hero.mana < hero.stats.maxMana) {
       hero.mana = Math.min(hero.stats.maxMana, hero.mana + hero.stats.manaRegen * dt);
+    }
+    // UNDERTOW: under the floor, the pool is poured into life one for one.
+    const pump = this.grants.lifeFromMana as { below: number; perSecond: number } | undefined;
+    if (pump && hero.mana > 0 && hero.life < hero.stats.maxLife * pump.below) {
+      const move = Math.min(
+        hero.mana,
+        hero.stats.maxMana * pump.perSecond * dt,
+        hero.stats.maxLife * pump.below - hero.life
+      );
+      if (move > 0) {
+        hero.mana -= move;
+        hero.life += move;
+        this.state.pumped += move;
+      }
     }
     // THE WINDOW a mover opened, in SHARES of the pool it fills rather than in
     // the flat figure a stat line buys.
@@ -2845,11 +2879,16 @@ export class RunSim {
    *  what the charges in hand are worth. Clamped, so no walk makes you immune. */
   private softened(): number {
     const m = this.moving;
-    if (!m) return 1;
-    let less = this.afterIn > 0 ? m.after.guard : 0;
-    if (m.gusts) {
+    let less = m && this.afterIn > 0 ? m.after.guard : 0;
+    if (m?.gusts) {
       less += this.gusts * m.gusts.guard;
       if (this.gusts === 0) less += m.gusts.empty;
+    }
+    // DUST: a Starved caster is harder to hurt, for as long as he stays dry.
+    const dust = (this.grants.starvedGuard as number) ?? 0;
+    if (dust > 0 && this.parched) {
+      less += dust;
+      this.state.dusted++;
     }
     return Math.max(0.2, 1 - less);
   }
@@ -3113,6 +3152,7 @@ export class RunSim {
     }
     if (!paid) this.state.dryCasts++;
     this.starved = !paid;
+    this.parched = !paid;
     // A cost that is a SHARE of the pool, so stacking mana pays for itself.
     this.overcharged = paid ? this.spendOvercharge(hero) : 0;
     this.useSkill(hero, target, this.skill);
@@ -3122,7 +3162,7 @@ export class RunSim {
 
   /** What it PAID, or 0 when short. The payment IS the damage. */
   private spendOvercharge(hero: Entity): number {
-    const share = overchargeOf(this.grants);
+    const share = overchargeOf(this.grants, { mana: hero.mana, max: hero.stats.maxMana });
     const price = hero.stats.maxMana * share;
     if (price <= 0 || hero.mana < price) return 0;
     hero.mana -= price;
@@ -3525,6 +3565,12 @@ export class RunSim {
     if (sleet) stacked *= 1 + (this.sleet * sleet.per) / 100;
     // SURE FOOTING: the cast that opened on a new body comes back sooner.
     if (this.streak === 1) stacked *= 1 + ((this.grants.freshFaster as number) ?? 0) / 100;
+    // SLOW BURN: a Starved use comes back slower, and `starvedMultiplier` lands it whole.
+    const slowBurn = (this.grants.starvedSlow as number) ?? 0;
+    if (slowBurn > 0 && this.starved) {
+      stacked *= 1 - slowBurn;
+      this.state.slowBurns++;
+    }
     const held = this.moving?.gusts;
     const charged = held ? 1 + (this.gusts * held.haste) / 100 : 1;
     if (!this.flasked()) return slow * killed * charged * stacked;
@@ -3730,6 +3776,7 @@ export class RunSim {
         const kept = dmg / before;
         for (const type of Object.keys(byType)) byType[type] *= kept;
       }
+      this.drinkTaken(defender, dmg);
     }
     if (attacker.kind === 'hero') this.leech(attacker, dmg);
 
@@ -4002,7 +4049,12 @@ export class RunSim {
       // ONE SEAM: `ailmentChances` folds what a chance node bought into the
       // stats, against the skill's OWN type alone, so the sheet prints the
       // number rolled here. Added by hand it landed on every type in the hit.
-      const chance = attacker.stats.ailmentChance?.[def.id] ?? def.chance;
+      let chance = attacker.stats.ailmentChance?.[def.id] ?? def.chance;
+      // DEEP WINTER: an Overcharged use's Cold always Chills, whatever was bought.
+      if (def.id === 'chill' && this.overcharged > 0 && this.grants.overchargeChills && chance < 100) {
+        chance = 100;
+        this.state.chilledByCold++;
+      }
       if (chance <= 0) continue;
       let count = Math.floor(chance / 100);
       const over = chance - count * 100; // rolled only when there IS one, or the seed parts
@@ -4453,7 +4505,27 @@ export class RunSim {
     const paid = Math.min(hero.mana, damage * share);
     hero.mana -= paid;
     this.state.absorbed += paid;
+    // REFRACTION: a share of what the pool ate comes back as life.
+    const heals = (this.grants.wardHeals as number) ?? 0;
+    if (heals > 0 && paid > 0) {
+      const was = hero.life;
+      hero.life = Math.min(hero.stats.maxLife, hero.life + paid * heals);
+      this.state.refracted += hero.life - was;
+      this.bankHeal(was, hero.life);
+    }
     return damage - paid;
+  }
+
+  /** BLOODLETTING: what reached your life is drunk back as mana at the Siphon's
+   *  share. Asked by a hit and a drain alike, after the pool has had its share. */
+  private drinkTaken(hero: Entity, reached: number): void {
+    if (!this.grants.leechOnTaken || reached <= 0) return;
+    const share = (this.grants.manaLeech as number) ?? 0;
+    if (share <= 0) return;
+    const drunk = Math.min(reached * share, hero.stats.maxMana - hero.mana);
+    if (drunk <= 0) return;
+    hero.mana += drunk;
+    this.state.drunkTaken += drunk;
   }
 
   /** WHAT A BLOCK IS WORTH BEYOND STOPPING THE HIT. Nothing here writes
@@ -4610,6 +4682,12 @@ export class RunSim {
     if (back > 0) {
       const hero = s.hero;
       hero.mana = Math.min(hero.stats.maxMana, hero.mana + hero.stats.maxMana * back);
+    }
+    // SECOND WIND: a kill off a low pool refills it to the floor, never past it.
+    const floor = (this.grants.killFloor as number) ?? 0;
+    if (floor > 0 && s.hero.mana < s.hero.stats.maxMana * floor) {
+      s.hero.mana = s.hero.stats.maxMana * floor;
+      s.secondWinds++;
     }
     const refund = (this.grants.refundOnKill as number) ?? 0;
     if (refund > 0) s.hero.mana = Math.min(s.hero.stats.maxMana, s.hero.mana + this.lastCost * refund);

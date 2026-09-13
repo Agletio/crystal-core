@@ -89,7 +89,7 @@ of nodes, because two copies of a reachability rule is one copy that is wrong.
 |---|---|---|
 | skill tree (`src/trees/`) | 3 ways in, a ring of 12, 6 branches, 6 trunk notables | level-funded |
 | mover tree (`src/moves/`) | the same as a skill tree, and built by `buildTree` | level-funded |
-| trade tree (`src/trades/`) | 5 spokes of 10: a stem of 1, a GATE, then two branches of minor-notable-minor-notable | 6, TWO AT A TIME — one BRANCH walked whole, and 3 notables is the CEILING |
+| trade tree (`src/trades/`) | 5 spokes: a stem of 1, a GATE, then two branches of minor-notable pairs — ONE pair (a keystone) on a rebuilt trade, two on one not yet | 10, TWO AT A TIME, paid by `TRADE.steps` of the CLIMB — 5 notables is the CEILING, and `clashes` refuse a pair that does not work together |
 
 - **Content only**; `layout.ts` owns every coordinate, in tile units. Give a
   tree a `prefix` no other tree uses — node ids are what a save points at.
@@ -119,9 +119,13 @@ of nodes, because two copies of a reachability rule is one copy that is wrong.
   a branch rather than stranding a build one step short of its tip. An odd
   budget, or a notable at an odd depth, breaks it — the demo walks each web a
   pair at a time and fails if any stop lands on a minor.
-- **A whole SPOKE never fits.** Ten nodes against six points, so the fork is
-  still a decision at the level cap. It stopped being one when nine nodes faced
-  ten points and had one left over.
+- **The budget buys a THIRD of the web at most**, so which spokes is the
+  decision. Points are the climb's, never a level's: `tradePointsFor` takes the
+  CHARACTER and reads `climbed` at the bare tier.
+- **A trade keystone is the END of its branch**, and two that do not work
+  together are named in `TradeSpec.clashes`: `tradeClash` is asked by
+  `canAllocateTrade` and by the load's replay, and the card prints the reason.
+  "While Starved" reads `parched`, the state; `starved` is one cast's mark.
 - **A trade is funded by CHARACTER level** (`TRADE`: `pointsPerGrant` every
   `levelsPerGrant` from `firstAt`, capped at `maxPoints`), out of its own budget — funded from skill points, "identity" and
   "generic stats" compete for the same point and the beeline is back.

@@ -1711,12 +1711,46 @@ one-shot would otherwise lose the branch it spent points on exactly where that
 branch is working. A Stunned body neither swings nor closes and its cooldown
 still runs down, so a Stun is time off the fight and not a free swing at the end
 of it. Rolled only where there IS a Stun, or every hero swing would spend a draw.
-Its web is five spokes of TEN — one minor, a GATE everyone on that spoke takes,
-then a fork into two branches of minor, notable, minor, notable. **Every notable
+Its web is five spokes — one minor, a GATE everyone on that spoke takes, then a
+fork into two branches of minor-then-notable, one pair or two. **Every notable
 sits at an EVEN step from the middle and points come TWO AT A TIME**, so a grant
 is always a minor and the notable behind it and the last pair finishes a branch
-instead of stranding you short of its tip. Six points against fifty nodes: one
-branch whole, three notables, and the fork is still a decision at the cap.
+instead of stranding you short of its tip.
+
+**THE CLIMB PAYS THE TRADE, AND IT IS TEN POINTS.** *"I feel like too much
+stuff is tied to level already… one at shallows 6, shallows 12, prism 7, prism
+14, and the rot 16."* `TRADE.steps` is those five depths and `tradePointsFor`
+reads the CHARACTER's `climbed` at the campaign's own tier — the bare zone key,
+whatever the wall holds now — so a pair lands the first time each is cleared,
+the last with the Rot's boss, and a souled climb pays nothing twice. Not a
+level and not a raw clear count: a count of descents pays depth 1 as it pays
+depth 12, and the rule everywhere else is that an easier map is never strictly
+better. The screen names the next depth that pays.
+
+**EVERY TRADE NOTABLE PAST A GATE IS A KEYSTONE FOR THE CHARACTER**, drawn
+half again a notable's size, with no cap on how many are held — *"think of
+every notable as a keystone for your character instead of the skill with no
+limit on keystones."* A branch is ONE pair, a minor and the keystone, so a spoke
+is six nodes and a trade thirty; ten points buy a third of the web at most, and
+five notables is the ceiling however they are spent. **TWO THAT DO NOT WORK
+TOGETHER ARE REFUSED, AND THE CARD SAYS WHY**: `TradeSpec.clashes` names the
+pairs, `tradeClash` is the one seam `canAllocateTrade` and the load's replay
+both ask, so a save holding both wakes holding one. **THE AETHERMANCER IS THE
+MODEL** — *"most of the first nodes are good but a lot of the subsequent nodes
+past them are super boring"* — so the five gates stayed and the ten past them
+are rules on the pool: Refraction returns what Mana absorbed as Life, the Outer
+Shell pays an Ailment whole, Cataclysm draws 30% off a pool above 70% and
+nothing below it, Deep Winter Chills on every Overcharged use, Bloodletting
+drinks Mana off damage taken, Second Wind refills a dry pool to 25% on a kill,
+Slow Burn lands a Starved use whole for half the rate, Dust is 30% less taken
+while Starved, Never Dry pays Life for what Mana cannot, Undertow pours the
+pool into a Life under 35%. Never Dry clashes with Dry Season. **STARVED IS A
+STATE AS WELL AS A MARK**: `starved` is the one cast's and is cleared as it
+lands, so a rule about *while* Starved reads `parched`, true from a use the
+pool could not pay for until the next it can. Each keystone has ONE read site
+and its own counter on `RunState`, and the demo puts a run where the rule
+bites — a pool held empty, a life set low — and fails if the counter does not
+move. The other three trades keep two pairs a branch until their own pass.
 Eight main skills, each with its own tree; a mover and THREE passives fill the
 other slots, the mover having a nine-node web of its own. **A passive changes a
 RULE and pays for it**, and the second and third slots open at levels 20 and 40

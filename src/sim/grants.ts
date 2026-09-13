@@ -536,6 +536,80 @@ export const GRANTS: GrantDef[] = [
       return n === null ? null : `Adds ${pct(n)} of maximum Life to base Mana, before modifiers to maximum Mana`;
     },
   },
+  // --- the AETHERMANCER's keystones: each a rule on the pool, one read site apiece
+  {
+    id: 'wardHeals',
+    what: 'what mana absorbs comes back as life',
+    reads: [STATS],
+    merge: 'sum',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null ? null : `${pct(n)} of the damage Mana absorbs returns to you as Life`;
+    },
+  },
+  {
+    id: 'overchargeSurge',
+    what: 'overcharge spends a bigger share, and only off a full pool',
+    reads: [STATS],
+    say: (v) => {
+      const p = v as { above?: unknown; share?: unknown };
+      return typeof p?.above === 'number' && typeof p?.share === 'number'
+        ? `Overcharge spends ${pct(p.share)} of maximum Mana while your Mana is above ${pct(p.above)}, and nothing below it`
+        : null;
+    },
+  },
+  {
+    id: 'overchargeChills',
+    what: 'an overcharged use always chills',
+    reads: [STATS],
+    say: () => 'An Overcharged use applies Chill at 100% chance',
+  },
+  {
+    id: 'leechOnTaken',
+    what: 'damage you take returns mana at the siphon share',
+    reads: [STATS],
+    say: () => "Damage that reaches your Life recovers Mana at 100% of the Siphon's share",
+  },
+  {
+    id: 'killFloor',
+    what: 'a kill refills a low pool to a floor',
+    reads: [STATS],
+    merge: 'max',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null ? null : `A kill while you are under ${pct(n)} Mana refills it to ${pct(n)}`;
+    },
+  },
+  {
+    id: 'starvedSlow',
+    what: 'a starved use is slower and lands whole',
+    reads: [STATS],
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null ? null : `Starved uses come ${pct(n)} slower and land for their full damage`;
+    },
+  },
+  {
+    id: 'starvedGuard',
+    what: 'you take less while starved',
+    reads: [STATS],
+    merge: 'sum',
+    say: (v) => {
+      const n = asNumber(v);
+      return n === null ? null : `Take ${pct(n)} less damage while Starved`;
+    },
+  },
+  {
+    id: 'lifeFromMana',
+    what: 'mana becomes life below a floor',
+    reads: [STATS],
+    say: (v) => {
+      const p = v as { below?: unknown; perSecond?: unknown };
+      return typeof p?.below === 'number' && typeof p?.perSecond === 'number'
+        ? `While you are under ${pct(p.below)} Life, ${pct(p.perSecond)} of maximum Mana a second becomes Life, one for one`
+        : null;
+    },
+  },
 
   // --- what the WARRIOR's trade hands over ----------------------------------
   //
@@ -2366,6 +2440,7 @@ export function critBuff(grants: Record<string, unknown>): { more: number; secon
  * moves it is a grant rather than an edit at every call site.
  */
 export function starvedMultiplier(grants: Record<string, unknown>): number {
+  if (typeof grants.starvedSlow === 'number') return 1; // SLOW BURN: the rate pays instead
   const own = typeof grants.starvedDamage === 'number' ? grants.starvedDamage : 1;
   return Math.max(0, Math.min(1, MANA.starvedDamage * own));
 }
@@ -2402,8 +2477,13 @@ export function bleedOf(
  * buffer you never touch. A `more` multiplier gave a stacked pool nothing and
  * made regeneration the only stat that mattered.
  */
-export const overchargeOf = (grants: Record<string, unknown>): number =>
-  Math.max(0, (grants.overcharge as number) ?? 0);
+export const overchargeOf = (grants: Record<string, unknown>, pool?: { mana: number; max: number }): number => {
+  // CATACLYSM replaces the share rather than adding to it: a big draw off a
+  // full pool and nothing off a low one. Asked without a pool, it is the draw.
+  const surge = grants.overchargeSurge as { above: number; share: number } | undefined;
+  if (surge) return !pool || pool.mana >= pool.max * surge.above ? surge.share : 0;
+  return Math.max(0, (grants.overcharge as number) ?? 0);
+};
 
 /** The share of a hit the mana pool pays before life does. Capped: a pool that
  *  ate everything would be a second life bar rather than a trade. */

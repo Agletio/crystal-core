@@ -9,7 +9,8 @@
  * Every notable changes a RULE rather than handing out a percentage: a trade
  * that gave numbers would compete with the other on numbers, and one would win.
  */
-import { TRADE } from './data';
+import { LADDER, TRADE } from './data';
+import type { Character } from './sim/character';
 import { GRANT_BY_ID } from './sim/grants';
 import type { TradeSpec } from './trades/spec';
 import { buildTrade } from './trades/layout';
@@ -40,20 +41,36 @@ export const tradeNodeById = (
   nodeId: string
 ): SkillNodeDef | undefined => tradeNodes(tradeId).find((n) => n.id === nodeId);
 
-/** TWO AT A TIME, from `firstAt` — the level the trade itself is picked at. */
-export const tradePointsFor = (level: number): number => {
-  if (level < TRADE.firstAt) return 0;
-  const grants = 1 + Math.floor((level - TRADE.firstAt) / TRADE.levelsPerGrant);
-  return Math.min(TRADE.maxPoints, grants * TRADE.pointsPerGrant);
+/** A STEP IS CLEARED at the campaign's own tier: the bare zone key, whatever
+ *  the wall holds now, because every character walked that tier first. */
+const stepCleared = (character: Character, step: { zone: string; rung: number }): boolean =>
+  (character.climbed?.[step.zone] ?? 0) >= step.rung;
+
+/** TWO AT A TIME, a pair for every step of the climb cleared. */
+export const tradePointsFor = (character: Character): number =>
+  Math.min(TRADE.maxPoints, TRADE.steps.filter((s) => stepCleared(character, s)).length * TRADE.pointsPerGrant);
+
+/** The next depth that pays, by the zone's own name, or null once they all have. */
+export const tradeNextAt = (character: Character): { zone: string; rung: number } | null => {
+  const next = TRADE.steps.find((s) => !stepCleared(character, s));
+  if (!next) return null;
+  return { zone: LADDER.zones.find((z) => z.id === next.zone)?.name ?? next.zone, rung: next.rung };
 };
 
-/** The level the next pair lands at, or null once they are all spent. */
-export const tradeNextAt = (level: number): number | null => {
-  if (tradePointsFor(level) >= TRADE.maxPoints) return null;
-  if (level < TRADE.firstAt) return TRADE.firstAt;
-  const done = Math.floor((level - TRADE.firstAt) / TRADE.levelsPerGrant);
-  return TRADE.firstAt + (done + 1) * TRADE.levelsPerGrant;
-};
+/** THE HELD NODE THIS ONE CANNOT BE TAKEN WITH, and why, or null. */
+export function tradeClash(
+  tradeId: string,
+  nodeId: string,
+  allocated: readonly string[]
+): { node: SkillNodeDef; why: string } | null {
+  for (const clash of TRADE_BY_ID[tradeId]?.spec.clashes ?? []) {
+    const other = clash.a === nodeId ? clash.b : clash.b === nodeId ? clash.a : null;
+    if (!other || !allocated.includes(other)) continue;
+    const node = tradeNodeById(tradeId, other);
+    if (node) return { node, why: clash.why };
+  }
+  return null;
+}
 
 /** The one allocation with no click to undo it, so gold is what undoes it. */
 export const respecCost = (level: number): number =>
@@ -66,7 +83,8 @@ export const canAllocateTrade = (
   tradeId: string,
   nodeId: string,
   allocated: readonly string[]
-): boolean => canAllocateIn(tradeNodes(tradeId), nodeId, allocated);
+): boolean =>
+  canAllocateIn(tradeNodes(tradeId), nodeId, allocated) && tradeClash(tradeId, nodeId, allocated) === null;
 
 export const canDeallocateTrade = (
   tradeId: string,
@@ -79,7 +97,8 @@ export const replayTradeNodes = (
   tradeId: string,
   wanted: readonly string[],
   cap: number
-): string[] => replayWeb(tradeNodes(tradeId), wanted, cap);
+): string[] =>
+  replayWeb(tradeNodes(tradeId), wanted, cap, (id, kept) => tradeClash(tradeId, id, kept) === null);
 
 /**
  * Every switch the trade hands over: its BASELINE first, then what has been

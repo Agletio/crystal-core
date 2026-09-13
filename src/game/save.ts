@@ -298,7 +298,7 @@ function replayTrade(character: Character): number {
     character.tradeAllocated = [];
     return wanted.length;
   }
-  const kept = replayTradeNodes(trade, wanted, tradePointsFor(character.level));
+  const kept = replayTradeNodes(trade, wanted, tradePointsFor(character));
   character.tradeAllocated = kept;
   return wanted.length - kept.length;
 }
