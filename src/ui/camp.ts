@@ -30,6 +30,7 @@ import { CRYSTAL_SLOTS, MATERIAL_BY_ID } from '../data';
 import { folkMet } from '../game/scenes';
 import { jobOf, saysJob, workersFound } from '../game/work';
 import { CAMP_STATION_FOOT, CAMP_WORKER_SPOTS } from '../scenes/camp';
+import type { SceneDef } from '../scenes';
 import { crystalIcon } from './icons';
 import { showTooltip, hideTooltip } from './tooltip';
 import { syncTalk, wants } from './talk';
@@ -122,6 +123,10 @@ function workerSpot(id: string, i: number): { x: number; y: number } {
   return family ? CAMP_STATION_FOOT[family] ?? idle : idle;
 }
 
+/** Where somebody met stands: their own spot in the picture, or the i-th open one. */
+const folkSpot = (def: SceneDef, i: number): { x: number; y: number } =>
+  def.camp ?? CAMP_SPOTS[i % CAMP_SPOTS.length];
+
 /** A PERSON is a hotspot too, and theirs moves: it is wherever their body was
  *  drawn, which is a spot and the size of that body's own grid. */
 function mountFolk(): void {
@@ -148,7 +153,7 @@ function mountFolk(): void {
   });
   folkMet(game).forEach((def, i) => {
     const grid = (GENERATED[def.who]?.grid ?? 32) * CAMP_HERO_SCALE;
-    const at = CAMP_SPOTS[i % CAMP_SPOTS.length];
+    const at = folkSpot(def, i);
     const btn = mount(
       {
         id: `who-${def.id}`,
@@ -309,7 +314,7 @@ function draw(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, at: numb
   // looking for, so nothing stands in front of him.
   const met = folkMet(game);
   met.forEach((who, i) => {
-    const spot = CAMP_SPOTS[i % CAMP_SPOTS.length];
+    const spot = folkSpot(who, i);
     drawBody(ctx, who.who, spot.x, spot.y, at, i * 0.7, i === lit, CAMP_HERO_SCALE);
   });
   // THE WORKERS: idle by the tent, or at the foot of the station of the job,

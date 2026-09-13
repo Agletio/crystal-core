@@ -58,6 +58,7 @@ export interface SceneDef {
   /** WHAT THEY KEEP: a counter, opened once they owe you nothing. A bench a
    *  RELIC buys is this shape already (`relicFor`). */
   keeps?: 'shop' | 'tools';
+  camp?: Vec2; // his FEET in the camp picture's own pixels; absent, the next open spot
   rung?: number; // HIS OWN DEPTH, ahead of the schedule; absent is the rota's
   room?: SceneRoom; // HE NEVER COMES UP: his own tab, and not in the camp
 }

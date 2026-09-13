@@ -16,6 +16,7 @@ export const SMITHY: SceneDef = {
   greets:
     'You walked past three seams to get here. Three. Come up and see me when you are done and I will put something in your hand that can take them.',
   idles: SMITH.idles,
+  camp: { x: 214, y: 268 }, // by the anvil, which is his; the loom's foot was a worker's
   beats: SMITH.beats,
   keeps: 'tools',
   encounter: null,

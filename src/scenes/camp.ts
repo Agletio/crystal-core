@@ -111,10 +111,11 @@ export const CAMP_STAND = { x: 344, y: 300 };
  *  it from 166 tall to 86, so this halved with it. */
 export const CAMP_HERO_SCALE = 1;
 
-/** Where somebody MET stands, in order. All open ground. */
+/** Where somebody MET stands without a spot of their own, in order. All open
+ *  ground, and none at a station's foot, where a working body stands. */
 export const CAMP_SPOTS = [
   { x: 250, y: 202 },
-  { x: 430, y: 210 },
+  { x: 392, y: 262 },
   { x: 120, y: 252 },
   { x: 560, y: 250 },
   { x: 300, y: 330 },
