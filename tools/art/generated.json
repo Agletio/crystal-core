@@ -4135,11 +4135,11 @@
    ],
    "states": {
     "idle": {
-     "group": "81ec3c07-ee89-4a54-9d55-493baf3f2472",
+     "group": "1fc4434c-6601-44eb-83c2-a5032a1edb0b",
      "frames": 5
     },
     "walk": {
-     "group": "c06e1192-b1ff-4395-b8e2-b2bf958f5766",
+     "group": "15462c0c-7e42-4fbc-8516-61351cb7f981",
      "frames": 7
     }
    }

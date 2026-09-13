@@ -317,7 +317,10 @@ if (command === 'design') {
       // retry says the same thing in a way that hashes differently.
       let out = '';
       let got = '';
-      for (let go = 0; go < 4 && !got; go++) {
+      // A rotation still rendering refuses the ask as TEXT rather than as an
+      // error, for minutes after `get_character` stops saying so; that refusal
+      // is waited out and never spends a try.
+      for (let go = 0, held = 0; go < 4 && !got; go++) {
         if (go > 0) await wait(20_000);
         out = await callTool('animate_character', {
           character_id: character,
@@ -329,6 +332,7 @@ if (command === 'design') {
           ...(into ? { animation_group_id: into } : {}),
         });
         got = /group[:= ]+([0-9a-f-]{36})/.exec(out)?.[1] ?? '';
+        if (!got && /still being created/i.test(out) && held++ < 40) { go--; await wait(30_000); }
       }
       if (!got) {
         console.log(`${name}/${facing}: GAVE UP — ${said(out, /error|hint|slots/i)}`);
