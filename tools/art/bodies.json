@@ -3743,23 +3743,18 @@
    "sprite": "smith",
    "name": "The Smith",
    "size": 96,
-   "look": "A BROAD HEAVY MAN standing square and side-on, arms bare and thick, a long scorched leather apron from chest to shin over a dark sleeveless tunic, heavy gloves shoved through his belt, a short-handled HAMMER hanging head-down at his hip. Bald with a heavy jaw and a short blunt beard. Soot-black and dull umber leather, iron-grey tools, one worn brass buckle. Burn marks and old scorch on the apron, dust on the boots. A SMALL head on a tall wide-shouldered body, at least seven heads tall. NOT anime, NOT manga, NOT chibi, NOT cute, NOT a big head, NOT a doll, NOT a cartoon, NOT armoured, NOT a knight, NOT a dwarf, NOT a wizard, NOT bright, NOT colourful. No ground, NO SHADOW UNDER HIM, no ellipse, no base, no anvil, no forge, no other objects.",
+   "look": "A BROAD HEAVY BLACKSMITH standing square, arms bare and thick and ruddy from the forge: a long scorched leather apron from chest to shin, its leather a warm OXBLOOD red gone black at the hem with old burns, over a sleeveless soot-grey tunic, heavy gloves shoved through a wide belt with one worn BRASS buckle, a short-handled HAMMER hanging head-down at his hip, iron-grey tongs beside it, a rag of dull EMBER ORANGE tied at the neck. Bald with a heavy jaw and a short blunt dark beard, warm ruddy skin shining with sweat, a smear of soot on one cheek. Dark clothes with ONE warm accent: the OXBLOOD apron and the ember rag. A SMALL head on a tall wide-shouldered body, at least seven heads tall. Realistic ADULT proportions. Seen at a STRONG three-quarter angle, turned well round toward the viewer. NOT anime, NOT manga, NOT chibi, NOT cute, NOT a big head, NOT a doll, NOT a cartoon, NOT armoured, NOT a knight, NOT a dwarf, NOT a wizard, NOT fat, NOT yellow skin, NOT a helmet, NOT a hood, NOT holding anything. No ground, NO SHADOW under the feet, no ellipse, no base, no anvil, no forge, no other objects.",
    "states": {
     "idle": {
      "frames": 4,
-     "say": "Squared over his own feet, the great shoulders lifting and settling with each slow breath, apron hanging heavy and still"
+     "say": "squared over his own feet at a three-quarter angle, the great shoulders lifting and settling with each slow breath, the apron hanging heavy and still"
     },
     "walk": {
-     "frames": 8,
-     "say": "Rolling forward on heavy legs in strict side profile, one boot swinging past the other and planting, the knee lifting, the opposite arm swinging back, the apron shifting with each step. He faces the same way in every frame."
-    },
-    "attack": {
-     "frames": 4,
-     "say": "Driving one fist down and across in front of the body in strict side profile, stepping onto the front foot, the shoulder turning into it, ending at full forward extension. He faces the same way in every frame and does not straighten up."
+     "frames": 6,
+     "say": "rolling forward toward the viewer at a three-quarter angle on heavy legs, one boot swinging past the other and planting, the knee lifting, the opposite arm swinging, the apron shifting with each step"
     }
    },
-   "approved": "cache/designs/smith-0.png",
-   "character": "c6648899-ed40-4177-bf6a-ce9cd2a2f0d3"
+   "inks": "smith"
   },
   {
    "sprite": "hob",
@@ -3959,6 +3954,20 @@
    "#8C2A22",
    "#C9B99A",
    "#4F6B3A"
+  ],
+  "smith": [
+   "#0A0908",
+   "#14110F",
+   "#211C18",
+   "#2E2722",
+   "#3D342C",
+   "#4E4238",
+   "#5F5145",
+   "#B07A5C",
+   "#4A1A16",
+   "#6E2A22",
+   "#8C6A2E",
+   "#D9772A"
   ]
  },
  "_props": "What a prop must SAY. `view` already defaults to high top-down and does not carry the framing on its own — the description has to, in capitals, or an object comes back 3/4-projected and reads as furniture from a different game. Naming a thing gets you ONE of it, so a scatter says 'spread apart with gaps'. And the palette words are the zone's own, by exclusion as well as by number, or a prop lands warmer and more cheerful than the stone around it. A `view` of `side` is for what hangs on the WALL FACE: the face is seen straight on, so a top-down picture of it lies flat against a cliff and reads as a sticker.",
