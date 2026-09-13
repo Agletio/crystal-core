@@ -62,7 +62,7 @@ if (command === 'ask') {
         ? {
             reference_images: [
               ...(like ? [{ url: like, usage: 'the chamber itself: its wall texture, its colours, and the direction it opens' }] : []),
-              ...who.map((url) => ({ url, usage: 'the PERSON: his FACE, the size of his ears, his build and what he is wearing' })),
+              ...who.map((url) => ({ url, usage: 'the PERSON: their FACE, their hair, their build and what they are wearing' })),
             ],
           }
         : {}),

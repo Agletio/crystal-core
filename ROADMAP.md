@@ -137,9 +137,11 @@ binding.
 
 Taken FIRST, ahead of the numbered order: a playtest is the one review that
 outranks the critics. Items 2, 3, 5 and 6 are DONE and deleted — the buff and
-debuff rows above the name, the death line naming what was on you, a bust a
-worker, the smith by the anvil. Two remain, and both are ART with a decision
-in them.
+debuff rows above the name, the death line naming what was on you, the smith
+by the anvil, and the WORKERS' OWN FACES: a bust apiece for the bubble, and
+the four TALE panels re-asked with each worker's bust as the reference — the
+old four all described one bearded man, which is *"the guy looks the same
+every time"*. Two remain, and both are ART with a decision in them.
 
 1. **The Aethermancer's wand and shield draws as two wands.** *"Aethermancer
    shows two weapons when equipping a wand and shield, looks like two wands."*
