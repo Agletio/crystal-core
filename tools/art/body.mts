@@ -317,10 +317,7 @@ if (command === 'design') {
       // retry says the same thing in a way that hashes differently.
       let out = '';
       let got = '';
-      // A rotation still rendering refuses the ask as TEXT rather than as an
-      // error, for minutes after `get_character` stops saying so; that refusal
-      // is waited out and never spends a try.
-      for (let go = 0, held = 0; go < 4 && !got; go++) {
+      for (let go = 0, held = 0; go < 4 && !got; go++) { // a rotation still rendering refuses as TEXT for minutes; waited out, never a spent try
         if (go > 0) await wait(20_000);
         out = await callTool('animate_character', {
           character_id: character,

@@ -821,8 +821,14 @@ you're assigning it to and what that worker is currently doing."* `WORKERS` in
 `src/data.ts`: four, each standing at ONE depth of one world's zone (Hob at
 depth 1 of the Fissure, the one you find immediately), placed by `workerDown`
 ahead of the people's schedule and RESCUED by the same walk past
-(`worker:<id>` in `given`), wearing the `wanderer` body because a bust nobody
-has generated is a face nobody can talk to. `WorkJob.worker` names who is on
+(`worker:<id>` in `given`). **EACH HAS A BODY, A BUST AND A PANEL OF ITS
+OWN, ALL OFF ONE APPROVED DESIGN** — *"unique design for each worker similar
+to the playable characters but less animations needed"* — asked at the
+heroes' size with a palette apiece carrying a skin swatch and one accent on
+the cloth (Hob's rust and brass, Nell's teal, Wat's frost blue, Ida's blood
+red), an idle and a walk and nothing else since a worker never swings, and
+no brightness target on import, which is what had flattened the four to
+soot. The bust and the tale panel name the same design as their reference. `WorkJob.worker` names who is on
 it, the load button names the idle worker it goes to, the Works is
 one card a worker, and in the camp an idle one stands by the tent and a busy
 one at the foot of the station of the job (`CAMP_STATION_FOOT`), opening the

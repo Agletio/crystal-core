@@ -133,26 +133,6 @@ binding.
 
 ---
 
-## Phase 7½ — THE 2026-09-13 PLAYTEST: what is left of his six
-
-Taken FIRST, ahead of the numbered order: a playtest is the one review that
-outranks the critics. Items 2, 3, 5 and 6 are DONE and deleted — the buff and
-debuff rows above the name, the death line naming what was on you, the smith
-by the anvil, and the WORKERS' OWN FACES: a bust apiece for the bubble, and
-the four TALE panels re-asked with each worker's bust as the reference — the
-old four all described one bearded man, which is *"the guy looks the same
-every time"*. The wand-and-shield row is fixed in
-Aseprite. One remains, and it is in hand.
-
-1. **THE WORKERS NEED COLOUR.** *"The workers are too monotone, we need some
-   colour on them."* FOUND: the four bodies were ASKED dark and muted, and
-   each ships on 22 to 24 inks all under `#47`, with the SAME inks used for
-   skin and cloth — so a palette remap cannot colour a jerkin without
-   colouring the face under it (samples were drawn, two schemes a worker;
-   only Wat's face separated). The honest routes are pixel work in Aseprite
-   per body, or re-asking the generator with colour in each `look`, which is
-   design samples first and a body's worth of generations each. HIS CALL.
-
 ## Phase 8 — TERRAIN, RECALIBRATED: levels, water, detail, and where things grow
 
 *"We are failing to achieve what I want here so lets just start from the
