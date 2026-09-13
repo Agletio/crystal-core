@@ -4127,7 +4127,6 @@
   {
    "grid": 48,
    "inks": 24,
-   "luma": 32,
    "sprite": "hob",
    "character": "7dfe928f-4770-416d-80f6-6277dd4347b9",
    "dirs": [
@@ -4147,7 +4146,6 @@
   {
    "grid": 48,
    "inks": 24,
-   "luma": 32,
    "sprite": "nell",
    "character": "273b15d7-b92f-4b5b-8505-f28cfe3e83b5",
    "dirs": [
@@ -4167,7 +4165,6 @@
   {
    "grid": 48,
    "inks": 24,
-   "luma": 32,
    "sprite": "ida",
    "character": "603395f8-92a5-468e-af4d-e27b75025742",
    "dirs": [
@@ -4211,7 +4208,6 @@
   {
    "grid": 48,
    "inks": 24,
-   "luma": 32,
    "sprite": "wat",
    "character": "12855abd-ec8f-4248-82eb-931423401ff8",
    "dirs": [

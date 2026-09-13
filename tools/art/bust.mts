@@ -48,7 +48,7 @@ function fromPng(file: string): string[] {
  *  roster's shared face inks, which is why the four asked through it have
  *  colour; his own are still in there, so the portrait cannot drift off him. */
 function swatch(): string {
-  const own = art ? Object.values(art.key) : fromPng(design!);
+  const own = design ? fromPng(design) : Object.values(art.key); // a design given is the body before its import
   const inks = [...new Set([...FACE_INKS, ...own])];
   const cell = 8;
   const across = Math.ceil(Math.sqrt(inks.length));
@@ -69,24 +69,25 @@ function swatch(): string {
 }
 
 const SAY: Record<string, string> = {
-  hob: 'a short thickset MINER seen from the FRONT at eye level, head and shoulders filling the frame: '
-    + 'a battered leather skullcap with a spent lamp bracket riveted to the front, short grey stubble, a '
-    + 'broken nose, deep-set eyes, weather-beaten skin grey with rock dust, a sleeveless quilted jerkin '
-    + 'worn through at the shoulders. Soot black, dull umber leather, iron grey, one worn brass rivet.',
+  hob: 'a DWARF MINER seen from the FRONT at eye level, head and shoulders filling the frame: a great grey '
+    + 'BEARD braided into two forks bound with iron rings, a heavy brow, a broad flat nose, small hard eyes '
+    + 'under the brim of a battered dark leather cap, a brass lamp on a strap at one shoulder glowing warm '
+    + 'amber, a sleeveless rust-red canvas jerkin over a grey shirt. Warm olive weathered skin grey with rock '
+    + 'dust. Soot black, dull rust red, dark leather, one brass glint. Grim, unsmiling, NOT a cartoon, NOT cute.',
   nell: 'a lean WOMAN of middle age seen from the FRONT at eye level, head and shoulders filling the frame: '
-    + 'dark hair scraped back and tied short at the nape, a hard set jaw, level eyes, a patched tunic '
-    + 'under a coarse sleeveless work apron, a needle case on a strap at the shoulder. Dull umber, bone, '
-    + 'iron grey, dried blood red at the strap.',
-  wat: 'a HOLLOW-CHEEKED MAN of thirty seen from the FRONT at eye level, head and shoulders filling the '
-    + 'frame: a long bony unshaven face, sunken tired eyes with dark rings under them, thinning ash-grey '
-    + 'hair hanging lank and greasy, a ragged coat gone stiff and pale where crystal dust has worked into '
-    + 'the cloth, small faceted VIOLET crystal shards glinting in its seams. Cold grey-violet, dull bone, '
-    + 'soot black, small violet glints. Realistic ADULT proportions, a small head: NOT anime, NOT manga, '
-    + 'NOT chibi, NOT cute, NOT a big head, NOT big eyes, NOT a doll, NOT a cartoon, NOT young, NOT pretty.',
+    + 'dark hair scraped back and tied up at the nape, a hard set jaw, level eyes, warm olive skin, a soot-grey '
+    + 'tunic under a deep TEAL sleeveless work apron, a strap at the shoulder. Soot black, deep teal, '
+    + 'iron grey, one scarlet thread at the strap. NOT red skin.',
+  wat: 'a stooped OLDER MAN seen from the FRONT at eye level, head and shoulders filling the frame: white hair '
+    + 'and a short white beard, a long bony lined face with sunken tired eyes, warm olive skin gone grey with '
+    + 'fatigue, a ragged FROST-BLUE coat with a wide collar over a dark leather apron, small faceted VIOLET '
+    + 'crystal shards on a cord at the neck. Frost blue, soot black, dull bone, small violet glints. Realistic '
+    + 'ADULT proportions, a small head: NOT anime, NOT manga, NOT chibi, NOT cute, NOT a big head, NOT a doll.',
   ida: 'a HARD GAUNT WEATHERED WOMAN in her forties seen from the FRONT at eye level, head and shoulders '
-    + 'filling the frame: hair hacked short and uneven, a hollow lined face with deep-set eyes and a set '
-    + 'mouth, dirt ground into the skin, a close-cut sleeveless jerkin of cracked boiled leather, old raking '
-    + 'scars across one bare shoulder. Rot brown, dried blood red gone almost black, soot black, dull grey bone.',
+    + 'filling the frame: dark hair hacked short and uneven, a hollow lined face with deep-set eyes and a set '
+    + 'mouth, dirt ground into warm olive skin, a sleeveless BLOOD-RED leather jerkin over a bone-coloured '
+    + 'shirt, a string of yellowed bone charms, old raking scars across one bare shoulder. Dried blood red, '
+    + 'bone, soot black, dull grey. NOT a man, NO beard.',
   osteomancer: 'a SMALL STOOPED creature that used to be a man, seen from the FRONT at eye level '
     + 'with his head and narrow shoulders filling the frame: a bald domed head with a few long lank '
     + 'strands of dark hair, ENORMOUS thin pointed ears, huge round wet eyes set wide under a high '
