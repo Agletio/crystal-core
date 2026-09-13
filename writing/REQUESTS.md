@@ -117,7 +117,7 @@ the implementation and records the review there. A request does not itself
 notify Astra; include its IDs in the next handoff with the branch and commit.
 
 
-## Requests from Claude — dialogue enters the ledger, commit `JOURNAL_COMMIT`
+## Requests from Claude — dialogue enters the ledger, commit `42baba54a5344c818c96892e2acc499d889a3798`
 
 ```text
 Entry ID(s): scene.* (every person: `said` where they are found, `greets`, `idles`, and `scene.<id>.beat.<n>` for the camp lines); lampwright.seen and lampwright.<speech> / lampwright.<speech>.beat.<n> for first, journal, crystal, campaign, soul, deeper and again; tale.<meeting>.<n> for every cut-scene panel; worker.<id> for the four workers' one line
