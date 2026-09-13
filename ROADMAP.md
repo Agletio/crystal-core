@@ -141,16 +141,10 @@ debuff rows above the name, the death line naming what was on you, the smith
 by the anvil, and the WORKERS' OWN FACES: a bust apiece for the bubble, and
 the four TALE panels re-asked with each worker's bust as the reference — the
 old four all described one bearded man, which is *"the guy looks the same
-every time"*. Two remain, and both are ART with a decision in them.
+every time"*. The wand-and-shield row is fixed in
+Aseprite. One remains, and it is in hand.
 
-1. **The Aethermancer's wand and shield draws as two wands.** *"Aethermancer
-   shows two weapons when equipping a wand and shield, looks like two wands."*
-   FOUND: the seam is right (`pinnedFor` pins nothing over a body that draws
-   both hands) and the fault is in the `aethermancer_wand_shield` row's own
-   frames — a second pale stroke lies across the shield face in every frame.
-   That is an Aseprite touch-up across the row (`tools/aseprite/body.mts`),
-   never a re-roll: paint the stray stroke out of the shield on each frame.
-2. **THE WORKERS NEED COLOUR.** *"The workers are too monotone, we need some
+1. **THE WORKERS NEED COLOUR.** *"The workers are too monotone, we need some
    colour on them."* FOUND: the four bodies were ASKED dark and muted, and
    each ships on 22 to 24 inks all under `#47`, with the SAME inks used for
    skin and cloth — so a palette remap cannot colour a jerkin without

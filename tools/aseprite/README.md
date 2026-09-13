@@ -18,4 +18,6 @@ is repaired here rather than re-rolled: `body.mts export <sprite> <dir>`
 writes the row's frames to a frames.json, a script or a hand in Aseprite
 edits them, and `body.mts import <sprite> <frames.json>` puts them back,
 rewriting only the frames and the key of that one row. `lampwright-staff.lua`
-is the first: the staff made whole in every frame.
+is the first: the staff made whole in every frame. `shield-rim.lua` is the
+second: a round shield drawn as a ragged patch with one pale stroke on it,
+fitted to a circle with a rim and a boss, over every frame of a variant.

@@ -165,7 +165,9 @@ minutes**; a silent hour is how this looked stuck.
   frame the generator got wrong — a staff that vanishes, a hand that lets go —
   is repaired in the frames, never re-rolled: `tools/aseprite/body.mts` moves a
   body row to a frames file and back, and a headless Aseprite (`setup.sh`,
-  seconds) runs the script that fixes it. The Lampwright's staff was the first.
+  seconds) runs the script that fixes it. The Lampwright's staff was the first, and the
+  Aethermancer's wand-and-shield the second: a shield drawn as a patch with one
+  pale stroke read as a second wand, and `shield-rim.lua` fits a disc to it.
 - **THERE IS NO ART DIRECTOR BUT THE USER.** *"Just forget Astra, I'm cutting
   it, she doesn't help much."* That was Astra as art director; **ASTRA IS THE
   WRITING EDITOR NOW**, for player-facing text through the ledger in
