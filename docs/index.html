@@ -1425,6 +1425,8 @@
   .crystal__title { min-width: 0; }
   .crystal__name { font-family: var(--display); font-size: 13px; }
   .crystal .mini { margin-top: 6px; }
+  .crystal--locked .crystal__head, .crystal--locked .forgeneeds, .crystal--locked .crystal__grow { filter: blur(1px); opacity: .5; }
+  .crystal--locked:hover .crystal__head, .crystal--locked:hover .forgeneeds, .crystal--locked:hover .crystal__grow { filter: none; opacity: .85; }
   .quests { display: grid; gap: 8px; }
   .quest { border: 1px solid var(--edge); border-left: 3px solid var(--rust); padding: 8px 9px; }
   .quest--done { opacity: .45; border-left-color: var(--verdite); }
