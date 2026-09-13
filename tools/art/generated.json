@@ -4175,11 +4175,11 @@
    ],
    "states": {
     "idle": {
-     "group": "de21e30c-81cb-4819-9019-2129252be0b7",
+     "group": "6763f09b-17b7-42db-a2da-93d953403b50",
      "frames": 5
     },
     "walk": {
-     "group": "a1f95b52-3baf-4b6d-9a1d-d4a00d319cb0",
+     "group": "115107de-59a7-4a8d-8d3b-6ce3c45950a9",
      "frames": 7
     }
    }
@@ -4219,11 +4219,11 @@
    ],
    "states": {
     "idle": {
-     "group": "12f37266-529b-4777-9978-97abb5c48f11",
+     "group": "29132dbf-275e-4d8a-b781-f274a5ae03d1",
      "frames": 5
     },
     "walk": {
-     "group": "b65c9d02-1e15-4049-b62b-b498e45c4773",
+     "group": "6d0f971c-0d54-47b6-81bb-5b03bd482461",
      "frames": 7
     }
    }
