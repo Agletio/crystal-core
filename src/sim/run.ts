@@ -203,7 +203,8 @@ export interface Buff {
   by: string;
   name: string;
   says: string;
-  left: number;
+  left: number; // seconds, or the count when `count` is set
+  count?: number; // STACKS: Sleet, Gusts, Marks, an Ailment's stacks
 }
 
 export type EntityKind = 'hero' | 'monster';
@@ -476,7 +477,7 @@ export type RunEvent =
   | { kind: 'kill'; total: number; xp: number }
   | { kind: 'hurt'; life: number; maxLife: number }
   | { kind: 'cleared'; seconds: number; killed: number }
-  | { kind: 'died'; seconds: number; killed: number };
+  | { kind: 'died'; seconds: number; killed: number; under: string[] }; // what was ON you when you fell
 
 export type RunStatus = 'running' | 'cleared' | 'died';
 
@@ -573,6 +574,9 @@ export interface RunState {
    *  the HUD reads a single thing rather than four clocks the sim keeps private
    *  — a window nobody can see is a build working with nothing to show for it. */
   buffs: Buff[];
+  /** WHAT IS BEING DONE TO YOU, gathered the same way: a Stun, the boss's
+   *  Marks, every Ailment a monster left, a Chill, and being Starved. */
+  debuffs: Buff[];
   /** Uses that spent a share of the pool for damage. Zero without the node. */
   overcharges: number;
   /** Follow-ups a Critical bought, teleport and all. Zero without the node. */
@@ -871,6 +875,7 @@ export class RunSim {
       regained: 0,
       stunned: 0,
       buffs: [],
+      debuffs: [],
       overcharges: 0,
       relays: 0,
       freezes: 0,
@@ -1429,6 +1434,7 @@ export class RunSim {
     // every other decision, or a seed stops replaying the same run.
     this.stepPotions(dt);
     this.readBuffs();
+    this.readDebuffs();
 
     for (const f of s.floaters) f.age += dt;
     if (s.floaters.length > 0 && s.floaters[0].age >= FLOATER_LIFE) {
@@ -3040,7 +3046,110 @@ export class RunSim {
         left: this.riposte,
       });
     }
+    // WHAT STACKS UP — *"the stacking buff from Sleet should appear in the
+    // bottom left above the character name, and you should be able to hover
+    // to see exactly what it is giving you."* Each says its LIVE figure.
+    const sleet = this.grants.spikeTempo as { per: number; stacks: number } | undefined;
+    if (sleet && this.sleet > 0) {
+      const bar = sleet.stacks + ((this.grants.tempoStacks as number) ?? 0);
+      const dmg = (this.grants.tempoDamage as number) ?? 0;
+      out.push({
+        id: 'sleet', by: 'sleet', name: `Sleet ×${this.sleet}`,
+        says: `+${this.sleet * sleet.per}% increased Cast Speed${dmg ? `, ${this.sleet * dmg}% more damage` : ''}. At ${bar} the next cast Freezes what it hits.`,
+        left: this.sleet, count: this.sleet,
+      });
+    }
+    const tempo = this.grants.killTempo as { per: number; most: number; seconds: number } | undefined;
+    if (tempo && this.tempo > 0) {
+      out.push({
+        id: 'tempo', by: 'tempo', name: `Quickening ×${this.tempo}`,
+        says: `+${Math.round(this.tempo * tempo.per * 100)}% increased Attack and Cast Speed, ${this.tempoIn.toFixed(1)}s left.`,
+        left: this.tempo, count: this.tempo,
+      });
+    }
+    const gusts = this.moving?.gusts;
+    if (gusts && this.gusts > 0) {
+      out.push({
+        id: 'gust', by: 'gust', name: `Gusts ×${this.gusts}`,
+        says: `+${this.gusts * gusts.speed}% increased Movement Speed${gusts.haste ? `, +${this.gusts * gusts.haste}% increased Attack and Cast Speed` : ''}${gusts.guard ? `, ${Math.round(this.gusts * gusts.guard * 100)}% less damage taken` : ''}. A hit takes one.`,
+        left: this.gusts, count: this.gusts,
+      });
+    }
+    if (this.state.vanished > 0) {
+      out.push({
+        id: 'vanish', by: 'vanish', name: 'Vanished',
+        says: `Nothing wakes and the woken mill about. Walking ${Math.round(((this.grants.vanish as { faster?: number })?.faster ?? 0.4) * 100)}% faster; the first use out of it lands more.`,
+        left: this.state.vanished,
+      });
+    }
+    const after = this.moving?.after;
+    if (after && this.afterIn > 0 && (after.speed > 0 || after.damage > 0 || after.guard > 0 || after.life > 0 || after.mana > 0)) {
+      const parts = [
+        after.speed > 0 ? `+${after.speed}% increased Movement Speed` : '',
+        after.damage > 0 ? `${Math.round(after.damage * 100)}% more damage` : '',
+        after.guard > 0 ? `${Math.round(after.guard * 100)}% less damage taken` : '',
+        after.life > 0 ? `${after.life}% of Life a second` : '',
+        after.mana > 0 ? `${after.mana}% of Mana a second` : '',
+      ].filter(Boolean);
+      out.push({ id: 'after', by: 'after', name: 'After the step', says: `${parts.join(', ')}.`, left: this.afterIn });
+    }
     this.state.buffs = out;
+  }
+
+  /** WHAT IS ON YOU, over the pools it is spoiling, gathered here so the HUD
+   *  and the death line read one list. */
+  private readDebuffs(): void {
+    const hero = this.state.hero;
+    const out: Buff[] = [];
+    const stun = hero.stun ?? 0;
+    if (stun > 0) {
+      const kind = hero.stunKind === 'freeze' ? 'Frozen' : hero.stunKind === 'pin' ? 'Pinned' : 'Stunned';
+      out.push({ id: 'stun', by: 'stun', name: kind, says: 'Held where you stand: no walking, no using, until it passes.', left: stun });
+    }
+    if (this.state.marks > 0) {
+      out.push({
+        id: 'mark', by: 'mark', name: `Marked ×${this.state.marks}`,
+        says: `${Math.round(this.state.marks * BOSS_FIGHT.markMore * 100)}% more damage taken, from anything. They fall off once nothing is adding them.`,
+        left: this.state.marks, count: this.state.marks,
+      });
+    }
+    // EVERY AILMENT A MONSTER LEFT, one row a kind with its stacks and what
+    // the lot of them are doing a second, after resistance.
+    const byKind = new Map<string, { def: AilmentDef; count: number; left: number; dps: number }>();
+    for (const a of hero.ailments) {
+      const def = AILMENT_BY_ID[a.id];
+      if (!def) continue;
+      const row = byKind.get(a.id) ?? { def, count: 0, left: 0, dps: 0 };
+      row.count++;
+      row.left = Math.max(row.left, a.remaining);
+      for (const [type, amount] of Object.entries(a.dps)) row.dps += this.afterResistance(hero, amount, type);
+      byKind.set(a.id, row);
+    }
+    for (const [id, row] of byKind) {
+      const does = row.def.kind === 'damage'
+        ? `${Math.round(row.dps)} damage a second`
+        : id === 'chill'
+          ? `${Math.round((hero.chill ?? 0) * 100)}% slower to walk and swing`
+          : id === 'shock'
+            ? 'more damage taken from every hit'
+            : id === 'curse'
+              ? 'weaker'
+              : 'more damage taken from hits';
+      out.push({
+        id, by: id, name: `${row.def.name} ×${row.count}`,
+        says: `${does}, ${row.left.toFixed(1)}s left on the freshest.`,
+        left: row.left, count: row.count,
+      });
+    }
+    if (this.parched) {
+      const share = Math.round(starvedMultiplier(this.grants) * 100);
+      out.push({
+        id: 'starved', by: 'starved', name: 'Starved',
+        says: `The pool could not pay for the last use. Uses land for ${share}% of their damage until one is paid for.`,
+        left: 0,
+      });
+    }
+    this.state.debuffs = out;
   }
 
   /** A monster's own clock: it runs down and what it was doing stops. The
@@ -4671,7 +4780,8 @@ export class RunSim {
 
     if (victim.kind === 'hero') {
       s.status = 'died';
-      this.events.push({ kind: 'died', seconds: s.elapsed, killed: s.killed });
+      this.readDebuffs();
+      this.events.push({ kind: 'died', seconds: s.elapsed, killed: s.killed, under: s.debuffs.map((d) => d.name) });
       return;
     }
 

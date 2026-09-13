@@ -263,7 +263,7 @@ import {
   whyNotUpgrade,
 } from './game/forge';
 import { ZONES } from './render/generated-tiles';
-import type { Entity, RunState } from './sim/run';
+import type { Buff, Entity, RunState } from './sim/run';
 import {
   declaredCapacity,
   baseTier,
@@ -10402,6 +10402,54 @@ if (rule('TRADE RULES — does each one actually change what the sim does?')) {
       kept.includes('aet_thrift') !== kept.includes('aet_dry_season') && kept.length === 5,
       'and a save holding both wakes holding one, the other refunded',
       kept.join(', ')
+    );
+  }
+
+  // WHAT IS ON YOU: the two rows the HUD draws are the sim's own lists, each
+  // entry carrying its live figure, and the death line reads the same list.
+  {
+    const spiker = armed([], 'rimespike');
+    skillProgress(spiker, 'rimespike').allocated = routeTo('rimespike', 'rs_sleet');
+    const sim = new RunSim(ladderSet(3, new Rng(4), pool), spiker, new Rng(9091));
+    let sleet: Buff | undefined;
+    for (let guard = Math.ceil(120 / TICK); sim.state.status === 'running' && guard > 0 && !sleet; guard--) {
+      sim.step(TICK);
+      sleet = sim.state.buffs.find((b) => b.id === 'sleet');
+    }
+    check(
+      !!sleet && (sleet.count ?? 0) > 0 && /\d+% increased Cast Speed/.test(sleet.says),
+      `Sleet stands above the name with its stacks and what they are worth — ${sleet?.says ?? 'never appeared'}`,
+      JSON.stringify(sleet)
+    );
+
+    const hurt = new RunSim(ladderSet(3, new Rng(4), pool), armed([]), new Rng(9091));
+    hurt.state.hero.ailments.push({ id: 'burn', type: 'fire', dps: { fire: 40 }, remaining: 3, tickIn: 0.5 });
+    hurt.step(TICK);
+    const burn = hurt.state.debuffs.find((d) => d.id === 'burn');
+    check(
+      !!burn && burn.count === 1 && /\d+ damage a second/.test(burn.says),
+      `a Burn a monster left is on the row with its stacks and its damage a second — ${burn?.says ?? 'absent'}`,
+      JSON.stringify(hurt.state.debuffs)
+    );
+
+    const dryRun = new RunSim(ladderSet(3, new Rng(4), pool), armed(['aet_drought_m0', 'aet_dry_season']), new Rng(9091));
+    let starved: Buff | undefined;
+    for (let guard = Math.ceil(60 / TICK); dryRun.state.status === 'running' && guard > 0 && !starved; guard--) {
+      dryRun.state.hero.mana = 0;
+      dryRun.step(TICK);
+      starved = dryRun.state.debuffs.find((d) => d.id === 'starved');
+    }
+    check(!!starved && /\d+% of their damage/.test(starved.says), `Starved is on the row as a state, with the share it costs — ${starved?.says ?? 'never appeared'}`, JSON.stringify(starved));
+
+    // A death carries the list: a bare level-1 body at band 6 does not come back.
+    const weak = makeCharacter(starterLoadout(new Rng(21), 1), 'strike');
+    const grave = new RunSim(ladderSet(6, new Rng(4), pool), weak, new Rng(9091));
+    runToCompletion(grave, 300);
+    const fell = grave.drainEvents().find((e) => e.kind === 'died');
+    check(
+      grave.state.status === 'died' && fell?.kind === 'died' && Array.isArray(fell.under),
+      `and the death line names what was on you — ${fell?.kind === 'died' ? (fell.under.join(', ') || 'nothing') : 'no death'}`,
+      grave.state.status
     );
   }
 

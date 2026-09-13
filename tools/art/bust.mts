@@ -69,6 +69,24 @@ function swatch(): string {
 }
 
 const SAY: Record<string, string> = {
+  hob: 'a short thickset MINER seen from the FRONT at eye level, head and shoulders filling the frame: '
+    + 'a battered leather skullcap with a spent lamp bracket riveted to the front, short grey stubble, a '
+    + 'broken nose, deep-set eyes, weather-beaten skin grey with rock dust, a sleeveless quilted jerkin '
+    + 'worn through at the shoulders. Soot black, dull umber leather, iron grey, one worn brass rivet.',
+  nell: 'a lean WOMAN of middle age seen from the FRONT at eye level, head and shoulders filling the frame: '
+    + 'dark hair scraped back and tied short at the nape, a hard set jaw, level eyes, a patched tunic '
+    + 'under a coarse sleeveless work apron, a needle case on a strap at the shoulder. Dull umber, bone, '
+    + 'iron grey, dried blood red at the strap.',
+  wat: 'a HOLLOW-CHEEKED MAN of thirty seen from the FRONT at eye level, head and shoulders filling the '
+    + 'frame: a long bony unshaven face, sunken tired eyes with dark rings under them, thinning ash-grey '
+    + 'hair hanging lank and greasy, a ragged coat gone stiff and pale where crystal dust has worked into '
+    + 'the cloth, small faceted VIOLET crystal shards glinting in its seams. Cold grey-violet, dull bone, '
+    + 'soot black, small violet glints. Realistic ADULT proportions, a small head: NOT anime, NOT manga, '
+    + 'NOT chibi, NOT cute, NOT a big head, NOT big eyes, NOT a doll, NOT a cartoon, NOT young, NOT pretty.',
+  ida: 'a HARD GAUNT WEATHERED WOMAN in her forties seen from the FRONT at eye level, head and shoulders '
+    + 'filling the frame: hair hacked short and uneven, a hollow lined face with deep-set eyes and a set '
+    + 'mouth, dirt ground into the skin, a close-cut sleeveless jerkin of cracked boiled leather, old raking '
+    + 'scars across one bare shoulder. Rot brown, dried blood red gone almost black, soot black, dull grey bone.',
   osteomancer: 'a SMALL STOOPED creature that used to be a man, seen from the FRONT at eye level '
     + 'with his head and narrow shoulders filling the frame: a bald domed head with a few long lank '
     + 'strands of dark hair, ENORMOUS thin pointed ears, huge round wet eyes set wide under a high '

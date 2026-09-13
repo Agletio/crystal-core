@@ -31,7 +31,6 @@ import {
   FAMILY_BY_ID,
   LAMPWRIGHT,
   POTIONS,
-  BOSS_FIGHT,
   BOSS_SHOUTS,
   RUN_SLOTS,
   SOULS,
@@ -1170,7 +1169,8 @@ function absorbEvents(): void {
     else if (e.kind === 'cleared') {
       note(`Cleared in ${e.seconds.toFixed(1)}s — ${e.killed} killed`, 'add', at);
     } else if (e.kind === 'died') {
-      note(`Died at ${e.seconds.toFixed(1)}s — ${e.killed} killed`, 'fail', at);
+      const under = e.under.length ? ` — under ${e.under.join(', ')}` : ''; // what the HUD drew as you fell
+      note(`Died at ${e.seconds.toFixed(1)}s — ${e.killed} killed${under}`, 'fail', at);
     }
   }
 }
@@ -1623,70 +1623,24 @@ function syncRung(): void {
   what.hidden = what.textContent === '';
 }
 
-/** What is ON you, over the pools it is spoiling: a picture, the seconds left
- *  under it, and a hover that says what it does. Built when the SET of them
- *  changes and only counted down per frame, so a tooltip survives its box. */
 function syncDebuffs(): void {
-  const host = $('run-debuffs');
   const state = sim?.state;
-  const on: { id: string; icon: string; name: string; says: string; left: number }[] = [];
-  if (state) {
-    const stun = state.hero.stun ?? 0;
-    if (stun > 0) {
-      on.push({
-        id: 'stun',
-        icon: 'dbf_stun',
-        name: 'Stunned',
-        says: 'Held where you stand — you cannot walk, and nothing moves you until it passes.',
-        left: stun,
-      });
-    }
-    if (state.marks > 0) {
-      on.push({
-        id: 'mark',
-        icon: 'dbf_mark',
-        name: `Marked ×${state.marks}`,
-        says: `Every mark is ${Math.round(BOSS_FIGHT.markMore * 100)}% more damage taken, from anything. They fall off slowly once nothing is adding them — being caught by a Fall adds ${BOSS_FIGHT.markPerCatch}.`,
-        left: state.marks,
-      });
-    }
-  }
-
-  if (host.dataset.on !== on.map((d) => d.id).join(',')) {
-    host.dataset.on = on.map((d) => d.id).join(',');
-    host.replaceChildren();
-    for (const debuff of on) {
-      const box = el('div', `debuff${debuff.id === 'mark' ? ' debuff--bad' : ''}`);
-      box.id = `run-debuff-${debuff.id}`;
-      const art = drawn(debuff.icon, 22) ?? el('span', '', '?');
-      art.classList.add('debuff__art');
-      box.append(art);
-      box.append(el('span', 'debuff__left', ''));
-      attachTooltip(box, () => `${debuff.name}\n${debuff.says}`);
-      host.append(box);
-    }
-  }
-  for (const debuff of on) {
-    const left = document.getElementById(`run-debuff-${debuff.id}`)?.lastElementChild;
-    if (left) {
-      left.textContent = debuff.id === 'stun' ? `${debuff.left.toFixed(1)}s` : `×${debuff.left}`;
-    }
-  }
-  renderBuffs(state?.buffs ?? []);
+  renderRow('run-debuffs', 'run-debuff', state?.debuffs ?? [], 'debuff--bad');
+  renderRow('run-buffs', 'run-buff', state?.buffs ?? [], 'debuff--good');
 }
 
-/** WHAT IS ON YOU, beside what is being done TO you and read the same way. The
- *  sim gathers them; this only draws. Rebuilt only when the SET changes, so a
- *  timer ticking sixty times a second never tears down a node under the cursor. */
-function renderBuffs(on: Buff[]): void {
-  const host = $('run-buffs');
+const leftOf = (b: Buff): string => (b.count !== undefined ? `×${b.count}` : b.left > 0 ? `${b.left.toFixed(1)}s` : ''); // stacks, seconds, or nothing for a state
+
+/** Rebuilt only when the SET changes, so a ticking timer never tears down a node under the cursor. */
+function renderRow(hostId: string, prefix: string, on: Buff[], cls: string): void {
+  const host = $(hostId);
   const key = on.map((b) => b.id).join(',');
   if (host.dataset.on !== key) {
     host.dataset.on = key;
     host.replaceChildren();
     for (const buff of on) {
-      const box = el('div', 'debuff debuff--good');
-      box.id = `run-buff-${buff.id}`;
+      const box = el('div', `debuff ${cls}`);
+      box.id = `${prefix}-${buff.id}`;
       const art = SKILL_BY_ID[buff.by] ? skillIcon(buff.by, 22) : drawn(`dbf_${buff.by}`, 22);
       const mark = art ?? el('span', 'debuff__art', buff.name.slice(0, 1));
       mark.classList.add('debuff__art');
@@ -1697,14 +1651,13 @@ function renderBuffs(on: Buff[]): void {
     }
   }
   for (const buff of on) {
-    const left = document.getElementById(`run-buff-${buff.id}`)?.lastElementChild;
-    if (left) left.textContent = `${buff.left.toFixed(1)}s`;
+    const left = document.getElementById(`${prefix}-${buff.id}`)?.lastElementChild;
+    if (left) left.textContent = leftOf(buff);
   }
 }
 
 function renderBadges(): void {
   badge('open-character', attributePointsLeft(game.character));
-  // AN ACCENT, not a badge and not a word. Once opened it never returns.
   document
     .getElementById('open-skills')
     ?.classList.toggle('railbtn--new', game.cameBack && !game.skillsSeen);

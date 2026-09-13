@@ -133,40 +133,29 @@ binding.
 
 ---
 
-## Phase 7½ — THE 2026-09-13 PLAYTEST: six things he saw, in his words
+## Phase 7½ — THE 2026-09-13 PLAYTEST: what is left of his six
 
 Taken FIRST, ahead of the numbered order: a playtest is the one review that
-outranks the critics. Each is done when the thing he saw is gone, and an art
-item shows him a sample before anything is animated.
+outranks the critics. Items 2, 3, 5 and 6 are DONE and deleted — the buff and
+debuff rows above the name, the death line naming what was on you, a bust a
+worker, the smith by the anvil. Two remain, and both are ART with a decision
+in them.
 
 1. **The Aethermancer's wand and shield draws as two wands.** *"Aethermancer
    shows two weapons when equipping a wand and shield, looks like two wands."*
-   Find whether it is the `aethermancer_wand_shield` row's own art or a second
-   wand pinned over a body that already draws one (`HOLDING`, `pinnedFor`), and
-   fix the seam, not the frame, if it is the seam.
-2. **BUFFS AND DEBUFFS ABOVE THE CHARACTER'S NAME.** *"For things that buff or
-   stack up we need to track those as buffs above the character's name. Any
-   sort of temporary buff or debuff should appear above the character's name
-   with an icon and you should be able to hover to see what it does… for
-   example the stacking buff from Sleet should appear in the bottom left above
-   the character name, and you should be able to hover to see exactly what it
-   is giving you."* Every timed thing the run keeps on the hero — a flask's
-   effect, Sleet's stacks, Gusts, a kill's window, Vanish, a mover's after
-   window, a Chill on him, every Ailment a monster left — as one row of icons
-   with the live figure on hover, through one seam the sim already exposes.
-3. **THE DEATH LOG NAMES WHAT WAS ON YOU.** *"Also should show in death log
-   what debuffs you had on you when you died."* The same row, read at the
-   moment of death and printed on the report.
-4. **THE WORKERS NEED COLOUR.** *"The workers are too monotone, we need some
-   colour on them."* Four bodies — Hob, Nell, Wat, Ida — recoloured through
-   the generator or touched up in Aseprite; SAMPLES SHOWN FIRST.
-5. **A WORKER'S PORTRAIT IS THE WORKER.** *"The associated image that appears
-   with dialogue when you unlock them doesn't look like them and the guy looks
-   the same every time. Make it look like the character you're unlocking."*
-   A bust a worker, off that worker's own body, in the bubble and the tale.
-6. **THE SMITH STANDS BY THE ANVIL.** *"When a worker is standing at the loom
-   working he clips into the smith. Just move the smith over by the anvil,
-   honestly makes more sense there anyways."* His spot in `src/scenes/camp.ts`.
+   FOUND: the seam is right (`pinnedFor` pins nothing over a body that draws
+   both hands) and the fault is in the `aethermancer_wand_shield` row's own
+   frames — a second pale stroke lies across the shield face in every frame.
+   That is an Aseprite touch-up across the row (`tools/aseprite/body.mts`),
+   never a re-roll: paint the stray stroke out of the shield on each frame.
+2. **THE WORKERS NEED COLOUR.** *"The workers are too monotone, we need some
+   colour on them."* FOUND: the four bodies were ASKED dark and muted, and
+   each ships on 22 to 24 inks all under `#47`, with the SAME inks used for
+   skin and cloth — so a palette remap cannot colour a jerkin without
+   colouring the face under it (samples were drawn, two schemes a worker;
+   only Wat's face separated). The honest routes are pixel work in Aseprite
+   per body, or re-asking the generator with colour in each `look`, which is
+   design samples first and a body's worth of generations each. HIS CALL.
 
 ## Phase 8 — TERRAIN, RECALIBRATED: levels, water, detail, and where things grow
 

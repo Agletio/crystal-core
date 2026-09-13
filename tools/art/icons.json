@@ -491,6 +491,70 @@
    "say": "a single angular RUNE like three scratched tally marks struck into bone, glowing hot violet at the edges as if freshly cut. Nothing else."
   },
   {
+   "id": "dbf_burn",
+   "say": "a single tongue of FLAME, orange with a yellow core, rising from nothing. Nothing else."
+  },
+  {
+   "id": "dbf_bleed",
+   "say": "three fat DROPS of dark red blood falling, one larger above two smaller. Nothing else."
+  },
+  {
+   "id": "dbf_chill",
+   "say": "a single six-armed ICE CRYSTAL snowflake, pale blue-white with a darker outline. Nothing else."
+  },
+  {
+   "id": "dbf_shock",
+   "say": "a single jagged LIGHTNING BOLT, bright yellow with a white core, striking downward. Nothing else."
+  },
+  {
+   "id": "dbf_poison",
+   "say": "a single round BUBBLING DROP of sickly green liquid with two small bubbles rising off it. Nothing else."
+  },
+  {
+   "id": "dbf_curse",
+   "say": "a single closed EYE drawn as a sharp almond shape with a violet slit, dark purple round it. Nothing else."
+  },
+  {
+   "id": "dbf_exposure",
+   "say": "a single small SUN of pale bone-white light, a disc with eight short rays. Nothing else."
+  },
+  {
+   "id": "dbf_starved",
+   "say": "an EMPTY upturned CLAY CUP tipped on its side with one last blue drop falling from its lip. Nothing else."
+  },
+  {
+   "id": "dbf_sleet",
+   "say": "three small pale blue ICE SHARDS stacked in a rising column, the top one largest, pale blue-white. Nothing else."
+  },
+  {
+   "id": "dbf_gust",
+   "say": "three curling STREAKS of wind drawn as pale grey-white swept lines, one above the other. Nothing else."
+  },
+  {
+   "id": "dbf_vanish",
+   "say": "a plain grey HOOD seen from the front with nothing inside it, the opening pure black. Nothing else."
+  },
+  {
+   "id": "dbf_tempo",
+   "say": "a single round STOPWATCH face with the hand at speed, pale bone with a gold ring. Nothing else."
+  },
+  {
+   "id": "dbf_after",
+   "say": "a single pair of pale grey FOOTPRINTS, one ahead of the other, fading. Nothing else."
+  },
+  {
+   "id": "dbf_kill",
+   "say": "a single small pale SKULL seen from the front, jaw shut, a red gleam in one eye. Nothing else."
+  },
+  {
+   "id": "dbf_paint",
+   "say": "two broad diagonal STROKES of dried red war paint side by side, like two finger smears. Nothing else."
+  },
+  {
+   "id": "dbf_riposte",
+   "say": "a small round SHIELD seen from the front with a bright pale SWORD crossing in front of it point up. Nothing else."
+  },
+  {
    "id": "gear_bow",
    "say": "a THICK recurve war bow standing upright and filling the whole frame, its two heavy limbs carved from warm lit honey-brown timber with brass caps at the tips, a BRIGHT pale taut bowstring running straight down between them, a dark bound leather grip at the middle, strongly lit against the dark, NOT thin, NOT a crescent moon, NOT a harp, NOT a lyre, NOT an arrow."
   },

@@ -352,6 +352,20 @@ corpses and dust."* The relic column is ODDITIES and `addItem` merges one into
 its own row by `stackKey`, the way a material does; `spendRelic` takes one off
 the stack rather than the list, and `heal()` merges a save written before it.
 
+**WHAT IS ON YOU IS DRAWN ABOVE YOUR NAME, AND THE SIM GATHERS IT.** *"Any
+sort of temporary buff or debuff should appear above the character's name with
+an icon and you should be able to hover to see what it does… the stacking buff
+from Sleet should appear in the bottom left above the character name."*
+`readBuffs` and `readDebuffs` in `src/sim/run.ts` are the two lists —
+`RunState.buffs` and `.debuffs`, one `Buff` each with its LIVE figure in `says`
+(Sleet's stacks and what they are worth, Gusts, Quickening, Vanish, a mover's
+window, a flask; a Stun, the boss's Marks, every Ailment a monster left with
+its stacks and its damage a second after resistance, a Chill, Starved) — and
+`renderRow` in `src/ui/run.ts` only draws them, `dbf_<id>` glyphs from
+`GENERATED_ICONS` with the stacks or the seconds under each. **THE DEATH LINE
+NAMES THEM** — *"show in death log what debuffs you had on you when you
+died"* — off the `died` event's `under`, read at the moment you fell.
+
 **THE DOCK IS THREE TABS, and only ONE of them is a grid.** Gear is SLOTS
 because the slot count IS the carry limit — 48, twelve columns of four, and
 running out is something you watch approaching. Currency and material are
