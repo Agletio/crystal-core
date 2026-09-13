@@ -23,6 +23,7 @@
   { "id": "rail_settings", "say": "a plain six-toothed COG, a gold dot at its hub." },
   { "id": "rail_hide", "say": "a single thick V-shaped ARROWHEAD pointing down, two thick bars meeting at a gold point at the bottom, alone in empty space with nothing round it. NOT a circle, NOT a disc, NOT a coin, NOT a badge, NOT a button, NOT a ring, NOT a background shape." },
   { "id": "rail_full", "say": "a small SQUARE standing inside a larger SQUARE with a wide empty gap all the way round between the two, both drawn as thick outlines only and nothing whatever inside the inner one, the inner square gold. NOT a disc, NOT a circle, NOT a solid shape, NOT a filled middle, NOT a single square." },
-  { "id": "rail_dev", "say": "a small stone MASK with two empty eye holes, a gold mark on its brow." }
+  { "id": "rail_dev", "say": "a small stone MASK with two empty eye holes, a gold mark on its brow." },
+  { "id": "rail_journal", "say": "a CLOSED BOOK standing upright seen from its front cover, a thick spine down the left edge and a gold clasp on the right edge, the cover plain. NOT open, NOT pages, NOT a scroll, NOT a box." }
  ]
 }

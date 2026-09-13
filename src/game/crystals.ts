@@ -23,6 +23,7 @@ import {
 } from '../data';
 import { mainSkillId, pointsAvailable } from '../sim/character';
 import { armForSkill, giveGift, soulClearsAt } from './state';
+import { hasMet } from './scenes';
 import type { GameState } from './state';
 import { grant, makeCrystal, makeSoul } from '../economy';
 import { crystalFamily, crystalLevel, crystalXp, levelForXp } from '../sim/crystal';
@@ -45,6 +46,8 @@ export function ownedCrystals(game: GameState): Item[] {
  */
 export interface Waiting {
   weapon: boolean;
+  /** THE JOURNAL, owed the first time you come up: nothing else is until it is taken. */
+  journal: boolean;
   crystal: boolean;
   /** The whole campaign's reward. He holds it until you come and take it. */
   campaign: boolean;
@@ -129,19 +132,26 @@ export function crystalEarned(game: GameState): boolean {
 export function giftWaiting(game: GameState): Waiting | null {
   const given = game.given ?? [];
   const weapon = !given.includes('weapon');
-  const crystal = !weapon && !given.includes('crystal') && crystalEarned(game);
+  // Handed over in the camp by somebody you have MET: a journal from a man
+  // you have not found yet is owed by nobody, and the crystal is not gated.
+  const journal = !weapon && !given.includes('journal') && hasMet(game, LAMPWRIGHT.scene);
+  const crystal = !weapon && !journal && !given.includes('crystal') && crystalEarned(game);
   const campaign =
-    !weapon && !crystal && !game.character.paidCampaign && campaignDone(game.character);
-  const soul = !weapon && !crystal && !campaign ? soulOwed(game) : 0;
+    !weapon && !journal && !crystal && !game.character.paidCampaign && campaignDone(game.character);
+  const soul = !weapon && !journal && !crystal && !campaign ? soulOwed(game) : 0;
   // THE LADDER IS LAST: everything the campaign owes lands before the endless
   // half of the game starts paying.
   const ladder =
-    !weapon && !crystal && !campaign && !soul && game.character.paidCampaign
+    !weapon && !journal && !crystal && !campaign && !soul && game.character.paidCampaign
       ? (ladderOwed(game)?.id ?? null)
       : null;
-  if (!weapon && !crystal && !campaign && !soul && !ladder) return null;
-  return { weapon, crystal, campaign, soul, ladder };
+  if (!weapon && !journal && !crystal && !campaign && !soul && !ladder) return null;
+  return { weapon, journal, crystal, campaign, soul, ladder };
 }
+
+/** The mark on the rail: handed over and never yet opened. */
+export const journalUnread = (game: GameState): boolean =>
+  (game.given ?? []).includes('journal') && !game.journalSeen;
 
 /** What the collection screen says about the next meeting. */
 export function giftSchedule(game: GameState): string {
@@ -150,6 +160,7 @@ export function giftSchedule(game: GameState): string {
   if (!given.includes('weapon')) {
     return `${who} owes you the weapon your skill wants. Find him below.`;
   }
+  if (giftWaiting(game)?.journal) return `${who} has something for you. Go and talk to him in the camp.`;
   if (!given.includes('crystal') && (game.character.souls ?? 0) >= 1) {
     if (crystalEarned(game)) {
       return `${who} has one for you. Go and talk to him in the camp.`;
@@ -196,6 +207,11 @@ export function takeHandover(game: GameState, waiting: Waiting): Handover {
   if (waiting.weapon) {
     const gift = armForSkill(game); // marks `given` itself
     if (gift) items.push(gift.item);
+  }
+  if (waiting.journal) {
+    game.given = [...(game.given ?? []), 'journal'];
+    game.journalSeen = false;
+    says.push('the journal');
   }
   if (waiting.crystal) {
     game.given = [...(game.given ?? []), 'crystal'];

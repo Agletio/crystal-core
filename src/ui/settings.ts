@@ -1,13 +1,11 @@
 /**
- * Settings: keys and the book.
+ * Settings: the keys.
  *
  * Almost none of this is machinery. `BINDINGS` already says what every key
- * DOES and defaults to, `GameState.keys` already overrides by the same id, and
- * `KEYWORDS` already carries every definition with its own numbers — so a
- * rebinding screen is a screen, and the book is a Find box over a table.
+ * DOES and defaults to and `GameState.keys` already overrides by the same id,
+ * so a rebinding screen is a screen. The book is the journal's.
  */
 import { BINDINGS } from '../data';
-import { KEYWORDS } from '../keywords';
 import { keyFor, keyName } from './keys';
 import type { GameState } from '../game/state';
 
@@ -24,8 +22,6 @@ let game: GameState;
 let onChanged: (() => void) | null = null;
 /** The binding waiting for a press, or null. A MODE, so it is not saved. */
 let listening: string | null = null;
-type Tab = 'keys' | 'book';
-let tab: Tab = 'keys';
 
 // ---------------------------------------------------------------------------
 
@@ -81,55 +77,15 @@ function capture(event: KeyboardEvent): void {
 
 // ---------------------------------------------------------------------------
 
-/** Every keyword, searchable. Driven off the table, so one added anywhere
- *  appears here with no edit — and `kin` is shown, since a Burn satisfying an
- *  Ailment is the thing nobody works out from two separate entries. */
-function renderBook(): void {
-  const host = $('book-rows');
-  host.replaceChildren();
-  const find = ($('book-find') as HTMLInputElement).value.trim().toLowerCase();
-
-  const found = KEYWORDS.filter(
-    (k) =>
-      find === '' ||
-      k.name.toLowerCase().includes(find) ||
-      k.says.some((s) => s.toLowerCase().includes(find)) ||
-      k.means.toLowerCase().includes(find)
-  );
-
-  for (const keyword of found) {
-    const row = el('div', 'bookrow');
-    const head = el('div', 'bookrow__name', keyword.name);
-    if (keyword.kin) head.append(el('span', 'keyrow__what', ` — a kind of ${keyword.kin}`));
-    row.append(head);
-    row.append(el('div', 'bookrow__means', keyword.means));
-    host.append(row);
-  }
-  if (found.length === 0) host.append(el('p', 'empty', `Nothing is called "${find}".`));
-}
-
-// ---------------------------------------------------------------------------
-
 function render(): void {
-  for (const [id, which] of [
-    ['set-tab-keys', 'keys'],
-    ['set-tab-book', 'book'],
-  ] as const) {
-    $(id).classList.toggle('mini--on', tab === which);
-  }
-  $('set-pane-keys').hidden = tab !== 'keys';
-  $('set-pane-book').hidden = tab !== 'book';
-
-  if (tab === 'keys') renderKeys();
-  if (tab === 'book') renderBook();
+  renderKeys();
 }
 
 export function isSettingsOpen(): boolean {
   return !$('settings').hidden;
 }
 
-export function openSettings(which?: Tab): void {
-  if (which) tab = which;
+export function openSettings(): void {
   listening = null;
   $('settings').hidden = false;
   render();
@@ -144,8 +100,5 @@ export function initSettings(state: GameState, changed?: () => void): void {
   game = state;
   onChanged = changed ?? null;
   ($('settings-close') as HTMLButtonElement).onclick = closeSettings;
-  ($('set-tab-keys') as HTMLButtonElement).onclick = () => openSettings('keys');
-  ($('set-tab-book') as HTMLButtonElement).onclick = () => openSettings('book');
-  ($('book-find') as HTMLInputElement).oninput = renderBook;
   document.addEventListener('keydown', capture, true);
 }

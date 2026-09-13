@@ -113,6 +113,7 @@ import {
 } from './ui/history';
 import { initSaveData, openSaveData, closeSaveData, isSaveDataOpen } from './ui/savedata';
 import { initSettings, openSettings, closeSettings, isSettingsOpen } from './ui/settings';
+import { initJournal, openJournal, closeJournal, isJournalOpen } from './ui/journal';
 import { initDev, openDev, closeDev, isDevOpen } from './ui/dev';
 import { initBuilder, openBuilder, closeBuilder, isBuilderOpen } from './ui/builder';
 import { initSurvey, openSurvey, closeSurvey, isSurveyOpen } from './ui/survey';
@@ -194,6 +195,7 @@ document.getElementById('open-trade')!.addEventListener('click', openTrade);
 document.getElementById('open-history')!.addEventListener('click', openHistory);
 document.getElementById('open-save')!.addEventListener('click', () => openSaveData());
 document.getElementById('open-settings')!.addEventListener('click', () => openSettings());
+document.getElementById('open-journal')!.addEventListener('click', openJournal);
 document.getElementById('open-dev')!.addEventListener('click', openDev);
 
 // Escape closes whatever is on top. Cheap, and the first thing anyone tries.
@@ -245,6 +247,7 @@ mountFixtures();
 initInventory(game);
 initHistory();
 initSettings(game, refreshRunPanels);
+initJournal(game, refreshRunPanels);
 initDev(game, {
   enterRoom: enterRoomNow,
   restock: () => restart('dev'),
@@ -457,6 +460,7 @@ const SCREENS: Record<
   history: { el: 'history', open: openHistory, close: closeHistory, isOpen: isHistoryOpen },
   save: { el: 'savedata', open: openSaveData, close: closeSaveData, isOpen: isSaveDataOpen },
   settings: { el: 'settings', open: () => openSettings(), close: closeSettings, isOpen: isSettingsOpen },
+  journal: { el: 'journal', open: openJournal, close: closeJournal, isOpen: isJournalOpen },
   dev: { el: 'dev', open: openDev, close: closeDev, isOpen: isDevOpen },
   builder: { el: 'builder', open: openBuilder, close: closeBuilder, isOpen: isBuilderOpen },
   survey: { el: 'survey', open: openSurvey, close: closeSurvey, isOpen: isSurveyOpen },

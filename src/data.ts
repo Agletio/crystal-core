@@ -2361,6 +2361,19 @@ export const LAMPWRIGHT = {
     ] as SceneBeat[],
     button: 'Take it',
   },
+  /** THE JOURNAL, the first time you come up after meeting him: the book of
+   *  every word the game uses, and where a quest log goes when there is one. */
+  journal: {
+    title: 'The Lampwright',
+    beats: [
+      { said: 'You came back up. Most do not, and none of them wanted this.', act: 'face' },
+      {
+        said: 'Everything I have worked out about what is down there is in it — what a thing is called, and what it does. Keep it. Add to it.',
+        act: 'work',
+      },
+    ] as SceneBeat[],
+    button: 'Take it',
+  },
   /** The crystal, which is the first thing that changes what a descent IS. */
   crystal: {
     title: 'The Lampwright',
@@ -2432,7 +2445,6 @@ export const LAMPWRIGHT = {
     // He KEEPS a counter, so the line that plays when he owes nothing has to
     // say what clicking him does next.
     beats: [
-      { said: 'You went and got this one. I only carried it up.', act: 'work' },
       { said: 'I keep a shelf here. Shards, mostly. Come and look when you have the gold.', act: 'face' },
     ] as SceneBeat[],
     button: 'Take it',
@@ -5011,12 +5023,13 @@ export const BINDINGS: BindingDef[] = [
   { id: 'skills', what: 'Open the skills and their webs', key: 's' },
   { id: 'trade', what: 'Open your trade', key: 't' },
   { id: 'trials', what: 'Open the Reckoning and its Ledger', key: 'r' },
-  { id: 'settings', what: 'Open settings, the auto-sell filter and the book', key: 'j' },
+  { id: 'settings', what: 'Open settings', key: 'k' },
   { id: 'craft', what: 'Open the bench', key: 'b' },
   { id: 'shop', what: 'Open the shop', key: 'v' },
   { id: 'crystals', what: 'Open the crystal collection', key: 'y' },
   { id: 'stash', what: 'Open the stash', key: 'x' },
   { id: 'history', what: 'Open the log', key: 'l' },
+  { id: 'journal', what: 'Open the journal', key: 'j' },
   { id: 'save', what: 'Open saving and loading', key: 'o' },
   { id: 'hide', what: 'Hide every panel and watch the map', key: 'z' },
   { id: 'fullscreen', what: 'Fill the screen', key: 'f' },

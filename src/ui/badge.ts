@@ -6,12 +6,12 @@
  * badge entirely — one reading 0 is a permanent nag — and the node carries a
  * class rather than an id, so nothing may point a tutorial step at it.
  */
-export function badge(buttonId: string, count: number): void {
+export function badge(buttonId: string, count: number | string): void {
   const button = document.getElementById(buttonId);
   if (!button) return;
 
   const shown = button.querySelector('.tabbadge');
-  if (count <= 0) {
+  if (typeof count === 'number' && count <= 0) { // a MARK such as '!' is shown as it is
     shown?.remove();
     return;
   }

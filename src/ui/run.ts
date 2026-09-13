@@ -46,7 +46,7 @@ import {
   bagsFull, bankSoulClear, socketItem, socketed, syncSouls, unsocket,
 } from '../game/state';
 import type { GameState } from '../game/state';
-import { crystalProgress } from '../game/crystals';
+import { crystalProgress, journalUnread } from '../game/crystals';
 import { bossBeaten, hasMet, owedTale, takeBoss, takeMet, whoIsDown } from '../game/scenes';
 import { hasWorker, takeWorker, workerDown } from '../game/work';
 import { dismissSpeech } from './speech';
@@ -1710,6 +1710,7 @@ function renderBadges(): void {
     ?.classList.toggle('railbtn--new', game.cameBack && !game.skillsSeen);
   badge('open-skills', spareTreePoints(game.character, mainSkillId(game.character)));
   badge('open-trade', tradePointsLeft(game.character));
+  badge('open-journal', journalUnread(game) ? '!' : 0);
   setCampEmber(trialPointsLeft(game.character) > 0);
 }
 

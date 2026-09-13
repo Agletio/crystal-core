@@ -2408,6 +2408,7 @@
       <button class="railbtn" id="open-skills" data-key="skills">Skills</button>
       <button class="railbtn" id="open-trade" data-key="trade">Trade</button>
       <button class="railbtn" id="open-history" data-key="history">History</button>
+      <button class="railbtn" id="open-journal" data-key="journal">Journal</button>
       <button class="railbtn" id="open-save" data-key="save">Save &amp; Load</button>
       <button class="railbtn" id="open-settings" data-key="settings">Settings</button>
     </div>
@@ -3138,18 +3139,27 @@
       </div>
     </div>
     <div class="modal__body">
+      <p class="skillhead__sub">Click a key to rebind it. Escape closes what is on top.</p>
+      <div class="keyrows" id="settings-keys"></div>
+    </div>
+  </div>
+</div>
+<!-- THE JOURNAL, the Lampwright's: one tab today, the book, and a quest log
+     when there is one. -->
+<div class="modal" id="journal" hidden>
+  <div class="modal__card">
+    <div class="modal__head">
+      <h2 class="modal__title">Journal</h2>
+      <div class="seedbar">
+        <button class="mini" id="journal-close">Close</button>
+      </div>
+    </div>
+    <div class="modal__body">
       <div class="settabs">
-        <button class="mini mini--on" id="set-tab-keys">Keys</button>
-        <button class="mini" id="set-tab-book">The Book</button>
+        <button class="mini mini--on" id="journal-tab-book">The Book</button>
       </div>
-      <div id="set-pane-keys">
-        <p class="skillhead__sub">Click a key to rebind it. Escape closes what is on top.</p>
-        <div class="keyrows" id="settings-keys"></div>
-      </div>
-      <div id="set-pane-book" hidden>
-        <input class="find" id="book-find" placeholder="Find a word" />
-        <div class="bookrows" id="book-rows"></div>
-      </div>
+      <input class="find" id="book-find" placeholder="Find a word" />
+      <div class="bookrows" id="book-rows"></div>
     </div>
   </div>
 </div>

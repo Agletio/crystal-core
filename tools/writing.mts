@@ -4,7 +4,8 @@ import { execFileSync } from 'node:child_process';
 import { parse } from '@babel/parser';
 import { BUILT_TREES, faceOf } from '../src/skills-tree';
 import { TRADES } from '../src/trades';
-import { PLAYER_SKILLS } from '../src/data';
+import { LAMPWRIGHT, PLAYER_SKILLS, TALES, WORKERS } from '../src/data';
+import { SCENES } from '../src/scenes';
 import { KEYWORDS } from '../src/keywords';
 import { GRANT_BY_ID } from '../src/sim/grants';
 
@@ -17,7 +18,8 @@ type Entry = {
 };
 const file = 'writing/entries.json';
 const hash = (v: unknown) => createHash('sha256').update(JSON.stringify(v)).digest('hex');
-const copyKeys = new Set(['name', 'description', 'text', 'lore', 'blurb', 'becomes', 'what', 'say', 'means', 'short', 'says']);
+const copyKeys = new Set(['name', 'description', 'text', 'lore', 'blurb', 'becomes', 'what', 'say', 'means', 'short', 'says',
+  'said', 'greets', 'idles', 'seen', 'title', 'button']);
 export function mechanical(v: any): any {
   if (Array.isArray(v)) return v.map(mechanical);
   if (v && typeof v === 'object') return Object.fromEntries(Object.entries(v)
@@ -61,8 +63,9 @@ export function inventory(): Entry[] {
   const common = ['src/data.ts', 'src/sim/stats.ts', 'src/sim/grants.ts', 'src/sim/run.ts',
     'src/sim/skills.ts', 'src/sim/movers.ts', 'src/mods.ts', 'src/skills-tree.ts', 'src/trades.ts',
     'src/trees/layout.ts', 'src/trades/layout.ts', 'src/webgraph.ts', 'src/sim/character.ts'];
-  function add(id: string, path: string, selector: string, text: unknown, rules: unknown) {
-    const implementation = [...new Set([path, ...common])];
+  // `deps` null is DIALOGUE: no rule stands behind it, so only its own text can make it stale.
+  function add(id: string, path: string, selector: string, text: unknown, rules: unknown, deps: string[] | null = common) {
+    const implementation = deps === null ? [] : [...new Set([path, ...deps])];
     out.push({ id, location: { file: path, selector }, text, implementation,
       mechanicsRevision: hash([mechanical(rules), implementation.map(p => [p, sourceRevision(p)])]),
       textRevision: hash(text), status: 'pending', reviewedMechanicsRevision: null,
@@ -103,6 +106,29 @@ export function inventory(): Entry[] {
   }
   for (const skill of PLAYER_SKILLS) add(`skill.${skill.id}.card`, 'src/data.ts', `skill:${skill.id}`, { name: skill.name, description: skill.description }, skill);
   for (const k of KEYWORDS) add(`keyword.${k.id}`, 'src/keywords.ts', `keyword:${k.id}`, { name: k.name, means: k.means }, k);
+  // DIALOGUE: the people, what they say where they are found and in the camp, the Lampwright's handovers, the tales.
+  const SCENE_FILE: Record<string, string> = { workshop: 'workshop', reading_room: 'reading-room', answering_hall: 'answering',
+    refraction_hall: 'refraction', flowering_hall: 'flowering', ossuary: 'ossuary', orrery: 'orrery', smithy: 'smithy' };
+  const line = (id: string, path: string, selector: string, text: unknown) => add(id, path, selector, text, null, null);
+  for (const scene of SCENES) {
+    const file = SCENE_FILE[scene.id];
+    if (!file) throw new Error(`No source file recorded for scene ${scene.id}; add it to SCENE_FILE`);
+    const path = `src/scenes/${file}.ts`;
+    line(`scene.${scene.id}`, path, `scene:${scene.id}`, { name: scene.name, said: scene.said,
+      ...(scene.greets ? { greets: scene.greets } : {}), ...(scene.idles ? { idles: scene.idles } : {}) });
+    (scene.beats ?? []).forEach((b, i) => line(`scene.${scene.id}.beat.${i + 1}`, path, `scene:${scene.id}/beat:${i + 1}`, { said: b.said }));
+  }
+  line('lampwright.seen', 'src/data.ts', 'LAMPWRIGHT.seen', { seen: LAMPWRIGHT.seen });
+  for (const [speech, words] of Object.entries(LAMPWRIGHT)) {
+    if (!words || typeof words !== 'object' || !('beats' in words)) continue;
+    const w = words as { title: string; button: string; beats: { said: string }[] };
+    line(`lampwright.${speech}`, 'src/data.ts', `LAMPWRIGHT.${speech}`, { title: w.title, button: w.button });
+    w.beats.forEach((b, i) => line(`lampwright.${speech}.beat.${i + 1}`, 'src/data.ts', `LAMPWRIGHT.${speech}/beat:${i + 1}`, { said: b.said }));
+  }
+  for (const [id, panels] of Object.entries(TALES)) {
+    panels.forEach((p, i) => line(`tale.${id}.${i + 1}`, 'src/data.ts', `TALES.${id}/panel:${i + 1}`, { said: p.said }));
+  }
+  for (const w of WORKERS) line(`worker.${w.id}`, 'src/data.ts', `WORKERS/${w.id}`, { name: w.name, greets: w.greets });
   if (new Set(out.map(e => e.id)).size !== out.length) throw new Error('Duplicate writing identifier');
   return out.sort((a, b) => a.id.localeCompare(b.id));
 }

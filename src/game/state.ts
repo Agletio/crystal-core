@@ -122,6 +122,8 @@ export interface GameState {
    *  this cannot read off `clears`. */
   skillsSeen: boolean;
   cameBack: boolean;
+  /** False until the journal has been opened since it was handed over. */
+  journalSeen: boolean;
   /** False until the Fissure has been cleared once. Gates the opening payout. */
   firstClearDone: boolean;
   /** Descents cleared, ever. What the opening's schedule is measured in. */
@@ -175,6 +177,7 @@ export function createGame(mode: StartMode = 'dev'): GameState {
     onboarded: false,
     skillsSeen: false,
     cameBack: false,
+    journalSeen: false,
     firstClearDone: false,
     clears: 0,
     given: [],
@@ -254,6 +257,7 @@ export function resetGame(game: GameState, mode: StartMode): void {
   game.onboarded = mode === 'dev';
   game.skillsSeen = mode === 'dev';
   game.cameBack = mode === 'dev';
+  game.journalSeen = mode === 'dev';
   game.firstClearDone = mode === 'dev';
   game.clears = mode === 'dev' ? 1 : 0; // the same descent `firstClearDone` is
   // The dev kit is armed, holds every crystal, and has MET everybody AND HEARD
@@ -263,7 +267,7 @@ export function resetGame(game: GameState, mode: StartMode): void {
   game.given =
     mode === 'dev'
       ? [
-          'weapon', 'crystal',
+          'weapon', 'journal', 'crystal',
           ...SCENES.filter((s) => !s.encounter).flatMap((s) => [metMark(s.id), heardMark(s.id)]),
           ...WORKERS.flatMap((w) => [workerMark(w.id), heardMark(`worker:${w.id}`)]),
         ]

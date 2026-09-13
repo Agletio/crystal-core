@@ -35,6 +35,8 @@ export const isMetOpen = (): boolean => !$('met').hidden;
 export const lampwrightWords = (waiting: Waiting) =>
   waiting.weapon
     ? LAMPWRIGHT.first
+    : waiting.journal
+      ? LAMPWRIGHT.journal
     : waiting.crystal
       ? LAMPWRIGHT.crystal
       : waiting.campaign

@@ -184,7 +184,7 @@ const STATES = [
   'title', 'slots', 'pick', 'welcome', 'camp', 'camp-hover', 'camp-lit', 'fissure',
   'bench-pick',
   'dock', 'dock-currency', 'dock-materials',
-  'crystals', 'sheet', 'shop', 'stash', 'settings', 'history',
+  'crystals', 'sheet', 'shop', 'stash', 'settings', 'journal', 'history',
   'toast', 'itemmenu', 'confirm', 'professions',
   'handover', 'descent', 'results',
   'scene', 'speech', 'lampwright', 'tale', 'bonus',
@@ -547,6 +547,7 @@ for (const vp of VIEWPORTS) {
   for (const [state, shut] of [
     ['stash', 'stash-close'],
     ['settings', 'settings-close'],
+    ['journal', 'journal-close'],
     ['history', 'history-close'],
   ]) {
     await page.evaluate((id) => document.getElementById(id)?.click(), `open-${state}`);

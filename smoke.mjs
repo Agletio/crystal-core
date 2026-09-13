@@ -921,7 +921,7 @@ assert(
   text('inv-gear-label')
 );
 
-// --- settings, which is keys and the book now -----------------------------
+// --- settings, which is the keys now ---------------------------------------
 // The FILTER is gone with the heap it existed to sort: a clear banks the lot,
 // and what you do not want is dismantled or sold rather than never picked up.
 assert($('settings').hidden === true, 'settings starts closed');
@@ -931,8 +931,8 @@ assert(document.getElementById('open-filter') === null, 'the filter left the rai
 assert(document.getElementById('set-tab-filter') === null, 'and its tab in settings with it');
 assert(document.getElementById('set-pane-filter') === null, 'and the pane behind that tab');
 
-// --- the keys, and the book ------------------------------------------------
-$('set-tab-keys').click();
+// --- the keys ----------------------------------------------------------------
+assert(document.getElementById('set-tab-book') === null, 'the book left settings for the journal');
 assert(
   all('#settings-keys .keyrow').length >= 15,
   'every binding there is has a row you can rebind',
@@ -955,7 +955,13 @@ assert(
   text('key-set-inventory')
 );
 
-$('set-tab-book').click();
+window.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+assert($('settings').hidden === true, 'Escape closes it');
+
+// --- the journal, and the book in it ----------------------------------------
+assert($('journal').hidden === true, 'the journal starts closed');
+$('open-journal').click();
+assert($('journal').hidden === false, 'and opens from the rail');
 const bookRows = () => all('#book-rows .bookrow');
 assert(bookRows().length > 20, 'the book lists every keyword there is', String(bookRows().length));
 $('book-find').value = 'burn';
@@ -965,7 +971,7 @@ $('book-find').value = '';
 $('book-find').dispatchEvent(new window.Event('input', { bubbles: true }));
 
 window.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
-assert($('settings').hidden === true, 'Escape closes it');
+assert($('journal').hidden === true, 'Escape closes it');
 
 // --- the collection --------------------------------------------------------
 // Four sockets against everything you have ever been given. Nothing here is

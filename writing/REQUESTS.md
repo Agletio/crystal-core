@@ -115,3 +115,16 @@ Blocker: W-number if applicable
 Do not copy reviewed status into this request to bypass the ledger. Astra reads
 the implementation and records the review there. A request does not itself
 notify Astra; include its IDs in the next handoff with the branch and commit.
+
+
+## Requests from Claude — dialogue enters the ledger, commit `JOURNAL_COMMIT`
+
+```text
+Entry ID(s): scene.* (every person: `said` where they are found, `greets`, `idles`, and `scene.<id>.beat.<n>` for the camp lines); lampwright.seen and lampwright.<speech> / lampwright.<speech>.beat.<n> for first, journal, crystal, campaign, soul, deeper and again; tale.<meeting>.<n> for every cut-scene panel; worker.<id> for the four workers' one line
+Status: pending (84 entries, all new)
+Text location: src/scenes/*.ts for the scenes (the smith's, the Osteomancer's and the Astral-Geometer's beats and idles are the SMITH, OSTEOMANCER and ASTRAL_GEOMETER tables in src/data.ts, which the scene files read); LAMPWRIGHT and TALES in src/data.ts; WORKERS in src/data.ts
+Implementation: none — dialogue has no rule behind it, so only its own text can make an entry stale
+Intended rule: flavour throughout. Three things are new in this commit and are my placeholder wording: lampwright.journal (title, button and two beats — he hands over the journal the first time you come up after meeting him; the journal is the book of every keyword and will hold the quest log later), and lampwright.again, cut to its one shelf line because "You went and got this one. I only carried it up." referred to a weapon he no longer hands over. Everyone else's lines are unchanged and are here for review, not because they moved.
+Request: review all dialogue; reword lampwright.journal.* first. Priority: high for lampwright.journal, medium for the rest.
+Blocker: none
+```

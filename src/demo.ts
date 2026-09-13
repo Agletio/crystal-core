@@ -218,7 +218,7 @@ import { LIVE_PROPS, RIPPLE, lootSpan, rippleRings } from './render/renderer';
 import { RunSim, TICK, runToCompletion, walkToMeeting } from './sim/run';
 import { tierForSet } from './sim/crystal';
 import { findPath } from './sim/pathfind';
-import { MEETINGS, folkMet, folkRooms, gaveKey, hasHeard, hasMet, keyOwed, nextMeeting, owedTale, takeBoss, takeHeard, takeMet, whoIsDown } from './game/scenes';
+import { MEETINGS, folkMet, folkRooms, gaveKey, hasHeard, hasMet, keyOwed, nextMeeting, owedTale, takeBoss, takeHeard, takeMet, whoIsDown, metMark } from './game/scenes';
 import {
   TOOL_PRICE, buyTool, holdsTool, owesFirstTool, takeFirstTool, toolsOnOffer, whyNotBuyTool,
 } from './game/smith';
@@ -470,8 +470,7 @@ import {
   ladderSchedule,
   ownedCrystals,
   takeHandover,
-  xpForClear,
-} from './game/crystals';
+  xpForClear, journalUnread } from './game/crystals';
 import {
   clearSave,
   copySlot,
@@ -3022,7 +3021,7 @@ if (rule('THE OPENING — is the first hour walkable with nothing explaining it?
   const game = createGame('fresh');
   grantFirstClear(game);
   bankLoot(game, [makeGear('ash_wand', 1), makeGear('bulwark_helmet_t1', 8)]);
-  takeHandover(game, { weapon: true, crystal: false, campaign: false, soul: 0, ladder: null });
+  takeHandover(game, { weapon: true, journal: false, crystal: false, campaign: false, soul: 0, ladder: null });
   line(
     `  after the first clear: ${balance(game.wallet, 'gold')} gold, ` +
       `${game.inventory.length} items`
@@ -3034,7 +3033,7 @@ if (rule('THE OPENING — is the first hour walkable with nothing explaining it?
   const making = RECIPES.find((r) => r.id === 'make_shard_of_making');
   const bill = making ? (recipeInputs(making, 1).gold ?? 0) : 0;
   const handed = createGame('fresh');
-  const owed = takeHandover(handed, { weapon: false, crystal: true, campaign: false, soul: 0, ladder: null });
+  const owed = takeHandover(handed, { weapon: false, journal: false, crystal: true, campaign: false, soul: 0, ladder: null });
   check(
     (owed.currency[INTRO.scriptedCurrency] ?? 0) > 0,
     `the opening HANDS you the craft — the counter's own is ${bill} gold, several descents off`,
@@ -3078,7 +3077,7 @@ if (rule('THE OPENING — is the first hour walkable with nothing explaining it?
     'the bench reaches a weapon you are wearing',
     'wearing the benched item lost it — the bench resolves to nothing'
   );
-  takeHandover(game, { weapon: false, crystal: true, campaign: false, soul: 0, ladder: null });
+  takeHandover(game, { weapon: false, journal: false, crystal: true, campaign: false, soul: 0, ladder: null });
   const crystal = crystalsIn(game)[0];
   selectForCraft(game, crystal);
   socketItem(game, crystal, socketFor(game, crystal)!);
@@ -13658,6 +13657,23 @@ if (rule('THE COLLECTION — do crystals arrive, and do they grow?')) {
     'and arming one settles that debt rather than leaving him a second to hand over',
     JSON.stringify(giftWaiting(fresh))
   );
+  // THE JOURNAL IS NEXT, before any crystal: the first trip up after MEETING
+  // him hands it over, and the mark on the rail stays until it is opened.
+  check(giftWaiting(fresh) === null, 'and a man you have not met owes you nothing', JSON.stringify(giftWaiting(fresh)));
+  fresh.given = [...fresh.given, metMark(LAMPWRIGHT.scene)];
+  check(
+    giftWaiting(fresh)?.journal === true && !journalUnread(fresh),
+    'and what he owes next is the journal, unmarked until it is in your hands',
+    JSON.stringify(giftWaiting(fresh))
+  );
+  takeHandover(fresh, giftWaiting(fresh)!);
+  check(
+    journalUnread(fresh) && giftWaiting(fresh) === null,
+    'taking it marks the rail and leaves him owing nothing until the crystal is earned',
+    `unread ${journalUnread(fresh)}, waiting ${JSON.stringify(giftWaiting(fresh))}`
+  );
+  fresh.journalSeen = true;
+  check(!journalUnread(fresh), 'and opening the journal takes the mark off', String(journalUnread(fresh)));
 
   // A weapon picked off the SKILL. A Strike character handed a wand is the
   // first item the game gives you and the first one it teaches you to craft.
@@ -14120,11 +14136,14 @@ if (rule('THE COLLECTION — do crystals arrive, and do they grow?')) {
       'and hands over a marked weapon, straight into your hand rather than your bag',
       `${weapon?.base} is ${g.character.equipment.weapon?.id === weapon?.id ? 'worn' : 'in the bag'}`
     );
+    g.given = [...g.given, metMark(LAMPWRIGHT.scene)]; // found at depth 2, as every player has by then
     check(
-      giftWaiting(g) === null,
-      'and is not waiting again the next time you come up',
+      giftWaiting(g)?.journal === true && giftWaiting(g)?.weapon === false,
+      'and the next time you come up he owes the journal and nothing else',
       JSON.stringify(giftWaiting(g))
     );
+    takeHandover(g, giftWaiting(g)!); // the first trip up, as a player makes it
+    check(giftWaiting(g) === null, 'and once it is taken he owes nothing', JSON.stringify(giftWaiting(g)));
 
     // The crystal is the SECOND meeting, and it is EARNED rather than counted
     // out: the active skill at INTRO.crystalSkillLevel with a notable taken in

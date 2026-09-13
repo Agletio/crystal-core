@@ -574,8 +574,17 @@ every other line, at the user's word, and it is waiting on a screen that has
 room. The web is on screen from the first descent, with nothing on it walkable:
 a plan you cannot see is a plan nobody makes.
 
-**The Lampwright owes the weapon, the FIRST crystal, the campaign's reward and
-every step of the CRYSTAL LADDER**, and nothing else. **THE FIRST CRYSTAL IS
+**THE JOURNAL IS THE FIRST THING HE HANDS OVER**, the first time you come up
+after meeting him — *"make him give you a journal"* — and it is a SCREEN of its
+own on the rail (`#journal`, `src/ui/journal.ts`, the `j` key): one tab today,
+THE BOOK, which was settings' second tab and is not any more, and a quest log
+when there is one. `Waiting.journal` is owed before any crystal,
+`GameState.journalSeen` is false from the handover until the screen is opened,
+and `journalUnread` is the `!` on the rail — the badge takes a MARK as well as
+a count, and this is the one mark. Settings is the keys alone, on `k`.
+
+**The Lampwright owes the journal, the weapon, the FIRST crystal, the
+campaign's reward and every step of the CRYSTAL LADDER**, and nothing else. **THE FIRST CRYSTAL IS
 THE SECOND PASS'S** — *"make the first crystal come at level 4 on the second
 clear when you have a soul stone in"* — so `crystalEarned` asks for a SOCKETED
 soulstone as well as the main skill at `INTRO.crystalSkillLevel` with every
@@ -1283,7 +1292,11 @@ entry is a mechanics question in `writing/BLOCKERS.md` answered under its
 W-number and returned to pending, never rewritten to fit the prose; a request
 for wording goes in `writing/REQUESTS.md` with the IDs and the commit. A
 change to `run.ts`, `skills.ts` or `grants.ts` makes every reviewed entry
-stale, by design — the tool over-reports rather than approves.
+stale, by design — the tool over-reports rather than approves. **DIALOGUE IS
+IN THE LEDGER TOO** — `scene.*` (what somebody says where they are found and in
+the camp), `lampwright.*` (every handover), `tale.*` (the panels) and
+`worker.*` — with NO implementation behind it, so only its own text can make
+it stale; a scene needs a row in `SCENE_FILE` or the sync refuses it.
 
 **EIGHT TREES, SIXTEEN KEYSTONES, AND EVERY ONE IS PLAYED.** Each tree's demo
 section plays three descents at band 4 under each keystone against a bare
