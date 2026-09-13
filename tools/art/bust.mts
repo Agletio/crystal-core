@@ -99,10 +99,10 @@ const SAY: Record<string, string> = {
     + 'NOT green, NOT grey, NOT a goblin snout, NOT cute, NOT a helmet, NOT a hood.',
   smith: 'a broad heavy BALD man with a heavy jaw, a short blunt dark beard and RUDDY WEATHERED '
     + 'SKIN, forge-burnt across the cheekbones and soot-marked at the temple, dark eyes open and '
-    + 'looking straight out, the neck and shoulders thick, the top of a scorched dark leather '
-    + 'apron strap over one bare shoulder. His skin is warm and lived-in; the leather is soot '
-    + 'black and dull umber. NOT grey skin, NOT a corpse, NOT a skull, NOT undead, NOT a helmet, '
-    + 'NOT armour, NOT a hood, NOT hair on the head, NOT holding anything.',
+    + 'looking straight out, the neck and shoulders thick, the top of a scorched OXBLOOD-RED leather '
+    + 'apron strap over one bare shoulder and a rag of dull ember orange at the neck. His skin is warm '
+    + 'and lived-in; the leather is oxblood red gone soot black. NOT grey skin, NOT a corpse, NOT a '
+    + 'skull, NOT undead, NOT a helmet, NOT armour, NOT a hood, NOT hair on the head, NOT holding anything.',
 };
 
 const say = SAY[sprite];

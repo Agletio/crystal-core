@@ -32,14 +32,17 @@ import type { Item, RolledMod } from '../types';
 import type { Rng } from '../rng';
 import { liftFor, qualityRoll } from './forge';
 
-/** One job loaded at a station, and WHO is on it. `doneAt` is the epoch
- *  millisecond it is finished at; loaded again on a later day it is done. */
+/** One job loaded at a station, and WHO is on it. `startAt` and `doneAt` are
+ *  epoch milliseconds a unit apart per `n`; `taken` is how many of the units
+ *  the clock has finished have already been collected into the bag. */
 export interface WorkJob {
   id: string;
   profession: string;
   material: string;
   n: number;
+  startAt: number;
   doneAt: number;
+  taken: number;
   worker: string;
 }
 
@@ -79,7 +82,7 @@ export const setClock = (fn: () => number): void => {
   clock = fn;
 };
 export const now = (): number => clock();
-export const minutesMs = (minutes: number): number => minutes * 60_000;
+export const unitMs = (): number => WORK.secondsEach * 1000;
 
 export const jobsIn = (game: GameState): WorkJob[] => game.jobs ?? [];
 
@@ -163,10 +166,9 @@ export function whyNotWork(game: GameState, def: MaterialDef): string | null {
   return null;
 }
 
-/** How big a job of this would be: WHAT YOU HOLD, capped. Read by the screen
+/** How big a job of this would be: EVERYTHING YOU HOLD. Read by the screen
  *  before the click, so the button says the number it is about to take. */
-export const jobSize = (game: GameState, id: string): number =>
-  Math.min(rawCount(game, id), WORK.most);
+export const jobSize = (game: GameState, id: string): number => rawCount(game, id);
 
 /** Load one job onto the first idle worker. The raw leaves the bag NOW — a
  *  job you can cancel for a refund is a slot that costs nothing to fill. */
@@ -186,22 +188,31 @@ export function loadWork(game: GameState, def: MaterialDef): WorkJob | null {
     profession: profession.id,
     material: def.id,
     n,
-    doneAt: clock() + minutesMs(WORK.minutes),
+    startAt: clock(),
+    doneAt: clock() + n * unitMs(),
+    taken: 0,
     worker: worker.id,
   };
   game.jobs = [...jobsIn(game), job];
   return job;
 }
 
-/** What a finished job handed over. */
+/** What a job handed over on one collection: `n` units of it, never the whole. */
 export interface Finished {
   job: WorkJob;
   item: Item;
+  n: number;
   levels: number;
 }
 
 /** Seconds a job has left on the clock, floored at none. */
 export const leftOn = (job: WorkJob): number => Math.max(0, (job.doneAt - clock()) / 1000);
+/** Units the clock has finished so far, collected or not. */
+export const finishedOn = (job: WorkJob): number =>
+  Math.max(0, Math.min(job.n, Math.floor((clock() - job.startAt) / unitMs())));
+/** Seconds until the next unit lands, none once the last has. */
+export const nextOn = (job: WorkJob): number =>
+  finishedOn(job) >= job.n ? 0 : Math.max(0, (job.startAt + (finishedOn(job) + 1) * unitMs() - clock()) / 1000);
 
 /** A time left said as `m:ss`, so the screen counts down in one shape. */
 export function saysLeft(seconds: number): string {
@@ -210,23 +221,25 @@ export function saysLeft(seconds: number): string {
 }
 
 /**
- * WHAT THE CLOCK HAS FINISHED, taken off the stations and into the bag. Asked
- * wherever the bag is next read, so a job done overnight is bars by the time
- * the anvil opens.
+ * WHAT THE CLOCK HAS FINISHED, taken off the stations and into the bag a unit
+ * at a time — *"work in bulk but just finish the individual items as it
+ * goes."* Asked wherever the bag is next read, so a job done overnight is bars
+ * by the time the anvil opens, and one half done is half the bars.
  */
 export function collectWork(game: GameState): Finished[] {
   const out: Finished[] = [];
   const kept: WorkJob[] = [];
   for (const job of jobsIn(game)) {
-    if (leftOn(job) > 0) {
-      kept.push(job);
-      continue;
-    }
     const def = MATERIAL_BY_ID[job.material];
     if (!def) continue; // a material that has been cut takes its job with it
-    const item = makeMaterial(def, job.n, true);
-    addItem(game, item);
-    out.push({ job, item, levels: payXp(game, job.profession, WORK.xp * job.n) });
+    const fresh = finishedOn(job) - job.taken;
+    if (fresh > 0) {
+      const item = makeMaterial(def, fresh, true);
+      addItem(game, item);
+      job.taken += fresh;
+      out.push({ job, item, n: fresh, levels: payXp(game, job.profession, WORK.xp * fresh) });
+    }
+    if (job.taken < job.n) kept.push(job);
   }
   game.jobs = kept;
   return out;

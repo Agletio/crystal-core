@@ -3207,8 +3207,7 @@ export const PROFESSION = { maxLevel: 99, xpTo1: 20, curve: 1.05 };
  */
 export const WORK = {
   least: 1, // a bare clear gathers 1.0 ore: a floor of 4 was four descents before a station took anything
-  most: 20, // raw one job eats, and processed it hands back
-  minutes: 5, // wall-clock minutes a job takes
+  secondsEach: 15, // wall-clock seconds one unit takes; a job is everything held and lands a unit at a time
   xp: 6, // FLAT, never by world, or the no-tiers rule breaks in its easiest place
 };
 

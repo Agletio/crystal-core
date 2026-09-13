@@ -4105,22 +4105,18 @@
    "inks": 24,
    "luma": 32,
    "sprite": "smith",
-   "character": "c6648899-ed40-4177-bf6a-ce9cd2a2f0d3",
+   "character": "9fcc1593-786e-4293-81d3-4fe408b223f0",
    "dirs": [
     "south-east"
    ],
    "states": {
     "idle": {
-     "group": "4ffd402d-1a2a-4f36-9ca6-b2297dd84b44",
+     "group": "30ff8b50-edf2-4c78-8f09-4ffd9f2f169e",
      "frames": 5
     },
     "walk": {
-     "group": "7a60aa2f-7b14-4458-aa15-d44f8b710de0",
+     "group": "2557abc2-21ce-4c9b-9a7b-c297f645cf93",
      "frames": 9
-    },
-    "attack": {
-     "group": "7fa4500c-b13c-455d-90ea-83a50c6422de",
-     "frames": 5
     }
    }
   },

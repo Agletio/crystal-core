@@ -240,8 +240,9 @@ import {
   jobsIn,
   loadWork,
   mealRuns,
-  minutesMs,
+  unitMs,
   professionAt,
+  saysLeft,
   setClock,
   whyNotWork,
   xpToNext as workXpToNext,
@@ -4265,19 +4266,19 @@ if (rule('THE WORKS — does a job run on the clock, and on nothing else?')) {
     refused ?? 'it went ahead anyway'
   );
 
-  // A JOB IS WHAT YOU HOLD, one to `most`. *"It feels bad to need 4 ores for a
-  // bar"* — so a single lump is a job, and a heap is one job and a remainder.
+  // A JOB IS EVERYTHING YOU HOLD. *"It feels bad to need 4 ores for a bar"* —
+  // so a single lump is a job, and a heap of 25 is one job of 25 with none left.
   const one = createGame('fresh');
   takeWorker(one, WORKERS[0].id);
   addItem(one, makeMaterial(ore, 1));
   const single = loadWork(one, ore);
-  addItem(one, makeMaterial(ore, WORK.most + 5));
+  addItem(one, makeMaterial(ore, 25));
   takeWorker(one, WORKERS[1].id);
   const heap = loadWork(one, ore);
   const over = (one.materials ?? []).find((i) => i.base === ore.id && !i.meta.done);
   check(
-    single?.n === WORK.least && heap?.n === WORK.most && ((over?.meta.n as number) ?? 0) === 5,
-    `and ${WORK.least} raw is a job while ${WORK.most + 5} is one of ${WORK.most} with 5 left in the bag`,
+    single?.n === WORK.least && heap?.n === 25 && over === undefined && heap.doneAt - heap.startAt === 25 * unitMs(),
+    `and ${WORK.least} raw is a job while 25 is one job of 25, a unit every ${WORK.secondsEach}s, with none left in the bag`,
     `${single?.n ?? 'none'} then ${heap?.n ?? 'none'}, ${(over?.meta.n as number) ?? 0} held`
   );
 
@@ -4296,7 +4297,7 @@ if (rule('THE WORKS — does a job run on the clock, and on nothing else?')) {
   const shop = createGame('fresh');
   for (const w of WORKERS) takeWorker(shop, w.id);
   for (const def of MATERIALS.filter((m) => m.family !== null)) {
-    addItem(shop, makeMaterial(def, WORK.most * 2));
+    addItem(shop, makeMaterial(def, 4));
   }
   const loaded = MATERIALS.filter((m) => m.family !== null)
     .map((def) => loadWork(shop, def))
@@ -4313,8 +4314,8 @@ if (rule('THE WORKS — does a job run on the clock, and on nothing else?')) {
   const first = MATERIALS.find((m) => m.family !== null)!;
   const heldNow = (shop.materials ?? []).find((i) => i.base === first.id && !i.meta.done);
   check(
-    ((heldNow?.meta.n as number) ?? 0) === WORK.most,
-    'and the raw leaves the bag the moment it is loaded, capped at what one job takes',
+    heldNow === undefined,
+    'and the raw leaves the bag the moment it is loaded, all of it',
     String((heldNow?.meta.n as number) ?? 0)
   );
 
@@ -4343,25 +4344,34 @@ if (rule('THE WORKS — does a job run on the clock, and on nothing else?')) {
     jobsIn(shop).map((j) => j.doneAt).join(',')
   );
 
-  // A SECOND SHORT it is still on; the minute up, the WHOLE of it comes off:
-  // one for one, banked on the report, and paid in XP.
+  // A SECOND SHORT nothing is off; the first unit's seconds up, ONE unit comes
+  // off every job and the jobs stay on; the last unit's, the whole of it is
+  // off: one for one, banked on the report, and paid in XP.
   const wanted = jobsIn(shop).map((j) => ({ ...j }));
-  at += minutesMs(WORK.minutes) - 1000;
-  buildReport(shop, cleared.state);
+  at += unitMs() - 1000;
+  const short = buildReport(shop, cleared.state);
   check(
-    jobsIn(shop).length === wanted.length,
-    'a second short of the batch every job is still on the station',
-    `${jobsIn(shop).length} of ${wanted.length}`
+    short.worked.length === 0 && jobsIn(shop).length === wanted.length,
+    'a second short of the first unit every job is still on the station and nothing is off',
+    `${short.worked.length} off, ${jobsIn(shop).length} of ${wanted.length}`
   );
   at += 1000;
+  const firsts = buildReport(shop, cleared.state).worked;
+  check(
+    firsts.length === wanted.length && firsts.every((d) => d.n === 1) && jobsIn(shop).length === wanted.length,
+    `and ${WORK.secondsEach}s later one unit is off every job, with the jobs still on`,
+    `${firsts.map((d) => d.n).join(',')} off, ${jobsIn(shop).length} still on`
+  );
+  at += 3 * unitMs();
   const report = buildReport(shop, cleared.state);
   const done = report.worked;
+  const handed = [...firsts, ...done].reduce((n, d) => n + d.n, 0);
   check(
-    done.length === wanted.length && jobsIn(shop).length === 0,
-    `and ${WORK.minutes} minutes takes every one of them off, collected on the report`,
-    `${done.length} finished, ${jobsIn(shop).length} still on`
+    done.length === wanted.length && jobsIn(shop).length === 0 && handed === wanted.reduce((n, j) => n + j.n, 0),
+    'and the last unit\'s seconds take every one of them off, collected on the report',
+    `${done.length} finished, ${jobsIn(shop).length} still on, ${handed} handed back`
   );
-  const minted = done.filter((d) => ((d.item.meta.n as number) ?? 0) !== d.job.n);
+  const minted = [...firsts, ...done].filter((d) => ((d.item.meta.n as number) ?? 0) !== d.n);
   check(
     minted.length === 0,
     'and a job hands back exactly what it took: nothing lost, nothing minted',
@@ -4370,6 +4380,7 @@ if (rule('THE WORKS — does a job run on the clock, and on nothing else?')) {
 
   // RAW AND PROCESSED ARE TWO STACKS OF ONE ROW. Merged, a recipe could not
   // tell ore from bars; two tables, and every screen has to learn both.
+  addItem(shop, makeMaterial(first, 1)); // a job took every raw, so one more comes up beside the bars
   const both = (shop.materials ?? []).filter((i) => i.base === first.id);
   check(
     both.length === 2 && both.filter((i) => i.meta.done).length === 1,
@@ -4389,19 +4400,18 @@ if (rule('THE WORKS — does a job run on the clock, and on nothing else?')) {
   let banked = 0;
   for (let level = 1; level < PROFESSION.maxLevel; level++) banked += workXpToNext(level);
   // IN RAW, not in jobs: xp is paid per UNIT, so what 99 costs in material is
-  // the same however big a job is, and only the WAIT rides `most`.
+  // the same however big a job is, and the WAIT is a unit's seconds each.
   const raw = Math.ceil(banked / WORK.xp);
-  const jobs = Math.ceil(raw / WORK.most);
   line(
     `  level ${PROFESSION.maxLevel} is ${banked.toLocaleString()} xp — ${raw.toLocaleString()} raw worked, ` +
-      `${jobs.toLocaleString()} jobs at the ${WORK.most} one holds, ` +
-      `${Math.ceil((jobs * WORK.minutes) / WORKERS.length / 60).toLocaleString()} hours at best with every worker busy`
+      `${Math.ceil((raw * WORK.secondsEach) / WORKERS.length / 3600).toLocaleString()} hours at best with every worker busy`
   );
   // A LEVEL HAS TO BE FELT IN THE FIRST HOUR, or the whole mechanism is a wall
   // pretending to be a curve. In raw, so no job size can flatter it.
+  const firstRaw = Math.ceil(workXpToNext(1) / WORK.xp);
   check(
-    Math.ceil(workXpToNext(1) / WORK.xp) <= WORK.most,
-    `and the FIRST level is ${Math.ceil(workXpToNext(1) / WORK.xp)} raw, inside one job, so the curve is felt before it is long`,
+    firstRaw * WORK.secondsEach <= 3600,
+    `and the FIRST level is ${firstRaw} raw, ${saysLeft(firstRaw * WORK.secondsEach)} on one station, so the curve is felt before it is long`,
     `${workXpToNext(1)} xp at ${WORK.xp} a unit`
   );
 
@@ -4625,7 +4635,7 @@ if (rule('THE WORKS — does a job run on the clock, and on nothing else?')) {
   // A JOB POINTS AT A TABLE, and a save that outlives the table takes the job
   // with it rather than paying out something that no longer exists.
   const rotted = createGame('fresh');
-  rotted.jobs = [{ id: 'job_x', profession: 'nobody', material: 'nothing', n: 4, doneAt: 1, worker: 'hob' }];
+  rotted.jobs = [{ id: 'job_x', profession: 'nobody', material: 'nothing', n: 4, startAt: 0, doneAt: 1, taken: 0, worker: 'hob' }];
   const healed = heal(rotted);
   check(
     rotted.jobs.length === 0 && healed.items > 0,
@@ -4659,15 +4669,22 @@ if (rule('THE WORKS — does a job run on the clock, and on nothing else?')) {
     `${ran} descents, ${anyDone} jobs off, ${madeAny} processed stacks`
   );
 
-  // A SAVE WRITTEN IN DESCENTS: each one it had left is a batch's minutes.
+  // A SAVE WRITTEN IN DESCENTS: each one it had left is the job's own run. One
+  // written as a BATCH, with an end and no start, is a run ending there.
   const dated = createGame('fresh');
   takeWorker(dated, 'hob');
-  dated.jobs = [{ id: 'job_o', profession: 'blacksmithing', material: 'pale_iron', n: 4, left: 2 } as unknown as WorkJob];
+  takeWorker(dated, 'nell');
+  dated.jobs = [
+    { id: 'job_o', profession: 'blacksmithing', material: 'pale_iron', n: 4, left: 2 } as unknown as WorkJob,
+    { id: 'job_b', profession: 'blacksmithing', material: 'pale_iron', n: 3, doneAt: at + 10_000, worker: 'nell' } as unknown as WorkJob,
+  ];
   heal(dated);
+  const batch = dated.jobs.find((j) => j.id === 'job_b');
   check(
-    dated.jobs.length === 1 && Math.abs(dated.jobs[0].doneAt - (at + minutesMs(WORK.minutes) * 2)) < 5000,
-    'and a job written in descents is healed onto the clock, a batch a descent',
-    `${dated.jobs.length} jobs, done at ${dated.jobs[0]?.doneAt}`
+    dated.jobs.length === 2 && Math.abs(dated.jobs[0].doneAt - (at + 4 * unitMs() * 2)) < 5000
+      && batch?.startAt === batch!.doneAt - 3 * unitMs() && batch?.taken === 0,
+    'and a job written in descents is healed onto the clock, a run a descent; one written as a batch gets its start',
+    `${dated.jobs.length} jobs, done at ${dated.jobs[0]?.doneAt}, batch ${batch?.startAt}..${batch?.doneAt}`
   );
   setClock(() => Date.now());
 }

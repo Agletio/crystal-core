@@ -11,7 +11,7 @@ import {
 import { takeMet } from './scenes';
 import { ownedCrystals } from './crystals';
 import { healTrials } from './trials';
-import { collectWork, hasWorker, minutesMs, now, workersFound } from './work';
+import { collectWork, hasWorker, now, unitMs, workersFound } from './work';
 import { fullUses } from '../mods';
 import { crystalFamily } from '../sim/crystal';
 import type { GameState } from './state';
@@ -397,12 +397,15 @@ export function heal(game: GameState): Healed {
   // into a table that has moved is the worse answer.
   const jobs = Array.isArray(game.jobs) ? game.jobs : [];
   game.jobs = jobs.filter((job) => {
-    // Written when a job counted DESCENTS: each one left is a batch's minutes.
+    // Written when a job counted DESCENTS: each one left is the job's own run.
     const old = (job as { left?: number }).left;
     if (job && !Number.isFinite(job.doneAt) && Number.isFinite(old) && (old ?? 0) > 0) {
-      job.doneAt = now() + minutesMs(WORK.minutes) * (old ?? 0);
+      job.doneAt = now() + job.n * unitMs() * (old ?? 0);
     }
     delete (job as { left?: number }).left;
+    // Written as one batch: it started a run before it ends, and none is taken.
+    if (job && Number.isFinite(job.doneAt) && !Number.isFinite(job.startAt)) job.startAt = job.doneAt - job.n * unitMs();
+    if (job && !Number.isFinite(job.taken)) job.taken = 0;
     const ok =
       job && MATERIAL_BY_ID[job.material] !== undefined &&
       PROFESSION_BY_ID[job.profession] !== undefined &&

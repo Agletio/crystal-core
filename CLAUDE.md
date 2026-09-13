@@ -803,12 +803,16 @@ level that buys nothing is not a state that exists.
 **PROCESSING RUNS ON THE CLOCK.** *"Change the materials to process on a
 timer. I think it's fine you still want to go and run stuff to clear it while
 it's processing anyway but it's annoying having to go in and out to see if
-they are ready."* `WORK.minutes` a job and `WorkJob.doneAt` an epoch
-millisecond, read through ONE `clock()` in `src/game/work.ts` that the demo
-sets forward; `collectWork` takes what the clock finished off the stations
-wherever the bag is next read — the report (cleared, died or walked), the
-Works, the anvil, a load — and the Works counts down once
-a second while it is open. **The cost is said out loud**: a job finishes while
+they are ready."* `WORK.secondsEach` a unit, `WorkJob.startAt` and `.doneAt`
+epoch milliseconds a unit apart per `n`, read through ONE `clock()` in
+`src/game/work.ts` that the demo sets forward; `collectWork` takes what the
+clock finished off the stations wherever the bag is next read — the report
+(cleared, died or walked), the Works, the anvil, a load — and the Works counts
+down once a second while it is open. **A JOB IS EVERYTHING HELD AND LANDS A
+UNIT AT A TIME** — *"make the work your workers do work in bulk but just finish
+the individual items as it goes"* — so `WorkJob.taken` is what has already
+come off it, a job half through is half the bars, and there is no cap on what
+a worker takes. **The cost is said out loud**: a job finishes while
 the browser is shut and while it is left open, so processing is the one thing
 in the game a player can wait out, and it pays materials, never power. The
 meal still burns on CLEARS. `heal()` turns a job written in descents into a
@@ -835,17 +839,17 @@ one at the foot of the station of the job (`CAMP_STATION_FOOT`), opening the
 Works on that tab. The dev kit rescues all four. The raw
 leaves the bag on LOAD, since a job you could cancel for a refund is a slot that
 costs nothing to fill. **A JOB IS ONE FOR ONE**, so nothing is lost and nothing
-minted — which is why **A JOB'S SIZE IS WHAT YOU HOLD**, `WORK.least` of 1 up
-to `WORK.most`, and never a floor you have to reach: *"it feels bad to need 4
-ores for a bar."* Measured, a bare clear gathers 2.1 raw dealt round the two dry
-families, so the old floor of 4 was four descents before a station would take
-anything at all. The rate never moved — it was one for one
-before and after — so nothing a recipe asks for changes with it, and `most` is
-the only reason a worker is worth finding. **XP IS FLAT AND NEVER BY WORLD**, or
+minted — which is why **A JOB'S SIZE IS WHAT YOU HOLD**, from `WORK.least` of
+1, and never a floor you have to reach: *"it feels bad to need 4 ores for a
+bar."* Measured, a bare clear gathers 2.1 raw dealt round the two dry families,
+so the old floor of 4 was four descents before a station would take anything at
+all. The rate never moved — it was one for one before and after — so nothing a
+recipe asks for changes with it, and a second worker is a second unit landing
+every fifteen seconds. **XP IS FLAT AND NEVER BY WORLD**, or
 the no-tiers rule breaks in the easiest place, and it is paid PER UNIT — so what
 a level costs is said in RAW, which no job size can flatter: measured, level 2 is
-4 raw and 99 is 7,886, nine hours at best with all four workers on full jobs. A
-zone-unique is worked by nothing at all.
+4 raw and 99 is 7,886, which at a unit every 15 seconds is nine hours at best
+with all four workers busy. A zone-unique is worked by nothing at all.
 
 **JEWELLERY IS TEN IMPLICITS, and it is JEWELLING's whole output.**
 `JEWEL_IMPLICITS` — Elemental and Occult Resistance, % Life, % Mana and one per

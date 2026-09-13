@@ -7,6 +7,7 @@
  * profession is on the screen rather than in a wiki.
  */
 import {
+  PROFESSION,
   CRAFT,
   GEAR_BASES,
   JEWEL_IMPLICITS,
@@ -125,7 +126,8 @@ function saysWindow(recipe: CraftRecipe, base: GearBase): string {
   if (share <= 0) return `at level ${level}`;
   const lo = Math.ceil(share * liftFor(windowLow(level)));
   const hi = Math.ceil(share * liftFor(windowHigh(level)));
-  return `${lo}–${hi} ${what} at level ${level}`;
+  const top = Math.ceil(share * liftFor(windowHigh(PROFESSION.maxLevel)));
+  return `${lo === hi ? lo : `${lo}–${hi}`} ${what} now · ${top} at level ${PROFESSION.maxLevel}`;
 }
 
 /** What a jewellery implicit's stat is CALLED. Off the table, so a new one is
@@ -142,12 +144,20 @@ const windowLow = (level: number): number => windowShare(level) * (1 - windowWid
 const windowHigh = (level: number): number => windowLow(level) + windowWidth(level);
 
 /** One row of the NEEDS ledger: an icon, a name, and held against wanted as
- *  two numbers — lit when it is enough, dim when it is not. */
+ *  two numbers each saying which it is — lit when it is enough, dim when not. */
 function needRow(icon: Element | null, what: string, held: number, wanted: number): HTMLElement {
   const row = el('div', `forgeneed ${held >= wanted ? 'forgeneed--ok' : 'forgeneed--short'}`);
   if (icon) row.append(icon);
   row.append(el('span', 'forgeneed__what', what));
-  row.append(el('span', 'forgeneed__n', `${held} / ${wanted}`));
+  row.append(el('span', 'forgeneed__n', `${held} held / ${wanted} needed`));
+  return row;
+}
+
+/** THE LEVEL ROW says the level required and nothing else — *"not the
+ *  fraction"* — lit once the profession is there. */
+function levelRow(name: string, at: number, wanted: number): HTMLElement {
+  const row = el('div', `forgeneed ${at >= wanted ? 'forgeneed--ok' : 'forgeneed--short'}`);
+  row.append(el('span', 'forgeneed__what', `Required level ${wanted} ${name}`));
   return row;
 }
 
@@ -174,7 +184,7 @@ function baseCard(base: GearBase, recipe: CraftRecipe): HTMLElement {
   for (const part of recipe.parts) {
     const who = PROFESSION_BY_ID[part.profession];
     const at = professionAt(game, part.profession).level;
-    needs.append(needRow(null, `${who?.name ?? part.profession} level`, at, part.level));
+    needs.append(levelRow(who?.name ?? part.profession, at, part.level));
     const family = MATERIAL_FAMILY_BY_ID[who?.family ?? ''];
     const one = family?.one ?? 'unit';
     const ready = versionsFor(game, part);
@@ -215,6 +225,7 @@ function baseCard(base: GearBase, recipe: CraftRecipe): HTMLElement {
   if (odds > 0) card.append(el('div', 'crystal__grow', `${odds}% chance of a Perfect base`));
 
   const why = whyNotCraft(game, recipe);
+  card.classList.toggle('crystal--locked', why !== null); // still there to read, blurred and shut
   const button = el('button', 'mini', why ?? 'Make it') as HTMLButtonElement;
   button.id = forgeMakeId(base.id);
   button.disabled = why !== null;
@@ -231,7 +242,7 @@ function baseCard(base: GearBase, recipe: CraftRecipe): HTMLElement {
 
 export function render(): void {
   if (!game) return;
-  for (const done of collectWork(game)) note(`${done.item.name} came off the station: +${done.job.n}`);
+  for (const done of collectWork(game)) note(`${done.item.name} came off the station: +${done.n}`);
   tabs();
   filters();
   const host = $('forge-list');

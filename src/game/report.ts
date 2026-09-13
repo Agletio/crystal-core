@@ -176,8 +176,8 @@ export function buildReport(game: GameState, run: RunState, left = false): RunRe
     rows.push({
       label: `${profession?.name ?? done.job.profession} · ${done.item.name}`,
       value: done.levels > 0
-        ? `+${done.job.n}, level ${professionAt(game, done.job.profession).level}`
-        : `+${done.job.n}`,
+        ? `+${done.n}, level ${professionAt(game, done.job.profession).level}`
+        : `+${done.n}`,
     });
   }
 

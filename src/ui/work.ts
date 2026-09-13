@@ -14,7 +14,9 @@ import {
   jobOf,
   jobSize,
   jobsIn,
+  finishedOn,
   leftOn,
+  nextOn,
   loadWork,
   professionAt,
   professionFor,
@@ -86,8 +88,7 @@ function rawCard(family: MaterialFamilyDef, item: any): HTMLElement {
 
   card.append(
     el('div', 'crystal__grow',
-      `${size} → ${size} ${family.one}${size === 1 ? '' : 's'}, ${WORK.minutes} minutes` +
-        (n > size ? ` — ${n - size} stay in the bag` : ''))
+      `${size} → ${size} ${family.one}${size === 1 ? '' : 's'}, one every ${WORK.secondsEach}s, ${saysLeft(size * WORK.secondsEach)} in all`)
   );
 
   // THE BUTTON NAMES THE WORKER it goes to, so who is being assigned is read
@@ -111,7 +112,7 @@ function rawCard(family: MaterialFamilyDef, item: any): HTMLElement {
 export function render(): void {
   if (!game) return;
   // WHAT THE CLOCK FINISHED comes off the stations first, and says so.
-  for (const done of collectWork(game)) note(`${done.item.name} came off the station: +${done.job.n}`);
+  for (const done of collectWork(game)) note(`${done.item.name} came off the station: +${done.n}`);
   tabs();
   const family = MATERIAL_FAMILIES.find((f) => f.id === shown) ?? MATERIAL_FAMILIES[0];
   const profession = professionFor(family.id);
@@ -128,8 +129,8 @@ export function render(): void {
     : '';
   $('work-note').textContent =
     `${profession?.name} works ${family.name.toLowerCase()} at ${family.station}: ` +
-    `${family.raw} into ${family.processed}, ${WORK.minutes} minutes a job, ` +
-    `${WORK.most} at a time.${eating}`;
+    `${family.raw} into ${family.processed}, one every ${WORK.secondsEach} seconds, ` +
+    `everything held at once.${eating}`;
   ($('work-bar') as HTMLElement).style.width = `${Math.round((at.xp / need) * 100)}%`;
   $('work-xp').textContent = `Level ${at.level} — ${Math.floor(at.xp)} / ${need} to the next`;
 
@@ -156,7 +157,9 @@ export function render(): void {
     const which = job ? PROFESSIONS.find((p) => p.id === job.profession) : undefined;
     card.append(
       el('div', 'quest__detail',
-        job ? `${which?.name ?? job.profession} — ${saysLeft(leftOn(job))} left` : 'Load raw at a station.')
+        job
+          ? `${which?.name ?? job.profession} — ${finishedOn(job)} of ${job.n} done · next in ${saysLeft(nextOn(job))} · ${saysLeft(leftOn(job))} in all`
+          : 'Load raw at a station.')
     );
     jobs.append(card);
   }
