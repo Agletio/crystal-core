@@ -130,7 +130,7 @@ Blocker: none
 ```
 
 
-## Requests from Claude — the Aethermancer's keystones, commit `TRADE_COMMIT`
+## Requests from Claude — the Aethermancer's keystones, commit `df12bf463ca743abcbc4f77212e21b45b8f16528`
 
 ```text
 Entry ID(s): talent.aethermancer.aet_refraction, aet_shell, aet_surge, aet_deepwinter, aet_bloodletting, aet_secondwind, aet_slowburn, aet_dust, aet_thrift, aet_undertow, and each one's .grant.* line; character.aethermancer (the blurb now understates the trade)
