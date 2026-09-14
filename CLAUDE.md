@@ -1531,6 +1531,27 @@ the gloves, and 1.93 to 2.07 to 2.18 kills/s. **THIS IS WHAT MOST NODES ARE FOR*
 out a unique build."* Nothing in it is new content: Transmutation, Chill chance,
 Deepfreeze and the standing spike were all already there.
 
+**THE PASSIVE SHELF IS A LADDER, SIX STEPS OF IT.** *"Lets make 5 tiers of
+unlocks: ones you start with, ones you unlock at level 12, 20, 32, 40, and
+48… try to make the really complex ones last or ones that really need other
+support to do anything worthwhile, like lingering or Glass."* `PASSIVE_STEPS`
+in `src/data.ts` and `SkillDef.unlocksAt` on each row — absent is the first
+step, and the demo fails a passive standing on none of them. You START with
+Killing Surge, Refraction and Quickening, three that ask nothing of the rest
+of the build; **12** opens Infection, Unmaking, Unbinding and Sundering;
+**20** the plain rules — Headsman, Transfixion, Reaping, Bulwark — which is
+also where the first defensive answer arrives; **32** the conditionals and the
+first Ailment cluster — Brink, Virulence, Deep Winter, Contagion; **40** what
+needs a stat behind it — Zealotry, Featherstep, Aftershock, Hoarfrost; and
+**48** the five that are a build rather than a pick — Lingering, Shardfall,
+Rimeheart, Blood Pact and Glass. **`skillIsOpen` AND `openPassives` ARE THE
+SEAM**, in `src/sim/character.ts`: `equipSkill` refuses a locked one,
+`whyNotEquip` says the level in numbers, and the three places that FILL a
+passive slot — the ladder character, the ceiling's search and its played sets
+— all read `openPassives`, so no balance number is ever read off a build its
+own level could not assemble. On the shelf a shut tile keeps its picture,
+prints the level it opens at and says the same on its card.
+
 **TWENTY-FOUR PASSIVES, THREE A DAMAGE SKILL, AND EVERY ONE IS A TRADE.**
 *"We need to add some more ideally like 3x the number of damage skills because
 you get three passives so we need some variety."* Sixteen became twenty-four:

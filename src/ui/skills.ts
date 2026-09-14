@@ -43,6 +43,7 @@ import { ask } from './confirm';
 import { nodeCard } from './glossary';
 import { warnAtCamp } from './atcamp';
 import { inDescent } from './run';
+import { note } from './history';
 import { slotWorkings } from '../skill-text';
 import { ailmentLine } from '../damage-text';
 import type { SkillNodeDef } from '../skills-tree';
@@ -56,6 +57,7 @@ import {
   slotIsOpen,
   targetSlotFor,
   weaponWanted,
+  whyNotEquip,
   xpToNext,
 } from '../sim/character';
 import { AILMENT_BY_ID, DAMAGE_TYPE_BY_ID } from '../data';
@@ -227,7 +229,11 @@ export function skillCard(skill: SkillDef): HTMLElement {
   // printing the description beside them is the same sentence twice.
   const workings = slotWorkings(skill, game.character);
   const body = skill.category === 'passive' ? workings : [skill.description, ...workings];
-  return nodeCard(skill.name, on ? 'equipped' : where ? `${where} slot` : '', body);
+  // SHUT SAYS THE LEVEL, first: what a locked tile is hovered to find out.
+  const why = whyNotEquip(game.character, skill.id);
+  const card = nodeCard(skill.name, why ? `level ${skill.unlocksAt}` : on ? 'equipped' : where ? `${where} slot` : '', body);
+  if (why) card.append(el('div', 'tip__note tip__note--why', why));
+  return card;
 }
 
 /**
@@ -318,6 +324,11 @@ async function open(skillId: string): Promise<void> {
     return;
   }
 
+  const shut = whyNotEquip(game.character, skillId);
+  if (shut) {
+    note(shut, 'fail');
+    return;
+  }
   const slot = slotFor(skillId);
   if (!slot) return;
   const held = SKILL_BY_ID[equippedSkill(game.character, slot) ?? ''];
@@ -462,12 +473,18 @@ function renderSkillList(): void {
       const spare = treePointsFor(skill.id, progress.level) - progress.allocated.length;
       const mine = heldAnywhere(skill.id);
 
-      const btn = el('button', `skilltile${mine ? ' skilltile--on' : ''}`) as HTMLButtonElement;
+      const shut = whyNotEquip(game.character, skill.id);
+      const btn = el(
+        'button',
+        `skilltile${mine ? ' skilltile--on' : ''}${shut ? ' skilltile--shut' : ''}`
+      ) as HTMLButtonElement;
       btn.id = skillRowId(skill.id);
       btn.append(skillIcon(skill.id, 44));
       btn.append(el('span', 'skilltile__name', skill.name));
-      // Two marks and no prose: what is held, and what has a point waiting.
-      btn.append(el('span', 'skilltile__tag', mine ? 'equipped' : ''));
+      // Two marks and no prose: what is held, and what has a point waiting. A
+      // SHUT one says the level it opens at, which is the only fact about it
+      // a player can act on.
+      btn.append(el('span', 'skilltile__tag', shut ? `level ${skill.unlocksAt}` : mine ? 'equipped' : ''));
       if (spare > 0 && treeFor(skill.id).length > 0) {
         btn.append(el('span', 'skilltile__spare', String(spare)));
       }

@@ -8,6 +8,7 @@ import {
   WEAPON_SLOT,
   LEVELLING,
   MAIN_SLOT,
+  PLAYER_SKILLS,
   SKILL_BY_ID,
   SKILL_SLOTS,
   SKILL_SLOT_BY_ID,
@@ -264,6 +265,20 @@ export const openSlots = (character: Character): SkillSlotDef[] =>
 export const slotIsOpen = (character: Character, slotId: string): boolean =>
   character.level >= (SKILL_SLOT_BY_ID[slotId]?.unlocksAt ?? 1);
 
+/** A SKILL OPENS AT A LEVEL TOO, which is the passive shelf's own ladder. */
+export const skillIsOpen = (character: Character, skillId: string): boolean =>
+  character.level >= (SKILL_BY_ID[skillId]?.unlocksAt ?? 1);
+
+/** Why this skill is not yours yet, or null — said in the level it wants. */
+export const whyNotEquip = (character: Character, skillId: string): string | null =>
+  skillIsOpen(character, skillId)
+    ? null
+    : `Opens at level ${SKILL_BY_ID[skillId]?.unlocksAt}, you are ${character.level}.`;
+
+/** Every passive this character has reached, which is what fills a slot. */
+export const openPassives = (character: Character): SkillDef[] =>
+  PLAYER_SKILLS.filter((sk) => sk.category === 'passive' && skillIsOpen(character, sk.id));
+
 /** Where it would land: the slot it is in, else the first EMPTY one it fits,
  *  else the first it fits at all. Null when nothing open takes it. */
 export function targetSlotFor(character: Character, skillId: string): string | null {
@@ -285,6 +300,7 @@ export function equipSkill(character: Character, skillId: string, slotId?: strin
   if (!slot) return false;
   const def = SKILL_SLOT_BY_ID[slot];
   if (!def || !def.accepts.includes(category) || !slotIsOpen(character, slot)) return false;
+  if (!skillIsOpen(character, skillId)) return false;
   const held = { ...(character.equipped ?? {}) };
   for (const [id, what] of Object.entries(held)) {
     if (what === skillId && id !== slot) delete held[id];

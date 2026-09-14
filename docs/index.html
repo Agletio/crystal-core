@@ -2129,6 +2129,10 @@
   .skilltile { position: relative; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 9px 5px 7px; text-align: center; }
   .skilltile:hover { background: var(--edge); border-color: var(--rust); }
   .skilltile--on { border-color: var(--citrine); }
+  /* SHUT: the picture stays, the name goes quiet, and the tag is the level. */
+  .skilltile--shut { opacity: .5; cursor: not-allowed; }
+  .skilltile--shut .skilltile__name { color: var(--text-dim); }
+  .skilltile--shut .skilltile__tag { color: var(--hurt); }
   .skilltile__name { font-size: 10px; line-height: 1.25; }
   /* Always present, empty until it is held: a tag arriving on equip grew the
      tile, and the grid reflowed under the next click. */

@@ -188,7 +188,7 @@ const STATES = [
   'toast', 'itemmenu', 'confirm', 'professions',
   'handover', 'descent', 'results',
   'scene', 'speech', 'lampwright', 'tale', 'bonus',
-  'skills', 'skill-list', 'skill-web', 'move-web', 'trade', 'trials', 'wall',
+  'skills', 'skill-list', 'skill-passives', 'skill-web', 'move-web', 'trade', 'trials', 'wall',
   'bench', 'tooltip', 'glossary', 'graft', 'works', 'anvil', 'jewellery', 'tools',
   'builder',
 ];
@@ -598,6 +598,37 @@ for (const vp of VIEWPORTS) {
   await page.waitForTimeout(250);
   // The middle depth, which Escape steps back to: a state, not a moment.
   await shoot('skill-list');
+
+  // THE PASSIVE SHELF IS A LADDER, and a level 1 character has most of it shut.
+  // A shut tile keeps its picture and prints the level it opens at; a shelf
+  // where nothing is shut means the gate is not reaching the screen at all.
+  await page.evaluate(() => {
+    document.getElementById('skills-back')?.click();
+    const passive = document.getElementById('skillcat-passive');
+    if (passive) passive.click();
+  });
+  await page.waitForTimeout(250);
+  const shelf = await page.evaluate(() => {
+    const tiles = [...document.querySelectorAll('#skills-list .skilltile')];
+    const shut = tiles.filter((t) => t.classList.contains('skilltile--shut'));
+    return {
+      all: tiles.length,
+      shut: shut.length,
+      said: shut[0]?.querySelector('.skilltile__tag')?.textContent ?? '',
+    };
+  });
+  if (shelf.all > 0) {
+    if (shelf.shut === 0) problems.push(`${vp.name}: a level 1 character sees the whole passive shelf open`);
+    else if (!/\d/.test(shelf.said)) problems.push(`${vp.name}: a shut passive says "${shelf.said}" rather than a level`);
+    else await shoot('skill-passives');
+  }
+  // BACK TO THE ABILITY SHELF, because everything below is the WEB's: a shelf
+  // of passives has no web at all and the glossary shot comes off a node.
+  await page.evaluate(() => {
+    document.getElementById('skills-back')?.click();
+    document.querySelector('#skills-cats .catcard:not([disabled])')?.click();
+  });
+  await page.waitForTimeout(250);
   await page.evaluate(() => {
     const rows = [...document.querySelectorAll('#skills-list .skilltile')];
     (rows.find((r) => /Fireball/.test(r.textContent ?? '')) ?? rows[0])?.click();

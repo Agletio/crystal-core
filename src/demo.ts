@@ -68,6 +68,7 @@ import {
   PROFESSION_BY_ID,
   SELECT,
   INSTABILITY,
+  PASSIVE_STEPS,
   MOD_TIERS,
   TIER_ILVL,
   spreadTiers,
@@ -194,7 +195,7 @@ import {
   touching, zoneOpen,
 } from './ladder';
 import type { RunWhere } from './ladder';
-import { canDualWield, gatherableFamilies, toolIn, toolMore, toolRung } from './sim/character';
+import { canDualWield, gatherableFamilies, openPassives, toolIn, toolMore, toolRung, whyNotEquip } from './sim/character';
 import { unlocksFor } from './professions';
 import { seamSocketed } from './sim/crystal';
 import {
@@ -7181,6 +7182,9 @@ if (rule('THE SPIKE — does one cast cover ground, and does buying area cover m
 {
   const crystals = (passive: string | null, shots: number) => {
     const who = ladderCharacter(5, new Rng(88), 'rimespike');
+    // AT THE STEP THE PASSIVE OPENS ON, or it never goes on and the run below
+    // measures a bare hero against a bare hero.
+    who.level = Math.max(who.level, SKILL_BY_ID[passive ?? '']?.unlocksAt ?? 1);
     const freeze = routeTo('rimespike', 'rs_ward');
     skillProgress(who, 'rimespike').allocated = [...freeze, ...routeTo('rimespike', 'rs_field', freeze)];
     for (const slot of SKILL_SLOTS) {
@@ -9186,6 +9190,64 @@ if (rule('THREE SLOTS — one that kills, one always on, one that moves you')) {
     `and every one of them is reachable inside the ${LEVELLING.maxLevel} levels there are`,
     String(LEVELLING.maxLevel)
   );
+  // THE PASSIVE SHELF IS A LADDER — *"5 tiers of unlocks: ones you start with,
+  // ones you unlock at level 12, 20, 32, 40, and 48."*
+  {
+    const shelf = PLAYER_SKILLS.filter((sk) => sk.category === 'passive');
+    const off = shelf.filter((sk) => !PASSIVE_STEPS.includes(sk.unlocksAt ?? 1));
+    check(
+      off.length === 0,
+      `all ${shelf.length} passives stand on one of the ${PASSIVE_STEPS.length} steps — ${PASSIVE_STEPS.join(', ')}`,
+      off.map((sk) => `${sk.id}@${sk.unlocksAt}`).join(', ')
+    );
+    for (const at of PASSIVE_STEPS) {
+      const here = shelf.filter((sk) => (sk.unlocksAt ?? 1) === at);
+      gauge(`level ${String(at).padStart(2)}: ${here.map((sk) => sk.name).join(', ')}`);
+    }
+    // NO STEP IS EMPTY and none is the whole shelf: a tier nothing stands on is
+    // a level that opens nothing, and one holding everything is no ladder.
+    const empty = PASSIVE_STEPS.filter((at) => !shelf.some((sk) => (sk.unlocksAt ?? 1) === at));
+    check(
+      empty.length === 0 && PASSIVE_STEPS.every((at) => shelf.filter((sk) => (sk.unlocksAt ?? 1) === at).length < shelf.length),
+      'every step opens something, and no step opens the lot',
+      empty.join(', ')
+    );
+    check(
+      PASSIVE_STEPS[0] === 1 && PASSIVE_STEPS.every((n, i) => i === 0 || n > PASSIVE_STEPS[i - 1])
+        && PASSIVE_STEPS[PASSIVE_STEPS.length - 1] <= LEVELLING.maxLevel,
+      `the first step is level 1 and the last, ${PASSIVE_STEPS[PASSIVE_STEPS.length - 1]}, is inside the ${LEVELLING.maxLevel} there are`,
+      PASSIVE_STEPS.join(', ')
+    );
+    // AND THE LEVEL IS WHAT ENFORCES IT, not the screen: a fresh character is
+    // refused in numbers, and the same character at the level takes it.
+    const late = shelf.find((sk) => (sk.unlocksAt ?? 1) === PASSIVE_STEPS[PASSIVE_STEPS.length - 1])!;
+    const young = makeCharacter({}, 'strike');
+    const why = whyNotEquip(young, late.id);
+    check(
+      why !== null && /\d/.test(why) && !equipSkill(young, late.id)
+        && equippedSkill(young, 'passive') === null,
+      `a level 1 character is refused ${late.name} and told the level — ${why}`,
+      why ?? 'it went on anyway'
+    );
+    const grown = makeCharacter({}, 'strike');
+    grown.level = late.unlocksAt ?? 1;
+    check(
+      whyNotEquip(grown, late.id) === null && equipSkill(grown, late.id)
+        && equippedSkill(grown, 'passive') === late.id,
+      `and at level ${late.unlocksAt} it goes on`,
+      String(whyNotEquip(grown, late.id))
+    );
+    // WHAT THE CEILING WEARS IS WHAT ITS LEVEL OPENED, or every balance number
+    // in the game is read off a build nobody could assemble.
+    const walled = PASSIVE_STEPS.map((at) => openPassives({ ...young, level: at }).length);
+    check(
+      walled.every((n, i) => i === 0 || n > walled[i - 1]) && walled[0] > 0
+        && walled[walled.length - 1] === shelf.length,
+      `what a level has open climbs ${walled.join(' → ')} of ${shelf.length}`,
+      walled.join(', ')
+    );
+  }
+
   // Every shelf fills at least one slot, and every slot has something to put in
   // it — an empty shelf is a slot nobody can fill.
   const homeless = PLAYER_SKILLS.filter((s) => !slotForSkill(s.id));
@@ -9227,7 +9289,9 @@ if (rule('THREE SLOTS — one that kills, one always on, one that moves you')) {
 
     const grown = makeCharacter({}, 'strike');
     grown.level = 40;
-    for (const p of passives.slice(0, 3)) equipSkill(grown, p.id);
+    // WHAT THAT LEVEL HAS OPENED: the shelf is a ladder, so the first three in
+    // the table are not the first three a level 40 character may wear.
+    for (const p of openPassives(grown).slice(0, 3)) equipSkill(grown, p.id);
     const heldGrown = Object.entries(grown.equipped ?? {})
       .filter(([id]) => id.startsWith('passive'))
       .map(([, what]) => what);
@@ -9331,9 +9395,11 @@ if (rule('THREE SLOTS — one that kills, one always on, one that moves you')) {
   // Declared and read is not the same as DOES SOMETHING, which is the promise
   // `npm run mods` makes about a modifier and this section makes about a slot.
   {
+    // AT ITS OWN STEP OR HIGHER, since the shelf is a ladder: a level under
+    // what a passive opens at equips nothing and the run measures a bare hero.
     const wearing = (id: string, level = 40) => {
       const c = makeCharacter(starterLoadout(new Rng(9)), 'strike');
-      c.level = level;
+      c.level = Math.max(level, SKILL_BY_ID[id]?.unlocksAt ?? 1);
       equipSkill(c, id);
       return c;
     };

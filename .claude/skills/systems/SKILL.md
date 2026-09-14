@@ -50,6 +50,12 @@ never a second path.
 
 ## Skills
 
+**A PASSIVE OPENS AT A LEVEL** — `PASSIVE_STEPS` and `SkillDef.unlocksAt`, six
+steps from 1 to 48, the build-defining ones last. `skillIsOpen`, `whyNotEquip`
+and `openPassives` in `src/sim/character.ts` are the seam: `equipSkill` refuses
+a locked one and every harness that fills a passive slot reads `openPassives`,
+so a measured build is one its own level could wear.
+
 **Three slots in a TABLE** — `SKILL_SLOTS`, like `EQUIP_SLOTS` and `RUN_SLOTS`.
 A fourth is one entry, never a fourth named field. `Character.equipped` is slot
 id → skill id and **nothing outside `src/sim/character.ts` reads it directly**:

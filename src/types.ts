@@ -374,6 +374,7 @@ export interface SkillDef {
   name: string;
   description: string;
   category?: SkillCategory; // omitted for monster-only skills
+  unlocksAt?: number; // character level it opens at, one of `PASSIVE_STEPS`; absent is 1
   /** Base the Lampwright hands you, over what `requires` would pick. */
   weapon?: string;
   /** 'attack', 'spell', 'melee', … NEVER damage types, or they'd scale the lot. */

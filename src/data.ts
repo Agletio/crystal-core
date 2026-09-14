@@ -5553,6 +5553,7 @@ export const SKILLS: SkillDef[] = [
     id: 'contagion',
     name: 'Contagion',
     category: 'passive',
+    unlocksAt: 32,
     description:
       "When an enemy dies, spread 1 stack of each Ailment on it to the 2 nearest enemies " +
       "within 3 tiles. Ailments you apply are 40% weaker.",
@@ -5572,6 +5573,7 @@ export const SKILLS: SkillDef[] = [
     id: 'bloodpact',
     name: 'Blood Pact',
     category: 'passive',
+    unlocksAt: 48,
     description:
       "Maximum Mana becomes 0. Skills cost 1.4 Life per Mana they " +
       "would normally cost. This Life cost can kill you.",
@@ -5592,6 +5594,7 @@ export const SKILLS: SkillDef[] = [
     id: 'headsman',
     name: 'Headsman',
     category: 'passive',
+    unlocksAt: 20,
     description:
       "Cull enemies left at or below 6% of maximum Life by a hit or Ailment tick.",
     tags: ['passive'],
@@ -5610,6 +5613,7 @@ export const SKILLS: SkillDef[] = [
     id: 'deepwinter',
     name: 'Deep Winter',
     category: 'passive',
+    unlocksAt: 32,
     description:
       "Freezing an enemy requires 3 fewer Chill stacks, to a minimum of 1. Your Freezes last 40% longer.",
     tags: ['passive'],
@@ -5626,6 +5630,7 @@ export const SKILLS: SkillDef[] = [
     id: 'transfixion',
     name: 'Transfixion',
     category: 'passive',
+    unlocksAt: 20,
     description:
       "Hits prevent enemies from moving, attacking or casting for 0.35s. Repeated hits refresh this duration.",
     tags: ['passive'],
@@ -5644,6 +5649,7 @@ export const SKILLS: SkillDef[] = [
     id: 'virulence',
     name: 'Virulence',
     category: 'passive',
+    unlocksAt: 32,
     description:
       'Your Ailments deal 50% more damage and last 40% less time.',
     tags: ['passive'],
@@ -5660,6 +5666,7 @@ export const SKILLS: SkillDef[] = [
     id: 'lingering',
     name: 'Lingering',
     category: 'passive',
+    unlocksAt: 48,
     description:
       'Your Ailments last 70% longer and deal 15% less damage.',
     tags: ['passive'],
@@ -5676,6 +5683,7 @@ export const SKILLS: SkillDef[] = [
     id: 'infection',
     name: 'Infection',
     category: 'passive',
+    unlocksAt: 12,
     description:
       '+40% chance to apply an Ailment.',
     tags: ['passive'],
@@ -5708,6 +5716,7 @@ export const SKILLS: SkillDef[] = [
     id: 'unmaking',
     name: 'Unmaking',
     category: 'passive',
+    unlocksAt: 12,
     description:
       "Reduces the Fire, Cold and Lightning Resistance of enemies within 5 tiles by 25 percentage points.",
     tags: ['passive'],
@@ -5724,6 +5733,7 @@ export const SKILLS: SkillDef[] = [
     id: 'unbinding',
     name: 'Unbinding',
     category: 'passive',
+    unlocksAt: 12,
     description:
       "Reduces the Poison, Dark and Light Resistance of enemies within 5 tiles by 25 percentage points.",
     tags: ['passive'],
@@ -5746,6 +5756,7 @@ export const SKILLS: SkillDef[] = [
     id: 'sundering',
     name: 'Sundering',
     category: 'passive',
+    unlocksAt: 12,
     description:
       "Hitting an enemy triggers a Burst around you, dealing 5.5 base Physical damage per " +
       "character level in a 2.4 tile radius. Cooldown: 4s.",
@@ -5770,6 +5781,7 @@ export const SKILLS: SkillDef[] = [
     id: 'hoarfrost',
     name: 'Hoarfrost',
     category: 'passive',
+    unlocksAt: 40,
     description:
       'Every 0.7s a spike goes out at every Chilled enemy within 7 tiles, ' +
       'for 1.6 Cold damage per character level.',
@@ -5796,6 +5808,7 @@ export const SKILLS: SkillDef[] = [
     id: 'shardfall',
     name: 'Shardfall',
     category: 'passive',
+    unlocksAt: 48,
     description:
       'A body dying Frozen throws 3 Projectiles of ice at enemies within 6 ' +
       'tiles, each a Spell dealing 1.1 Cold damage per character level.',
@@ -5823,6 +5836,7 @@ export const SKILLS: SkillDef[] = [
     id: 'featherstep',
     name: 'Featherstep',
     category: 'passive',
+    unlocksAt: 40,
     description:
       "Your Armour no longer reduces damage. Gain Dodge Chance equal to 60% of the damage reduction it would provide, " +
       "and gain 60% more Movement Speed after 2s " +
@@ -5847,6 +5861,7 @@ export const SKILLS: SkillDef[] = [
     id: 'brink',
     name: 'Brink',
     category: 'passive',
+    unlocksAt: 32,
     description:
       "While below 35% of maximum Life, deal 65% more hit damage and take " +
       "30% less damage from hits and boss drains. At or above 35% Life, deal 20% less hit damage.",
@@ -5873,6 +5888,7 @@ export const SKILLS: SkillDef[] = [
     id: 'glass',
     name: 'Glass',
     category: 'passive',
+    unlocksAt: 48,
     description: "Deal 90% more damage. You have 70% less maximum Life.",
     tags: ['passive'],
     behaviour: 'no_cast',
@@ -5890,6 +5906,7 @@ export const SKILLS: SkillDef[] = [
     id: 'reaping',
     name: 'Reaping',
     category: 'passive',
+    unlocksAt: 20,
     description:
       "Kills restore 10% of maximum Life. You have " +
       "35% less maximum Life.",
@@ -5910,6 +5927,7 @@ export const SKILLS: SkillDef[] = [
     id: 'zealotry',
     name: 'Zealotry',
     category: 'passive',
+    unlocksAt: 40,
     description:
       "Deal 55% more hit damage while above 70% of maximum Mana, checked after paying the skill cost. " +
       "Skills cost 70% more Mana.",
@@ -5930,6 +5948,7 @@ export const SKILLS: SkillDef[] = [
     id: 'aftershock',
     name: 'Aftershock',
     category: 'passive',
+    unlocksAt: 40,
     description:
       "Each Ailment tick on an enemy also deals 50% of its damage after mitigation to other enemies within " +
       "2.2 tiles. This shared damage is not reduced again. Your Ailments have 40% less duration.",
@@ -5951,6 +5970,7 @@ export const SKILLS: SkillDef[] = [
     id: 'bulwark',
     name: 'Bulwark',
     category: 'passive',
+    unlocksAt: 20,
     description:
       "Limits damage from an ordinary hit to 10% of maximum Life before movement skill protection and Mana absorption. Deal " +
       '35% less damage.',
@@ -5995,6 +6015,7 @@ export const SKILLS: SkillDef[] = [
     id: 'rimeheart',
     name: 'Rimeheart',
     category: 'passive',
+    unlocksAt: 48,
     description:
       "Converts your main skill and its tree to Cold and adds 200 percentage points to your chance to apply Ailments, " +
       "guaranteeing at least 2 Chill stacks from its Cold hits. Deal 25% less damage.",
@@ -6122,6 +6143,17 @@ export const shelfForCategory = (category: SkillCategory): string =>
 
 /** The three a character holds at once, as a TABLE like `EQUIP_SLOTS`: a
  *  fourth is one entry rather than a fourth named field. */
+/**
+ * WHEN A PASSIVE OPENS. *"Lets make 5 tiers of unlocks: ones you start with,
+ * ones you unlock at level 12, 20, 32, 40, and 48."* The first tier is three
+ * plain ones, the next four that ask nothing of the rest of the build, and the
+ * last holds what needs a build round it — *"try to make the really complex
+ * ones last or ones that really need other support to do anything worthwhile,
+ * like lingering or Glass."* `SkillDef.unlocksAt` is the level; absent is the
+ * first tier, and the demo fails a passive standing on no step.
+ */
+export const PASSIVE_STEPS = [1, 12, 20, 32, 40, 48];
+
 export const SKILL_SLOTS: SkillSlotDef[] = [
   {
     id: 'main',

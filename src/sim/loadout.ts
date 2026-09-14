@@ -28,7 +28,7 @@ import { choices, chooseMod, raiseMod, raises } from '../crafting';
 import { defaultGearBase, makeGear, rollCrystal, rollGear } from '../economy';
 import { runSet } from './crystal';
 import { RunSim, TICK } from './run';
-import { attributePointsFor, canDualWield, equipSkill, makeCharacter, slotIsOpen } from './character';
+import { attributePointsFor, canDualWield, equipSkill, makeCharacter, openPassives, slotIsOpen } from './character';
 import { BUILT_TREES, canAllocate, treeFor, treePointsFor } from '../skills-tree';
 import { skillProgress } from './character';
 import type { Character } from './character';
@@ -113,7 +113,7 @@ export function ladderCharacter(
   // Every passive slot the LEVEL opened gets filled: since the Burst moved into
   // one, an empty slot is a build with no answer to a crowd. A SHAPE chooses,
   // the way it chooses its plate; an unshaped character draws.
-  const passives = PLAYER_SKILLS.filter((sk) => sk.category === 'passive');
+  const passives = openPassives(character);
   const wanted = shape ? SHAPE_PASSIVES[shape] : [];
   for (const slot of SKILL_SLOTS) {
     if (!slot.accepts.includes('passive') || !slotIsOpen(character, slot.id)) continue;
@@ -301,7 +301,8 @@ export function bestBuild(band: number, rng: Rng, skillId = 'strike', atLevel?: 
     f.archetypes.some((a) => (skill?.tags ?? []).includes(a === 'rogue' ? 'attack' : a))
   );
   const plate = (wear.length ? wear : ARMOUR_FAMILIES).map((f) => f.id);
-  const passives = PLAYER_SKILLS.filter((sk) => sk.category === 'passive').map((sk) => sk.id);
+  // A ceiling wearing a passive its level never opened is one nobody can reach.
+  const passives = openPassives({ ...makeCharacter({}, skillId), level }).map((sk) => sk.id);
   const movers = [null, ...MOVER_IDS];
 
   // Two passes, because the tree walk is nearly the whole cost: score every
