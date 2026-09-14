@@ -1925,6 +1925,67 @@ const ATTRIBUTE_MODS: ModDef[] = ATTRIBUTES.map((attr) => ({
   ],
 }));
 
+/**
+ * SEVEN TIERS, T1 THE BEST AND T7 THE WORST, DERIVED off the two or three the
+ * table authors. *"I think we need way more tiers of mods for this system to
+ * work… lets make 7 tiers with t1 being the best and t7 the worst."* The
+ * authored rungs are the ANCHORS — the worst is T7 and the best T1 exactly as
+ * written, so neither end of the balance moves — and the rest are interpolated
+ * between them, spaced evenly so a middle anchor stays where its author put it.
+ * The WEIGHT is interpolated the same way, which keeps one modifier's
+ * commonness against another's; only the ilvl ladder is shared.
+ */
+export const MOD_TIERS = 7;
+
+/** Item level a TIER needs, WORST first — one a DROP BAND, so band N rolls
+ *  tier 7-N and the gear a new character finds is T7 and T6. T7 opens at 1,
+ *  since a piece with no tier at all is a piece the bench cannot start on. */
+export const TIER_ILVL = [1, 10, 22, 34, 46, 58, 70];
+
+/** A ladder authored as RUNGS — a tier carrying its own switch — is left where
+ *  it is: +1 and +2 Projectiles are two rungs of one modifier, never seven. */
+const rungLadder = (mod: ModDef): boolean => mod.tiers.some((t) => t.grants !== undefined);
+
+const lerp = (a: number, b: number, at: number): number => a + (b - a) * at;
+
+/** Interpolated and rounded the way its ends were written: a range of whole
+ *  numbers stays whole, one carrying a fraction keeps two places. */
+function between(a: number, b: number, at: number): number {
+  const v = lerp(a, b, at);
+  return Number.isInteger(a) && Number.isInteger(b) ? Math.round(v) : Number(v.toFixed(2));
+}
+
+/** The authored tiers spread over `MOD_TIERS` rungs, best first. */
+export function spreadTiers(mod: ModDef): ModDef {
+  const anchors = [...mod.tiers].reverse(); // worst first, which is how a ladder reads
+  const stats = anchors[0]?.stats.length ?? 0;
+  // Nothing to interpolate between, a rung ladder, or ends that do not line up.
+  if (anchors.length < 2 || rungLadder(mod) || anchors.some((t) => t.stats.length !== stats)) {
+    return mod;
+  }
+  const rungs = [];
+  for (let rank = 0; rank < MOD_TIERS; rank++) {
+    const along = (rank / (MOD_TIERS - 1)) * (anchors.length - 1);
+    const low = anchors[Math.min(anchors.length - 2, Math.floor(along))];
+    const high = anchors[Math.min(anchors.length - 1, Math.floor(along) + 1)];
+    const at = along - Math.min(anchors.length - 2, Math.floor(along));
+    rungs.push({
+      // The author's own worst rung is the FLOOR: a line they kept out of the
+      // shallow end stays out of it, however far down the ladder now reaches.
+      ilvl: Math.max(TIER_ILVL[rank] ?? 1, anchors[0].ilvl),
+      weight: Math.round(lerp(low.weight, high.weight, at)),
+      stats: low.stats.map((line, i) => ({
+        ...line,
+        range: [
+          between(line.range[0], high.stats[i].range[0], at),
+          between(line.range[1], high.stats[i].range[1], at),
+        ] as [number, number],
+      })),
+    });
+  }
+  return { ...mod, tiers: rungs.reverse() };
+}
+
 export const GEAR_MODS: ModDef[] = [
   ...ATTRIBUTE_MODS,
   ...GEAR_MAIN_MODS,
@@ -1935,7 +1996,7 @@ export const GEAR_MODS: ModDef[] = [
   ...AILMENT_MODS,
   ...RESISTANCE_MODS,
   ...AILMENT_WARD_MODS,
-];
+].map(spreadTiers);
 
 /** What somebody will write over a base's own line. Never rolled — weight 0 —
  *  but present in `ALL_MODS`, so a save resolves one and `npm run mods` holds
@@ -2060,29 +2121,29 @@ export const MOD_BY_ID: Record<string, ModDef> = Object.fromEntries(
  */
 export const SHARD_FAMILIES = [
   { id: 'shard_attribute', tag: 'attribute', name: 'Attribute Shard', icon: 'cur_attribute',
-    class: 'basic' as CurrencyClass, weight: 10, buys: 'an Attribute line' },
+    class: 'basic' as CurrencyClass, weight: 10, buys: 'an Attribute line', does: 'Strength, Intelligence, Dexterity, Acuity, Spirit and Constitution.' },
   { id: 'shard_resistance', tag: 'resistance', name: 'Warding Shard', icon: 'cur_resistance',
-    class: 'basic' as CurrencyClass, weight: 10, buys: 'a Resistance line' },
+    class: 'basic' as CurrencyClass, weight: 10, buys: 'a Resistance line', does: 'Resistance to one damage type, or to a whole group.' },
   { id: 'shard_ailment', tag: 'ailment', name: 'Affliction Shard', icon: 'cur_ailment',
-    class: 'uncommon' as CurrencyClass, weight: 6, buys: 'an Ailment line' },
+    class: 'uncommon' as CurrencyClass, weight: 6, buys: 'an Ailment line', does: 'The Ailments you apply, and the effect of Ailments on you.' },
   { id: 'shard_crit', tag: 'crit', name: 'Precision Shard', icon: 'cur_crit',
-    class: 'rare' as CurrencyClass, weight: 6, buys: 'a Critical line' },
+    class: 'rare' as CurrencyClass, weight: 6, buys: 'a Critical line', does: 'Critical Chance and Critical Damage.' },
   { id: 'shard_speed', tag: 'speed', name: 'Alacrity Shard', icon: 'cur_speed',
-    class: 'rare' as CurrencyClass, weight: 7, buys: 'an Attack, Cast or Movement Speed line' },
+    class: 'rare' as CurrencyClass, weight: 7, buys: 'an Attack, Cast or Movement Speed line', does: 'Attack, Cast and Movement Speed, and Skill Cooldown.' },
   { id: 'shard_life', tag: 'life', name: 'Vitality Shard', icon: 'cur_life',
-    class: 'uncommon' as CurrencyClass, weight: 8, buys: 'a Life line' },
+    class: 'uncommon' as CurrencyClass, weight: 8, buys: 'a Life line', does: 'Maximum Life, its regeneration and its leech.' },
   { id: 'shard_mana', tag: 'mana', name: 'Aether Shard', icon: 'cur_mana',
-    class: 'basic' as CurrencyClass, weight: 6, buys: 'a Mana line' },
+    class: 'basic' as CurrencyClass, weight: 6, buys: 'a Mana line', does: 'Maximum Mana, its regeneration and what a use costs.' },
   { id: 'shard_area', tag: 'area', name: 'Expanse Shard', icon: 'cur_area',
-    class: 'uncommon' as CurrencyClass, weight: 5, buys: 'an Area of Effect line' },
+    class: 'uncommon' as CurrencyClass, weight: 5, buys: 'an Area of Effect line', does: 'Area of Effect, and the damage an Area skill deals.' },
   { id: 'shard_reward', tag: 'reward', name: 'Fortune Shard', icon: 'cur_reward',
-    class: 'exotic' as CurrencyClass, weight: 3, buys: 'a Rarity or Currency Find line' },
+    class: 'exotic' as CurrencyClass, weight: 3, buys: 'a Rarity or Currency Find line', does: 'Rarity and Currency Find.' },
   { id: 'shard_damage', tag: 'damage', name: 'Ruin Shard', icon: 'cur_damage',
-    class: 'rare' as CurrencyClass, weight: 14, buys: 'a Damage line' },
+    class: 'rare' as CurrencyClass, weight: 14, buys: 'a Damage line', does: 'Damage of every kind, and Levels of your skills.' },
   { id: 'shard_defence', tag: 'defence', name: 'Bulwark Shard', icon: 'cur_defence',
-    class: 'basic' as CurrencyClass, weight: 8, buys: 'an Armour or Block line' },
+    class: 'basic' as CurrencyClass, weight: 8, buys: 'an Armour line', does: 'Armour, flat and increased.' },
   { id: 'shard_utility', tag: 'utility', name: 'Sundry Shard', icon: 'cur_utility',
-    class: 'basic' as CurrencyClass, weight: 5, buys: 'a line no other shard buys' },
+    class: 'basic' as CurrencyClass, weight: 5, buys: 'a line no other shard buys', does: 'Attack Range, and anything no other shard claims.' },
 ] as const;
 
 export const SHARD_BY_ID: Record<string, (typeof SHARD_FAMILIES)[number]> =
@@ -2104,8 +2165,10 @@ export function shardFor(mod: { tags?: string[] }): string | null {
  * shallow end for a top line is the slow road and the answer is the next zone.
  */
 export const SHARDS = {
-  /** Indexed by tier RANK from the worst. */
-  perTier: [3, 30, 300],
+  /** Indexed by tier RANK from the worst, and it is a CUMULATIVE ladder now: a
+   *  line goes on at T7 and is RAISED, so what a top line costs is the sum of
+   *  all seven — 282 of one family, near the 300 a single pick used to cost. */
+  perTier: [2, 4, 8, 16, 32, 70, 150],
   /** What DISMANTLING a modifier hands back, as a share of what it cost. Under
    *  1 by law: craft, dismantle and craft again may never print shards. */
   refund: 0.4,
@@ -2205,7 +2268,7 @@ export const PLAN_DROP = {
 export const SELECT = {
   /** Level a modifier TIER needs, by RANK from the worst. The worst is open
    *  from level 1: what limits a piece is its sockets, never a line count. */
-  tierAt: [1, 25, 60],
+  tierAt: [1, 6, 14, 25, 38, 54, 72],
 };
 
 /**
@@ -2217,12 +2280,12 @@ export const SELECT = {
  */
 export const INSTABILITY = {
   bench: 'jewelling', // the one profession every chosen line reads
-  capFound: [12, 24], // a found piece's socket, from item level 1 to `topIlvl`
-  capMade: [12, 32], // a made piece's socket, from the maker's level 1 to 99
+  capFound: [12, 30], // a found piece's socket, from item level 1 to `topIlvl`
+  capMade: [14, 34], // a made piece's socket, from the maker's level 1 to 99
   topIlvl: 70,
   addAt1: [7, 10], // what one shard adds at Jewelling 1
-  addAt99: [1, 3], // and at 99
-  tierMore: 2, // more per tier rank climbed when a line is raised
+  addAt99: [1, 2], // and at 99
+  tierMore: 1, // more per tier rank climbed when a line is raised
 };
 
 export const shardCost = (rank: number): number =>
@@ -2243,7 +2306,7 @@ export const CURRENCIES: CurrencyDef[] = [
     id: roughOf(f.id),
     name: `Rough ${f.name}`,
     class: f.class,
-    description: `Cut at the jeweller's into ${f.name}s, one at a time.`,
+    description: `Uncut. The jeweller's turns 1 of these into 1 ${f.name}.`,
     icon: f.icon,
     weight: f.weight,
     cuts: f.id,
@@ -2252,7 +2315,7 @@ export const CURRENCIES: CurrencyDef[] = [
     id: f.id,
     name: f.name,
     class: f.class,
-    description: `Buys ${f.buys}, for ${SHARDS.perTier.join(', ')} by tier.`,
+    description: `${f.does} ${SHARDS.perTier[0]} of them buys the worst tier and ${SHARDS.perTier[SHARDS.perTier.length - 1]} the best.`,
     icon: f.icon,
     weight: 0, // never a drop: cut from the rough one
   })),

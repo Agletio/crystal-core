@@ -818,20 +818,21 @@ for (const vp of VIEWPORTS) {
 
   await page.evaluate(() => {
     // Lines go on from the bench's own list now, so the shot fills the piece
-    // by choosing rather than by clicking a currency.
-    // A shard group is folded until opened, and the list is the picked
-    // socket's: unfold the first group, take a line, and the list moves on
-    // to the next empty socket by itself.
-    for (let i = 0; i < 6; i++) {
+    // by choosing rather than by clicking a currency. ONE LINE A SOCKET: the
+    // list is whatever socket is picked, and clicking the enabled row over and
+    // over instead RAISES one socket until it fractures and the piece is bare.
+    const click = (el) => el?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    for (let at = 0; at < 4; at++) {
+      click(document.getElementById(`bench-socket-${at}`));
       let row = [...document.querySelectorAll('#craft-pick .craftpick')].find((b) => !b.disabled);
       if (!row) {
         const fold = document.querySelector('#craft-pick .picklist__shard');
         if (!fold) break;
-        fold.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+        click(fold);
         row = [...document.querySelectorAll('#craft-pick .craftpick')].find((b) => !b.disabled);
         if (!row) break;
       }
-      row.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      click(row);
     }
   });
   await page.waitForTimeout(200);

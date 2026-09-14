@@ -327,12 +327,20 @@ the ZONE (`mapTheme`, `MAP_THEMES`).
   tier a raise may reach (`SELECT.tierAt`, the worst at 1) and a narrower add.
 - **A SHARD IS A COST.** Twelve families DERIVED off `GEAR_MODS`'s own tags
   (`SHARD_FAMILIES`, `shardFor`, first match wins); `SHARDS.perTier` is what a
-  tier costs by rank from the worst, and `SHARDS.refund` what a dismantle hands
-  back, always under it. No run gates a family out; `DropBand.shards` is the
-  pile one drop pays, so depth buys VOLUME. **It DROPS ROUGH** — the
+  tier costs by rank from the worst and is CUMULATIVE, since a line is placed
+  at the worst and raised; `SHARDS.refund` is what a dismantle hands back for
+  one rung, always under it. `SHARD_FAMILIES.does` is the plain line a folded
+  group on the bench prints. No run gates a family out; `DropBand.shards` is
+  the pile one drop pays, so depth buys VOLUME. **It DROPS ROUGH** — the
   `rough_<family>` row is the only one weighted, `CurrencyDef.cuts` names the
   shard it becomes, and a Jewelling job at the jeweller's (`loadCut`,
   `collectWork` granting into the wallet) is what cuts it and levels Jewelling.
+- **SEVEN TIERS, T1 BEST, AND FIVE OF THEM ARE DERIVED.** `MOD_TIERS` and
+  `spreadTiers`: a gear modifier authors two or three ANCHORS, the worst
+  becoming T7 and the best T1 unchanged, and the rest are interpolated — stats,
+  ranges and weight alike. A ladder whose tiers carry their own `grants` is a
+  RUNG ladder and is left as authored. `TIER_ILVL` is one rung a DROP BAND, so
+  band N rolls tier 7−N, floored by the modifier's own worst authored ilvl.
 - **The crystal's is the one ROLL left**, and `shard_of_making` is the only
   thing the counter sells, because a shop stocking the whole bench replaces the
   map — and choosing a crystal's rule would buy the cheapest danger for the

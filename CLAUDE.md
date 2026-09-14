@@ -946,29 +946,33 @@ or you stop early."* `INSTABILITY` in `src/data.ts` and `Item.meta.sockets`:
 a piece is born with one `Socket` a modifier it can hold (`socketsFor`, drawn
 off the piece's OWN id so a drop consumes no draw and `ensureSockets` heals an
 old save to the same caps), a FOUND piece's caps ride its item level
-(`capFound`, 12 to 24 by `topIlvl`) and a MADE one's the maker's level
-(`capMade`, 12 to 32), so a level 99 smith's piece goes further than any drop.
+(`capFound`, 12 to 30 by `topIlvl`) and a MADE one's the maker's level
+(`capMade`, 14 to 34), so a level 99 smith's piece goes further than any drop.
 A line goes in at its WORST tier into a free live socket and is RAISED a tier
 at a time in the same socket; each shard adds a roll of instability —
-`addRange`, 7–10 at Jewelling 1 down to 1–3 at 99, `tierMore` extra a rank on
-a raise — and past the cap the socket FRACTURES: the line is gone, the shards
+`addRange`, 7–10 at Jewelling 1 down to 1–2 at 99, `tierMore` of 1 extra a rank
+on a raise — and past the cap the socket FRACTURES: the line is gone, the shards
 are spent, `Socket.dead` and it takes nothing again. **NO ITEM LEVEL GATES A
 RAISE** — *"it should be unlimited except the instability should just be
 lower on the lower ilvl items… if you get super lucky on an ilvl 25 item and
 get bottom roll instability or you just have really high jewel crafting then
 you can still get to the next tier"* — the cap is the whole of what a shallow
 piece pays. Measured, a level 1 jeweller's first line always fits the
-shallowest drop, a top drop takes a full T1 line with no roll going wrong from
-Jewelling 75, and a level 99 maker's piece from 25. A found line wears
-nothing, which is what makes a good drop a socket with room to raise in.
+shallowest drop; the whole T7-to-T1 climb costs 28–35 instability at Jewelling
+99 against a top drop's 30 and a level 99 maker's 34, so the last rung is a
+gamble on the best piece in the game and out of reach on anything less. Where
+a socket stops is a table: at Jewelling 25 a deep drop reaches T4, at 50 T3,
+at 75 T2. A found line wears nothing, which is what makes a good drop a socket
+with room to raise in.
 **A PIECE IS DRAWN AS ITS SOCKETS**, on the card and on the bench: one row a
 socket, an empty one saying *Empty socket* with its `0/22 instability`, a
 fractured one saying so, and on the bench every row is a BUTTON — *"you
 should be able to select it and see the mods you can add"* — the picked
 socket being what the list beside it is about: a held line's RAISE, an empty
 socket's every line. The lines are grouped under the shard that buys them and
-FOLDED until opened (`opened` in `src/ui/craft.ts`), a folded group naming
-the lines it holds, and a legend over the list says what the columns are.
+FOLDED until opened (`opened` in `src/ui/craft.ts`), a folded group saying how
+many lines it holds and what the family DOES rather than listing their names,
+and a legend over the list says what the columns are.
 The tooltip behind a row is a card (`pickCard`): the line lit, the shards
 against what you hold, the instability against the socket, and how likely
 the socket is to fracture on it.
@@ -985,19 +989,39 @@ Measured on a +14–26 Strength line: 14–16 at level 1 and 25–26 at 99. **A 
 PIECE COMES WITH ONE LINE**, random, so the anvil hands the bench something to
 raise rather than a blank.
 
+**SEVEN TIERS, T1 THE BEST AND T7 THE WORST, AND EVERY ONE IS DERIVED.** *"I
+think we need way more tiers of mods for this system to work… lets make 7 tiers
+with t1 being the best and t7 the worst. Its just weird that I can fairly easily
+get a bunch of t1 mods on gear I just got at level 8."* `MOD_TIERS` and
+`spreadTiers` in `src/data.ts`: a gear modifier still AUTHORS two or three
+rungs and those are the ANCHORS — the worst is T7 and the best T1 exactly as
+written, so neither end of the balance moves — and the five between are
+interpolated, evenly spaced so a middle anchor stays where its author put it.
+The WEIGHT is interpolated the same way, which keeps one modifier's commonness
+against another's. **A LADDER AUTHORED AS RUNGS IS LEFT ALONE**: a tier
+carrying its own switch is +1 and +2 Projectiles, two rungs and never seven.
+**AND ITEM LEVEL IS THE WHOLE OF WHAT A DROP MAY ROLL** — `TIER_ILVL` is one
+rung a DROP BAND, so band N rolls tier 7−N and the gear a new character finds
+is T7 and T6, with T1 the last band's alone. A modifier's own worst authored
+ilvl is the FLOOR under that, so a line kept out of the shallow end stays out
+of it.
+
 **A SHARD IS A COST, NEVER A THING YOU APPLY.** Twelve of them, one per family
 of modifier, DERIVED off the tags `GEAR_MODS` already carries — `SHARD_FAMILIES`
 and `shardFor`, first matching tag wins, and the demo fails a modifier no family
-claims. `SHARDS.perTier` is 3 / 30 / 300 by tier RANK from the worst, ten times
-a step, so grinding the shallow end for a top line is the slow road and the
-answer is the next zone — *"you need 1 for tier 1… but t2 you need say like 20
-per."* **NO RUN GATES A FAMILY OUT**: damage you cannot craft until the fourth
+claims. `SHARDS.perTier` is 2 / 4 / 8 / 16 / 32 / 70 / 150 by tier RANK from the
+worst, and it is CUMULATIVE now that a line is placed at T7 and raised: a top
+line is 282 of one family, near the 300 a single pick used to cost.
+**`SHARD_FAMILIES.does` is what the family is FOR**, printed under a folded
+group on the bench and on the currency's own row — *"instead of the names of
+each in the small text it should be a brief description of each."*
+**NO RUN GATES A FAMILY OUT**: damage you cannot craft until the fourth
 band is damage nobody crafts, so the CLASS only groups the ledger and
 `DropBand.shards` is the pile one drop hands over. Depth buys VOLUME here, and
-volume is the whole of what a better tier costs. Measured: a clear pays 7.3
-shards at the bare Fissure and 38.0 at the deep end, which for the family
-everybody wants is a worst-tier line in 3 clears at the bottom and 1 at the top,
-a middle one in 27 against 5, and the best in 261 against 50.
+volume is the whole of what a better tier costs. Measured: a clear pays 7.6
+shards at the bare Fissure and 29.4 at the deep end, which for the family
+everybody wants is a T7 line in 2 clears at the bottom and 1 at the top, a T4
+in 25 against 7, and a T1 in 233 against 61.
 
 **A SHARD DROPS ROUGH, AND THE JEWELLER'S CUTS IT.** *"How are you leveling
 up… do you just have to sit here adding random mods to gear? Maybe we need to
@@ -1038,9 +1062,14 @@ teleports so you get 100% and then stack CDR."* Each has a FLOOR
 (`MOVE.leastCooldown`, `AMBUSH.leastChain`) and each is cut by the GRANT and the
 worn `cooldown` stat MULTIPLIED, so a notable and a rolled line cannot replace
 each other. **A MOVER'S FLOOR IS THERE TO STOP IT BEING A SECOND WALK SPEED;
-AMBUSH'S IS SET UNDER WHAT GEAR ROLLS ON PURPOSE** — measured, a full set of
-the line is 84% and the floor is 15%, so stacking it pays all the way rather
-than stopping partway, and the demo ROLLS that set rather than quoting it. The
+AMBUSH'S IS WHERE THE LINE RUNS OUT** — measured, the line on all seven slots
+that take it rolls 103% to 123% and the floor bites at 85%, so an all-in set
+spends its last fifth on nothing while any ordinary one pays all the way. It
+read 84% on two rungs, when a tier-3 base's own item level could reach only
+the worst; seven rungs put the middle ones inside it. The demo ROLLS that set
+over eight seeds rather than quoting it, and what it FAILS on is the
+mechanism: past 100% the multiplier goes negative, and the floor is what holds
+the delay above zero. The
 line is called **Skill Cooldown** now, because naming the mover was a lie the
 moment a second cooldown existed. **A LEVEL ON A SKILL LANDS INSIDE `skillBase`**, tagged like every
 other line, so `+1 to Level of Attack Skills` reaches a swing and not a cast and

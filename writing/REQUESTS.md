@@ -141,3 +141,16 @@ Intended rule: every notable past a gate is a keystone-grade rule on the pool; t
 Request: reword the ten keystones and the clash reason; the blurb could name that the talents are rules on the pool rather than "strengthen this protection". Priority: high for the ten, medium for the blurb.
 Blocker: none
 ```
+
+
+## Requests from Claude — what a shard family DOES, on the bench's folded groups
+
+```text
+Entry ID(s): currency.shard_attribute, currency.shard_resistance, currency.shard_ailment, currency.shard_crit, currency.shard_speed, currency.shard_life, currency.shard_mana, currency.shard_area, currency.shard_reward, currency.shard_damage, currency.shard_defence, currency.shard_utility, and the twelve rough_* rows beside them
+Status: pending (my placeholder wording throughout)
+Text location: SHARD_FAMILIES in src/data.ts — the new `does` field on each row, which CURRENCIES reads into the currency's own description and src/ui/craft.ts prints under a folded shard group on the bench
+Implementation: shardFor in src/data.ts decides which modifiers a family claims; SHARDS.perTier is what a rung costs
+Intended rule: the bench groups every line it offers under the shard that buys it, folded shut. Folded, the group prints its count and this line, so `does` has to say what the family is FOR without listing its modifiers — *"instead of the names of each in the small text it should be a brief description of each. Like Affliction is reduced effect of ailments on you. You can just put something basic dont work too hard and just flag it for astra to fix."* Each line I wrote is true of what the family actually claims, checked against the table: Affliction is both halves (the Ailments you apply AND inurement to the ones on you), Ruin is every damage line plus +Level of Skills, Sundry is Attack Range alone today.
+Request: reword all twelve `does` lines. They are read at a glance while folded, so short and concrete beats complete. Priority: medium.
+Blocker: none
+```

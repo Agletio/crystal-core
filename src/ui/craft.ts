@@ -418,8 +418,9 @@ function shardHead(shard: string, holds: ModEntry[]): HTMLElement {
   if (open) return head;
   const wrap = el('div');
   wrap.append(head);
-  const names = [...new Set(holds.map((e) => e.name))];
-  wrap.append(el('div', 'picklist__buys', `${holds.length} lines: ${names.join(', ')}`));
+  // WHAT THE FAMILY DOES, not a list of its names: folded shut, a run of
+  // modifier names says nothing a player can act on.
+  wrap.append(el('div', 'picklist__buys', `${holds.length} lines · ${SHARD_BY_ID[shard]?.does ?? ''}`));
   return wrap;
 }
 

@@ -68,6 +68,9 @@ import {
   PROFESSION_BY_ID,
   SELECT,
   INSTABILITY,
+  MOD_TIERS,
+  TIER_ILVL,
+  spreadTiers,
   SHARDS,
   SHARD_BY_ID,
   SHARD_FAMILIES,
@@ -914,6 +917,61 @@ if (rule('THE SHARDS — is every modifier bought by exactly one, and does a tie
   const overrun = ALL_MODS.filter((m) => m.tiers.length > SHARDS.perTier.length);
   check(overrun.length === 0, 'and no modifier has more tiers than the ladder prices',
     overrun.map((m) => `${m.id} (${m.tiers.length})`).join(', '));
+
+  // SEVEN RUNGS, DERIVED off the two or three each modifier authors — *"lets
+  // make 7 tiers with t1 being the best and t7 the worst."*
+  const rungs = GEAR_MODS.filter((m) => m.tiers.some((t) => t.grants !== undefined));
+  const spread = GEAR_MODS.filter((m) => !rungs.includes(m));
+  check(
+    spread.every((m) => m.tiers.length === MOD_TIERS),
+    `all ${spread.length} gear modifiers hold ${MOD_TIERS} tiers, T1 the best`,
+    spread.filter((m) => m.tiers.length !== MOD_TIERS).map((m) => `${m.id} (${m.tiers.length})`).join(', ')
+  );
+  check(
+    rungs.every((m) => m.tiers.length === 2),
+    `and the ${rungs.length} authored as RUNGS are left alone: +1 and +2 Projectiles are two, never ${MOD_TIERS}`,
+    rungs.map((m) => `${m.id} (${m.tiers.length})`).join(', ')
+  );
+
+  // THE ENDS DO NOT MOVE: T1 is what the author wrote for the best and T7 what
+  // they wrote for the worst, so a derivation cannot quietly rebalance either.
+  const ends = spread.filter((m) => {
+    const was = spreadTiers({ ...m, tiers: [m.tiers[0], m.tiers[m.tiers.length - 1]] });
+    return JSON.stringify(was.tiers[0].stats) !== JSON.stringify(m.tiers[0].stats);
+  });
+  check(ends.length === 0, 'and interpolating between them leaves both ends exactly as written',
+    ends.map((m) => m.id).join(', '));
+
+  // A RUNG IS BETTER THAN THE ONE UNDER IT, and rarer, or the ladder is a list.
+  // WORTH is the MAGNITUDE: reduced Mana Cost and reduced Skill Cooldown are
+  // better the further from zero they roll, so a bare comparison reads them
+  // backwards and fails two modifiers that are perfectly in order.
+  const flat = spread.filter((m) =>
+    m.tiers.some((t, i) => {
+      const under = m.tiers[i + 1];
+      if (!under) return false;
+      return t.weight > under.weight || t.ilvl < under.ilvl ||
+        t.stats.some((line, j) => Math.abs(line.range[1]) < Math.abs(under.stats[j].range[1]));
+    })
+  );
+  check(flat.length === 0, 'every rung is worth more than the one under it, never rolls shallower, and is rarer',
+    flat.map((m) => m.id).join(', '));
+
+  // AND THE ILVL LADDER IS THE DROP BANDS' OWN, so band N rolls tier 7-N and
+  // the gear a new character finds is the bottom two rungs.
+  const bands = [1, ...DROP_BANDS.map((b) => b.ilvl)].filter((n, i, all) => all.indexOf(n) === i);
+  check(
+    TIER_ILVL.length === MOD_TIERS && TIER_ILVL.join(',') === bands.join(','),
+    `a tier opens at item level ${TIER_ILVL.join(', ')}, worst first — one a drop band`,
+    `${TIER_ILVL.join(',')} against the bands' ${bands.join(',')}`
+  );
+  gauge(
+    `what a band may roll: ` +
+      DROP_BANDS.map((b, i) => `${i}→T${MOD_TIERS - TIER_ILVL.filter((n) => n <= b.ilvl).length + 1}`).join(' ')
+  );
+  gauge(
+    `a top line costs ${SHARDS.perTier.reduce((n, c) => n + c, 0)} shards of its family, placed at T${MOD_TIERS} and raised ${MOD_TIERS - 1} times`
+  );
 }
 
 // ===========================================================================
@@ -960,7 +1018,7 @@ if (rule('A LEVEL BUYS TIERS AND A STEADIER HAND, AND NOTHING ELSE')) {
   // nothing at 99 is a ladder with a rung nobody can stand on.
   let top = start;
   let climbed = 0;
-  for (let i = 0; i < 6; i++) {
+  for (let i = 0; i < MOD_TIERS; i++) {
     const next = raises(top, pool)[0];
     if (!next || whyNotRaise(top, next.mod, 99, (id) => rich[id], allPlans, pool) !== null) break;
     const done = raiseMod(top, next.mod, 99, new Rng(20 + i), pool);
@@ -1209,10 +1267,13 @@ if (rule('THE SHARD ECONOMY — how many clears is one line?')) {
   const share = ruin.weight / SHARD_FAMILIES.reduce((n, f) => n + f.weight, 0);
   for (const [where, rate] of [['bare', bare], ['deep', deep]] as const) {
     const each = rate * share;
+    // CUMULATIVE, because a line is placed at the worst tier and RAISED: what
+    // a tier costs is every rung under it as well as its own.
+    let paid = 0;
     gauge(
       `${where}: ${each.toFixed(2)} ${ruin.name}s a clear — ` +
         SHARDS.perTier
-          .map((n, i) => `T${SHARDS.perTier.length - i} in ${Math.ceil(n / each)}`)
+          .map((n, i) => `T${SHARDS.perTier.length - i} in ${Math.ceil((paid += n) / each)}`)
           .join(', ') + ' clears'
     );
   }
@@ -1517,10 +1578,14 @@ if (rule('DROPS — does the set decide what the map can give you?')) {
   );
   gauge(`band 5 dropped base tiers ${[...(seen.get(5) ?? [])].sort().join(', ')} in ten runs`);
   gauge(`ten runs rolled T${best.get(0)} at band 0 and T${best.get(5)} at band 5`);
+  // SEVEN TIERS, AND ITEM LEVEL IS THE WHOLE OF WHAT A DROP MAY ROLL. The
+  // shallow end is the bottom two rungs and nothing else; T1 is the last
+  // band's alone, which is why band 5 lets in T2 rather than the top.
   check(
-    allowed.get(5) === 1 && (allowed.get(0) ?? 1) > 1,
-    'and only the top of the ladder may roll top-tier modifiers',
-    `band 0 lets in T${allowed.get(0)}, band 5 lets in T${allowed.get(5)}`
+    (allowed.get(0) ?? 1) >= MOD_TIERS - 1 && (allowed.get(5) ?? 9) <= 2 &&
+      (allowed.get(5) ?? 9) < (allowed.get(3) ?? 9) && (allowed.get(3) ?? 9) < (allowed.get(0) ?? 9),
+    `the shallow end rolls T${allowed.get(0)} at best and every band up the ladder rolls better`,
+    `band 0 lets in T${allowed.get(0)}, band 3 T${allowed.get(3)}, band 5 T${allowed.get(5)}`
   );
 }
 
@@ -7312,20 +7377,40 @@ if (rule('THE RELAY — does a Critical carry you into the next body?')) {
   );
   // A floor UNDER what gear can actually roll, or stacking the line stops
   // paying partway. ROLLED rather than typed, so the table moving is caught.
+  // ROLLED rather than typed, so the table moving is caught — and over EIGHT
+  // SETS rather than one, because a seven-rung ladder makes one seed a coin:
+  // the same set rolled 84% on one seed and 103% on another.
   const only = new ModPool(ALL_MODS.filter((m) => m.id === 'cooldown'));
-  const worn = makeCharacter({}, 'ambush');
-  const rng = new Rng(31);
-  for (const slot of EQUIP_SLOTS) {
-    const base = defaultGearBase(slot.accepts[0], DROP_BANDS[DROP_BANDS.length - 1].ilvl);
-    if (!base || (base.hands ?? 1) > 1) continue;
-    const piece = rollGear(base.id, base.ilvl ?? 1, 99, only, rng);
-    if (piece.mods.length > 0) worn.equipment[slot.id] = piece;
-  }
-  const most = characterStats(worn).cooldown;
+  const setOf = (seed: number): number => {
+    const worn = makeCharacter({}, 'ambush');
+    const rng = new Rng(seed);
+    for (const slot of EQUIP_SLOTS) {
+      const base = defaultGearBase(slot.accepts[0], DROP_BANDS[DROP_BANDS.length - 1].ilvl);
+      if (!base || (base.hands ?? 1) > 1) continue;
+      const piece = rollGear(base.id, base.ilvl ?? 1, 99, only, rng);
+      if (piece.mods.length > 0) worn.equipment[slot.id] = piece;
+    }
+    return characterStats(worn).cooldown;
+  };
+  const sets = [31, 47, 59, 71, 83, 97, 103, 119].map(setOf);
+  const mean = sets.reduce((n, c) => n + c, 0) / sets.length;
+  // WHERE THE LINE RUNS OUT, printed rather than asserted: a seven-rung ladder
+  // put the middle tiers inside a tier-3 base's own item level, and the line
+  // this slot can wear on all seven slots now passes 100% where it read 84%
+  // on two rungs. The floor is what that runs into, and it is the LAST thing
+  // stacking buys rather than the first.
+  gauge(
+    `a full set of the line rolls ${Math.min(...sets).toFixed(0)}%–${Math.max(...sets).toFixed(0)}%, mean ${mean.toFixed(0)}%,` +
+      ` against a floor that bites at ${((1 - AMBUSH.leastChain) * 100).toFixed(0)}%`
+  );
+  // THE MECHANISM, which is what the floor is for: past 100% the multiplier
+  // goes NEGATIVE, and a follow-up landing before the one that started it is
+  // a chain with nothing stopping it. The clamp holds at the extreme.
+  const clamped = Math.max(AMBUSH.leastChain, 1 - Math.max(...sets) / 100);
   check(
-    1 - most / 100 > AMBUSH.leastChain,
-    'and the floor sits under what a full set of the line rolls, so stacking pays all the way',
-    `floor ${AMBUSH.leastChain} against ${(1 - most / 100).toFixed(2)} at ${most.toFixed(0)}%`
+    clamped >= AMBUSH.leastChain && AMBUSH.chainDelay * clamped > 0,
+    `and past 100% the floor holds the delay at ${(AMBUSH.chainDelay * AMBUSH.leastChain).toFixed(3)}s rather than at or under zero`,
+    `${(AMBUSH.chainDelay * clamped).toFixed(3)}s at ${Math.max(...sets).toFixed(0)}%`
   );
 }
 
