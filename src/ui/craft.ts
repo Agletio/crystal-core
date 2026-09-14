@@ -96,7 +96,7 @@ function roll(currency: CurrencyDef): void {
   if (!item) return;
 
   if (balance(game.wallet, currency.id) < 1) {
-    note(`${currency.name} — none in stock`, 'fail');
+    note(`${currency.name} — none owned`, 'fail');
     render();
     return;
   }
@@ -129,7 +129,7 @@ const plans = (): string[] => game.character.plans ?? [];
 function landed(done: Placed, was: string): void {
   const socket = socketsOf(done.item)[done.socket];
   if (done.fractured) {
-    note(`Socket ${done.socket + 1} fractured at +${done.added}: ${was} and the shards are gone`, 'fail');
+    note(`Socket ${done.socket + 1} fractured after gaining ${done.added} instability: ${was} was lost; the shards were spent`, 'fail');
   } else {
     const mod = done.item.mods.find((m) => m.socket === done.socket);
     note(`+ ${mod ? describeMod(mod) : was} · +${done.added}, ${describeSocket(socket)}`, 'add');
@@ -298,7 +298,7 @@ function renderItem(): void {
       el(
         'div',
         'mod__name',
-        item.meta.grafted !== undefined ? 'grafted — cannot be changed' : 'base — cannot be changed'
+        item.meta.grafted !== undefined ? "grafted implicit" : "base implicit"
       )
     );
     row.append(b);
@@ -310,7 +310,7 @@ function renderItem(): void {
   const sockets = socketsOf(item);
   if (item.kind === 'crystal') {
     for (const mod of item.mods) list.append(modRow(item, mod, -1));
-    if (item.mods.length === 0) list.append(el('p', 'empty', modCapacity(item) > 0 ? 'No modifiers.' : 'No room until it levels.'));
+    if (item.mods.length === 0) list.append(el('p', 'empty', modCapacity(item) > 0 ? 'No modifiers.' : "Level up this crystal to unlock a modifier slot."));
   } else {
     if (focused === null || focused >= sockets.length) focused = defaultSocket(item);
     sockets.forEach((socket, i) => {
@@ -345,29 +345,29 @@ function renderPicks(item: Item): void {
   const who = PROFESSION_BY_ID[INSTABILITY.bench]?.name ?? 'Jewelling';
   const [lo, hi] = addRange(level);
   line.hidden = false;
-  line.textContent = `${who} ${level} · a line adds ${lo}–${hi} instability`;
+  line.textContent = `${who} ${level} · new modifier: +${lo}–${hi} instability`;
 
   const at = focused ?? defaultSocket(item);
   const socket = at === null ? undefined : socketsOf(item)[at];
   if (at === null || !socket) {
-    host.append(el('p', 'empty', 'No socket to fill.'));
+    host.append(el('p', 'empty', "No sockets available."));
     return;
   }
   host.append(legend());
   if (socket.dead) {
-    host.append(el('p', 'empty', `Socket ${at + 1} is fractured and takes nothing again.`));
+    host.append(el('p', 'empty', `Socket ${at + 1} is fractured and cannot hold a modifier.`));
     return;
   }
   const held = item.mods.find((m) => m.socket === at);
   if (held) {
-    host.append(el('div', 'slotgroup__label', `socket ${at + 1} · raise`));
+    host.append(el('div', 'slotgroup__label', `socket ${at + 1} · upgrade modifier`));
     const up = raises(item, pool).find((r) => r.mod === held);
     if (up) host.append(pickRow(item, up.entry, level, held));
-    else host.append(el('p', 'empty', `T${held.tier} is the top of ${held.name}.`));
+    else host.append(el('p', 'empty', `T${held.tier} is the best tier for ${held.name}.`));
     return;
   }
 
-  host.append(el('div', 'slotgroup__label', `socket ${at + 1} · add a line`));
+  host.append(el('div', 'slotgroup__label', `socket ${at + 1} · add modifier`));
   const entries = [...choices(item, pool)].sort(
     (a, b) =>
       (costOf(a).shard ?? '').localeCompare(costOf(b).shard ?? '') ||
@@ -375,7 +375,7 @@ function renderPicks(item: Item): void {
       a.defId.localeCompare(b.defId)
   );
   if (entries.length === 0) {
-    host.append(el('p', 'empty', 'Nothing more fits on it.'));
+    host.append(el('p', 'empty', "No compatible modifiers available."));
     return;
   }
   let shard = '';
@@ -420,7 +420,7 @@ function shardHead(shard: string, holds: ModEntry[]): HTMLElement {
   wrap.append(head);
   // WHAT THE FAMILY DOES, not a list of its names: folded shut, a run of
   // modifier names says nothing a player can act on.
-  wrap.append(el('div', 'picklist__buys', `${holds.length} lines · ${SHARD_BY_ID[shard]?.does ?? ''}`));
+  wrap.append(el('div', 'picklist__buys', `${holds.length} modifiers · ${SHARD_BY_ID[shard]?.does ?? ''}`));
   return wrap;
 }
 
@@ -517,10 +517,10 @@ function pickCard(
   fact('instability', `+${lo} to ${hi}`, socket ? `· socket at ${socket.dead ? 'fractured' : `${socket.wear} of ${socket.cap}`}` : '');
   if (socket && !socket.dead) {
     const room = socket.cap - socket.wear;
-    const odds = hi <= room ? 'never' : lo > room ? 'always' : `${Math.round(((hi - room) / (hi - lo + 1)) * 100)}% likely to`;
-    fact('fracture', odds, odds === 'never' ? '— it fits whatever it rolls' : odds === 'always' ? '— the socket cannot take it' : '');
+    const odds = hi <= room ? 'never' : lo > room ? 'always' : `${Math.round(((hi - room) / (hi - lo + 1)) * 100)}% chance`;
+    fact('fracture', odds, odds === 'never' ? "— safe at any roll" : odds === 'always' ? "— socket will be destroyed" : '');
   }
-  card.append(el('div', why ? 'tip__note tip__note--why' : 'tip__note', why ? `— ${why}` : from ? '— click to raise it' : '— click to put it on'));
+  card.append(el('div', why ? 'tip__note tip__note--why' : 'tip__note', why ? `— ${why}` : from ? "— click to upgrade" : "— click to add"));
   return card;
 }
 
@@ -528,7 +528,7 @@ function pickCard(
 export const crystalSlotId = (itemId: string): string => `bench-${itemId}`;
 
 /** Said in one place, because it is said twice: on a crystal, and under them. */
-const WHY_SHUT = `The bench reaches a crystal once you hold all ${CRYSTAL_SLOTS.length}.`;
+const WHY_SHUT = `Crystal crafting unlocks once you own all ${CRYSTAL_SLOTS.length} crystals.`;
 
 /**
  * Every crystal you own, beside the bench. They are never carried, so the dock
@@ -687,7 +687,7 @@ function currencyHandler() {
       if (!currency.crystal) return null;
       const item = craftItem(game);
       if (!item) return null;
-      if (item.kind !== 'crystal') return 'A Shard of Making only reaches a crystal.';
+      if (item.kind !== 'crystal') return "Use a Shard of Making on a crystal.";
       return hasOpenSlot(item) ? null : 'No open slot.';
     },
   };

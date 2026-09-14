@@ -544,7 +544,7 @@ export const GRANTS: GrantDef[] = [
     merge: 'sum',
     say: (v) => {
       const n = asNumber(v);
-      return n === null ? null : `${pct(n)} of the damage Mana absorbs returns to you as Life`;
+      return n === null ? null : `${pct(n)} of damage absorbed by Mana is recovered as Life`;
     },
   },
   {
@@ -554,7 +554,7 @@ export const GRANTS: GrantDef[] = [
     say: (v) => {
       const p = v as { above?: unknown; share?: unknown };
       return typeof p?.above === 'number' && typeof p?.share === 'number'
-        ? `Overcharge spends ${pct(p.share)} of maximum Mana while your Mana is above ${pct(p.above)}, and nothing below it`
+        ? `Overcharge spends ${pct(p.share)} of maximum Mana, replacing its normal cost; requires at least ${pct(p.above)} of maximum Mana remaining after the skill cost`
         : null;
     },
   },
@@ -562,13 +562,13 @@ export const GRANTS: GrantDef[] = [
     id: 'overchargeChills',
     what: 'an overcharged use always chills',
     reads: [STATS],
-    say: () => 'An Overcharged use applies Chill at 100% chance',
+    say: () => "Overcharged Cold hits have at least 100% chance to apply Chill",
   },
   {
     id: 'leechOnTaken',
     what: 'damage you take returns mana at the siphon share',
     reads: [STATS],
-    say: () => "Damage that reaches your Life recovers Mana at 100% of the Siphon's share",
+    say: () => "Damage to your Life from hits and boss drains also restores Mana at your Mana Leech percentage",
   },
   {
     id: 'killFloor',
@@ -577,7 +577,7 @@ export const GRANTS: GrantDef[] = [
     merge: 'max',
     say: (v) => {
       const n = asNumber(v);
-      return n === null ? null : `A kill while you are under ${pct(n)} Mana refills it to ${pct(n)}`;
+      return n === null ? null : `Killing an enemy while below ${pct(n)} of maximum Mana restores it to ${pct(n)}`;
     },
   },
   {
@@ -586,7 +586,7 @@ export const GRANTS: GrantDef[] = [
     reads: [STATS],
     say: (v) => {
       const n = asNumber(v);
-      return n === null ? null : `Starved uses come ${pct(n)} slower and land for their full damage`;
+      return n === null ? null : `Starved skills deal full damage; Starved attacks and casts have ${pct(n)} less speed`;
     },
   },
   {
@@ -596,7 +596,7 @@ export const GRANTS: GrantDef[] = [
     merge: 'sum',
     say: (v) => {
       const n = asNumber(v);
-      return n === null ? null : `Take ${pct(n)} less damage while Starved`;
+      return n === null ? null : `Take ${pct(n)} less damage from hits and boss drains after a Starved use, until you fully pay a skill cost; adds to movement reduction, up to 80% combined`;
     },
   },
   {
@@ -606,7 +606,7 @@ export const GRANTS: GrantDef[] = [
     say: (v) => {
       const p = v as { below?: unknown; perSecond?: unknown };
       return typeof p?.below === 'number' && typeof p?.perSecond === 'number'
-        ? `While you are under ${pct(p.below)} Life, ${pct(p.perSecond)} of maximum Mana a second becomes Life, one for one`
+        ? `While below ${pct(p.below)} of maximum Life, spend up to ${pct(p.perSecond)} of maximum Mana per second to recover 1 Life per Mana spent, stopping at that Life threshold`
         : null;
     },
   },

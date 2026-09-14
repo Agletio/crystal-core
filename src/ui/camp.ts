@@ -144,7 +144,7 @@ function mountFolk(): void {
         id: `worker-${w.id}`,
         x: at.x - grid / 2, y: at.y - grid, w: grid, h: grid,
         opens: 'work', family: job ? familyOfJob(job) : undefined,
-        says: `${w.name}. ${job ? saysJob(job) : 'Idle. Load raw at a station.'}`,
+        says: `${w.name}. ${job ? saysJob(job) : "Idle. Assign work at a processing station."}`,
       },
       'camp-workers'
     );
@@ -181,7 +181,7 @@ function mountFolk(): void {
 function says(spot: Hotspot): string {
   if (spot.opens !== 'socket') return spot.says;
   const held = game.sockets[CRYSTAL_SLOTS[spot.slot ?? 0]?.id ?? ''];
-  return held ? `${held.name} — click to take it back.` : 'Click to choose a crystal.';
+  return held ? `${held.name} — click to unsocket.` : 'Click to choose a crystal.';
 }
 
 /** THE SOCKETS SHOW WHAT IS IN THEM, over the hollow the art drew. */

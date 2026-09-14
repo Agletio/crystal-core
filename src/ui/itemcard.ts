@@ -211,7 +211,7 @@ export function itemCard(item: Item, notes: string[] = []): HTMLElement {
     if (hands > 1) {
       const row = el('div', 'rolled');
       row.append(el('span', 'rolled__v', String(hands)));
-      row.append(el('span', 'rolled__k', 'Hands — your off hand stays empty'));
+      row.append(el('span', 'rolled__k', "Hands — requires both hands"));
       base.append(row);
     }
     if (item.armour) {
@@ -258,7 +258,7 @@ export function itemCard(item: Item, notes: string[] = []): HTMLElement {
   // switch and no amount. And why it can never be crafted, which is otherwise
   // a currency refusing it for no reason the card gives.
   if (unique) {
-    const box = group('it does this');
+    const box = group("Effects");
     const grants: string[] = [];
     for (const [id, value] of Object.entries(unique.grants ?? {})) {
       const said = GRANT_BY_ID[id]?.say?.(value) ?? GRANT_BY_ID[id]?.what;
@@ -267,7 +267,7 @@ export function itemCard(item: Item, notes: string[] = []): HTMLElement {
         box.append(keywordLine(said, 'tip__grant'));
       }
     }
-    box.append(el('div', 'tip__none', 'Fixed. Nothing at a bench can change it.'));
+    box.append(el('div', 'tip__none', "Fixed modifiers. Cannot be crafted."));
     card.append(box);
     // A named piece holds no modifiers, so there is room for the vocabulary.
     const glossary = glossaryOf(grants);
@@ -285,7 +285,7 @@ export function itemCard(item: Item, notes: string[] = []): HTMLElement {
         'div',
         'tip__note',
         grown.need === null
-          ? 'As far as it levels'
+          ? "Maximum level"
           : `${Math.floor(grown.xp)} / ${grown.need} to level ${grown.level + 1}`
       )
     );

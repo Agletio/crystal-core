@@ -58,7 +58,7 @@ async function loadSlot(slot: Slot): Promise<void> {
   if (!who) return;
   const yes = await ask({
     title: `Play ${who.name}?`,
-    text: 'The game you are in keeps playing where it is.',
+    text: "Your current character remains in its save slot.",
     confirm: 'Play',
   });
   if (!yes) return;
@@ -116,8 +116,8 @@ async function saveHere(): Promise<void> {
   if (held) {
     const yes = await ask({
       title: `Save over ${held.name}?`,
-      text: `Level ${held.level}. That game goes, and this one stands in its place.`,
-      confirm: 'Save over it',
+      text: `Level ${held.level}. This replaces that character and its progress with a copy of your current game.`,
+      confirm: "Replace save",
     });
     if (!yes) return;
   }
@@ -135,7 +135,7 @@ async function deleteSlot(): Promise<void> {
   if (!held || slot === liveSlot()) return;
   const yes = await ask({
     title: `Delete ${held.name}?`,
-    text: `Level ${held.level}. This one goes; the others stay.`,
+    text: `Level ${held.level}. This permanently deletes that character and its progress.`,
     confirm: 'Delete',
   });
   if (!yes) return;
@@ -191,8 +191,8 @@ function render(): void {
     el(
       'p',
       'ask__text',
-      'Three games, saved to this browser and nowhere else. The one you are ' +
-        'playing writes itself every few seconds.'
+      "Three save slots, stored in this browser. Your current game " +
+        "autosaves every few seconds."
     )
   );
 

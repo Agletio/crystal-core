@@ -66,7 +66,7 @@ function action(row: Row): { label: string; run: () => void } {
   const { item } = row;
   if (row.held === 'socket') {
     return {
-      label: 'Take it back',
+      label: "Unsocket",
       run: () => {
         if (!unsocket(game, row.slot!)) return;
         note(`Unsocketed ${item.name}`);
@@ -78,7 +78,7 @@ function action(row: Row): { label: string; run: () => void } {
   const slot = socketFor(game, item);
   const into = CRYSTAL_SLOTS.find((s) => s.id === slot);
   return {
-    label: game.sockets[slot ?? ''] ? `Socket (swaps ${into?.name})` : 'Socket it',
+    label: game.sockets[slot ?? ''] ? `Socket (swaps ${into?.name})` : "Socket",
     run: () => {
       if (!slot || !socketItem(game, item, slot)) return;
       note(`Socketed ${item.name}`);
@@ -175,10 +175,10 @@ function renderStep(step: CrystalStep, at: number, now: number): HTMLElement {
   card.append(el('div', 'crystal__name', `${family?.name ?? step.family} crystal`));
   const said = step.clears !== undefined
     ? `${Math.min(step.clears, soulClearsAt(game, step.souls ?? 1))} of ${step.clears} clears ` +
-      `with ${step.souls ?? 1} socketed.`
+      `with ${step.souls ?? 1} Soulstones socketed.`
     : `${step.hold!.count} ${FAMILY_BY_ID[step.hold!.family]?.name ?? step.hold!.family} ` +
       `${step.hold!.count === 1 ? 'crystal' : 'crystals'} at level ${step.hold!.level}.`;
-  card.append(el('div', 'quest__detail', done ? 'Taken.' : said));
+  card.append(el('div', 'quest__detail', done ? "Claimed." : said));
   return card;
 }
 

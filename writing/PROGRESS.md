@@ -1,5 +1,27 @@
 # Writing batches
 
+## Batch 3 — menus, crafting, dialogue and remaining cards
+
+Completed the broad review against main `4267c981`, including all menu
+modules, static labels, HUD explanations, 88 dialogue/scene entries, 25
+currencies, nine professions, 24 materials, all 35 skill cards, four character
+introductions, 162 Reckoning node/choice entries and 18 objectives. Clear
+existing text remains in place. See `MENUS-DIALOGUE.md` for the evidence.
+
+The durable inventory now contains **2,504 reviewed and nine blocked entries**,
+with no pending or stale entries. W005, W008 and W018–W021 are resolved;
+W022–W026 are Claude's current mechanics questions. Counts describe review
+units and include unchanged copy, not just rewritten sentences.
+
+Validation: all 1,285 default demo checks passed; all eight writing tests and
+the inventory check passed; typecheck, comments and theme checks passed.
+Chromium screenshots reported no overflow or console errors, and the drag
+probe passed. Source/HTML comparison confirmed unchanged gameplay structure,
+IDs, bindings and styles outside the audited copy formatters. The generated
+bundle is rebuilt. The PR records publication and live verification.
+
+The older sections below retain the history of prior batches.
+
 ## Batch 2 — entire glossary
 
 All **33 keyword definitions** in `src/keywords.ts` were reviewed against main

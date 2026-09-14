@@ -527,7 +527,7 @@ function renderRelics(): void {
     btn.append(itemIcon(item, 30));
     const n = (item.meta.n as number) ?? 1;
     if (n > 1) btn.append(el('span', 'slot__n', String(n)));
-    attachTooltip(btn, () => itemCard(item, ['somebody down here wants this']));
+    attachTooltip(btn, () => itemCard(item, ["A collector may trade for this."]));
     host.append(btn);
   }
   for (let i = held.length; i < RELIC_SLOTS; i++) {
@@ -553,7 +553,7 @@ function renderMaterials(): void {
   // UNIQUE, which is used exactly as it came up.
   const groups: Array<{ label: string; of: (def: MaterialDef) => boolean }> = [
     ...MATERIAL_FAMILIES.map((f) => ({ label: f.name, of: (d: MaterialDef) => d.family === f.id })),
-    { label: 'Unworked', of: (d: MaterialDef) => d.family === null },
+    { label: "Raw", of: (d: MaterialDef) => d.family === null },
   ];
 
   let owned = 0;

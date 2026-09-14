@@ -14,16 +14,16 @@ export const ORRERY: SceneDef = {
   rung: 8, // deep in his own zone: the second of the two who live in it
   said: ASTRAL_GEOMETER.seen,
   greets:
-    'Stand still. No — exactly there, you are holding the angle. Right. It reads the same here as it does in nine other rooms. I stay where the reading is. Bring me dust and come back down.',
+    "Stand still. There. Your shadow completes the angle. The same result in nine rooms. Remarkable. Bring me dust when you return. I will be here.",
   idles:
-    'No dust? Then there is nothing to measure, and we are both wasting the light.',
+    "No dust today? Then I shall return to my measurements.",
   beats: ASTRAL_GEOMETER.beats,
   room: {
     art: 'room_orrery',
     stands: { x: 410, y: 300 },
     you: { x: 250, y: 312 },
     name: 'The Orrery',
-    blurb: 'His room, down where you found him. Nothing descends here.',
+    blurb: "The Astral-Geometer works here. Bring him Prismatic Dust.",
   },
   encounter: null,
 };

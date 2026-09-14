@@ -55,7 +55,7 @@ function card(tool: ToolDef): HTMLElement {
   const title = el('div', 'crystal__title');
   const family = MATERIAL_FAMILY_BY_ID[tool.family];
   title.append(el('div', 'crystal__name', doing === 'shop' ? tool.rungs[0].name : tool.rungs[owned].name));
-  title.append(el('div', 'socket__family', `${who} · takes ${family?.raw ?? tool.family}`));
+  title.append(el('div', 'socket__family', `${who} · gathers ${family?.raw ?? tool.family}`));
   head.append(title);
   wrap.append(head);
 
@@ -104,11 +104,11 @@ function card(tool: ToolDef): HTMLElement {
     needs.append(needRow(itemIcon(makeMaterial(stacks[0], 1, true), 22),
       eats?.one.toLowerCase() ?? 'material', held, next.eats));
     wrap.append(needs);
-    wrap.append(el('div', 'crystal__grow', `${next.name} takes +${next.more} out of every node`));
+    wrap.append(el('div', 'crystal__grow', `${next.name} gathers +${next.more} materials per node`));
   }
   // A TOOL YOU ARE NOT CARRYING cannot be reforged: he works the one in your
   // hand, and saying so is better than a button that does nothing.
-  const why = holdsTool(game, tool) ? whyNotUpgrade(game, tool) : 'You are not carrying one.';
+  const why = holdsTool(game, tool) ? whyNotUpgrade(game, tool) : "You do not own this tool.";
   // SHUT ON THE LEVEL ALONE; short of gold or bars it stays readable.
   wrap.classList.toggle('crystal--locked', next !== null && professionAt(game, tool.skill).level < next.at);
   const button = el('button', 'mini', why ?? `Reforge into ${next?.name}`) as HTMLButtonElement;
@@ -127,13 +127,13 @@ function card(tool: ToolDef): HTMLElement {
 
 function render(): void {
   $('smith-purse').textContent = `${Math.floor(game.wallet.gold ?? 0)} gold`;
-  $('smith-what').textContent = doing === 'first' ? 'Yours, for nothing'
-    : doing === 'shop' ? 'What he will sell you' : 'What he will make better';
+  $('smith-what').textContent = doing === 'first' ? "Choose your free tool"
+    : doing === 'shop' ? "Tools for sale" : "Tool upgrades";
   $('smith-hint').textContent = doing === 'first'
-    ? 'One of them. The other three he will sell you.'
+    ? "Your first tool is free. Buy the others here."
     : doing === 'shop'
-      ? `Every tool is ${TOOL_PRICE} gold. What separates them is which family they open.`
-      : 'He works the tool you are carrying. A level opens the next rung.';
+      ? `Every tool is ${TOOL_PRICE} gold. Each gathers a different material.`
+      : "Upgrade your tools as your gathering professions level up.";
   const host = $('smith-list');
   host.replaceChildren();
   for (const tool of TOOLS) host.append(card(tool));

@@ -184,11 +184,11 @@ const rawCount = (game: GameState, id: string): number =>
 function whyNoHands(game: GameState, self: boolean): string | null {
   if (self) {
     const own = jobOf(game, SELF);
-    return own ? `You are on ${saysJob(own)}.` : null;
+    return own ? `You are already working on ${saysJob(own)}.` : null;
   }
   const found = workersFound(game);
-  if (found.length === 0) return 'Nobody to work it. Workers are found down the Fissure.';
-  if (!idleWorker(game)) return `Every worker is busy — ${found.length} of ${found.length}.`;
+  if (found.length === 0) return "Nobody has been rescued yet.";
+  if (!idleWorker(game)) return `All workers busy — ${found.length} of ${found.length}.`;
   return null;
 }
 
@@ -196,11 +196,11 @@ function whyNoHands(game: GameState, self: boolean): string | null {
  *  that does nothing and will not say why is the same as one that is missing.
  *  `self` is the hero taking it himself. */
 export function whyNotWork(game: GameState, def: MaterialDef, self = false): string | null {
-  if (!def.family) return 'Nothing works this. It is used as it came up.';
+  if (!def.family) return "This material is used without processing.";
   const hands = whyNoHands(game, self);
   if (hands) return hands;
   const n = rawCount(game, def.id);
-  if (n < WORK.least) return `${WORK.least} needed, ${n} held.`;
+  if (n < WORK.least) return `${WORK.least} required; ${n} held.`;
   return null;
 }
 
@@ -227,11 +227,11 @@ export const roughHeld = (game: GameState): CurrencyDef[] =>
 
 /** Why this rough cannot be cut, or null — the same walls a raw stack meets. */
 export function whyNotCut(game: GameState, def: CurrencyDef, self = false): string | null {
-  if (!def.cuts) return 'Nothing cuts this. It is spent as it is.';
+  if (!def.cuts) return "This currency does not need cutting.";
   const hands = whyNoHands(game, self);
   if (hands) return hands;
   const n = balance(game.wallet, def.id);
-  if (n < WORK.least) return `${WORK.least} needed, ${n} held.`;
+  if (n < WORK.least) return `${WORK.least} required; ${n} held.`;
   return null;
 }
 
@@ -352,9 +352,9 @@ export function mealRuns(level: number, rng: Rng): number {
 
 /** Why this cannot be eaten, or null. */
 export function whyNotEat(game: GameState, fish: string): string | null {
-  if (!MEAL_BY_FISH[fish]) return 'Nothing is cooked out of that.';
+  if (!MEAL_BY_FISH[fish]) return "This item cannot be eaten.";
   const held = (game.materials ?? []).find((i) => i.base === fish && i.meta.done);
-  if (((held?.meta.n as number) ?? 0) < 1) return 'None cooked. Work some at the kitchen.';
+  if (((held?.meta.n as number) ?? 0) < 1) return "No cooked meals. Cook fish at the kitchen.";
   return null;
 }
 

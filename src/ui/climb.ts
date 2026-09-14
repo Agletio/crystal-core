@@ -104,7 +104,7 @@ export function climbLine(
   const name = zone.name;
   const done = Math.min(zone.rungs, climbed(character, at.zone));
   if (!cleared) {
-    return `${name}, depth ${at.rung}. ${done} of ${zone.rungs} cleared — drop back a depth or two and grind if you need to.`;
+    return `${name}, depth ${at.rung}. ${done} of ${zone.rungs} depths cleared.`;
   }
   if (at.rung < zone.rungs) return `${name}, depth ${at.rung} cleared. Depth ${at.rung + 1} is open.`;
   const after = zoneAt(at.zone + 1);
@@ -230,7 +230,7 @@ function tabs(host: HTMLElement, character: Character, at: number, redraw: () =>
     tab.disabled = !open;
     tab.append(el('span', 'climbtab__done', ` ${done}/${zone.rungs}`));
     attachTooltip(tab, () =>
-      open ? `${zone.name}. ${zone.blurb}` : `Shut until ${shutBy(z)} is cleared whole.`);
+      open ? `${zone.name}. ${zone.blurb}` : `Unlocks after completing ${shutBy(z)}.`);
     tab.onclick = () => {
       shown = z;
       closeParley();

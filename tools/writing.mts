@@ -4,10 +4,13 @@ import { execFileSync } from 'node:child_process';
 import { parse } from '@babel/parser';
 import { BUILT_TREES, faceOf } from '../src/skills-tree';
 import { TRADES } from '../src/trades';
-import { LAMPWRIGHT, PLAYER_SKILLS, TALES, WORKERS } from '../src/data';
+import { CURRENCIES, LAMPWRIGHT, MATERIALS, PLAYER_SKILLS, PROFESSIONS, TALES, WORKERS } from '../src/data';
 import { SCENES } from '../src/scenes';
 import { KEYWORDS } from '../src/keywords';
 import { GRANT_BY_ID } from '../src/sim/grants';
+import { copyGroups, htmlGroups, menuSources, readCopyGroups } from './writing-surfaces.mts';
+import { GRINDS, SMITH, OSTEOMANCER, ASTRAL_GEOMETER, SKILL_CATEGORIES, SKILL_SHELVES, SKILL_SLOTS, TOOL_SLOTS } from '../src/data';
+import { trialNodes } from '../src/trials';
 
 export type Status = 'pending' | 'reviewed' | 'stale' | 'blocked';
 type Entry = {
@@ -19,7 +22,7 @@ type Entry = {
 const file = 'writing/entries.json';
 const hash = (v: unknown) => createHash('sha256').update(JSON.stringify(v)).digest('hex');
 const copyKeys = new Set(['name', 'description', 'text', 'lore', 'blurb', 'becomes', 'what', 'say', 'means', 'short', 'says',
-  'said', 'greets', 'idles', 'seen', 'title', 'button']);
+  'said', 'greets', 'idles', 'seen', 'title', 'button', 'does', 'makes']);
 export function mechanical(v: any): any {
   if (Array.isArray(v)) return v.map(mechanical);
   if (v && typeof v === 'object') return Object.fromEntries(Object.entries(v)
@@ -30,6 +33,7 @@ const fingerprints = new Map<string, string>();
 export function sourceRevision(path: string): string {
   const held = fingerprints.get(path);
   if (held) return held;
+  if (path.endsWith('.html')) return hash(readFileSync(path, 'utf8'));
   const ast = parse(readFileSync(path, 'utf8'), { sourceType: 'module', plugins: ['typescript'] });
   function clean(v: any): any {
     if (Array.isArray(v)) return v.map(clean);
@@ -106,6 +110,15 @@ export function inventory(): Entry[] {
   }
   for (const skill of PLAYER_SKILLS) add(`skill.${skill.id}.card`, 'src/data.ts', `skill:${skill.id}`, { name: skill.name, description: skill.description }, skill);
   for (const k of KEYWORDS) add(`keyword.${k.id}`, 'src/keywords.ts', `keyword:${k.id}`, { name: k.name, means: k.means }, k);
+  const trialDeps = [...common, 'src/trials.ts', 'src/trials/web.ts', 'src/trials/layout.ts', 'src/sim/grid.ts', 'src/sim/crystal.ts', 'src/economy.ts', 'src/game/trials.ts'];
+  for (const node of trialNodes()) {
+    add(`trial.${node.id}`, 'src/trials/web.ts', `node:${node.id}`, { name: node.name, description: node.description }, node, trialDeps);
+    for (const c of node.choices ?? []) add(`trial.${node.id}.choice.${c.id}`, 'src/trials/web.ts', `node:${node.id}/choice:${c.id}`, { name: c.name, description: c.description }, c, trialDeps);
+  }
+  for (const g of GRINDS) add(`objective.${g.id}`, 'src/data.ts', `GRINDS/${g.id}`, { name: g.name, detail: g.detail }, g, trialDeps);
+  for (const [group, rows] of Object.entries({ category: SKILL_CATEGORIES, shelf: SKILL_SHELVES, slot: SKILL_SLOTS, toolSlot: TOOL_SLOTS })) {
+    for (const row of rows) add(`menu.skillData.${group}.${row.id}`, 'src/data.ts', `${group}:${row.id}`, { name: row.name, blurb: row.blurb }, row);
+  }
   // DIALOGUE: the people, what they say where they are found and in the camp, the Lampwright's handovers, the tales.
   const SCENE_FILE: Record<string, string> = { workshop: 'workshop', reading_room: 'reading-room', answering_hall: 'answering',
     refraction_hall: 'refraction', flowering_hall: 'flowering', ossuary: 'ossuary', orrery: 'orrery', smithy: 'smithy' };
@@ -117,6 +130,8 @@ export function inventory(): Entry[] {
     line(`scene.${scene.id}`, path, `scene:${scene.id}`, { name: scene.name, said: scene.said,
       ...(scene.greets ? { greets: scene.greets } : {}), ...(scene.idles ? { idles: scene.idles } : {}) });
     (scene.beats ?? []).forEach((b, i) => line(`scene.${scene.id}.beat.${i + 1}`, path, `scene:${scene.id}/beat:${i + 1}`, { said: b.said }));
+    (scene.after ?? []).forEach((b, i) => line(`scene.${scene.id}.after.${i + 1}`, path, `scene:${scene.id}/after:${i + 1}`, { said: b.said }));
+    if (scene.room) line(`scene.${scene.id}.room`, path, `scene:${scene.id}/room`, { name: scene.room.name, blurb: scene.room.blurb });
   }
   line('lampwright.seen', 'src/data.ts', 'LAMPWRIGHT.seen', { seen: LAMPWRIGHT.seen });
   for (const [speech, words] of Object.entries(LAMPWRIGHT)) {
@@ -129,6 +144,32 @@ export function inventory(): Entry[] {
     panels.forEach((p, i) => line(`tale.${id}.${i + 1}`, 'src/data.ts', `TALES.${id}/panel:${i + 1}`, { said: p.said }));
   }
   for (const w of WORKERS) line(`worker.${w.id}`, 'src/data.ts', `WORKERS/${w.id}`, { name: w.name, greets: w.greets });
+  for (const [id, npc] of Object.entries({ smith: SMITH, osteomancer: OSTEOMANCER, geometer: ASTRAL_GEOMETER })) {
+    if ('done' in npc) line(`dialogue.${id}.done`, 'src/data.ts', `${id}.done`, npc.done);
+  }
+  const crafting = ['src/data.ts', 'src/crafting.ts', 'src/economy.ts', 'src/game/forge.ts', 'src/game/work.ts', 'src/game/state.ts'];
+  for (const c of CURRENCIES) add(`currency.${c.id}`, 'src/data.ts', `currency:${c.id}`, { name: c.name, description: c.description }, c, crafting);
+  for (const p of PROFESSIONS) add(`profession.${p.id}`, 'src/data.ts', `profession:${p.id}`, { name: p.name, makes: p.makes }, p, [...crafting, 'src/professions.ts', 'src/sim/character.ts']);
+  for (const m of MATERIALS) line(`material.${m.id}`, 'src/data.ts', `material:${m.id}`, { name: m.name, description: m.description });
+  const menuDeps = [...common, ...crafting, 'src/ladder.ts', 'src/trials.ts', 'src/game/crystals.ts', 'src/game/graft.ts', 'src/game/smith.ts', 'src/game/save.ts'];
+  for (const path of menuSources()) {
+    for (const [name, copy] of readCopyGroups(path)) {
+      add(`menu.${path.replace(/^src\//, '').replace(/\.ts$/, '').replaceAll('/', '.')}.${name}`, path, `declaration:${name}`, copy, null, menuDeps);
+    }
+  }
+  for (const name of ['readBuffs', 'readDebuffs']) {
+    // RunSim is a class; only its two display methods belong to this copy entry.
+    const source = readFileSync('src/sim/run.ts', 'utf8');
+    const ast = parse(source, { sourceType: 'module', plugins: ['typescript'] });
+    const cls: any = ast.program.body.find((n: any) => n.declaration?.id?.name === 'RunSim');
+    const method = cls?.declaration.body.body.find((n: any) => n.key?.name === name);
+    if (!method) throw new Error(`Missing RunSim.${name}`);
+    const copy = copyGroups(`function ${name}() ${source.slice(method.body.start, method.body.end)}`).get(name);
+    add(`menu.sim.${name}`, 'src/sim/run.ts', `RunSim.${name}`, copy, null, common);
+  }
+  for (const [id, copy] of htmlGroups(readFileSync('docs/index.html', 'utf8'))) {
+    add(`menu.html.${id}`, 'docs/index.html', `#${id}`, copy, null, menuDeps);
+  }
   if (new Set(out.map(e => e.id)).size !== out.length) throw new Error('Duplicate writing identifier');
   return out.sort((a, b) => a.id.localeCompare(b.id));
 }

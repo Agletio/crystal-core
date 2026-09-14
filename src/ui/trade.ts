@@ -111,7 +111,7 @@ function renderPicker(): void {
     card.append(head);
     card.append(el('span', 'catcard__blurb', trade.spec.blurb));
     card.append(
-      el('span', 'catcard__count', `${TRADE_RULES.maxPoints} points, ${TRADE_RULES.pointsPerGrant} a clear on the climb`)
+      el('span', 'catcard__count', `${TRADE_RULES.maxPoints} points maximum; ${TRADE_RULES.pointsPerGrant} earned at selected campaign milestones`)
     );
     card.onclick = () => choose(trade.spec.id);
     host.append(card);
@@ -127,8 +127,8 @@ async function choose(tradeId: string): Promise<void> {
 
   const yes = await ask({
     title: `Take up the ${name}?`,
-    text: 'This is who you are for the rest of this character. The points you spend on its web come back one at a time; the trade itself does not.',
-    confirm: `Take it up`,
+    text: "Your trade is permanent. You can refund its talent points one node at a time.",
+    confirm: `Choose trade`,
   });
   if (!yes) return;
 
@@ -248,11 +248,11 @@ function renderWeb(): void {
       const state = owned
         ? canDeallocateTrade(tradeId, node.id, allocated)
           ? 'allocated — click to refund'
-          : 'allocated — refunding it would strand another node'
+          : "allocated — needed to connect another allocated node"
         : clash
           ? `cannot be held with ${clash.node.name}`
           : !reachable
-            ? 'not connected to anything you own'
+            ? "requires a connected allocated node"
             : spare > 0
               ? 'available'
               : 'no points left';
@@ -301,8 +301,8 @@ function render(): void {
   $('trade-sub').textContent = chosen
     ? `${character.tradeAllocated.length}/${earned} points spent` +
       (nextAt !== null
-        ? ` · ${TRADE.pointsPerGrant} more for clearing ${nextAt.zone} ${nextAt.rung} · ${TRADE.maxPoints} in all`
-        : ' · every point earned')
+        ? ` · ${TRADE.pointsPerGrant} more for clearing ${nextAt.zone}, depth ${nextAt.rung} · ${TRADE.maxPoints} in all`
+        : " · all points earned")
     : 'Choose what to be.';
 
   // Who you ARE is chosen once, so this screen is where one is WALKED.

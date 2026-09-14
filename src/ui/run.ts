@@ -330,8 +330,8 @@ function syncClimb(): void {
   btn.setAttribute('aria-pressed', String(on));
   attachTooltip(btn, () =>
     on
-      ? 'Deeper — on.\nEvery clear takes the next depth. A death turns it off.'
-      : 'Deeper — off.\nEvery clear repeats the depth you picked.'
+      ? "Deeper — on.\nAdvance to the next depth after each clear. Turns off on death."
+      : "Deeper — off.\nRepeat the selected depth after each clear."
   );
 }
 
@@ -827,7 +827,7 @@ function haltLine(report: RunReport): string {
   // it is easiest to read as losing the lot — so say what is still yours.
   const kept =
     streak > 0
-      ? `Everything ${runs} banked is yours; only the one you were in is gone.`
+      ? `Loot from the previous ${runs} is safe. Loot from this unfinished descent is lost.`
       : 'A descent only pays if you finish it.';
 
   if (halt === 'met') return `${LAMPWRIGHT.name} walked you out. Cleared ${runs}.`;
@@ -936,7 +936,8 @@ function renderFlasks(): void {
     attachTooltip(
       auto,
       () =>
-        `Fires itself\nWhen your ${potion.pool} falls to this share — and a headless run obeys the same number.`
+        `Automatic use
+Activates when your ${potion.pool} reaches or falls below this percentage.`
     );
     row.append(auto);
     host.append(row);

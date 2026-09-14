@@ -70,11 +70,11 @@ function loadButtons(
   const row = el('div', 'workload');
   const idle = idleWorker(game);
   const byWorker = why(false);
-  const worker = el('button', 'mini', byWorker ?? `${idle?.name} works ${n}`) as HTMLButtonElement;
+  const worker = el('button', 'mini', byWorker ?? `${idle?.name}: process ${n}`) as HTMLButtonElement;
   worker.id = workLoadId(id);
   worker.disabled = byWorker !== null;
   const bySelf = why(true);
-  const self = el('button', 'mini', bySelf ?? `Work ${n} yourself`) as HTMLButtonElement;
+  const self = el('button', 'mini', bySelf ?? `Process ${n} yourself`) as HTMLButtonElement;
   self.id = workSelfId(id);
   self.disabled = bySelf !== null;
   const go = (own: boolean) => () => {
@@ -101,7 +101,7 @@ function tabs(): void {
     tab.id = workTabId(family.id);
     tab.classList.toggle('climbtab--on', family.id === shown);
     tab.append(el('span', 'climbtab__done', ` ${at.level}`));
-    attachTooltip(tab, () => `${profession?.name}, at ${family.station}. It makes ${profession?.makes}.`);
+    attachTooltip(tab, () => `${profession?.name} at ${family.station}. Makes ${profession?.makes}.`);
     tab.onclick = () => {
       shown = family.id;
       render();
@@ -130,7 +130,7 @@ function rawCard(family: MaterialFamilyDef, item: any): HTMLElement {
 
   card.append(
     el('div', 'crystal__grow',
-      `${size} → ${size} ${family.one}${size === 1 ? '' : 's'}, one every ${WORK.secondsEach}s, ${saysLeft(size * WORK.secondsEach)} in all`)
+      `${size} → ${size} ${family.one}${size === 1 ? '' : 's'} · 1 every ${WORK.secondsEach}s, ${saysLeft(size * WORK.secondsEach)} total`)
   );
 
   card.append(
@@ -154,7 +154,7 @@ function roughCard(def: CurrencyDef): HTMLElement {
   card.append(head);
   card.append(
     el('div', 'crystal__grow',
-      `${n} → ${n} ${cut?.name ?? def.cuts}${n === 1 ? '' : 's'}, one every ${WORK.secondsEach}s, ${saysLeft(n * WORK.secondsEach)} in all`)
+      `${n} → ${n} ${cut?.name ?? def.cuts}${n === 1 ? '' : 's'} · 1 every ${WORK.secondsEach}s, ${saysLeft(n * WORK.secondsEach)} total`)
   );
   card.append(
     loadButtons(def.id, n, (self) => whyNotCut(game, def, self), (self) => loadCut(game, def, self),
@@ -166,7 +166,7 @@ function roughCard(def: CurrencyDef): HTMLElement {
 export function render(): void {
   if (!game) return;
   // WHAT THE CLOCK FINISHED comes off the stations first, and says so.
-  for (const done of collectWork(game)) note(`${done.name} came off the station: +${done.n}`);
+  for (const done of collectWork(game)) note(`${done.name} processed: +${done.n}`);
   tabs();
   const family = MATERIAL_FAMILIES.find((f) => f.id === shown) ?? MATERIAL_FAMILIES[0];
   const profession = professionFor(family.id);
@@ -178,15 +178,15 @@ export function render(): void {
   const meal = game.character.meal;
   const eating = family.id === 'fish'
     ? meal
-      ? ` You are on ${meal.name} — ${meal.uses} ${meal.uses === 1 ? 'descent' : 'descents'} left.`
-      : ' Nothing eaten. Cook a fish and eat it out of the dock.'
+      ? ` Active meal: ${meal.name} — ${meal.uses} ${meal.uses === 1 ? 'descent' : 'descents'} left.`
+      : " No active meal. Cook fish, then eat a meal from your inventory."
     : '';
   $('work-note').textContent =
-    `${profession?.name} works ${family.name.toLowerCase()} at ${family.station}: ` +
-    `${family.raw} into ${family.processed}, one every ${WORK.secondsEach} seconds, ` +
-    `everything held at once.${eating}`;
+    `${profession?.name}: process ${family.name.toLowerCase()} at ${family.station}: ` +
+    `${family.raw} into ${family.processed} · 1 every ${WORK.secondsEach} seconds, ` +
+    `each job uses the whole stack.${eating}`;
   ($('work-bar') as HTMLElement).style.width = `${Math.round((at.xp / need) * 100)}%`;
-  $('work-xp').textContent = `Level ${at.level} — ${Math.floor(at.xp)} / ${need} to the next`;
+  $('work-xp').textContent = `Level ${at.level} — ${Math.floor(at.xp)} / ${need} XP to next level`;
 
   const host = $('work-raw');
   host.replaceChildren();
@@ -197,7 +197,7 @@ export function render(): void {
   for (const def of rough) host.append(roughCard(def));
   if (raw.length === 0 && rough.length === 0) {
     host.append(
-      el('p', 'empty', `No ${family.raw} yet. It comes up out of a descent, ${family.verb.toLowerCase()}.`)
+      el('p', 'empty', `No ${family.raw} available. More can be ${family.verb.toLowerCase()} during descents.`)
     );
   }
 
@@ -219,8 +219,8 @@ export function render(): void {
     card.append(
       el('div', 'quest__detail',
         job
-          ? `${which?.name ?? job.profession} — ${finishedOn(job)} of ${job.n} done · next in ${saysLeft(nextOn(job))} · ${saysLeft(leftOn(job))} in all`
-          : 'Load raw at a station.')
+          ? `${which?.name ?? job.profession} — ${finishedOn(job)} of ${job.n} complete · next in ${saysLeft(nextOn(job))} · ${saysLeft(leftOn(job))} total`
+          : "Ready for a job.")
     );
     // THE UNIT ON THE BENCH, filling over its seconds and starting again —
     // *"a progress bar showing the progress of the individual one."*
@@ -234,7 +234,7 @@ export function render(): void {
     jobs.append(card);
   }
   if (hands.length === 0) {
-    jobs.append(el('p', 'empty', 'No workers yet. They are found down the Fissure, or work it yourself.'));
+    jobs.append(el('p', 'empty', "Rescue workers in the Fissure or process materials yourself at camp."));
   }
   $('work-slots').textContent = `${jobsIn(game).filter((j) => j.worker !== SELF).length}/${found.length} workers busy`;
   syncBars();

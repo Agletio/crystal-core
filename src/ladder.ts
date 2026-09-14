@@ -280,9 +280,9 @@ export function campaignLine(character: Character): string {
   if (character.paidCampaign) return `The climb is finished, and ${LAMPWRIGHT.name} has paid for it.`;
   if (!campaignDone(character)) {
     return (
-      `No crystal and no point is paid until the climb is whole. ` +
-      `${last.name}, depth ${last.rungs}, is the last of it, and ` +
-      `${LAMPWRIGHT.name} hands over ${campaignPrize()} for it.`
+      `The final campaign reward requires completing every depth. ` +
+      `${last.name}, depth ${last.rungs}, is the final depth. ` +
+      `${LAMPWRIGHT.name} awards ${campaignPrize()} when you finish.`
     );
   }
   return `The climb is finished. ${LAMPWRIGHT.name} is holding ${campaignPrize()} for you in the camp.`;
@@ -308,4 +308,3 @@ export function takeRung(character: Character, at: Rung): void {
   const was = climbed(character, at.zone);
   if (at.rung > was) character.climbed = { ...(character.climbed ?? {}), [key]: at.rung };
 }
-

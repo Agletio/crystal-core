@@ -4639,7 +4639,7 @@ if (rule('THE WORKS — does a job run on the clock, and on nothing else?')) {
     const job = loadWork(own, ore, true);
     const twice = whyNotWork(own, ore, true);
     check(
-      job !== null && job.worker === SELF && twice !== null && /You are on/.test(twice),
+      job !== null && job.worker === SELF && twice !== null && /You are already working/.test(twice),
       `and taking it puts him on it, and a second is refused — ${twice}`,
       job ? `${job.worker}, ${twice}` : 'refused'
     );

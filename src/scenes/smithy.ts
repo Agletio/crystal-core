@@ -14,7 +14,7 @@ export const SMITHY: SceneDef = {
   rung: SMITH.rung,
   said: SMITH.seen,
   greets:
-    'You walked past three seams to get here. Three. Come up and see me when you are done and I will put something in your hand that can take them.',
+    "Three good seams on the way here, and you walked past them all. Find me at camp. I will see you properly equipped.",
   idles: SMITH.idles,
   camp: { x: 214, y: 268 }, // by the anvil, which is his; the loom's foot was a worker's
   beats: SMITH.beats,

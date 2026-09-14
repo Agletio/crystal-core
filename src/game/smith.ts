@@ -34,9 +34,9 @@ export function takeFirstTool(game: GameState, tool: ToolDef): boolean {
 
 /** Why one cannot be bought, or null — in NUMBERS, like every refusal. */
 export function whyNotBuyTool(game: GameState, tool: ToolDef): string | null {
-  if (holdsTool(game, tool)) return `You are carrying a ${tool.name.toLowerCase()} already.`;
+  if (holdsTool(game, tool)) return `You already own a ${tool.name.toLowerCase()}.`;
   const gold = Math.floor(game.wallet.gold ?? 0);
-  if (gold < TOOL_PRICE) return `${TOOL_PRICE} gold needed, you have ${gold}.`;
+  if (gold < TOOL_PRICE) return `${TOOL_PRICE} gold required; owned: ${gold}.`;
   return null;
 }
 
