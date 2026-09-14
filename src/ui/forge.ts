@@ -177,7 +177,8 @@ function baseCard(base: GearBase, recipe: CraftRecipe): HTMLElement {
   title.append(el('div', 'crystal__name', base.name));
   title.append(el('div', 'socket__family', `Tier ${recipe.tier} · ${saysWindow(recipe, base)}`));
   head.append(title);
-  attachTooltip(head, () => itemCard(preview));
+  const why = whyNotCraft(game, recipe);
+  if (why === null) attachTooltip(head, () => itemCard(preview)); // a locked card gives its picture and nothing else
   card.append(head);
 
   const needs = el('div', 'forgeneeds');
@@ -224,8 +225,7 @@ function baseCard(base: GearBase, recipe: CraftRecipe): HTMLElement {
   const odds = Math.round(perfectChanceAt(level) * 100);
   if (odds > 0) card.append(el('div', 'crystal__grow', `${odds}% chance of a Perfect base`));
 
-  const why = whyNotCraft(game, recipe);
-  card.classList.toggle('crystal--locked', why !== null); // still there to read, blurred and shut
+  card.classList.toggle('crystal--locked', why !== null); // still there, blurred past reading and shut
   const button = el('button', 'mini', why ?? 'Make it') as HTMLButtonElement;
   button.id = forgeMakeId(base.id);
   button.disabled = why !== null;

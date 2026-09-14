@@ -1418,15 +1418,14 @@
   /* The card the stations and the anvil borrow; only a CRYSTAL wears amethyst. */
   #crystals .crystal { border-left-color: var(--amethyst); }
   #crystals .crystal--socket { border-left-color: var(--citrine); }
-  .crystal { border: 1px solid var(--edge); border-left-width: 3px; border-left-color: var(--edge-lit); padding: 8px 9px; display: flex; flex-direction: column; gap: 4px; }
+  .crystal { border: 1px solid var(--edge); border-left-width: 3px; border-left-color: var(--edge-lit); padding: 8px 9px; display: flex; flex-direction: column; gap: 4px; min-height: 100%; }
   /* The four that a run actually reads, told apart from the shelf behind them. */
   .crystal--socket { background: var(--edge); border-left-color: var(--citrine); }
   .crystal__head { display: flex; align-items: center; gap: 8px; }
   .crystal__title { min-width: 0; }
   .crystal__name { font-family: var(--display); font-size: 13px; }
-  .crystal .mini { margin-top: 6px; }
-  .crystal--locked .crystal__head, .crystal--locked .forgeneeds, .crystal--locked .crystal__grow { filter: blur(1px); opacity: .5; }
-  .crystal--locked:hover .crystal__head, .crystal--locked:hover .forgeneeds, .crystal--locked:hover .crystal__grow { filter: none; opacity: .85; }
+  .crystal--locked .crystal__title, .crystal--locked .forgeneeds, .crystal--locked .crystal__grow { filter: blur(4px); opacity: .35; user-select: none; pointer-events: none; }
+  .crystal .mini { margin-top: auto; }
   .quests { display: grid; gap: 8px; }
   .quest { border: 1px solid var(--edge); border-left: 3px solid var(--rust); padding: 8px 9px; }
   .quest--done { opacity: .45; border-left-color: var(--verdite); }
