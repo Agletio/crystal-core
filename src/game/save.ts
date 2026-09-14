@@ -12,7 +12,7 @@ import { takeMet } from './scenes';
 import { ownedCrystals } from './crystals';
 import { healTrials } from './trials';
 import { collectWork, hasWorker, now, unitMs, workersFound } from './work';
-import { fullUses } from '../mods';
+import { ensureSockets, fullUses } from '../mods';
 import { crystalFamily } from '../sim/crystal';
 import type { GameState } from './state';
 import {
@@ -481,8 +481,10 @@ export function heal(game: GameState): Healed {
     }
   }
   // GEAR IS KEPT: a count on a worn piece would silently eat it, so it goes.
+  // And a piece from before sockets is given the ones a found piece rolls.
   for (const item of [...game.inventory, ...game.stash, ...wornItems(game)]) {
     for (const mod of item.mods) delete mod.uses;
+    if (item.kind === 'gear') ensureSockets(item);
   }
   // The one heal that repairs a LINE rather than dropping an item: a graft
   // stands where the base's implicit stood, so a forged def that no longer

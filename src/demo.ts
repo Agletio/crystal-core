@@ -2,20 +2,25 @@ import { readFileSync } from 'node:fs';
 import { Rng } from './rng';
 import { ModPool } from './mods';
 import {
+  addRange,
   chooseMod,
   choices,
-  chosenLines,
+  clone,
   costOf,
+  describeSocket,
   describeItem,
   describeMod,
   dismantleShards,
   itemMatches,
   levelFor,
-  linesAllowed,
+  placeMod,
+  raiseMod,
+  raises,
   rollCrystal as rollOntoCrystal,
   windowRange,
   tierRank,
   whyNotChoose,
+  whyNotRaise,
 } from './crafting';
 import {
   AILMENT,
@@ -62,6 +67,7 @@ import {
   planName,
   PROFESSION_BY_ID,
   SELECT,
+  INSTABILITY,
   SHARDS,
   SHARD_BY_ID,
   SHARD_FAMILIES,
@@ -268,6 +274,7 @@ import type { Buff, Entity, RunState } from './sim/run';
 import {
   declaredCapacity,
   baseTier,
+  ensureSockets,
   fullUses,
   modCapacity,
   dangerScore,
@@ -276,6 +283,8 @@ import {
   slotCapacity,
   slotTypes,
   slotUsed,
+  socketsFor,
+  socketsOf,
   statPower,
 } from './mods';
 import { DESIGN, ENTRANCE, EXIT, FACE_LIP, FLOOR, LAKE_SHORE, TEST_LEVEL, TUNNEL, WALL, dist, generateMap, patchesFor, reachable, roomCenter, sceneMap, shoreClear, testLevel } from './sim/grid';
@@ -672,29 +681,160 @@ line(describeItem(crystal));
 // ===========================================================================
 }
 
-if (rule('THE BENCH SELECTS')) {
+if (rule('THE BENCH SELECTS, AND A SOCKET WEARS')) {
 
-// A tier 3 body armour off the floor, with room left on it. What goes in that
-// room is CHOSEN, paid for in the family's own shard, and rolls only its value.
+// A tier 3 body armour off the floor, with room left on it. Every line sits
+// in a SOCKET with a cap; a line goes in at the worst tier and is RAISED, and
+// every shard put in adds instability the socket may not survive.
 {
   let gear = filled('bulwark_body_t3', 55, 3, 3);
   line(describeItem(gear));
-  line();
-  line('At Blacksmithing 40 — two chosen lines, and the worst two tiers:');
   const purse: Record<string, number> = Object.fromEntries(
-    SHARD_FAMILIES.map((f) => [f.id, 400])
+    SHARD_FAMILIES.map((f) => [f.id, 4000])
   );
-  while (chosenLines(gear) < linesAllowed(40)) {
-    const entry = choices(gear, pool)[0];
-    if (!entry) break;
-    gear = pick(gear, entry.defId, entry.tier, 40, purse);
+  const allPlans = PLANS.map((p) => p.id);
+  check(
+    socketsOf(gear).length === modCapacity(gear) && gear.mods.every((m) => m.socket !== undefined),
+    `a found piece is born with one socket a modifier, ${socketsOf(gear).length} here, and every line sits in one`,
+    `${socketsOf(gear).length} sockets, seated ${gear.mods.filter((m) => m.socket !== undefined).length}`
+  );
+  check(
+    socketsOf(gear).every((sk) => sk.wear === 0 && !sk.dead),
+    'and a found line wears nothing: a good drop is a socket with room to raise in',
+    socketsOf(gear).map(describeSocket).join(', ')
+  );
+
+  line();
+  line('At Jewelling 40 — a line goes in at its worst tier:');
+  const entry = choices(gear, pool)[0]!;
+  const [lo, hi] = addRange(40);
+  const put = placeMod(gear, entry, 40, rng);
+  const socket = socketsOf(put.item)[put.socket];
+  line(`  ✓ ${describeMod(put.item.mods[put.item.mods.length - 1])} · +${put.added}, ${describeSocket(socket)}`);
+  check(
+    !put.fractured && put.added >= lo && put.added <= hi && socket.wear === put.added,
+    `it added ${put.added} instability, inside the ${lo}–${hi} the level says`,
+    `${put.added} against ${lo}–${hi}, socket ${describeSocket(socket)}`
+  );
+  check(
+    tierRank(entry) === 0 && choices(gear, pool).every((e) => tierRank(e) === 0),
+    'and nothing is offered above the worst tier: a better one is RAISED, never placed',
+    choices(gear, pool).filter((e) => tierRank(e) > 0).map((e) => `${e.name} T${e.tier}`).join(', ')
+  );
+  gear = put.item;
+
+  line();
+  line('  and raising it is the same socket taking more:');
+  const up = raises(gear, pool).find((r) => r.mod.socket === put.socket)!;
+  check(
+    up !== undefined && whyNotRaise(gear, up.mod, 40, (id) => purse[id], allPlans, pool) === null,
+    'the placed line can be raised a tier at 40',
+    up ? String(whyNotRaise(gear, up.mod, 40, (id) => purse[id], allPlans, pool)) : 'not offered'
+  );
+  const was = socketsOf(gear)[put.socket].wear;
+  socketsOf(gear)[put.socket].cap = 999; // the raise itself is what is under test
+  const raised = raiseMod(gear, up.mod, 40, rng, pool);
+  const after = raised.item.mods.find((m) => m.socket === put.socket)!;
+  line(`  ✓ ${describeMod(after)} · +${raised.added}, ${describeSocket(socketsOf(raised.item)[put.socket])}`);
+  const [rlo, rhi] = addRange(40, 1);
+  check(
+    !raised.fractured && after.tier === up.mod.tier - 1 && after.defId === up.mod.defId &&
+      socketsOf(raised.item)[put.socket].wear === was + raised.added &&
+      raised.added >= rlo && raised.added <= rhi && rlo > lo,
+    `it climbed one tier in the same socket for +${raised.added}, a raise costing ${INSTABILITY.tierMore} more a rank`,
+    `T${up.mod.tier} → T${after.tier}, wear ${was} → ${socketsOf(raised.item)[put.socket].wear}, +${raised.added} against ${rlo}–${rhi}`
+  );
+  check(
+    costOf({ defId: up.mod.defId, tier: after.tier }).n === SHARDS.perTier[1],
+    `and the raise cost the next tier's shards, ${SHARDS.perTier[1]}`,
+    String(costOf({ defId: up.mod.defId, tier: after.tier }).n)
+  );
+
+  line();
+  line('  and past the cap the socket FRACTURES:');
+  const brittle = raised.item;
+  const sk = socketsOf(brittle)[put.socket];
+  sk.cap = sk.wear; // the next shard, whatever it rolls, is one too many
+  const next = raises(brittle, pool).find((r) => r.mod.socket === put.socket)!;
+  const broke = raiseMod(brittle, next.mod, 40, rng, pool);
+  const dead = socketsOf(broke.item)[put.socket];
+  line(`  · socket ${put.socket + 1} ${describeSocket(dead)}`);
+  check(
+    broke.fractured && dead.dead === true && !broke.item.mods.some((m) => m.socket === put.socket),
+    'the line is gone with the socket, and the shards were spent either way',
+    `fractured ${broke.fractured}, dead ${dead.dead}, lines in it ${broke.item.mods.filter((m) => m.socket === put.socket).length}`
+  );
+  // Nothing goes back into it: every other socket filled, the bench offers no
+  // placement at all, and no raise names the dead one.
+  {
+    let full = clone(broke.item);
+    for (let guard = 0; guard < 12; guard++) {
+      const e = choices(full, pool)[0];
+      if (!e || whyNotChoose(full, e, 99, () => 9999, allPlans) !== null) break;
+      const done = placeMod(full, e, 99, new Rng(300 + guard));
+      if (done.fractured) socketsOf(full)[done.socket].dead = true;
+      else full = done.item;
+    }
+    const offered = choices(full, pool).filter((e) => whyNotChoose(full, e, 99, () => 9999, allPlans) === null);
+    check(
+      offered.length === 0 && !raises(full, pool).some((r) => r.mod.socket === put.socket) &&
+        socketsOf(full).every((s2, i) => s2.dead || full.mods.some((m) => m.socket === i)),
+      'and a fractured socket takes nothing again: with the live ones filled the bench offers no line',
+      `${offered.length} offered, ${socketsOf(full).map(describeSocket).join(', ')}`
+    );
   }
   line();
-  line('  and the third is the level, not the shards:');
-  const third = choices(gear, pool)[0];
-  if (third) gear = pick(gear, third.defId, third.tier, 40, purse);
-  line();
-  line(describeItem(gear));
+  line(describeItem(broke.item));
+
+  // THE CAPS ARE WHERE A PIECE CAME FROM. A found one rides its item level, a
+  // made one its maker's level, and a made one at the cap goes further than
+  // any drop — which is what a high crafting level is for.
+  const capAt = (at: { ilvl?: number; level?: number }, seed: number): number => {
+    const piece = makeGear('bulwark_body_t3', at.ilvl ?? 60);
+    piece.id = `gear_${seed}`;
+    const caps = socketsFor(piece, at).map((s2) => s2.cap);
+    return caps.reduce((n, c) => n + c, 0) / caps.length;
+  };
+  const mean = (at: { ilvl?: number; level?: number }) =>
+    [1, 2, 3, 4, 5, 6, 7, 8].map((i) => capAt(at, i)).reduce((n, c) => n + c, 0) / 8;
+  const foundLow = mean({ ilvl: 1 });
+  const foundTop = mean({ ilvl: INSTABILITY.topIlvl });
+  const madeLow = mean({ level: 1 });
+  const madeTop = mean({ level: 99 });
+  gauge(`a socket's cap: found ${foundLow.toFixed(1)} at ilvl 1 → ${foundTop.toFixed(1)} at ${INSTABILITY.topIlvl} · made ${madeLow.toFixed(1)} at level 1 → ${madeTop.toFixed(1)} at 99`);
+  check(
+    foundTop > foundLow && madeTop > foundTop,
+    'a deep drop\'s socket holds more than a shallow one\'s, and a level 99 maker\'s more than any drop',
+    `${foundLow.toFixed(1)} / ${foundTop.toFixed(1)} / ${madeTop.toFixed(1)}`
+  );
+  const [a1, b1] = addRange(1);
+  const [a99, b99] = addRange(99);
+  gauge(`a shard adds ${a1}–${b1} at Jewelling 1 and ${a99}–${b99} at 99 · a raise adds ${INSTABILITY.tierMore} more a rank`);
+  check(
+    a99 < a1 && b99 < b1 && b1 <= INSTABILITY.capFound[0] - 2,
+    'a level adds less, and at level 1 the first line always fits the shallowest drop',
+    `${a1}–${b1} at 1 against a cap of at least ${INSTABILITY.capFound[0] - 2}`
+  );
+  const fits = (level: number, cap: number, ranks: number): boolean =>
+    [...Array(ranks).keys()].reduce((n, r) => n + addRange(level, r)[1], 0) <= cap;
+  gauge(
+    `a top drop takes a full T1 line with no roll going wrong from Jewelling ` +
+      `${[1, 25, 50, 75, 99].find((l) => fits(l, INSTABILITY.capFound[1] - 2, SHARDS.perTier.length)) ?? 'no level'}` +
+      `, a level 99 maker's piece from ${[1, 25, 50, 75, 99].find((l) => fits(l, INSTABILITY.capMade[1] - 2, SHARDS.perTier.length)) ?? 'no level'}`
+  );
+
+  // A PIECE FROM BEFORE SOCKETS is healed to a found one's, and a load rolls
+  // the same caps every time: the caps come off the piece's own id.
+  const old = filled('ash_wand', 30, 5, 2);
+  const born = socketsOf(old).map((s2) => s2.cap).join(',');
+  delete old.meta.sockets;
+  for (const m of old.mods) delete m.socket;
+  const healed = ensureSockets(old).map((s2) => s2.cap).join(',');
+  check(
+    healed === born && old.mods.every((m) => m.socket !== undefined),
+    `a save from before sockets is healed to the caps the drop rolled, ${healed}`,
+    `${healed} against ${born}`
+  );
 }
 
 // ===========================================================================
@@ -773,19 +913,13 @@ if (rule('THE SHARDS — is every modifier bought by exactly one, and does a tie
 // ===========================================================================
 }
 
-if (rule('A LEVEL BUYS LINES AND TIERS, AND NOTHING ELSE')) {
+if (rule('A LEVEL BUYS TIERS AND A STEADIER HAND, AND NOTHING ELSE')) {
 
 {
-  // The ladder itself: both halves climb, so a level is never worth less than
-  // the one under it.
+  // The ladder itself climbs and starts at 1: *"t1 should be just level 1."*
   check(
-    SELECT.linesAt.every((n, i) => i === 0 || n > SELECT.linesAt[i - 1]),
-    `chosen lines open at level ${SELECT.linesAt.join(', ')}`,
-    SELECT.linesAt.join(', ')
-  );
-  check(
-    SELECT.tierAt.every((n, i) => i === 0 || n > SELECT.tierAt[i - 1]),
-    `and a tier needs level ${SELECT.tierAt.join(', ')}, worst first`,
+    SELECT.tierAt[0] === 1 && SELECT.tierAt.every((n, i) => i === 0 || n > SELECT.tierAt[i - 1]),
+    `a tier needs level ${SELECT.tierAt.join(', ')}, worst first`,
     SELECT.tierAt.join(', ')
   );
 
@@ -796,22 +930,42 @@ if (rule('A LEVEL BUYS LINES AND TIERS, AND NOTHING ELSE')) {
   const piece = () => makeGear('bulwark_body_t3', 70);
   const offer = choices(piece(), pool);
 
-  // UNDER the first level nothing may be chosen however many shards you hold.
-  const early = offer.filter((e) => whyNotChoose(piece(), e, SELECT.linesAt[0] - 1, (id) => rich[id], allPlans) === null);
+  // AT LEVEL 1 every worst line goes on, given the shards and no plan in the way.
+  const first = offer.filter((e) => !planFor(e.defId));
+  const early = first.filter((e) => whyNotChoose(piece(), e, 1, (id) => rich[id], allPlans) !== null);
   check(
-    early.length === 0,
-    `at level ${SELECT.linesAt[0] - 1} no line can be chosen, at any price`,
-    `${early.length} were offered anyway`
+    first.length > 0 && early.length === 0,
+    `at Jewelling 1 every one of the ${first.length} worst-tier lines can go on`,
+    early.map((e) => `${e.name}: ${whyNotChoose(piece(), e, 1, (id) => rich[id], allPlans)}`).join('; ')
   );
 
-  // And at the top, every tier is reachable — a level that buys nothing at 99
-  // is a ladder with a rung nobody can stand on.
-  const top = offer.filter((e) => whyNotChoose(piece(), e, 99, (id) => rich[id], allPlans) === null);
-  const ranks = new Set(top.map((e) => tierRank(e)));
+  // A RAISE waits on the level, and says so in numbers.
+  const start = placeMod(piece(), first[0], 1, new Rng(1)).item;
+  socketsOf(start).forEach((s2) => (s2.cap = 999));
+  const held = raises(start, pool)[0]!;
+  const under = whyNotRaise(start, held.mod, SELECT.tierAt[1] - 1, (id) => rich[id], allPlans, pool);
   check(
-    ranks.size === Math.min(SHARDS.perTier.length, new Set(offer.map(tierRank)).size),
-    `and at 99 every tier is reachable — ${[...ranks].sort().join(', ')} by rank`,
-    [...ranks].sort().join(', ')
+    under !== null && under.includes(String(SELECT.tierAt[1])),
+    `and at level ${SELECT.tierAt[1] - 1} the raise to tier ${held.entry.tier} is refused on the level — ${under}`,
+    String(under)
+  );
+
+  // And at the top, every tier is reached by raising: a level that buys
+  // nothing at 99 is a ladder with a rung nobody can stand on.
+  let top = start;
+  let climbed = 0;
+  for (let i = 0; i < 6; i++) {
+    const next = raises(top, pool)[0];
+    if (!next || whyNotRaise(top, next.mod, 99, (id) => rich[id], allPlans, pool) !== null) break;
+    const done = raiseMod(top, next.mod, 99, new Rng(20 + i), pool);
+    if (done.fractured) break;
+    top = done.item;
+    climbed++;
+  }
+  check(
+    climbed === (MOD_BY_ID[first[0].defId]?.tiers.length ?? 1) - 1 && top.mods[0].tier === 1,
+    `and at 99 ${first[0].name} is raised ${climbed} times to T1, the top of it`,
+    `climbed ${climbed}, at T${top.mods[0]?.tier}`
   );
 
   // The WINDOW is what the rest of the level buys. A low level rolls near the
@@ -820,7 +974,7 @@ if (rule('A LEVEL BUYS LINES AND TIERS, AND NOTHING ELSE')) {
   const wide = pool.entries.find((e) => e.defId === 'attr_strength' && e.tier === 1)!;
   for (const level of [1, 25, 50, 75, 99]) {
     const [lo, hi] = windowRange(wide, level);
-    gauge(`${wide.name} T${wide.tier} rolls ${lo}-${hi} at ${PROFESSION_BY_ID.blacksmithing?.name ?? 'crafting'} ${level}`);
+    gauge(`${wide.name} T${wide.tier} rolls ${lo}-${hi} at ${PROFESSION_BY_ID[INSTABILITY.bench]?.name ?? 'Jewelling'} ${level}`);
   }
   const [lo1] = windowRange(wide, 1);
   const [lo99, hi99] = windowRange(wide, 99);
@@ -4801,6 +4955,16 @@ if (rule('THE ANVIL — does a level slide the window, and can a dismantle print
       (madeTop.item.armour ?? 0) > (found.armour ?? 0),
     'and it reaches the PIECE: a made helm at 1 is worse than a found one and at 99 is better',
     `${madeLow.item.armour} · ${found.armour} · ${madeTop.item.armour}`
+  );
+  // A MADE PIECE COMES WITH ONE LINE, random, and sockets off the MAKER's level.
+  const lowCaps = socketsOf(madeLow.item).map((s2) => s2.cap);
+  const topCaps = socketsOf(madeTop.item).map((s2) => s2.cap);
+  check(
+    madeLow.item.mods.length === 1 && madeTop.item.mods.length === 1 &&
+      lowCaps.length === modCapacity(madeLow.item) &&
+      Math.max(...topCaps) > Math.max(...lowCaps),
+    `and it comes with one line and its sockets: caps ${lowCaps.join('/')} at level 1, ${topCaps.join('/')} at 99`,
+    `${madeLow.item.mods.length} and ${madeTop.item.mods.length} lines, caps ${lowCaps.join('/')} against ${topCaps.join('/')}`
   );
   const weapon = GEAR_BASES.find((b) => b.kind === 'weapon' && b.implicit?.length && b.tier === 1)!;
   const swung = craftBase(at(kit(), PROFESSION.maxLevel), recipeFor(weapon.id)!, new Rng(4))!;

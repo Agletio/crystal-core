@@ -316,11 +316,15 @@ the ZONE (`mapTheme`, `MAP_THEMES`).
   the same rule Block is under, or a thing that cannot happen re-seeds every
   measurement in the game. Never junked and never in the bulk heap: like a
   unique, it is only ever a decision.
-- **THE BENCH SELECTS.** `choices` / `whyNotChoose` / `chooseMod` in
-  `src/crafting.ts`: a line is CHOSEN off the item's own list, paid for in its
-  family's shard, and rolls only its value inside `qualityWindow(level)`. The
-  level buys how many lines a piece may have chosen and how good a tier one may
-  reach — `SELECT.linesAt` and `SELECT.tierAt` — and nothing else.
+- **THE BENCH SELECTS, INTO SOCKETS.** `choices` / `raises` / `whyNotChoose` /
+  `whyNotRaise` / `placeMod` / `raiseMod` in `src/crafting.ts`: a line goes in
+  at its WORST tier into a free live `Socket` (`Item.meta.sockets`, one a
+  modifier, caps off the item level or the maker's level — `INSTABILITY`) and
+  is raised a tier at a time there, paid for in its family's shard, rolling
+  its value inside `qualityWindow(level)` and its instability inside
+  `addRange(level, rank)`. Past the cap the socket fractures and holds nothing
+  again. The level is JEWELLING's alone (`INSTABILITY.bench`); it buys the
+  tier a raise may reach (`SELECT.tierAt`, the worst at 1) and a narrower add.
 - **A SHARD IS A COST.** Twelve families DERIVED off `GEAR_MODS`'s own tags
   (`SHARD_FAMILIES`, `shardFor`, first match wins); `SHARDS.perTier` is what a
   tier costs by rank from the worst, and `SHARDS.refund` what a dismantle hands

@@ -8,28 +8,24 @@
  * what rolls it.
  */
 import { Rng } from '../rng';
+import { ModPool, hasOpenSlot, modCapacity, tierName, socketsOf } from '../mods';
 import {
-  ModPool,
-  hasOpenSlot,
-  modCapacity,
-  tierName,
-  slotCapacity,
-  slotTypes,
-  slotUsed,
-} from '../mods';
-import {
-  chooseMod,
-  chosenLines,
+  addRange,
   choices,
   costOf,
   describeMod,
-  linesAllowed,
+  describeSocket,
+  placeMod,
+  raiseMod,
+  raises,
   rollCrystal,
+  tierRank,
   whyNotChoose,
+  whyNotRaise,
   windowRange,
 } from '../crafting';
-import { ALL_MODS, CURRENCY_BY_ID, PROFESSION_BY_ID, SELECT, SHARD_BY_ID } from '../data';
-import { craftLevel, recipeFor } from '../game/forge';
+import type { Placed } from '../crafting';
+import { ALL_MODS, CURRENCY_BY_ID, INSTABILITY, PROFESSION_BY_ID, SHARD_BY_ID } from '../data';
 import { professionAt } from '../game/work';
 import { statParts } from '../mod-text';
 import { balance, spend } from '../economy';
@@ -121,34 +117,52 @@ function roll(currency: CurrencyDef): void {
   onChanged?.();
 }
 
-/** The profession the bench reads, which is the LOWEST the recipe names: a
- *  hybrid is no better than the profession you neglected. */
-function benchProfession(item: Item): { id: string; level: number } | null {
-  const recipe = recipeFor(item.base);
-  if (!recipe || recipe.parts.length === 0) return null;
-  const worst = recipe.parts.reduce((a, b) =>
-    professionAt(game, a.profession).level <= professionAt(game, b.profession).level ? a : b
-  );
-  return { id: worst.profession, level: craftLevel(game, recipe) };
+/** The one profession the bench reads, whatever the piece is made of. */
+const benchLevel = (): number => professionAt(game, INSTABILITY.bench).level;
+const held = (id: string): number => balance(game.wallet, id);
+const plans = (): string[] => game.character.plans ?? [];
+
+/** What a placement or a raise came to, said once: the line that landed and
+ *  what it cost the socket, or the socket giving way. */
+function landed(done: Placed, was: string): void {
+  const socket = socketsOf(done.item)[done.socket];
+  if (done.fractured) {
+    note(`Socket ${done.socket + 1} fractured at +${done.added}: ${was} and the shards are gone`, 'fail');
+  } else {
+    const mod = done.item.mods.find((m) => m.socket === done.socket);
+    note(`+ ${mod ? describeMod(mod) : was} · +${done.added}, ${describeSocket(socket)}`, 'add');
+  }
+  replaceItem(game, done.item);
+  render();
+  onChanged?.();
 }
 
-/** PUT A CHOSEN LINE ON. Refuses before it spends, and says the number. */
+/** PUT A LINE ON, at its worst tier. Refuses before it spends, and says the number. */
 function choose(entry: ModEntry): void {
   const item = craftItem(game);
   if (!item) return;
-  const level = benchProfession(item)?.level ?? 0;
-  const why = whyNotChoose(item, entry, level, (id) => balance(game.wallet, id), game.character.plans ?? []);
+  const why = whyNotChoose(item, entry, benchLevel(), held, plans());
   if (why) {
     note(why, 'fail');
     return;
   }
   const { shard, n } = costOf(entry);
   spend(game.wallet, { [shard!]: n });
-  const out = chooseMod(item, entry, level, rng);
-  note(`+ ${describeMod(out.mods[out.mods.length - 1])}`, 'add');
-  replaceItem(game, out);
-  render();
-  onChanged?.();
+  landed(placeMod(item, entry, benchLevel(), rng), `T${entry.tier} ${entry.name}`);
+}
+
+/** RAISE A LINE a tier, in its own socket. */
+function raise(mod: RolledMod): void {
+  const item = craftItem(game);
+  if (!item) return;
+  const why = whyNotRaise(item, mod, benchLevel(), held, plans(), pool);
+  if (why) {
+    note(why, 'fail');
+    return;
+  }
+  const { shard, n } = costOf({ defId: mod.defId, tier: mod.tier - 1 });
+  spend(game.wallet, { [shard!]: n });
+  landed(raiseMod(item, mod, benchLevel(), rng, pool), `T${mod.tier} ${mod.name}`);
 }
 
 function reseed(): void {
@@ -198,25 +212,20 @@ function renderItem(): void {
   const host = $('sockets');
   host.replaceChildren();
 
-  // One facet per opening the item actually has. Drawing the base's declared
-  // table shows sockets that can never be filled, and the picture is what you
-  // look at, not the count. A type with no room is simply not drawn.
-  for (const slot of slotTypes(item)) {
-    const cap = slotCapacity(item, slot);
-    if (cap === 0) continue;
-
+  // ONE FACET A SOCKET, and the instability it has taken under each: the
+  // stone is the line's tier, an empty one is room, a cracked one is gone.
+  const sockets = socketsOf(item);
+  if (sockets.length > 0) {
     const group = el('div', 'slotgroup');
-    group.append(el('div', 'slotgroup__label', `${slot} ${slotUsed(item, slot)}/${cap}`));
-
+    group.append(el('div', 'slotgroup__label', `sockets ${item.mods.length}/${sockets.length}`));
     const row = el('div', 'facets');
-    const mods = item.mods.filter((m) => m.slot === slot);
-
-    for (let i = 0; i < cap; i++) {
-      const mod = mods[i];
+    sockets.forEach((socket, i) => {
+      const mod = item.mods.find((m) => m.socket === i);
+      const cell = el('div', 'facetcell');
       const facet = el('button', 'facet') as HTMLButtonElement;
       if (mod) {
         facet.classList.add('facet--set', `facet--${facetOf(mod)}`);
-        attachTooltip(facet, () => describeMod(mod));
+        attachTooltip(facet, () => `${describeMod(mod)}\n${describeSocket(socket)}`);
         facet.setAttribute('aria-label', describeMod(mod));
         facet.onclick = () => {
           focused = focused === mod.entryId ? null : mod.entryId;
@@ -224,13 +233,22 @@ function renderItem(): void {
         };
         if (focused === mod.entryId) facet.classList.add('facet--focus');
         facet.append(el('span', 'facet__tier', `T${mod.tier}`));
+      } else if (socket.dead) {
+        facet.classList.add('facet--dead');
+        facet.setAttribute('aria-label', `socket ${i + 1} fractured`);
+        facet.disabled = true;
+        facet.append(el('span', 'facet__tier', '✕'));
       } else {
         facet.classList.add('facet--empty');
-        facet.setAttribute('aria-label', `empty ${slot} slot`);
+        facet.setAttribute('aria-label', `socket ${i + 1} empty`);
         facet.disabled = true;
       }
-      row.append(facet);
-    }
+      cell.append(facet);
+      const wear = el('span', 'facet__wear', socket.dead ? 'fractured' : `${socket.wear}/${socket.cap}`);
+      if (socket.dead) wear.classList.add('facet__wear--dead');
+      cell.append(wear);
+      row.append(cell);
+    });
     group.append(row);
     host.append(group);
   }
@@ -282,8 +300,14 @@ function renderItem(): void {
     const stats = el('div', 'mod__stats');
     stats.append(...statLines(mod), ...grantLines(mod));
     b.append(stats);
+    const socket = socketsOf(item)[mod.socket ?? -1];
     b.append(
-      el('div', 'mod__name', `T${mod.tier} ${mod.name} · ${mod.slot}${mod.chosen ? ' · chosen' : ''}`)
+      el(
+        'div',
+        'mod__name',
+        `T${mod.tier} ${mod.name} · ${mod.slot}` +
+          (socket ? ` · socket ${(mod.socket ?? 0) + 1}, ${describeSocket(socket)}` : '')
+      )
     );
     row.append(b);
     list.append(row);
@@ -293,11 +317,11 @@ function renderItem(): void {
 }
 
 /**
- * WHAT MAY STILL GO ON IT. One row a line: the tier, what this level's window
- * would roll, and the shards it costs against the shards you hold. A row you
- * cannot take is DIMMED rather than hidden, and carries the number that is
- * short — a list that shrank as you levelled would never say what levelling is
- * for.
+ * WHAT MAY STILL GO ON IT. First every line already on the piece that can be
+ * RAISED a tier, then every line it could still take at the worst one: the
+ * tier, what this level's window would roll, the shards it costs, and what
+ * the socket would take for it. A row you cannot take is DIMMED rather than
+ * hidden, and carries the number that is short.
  */
 function renderPicks(item: Item): void {
   const host = $('craft-pick');
@@ -309,17 +333,17 @@ function renderPicks(item: Item): void {
     return;
   }
 
-
-  const at = benchProfession(item);
-  const level = at?.level ?? 0;
-  const allowed = linesAllowed(level);
-  const taken = chosenLines(item);
-  const who = PROFESSION_BY_ID[at?.id ?? '']?.name ?? 'Crafting';
+  const level = benchLevel();
+  const who = PROFESSION_BY_ID[INSTABILITY.bench]?.name ?? 'Jewelling';
+  const [lo, hi] = addRange(level);
   line.hidden = false;
-  line.textContent =
-    allowed === 0
-      ? `${who} ${level} · level ${SELECT.linesAt[0]} chooses the first line`
-      : `${who} ${level} · ${taken} of ${allowed} chosen lines`;
+  line.textContent = `${who} ${level} · a line adds ${lo}–${hi} instability`;
+
+  const up = raises(item, pool);
+  if (up.length > 0) {
+    host.append(el('div', 'slotgroup__label', 'raise'));
+    for (const { mod, entry } of up) host.append(pickRow(item, entry, level, mod));
+  }
 
   // Grouped by the SHARD as well as by the slot, because what you are short of
   // is a shard: the icon and the count belong to the group, and a row is then
@@ -328,11 +352,10 @@ function renderPicks(item: Item): void {
     (a, b) =>
       a.slot.localeCompare(b.slot) ||
       (costOf(a).shard ?? '').localeCompare(costOf(b).shard ?? '') ||
-      a.defId.localeCompare(b.defId) ||
-      a.tier - b.tier
+      a.defId.localeCompare(b.defId)
   );
-  if (entries.length === 0) {
-    host.append(el('p', 'empty', 'No open slot.'));
+  if (entries.length === 0 && up.length === 0) {
+    host.append(el('p', 'empty', 'No socket left to fill.'));
     return;
   }
 
@@ -358,13 +381,19 @@ function renderPicks(item: Item): void {
   }
 }
 
-function pickRow(item: Item, entry: ModEntry, level: number): HTMLButtonElement {
-  const why = whyNotChoose(item, entry, level, (id) => balance(game.wallet, id), game.character.plans ?? []);
+/** One row: a placement of `entry`, or with `from` a raise of that line to it. */
+function pickRow(item: Item, entry: ModEntry, level: number, from?: RolledMod): HTMLButtonElement {
+  const why = from
+    ? whyNotRaise(item, from, level, held, plans(), pool)
+    : whyNotChoose(item, entry, level, held, plans());
   const { shard, n } = costOf(entry);
-  const held = shard ? balance(game.wallet, shard) : 0;
+  const has = shard ? balance(game.wallet, shard) : 0;
+  const rank = tierRank(entry);
+  const [lo, hi] = addRange(level, rank);
+  const socket = from ? socketsOf(item)[from.socket ?? -1] : undefined;
 
   const row = el('button', 'craftpick') as HTMLButtonElement;
-  row.append(el('span', 'craftpick__tier', `T${entry.tier}`));
+  row.append(el('span', 'craftpick__tier', from ? `T${from.tier}→${entry.tier}` : `T${entry.tier}`));
 
   // The stat line as the WINDOW would roll it, not the tier's whole range: the
   // number a player acts on is the one they will get. Split rather than
@@ -375,14 +404,16 @@ function pickRow(item: Item, entry: ModEntry, level: number): HTMLButtonElement 
   if (said) {
     row.append(el('span', 'craftpick__what', said));
   } else {
-    const [lo, hi] = windowRange(entry, level);
-    const top = statParts({ ...entry.stats[0], value: hi, tags: entry.stats[0]?.tags ?? [] });
-    const bottom = statParts({ ...entry.stats[0], value: lo, tags: entry.stats[0]?.tags ?? [] });
-    const span = lo === hi ? top.value : `${bottom.value}–${top.value.replace(/^\+/, '')}`;
+    const [a, b] = windowRange(entry, level);
+    const top = statParts({ ...entry.stats[0], value: b, tags: entry.stats[0]?.tags ?? [] });
+    const bottom = statParts({ ...entry.stats[0], value: a, tags: entry.stats[0]?.tags ?? [] });
+    const span = a === b ? top.value : `${bottom.value}–${top.value.replace(/^\+/, '')}`;
     row.append(el('span', 'craftpick__what', `${span} ${top.label}`));
   }
 
+  row.append(el('span', 'craftpick__add', `+${lo}–${hi}`));
   const cost = el('span', 'craftpick__cost');
+  if (from && shard) cost.append(currencyIcon(CURRENCY_BY_ID[shard]!, 14));
   cost.append(el('span', 'craftpick__n', `${n}`));
   row.append(cost);
 
@@ -396,8 +427,9 @@ function pickRow(item: Item, entry: ModEntry, level: number): HTMLButtonElement 
         const low = statParts({ ...st, value: a, tags: st.tags ?? [] });
         return `${a === b ? one.value : `${low.value}–${one.value.replace(/^\+/, '')}`} ${one.label}`;
       }),
-      `${n} ${name}, you hold ${held}`,
-      why ? `— ${why}` : '— click to put it on',
+      `${n} ${name}, you hold ${has}`,
+      `Adds ${lo}–${hi} instability` + (socket ? `, socket at ${describeSocket(socket)}` : ''),
+      why ? `— ${why}` : from ? '— click to raise it' : '— click to put it on',
     ].join('\n')
   );
 
@@ -405,6 +437,9 @@ function pickRow(item: Item, entry: ModEntry, level: number): HTMLButtonElement 
     row.disabled = true;
     row.classList.add('craftpick--off');
     row.setAttribute('aria-label', `${entry.name} tier ${entry.tier} — ${why}`);
+  } else if (from) {
+    row.onclick = () => raise(from);
+    row.setAttribute('aria-label', `Raise ${entry.name} to tier ${entry.tier} for ${n} ${name}`);
   } else {
     row.onclick = () => choose(entry);
     row.setAttribute('aria-label', `Add ${entry.name} tier ${entry.tier} for ${n} ${name}`);

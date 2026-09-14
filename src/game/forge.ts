@@ -9,6 +9,7 @@
  * is craftable the moment it exists, with nothing to write down.
  */
 import {
+  ALL_MODS,
   TOOL_SLOTS,
   toolBaseId,
   ARCHETYPE_PROFESSION,
@@ -24,7 +25,7 @@ import {
 } from '../data';
 import type { MaterialDef, ToolDef, ToolRungDef } from '../data';
 import { canBePerfect, makeGear, makeMaterial, stackKey } from '../economy';
-import { qualityWindow } from '../mods';
+import { ModPool, qualityWindow, rollRandomMod, socketsFor } from '../mods';
 import { dismantleShards } from '../crafting';
 import { grant } from '../economy';
 import { addItem } from './state';
@@ -311,6 +312,11 @@ export function craftBase(game: GameState, recipe: CraftRecipe, rng: Rng): Craft
   // THE RECEIPT: a dismantle reads it, so what comes back is a share of what
   // actually went in rather than a guess off the recipe.
   item.meta.spent = spent;
+  // ITS SOCKETS ARE THE MAKER'S LEVEL, and one line comes free and random:
+  // what the bench is for is raising it, and a bare piece gave it nothing to raise.
+  const free = rollRandomMod(item, new ModPool(ALL_MODS), rng);
+  if (free) item.mods.push(free);
+  socketsFor(item, { level });
   addItem(game, item);
 
   const levels: Record<string, number> = {};

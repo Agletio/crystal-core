@@ -1,5 +1,5 @@
 import { Rng } from './rng';
-import { ModPool, baseTier, modCapacity, rollRandomMod } from './mods';
+import { ModPool, baseTier, ensureSockets, modCapacity, rollRandomMod, socketsFor } from './mods';
 import {
   KIND_VARIETY,
   DROP_BANDS,
@@ -204,7 +204,7 @@ export function makeGear(
   const lifted = perfect && canBePerfect(base);
   const lift = (n: number) => Math.ceil(n * (1 + PERFECT.lift) * made);
   const plain = (n: number) => (made === 1 ? n : Math.ceil(n * made));
-  return {
+  const item: Item = {
     id: uid('gear'),
     kind: 'gear',
     base,
@@ -227,6 +227,10 @@ export function makeGear(
       ...(lifted ? { perfect: true } : {}),
     },
   };
+  // EVERY PIECE IS BORN WITH ITS SOCKETS, as a found one's; the anvil rolls a
+  // made one's again off the maker's level.
+  socketsFor(item, { ilvl });
+  return item;
 }
 
 /**
@@ -251,6 +255,7 @@ export function rollGear(
     if (!mod) break;
     item.mods.push(mod);
   }
+  ensureSockets(item);
   return item;
 }
 

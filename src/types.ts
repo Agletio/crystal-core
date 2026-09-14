@@ -82,7 +82,15 @@ export interface RolledMod {
   stats: StatRoll[];
   /** Descents left, on a CRYSTAL alone: a clear spends one, zero drops it. */
   uses?: number;
-  chosen?: boolean; // put here at the bench: `SELECT` caps how many
+  chosen?: boolean; // put here at the bench rather than rolled at the drop
+  socket?: number; // which of the piece's sockets holds it
+}
+
+/** One modifier socket: what it can take before it fractures, and how much it has taken. */
+export interface Socket {
+  cap: number;
+  wear: number;
+  dead?: boolean;
 }
 
 export interface Item {

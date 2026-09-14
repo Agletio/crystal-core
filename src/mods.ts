@@ -1,4 +1,5 @@
 import { Rng } from './rng';
+import { INSTABILITY } from './data';
 import {
   CRAFT,
   DANGER_STATS,
@@ -14,6 +15,7 @@ import {
 import type {
   FillState,
   Item,
+  Socket,
   ModDef,
   ModEntry,
   ModSlot,
@@ -149,6 +151,63 @@ export function slotAllocation(item: Item): Record<ModSlot, number> {
  */
 export function slotCapacity(item: Item, slot: ModSlot): number {
   return Math.max(slotAllocation(item)[slot] ?? 0, slotUsed(item, slot));
+}
+
+/** THE SOCKETS a piece was born with, one per modifier it can hold. A found
+ *  piece's caps ride its item level and a made one's the maker's level; every
+ *  line already on it takes a socket with nothing worn. Drawn off the piece's
+ *  OWN id rather than the run's rng, so a drop consumes no draw and a load
+ *  rolls the same sockets every time. */
+export function socketsFor(item: Item, at: { ilvl?: number; level?: number }): Socket[] {
+  const share = at.level !== undefined
+    ? Math.max(0, Math.min(1, (at.level - 1) / 98))
+    : Math.max(0, Math.min(1, ((at.ilvl ?? item.ilvl) - 1) / (INSTABILITY.topIlvl - 1)));
+  const [lo, hi] = at.level !== undefined ? INSTABILITY.capMade : INSTABILITY.capFound;
+  const middle = lo + (hi - lo) * share;
+  const rng = new Rng([...item.id].reduce((n, c) => (n * 31 + c.charCodeAt(0)) >>> 0, 7));
+  const sockets: Socket[] = [];
+  for (let i = 0; i < modCapacity(item); i++) {
+    sockets.push({ cap: Math.max(lo, Math.min(hi, Math.round(middle + rng.int(-2, 2)))), wear: 0 });
+  }
+  item.meta.sockets = sockets;
+  seatMods(item);
+  return sockets;
+}
+
+/** A piece from before sockets, or one a dev grant made: what it has is kept
+ *  and the rest is rolled as a found piece's. */
+export function ensureSockets(item: Item): Socket[] {
+  const have = socketsOf(item);
+  if (have.length < modCapacity(item)) {
+    const fresh = socketsFor(item, { ilvl: item.ilvl });
+    for (let i = 0; i < have.length; i++) fresh[i] = have[i];
+    item.meta.sockets = fresh;
+  }
+  seatMods(item);
+  return socketsOf(item);
+}
+
+/** Never more than the piece can hold: a unique gives up its slots after it is made. */
+export const socketsOf = (item: Item): Socket[] =>
+  Array.isArray(item.meta?.sockets) ? (item.meta.sockets as Socket[]).slice(0, modCapacity(item)) : [];
+
+/** Every line sits in a socket of its own, the unseated taking the first free live ones. */
+function seatMods(item: Item): void {
+  const sockets = socketsOf(item);
+  const taken = new Set(item.mods.map((m) => m.socket).filter((i): i is number => i !== undefined));
+  for (const mod of item.mods) {
+    if (mod.socket !== undefined && mod.socket < sockets.length) continue;
+    const free = sockets.findIndex((sk, i) => !sk.dead && !taken.has(i));
+    if (free < 0) break;
+    mod.socket = free;
+    taken.add(free);
+  }
+}
+
+/** The first live socket holding nothing, or -1. */
+export function freeSocket(item: Item): number {
+  const held = new Set(item.mods.map((m) => m.socket));
+  return socketsOf(item).findIndex((sk, i) => !sk.dead && !held.has(i));
 }
 
 export function hasOpenSlot(item: Item, slot?: ModSlot): boolean {

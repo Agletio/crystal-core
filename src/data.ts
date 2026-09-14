@@ -2201,19 +2201,28 @@ export const PLAN_DROP = {
   perRun: 0.05,
 };
 
-/**
- * WHAT A CRAFTING LEVEL BUYS AT THE BENCH, and it buys nothing else.
- * *"As your associated crafting level increases you can select more and more
- * stats to be guaranteed. Say level 1 I can just craft my white items, level 10
- * I can select 1 stat."*
- */
+/** WHAT THE JEWELLING LEVEL GATES AT THE BENCH besides the instability it adds. */
 export const SELECT = {
-  /** Level the Nth chosen line on one piece opens at. Under the first, a
-   *  profession makes BASES and nothing else. */
-  linesAt: [10, 30, 55, 80],
   /** Level a modifier TIER needs, by RANK from the worst. The worst is open
-   *  from the first line you may choose at all. */
+   *  from level 1: what limits a piece is its sockets, never a line count. */
   tierAt: [1, 25, 60],
+};
+
+/**
+ * INSTABILITY. Every modifier socket rolls a CAP when the piece is born, and
+ * every shard put into it adds a rolled amount; past the cap the socket
+ * FRACTURES — the line is gone, the shards are gone, and the socket takes
+ * nothing again. A low Jewelling level adds a wide, high range and a high one
+ * a low narrow one, so levelling is what makes a socket go further.
+ */
+export const INSTABILITY = {
+  bench: 'jewelling', // the one profession every chosen line reads
+  capFound: [12, 24], // a found piece's socket, from item level 1 to `topIlvl`
+  capMade: [12, 32], // a made piece's socket, from the maker's level 1 to 99
+  topIlvl: 70,
+  addAt1: [7, 10], // what one shard adds at Jewelling 1
+  addAt99: [1, 3], // and at 99
+  tierMore: 2, // more per tier rank climbed when a line is raised
 };
 
 export const shardCost = (rank: number): number =>

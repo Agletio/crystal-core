@@ -104,7 +104,7 @@ minutes**; a silent hour is how this looked stuck.
   Bulwark, Rimeheart — get picked. **It cost +36% a build and 2 minutes on the
   demo, and it moved no gauge**: the ratio below is `buildPower` over
   `buildPower`, so the one number that reports the search cannot see the search
-  getting better. Measured across bands 1, 3 and 6, the second is **1.5× to 6.2×** the
+  getting better. Measured across bands 1, 3 and 6, the second is **1.6× to 8.4×** the
   first — so anything tuned until the floor dies is off by that much, which is
   what made the whole game clearable at 89% life or better. The top of that
   spread WIDENED from 3.0× when the passive shelf tripled, because the search
@@ -919,22 +919,45 @@ of drops, which is why the count had to be flattened first — at 84 a clear the
 same odds paid 3.79 Perfect bases a descent and the rare tier was wallpaper.
 
 **THE BENCH SELECTS, AND THE PoE ONE IS GONE.** *"I want to drop the entire POE
-style crafting system and switch to a select style crafting system. As your
-associated crafting level increases you can select more and more stats to be
-guaranteed."* `src/crafting.ts` is `choices` / `whyNotChoose` / `chooseMod`:
-under the benched item is every line it could still take, and taking one is a
-click on the line you want. There is no random add, no re-roll, no targeted
-removal and no gamble — `CONDITIONS`, `EFFECTS`, both Sigils and the two
-Essences are DELETED, and with them the only thing that ever set
-`meta.corrupted`.
+style crafting system and switch to a select style crafting system."*
+`src/crafting.ts` is `choices` / `raises` / `whyNotChoose` / `whyNotRaise` /
+`placeMod` / `raiseMod`: under the benched item is every line it could still
+take, and taking one is a click on the line you want. There is no random add,
+no re-roll, no targeted removal and no gamble — `CONDITIONS`, `EFFECTS`, both
+Sigils and the two Essences are DELETED, and with them the only thing that
+ever set `meta.corrupted`.
 
-**A LEVEL BUYS TWO THINGS AND `SELECT` IS BOTH.** `linesAt` is the level the
-Nth CHOSEN line on one piece opens at — 10, 30, 55, 80, so under 10 a profession
-makes bases and nothing else — and `tierAt` is the level a TIER needs, by rank
-from the worst. Everything else about the level is the WINDOW: `qualityWindow`
-in `src/mods.ts` is the one answer, read by the craft, the bench and every card
-that prints a range, and a chosen line rolls its value inside it. Measured on
-a +14–26 Strength line: 14–16 at level 1 and 25–26 at 99.
+**EVERY LINE SITS IN A SOCKET, AND A SOCKET WEARS.** *"Instead of per item its
+per jewel socket. Each socket when you craft the item or it drops drops with a
+cap on its instability… You place the jewels in one at a time and you slowly
+add instability to the socket until it either breaks and you lose everything
+or you stop early."* `INSTABILITY` in `src/data.ts` and `Item.meta.sockets`:
+a piece is born with one `Socket` a modifier it can hold (`socketsFor`, drawn
+off the piece's OWN id so a drop consumes no draw and `ensureSockets` heals an
+old save to the same caps), a FOUND piece's caps ride its item level
+(`capFound`, 12 to 24 by `topIlvl`) and a MADE one's the maker's level
+(`capMade`, 12 to 32), so a level 99 smith's piece goes further than any drop.
+A line goes in at its WORST tier into a free live socket and is RAISED a tier
+at a time in the same socket; each shard adds a roll of instability —
+`addRange`, 7–10 at Jewelling 1 down to 1–3 at 99, `tierMore` extra a rank on
+a raise — and past the cap the socket FRACTURES: the line is gone, the shards
+are spent, `Socket.dead` and it takes nothing again. Measured, a level 1
+jeweller's first line always fits the shallowest drop, a top drop takes a full
+T1 line with no roll going wrong from Jewelling 75, and a level 99 maker's
+piece from 25. A found line wears nothing, which is what makes a good drop a
+socket with room to raise in.
+
+**THE BENCH READS JEWELLING AND NOTHING ELSE.** *"It needs to just be
+jewelcrafting not also black smithing etc… t1 should be just level 1."*
+`INSTABILITY.bench` is the one profession every placement and raise reads,
+whatever the piece is made of; `SELECT.tierAt` is the level a TIER needs by
+rank from the worst, 1 / 25 / 60, so the worst is open from the first level.
+Everything else about the level is the WINDOW: `qualityWindow` in
+`src/mods.ts` is the one answer, read by the craft, the bench and every card
+that prints a range, and a placed or raised line rolls its value inside it.
+Measured on a +14–26 Strength line: 14–16 at level 1 and 25–26 at 99. **A MADE
+PIECE COMES WITH ONE LINE**, random, so the anvil hands the bench something to
+raise rather than a blank.
 
 **A SHARD IS A COST, NEVER A THING YOU APPLY.** Twelve of them, one per family
 of modifier, DERIVED off the tags `GEAR_MODS` already carries — `SHARD_FAMILIES`

@@ -656,6 +656,11 @@
   }
   .facet--empty { color: transparent; }
   .facet--empty::before { box-shadow: inset 0 0 0 2px var(--edge); }
+  .facetcell { display: grid; justify-items: center; gap: 2px; }
+  .facet__wear { font-size: 10px; font-variant-numeric: tabular-nums; color: var(--text-dim); }
+  .facet__wear--dead, .facet--dead .facet__tier { color: var(--hurt); }
+  .facet--dead { color: transparent; }
+  .facet--dead::before { background-image: none; box-shadow: inset 0 0 0 2px var(--hurt); }
   .facet__tier { position: absolute; }
   .facet--set:hover { transform: translateY(-3px); filter: brightness(1.18); }
   .facet--focus { transform: translateY(-3px); filter: brightness(1.25); }
@@ -2046,7 +2051,7 @@
 
   /* WHAT MAY STILL GO ON IT. Its own scroll: the list is every line the base
      can take, and it is longer than the window on any tier 3 piece. */
-  .picklist { display: grid; gap: 2px; max-height: min(56vh, 520px); overflow-y: auto; align-content: start; }
+  .picklist { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; max-height: min(56vh, 520px); overflow-y: auto; align-content: start; }
   .picklist .slotgroup__label { margin: 8px 0 2px; }
   .picklist .slotgroup__label:first-child { margin-top: 0; }
   .picklist__shard { display: flex; align-items: center; gap: 6px; margin: 4px 0 1px; font-size: 11px; color: var(--citrine); }
@@ -2054,7 +2059,8 @@
   .picklist__held { font-variant-numeric: tabular-nums; color: var(--text-dim); }
   .craftpick { display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; padding: 3px 7px; min-height: 26px; border-left-width: 3px; border-left-color: var(--edge-lit); }
   .craftpick:hover:not(:disabled) { background: var(--edge); }
-  .craftpick__tier { font-family: var(--display); font-size: 10px; color: var(--text-dim); min-width: 18px; }
+  .craftpick__tier { font-family: var(--display); font-size: 10px; color: var(--text-dim); min-width: 34px; }
+  .craftpick__add { font-size: 11px; font-variant-numeric: tabular-nums; color: var(--text-dim); }
   .craftpick__what { flex: 1; min-width: 0; font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .craftpick__cost { display: flex; align-items: center; gap: 4px; font-variant-numeric: tabular-nums; font-size: 11px; color: var(--citrine); }
   .craftpick--off { opacity: .42; border-left-color: var(--edge); }

@@ -2,7 +2,7 @@
  *  harnesses. A BAND is the parameter: it picks the crystal shape and the item
  *  level, and a crystal's own LEVEL is what decides the base tier. */
 import { Rng } from '../rng';
-import { ModPool } from '../mods';
+import { ModPool, socketsFor } from '../mods';
 import {
   ALL_MODS,
   ARMOUR_FAMILIES,
@@ -24,7 +24,7 @@ import {
   toolBaseId,
 } from '../data';
 import { characterStats, damageDetail, treeGrants } from './stats';
-import { choices, chooseMod } from '../crafting';
+import { choices, chooseMod, raiseMod, raises } from '../crafting';
 import { defaultGearBase, makeGear, rollCrystal, rollGear } from '../economy';
 import { runSet } from './crystal';
 import { RunSim, TICK } from './run';
@@ -257,17 +257,32 @@ function chosenLoadout(
     if (!base) continue;
     if ((base.hands ?? 1) > 1) continue; // never a bow: one arrangement, measured
     let item = makeGear(base.id, ilvl, undefined, false, 1);
-    // Until nothing more fits: the capacity cap is inside `choices`.
+    socketsFor(item, { level: 99 }); // the maker's sockets: a raise to the top always fits
+    // Until nothing more fits: the capacity cap is inside `choices`. A line is
+    // ranked by its TOP tier, since that is where it ends up.
     for (let guard = 0; guard < 12; guard++) {
       const open = choices(item, pool);
       if (open.length === 0) break;
-      const best = open.reduce((a, b) => (worth(b) > worth(a) ? b : a));
+      const best = open.reduce((a, b) => (worth(topOf(b, pool)) > worth(topOf(a, pool)) ? b : a));
       item = chooseMod(item, best, 99, rng);
+      const reach = (it: Item) =>
+        raises(it, pool).find((r) => r.mod.defId === best.defId && r.entry.ilvl <= it.ilvl);
+      for (let up = reach(item); up; up = reach(item)) {
+        const done = raiseMod(item, up.mod, 99, rng, pool);
+        if (done.fractured) break;
+        item = done.item;
+      }
     }
     out[slot.id] = item;
   }
   return out;
 }
+
+/** The best tier of a line: what a raise ends at. */
+const topOf = (entry: ModEntry, pool: ModPool): ModEntry =>
+  pool.entries
+    .filter((e) => e.defId === entry.defId)
+    .reduce((a, b) => (b.tier < a.tier ? b : a), entry);
 
 /** What one CHOSEN line is worth, off `STAT_POWER` — the table the hybrid rule
  *  is held to, so the greedy pick cannot disagree with it. */
