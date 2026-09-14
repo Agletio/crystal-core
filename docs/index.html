@@ -631,48 +631,25 @@
   #item-name { font-family: var(--display); font-size: 16px; margin: 0; }
   #item-meta { font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 16px; }
 
-  /* --- the signature: slots as cut facets --------------------------- */
-  /* Groups across, not stacked: stacked, the sockets alone are 600px and put
-     every modifier of a finished item below the fold. */
-  #sockets { display: flex; flex-wrap: wrap; gap: 18px; margin-bottom: 14px; }
-  .slotgroup { min-width: 0; }
+  /* --- a piece is its sockets, one row each, and a row is a button ------ */
   .slotgroup__label { font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 6px; }
-  .facets { display: flex; gap: 6px; flex-wrap: wrap; }
-
-  /* A modifier slot is the generated SOCKET plate the skill slots wear with the
-     tier as a round stone in it. `--gem` is that ink; an empty socket sets none. */
-  .facet {
-    width: 48px; height: 48px; padding: 0;
-    position: relative;
-    border: none; background: transparent; background-image: var(--fix-socket);
-    background-size: 100% 100%; image-rendering: pixelated;
-    display: grid; place-items: center;
-    transition: transform .12s steps(3), filter .12s steps(3);
-  }
-  .facet::before {
-    content: ''; width: 26px; height: 26px; border-radius: 50%;
-    background-color: var(--ink); background-image: radial-gradient(circle at 38% 32%, rgba(255,255,255,.55), transparent 38%);
-    box-shadow: inset 0 0 0 2px rgba(0,0,0,.45), 0 0 6px currentColor; /* the tier's ink is the button's colour */
-  }
-  .facet--empty { color: transparent; }
-  .facet--empty::before { box-shadow: inset 0 0 0 2px var(--edge); }
   .icon--rough { filter: saturate(.3) brightness(.8); }
   .workload { display: grid; gap: 4px; }
-  .facetcell { display: grid; justify-items: center; gap: 2px; }
-  .facet__wear { font-size: 10px; font-variant-numeric: tabular-nums; color: var(--text-dim); }
-  .facet__wear--dead, .facet--dead .facet__tier { color: var(--hurt); }
-  .facet--dead { color: transparent; }
-  .facet--dead::before { background-image: none; box-shadow: inset 0 0 0 2px var(--hurt); }
-  .facet__tier { position: absolute; }
-  .facet--set:hover { transform: translateY(-3px); filter: brightness(1.18); }
-  .facet--focus { transform: translateY(-3px); filter: brightness(1.25); }
-  .facet__tier { font-family: var(--display); font-size: 10px; color: var(--ink); }
-
-  .facet--amethyst { color: var(--amethyst); } .facet--amethyst::before { background-color: var(--amethyst); }
-  .facet--citrine  { color: var(--citrine); }  .facet--citrine::before  { background-color: var(--citrine); }
-  .facet--quartz   { color: var(--quartz); }   .facet--quartz::before   { background-color: var(--quartz); }
-  .facet--verdite  { color: var(--verdite); }  .facet--verdite::before  { background-color: var(--verdite); }
-  .facet--ember    { color: var(--ember); }    .facet--ember::before    { background-color: var(--ember); }
+  .mod--socket {
+    width: 100%; text-align: left; cursor: pointer;
+    border: none; border-top: 1px solid var(--edge); border-radius: 0;
+    background: none; box-shadow: none; color: inherit;
+    font-family: inherit; font-size: inherit; letter-spacing: 0; text-transform: none;
+  }
+  .mod--socket:hover:not(:disabled) { color: inherit; background: var(--edge); }
+  .mod__stats--empty { color: var(--text-dim); font-style: italic; }
+  .dot--hollow { background: var(--edge-lit); opacity: .55; }
+  .dot--dead { background: var(--hurt); }
+  .wear { margin-left: 8px; white-space: nowrap; }
+  .wear--alone { margin-left: 0; }
+  .wear__v { color: var(--citrine); font-weight: 600; }
+  .wear__k { margin-left: 3px; }
+  .wear--dead .wear__v { color: var(--hurt); }
 
   /* Two columns, because a Brilliant item carries six modifiers plus its
      implicit and one column of those is taller than the window has left after
@@ -2056,16 +2033,35 @@
   .picklist { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; max-height: min(56vh, 520px); overflow-y: auto; align-content: start; }
   .picklist .slotgroup__label { margin: 8px 0 2px; }
   .picklist .slotgroup__label:first-child { margin-top: 0; }
-  .picklist__shard { display: flex; align-items: center; gap: 6px; margin: 4px 0 1px; font-size: 11px; color: var(--citrine); }
+  /* A shard's group head is a FOLD: a button reset to a line of text. */
+  .picklist__shard {
+    display: flex; align-items: center; gap: 6px; width: 100%; margin: 4px 0 1px; padding: 3px 0;
+    border: none; border-radius: 0; background: none; box-shadow: none; text-align: left;
+    font-family: inherit; font-size: 11px; letter-spacing: 0; text-transform: none; color: var(--citrine);
+  }
+  .picklist__shard:hover:not(:disabled) { color: var(--citrine); background: var(--edge); }
+  .picklist__fold { width: 10px; color: var(--text-dim); }
   .picklist__name { flex: 1; min-width: 0; }
   .picklist__held { font-variant-numeric: tabular-nums; color: var(--text-dim); }
+  .picklist__buys { font-size: 10px; line-height: 1.35; color: var(--text-dim); padding: 0 0 4px 22px; }
+  .picklegend { display: flex; align-items: center; gap: 8px; padding: 0 7px 2px; border-left: 3px solid transparent; font-size: 9px; letter-spacing: .12em; text-transform: uppercase; color: var(--text-dim); }
+  .picklegend > span { font: inherit; color: inherit; }
   .craftpick { display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; padding: 3px 7px; min-height: 26px; border-left-width: 3px; border-left-color: var(--edge-lit); }
   .craftpick:hover:not(:disabled) { background: var(--edge); }
-  .craftpick__tier { font-family: var(--display); font-size: 10px; color: var(--text-dim); min-width: 34px; }
-  .craftpick__add { font-size: 11px; font-variant-numeric: tabular-nums; color: var(--text-dim); }
-  .craftpick__what { flex: 1; min-width: 0; font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .craftpick__cost { display: flex; align-items: center; gap: 4px; font-variant-numeric: tabular-nums; font-size: 11px; color: var(--citrine); }
+  .craftpick__tier { font-family: var(--display); font-size: 10px; color: var(--text-dim); min-width: 36px; }
+  .craftpick__what { flex: 1; min-width: 0; font-size: 11px; line-height: 1.25; }
+  .craftpick__v { color: var(--citrine); font-weight: 600; }
+  .craftpick__add { min-width: 58px; text-align: right; font-size: 11px; font-variant-numeric: tabular-nums; color: var(--text-dim); }
+  .craftpick__cost { display: flex; align-items: center; justify-content: flex-end; gap: 4px; min-width: 40px; font-variant-numeric: tabular-nums; font-size: 11px; color: var(--citrine); }
+  .craftpick__cost--short .craftpick__n { color: var(--hurt); }
   .craftpick--off { opacity: .42; border-left-color: var(--edge); }
+  .rolled__v--short { color: var(--hurt); }
+  .tip__note--why { color: var(--hurt); font-style: normal; }
+  .tip__wear { color: var(--citrine); }
+  .tip__wear--dead { color: var(--hurt); }
+  .tip__none--socket { margin-top: 0; }
+  .workbar { height: 5px; margin: 6px 0 0; }
+  .workbar__fill { background: var(--citrine); transition: width .1s linear; }
   .mod--chosen .mod__name { color: var(--citrine); }
 
   .worn { padding: 10px; }
@@ -2612,7 +2608,6 @@
             <h2 id="item-name">—</h2>
             <div id="item-meta"></div>
             <div class="mults" id="item-rewards" hidden></div>
-            <div id="sockets"></div>
             <div id="modlist"></div>
           </div>
         </div>

@@ -263,7 +263,10 @@ profession level, every stack a part eats with its icon, the world's own
 material) said as *held / wanted* and lit or dim, then the button — and the
 list is FILTERED beside the kind tabs: one tier or every tier, and *Can make
 now*. *"Clean up the actual boxes so it's clear what items are needed and
-what level is required."*
+what level is required."* **A CARD IS SHUT ON THE LEVEL ALONE** —
+`levelLocked`, and the smith's reforge the same — blurred past reading with
+no hover and the icon left; short of material or gold it stays readable, so
+what to go and gather is on it.
 Everything else is still on the rail, and a screen with neither a
 button nor a hotspot is one somebody will lose.
 
@@ -841,7 +844,8 @@ red), an idle and a walk and nothing else since a worker never swings, and
 no brightness target on import, which is what had flattened the four to
 soot. The bust and the tale panel name the same design as their reference. `WorkJob.worker` names who is on
 it, the load button names the idle worker it goes to, the Works is
-one card a worker, and in the camp an idle one stands by the tent and a busy
+one card a worker with a bar under it filling over the unit on the bench
+and starting again (`syncBars`, ten times a second, UPDATED never rebuilt), and in the camp an idle one stands by the tent and a busy
 one at the foot of the station of the job (`CAMP_STATION_FOOT`), opening the
 Works on that tab. The dev kit rescues all four. The raw
 leaves the bag on LOAD, since a job you could cancel for a refund is a slot that
@@ -948,11 +952,26 @@ A line goes in at its WORST tier into a free live socket and is RAISED a tier
 at a time in the same socket; each shard adds a roll of instability —
 `addRange`, 7–10 at Jewelling 1 down to 1–3 at 99, `tierMore` extra a rank on
 a raise — and past the cap the socket FRACTURES: the line is gone, the shards
-are spent, `Socket.dead` and it takes nothing again. Measured, a level 1
-jeweller's first line always fits the shallowest drop, a top drop takes a full
-T1 line with no roll going wrong from Jewelling 75, and a level 99 maker's
-piece from 25. A found line wears nothing, which is what makes a good drop a
-socket with room to raise in.
+are spent, `Socket.dead` and it takes nothing again. **NO ITEM LEVEL GATES A
+RAISE** — *"it should be unlimited except the instability should just be
+lower on the lower ilvl items… if you get super lucky on an ilvl 25 item and
+get bottom roll instability or you just have really high jewel crafting then
+you can still get to the next tier"* — the cap is the whole of what a shallow
+piece pays. Measured, a level 1 jeweller's first line always fits the
+shallowest drop, a top drop takes a full T1 line with no roll going wrong from
+Jewelling 75, and a level 99 maker's piece from 25. A found line wears
+nothing, which is what makes a good drop a socket with room to raise in.
+**A PIECE IS DRAWN AS ITS SOCKETS**, on the card and on the bench: one row a
+socket, an empty one saying *Empty socket* with its `0/22 instability`, a
+fractured one saying so, and on the bench every row is a BUTTON — *"you
+should be able to select it and see the mods you can add"* — the picked
+socket being what the list beside it is about: a held line's RAISE, an empty
+socket's every line. The lines are grouped under the shard that buys them and
+FOLDED until opened (`opened` in `src/ui/craft.ts`), a folded group naming
+the lines it holds, and a legend over the list says what the columns are.
+The tooltip behind a row is a card (`pickCard`): the line lit, the shards
+against what you hold, the instability against the socket, and how likely
+the socket is to fracture on it.
 
 **THE BENCH READS JEWELLING AND NOTHING ELSE.** *"It needs to just be
 jewelcrafting not also black smithing etc… t1 should be just level 1."*

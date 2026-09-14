@@ -79,7 +79,6 @@ function card(tool: ToolDef): HTMLElement {
     needs.append(needRow(null, 'gold', Math.floor(game.wallet.gold ?? 0), TOOL_PRICE));
     wrap.append(needs);
     const why = whyNotBuyTool(game, tool);
-    wrap.classList.toggle('crystal--locked', why !== null);
     const button = el('button', 'mini', why ?? `Buy for ${TOOL_PRICE} gold`) as HTMLButtonElement;
     button.id = `smith-shop-${tool.id}`;
     button.disabled = why !== null;
@@ -110,7 +109,8 @@ function card(tool: ToolDef): HTMLElement {
   // A TOOL YOU ARE NOT CARRYING cannot be reforged: he works the one in your
   // hand, and saying so is better than a button that does nothing.
   const why = holdsTool(game, tool) ? whyNotUpgrade(game, tool) : 'You are not carrying one.';
-  wrap.classList.toggle('crystal--locked', why !== null);
+  // SHUT ON THE LEVEL ALONE; short of gold or bars it stays readable.
+  wrap.classList.toggle('crystal--locked', next !== null && professionAt(game, tool.skill).level < next.at);
   const button = el('button', 'mini', why ?? `Reforge into ${next?.name}`) as HTMLButtonElement;
   button.id = `smith-upgrade-${tool.id}`;
   button.disabled = why !== null;

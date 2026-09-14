@@ -9,6 +9,7 @@
 import { CURRENCY_BY_ID, MATERIAL_BY_ID, MATERIAL_FAMILIES, PROFESSIONS, THEME_BY_ID, WORK } from '../data';
 import type { MaterialFamilyDef } from '../data';
 import type { CurrencyDef } from '../types';
+import type { WorkJob } from '../game/work';
 import { balance } from '../economy';
 import {
   collectWork,
@@ -221,12 +222,38 @@ export function render(): void {
           ? `${which?.name ?? job.profession} — ${finishedOn(job)} of ${job.n} done · next in ${saysLeft(nextOn(job))} · ${saysLeft(leftOn(job))} in all`
           : 'Load raw at a station.')
     );
+    // THE UNIT ON THE BENCH, filling over its seconds and starting again —
+    // *"a progress bar showing the progress of the individual one."*
+    if (job) {
+      const bar = el('div', 'grow workbar');
+      const fill = el('div', 'grow__fill workbar__fill');
+      fill.dataset.job = job.id;
+      bar.append(fill);
+      card.append(bar);
+    }
     jobs.append(card);
   }
   if (hands.length === 0) {
     jobs.append(el('p', 'empty', 'No workers yet. They are found down the Fissure, or work it yourself.'));
   }
   $('work-slots').textContent = `${jobsIn(game).filter((j) => j.worker !== SELF).length}/${found.length} workers busy`;
+  syncBars();
+}
+
+/** How far through its current unit a job is, 0 to 1; full once the last has landed. */
+function unitShare(job: WorkJob): number {
+  if (finishedOn(job) >= job.n) return 1;
+  return Math.max(0, Math.min(1, 1 - nextOn(job) / WORK.secondsEach));
+}
+
+/** UPDATED, NOT REBUILT: the bars move ten times a second under a screen
+ *  that is rebuilt once a second, so a click never lands on a node that has
+ *  just been torn down. */
+function syncBars(): void {
+  for (const fill of document.querySelectorAll<HTMLElement>('.workbar__fill')) {
+    const job = jobsIn(game).find((j) => j.id === fill.dataset.job);
+    fill.style.width = `${job ? Math.round(unitShare(job) * 1000) / 10 : 0}%`;
+  }
 }
 
 /** Opened by a station in the camp, ON that station's own tab. */
@@ -234,17 +261,22 @@ export function openWork(family?: string): void {
   if (family && MATERIAL_FAMILIES.some((f) => f.id === family)) shown = family;
   $('work').hidden = false;
   render();
+  syncBars();
   // The clock is on screen, so it COUNTS DOWN: a number that only moves when
   // you reopen the window is the going in and out the ask was about.
   if (ticking === null) ticking = globalThis.setInterval(render, 1000);
+  if (barTick === null) barTick = globalThis.setInterval(syncBars, 100);
 }
 
 let ticking: ReturnType<typeof setInterval> | null = null;
+let barTick: ReturnType<typeof setInterval> | null = null;
 
 export function closeWork(): void {
   $('work').hidden = true;
   if (ticking !== null) globalThis.clearInterval(ticking);
+  if (barTick !== null) globalThis.clearInterval(barTick);
   ticking = null;
+  barTick = null;
   onChanged?.();
 }
 

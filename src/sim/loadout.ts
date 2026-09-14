@@ -266,7 +266,7 @@ function chosenLoadout(
       const best = open.reduce((a, b) => (worth(topOf(b, pool)) > worth(topOf(a, pool)) ? b : a));
       item = chooseMod(item, best, 99, rng);
       const reach = (it: Item) =>
-        raises(it, pool).find((r) => r.mod.defId === best.defId && r.entry.ilvl <= it.ilvl);
+        raises(it, pool).find((r) => r.mod.defId === best.defId);
       for (let up = reach(item); up; up = reach(item)) {
         const done = raiseMod(item, up.mod, 99, rng, pool);
         if (done.fractured) break;

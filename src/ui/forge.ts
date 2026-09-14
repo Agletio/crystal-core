@@ -24,6 +24,7 @@ import {
   recipeFor,
   uniqueFor,
   versionsFor,
+  levelLocked,
   whyNotCraft,
 } from '../game/forge';
 import type { CraftRecipe } from '../game/forge';
@@ -225,7 +226,7 @@ function baseCard(base: GearBase, recipe: CraftRecipe): HTMLElement {
   const odds = Math.round(perfectChanceAt(level) * 100);
   if (odds > 0) card.append(el('div', 'crystal__grow', `${odds}% chance of a Perfect base`));
 
-  card.classList.toggle('crystal--locked', why !== null); // still there, blurred past reading and shut
+  card.classList.toggle('crystal--locked', levelLocked(game, recipe)); // shut past reading on the LEVEL alone
   const button = el('button', 'mini', why ?? 'Make it') as HTMLButtonElement;
   button.id = forgeMakeId(base.id);
   button.disabled = why !== null;
@@ -267,7 +268,7 @@ export function render(): void {
   const made = all.filter((row) => whyNotCraft(game, row.recipe) === null).length;
   $('forge-count').textContent = `${made} of ${all.length} you can make`;
   $('forge-note').textContent =
-    'A piece comes out of the anvil bare. Every modifier on it is the bench\'s.';
+    'A piece comes out of the anvil with 1 line on it, and the sockets its maker\'s level buys.';
 }
 
 export function openForge(): void {

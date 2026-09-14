@@ -163,9 +163,8 @@ export function whyNotRaise(
   if (!entry) return `T${mod.tier} is the top of ${mod.name}.`;
   const socket = socketsOf(item)[mod.socket ?? -1];
   if (!socket || socket.dead) return 'Its socket is fractured.';
-  // THE RUNG BUYS ITEM LEVEL, and item level is what a tier needs: a deep
-  // drop is raised to the top where a shallow one stops a tier short.
-  if (entry.ilvl > item.ilvl) return `Item level ${entry.ilvl} needed for tier ${entry.tier}, this is ${item.ilvl}.`;
+  // NO ITEM LEVEL GATE: a shallow piece's socket is smaller, and that is the
+  // whole of what stops a tier on it — a lucky low roll or a steady hand gets there.
   return whyNotPay(entry, level, held, plans);
 }
 

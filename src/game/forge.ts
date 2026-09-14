@@ -227,6 +227,10 @@ export function upgradeTool(game: GameState, tool: ToolDef): ToolRungDef | null 
 
 /** Why this cannot be made, or null. Said in NUMBERS — the level you are and
  *  the level it wants, the versions you hold and the versions it asks for. */
+/** Under a part's level: the one wall a bag cannot fix, and the one a card is shut for. */
+export const levelLocked = (game: GameState, recipe: CraftRecipe): boolean =>
+  recipe.parts.some((part) => professionAt(game, part.profession).level < part.level);
+
 export function whyNotCraft(game: GameState, recipe: CraftRecipe): string | null {
   for (const part of recipe.parts) {
     const at = professionAt(game, part.profession).level;

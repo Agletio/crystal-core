@@ -8,7 +8,7 @@
  * what rolls it.
  */
 import { Rng } from '../rng';
-import { ModPool, hasOpenSlot, modCapacity, tierName, socketsOf } from '../mods';
+import { ModPool, freeSocket, hasOpenSlot, modCapacity, tierName, socketsOf } from '../mods';
 import {
   addRange,
   choices,
@@ -44,16 +44,18 @@ import { note } from './history';
 import { attachTooltip, hideTooltip } from './tooltip';
 import { crystalFamily, rewardRows } from '../sim/crystal';
 import { grantLines, grantSaid, itemCard, statLines } from './itemcard';
+import { keywordLine } from './glossary';
 import { crystalProgress } from '../game/crystals';
 import { crystalsIn, socketed } from '../game/state';
 import { CRYSTAL_SLOTS, FAMILY_BY_ID } from '../data';
-import type { CurrencyDef, Item, ModEntry, RolledMod } from '../types';
+import type { CurrencyDef, Item, ModEntry, RolledMod, Socket } from '../types';
 
 const pool = new ModPool(ALL_MODS);
 let seed = Math.floor(Math.random() * 1e9);
 let rng = new Rng(seed);
 let game: GameState;
-let focused: string | null = null;
+let focused: number | null = null; // the socket the pick list is about
+const opened = new Set<string>(); // shard groups unfolded in the pick list
 
 /** Facet colour by what the mod actually does. */
 const TAG_COLOURS: Array<[string, string]> = [
@@ -172,6 +174,77 @@ function reseed(): void {
   render();
 }
 
+/** The socket the list opens on: the first empty live one, else the first held. */
+function defaultSocket(item: Item): number | null {
+  const free = freeSocket(item);
+  if (free >= 0) return free;
+  const held = item.mods.find((m) => m.socket !== undefined);
+  return held?.socket ?? null;
+}
+
+function pickSocket(i: number): void {
+  focused = i;
+  render();
+}
+
+/** A held line in its socket: the stats, then the tier, the slot and the wear. */
+function modRow(item: Item, mod: RolledMod, at: number): HTMLElement {
+  const socket = socketsOf(item)[at];
+  const row = el(at >= 0 ? 'button' : 'div', 'mod mod--socket');
+  if (mod.chosen) row.classList.add('mod--chosen');
+  if (at >= 0 && focused === at) row.classList.add('mod--focus');
+  row.append(el('span', `dot dot--${facetOf(mod)}`));
+  const b = el('div', 'mod__body');
+  // The shared stat row, not a local format. This screen once built its own
+  // text out of the raw stat KEY, so the one place you look hardest at an
+  // item was the one place printing "+14 coldRes" — the exact leak the mods
+  // check exists to catch, in the exact spot it does not look.
+  const stats = el('div', 'mod__stats');
+  stats.append(...statLines(mod), ...grantLines(mod));
+  b.append(stats);
+  const foot = el('div', 'mod__name', `T${mod.tier} ${mod.name} · ${mod.slot}`);
+  if (socket) foot.append(wearMark(socket));
+  b.append(foot);
+  row.append(b);
+  if (at >= 0) {
+    row.id = socketRowId(at);
+    row.onclick = () => pickSocket(at);
+  }
+  return row;
+}
+
+/** An empty or fractured socket, drawn where the line would be. */
+function emptyRow(item: Item, at: number): HTMLElement {
+  const socket = socketsOf(item)[at];
+  const row = el('button', 'mod mod--socket mod--empty');
+  if (socket.dead) row.classList.add('mod--dead');
+  if (focused === at) row.classList.add('mod--focus');
+  row.id = socketRowId(at);
+  row.append(el('span', socket.dead ? 'dot dot--dead' : 'dot dot--hollow'));
+  const b = el('div', 'mod__body');
+  b.append(el('div', 'mod__stats mod__stats--empty', socket.dead ? 'Fractured' : 'Empty socket'));
+  const foot = el('div', 'mod__name');
+  const mark = wearMark(socket);
+  mark.classList.add('wear--alone');
+  foot.append(mark);
+  b.append(foot);
+  row.append(b);
+  row.onclick = () => pickSocket(at);
+  return row;
+}
+
+/** `9/22 instability`, the figure lit; a fractured socket in the hurt ink. */
+function wearMark(socket: Socket): HTMLElement {
+  const mark = el('span', socket.dead ? 'wear wear--dead' : 'wear');
+
+  mark.append(el('span', 'wear__v', socket.dead ? 'fractured' : `${socket.wear}/${socket.cap}`));
+  if (!socket.dead) mark.append(el('span', 'wear__k', 'instability'));
+  return mark;
+}
+
+/** One socket's row, so a harness can click it by number. */
+export const socketRowId = (at: number): string => `bench-socket-${at}`;
+
 function renderItem(): void {
   const item = craftItem(game);
 
@@ -190,7 +263,7 @@ function renderItem(): void {
   // only thing that moves it is finding a better base.
   $('item-meta').textContent =
     `${tierName(item)} · ilvl ${item.ilvl} · ` +
-    `${item.mods.length}/${modCapacity(item)} modifiers` +
+    `${item.mods.length}/${modCapacity(item)} ${item.kind === 'gear' ? 'sockets' : 'modifiers'}` +
     // A chosen line is live against something you are wearing, and the sheet
     // moves under you when it lands.
     (worn ? ` · worn, ${worn.name.toLowerCase()}` : '');
@@ -207,50 +280,6 @@ function renderItem(): void {
       chip.append(el('span', 'mult__v', row.value));
       multipliers.append(chip);
     }
-  }
-
-  const host = $('sockets');
-  host.replaceChildren();
-
-  // ONE FACET A SOCKET, and the instability it has taken under each: the
-  // stone is the line's tier, an empty one is room, a cracked one is gone.
-  const sockets = socketsOf(item);
-  if (sockets.length > 0) {
-    const group = el('div', 'slotgroup');
-    group.append(el('div', 'slotgroup__label', `sockets ${item.mods.length}/${sockets.length}`));
-    const row = el('div', 'facets');
-    sockets.forEach((socket, i) => {
-      const mod = item.mods.find((m) => m.socket === i);
-      const cell = el('div', 'facetcell');
-      const facet = el('button', 'facet') as HTMLButtonElement;
-      if (mod) {
-        facet.classList.add('facet--set', `facet--${facetOf(mod)}`);
-        attachTooltip(facet, () => `${describeMod(mod)}\n${describeSocket(socket)}`);
-        facet.setAttribute('aria-label', describeMod(mod));
-        facet.onclick = () => {
-          focused = focused === mod.entryId ? null : mod.entryId;
-          render();
-        };
-        if (focused === mod.entryId) facet.classList.add('facet--focus');
-        facet.append(el('span', 'facet__tier', `T${mod.tier}`));
-      } else if (socket.dead) {
-        facet.classList.add('facet--dead');
-        facet.setAttribute('aria-label', `socket ${i + 1} fractured`);
-        facet.disabled = true;
-        facet.append(el('span', 'facet__tier', '✕'));
-      } else {
-        facet.classList.add('facet--empty');
-        facet.setAttribute('aria-label', `socket ${i + 1} empty`);
-        facet.disabled = true;
-      }
-      cell.append(facet);
-      const wear = el('span', 'facet__wear', socket.dead ? 'fractured' : `${socket.wear}/${socket.cap}`);
-      if (socket.dead) wear.classList.add('facet__wear--dead');
-      cell.append(wear);
-      row.append(cell);
-    });
-    group.append(row);
-    host.append(group);
   }
 
   const list = $('modlist');
@@ -276,52 +305,31 @@ function renderItem(): void {
     list.append(row);
   }
 
-  if (item.mods.length === 0) {
-    list.append(
-      el(
-        'p',
-        'empty',
-        modCapacity(item) > 0
-          ? 'No modifiers.'
-          : 'No room until it levels.'
-      )
-    );
-  }
-  for (const mod of item.mods) {
-    const row = el('div', 'mod');
-    if (mod.chosen) row.classList.add('mod--chosen');
-    if (focused === mod.entryId) row.classList.add('mod--focus');
-    row.append(el('span', `dot dot--${facetOf(mod)}`));
-    const b = el('div', 'mod__body');
-    // The shared stat row, not a local format. This screen once built its own
-    // text out of the raw stat KEY, so the one place you look hardest at an
-    // item was the one place printing "+14 coldRes" — the exact leak the mods
-    // check exists to catch, in the exact spot it does not look.
-    const stats = el('div', 'mod__stats');
-    stats.append(...statLines(mod), ...grantLines(mod));
-    b.append(stats);
-    const socket = socketsOf(item)[mod.socket ?? -1];
-    b.append(
-      el(
-        'div',
-        'mod__name',
-        `T${mod.tier} ${mod.name} · ${mod.slot}` +
-          (socket ? ` · socket ${(mod.socket ?? 0) + 1}, ${describeSocket(socket)}` : '')
-      )
-    );
-    row.append(b);
-    list.append(row);
+  // ONE ROW A SOCKET, empty ones included, and CLICKING ONE is what the pick
+  // list is about: a held line's raise, an empty socket's every line.
+  const sockets = socketsOf(item);
+  if (item.kind === 'crystal') {
+    for (const mod of item.mods) list.append(modRow(item, mod, -1));
+    if (item.mods.length === 0) list.append(el('p', 'empty', modCapacity(item) > 0 ? 'No modifiers.' : 'No room until it levels.'));
+  } else {
+    if (focused === null || focused >= sockets.length) focused = defaultSocket(item);
+    sockets.forEach((socket, i) => {
+      const mod = item.mods.find((m) => m.socket === i);
+      list.append(mod ? modRow(item, mod, i) : emptyRow(item, i));
+    });
+    if (sockets.length === 0) list.append(el('p', 'empty', 'No sockets.'));
   }
 
   renderPicks(item);
 }
 
 /**
- * WHAT MAY STILL GO ON IT. First every line already on the piece that can be
- * RAISED a tier, then every line it could still take at the worst one: the
- * tier, what this level's window would roll, the shards it costs, and what
- * the socket would take for it. A row you cannot take is DIMMED rather than
- * hidden, and carries the number that is short.
+ * WHAT MAY GO INTO THE SOCKET YOU PICKED. A held line offers its RAISE; an
+ * empty one offers every line the piece could still take, grouped under the
+ * shard that buys it and folded shut until you open the group — *"so you're
+ * not seeing 50000 mods"* — a folded group saying what it holds. A row you
+ * cannot take is DIMMED rather than hidden, and carries the number that is
+ * short.
  */
 function renderPicks(item: Item): void {
   const host = $('craft-pick');
@@ -339,46 +347,94 @@ function renderPicks(item: Item): void {
   line.hidden = false;
   line.textContent = `${who} ${level} · a line adds ${lo}–${hi} instability`;
 
-  const up = raises(item, pool);
-  if (up.length > 0) {
-    host.append(el('div', 'slotgroup__label', 'raise'));
-    for (const { mod, entry } of up) host.append(pickRow(item, entry, level, mod));
+  const at = focused ?? defaultSocket(item);
+  const socket = at === null ? undefined : socketsOf(item)[at];
+  if (at === null || !socket) {
+    host.append(el('p', 'empty', 'No socket to fill.'));
+    return;
   }
-
-  // Grouped by the SHARD as well as by the slot, because what you are short of
-  // is a shard: the icon and the count belong to the group, and a row is then
-  // three spans rather than a whole sprite apiece.
-  const entries = [...choices(item, pool)].sort(
-    (a, b) =>
-      a.slot.localeCompare(b.slot) ||
-      (costOf(a).shard ?? '').localeCompare(costOf(b).shard ?? '') ||
-      a.defId.localeCompare(b.defId)
-  );
-  if (entries.length === 0 && up.length === 0) {
-    host.append(el('p', 'empty', 'No socket left to fill.'));
+  host.append(legend());
+  if (socket.dead) {
+    host.append(el('p', 'empty', `Socket ${at + 1} is fractured and takes nothing again.`));
+    return;
+  }
+  const held = item.mods.find((m) => m.socket === at);
+  if (held) {
+    host.append(el('div', 'slotgroup__label', `socket ${at + 1} · raise`));
+    const up = raises(item, pool).find((r) => r.mod === held);
+    if (up) host.append(pickRow(item, up.entry, level, held));
+    else host.append(el('p', 'empty', `T${held.tier} is the top of ${held.name}.`));
     return;
   }
 
-  let slot = '';
+  host.append(el('div', 'slotgroup__label', `socket ${at + 1} · add a line`));
+  const entries = [...choices(item, pool)].sort(
+    (a, b) =>
+      (costOf(a).shard ?? '').localeCompare(costOf(b).shard ?? '') ||
+      a.slot.localeCompare(b.slot) ||
+      a.defId.localeCompare(b.defId)
+  );
+  if (entries.length === 0) {
+    host.append(el('p', 'empty', 'Nothing more fits on it.'));
+    return;
+  }
   let shard = '';
   for (const entry of entries) {
-    if (entry.slot !== slot) {
-      slot = entry.slot;
-      shard = '';
-      host.append(el('div', 'slotgroup__label', slot));
-    }
     const buys = costOf(entry).shard ?? '';
     if (buys !== shard) {
       shard = buys;
-      const head = el('div', 'picklist__shard');
-      const def = CURRENCY_BY_ID[shard];
-      if (def) head.append(currencyIcon(def, 16));
-      head.append(el('span', 'picklist__name', def?.name ?? shard));
-      head.append(el('span', 'picklist__held', String(balance(game.wallet, shard))));
-      host.append(head);
+      host.append(shardHead(shard, entries.filter((e) => costOf(e).shard === shard)));
     }
-    host.append(pickRow(item, entry, level));
+    if (opened.has(shard)) host.append(pickRow(item, entry, level));
   }
+}
+
+/** What the columns are, said once over the list rather than on every row. */
+function legend(): HTMLElement {
+  const row = el('div', 'picklegend');
+  row.append(el('span', 'craftpick__tier', 'tier'));
+  row.append(el('span', 'craftpick__what', 'line'));
+  row.append(el('span', 'craftpick__add', 'instability'));
+  row.append(el('span', 'craftpick__cost', 'shards'));
+  return row;
+}
+
+/** A shard's group head: a fold, the icon, the name, what you hold — and shut,
+ *  the lines it buys, so a folded group is not a mystery. */
+function shardHead(shard: string, holds: ModEntry[]): HTMLElement {
+  const def = CURRENCY_BY_ID[shard];
+  const open = opened.has(shard);
+  const head = el('button', 'picklist__shard') as HTMLButtonElement;
+  head.id = `bench-shard-${shard}`;
+  head.append(el('span', 'picklist__fold', open ? '▾' : '▸'));
+  if (def) head.append(currencyIcon(def, 16));
+  head.append(el('span', 'picklist__name', def?.name ?? shard));
+  head.append(el('span', 'picklist__held', String(balance(game.wallet, shard))));
+  head.onclick = () => {
+    if (open) opened.delete(shard);
+    else opened.add(shard);
+    render();
+  };
+  if (open) return head;
+  const wrap = el('div');
+  wrap.append(head);
+  const names = [...new Set(holds.map((e) => e.name))];
+  wrap.append(el('div', 'picklist__buys', `${holds.length} lines: ${names.join(', ')}`));
+  return wrap;
+}
+
+/** The stat line as the WINDOW would roll it, not the tier's whole range: the
+ *  number a player acts on is the one they will get. Split rather than
+ *  string-replaced, or a range whose figure appears twice comes out mangled.
+ *  A LINE WHOSE WHOLE EFFECT IS A SWITCH has no stat to put a window round —
+ *  +1 Projectile is a rung, not a range — so it says the switch instead. */
+function windowed(entry: ModEntry, level: number, i = 0): { value: string; label: string } {
+  const st = entry.stats[i];
+  if (!st) return { value: '', label: grantSaid(entry).join(', ') };
+  const [a, b] = windowRange(entry, level, i);
+  const top = statParts({ ...st, value: b, tags: st.tags ?? [] });
+  const low = statParts({ ...st, value: a, tags: st.tags ?? [] });
+  return { value: a === b ? top.value : `${low.value}–${top.value.replace(/^\+/, '')}`, label: top.label };
 }
 
 /** One row: a placement of `entry`, or with `from` a raise of that line to it. */
@@ -388,50 +444,27 @@ function pickRow(item: Item, entry: ModEntry, level: number, from?: RolledMod): 
     : whyNotChoose(item, entry, level, held, plans());
   const { shard, n } = costOf(entry);
   const has = shard ? balance(game.wallet, shard) : 0;
-  const rank = tierRank(entry);
-  const [lo, hi] = addRange(level, rank);
-  const socket = from ? socketsOf(item)[from.socket ?? -1] : undefined;
+  const [lo, hi] = addRange(level, tierRank(entry));
+  const socket = socketsOf(item)[from ? from.socket ?? -1 : freeSocket(item)];
 
   const row = el('button', 'craftpick') as HTMLButtonElement;
   row.append(el('span', 'craftpick__tier', from ? `T${from.tier}→${entry.tier}` : `T${entry.tier}`));
-
-  // The stat line as the WINDOW would roll it, not the tier's whole range: the
-  // number a player acts on is the one they will get. Split rather than
-  // string-replaced, or a range whose figure appears twice comes out mangled.
-  // A LINE WHOSE WHOLE EFFECT IS A SWITCH has no stat to put a window round —
-  // +1 Projectile is a rung, not a range — so it says the switch instead.
-  const said = entry.stats.length === 0 ? grantSaid(entry).join(', ') : '';
-  if (said) {
-    row.append(el('span', 'craftpick__what', said));
-  } else {
-    const [a, b] = windowRange(entry, level);
-    const top = statParts({ ...entry.stats[0], value: b, tags: entry.stats[0]?.tags ?? [] });
-    const bottom = statParts({ ...entry.stats[0], value: a, tags: entry.stats[0]?.tags ?? [] });
-    const span = a === b ? top.value : `${bottom.value}–${top.value.replace(/^\+/, '')}`;
-    row.append(el('span', 'craftpick__what', `${span} ${top.label}`));
-  }
-
-  row.append(el('span', 'craftpick__add', `+${lo}–${hi}`));
+  const what = windowed(entry, level);
+  const said = el('span', 'craftpick__what');
+  if (what.value) said.append(el('span', 'craftpick__v', what.value), ' ');
+  said.append(what.label);
+  row.append(said);
+  const add = el('span', 'craftpick__add');
+  add.append(el('span', 'craftpick__v', `+${lo}–${hi}`));
+  row.append(add);
   const cost = el('span', 'craftpick__cost');
-  if (from && shard) cost.append(currencyIcon(CURRENCY_BY_ID[shard]!, 14));
+  if (shard) cost.append(currencyIcon(CURRENCY_BY_ID[shard]!, 14));
   cost.append(el('span', 'craftpick__n', `${n}`));
+  if (has < n) cost.classList.add('craftpick__cost--short');
   row.append(cost);
 
   const name = SHARD_BY_ID[shard ?? '']?.name ?? 'shard';
-  attachTooltip(row, () =>
-    [
-      `${entry.name} · tier ${entry.tier}`,
-      ...entry.stats.map((st, i) => {
-        const [a, b] = windowRange(entry, level, i);
-        const one = statParts({ ...st, value: b, tags: st.tags ?? [] });
-        const low = statParts({ ...st, value: a, tags: st.tags ?? [] });
-        return `${a === b ? one.value : `${low.value}–${one.value.replace(/^\+/, '')}`} ${one.label}`;
-      }),
-      `${n} ${name}, you hold ${has}`,
-      `Adds ${lo}–${hi} instability` + (socket ? `, socket at ${describeSocket(socket)}` : ''),
-      why ? `— ${why}` : from ? '— click to raise it' : '— click to put it on',
-    ].join('\n')
-  );
+  attachTooltip(row, () => pickCard(entry, level, from, socket, why, has));
 
   if (why) {
     row.disabled = true;
@@ -445,6 +478,49 @@ function pickRow(item: Item, entry: ModEntry, level: number, from?: RolledMod): 
     row.setAttribute('aria-label', `Add ${entry.name} tier ${entry.tier} for ${n} ${name}`);
   }
   return row;
+}
+
+/** THE CARD BEHIND A ROW: the line as it would roll, the shards against what
+ *  you hold, the instability against the socket, and the one thing a click
+ *  does — figures lit, keywords marked, and the refusal in its own ink. */
+function pickCard(
+  entry: ModEntry,
+  level: number,
+  from: RolledMod | undefined,
+  socket: Socket | undefined,
+  why: string | null,
+  has: number
+): HTMLElement {
+  const { shard, n } = costOf(entry);
+  const [lo, hi] = addRange(level, tierRank(entry));
+  const card = el('div', 'tip__card tip__card--node');
+  const head = el('div', 'tip__name', entry.name);
+  head.append(el('span', `tip__state${why ? '' : ' tip__state--open'}`, from ? `T${from.tier} → T${entry.tier}` : `tier ${entry.tier}`));
+  card.append(head);
+  const lines = entry.stats.length === 0 ? [windowed(entry, level)] : entry.stats.map((_, i) => windowed(entry, level, i));
+  for (const what of lines) {
+    const row = el('div', 'rolled tip__body');
+    if (what.value) row.append(el('span', 'rolled__v', what.value));
+    row.append(keywordLine(what.label, 'rolled__k'));
+    card.append(row);
+  }
+  const fact = (key: string, value: string, rest: string, tone = ''): void => {
+    const row = el('div', 'tip__body tip__fact');
+    row.append(el('span', 'tip__key', key));
+    row.append(el('span', `rolled__v${tone}`, value));
+    if (rest) row.append(el('span', 'rolled__k', ` ${rest}`));
+    card.append(row);
+  };
+  const def = CURRENCY_BY_ID[shard ?? ''];
+  fact('shards', `${n} ${def?.name ?? 'shard'}`, `· you hold ${has}`, has < n ? ' rolled__v--short' : '');
+  fact('instability', `+${lo} to ${hi}`, socket ? `· socket at ${socket.dead ? 'fractured' : `${socket.wear} of ${socket.cap}`}` : '');
+  if (socket && !socket.dead) {
+    const room = socket.cap - socket.wear;
+    const odds = hi <= room ? 'never' : lo > room ? 'always' : `${Math.round(((hi - room) / (hi - lo + 1)) * 100)}% likely to`;
+    fact('fracture', odds, odds === 'never' ? '— it fits whatever it rolls' : odds === 'always' ? '— the socket cannot take it' : '');
+  }
+  card.append(el('div', why ? 'tip__note tip__note--why' : 'tip__note', why ? `— ${why}` : from ? '— click to raise it' : '— click to put it on'));
+  return card;
 }
 
 /** Id of one crystal's button beside the bench, so the guide can ring it. */

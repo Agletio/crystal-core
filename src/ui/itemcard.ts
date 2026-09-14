@@ -5,7 +5,7 @@
  * and none could use colour. The split `statParts` makes is the point: the
  * rolled NUMBER is one colour and the modifier's name another.
  */
-import { baseTier, fullUses, modCapacity, slotTypes, tierName } from '../mods';
+import { baseTier, fullUses, modCapacity, slotTypes, socketsOf, tierName } from '../mods';
 import { statParts } from '../mod-text';
 import { crystalFamily, rewardRows } from '../sim/crystal';
 import { crystalProgress } from '../game/crystals';
@@ -25,7 +25,7 @@ import { GRANT_BY_ID } from '../sim/grants';
 import { weaponSwing } from '../sim/stats';
 import { glossaryOf, keywordLine } from './glossary';
 import { itemIcon } from './icons';
-import type { Item, RolledMod } from '../types';
+import type { Item, RolledMod, Socket } from '../types';
 
 function el(tag: string, cls?: string, text?: string): HTMLElement {
   const node = document.createElement(tag);
@@ -66,13 +66,32 @@ export function grantLines(mod: RolledMod): HTMLElement[] {
   return grantSaid(mod).map((said) => keywordLine(said, 'tip__grant'));
 }
 
+/** `9/22 instability`, or fractured: what a socket has taken, beside its line. */
+export function socketMark(socket: Socket, after = true): HTMLElement {
+  const mark = el('span', socket.dead ? 'tip__wear tip__wear--dead' : 'tip__wear');
+  mark.textContent = (after ? ' · ' : '') + (socket.dead ? 'fractured' : `${socket.wear}/${socket.cap} instability`);
+  return mark;
+}
+
+/** A socket holding nothing, drawn where its line would be, so the room on a
+ *  piece is SEEN rather than counted. */
+function emptyBlock(socket: Socket): HTMLElement {
+  const block = el('div', 'tip__mod tip__mod--empty');
+  block.append(el('div', 'tip__none tip__none--socket', socket.dead ? 'Fractured' : 'Empty socket'));
+  const foot = el('div', 'tip__modname');
+  foot.append(socketMark(socket, false));
+  block.append(foot);
+  return block;
+}
+
 /** One modifier: its stats, its switches, then the tier and family behind them. */
-function modBlock(mod: RolledMod, named: boolean): HTMLElement {
+function modBlock(mod: RolledMod, named: boolean, socket?: Socket): HTMLElement {
   const block = el('div', 'tip__mod');
   for (const line of mod.stats) block.append(statLine(line));
   block.append(...grantLines(mod));
   if (named) {
     const foot = el('div', 'tip__modname', `T${mod.tier} ${mod.name}`);
+    if (socket) foot.append(socketMark(socket));
     // WHAT IS LEFT OF IT, out of what it started with — the number a player
     // plans around, and the last descent has to read as the last one.
     if (mod.uses !== undefined) {
@@ -158,7 +177,7 @@ export function itemCard(item: Item, notes: string[] = []): HTMLElement {
   }
   // A named piece holds nothing and never will, so a count out of zero is a
   // fact about a ladder it is not on.
-  if (!unique) facts.push(`${item.mods.length}/${modCapacity(item)} modifiers`);
+  if (!unique) facts.push(`${item.mods.length}/${modCapacity(item)} ${item.kind === 'gear' ? 'sockets' : 'modifiers'}`);
   card.append(el('div', 'tip__sub', facts.join(' · ')));
 
   // PERFECT. Said with its figure, because the whole of what it is is a number:
@@ -212,15 +231,26 @@ export function itemCard(item: Item, notes: string[] = []): HTMLElement {
     card.append(base);
   }
 
-  // Grouped by slot type, with a gap between groups. A crystal has one type
-  // and naming it "mod" says nothing, so its modifiers go in unlabelled.
-  const types = slotTypes(item).filter((t) => item.mods.some((m) => m.slot === t));
-  for (const type of types) {
-    const box = item.kind === 'crystal' ? el('div', 'tip__group') : group(type);
-    for (const mod of item.mods.filter((m) => m.slot === type)) {
-      box.append(modBlock(mod, true));
-    }
+  // GEAR IS ITS SOCKETS, in order, the empty ones drawn empty. A crystal has
+  // one slot type and naming it "mod" says nothing, so its modifiers go in
+  // unlabelled.
+  const sockets = item.kind === 'gear' && !unique ? socketsOf(item) : [];
+  if (sockets.length > 0) {
+    const box = group('sockets');
+    sockets.forEach((socket, i) => {
+      const mod = item.mods.find((m) => m.socket === i);
+      box.append(mod ? modBlock(mod, true, socket) : emptyBlock(socket));
+    });
     card.append(box);
+  } else {
+    const types = slotTypes(item).filter((t) => item.mods.some((m) => m.slot === t));
+    for (const type of types) {
+      const box = item.kind === 'crystal' ? el('div', 'tip__group') : group(type);
+      for (const mod of item.mods.filter((m) => m.slot === type)) {
+        box.append(modBlock(mod, true));
+      }
+      card.append(box);
+    }
   }
 
   // What the piece DOES, with ITS numbers in it — `say` off the item's own
@@ -243,7 +273,7 @@ export function itemCard(item: Item, notes: string[] = []): HTMLElement {
     const glossary = glossaryOf(grants);
     if (glossary) card.append(glossary);
     card.append(el('div', 'tip__flavour', unique.flavour));
-  } else if (item.mods.length === 0) {
+  } else if (item.mods.length === 0 && sockets.length === 0) {
     card.append(el('div', 'tip__none', 'No modifiers'));
   }
 
