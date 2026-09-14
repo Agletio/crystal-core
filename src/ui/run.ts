@@ -47,7 +47,7 @@ import {
 import type { GameState } from '../game/state';
 import { crystalProgress, journalUnread } from '../game/crystals';
 import { bossBeaten, hasMet, owedTale, takeBoss, takeMet, whoIsDown } from '../game/scenes';
-import { hasWorker, takeWorker, workerDown } from '../game/work';
+import { hasWorker, pauseOwnJob, takeWorker, workerDown } from '../game/work';
 import { dismissSpeech } from './speech';
 import { WORKERS, workerMark } from '../data';
 import { descentFacts, takeGrinds } from '../game/trials';
@@ -562,6 +562,7 @@ const meetsIn = (theme: MapTheme, rung: number) => {
 };
 
 function launch(): void {
+  pauseOwnJob(game); // whatever he was working on waits until he is back
   // A socketed key opens the fight AT the door: the descent this entry would
   // have been is the fight, not a wait for one.
   if (game.called) {

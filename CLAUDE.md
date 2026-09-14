@@ -808,7 +808,14 @@ epoch milliseconds a unit apart per `n`, read through ONE `clock()` in
 `src/game/work.ts` that the demo sets forward; `collectWork` takes what the
 clock finished off the stations wherever the bag is next read — the report
 (cleared, died or walked), the Works, the anvil, a load — and the Works counts
-down once a second while it is open. **A JOB IS EVERYTHING HELD AND LANDS A
+down once a second while it is open. **YOU ARE A WORKER TOO** — *"have your
+player character be capable of working if you want them to while in town"* —
+`SELF` in `src/game/work.ts`: every stack's card has a second button, *Work N
+yourself*, one job at a time on the same clock, and `pauseOwnJob` at the
+launch stops it dead while he is down a hole (`WorkJob.paused`, read by
+`finishedOn`), `collectWork` putting the stopped time on the end the moment
+the bag is next read in the camp. In the picture he stands at the station he
+is working. **A JOB IS EVERYTHING HELD AND LANDS A
 UNIT AT A TIME** — *"make the work your workers do work in bulk but just finish
 the individual items as it goes"* — so `WorkJob.taken` is what has already
 come off it, a job half through is half the bars, and there is no cap on what

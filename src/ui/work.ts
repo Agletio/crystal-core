@@ -19,6 +19,7 @@ import {
   finishedOn,
   loadCut,
   roughHeld,
+  SELF,
   whyNotCut,
   leftOn,
   nextOn,
@@ -52,6 +53,41 @@ let shown = MATERIAL_FAMILIES[0].id;
 
 /** The button one raw stack offers, so a harness can name it without its wording. */
 export const workLoadId = (materialId: string): string => `work-load-${materialId}`;
+/** And the one beside it, for the hero taking the job himself. */
+export const workSelfId = (materialId: string): string => `work-self-${materialId}`;
+
+/** THE TWO BUTTONS every stack gets: a worker, or the hero himself — *"have
+ *  your player character be capable of working if you want them to while in
+ *  town."* Each names who it goes to before the click. */
+function loadButtons(
+  id: string,
+  n: number,
+  why: (self: boolean) => string | null,
+  load: (self: boolean) => { n: number } | null,
+  said: string
+): HTMLElement {
+  const row = el('div', 'workload');
+  const idle = idleWorker(game);
+  const byWorker = why(false);
+  const worker = el('button', 'mini', byWorker ?? `${idle?.name} works ${n}`) as HTMLButtonElement;
+  worker.id = workLoadId(id);
+  worker.disabled = byWorker !== null;
+  const bySelf = why(true);
+  const self = el('button', 'mini', bySelf ?? `Work ${n} yourself`) as HTMLButtonElement;
+  self.id = workSelfId(id);
+  self.disabled = bySelf !== null;
+  const go = (own: boolean) => () => {
+    const job = load(own);
+    if (!job) return;
+    note(`${own ? 'You load' : `${idle?.name} loads`} ${job.n} ${said}`);
+    render();
+    onChanged?.();
+  };
+  worker.onclick = go(false);
+  self.onclick = go(true);
+  row.append(worker, self);
+  return row;
+}
 export const workTabId = (familyId: string): string => `work-tab-${familyId}`;
 
 function tabs(): void {
@@ -96,21 +132,10 @@ function rawCard(family: MaterialFamilyDef, item: any): HTMLElement {
       `${size} → ${size} ${family.one}${size === 1 ? '' : 's'}, one every ${WORK.secondsEach}s, ${saysLeft(size * WORK.secondsEach)} in all`)
   );
 
-  // THE BUTTON NAMES THE WORKER it goes to, so who is being assigned is read
-  // before the click rather than found afterwards.
-  const why = whyNotWork(game, def);
-  const idle = idleWorker(game);
-  const button = el('button', 'mini', why ?? `${idle?.name} works ${size}`) as HTMLButtonElement;
-  button.id = workLoadId(def.id);
-  button.disabled = why !== null;
-  button.onclick = () => {
-    const job = loadWork(game, def);
-    if (!job) return;
-    note(`${idle?.name} loads ${job.n} ${def.name} onto ${family.station}`);
-    render();
-    onChanged?.();
-  };
-  card.append(button);
+  card.append(
+    loadButtons(def.id, size, (self) => whyNotWork(game, def, self), (self) => loadWork(game, def, self),
+      `${def.name} onto ${family.station}`)
+  );
   return card;
 }
 
@@ -130,19 +155,10 @@ function roughCard(def: CurrencyDef): HTMLElement {
     el('div', 'crystal__grow',
       `${n} → ${n} ${cut?.name ?? def.cuts}${n === 1 ? '' : 's'}, one every ${WORK.secondsEach}s, ${saysLeft(n * WORK.secondsEach)} in all`)
   );
-  const why = whyNotCut(game, def);
-  const idle = idleWorker(game);
-  const button = el('button', 'mini', why ?? `${idle?.name} cuts ${n}`) as HTMLButtonElement;
-  button.id = workLoadId(def.id);
-  button.disabled = why !== null;
-  button.onclick = () => {
-    const job = loadCut(game, def);
-    if (!job) return;
-    note(`${idle?.name} loads ${job.n} ${def.name} onto the jeweller's`);
-    render();
-    onChanged?.();
-  };
-  card.append(button);
+  card.append(
+    loadButtons(def.id, n, (self) => whyNotCut(game, def, self), (self) => loadCut(game, def, self),
+      `${def.name} onto the jeweller's`)
+  );
   return card;
 }
 
@@ -189,7 +205,11 @@ export function render(): void {
   const jobs = $('work-jobs');
   jobs.replaceChildren();
   const found = workersFound(game);
-  for (const w of found) {
+  // YOU FIRST, and only while you are on something: an idle hero is not a slot
+  // waiting to be filled, he is the one reading the screen.
+  const own = jobOf(game, SELF);
+  const hands: Array<{ id: string; name: string }> = own ? [{ id: SELF, name: 'You' }, ...found] : found;
+  for (const w of hands) {
     const job = jobOf(game, w.id);
     const card = el('div', 'quest');
     card.id = `work-worker-${w.id}`;
@@ -203,10 +223,10 @@ export function render(): void {
     );
     jobs.append(card);
   }
-  if (found.length === 0) {
-    jobs.append(el('p', 'empty', 'No workers yet. They are found down the Fissure.'));
+  if (hands.length === 0) {
+    jobs.append(el('p', 'empty', 'No workers yet. They are found down the Fissure, or work it yourself.'));
   }
-  $('work-slots').textContent = `${jobsIn(game).length}/${found.length} workers busy`;
+  $('work-slots').textContent = `${jobsIn(game).filter((j) => j.worker !== SELF).length}/${found.length} workers busy`;
 }
 
 /** Opened by a station in the camp, ON that station's own tab. */

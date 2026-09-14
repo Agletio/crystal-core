@@ -242,12 +242,16 @@ import type { SceneDef } from './scenes';
 import { COVER_PROPS, COVER_SET, FACE_FOOT, FACE_HEAD, FOOT, HUNG_PROPS, VIGNETTES, WALL_PROPS } from './vignettes';
 import { PROP_ART } from './render/generated-props';
 import {
+  SELF,
   collectWork,
   eatMeal,
+  finishedOn,
+  jobOf,
   jobsIn,
   loadCut,
   loadWork,
   mealRuns,
+  pauseOwnJob,
   unitMs,
   professionAt,
   saysLeft,
@@ -4555,6 +4559,56 @@ if (rule('THE WORKS — does a job run on the clock, and on nothing else?')) {
     'and the profession that did the work is further on for it',
     `level ${smith.level}, ${smith.xp} xp`
   );
+
+  // THE HERO IS A WORKER TOO, and his job waits while he is down the Fissure —
+  // *"have your player character be capable of working if you want them to
+  // while in town."* Nobody rescued, and the station still runs.
+  {
+    const own = createGame('fresh');
+    addItem(own, makeMaterial(ore, 2));
+    check(
+      whyNotWork(own, ore) !== null && whyNotWork(own, ore, true) === null,
+      'with nobody rescued the hero can still work a stack himself',
+      `${whyNotWork(own, ore)} / ${whyNotWork(own, ore, true)}`
+    );
+    const job = loadWork(own, ore, true);
+    const twice = whyNotWork(own, ore, true);
+    check(
+      job !== null && job.worker === SELF && twice !== null && /You are on/.test(twice),
+      `and taking it puts him on it, and a second is refused — ${twice}`,
+      job ? `${job.worker}, ${twice}` : 'refused'
+    );
+    pauseOwnJob(own);
+    at += 5 * WORK.secondsEach * 1000;
+    check(
+      job !== null && finishedOn(job) === 0 && job.paused !== undefined,
+      'a descent stops his job dead: five units of minutes down there land nothing',
+      job ? `${finishedOn(job)} finished, paused ${job.paused}` : 'no job'
+    );
+    const back = collectWork(own);
+    check(
+      back.length === 0 && job?.paused === undefined && finishedOn(job!) === 0,
+      'and coming back up puts the stopped time on the end rather than handing it over',
+      `${back.length} landed, paused ${job?.paused}, ${finishedOn(job!)} finished`
+    );
+    at += 2 * WORK.secondsEach * 1000 + 1;
+    const landed = collectWork(own);
+    check(
+      landed.length === 1 && landed[0].n === 2 && jobsIn(own).length === 0,
+      'and two units later in the camp the bars are his',
+      `${landed.map((d) => `${d.name} +${d.n}`).join(', ')}, ${jobsIn(own).length} jobs left`
+    );
+    const saved = createGame('fresh');
+    addItem(saved, makeMaterial(ore, 1));
+    loadWork(saved, ore, true);
+    const woke = JSON.parse(JSON.stringify(saved)) as GameState;
+    heal(woke);
+    check(
+      jobOf(woke, SELF) !== undefined,
+      'and a save holding his own job wakes with it, nobody rescued or not',
+      `${jobsIn(woke).length} jobs after heal`
+    );
+  }
 
   // A SHARD DROPS ROUGH AND THE JEWELLER'S CUTS IT: what a descent hands over
   // buys nothing at the bench until a worker has been through it, one a unit

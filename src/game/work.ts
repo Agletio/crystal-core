@@ -48,8 +48,13 @@ export interface WorkJob {
   startAt: number;
   doneAt: number;
   taken: number;
-  worker: string;
+  worker: string; // a rescued worker's id, or `SELF`
+  paused?: number; // epoch ms the hero's own job stopped at, while he is down the Fissure
 }
+
+/** THE HERO IS A WORKER TOO, when he is in the camp: his job runs on the same
+ *  clock and stops while he is down a hole. */
+export const SELF = 'you';
 
 // --- the workers: found, rescued, and every one a slot ----------------------
 
@@ -74,6 +79,22 @@ export const workerDown = (game: GameState, theme: MapTheme, rung: number): Work
 
 export const jobOf = (game: GameState, workerId: string): WorkJob | undefined =>
   jobsIn(game).find((j) => j.worker === workerId);
+
+/** A descent starts: the hero's own job stops where it is. */
+export function pauseOwnJob(game: GameState): void {
+  const job = jobOf(game, SELF);
+  if (job && job.paused === undefined) job.paused = clock();
+}
+
+/** Back in the camp: the stopped time is added on, so nothing landed while he was gone. */
+function resumeOwnJob(game: GameState): void {
+  const job = jobOf(game, SELF);
+  if (!job || job.paused === undefined) return;
+  const gone = Math.max(0, clock() - job.paused);
+  job.startAt += gone;
+  job.doneAt += gone;
+  delete job.paused;
+}
 
 /** The first rescued worker with nothing on, or nobody. */
 export const idleWorker = (game: GameState): WorkerDef | undefined =>
@@ -159,13 +180,25 @@ export function payGathering(game: GameState, items: Item[]): GatherGain[] {
 const rawCount = (game: GameState, id: string): number =>
   ((game.materials ?? []).find((i) => i.base === id && !i.meta.done)?.meta.n as number) ?? 0;
 
-/** Why this job cannot be loaded, or null. Said rather than greyed: a button
- *  that does nothing and will not say why is the same as one that is missing. */
-export function whyNotWork(game: GameState, def: MaterialDef): string | null {
-  if (!def.family) return 'Nothing works this. It is used as it came up.';
+/** Why nobody can take a job: no hands, or the hero's own already full. */
+function whyNoHands(game: GameState, self: boolean): string | null {
+  if (self) {
+    const own = jobOf(game, SELF);
+    return own ? `You are on ${saysJob(own)}.` : null;
+  }
   const found = workersFound(game);
   if (found.length === 0) return 'Nobody to work it. Workers are found down the Fissure.';
   if (!idleWorker(game)) return `Every worker is busy — ${found.length} of ${found.length}.`;
+  return null;
+}
+
+/** Why this job cannot be loaded, or null. Said rather than greyed: a button
+ *  that does nothing and will not say why is the same as one that is missing.
+ *  `self` is the hero taking it himself. */
+export function whyNotWork(game: GameState, def: MaterialDef, self = false): string | null {
+  if (!def.family) return 'Nothing works this. It is used as it came up.';
+  const hands = whyNoHands(game, self);
+  if (hands) return hands;
   const n = rawCount(game, def.id);
   if (n < WORK.least) return `${WORK.least} needed, ${n} held.`;
   return null;
@@ -177,15 +210,15 @@ export const jobSize = (game: GameState, id: string): number => rawCount(game, i
 
 /** Load one job onto the first idle worker. The raw leaves the bag NOW — a
  *  job you can cancel for a refund is a slot that costs nothing to fill. */
-export function loadWork(game: GameState, def: MaterialDef): WorkJob | null {
-  if (whyNotWork(game, def)) return null;
+export function loadWork(game: GameState, def: MaterialDef, self = false): WorkJob | null {
+  if (whyNotWork(game, def, self)) return null;
   const profession = PROCESSING.find((p) => p.family === def.family);
   const held = (game.materials ?? []).find((i) => i.base === def.id && !i.meta.done);
   if (!profession || !held) return null;
   const n = jobSize(game, def.id);
   held.meta.n = ((held.meta.n as number) ?? 0) - n;
   game.materials = (game.materials ?? []).filter((i) => ((i.meta.n as number) ?? 0) > 0);
-  return startJob(game, profession.id, def.id, n);
+  return startJob(game, profession.id, def.id, n, self);
 }
 
 /** THE ROUGH SHARDS HELD, every kind with one in the wallet: what the jeweller's cuts. */
@@ -193,11 +226,10 @@ export const roughHeld = (game: GameState): CurrencyDef[] =>
   CURRENCIES.filter((c) => c.cuts && balance(game.wallet, c.id) > 0);
 
 /** Why this rough cannot be cut, or null — the same walls a raw stack meets. */
-export function whyNotCut(game: GameState, def: CurrencyDef): string | null {
+export function whyNotCut(game: GameState, def: CurrencyDef, self = false): string | null {
   if (!def.cuts) return 'Nothing cuts this. It is spent as it is.';
-  const found = workersFound(game);
-  if (found.length === 0) return 'Nobody to cut it. Workers are found down the Fissure.';
-  if (!idleWorker(game)) return `Every worker is busy — ${found.length} of ${found.length}.`;
+  const hands = whyNoHands(game, self);
+  if (hands) return hands;
   const n = balance(game.wallet, def.id);
   if (n < WORK.least) return `${WORK.least} needed, ${n} held.`;
   return null;
@@ -206,15 +238,15 @@ export function whyNotCut(game: GameState, def: CurrencyDef): string | null {
 /** CUT EVERY ROUGH SHARD OF ONE KIND, at the jeweller's, into the shard the
  *  bench spends. One for one on the same clock a bar is, and it is the whole
  *  of how Jewelling is levelled short of the bench. */
-export function loadCut(game: GameState, def: CurrencyDef): WorkJob | null {
-  if (whyNotCut(game, def)) return null;
+export function loadCut(game: GameState, def: CurrencyDef, self = false): WorkJob | null {
+  if (whyNotCut(game, def, self)) return null;
   const n = balance(game.wallet, def.id);
   spend(game.wallet, { [def.id]: n });
-  return startJob(game, INSTABILITY.bench, def.id, n);
+  return startJob(game, INSTABILITY.bench, def.id, n, self);
 }
 
-function startJob(game: GameState, profession: string, material: string, n: number): WorkJob | null {
-  const worker = idleWorker(game);
+function startJob(game: GameState, profession: string, material: string, n: number, self: boolean): WorkJob | null {
+  const worker = self ? SELF : idleWorker(game)?.id;
   if (!worker) return null;
   const job: WorkJob = {
     id: `job_${nextJob++}`,
@@ -224,7 +256,7 @@ function startJob(game: GameState, profession: string, material: string, n: numb
     startAt: clock(),
     doneAt: clock() + n * unitMs(),
     taken: 0,
-    worker: worker.id,
+    worker,
   };
   game.jobs = [...jobsIn(game), job];
   return job;
@@ -244,13 +276,15 @@ export interface Finished {
 }
 
 /** Seconds a job has left on the clock, floored at none. */
-export const leftOn = (job: WorkJob): number => Math.max(0, (job.doneAt - clock()) / 1000);
+/** The clock a job reads: a paused one stands at the moment it stopped. */
+const clockOn = (job: WorkJob): number => job.paused ?? clock();
+export const leftOn = (job: WorkJob): number => Math.max(0, (job.doneAt - clockOn(job)) / 1000);
 /** Units the clock has finished so far, collected or not. */
 export const finishedOn = (job: WorkJob): number =>
-  Math.max(0, Math.min(job.n, Math.floor((clock() - job.startAt) / unitMs())));
+  Math.max(0, Math.min(job.n, Math.floor((clockOn(job) - job.startAt) / unitMs())));
 /** Seconds until the next unit lands, none once the last has. */
 export const nextOn = (job: WorkJob): number =>
-  finishedOn(job) >= job.n ? 0 : Math.max(0, (job.startAt + (finishedOn(job) + 1) * unitMs() - clock()) / 1000);
+  finishedOn(job) >= job.n ? 0 : Math.max(0, (job.startAt + (finishedOn(job) + 1) * unitMs() - clockOn(job)) / 1000);
 
 /** A time left said as `m:ss`, so the screen counts down in one shape. */
 export function saysLeft(seconds: number): string {
@@ -265,6 +299,7 @@ export function saysLeft(seconds: number): string {
  * by the time the anvil opens, and one half done is half the bars.
  */
 export function collectWork(game: GameState): Finished[] {
+  resumeOwnJob(game); // the bag is read in the camp, so the hero is back
   const out: Finished[] = [];
   const kept: WorkJob[] = [];
   for (const job of jobsIn(game)) {

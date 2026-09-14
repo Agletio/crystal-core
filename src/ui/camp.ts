@@ -28,7 +28,7 @@ import { drawBody } from './bodydraw';
 import { heroSpriteFor } from '../sim/appearance';
 import { CRYSTAL_SLOTS } from '../data';
 import { folkMet } from '../game/scenes';
-import { familyOfJob, jobOf, saysJob, workersFound } from '../game/work';
+import { SELF, familyOfJob, jobOf, saysJob, workersFound } from '../game/work';
 import { CAMP_STATION_FOOT, CAMP_WORKER_SPOTS } from '../scenes/camp';
 import type { SceneDef } from '../scenes';
 import { crystalIcon } from './icons';
@@ -323,7 +323,12 @@ function draw(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, at: numb
     const spot = workerSpot(w.id, i);
     drawBody(ctx, w.sprite, spot.x, spot.y, at, 2 + i * 0.9, lit === 100 + i, CAMP_HERO_SCALE);
   });
-  drawBody(ctx, heroSpriteFor(game.character), CAMP_STAND.x, CAMP_STAND.y, at, 0, false, CAMP_HERO_SCALE);
+  // THE HERO STANDS AT THE STATION HE IS WORKING, a step off its foot so a
+  // worker on the same station is not under him.
+  const own = jobOf(game, SELF);
+  const foot = own ? CAMP_STATION_FOOT[familyOfJob(own) ?? ''] : undefined;
+  const stand = foot ? { x: foot.x + 18, y: foot.y } : CAMP_STAND;
+  drawBody(ctx, heroSpriteFor(game.character), stand.x, stand.y, at, 0, false, CAMP_HERO_SCALE);
 }
 
 /** A hex and an alpha, as the `rgba()` a gradient stop wants. */
