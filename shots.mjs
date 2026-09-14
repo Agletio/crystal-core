@@ -813,6 +813,35 @@ for (const vp of VIEWPORTS) {
   });
   await page.waitForTimeout(300);
   await shoot('bench-pick');
+
+  // A REFUSED ROW STILL ANSWERS. A disabled button raises no mouse event, so
+  // the one row whose card exists to say WHY drew nothing at all; this hovers
+  // one that cannot be taken and reads the reason back off the tooltip.
+  // A REFUSED ROW IS NEVER A DISABLED BUTTON, because a disabled one raises no
+  // mouse event at all and its card is the only place the reason is written.
+  // Unfolded first, so there are rows to check rather than twelve shut groups.
+  await page.evaluate(() => {
+    for (const fold of document.querySelectorAll('#craft-pick .picklist__shard')) {
+      fold.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    }
+  });
+  await page.waitForTimeout(200);
+  const rows = await page.evaluate(() => ({
+    all: document.querySelectorAll('#craft-pick .craftpick').length,
+    shut: document.querySelectorAll('#craft-pick .craftpick[disabled]').length,
+  }));
+  if (rows.all === 0) problems.push(`${vp.name}: the bench offers no line to check`);
+  if (rows.shut > 0) problems.push(`${vp.name}: ${rows.shut} craft rows are disabled, so they can raise no tooltip`);
+  const row = await page.$('#craft-pick .craftpick');
+  if (row) {
+    await row.hover();
+    await page.waitForTimeout(150);
+    const drew = await page.evaluate(() => {
+      const tip = document.getElementById('tooltip');
+      return !tip || tip.hidden ? '' : (tip.textContent ?? '').trim();
+    });
+    if (!drew) problems.push(`${vp.name}: a craft row raises no tooltip`);
+  }
   await page.evaluate(() => document.getElementById('open-inventory')?.click());
   await page.waitForTimeout(200);
 

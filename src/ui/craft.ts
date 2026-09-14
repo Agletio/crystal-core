@@ -468,9 +468,12 @@ function pickRow(item: Item, entry: ModEntry, level: number, from?: RolledMod): 
   attachTooltip(row, () => pickCard(entry, level, from, socket, why, has));
 
   if (why) {
-    row.disabled = true;
+    // REFUSED, NEVER DISABLED: a disabled button raises no mouse event at all,
+    // so the one row whose card has to say WHY was the one that never drew it.
     row.classList.add('craftpick--off');
+    row.setAttribute('aria-disabled', 'true');
     row.setAttribute('aria-label', `${entry.name} tier ${entry.tier} — ${why}`);
+    row.onclick = () => note(why, 'fail');
   } else if (from) {
     row.onclick = () => raise(from);
     row.setAttribute('aria-label', `Raise ${entry.name} to tier ${entry.tier} for ${n} ${name}`);
@@ -498,6 +501,8 @@ function pickCard(
   const head = el('div', 'tip__name', entry.name);
   head.append(el('span', `tip__state${why ? '' : ' tip__state--open'}`, from ? `T${from.tier} → T${entry.tier}` : `tier ${entry.tier}`));
   card.append(head);
+  // WHY FIRST when there is a why: it is the question the hover was asking.
+  if (why) card.append(el('div', 'tip__note tip__note--why', why));
   const lines = entry.stats.length === 0 ? [windowed(entry, level)] : entry.stats.map((_, i) => windowed(entry, level, i));
   for (const what of lines) {
     const row = el('div', 'rolled tip__body');
@@ -518,9 +523,16 @@ function pickCard(
   if (socket && !socket.dead) {
     const room = socket.cap - socket.wear;
     const odds = hi <= room ? 'never' : lo > room ? 'always' : `${Math.round(((hi - room) / (hi - lo + 1)) * 100)}% chance`;
-    fact('fracture', odds, odds === 'never' ? "— safe at any roll" : odds === 'always' ? "— socket will be destroyed" : '');
+    fact(
+      'fracture',
+      odds,
+      odds === 'never' ? "— safe at any roll" : odds === 'always' ? "— socket will be destroyed" : '',
+      odds === 'never' ? '' : ' rolled__v--short'
+    );
   }
-  card.append(el('div', why ? 'tip__note tip__note--why' : 'tip__note', why ? `— ${why}` : from ? "— click to upgrade" : "— click to add"));
+  if (!why) {
+    card.append(el('div', 'tip__note', from ? "— click to upgrade" : "— click to add"));
+  }
   return card;
 }
 
