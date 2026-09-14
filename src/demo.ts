@@ -9218,6 +9218,15 @@ if (rule('THREE SLOTS — one that kills, one always on, one that moves you')) {
       `the first step is level 1 and the last, ${PASSIVE_STEPS[PASSIVE_STEPS.length - 1]}, is inside the ${LEVELLING.maxLevel} there are`,
       PASSIVE_STEPS.join(', ')
     );
+    // AND THE SHELF IS IN STEP ORDER, so what a level has open stands together
+    // at the front rather than scattered through what it has not.
+    const drawn = skillsInCategory('passive').map((sk) => sk.unlocksAt ?? 1);
+    check(
+      drawn.every((n, i) => i === 0 || n >= drawn[i - 1]),
+      `the shelf draws them in step order — ${drawn.join(', ')}`,
+      drawn.join(', ')
+    );
+
     // AND THE LEVEL IS WHAT ENFORCES IT, not the screen: a fresh character is
     // refused in numbers, and the same character at the level takes it.
     const late = shelf.find((sk) => (sk.unlocksAt ?? 1) === PASSIVE_STEPS[PASSIVE_STEPS.length - 1])!;

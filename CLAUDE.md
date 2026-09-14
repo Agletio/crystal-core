@@ -1550,7 +1550,9 @@ SEAM**, in `src/sim/character.ts`: `equipSkill` refuses a locked one,
 passive slot — the ladder character, the ceiling's search and its played sets
 — all read `openPassives`, so no balance number is ever read off a build its
 own level could not assemble. On the shelf a shut tile keeps its picture,
-prints the level it opens at and says the same on its card.
+prints the level it opens at and says the same on its card, and
+`skillsInCategory` returns a category IN STEP ORDER so what you can take
+stands together at the front rather than scattered through what you cannot.
 
 **TWENTY-FOUR PASSIVES, THREE A DAMAGE SKILL, AND EVERY ONE IS A TRADE.**
 *"We need to add some more ideally like 3x the number of damage skills because

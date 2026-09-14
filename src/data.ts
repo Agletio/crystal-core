@@ -6206,8 +6206,13 @@ export const MAIN_SKILLS = PLAYER_SKILLS.filter((s) =>
   SKILL_SLOT_BY_ID[MAIN_SLOT].accepts.includes(s.category!)
 );
 
+/** BY THE STEP IT OPENS ON, so what you can take stands together at the front
+ *  rather than scattered through what you cannot. Stable, so the table's own
+ *  order still decides inside a step. */
 export const skillsInCategory = (category: SkillCategory): SkillDef[] =>
-  SKILLS.filter((s) => s.category === category);
+  SKILLS.filter((s) => s.category === category).sort(
+    (a, b) => (a.unlocksAt ?? 1) - (b.unlocksAt ?? 1)
+  );
 
 export const RECIPES: Recipe[] = [
   // THE ONE THING THE COUNTER SELLS, and it is the crystal man's own: a roll
