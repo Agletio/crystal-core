@@ -8,7 +8,10 @@
  * stations, the anvil, a load — through one `clock()` a harness sets forward.
  */
 import {
+  CURRENCIES,
+  CURRENCY_BY_ID,
   GATHER,
+  INSTABILITY,
   MATERIAL_BY_ID,
   MATERIAL_FAMILY_BY_ID,
   MEAL,
@@ -23,9 +26,10 @@ import {
   workerMark,
 } from '../data';
 import type { MaterialDef, ProfessionDef, WorkerDef } from '../data';
+import type { CurrencyDef } from '../types';
 import type { MapTheme } from '../types';
 import { nextMeeting } from './scenes';
-import { makeMaterial } from '../economy';
+import { balance, grant, makeMaterial, spend } from '../economy';
 import { addItem } from './state';
 import type { GameState } from './state';
 import type { Item, RolledMod } from '../types';
@@ -34,7 +38,8 @@ import { liftFor, qualityRoll } from './forge';
 
 /** One job loaded at a station, and WHO is on it. `startAt` and `doneAt` are
  *  epoch milliseconds a unit apart per `n`; `taken` is how many of the units
- *  the clock has finished have already been collected into the bag. */
+ *  the clock has finished have already been collected into the bag. `material`
+ *  names a raw material, or a ROUGH shard the jeweller's is cutting. */
 export interface WorkJob {
   id: string;
   profession: string;
@@ -175,18 +180,46 @@ export const jobSize = (game: GameState, id: string): number => rawCount(game, i
 export function loadWork(game: GameState, def: MaterialDef): WorkJob | null {
   if (whyNotWork(game, def)) return null;
   const profession = PROCESSING.find((p) => p.family === def.family);
-  const worker = idleWorker(game);
-  if (!profession || !worker) return null;
   const held = (game.materials ?? []).find((i) => i.base === def.id && !i.meta.done);
-  if (!held) return null;
-
+  if (!profession || !held) return null;
   const n = jobSize(game, def.id);
   held.meta.n = ((held.meta.n as number) ?? 0) - n;
   game.materials = (game.materials ?? []).filter((i) => ((i.meta.n as number) ?? 0) > 0);
+  return startJob(game, profession.id, def.id, n);
+}
+
+/** THE ROUGH SHARDS HELD, every kind with one in the wallet: what the jeweller's cuts. */
+export const roughHeld = (game: GameState): CurrencyDef[] =>
+  CURRENCIES.filter((c) => c.cuts && balance(game.wallet, c.id) > 0);
+
+/** Why this rough cannot be cut, or null — the same walls a raw stack meets. */
+export function whyNotCut(game: GameState, def: CurrencyDef): string | null {
+  if (!def.cuts) return 'Nothing cuts this. It is spent as it is.';
+  const found = workersFound(game);
+  if (found.length === 0) return 'Nobody to cut it. Workers are found down the Fissure.';
+  if (!idleWorker(game)) return `Every worker is busy — ${found.length} of ${found.length}.`;
+  const n = balance(game.wallet, def.id);
+  if (n < WORK.least) return `${WORK.least} needed, ${n} held.`;
+  return null;
+}
+
+/** CUT EVERY ROUGH SHARD OF ONE KIND, at the jeweller's, into the shard the
+ *  bench spends. One for one on the same clock a bar is, and it is the whole
+ *  of how Jewelling is levelled short of the bench. */
+export function loadCut(game: GameState, def: CurrencyDef): WorkJob | null {
+  if (whyNotCut(game, def)) return null;
+  const n = balance(game.wallet, def.id);
+  spend(game.wallet, { [def.id]: n });
+  return startJob(game, INSTABILITY.bench, def.id, n);
+}
+
+function startJob(game: GameState, profession: string, material: string, n: number): WorkJob | null {
+  const worker = idleWorker(game);
+  if (!worker) return null;
   const job: WorkJob = {
     id: `job_${nextJob++}`,
-    profession: profession.id,
-    material: def.id,
+    profession,
+    material,
     n,
     startAt: clock(),
     doneAt: clock() + n * unitMs(),
@@ -197,10 +230,15 @@ export function loadWork(game: GameState, def: MaterialDef): WorkJob | null {
   return job;
 }
 
+/** The family a job's station belongs to: a rough shard is the jeweller's. */
+export const familyOfJob = (job: WorkJob): string | undefined =>
+  CURRENCY_BY_ID[job.material]?.cuts ? 'gem' : MATERIAL_BY_ID[job.material]?.family ?? undefined;
+
 /** What a job handed over on one collection: `n` units of it, never the whole. */
 export interface Finished {
   job: WorkJob;
-  item: Item;
+  name: string;
+  item?: Item; // the stack a material landed as; a cut shard lands in the wallet
   n: number;
   levels: number;
 }
@@ -231,13 +269,16 @@ export function collectWork(game: GameState): Finished[] {
   const kept: WorkJob[] = [];
   for (const job of jobsIn(game)) {
     const def = MATERIAL_BY_ID[job.material];
-    if (!def) continue; // a material that has been cut takes its job with it
+    const cut = CURRENCY_BY_ID[job.material]?.cuts;
+    if (!def && !cut) continue; // a material that has been cut takes its job with it
     const fresh = finishedOn(job) - job.taken;
     if (fresh > 0) {
-      const item = makeMaterial(def, fresh, true);
-      addItem(game, item);
+      let item: Item | undefined;
+      if (cut) grant(game.wallet, cut, fresh);
+      else addItem(game, (item = makeMaterial(def as MaterialDef, fresh, true)));
       job.taken += fresh;
-      out.push({ job, item, n: fresh, levels: payXp(game, job.profession, WORK.xp * fresh) });
+      const name = item?.name ?? CURRENCY_BY_ID[cut ?? '']?.name ?? job.material;
+      out.push({ job, name, item, n: fresh, levels: payXp(game, job.profession, WORK.xp * fresh) });
     }
     if (job.taken < job.n) kept.push(job);
   }
@@ -247,6 +288,8 @@ export function collectWork(game: GameState): Finished[] {
 
 /** What a job is called on screen, in the station's own words. */
 export function saysJob(job: WorkJob): string {
+  const rough = CURRENCY_BY_ID[job.material];
+  if (rough?.cuts) return `${job.n} ${rough.name} → ${job.n} ${CURRENCY_BY_ID[rough.cuts]?.name ?? rough.cuts}`;
   const def = MATERIAL_BY_ID[job.material];
   const family = def?.family ? MATERIAL_FAMILY_BY_ID[def.family] : undefined;
   const one = family?.one ?? 'unit';

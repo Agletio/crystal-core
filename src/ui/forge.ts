@@ -242,7 +242,7 @@ function baseCard(base: GearBase, recipe: CraftRecipe): HTMLElement {
 
 export function render(): void {
   if (!game) return;
-  for (const done of collectWork(game)) note(`${done.item.name} came off the station: +${done.n}`);
+  for (const done of collectWork(game)) note(`${done.name} came off the station: +${done.n}`);
   tabs();
   filters();
   const host = $('forge-list');

@@ -154,6 +154,8 @@ export interface CurrencyDef {
   /** Spent on a CRYSTAL, for one random rule. A shard is a cost the bench
    *  spends and is never applied to anything. */
   crystal?: boolean;
+  /** ROUGH: what the jeweller's cuts it into. Only a rough shard drops. */
+  cuts?: string;
 }
 
 export type GearKind =

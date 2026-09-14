@@ -329,7 +329,10 @@ the ZONE (`mapTheme`, `MAP_THEMES`).
   (`SHARD_FAMILIES`, `shardFor`, first match wins); `SHARDS.perTier` is what a
   tier costs by rank from the worst, and `SHARDS.refund` what a dismantle hands
   back, always under it. No run gates a family out; `DropBand.shards` is the
-  pile one drop pays, so depth buys VOLUME.
+  pile one drop pays, so depth buys VOLUME. **It DROPS ROUGH** — the
+  `rough_<family>` row is the only one weighted, `CurrencyDef.cuts` names the
+  shard it becomes, and a Jewelling job at the jeweller's (`loadCut`,
+  `collectWork` granting into the wallet) is what cuts it and levels Jewelling.
 - **The crystal's is the one ROLL left**, and `shard_of_making` is the only
   thing the counter sells, because a shop stocking the whole bench replaces the
   map — and choosing a crystal's rule would buy the cheapest danger for the

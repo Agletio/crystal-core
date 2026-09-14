@@ -5344,7 +5344,7 @@ export class RunSim {
    *  BAND's, and volume is the whole of what a better tier costs. */
   private dropCurrency(lift = 0): void {
     // A gate is a wall, so the pool is filtered before the pick.
-    const pool = CURRENCIES.filter((c) => opensHere(c.gate, this.set.power, this.set.theme));
+    const pool = CURRENCIES.filter((c) => c.weight > 0 && opensHere(c.gate, this.set.power, this.set.theme));
     const dropped = this.rng.weighted(pool, (c) => c.weight);
     if (!dropped) return;
 

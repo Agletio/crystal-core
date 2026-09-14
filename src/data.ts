@@ -2234,14 +2234,27 @@ export const shardCost = (rank: number): number =>
  * roll left in the game: a crystal rolls a RULE, and choosing which rule would
  * let a build pick the cheapest danger for the richest payment.
  */
+/** A SHARD DROPS ROUGH, and the jeweller's cuts it: processing is how
+ *  Jewelling is levelled, and a shard nobody has cut buys nothing. */
+export const roughOf = (shardId: string): string => shardId.replace(/^shard_/, 'rough_');
+
 export const CURRENCIES: CurrencyDef[] = [
+  ...SHARD_FAMILIES.map((f) => ({
+    id: roughOf(f.id),
+    name: `Rough ${f.name}`,
+    class: f.class,
+    description: `Cut at the jeweller's into ${f.name}s, one at a time.`,
+    icon: f.icon,
+    weight: f.weight,
+    cuts: f.id,
+  })),
   ...SHARD_FAMILIES.map((f) => ({
     id: f.id,
     name: f.name,
     class: f.class,
     description: `Buys ${f.buys}, for ${SHARDS.perTier.join(', ')} by tier.`,
     icon: f.icon,
-    weight: f.weight,
+    weight: 0, // never a drop: cut from the rough one
   })),
   {
     id: 'shard_of_making',

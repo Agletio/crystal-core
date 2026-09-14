@@ -407,7 +407,7 @@ export function heal(game: GameState): Healed {
     if (job && Number.isFinite(job.doneAt) && !Number.isFinite(job.startAt)) job.startAt = job.doneAt - job.n * unitMs();
     if (job && !Number.isFinite(job.taken)) job.taken = 0;
     const ok =
-      job && MATERIAL_BY_ID[job.material] !== undefined &&
+      job && (MATERIAL_BY_ID[job.material] !== undefined || CURRENCY_BY_ID[job.material]?.cuts !== undefined) &&
       PROFESSION_BY_ID[job.profession] !== undefined &&
       Number.isFinite(job.doneAt) && Number.isFinite(job.n) && job.n > 0;
     if (!ok) out.items++;

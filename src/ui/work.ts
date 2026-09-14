@@ -6,8 +6,10 @@
  * and nothing else. Every station in the camp opens this on its own tab, so the
  * furnace and the loom are two doors into one room.
  */
-import { MATERIAL_BY_ID, MATERIAL_FAMILIES, PROFESSIONS, THEME_BY_ID, WORK } from '../data';
+import { CURRENCY_BY_ID, MATERIAL_BY_ID, MATERIAL_FAMILIES, PROFESSIONS, THEME_BY_ID, WORK } from '../data';
 import type { MaterialFamilyDef } from '../data';
+import type { CurrencyDef } from '../types';
+import { balance } from '../economy';
 import {
   collectWork,
   idleWorker,
@@ -15,6 +17,9 @@ import {
   jobSize,
   jobsIn,
   finishedOn,
+  loadCut,
+  roughHeld,
+  whyNotCut,
   leftOn,
   nextOn,
   loadWork,
@@ -28,7 +33,7 @@ import {
   xpToNext,
 } from '../game/work';
 import type { GameState } from '../game/state';
-import { itemIcon } from './icons';
+import { currencyIcon, itemIcon } from './icons';
 import { attachTooltip } from './tooltip';
 import { note } from './history';
 
@@ -109,10 +114,42 @@ function rawCard(family: MaterialFamilyDef, item: any): HTMLElement {
   return card;
 }
 
+/** One kind of rough shard, and the shard a job of it becomes. */
+function roughCard(def: CurrencyDef): HTMLElement {
+  const n = balance(game.wallet, def.id);
+  const cut = CURRENCY_BY_ID[def.cuts ?? ''];
+  const card = el('div', 'crystal');
+  const head = el('div', 'crystal__head');
+  head.append(currencyIcon(def, 26));
+  const title = el('div', 'crystal__title');
+  title.append(el('div', 'crystal__name', def.name));
+  title.append(el('div', 'socket__family', `${n} held`));
+  head.append(title);
+  card.append(head);
+  card.append(
+    el('div', 'crystal__grow',
+      `${n} → ${n} ${cut?.name ?? def.cuts}${n === 1 ? '' : 's'}, one every ${WORK.secondsEach}s, ${saysLeft(n * WORK.secondsEach)} in all`)
+  );
+  const why = whyNotCut(game, def);
+  const idle = idleWorker(game);
+  const button = el('button', 'mini', why ?? `${idle?.name} cuts ${n}`) as HTMLButtonElement;
+  button.id = workLoadId(def.id);
+  button.disabled = why !== null;
+  button.onclick = () => {
+    const job = loadCut(game, def);
+    if (!job) return;
+    note(`${idle?.name} loads ${job.n} ${def.name} onto the jeweller's`);
+    render();
+    onChanged?.();
+  };
+  card.append(button);
+  return card;
+}
+
 export function render(): void {
   if (!game) return;
   // WHAT THE CLOCK FINISHED comes off the stations first, and says so.
-  for (const done of collectWork(game)) note(`${done.item.name} came off the station: +${done.n}`);
+  for (const done of collectWork(game)) note(`${done.name} came off the station: +${done.n}`);
   tabs();
   const family = MATERIAL_FAMILIES.find((f) => f.id === shown) ?? MATERIAL_FAMILIES[0];
   const profession = professionFor(family.id);
@@ -138,7 +175,10 @@ export function render(): void {
   host.replaceChildren();
   const raw = rawHeld(game, family.id);
   for (const item of raw) host.append(rawCard(family, item));
-  if (raw.length === 0) {
+  // THE ROUGH SHARDS ARE THE JEWELLER'S TOO: every shard drops uncut.
+  const rough = family.id === 'gem' ? roughHeld(game) : [];
+  for (const def of rough) host.append(roughCard(def));
+  if (raw.length === 0 && rough.length === 0) {
     host.append(
       el('p', 'empty', `No ${family.raw} yet. It comes up out of a descent, ${family.verb.toLowerCase()}.`)
     );

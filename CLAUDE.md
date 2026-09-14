@@ -973,6 +973,20 @@ shards at the bare Fissure and 38.0 at the deep end, which for the family
 everybody wants is a worst-tier line in 3 clears at the bottom and 1 at the top,
 a middle one in 27 against 5, and the best in 261 against 50.
 
+**A SHARD DROPS ROUGH, AND THE JEWELLER'S CUTS IT.** *"How are you leveling
+up… do you just have to sit here adding random mods to gear? Maybe we need to
+have all these currency items drop as processable and you have to process them
+with a worker."* `CURRENCIES` holds a `rough_<family>` row a shard (`roughOf`,
+`CurrencyDef.cuts`), and it is the only one with a drop weight: what a descent
+banks is rough, in the wallet under the cut one's picture unpolished, and it
+buys nothing at the bench. `roughHeld` / `whyNotCut` / `loadCut` in
+`src/game/work.ts` are the jeweller's own cards on the Works' gem tab — every
+rough shard of one kind, one cut a unit on the same clock a bar is, landing
+in the wallet as the shard through `collectWork` — and every unit pays
+Jewelling `WORK.xp`, which is how the bench's one profession is levelled
+without spending a shard on anything. A dismantle still hands back CUT shards:
+it is a recovery, not a drop.
+
 **A PLAN IS THE THIRD GATE, AND NOTHING YOU OWN OPENS ONE.** *"The cool or
 really powerful stats should be locked behind crafting plans. Blacksmithing
 plans, weaving patterns etc. You have to find these in higher level zones and

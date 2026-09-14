@@ -242,8 +242,10 @@ import type { SceneDef } from './scenes';
 import { COVER_PROPS, COVER_SET, FACE_FOOT, FACE_HEAD, FOOT, HUNG_PROPS, VIGNETTES, WALL_PROPS } from './vignettes';
 import { PROP_ART } from './render/generated-props';
 import {
+  collectWork,
   eatMeal,
   jobsIn,
+  loadCut,
   loadWork,
   mealRuns,
   unitMs,
@@ -1147,7 +1149,7 @@ if (rule('THE SHARD ECONOMY — how many clears is one line?')) {
 {
   const shardsIn = (loot: Record<string, number>): number =>
     Object.entries(loot)
-      .filter(([id]) => SHARD_BY_ID[id])
+      .filter(([id]) => SHARD_BY_ID[id] || CURRENCY_BY_ID[id]?.cuts)
       .reduce((n, [, v]) => n + v, 0);
 
   const runs = 8;
@@ -4530,11 +4532,11 @@ if (rule('THE WORKS — does a job run on the clock, and on nothing else?')) {
     'and the last unit\'s seconds take every one of them off, collected on the report',
     `${done.length} finished, ${jobsIn(shop).length} still on, ${handed} handed back`
   );
-  const minted = [...firsts, ...done].filter((d) => ((d.item.meta.n as number) ?? 0) !== d.n);
+  const minted = [...firsts, ...done].filter((d) => ((d.item?.meta.n as number) ?? 0) !== d.n);
   check(
     minted.length === 0,
     'and a job hands back exactly what it took: nothing lost, nothing minted',
-    minted.map((d) => `${d.item.name} ${d.item.meta.n}`).join(', ')
+    minted.map((d) => `${d.name} ${d.item?.meta.n}`).join(', ')
   );
 
   // RAW AND PROCESSED ARE TWO STACKS OF ONE ROW. Merged, a recipe could not
@@ -4553,6 +4555,54 @@ if (rule('THE WORKS — does a job run on the clock, and on nothing else?')) {
     'and the profession that did the work is further on for it',
     `level ${smith.level}, ${smith.xp} xp`
   );
+
+  // A SHARD DROPS ROUGH AND THE JEWELLER'S CUTS IT: what a descent hands over
+  // buys nothing at the bench until a worker has been through it, one a unit
+  // on the same clock, and that is how Jewelling is levelled.
+  {
+    const rough = CURRENCIES.filter((c) => c.cuts);
+    const cut = CURRENCIES.filter((c) => !c.cuts && !c.crystal);
+    check(
+      rough.length === SHARD_FAMILIES.length && cut.every((c) => c.weight === 0) && rough.every((c) => c.weight > 0),
+      `every one of the ${SHARD_FAMILIES.length} shards drops ROUGH, and no cut one drops at all`,
+      `${rough.length} rough, ${cut.filter((c) => c.weight > 0).length} cut ones in the drop pool`
+    );
+    const rich: string[] = [];
+    for (let i = 0; i < 6; i++) {
+      const sim = new RunSim([makeCrystal(1), makeCrystal(1), makeCrystal(1), makeCrystal(1)], ladderCharacter(6, new Rng(70 + i)), new Rng(500 + i));
+      rich.push(...Object.keys(runToCompletion(sim, 600).loot.currency));
+    }
+    check(
+      rich.some((id) => CURRENCY_BY_ID[id]?.cuts) && !rich.some((id) => SHARD_BY_ID[id]),
+      'and what a descent banks is rough, never a cut shard',
+      rich.filter((id) => SHARD_BY_ID[id]).join(', ') || 'no rough turned up in 6 descents'
+    );
+    const jeweller = createGame('fresh');
+    takeWorker(jeweller, WORKERS[0].id);
+    const kind = rough[0];
+    grant(jeweller.wallet, kind.id, 3);
+    const gem = makeGear('ring_life_t1', 20);
+    check(
+      whyNotChoose(gem, choices(gem, pool)[0], 99, (id) => balance(jeweller.wallet, id), []) !== null,
+      'three rough shards buy nothing at the bench',
+      'the bench took a rough shard'
+    );
+    const job = loadCut(jeweller, kind);
+    check(
+      job !== null && balance(jeweller.wallet, kind.id) === 0 && job.profession === 'jewelling' && job.n === 3,
+      `and the jeweller's takes all 3 at once, off the wallet, as a Jewelling job`,
+      job ? `${job.profession} ${job.n}, ${balance(jeweller.wallet, kind.id)} left` : 'refused'
+    );
+    setClock(() => at + 3 * WORK.secondsEach * 1000 + 1);
+    const landed = collectWork(jeweller);
+    const jl = professionAt(jeweller, 'jewelling');
+    check(
+      landed.length === 1 && landed[0].n === 3 && balance(jeweller.wallet, kind.cuts!) === 3 && jl.xp > 0 || jl.level > 1,
+      `and 3 units later the wallet holds 3 ${CURRENCY_BY_ID[kind.cuts!]?.name}s and Jewelling is further on`,
+      `${landed.map((d) => `${d.name} +${d.n}`).join(', ')} · ${balance(jeweller.wallet, kind.cuts!)} held · level ${jl.level}, ${jl.xp} xp`
+    );
+    setClock(() => at);
+  }
 
   // WHAT 99 COSTS, measured rather than chosen: *"you can freely level them all
   // but it just costs your time."* Printed, because it is a balance number.

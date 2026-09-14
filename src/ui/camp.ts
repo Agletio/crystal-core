@@ -26,9 +26,9 @@ import { SCENE_ART } from '../render/generated-scene';
 import { GENERATED } from '../render/generated-art';
 import { drawBody } from './bodydraw';
 import { heroSpriteFor } from '../sim/appearance';
-import { CRYSTAL_SLOTS, MATERIAL_BY_ID } from '../data';
+import { CRYSTAL_SLOTS } from '../data';
 import { folkMet } from '../game/scenes';
-import { jobOf, saysJob, workersFound } from '../game/work';
+import { familyOfJob, jobOf, saysJob, workersFound } from '../game/work';
 import { CAMP_STATION_FOOT, CAMP_WORKER_SPOTS } from '../scenes/camp';
 import type { SceneDef } from '../scenes';
 import { crystalIcon } from './icons';
@@ -118,7 +118,7 @@ function mount(spot: Hotspot, host = 'camp-hotspots'): HTMLButtonElement {
 /** Where a worker stands: the station of the job, or the i-th idle spot. */
 function workerSpot(id: string, i: number): { x: number; y: number } {
   const job = jobOf(game, id);
-  const family = job ? MATERIAL_BY_ID[job.material]?.family : undefined;
+  const family = job ? familyOfJob(job) : undefined;
   const idle = CAMP_WORKER_SPOTS[i % CAMP_WORKER_SPOTS.length];
   return family ? CAMP_STATION_FOOT[family] ?? idle : idle;
 }
@@ -143,7 +143,7 @@ function mountFolk(): void {
       {
         id: `worker-${w.id}`,
         x: at.x - grid / 2, y: at.y - grid, w: grid, h: grid,
-        opens: 'work', family: job ? MATERIAL_BY_ID[job.material]?.family ?? undefined : undefined,
+        opens: 'work', family: job ? familyOfJob(job) : undefined,
         says: `${w.name}. ${job ? saysJob(job) : 'Idle. Load raw at a station.'}`,
       },
       'camp-workers'

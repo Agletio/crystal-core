@@ -174,7 +174,7 @@ export function buildReport(game: GameState, run: RunState, left = false): RunRe
   for (const done of worked) {
     const profession = PROFESSION_BY_ID[done.job.profession];
     rows.push({
-      label: `${profession?.name ?? done.job.profession} · ${done.item.name}`,
+      label: `${profession?.name ?? done.job.profession} · ${done.name}`,
       value: done.levels > 0
         ? `+${done.n}, level ${professionAt(game, done.job.profession).level}`
         : `+${done.n}`,
