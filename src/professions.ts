@@ -5,7 +5,7 @@
  * rungs for what a gatherer may carry. A page that disagrees with the game
  * cannot happen, and a new tier or rung writes its own line.
  */
-import { CRAFT, PROFESSION, PROFESSION_BY_ID, TOOLS } from './data';
+import { CRAFT, MOD_TIERS, PROFESSION, PROFESSION_BY_ID, SELECT, TOOLS } from './data';
 
 /** One step: the level, and what it opens. */
 export interface Unlock {
@@ -17,22 +17,26 @@ export interface Unlock {
 export function unlocksFor(id: string): Unlock[] {
   const def = PROFESSION_BY_ID[id];
   if (!def) return [];
+  if (id === 'cooking') return [{ at: 1, what: 'Cook fish into meals. Higher Cooking levels improve their bonuses and the number of clears they last.' }];
   const out: Unlock[] =
     def.kind === 'gather'
       ? TOOLS.filter((t) => t.skill === id).flatMap((tool) =>
           tool.rungs.map((rung, at) => ({
             at: rung.at,
             what: at === 0
-              ? `${rung.name} — what everybody starts with`
-              : `${rung.name}, taking +${rung.more} out of every node`,
+              ? `${rung.name} — starting tool`
+              : `${rung.name} — +${rung.more} materials gathered per node`,
           }))
         )
       : CRAFT.needs.map((at, tier) => ({
           at,
-          what: `Tier ${tier + 1} bases, wanting ${CRAFT.each[tier]} of each of `
+          what: `Tier ${tier + 1} bases — requires ${CRAFT.each[tier]} processed materials from each of `
             + `${CRAFT.versions[tier]} world${CRAFT.versions[tier] === 1 ? '' : 's'}`
-            + `${tier + 1 >= CRAFT.uniqueFrom ? " and a world's own material" : ''}`,
+            + `${tier + 1 >= CRAFT.uniqueFrom ? " and a rare world material" : ''}`,
         }));
+  if (id === 'jewelling') out.push(...SELECT.tierAt.map((at, rank) => ({
+    at, what: `Craft modifier rank ${rank + 1} at the bench — T${MOD_TIERS - rank} for modifiers with seven tiers`,
+  })));
   return out.sort((a, b) => a.at - b.at);
 }
 
@@ -40,6 +44,9 @@ export function unlocksFor(id: string): Unlock[] {
 export const saysProfession = (id: string): string => {
   const def = PROFESSION_BY_ID[id];
   if (!def) return '';
-  const verb = def.kind === 'gather' ? 'Gathering' : 'Working';
-  return `${verb} ${def.family} pays it. ${PROFESSION.maxLevel} is the top.`;
+  const earns = def.kind === 'gather' ? `Gathering ${def.family} earns XP.`
+    : id === 'cooking' ? 'Cooking fish earns XP.'
+    : id === 'jewelling' ? 'Processing gems, cutting rough shards and crafting bases that require Jewelling earn XP.'
+    : 'Processing materials and crafting bases that require this profession earn XP.';
+  return `${earns} Maximum level: ${PROFESSION.maxLevel}.`;
 };

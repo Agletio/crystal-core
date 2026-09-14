@@ -17,8 +17,8 @@ export const AETHERMANCER: TradeSpec = {
   id: 'aethermancer',
   name: 'Aethermancer',
   blurb:
-    'Uses mana to absorb damage. His talents can strengthen this protection, ' +
-    'spend mana for added Cold damage or recover mana by dealing damage.',
+    "Uses Mana to absorb damage before it reaches Life. His talents let him " +
+    "spend Mana for damage, recover it through combat or exchange it for Life.",
   lore:
     'He learned young to let aether take the blows meant for his flesh. ' +
     'Now he draws on it for every battle, pushing his exhausted body beyond ' +
@@ -47,7 +47,7 @@ export const AETHERMANCER: TradeSpec = {
     {
       a: 'aet_thrift',
       b: 'aet_dry_season',
-      why: 'Life pays what Mana cannot, so a use is never Starved and Dry Season never fires.',
+      why: "Never Dry pays missing Mana costs with Life. Your skills cannot be Starved, so Dry Season has no effect.",
     },
   ],
   spokes: [
@@ -73,7 +73,7 @@ export const AETHERMANCER: TradeSpec = {
             {
               id: 'aet_refraction',
               name: 'Refraction',
-              description: '35% of the damage Mana absorbs returns to you as Life.',
+              description: "Recover Life equal to 35% of the damage absorbed by Mana.",
               grants: { wardHeals: 0.35 },
               keystone: true,
             },
@@ -104,7 +104,7 @@ export const AETHERMANCER: TradeSpec = {
       gate: {
         id: 'aet_overcharge',
         name: 'Overcharge',
-        description: "After paying the skill's Mana cost, spend 10% of maximum Mana to add the same amount of Cold damage to its hits. Requires enough Mana for the full extra cost.",
+        description: "After paying a skill's Mana cost, spend an additional 10% of maximum Mana to add that amount as Cold damage to its hits or Blight's Poison. Also increases Exsanguinate's wound damage. Requires enough Mana for the full extra cost.",
         grants: { overcharge: 0.1 },
       },
       branches: [
@@ -116,7 +116,7 @@ export const AETHERMANCER: TradeSpec = {
             {
               id: 'aet_surge',
               name: 'Cataclysm',
-              description: 'Overcharge spends 30% of maximum Mana while your Mana is above 70%, and nothing below it.',
+              description: "After paying the skill's Mana cost, Overcharge activates only if at least 70% of maximum Mana remains. It then spends 30% of maximum Mana instead of 10%.",
               grants: { overchargeSurge: { above: 0.7, share: 0.3 } },
               keystone: true,
             },
@@ -130,7 +130,7 @@ export const AETHERMANCER: TradeSpec = {
             {
               id: 'aet_deepwinter',
               name: 'Deep Winter',
-              description: 'An Overcharged use applies Chill at 100% chance.',
+              description: "Overcharged Cold hits have at least 100% chance to apply Chill.",
               grants: { overchargeChills: true },
               keystone: true,
             },
@@ -159,7 +159,7 @@ export const AETHERMANCER: TradeSpec = {
             {
               id: 'aet_bloodletting',
               name: 'Bloodletting',
-              description: "Damage that reaches your Life recovers Mana at 100% of the Siphon's share.",
+              description: "Damage to your Life from hits and boss drains also restores Mana at your Mana Leech percentage (4% from Siphon).",
               grants: { leechOnTaken: true },
               keystone: true,
             },
@@ -173,7 +173,7 @@ export const AETHERMANCER: TradeSpec = {
             {
               id: 'aet_secondwind',
               name: 'Second Wind',
-              description: 'A kill while you are under 25% Mana refills it to 25%.',
+              description: "When you kill an enemy with less than 25% of maximum Mana remaining, restore Mana to 25% of maximum.",
               grants: { killFloor: 0.25 },
               keystone: true,
             },
@@ -202,7 +202,7 @@ export const AETHERMANCER: TradeSpec = {
             {
               id: 'aet_slowburn',
               name: 'Slow Burn',
-              description: 'Starved uses come 50% slower and land for their full damage.',
+              description: "Starved skills deal full damage. Starved attacks and casts have 50% less speed.",
               grants: { starvedSlow: 0.5 },
               keystone: true,
             },
@@ -216,7 +216,7 @@ export const AETHERMANCER: TradeSpec = {
             {
               id: 'aet_dust',
               name: 'Dust',
-              description: 'Take 30% less damage while Starved.',
+              description: "After a Starved use, take 30% less damage from hits and boss drains until you fully pay a skill cost. Adds to movement skill damage reduction, up to a combined 80%.",
               grants: { starvedGuard: 0.3 },
               keystone: true,
             },
@@ -260,7 +260,7 @@ export const AETHERMANCER: TradeSpec = {
             {
               id: 'aet_undertow',
               name: 'Undertow',
-              description: 'While you are under 35% Life, 5% of maximum Mana a second becomes Life, one for one.',
+              description: "While below 35% of maximum Life, spend up to 5% of maximum Mana per second to recover 1 Life per Mana spent. This recovery stops at 35% Life.",
               grants: { lifeFromMana: { below: 0.35, perSecond: 0.05 } },
               keystone: true,
             },

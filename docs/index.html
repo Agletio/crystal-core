@@ -2441,8 +2441,8 @@
          guess. Closed by default: a descent is for watching. -->
     <div class="panel details" id="run-details-panel" hidden>
       <div class="readout">
-        <div><span>starved casts</span><code id="run-starved">0</code></div>
-        <div id="run-warded-row" hidden><span>life paid in mana</span><code id="run-warded">0</code></div>
+        <div><span>Starved uses</span><code id="run-starved">0</code></div>
+        <div id="run-warded-row" hidden><span>damage absorbed by Mana</span><code id="run-warded">0</code></div>
         <div id="run-overcharged-row" hidden><span>overcharged</span><code id="run-overcharged">0</code></div>
         <div><span>elapsed</span><code id="run-elapsed">0.0s</code></div>
         <div><span>killed</span><code id="run-killed">0/0</code></div>
@@ -2549,7 +2549,7 @@
       <div class="dockcol">
         <div class="dockcol__head">
           <div class="dockcol__label" id="inv-gear-label">Equipment</div>
-          <input class="find" id="inv-find" type="search" placeholder="Find" aria-label="Filter what is drawn" />
+          <input class="find" id="inv-find" type="search" placeholder="Find" aria-label="Filter inventory" />
           <button class="chip" id="inv-sort" title="Group by slot, best first">Sort</button>
         </div>
         <div class="slots" id="inv-gear"></div>
@@ -2602,7 +2602,7 @@
         </div>
         <div class="panel">
           <p class="empty" id="craft-empty">
-            Click or drag something from your dock.
+            Select or drag an item from your inventory.
           </p>
           <div id="craft-item" hidden>
             <h2 id="item-name">—</h2>
@@ -2653,14 +2653,14 @@
     <div class="modal__body">
       <div class="panel met">
         <div class="met__row" id="graft-relic"></div>
-        <div class="dockcol__label">What he takes it out on</div>
+        <div class="dockcol__label">Choose equipment</div>
         <div class="graft__pieces" id="graft-pieces"></div>
-        <p class="graft__hint">Worn gear. Something carried is clicked in the dock.</p>
-        <div class="dockcol__label" id="graft-lineslabel">What he writes</div>
+        <p class="graft__hint">Choose equipped gear below, or select an item in your inventory.</p>
+        <div class="dockcol__label" id="graft-lineslabel">Choose an implicit modifier</div>
         <div class="met__gift" id="graft-lines"></div>
         <div class="graft__go">
-          <button class="mini mini--go" id="graft-do">Give it to him</button>
-          <button class="mini" id="graft-leave">Keep it</button>
+          <button class="mini mini--go" id="graft-do">Apply modifier</button>
+          <button class="mini" id="graft-leave">Cancel</button>
         </div>
       </div>
     </div>
@@ -2711,7 +2711,7 @@
         <div class="crystals" id="crystals-list"></div>
       </div>
       <div class="panel">
-        <h3 class="panel__title">What is earned</h3>
+        <h3 class="panel__title">Progression rewards</h3>
         <div class="quests" id="crystals-quests"></div>
       </div>
     </div>
@@ -3143,7 +3143,7 @@
       </div>
     </div>
     <div class="modal__body">
-      <p class="skillhead__sub">Click a key to rebind it. Escape closes what is on top.</p>
+      <p class="skillhead__sub">Click a key to change its binding. Escape closes the top window.</p>
       <div class="keyrows" id="settings-keys"></div>
     </div>
   </div>

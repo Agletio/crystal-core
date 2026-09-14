@@ -3,8 +3,8 @@
 Astra reviews player-facing copy against implementation. Claude owns changes to
 mechanics. Preserve names, character identities and good existing text. Use the
 approved character selection copy in `src/trades/` at `4e68b380` as the style
-reference: direct rules, separate intentional lore. Main was verified on GitHub
-at `e1413d520e265eb950b4ea83f86c9fa961441fe1` on 2026-09-11.
+reference: direct rules, separate intentional lore. This batch verified GitHub
+main at `4267c9817887a8bbd28a11e9fe71c777c9368c01` on 2026-09-13.
 
 No earlier writing PR or writing branch was present among all 14 PRs and all
 eight branches returned by GitHub. The approved character rewrite is on main;
@@ -81,10 +81,20 @@ When adding a new implementation module, add its dependency here in
 3. Equipment, modifiers, flasks and crafting.
 4. Quests, tutorial and encounter text; then navigation, empty states and errors.
 
-The current extractor covers batch 1, skill cards, character introductions and
-keywords. Other surfaces are a backlog, not implicitly reviewed. Extend the
-extractor with stable domain IDs when taking each subsequent batch. Keep prose
-in its existing source location; this ledger is not a second localization layer.
+The extractor now covers trees, cards, introductions, keywords, dialogue,
+currencies, professions, materials, Reckoning nodes, objectives and menus.
+`MENUS-DIALOGUE.md` records the current review; the counts in older batch
+descriptions are historical. Keep prose in its existing source location;
+this ledger is not a second localization layer.
+
+Menu copy is grouped by named declaration: `menu.ui.craft.renderPicks`, for
+example, includes that function's labels and callback messages. Static HTML
+uses `menu.html.<DOM-id>`; skill data uses its existing data IDs. Keep a
+declaration's name stable during copy edits. New declarations/data entries are
+pending; additions or changes inside an already reviewed group make it stale.
+The conservative text extractor can include an incidental code string in a
+group; it never treats a group as proof that an unregistered data source was
+reviewed. Add new imported data registries and mechanics dependencies explicitly.
 
 Read each mechanic's consumers, not just its grant label. Check targeting,
 timing, stacking, caps and alternate modes. Distinguish increased from more,

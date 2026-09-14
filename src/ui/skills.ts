@@ -258,7 +258,7 @@ function skillSummary(skill: SkillDef): HTMLElement {
     `base: ${Math.round(skillBase(skill, game.character.level))} ` +
       `${DAMAGE_TYPE_BY_ID[dealt]?.name ?? dealt}` +
       (converted ? ` (converted from ${skill.damageTypes.join(', ')})` : ''),
-    `added damage: ${skill.addedEffectiveness}%, as its own type`,
+    `added damage effectiveness: ${skill.addedEffectiveness}%`,
   ];
   // Before the numbers, because it decides whether any of them apply to you.
   if (skill.requires) lines.push(`swung with: ${weaponWanted(skill)}`);
@@ -727,7 +727,7 @@ function renderWeb(): void {
       // node before it, off the cheapest route in.
       const owed = (): string => {
         const route = routeTo(skillId, node.id, progress.allocated);
-        if (route.length < 2) return 'not connected to anything you own';
+        if (route.length < 2) return "requires a connected allocated node";
         const prev = route[route.length - 2];
         const n = route.filter((id) => id === prev).length;
         return `Requires ${n} more point${n === 1 ? '' : 's'} in ${byId.get(prev)?.name ?? prev}`;
@@ -737,7 +737,7 @@ function renderWeb(): void {
         : clash
           ? `cannot be taken with ${clash.node.name} — ${clash.says}`
           : other
-            ? `cannot be taken with ${other.name} — one Keystone a tree`
+            ? `cannot be taken with ${other.name} — only one Keystone per tree`
             : !reachable
               ? owed()
               : spare > 0
@@ -749,7 +749,7 @@ function renderWeb(): void {
           : 'Click to choose.'
         : '';
       return nodeCard(node.name, state, [
-        node.keystone ? 'Keystone. One a tree.' : '',
+        node.keystone ? "Keystone. Only one per tree." : '',
         most > 1 ? `Per point, up to ${most}.` : '',
         asConverted(node, skillId), cost(node), choice,
       ]);

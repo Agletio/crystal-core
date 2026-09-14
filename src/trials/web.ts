@@ -27,7 +27,7 @@ const bend = (much: number) =>
   DROP_GROUPS.map((g) => ({
     id: g.id,
     name: g.id[0].toUpperCase() + g.id.slice(1),
-    description: `+${much}% increased ${g.id} found, everywhere.`,
+    description: `+${much}% increased drop weight for ${g.id}.`,
     stats: [stat(findStat(g.id), 'inc', much)],
   }));
 
@@ -46,14 +46,14 @@ export const TRIAL_WEB: TrialSpec = {
   road: [
     m('+6% increased Pack Size', stat('packSize', 'inc', 6)),
     m('+5% increased Pack Count', stat('packCount', 'inc', 5)),
-    m('+12% increased Magic and Rare monsters', stat('monsterRank', 'inc', 12)),
+    m("+12% increased Magic and Rare monster spawn weight", stat('monsterRank', 'inc', 12)),
     m('+3 Rarity', stat('rarity', 'flat', 3)),
     m('+6% increased Currency Find', stat('currencyFind', 'inc', 6)),
     m('+6% increased Layout Complexity', stat('layoutComplexity', 'inc', 6)),
-    m('+2% of packs guard a Hoard', stat('hoardChance', 'inc', 2)),
-    m('+2% of deaths leave one of the rank below', stat('splitChance', 'inc', 2)),
-    m('+3% of packs hold a Warden', stat('wardenChance', 'inc', 3)),
-    m('+10% increased Magic and Rare monsters', stat('monsterRank', 'inc', 10)),
+    m("+2 percentage points to Hoard chance per pack", stat('hoardChance', 'inc', 2)),
+    m("+2 percentage points to the chance for a slain enemy to spawn one of a lower rank", stat('splitChance', 'inc', 2)),
+    m("+3 percentage points to Warden chance per pack", stat('wardenChance', 'inc', 3)),
+    m("+10% increased Magic and Rare monster spawn weight", stat('monsterRank', 'inc', 10)),
   ],
   wheels: [
     // --- the inner four: reached straight off the middle -------------------
@@ -64,19 +64,19 @@ export const TRIAL_WEB: TrialSpec = {
       at: at(0, 0),
       roads: [CENTRE],
       minors: [
-        m('+20% increased Magic and Rare monsters', stat('monsterRank', 'inc', 20)),
-        m('+20% increased Magic and Rare monsters', stat('monsterRank', 'inc', 20)),
-        m('+4% of packs hold a Warden', stat('wardenChance', 'inc', 4)),
-        m('+25% increased Magic and Rare monsters', stat('monsterRank', 'inc', 25)),
+        m("+20% increased Magic and Rare monster spawn weight", stat('monsterRank', 'inc', 20)),
+        m("+20% increased Magic and Rare monster spawn weight", stat('monsterRank', 'inc', 20)),
+        m("+4 percentage points to Warden chance per pack", stat('wardenChance', 'inc', 4)),
+        m("+25% increased Magic and Rare monster spawn weight", stat('monsterRank', 'inc', 25)),
         m('+5 Rarity', stat('rarity', 'flat', 5)),
-        m('+30% increased Magic and Rare monsters', stat('monsterRank', 'inc', 30)),
+        m("+30% increased Magic and Rare monster spawn weight", stat('monsterRank', 'inc', 30)),
       ],
       major: {
         id: 'tr_watched',
         name: 'Watched',
         description:
-          '+150% increased Magic and Rare monsters, and +10% of packs hold a ' +
-          'Warden. Every one of them was already facing the way you came in.',
+          "+150% increased Magic and Rare monster spawn weight. +10 percentage points to " +
+          "Warden chance per pack.",
         stats: [stat('monsterRank', 'inc', 150), stat('wardenChance', 'inc', 10)],
       },
     },
@@ -87,19 +87,19 @@ export const TRIAL_WEB: TrialSpec = {
       at: at(0, 1),
       roads: [CENTRE],
       minors: [
-        m('+6% of packs hold a Warden', stat('wardenChance', 'inc', 6)),
-        m('+7% of packs hold a Warden', stat('wardenChance', 'inc', 7)),
-        m('+15% increased Magic and Rare monsters', stat('monsterRank', 'inc', 15)),
-        m('+7% of packs hold a Warden', stat('wardenChance', 'inc', 7)),
-        m('+8% of packs hold a Warden', stat('wardenChance', 'inc', 8)),
+        m("+6 percentage points to Warden chance per pack", stat('wardenChance', 'inc', 6)),
+        m("+7 percentage points to Warden chance per pack", stat('wardenChance', 'inc', 7)),
+        m("+15% increased Magic and Rare monster spawn weight", stat('monsterRank', 'inc', 15)),
+        m("+7 percentage points to Warden chance per pack", stat('wardenChance', 'inc', 7)),
+        m("+8 percentage points to Warden chance per pack", stat('wardenChance', 'inc', 8)),
         m('+4 Rarity', stat('rarity', 'flat', 4)),
       ],
       major: {
         id: 'tr_grave_weight',
         name: 'Nothing Gets Past',
         description:
-          '+25% of packs hold a Warden. Nothing else in a pack can be hurt ' +
-          'while its Warden stands, and it is the biggest thing in there.',
+          "+25 percentage points to Warden chance per pack. Other enemies in a pack are immune to damage " +
+          "until its Warden dies.",
         stats: [stat('wardenChance', 'inc', 25)],
       },
     },
@@ -121,8 +121,8 @@ export const TRIAL_WEB: TrialSpec = {
         id: 'tr_the_press',
         name: 'The Press',
         description:
-          '+40% increased Pack Count and +30% increased Pack Size. They come up ' +
-          'out of the same holes, and there is no longer room between them.',
+          "+40% increased Pack Count " +
+          "and +30% increased Pack Size.",
         stats: [stat('packCount', 'inc', 40), stat('packSize', 'inc', 30)],
       },
     },
@@ -138,14 +138,14 @@ export const TRIAL_WEB: TrialSpec = {
         m('+4 Rarity', stat('rarity', 'flat', 4)),
         m('+12% increased Currency Find', stat('currencyFind', 'inc', 12)),
         m('+14% increased Currency Find', stat('currencyFind', 'inc', 14)),
-        m('+5% of packs guard a Vein', stat('veinChance', 'inc', 5)),
+        m("+5 percentage points to Vein chance per pack", stat('veinChance', 'inc', 5)),
       ],
       major: {
         id: 'tr_salt',
         name: 'The Salt Road',
         description:
-          '+45% increased Currency Find. What they were hauling up here was ' +
-          'never the interesting part.',
+          "+45% increased " +
+          "Currency Find.",
         stats: [stat('currencyFind', 'inc', 45), stat('veinChance', 'inc', 14)],
       },
     },
@@ -158,19 +158,19 @@ export const TRIAL_WEB: TrialSpec = {
       at: at(1, 0),
       roads: ['watch', 'weight'],
       minors: [
-        m('+6% of packs guard a Hoard', stat('hoardChance', 'inc', 6)),
-        m('+7% of packs guard a Hoard', stat('hoardChance', 'inc', 7)),
-        m('+20% increased Magic and Rare monsters', stat('monsterRank', 'inc', 20)),
-        m('+7% of packs guard a Hoard', stat('hoardChance', 'inc', 7)),
+        m("+6 percentage points to Hoard chance per pack", stat('hoardChance', 'inc', 6)),
+        m("+7 percentage points to Hoard chance per pack", stat('hoardChance', 'inc', 7)),
+        m("+20% increased Magic and Rare monster spawn weight", stat('monsterRank', 'inc', 20)),
+        m("+7 percentage points to Hoard chance per pack", stat('hoardChance', 'inc', 7)),
         m('+10% increased Currency Find', stat('currencyFind', 'inc', 10)),
-        m('+8% of packs guard a Hoard', stat('hoardChance', 'inc', 8)),
+        m("+8 percentage points to Hoard chance per pack", stat('hoardChance', 'inc', 8)),
       ],
       major: {
         id: 'tr_the_hoard',
         name: 'Say What They Carried',
         description:
-          '+20% of packs guard a Hoard, and you name what they were hauling: ' +
-          '+60% more of it is found everywhere.',
+          "+20 percentage points to Hoard chance per pack. Choose an equipment category: " +
+          "its drop weight is increased by 60%. This changes which equipment drops, not the total number of drops.",
         choices: bend(60).map((c) => ({
           ...c,
           stats: [...c.stats, stat('hoardChance', 'inc', 20)],
@@ -184,19 +184,19 @@ export const TRIAL_WEB: TrialSpec = {
       at: at(1, 1),
       roads: ['weight', 'press'],
       minors: [
-        m('+5% of deaths well up something worse', stat('wellChance', 'inc', 5)),
-        m('+6% of deaths well up something worse', stat('wellChance', 'inc', 6)),
-        m('+8% of deaths leave one of the rank below', stat('splitChance', 'inc', 8)),
-        m('+6% of deaths well up something worse', stat('wellChance', 'inc', 6)),
-        m('+10% of deaths leave one of the rank below', stat('splitChance', 'inc', 10)),
-        m('+7% of deaths well up something worse', stat('wellChance', 'inc', 7)),
+        m("+5 percentage points to the chance for a slain enemy to spawn one of a higher rank", stat('wellChance', 'inc', 5)),
+        m("+6 percentage points to the chance for a slain enemy to spawn one of a higher rank", stat('wellChance', 'inc', 6)),
+        m("+8 percentage points to the chance for a slain enemy to spawn one of a lower rank", stat('splitChance', 'inc', 8)),
+        m("+6 percentage points to the chance for a slain enemy to spawn one of a higher rank", stat('wellChance', 'inc', 6)),
+        m("+10 percentage points to the chance for a slain enemy to spawn one of a lower rank", stat('splitChance', 'inc', 10)),
+        m("+7 percentage points to the chance for a slain enemy to spawn one of a higher rank", stat('wellChance', 'inc', 7)),
       ],
       major: {
         id: 'tr_the_welling',
         name: 'Nothing Stays Down',
         description:
-          '+22% of deaths well up something worse. A Magic out of a Common, a ' +
-          'Rare out of that, and out of a Rare something the rock has no name for.',
+          "+22 percentage points to the chance for slain enemies to spawn one of the next rank. This can progress from Common to Magic, " +
+          "Rare, then Unique. Enemies created by Splitting cannot trigger this effect.",
         stats: [stat('wellChance', 'inc', 22)],
       },
     },
@@ -207,19 +207,19 @@ export const TRIAL_WEB: TrialSpec = {
       at: at(1, 2),
       roads: ['press', 'vein'],
       minors: [
-        m('+3% of packs carry a Bearer', stat('bearerChance', 'inc', 3)),
-        m('+5% of packs hold a Warden', stat('wardenChance', 'inc', 5)),
-        m('+3% of packs carry a Bearer', stat('bearerChance', 'inc', 3)),
+        m("+3 percentage points to Bearer chance per pack", stat('bearerChance', 'inc', 3)),
+        m("+5 percentage points to Warden chance per pack", stat('wardenChance', 'inc', 5)),
+        m("+3 percentage points to Bearer chance per pack", stat('bearerChance', 'inc', 3)),
         m('+5 Rarity', stat('rarity', 'flat', 5)),
-        m('+4% of packs carry a Bearer', stat('bearerChance', 'inc', 4)),
-        m('+12% of bodies drop coin where they fall', stat('giltChance', 'inc', 12)),
+        m("+4 percentage points to Bearer chance per pack", stat('bearerChance', 'inc', 4)),
+        m("+12 percentage points to the chance for slain enemies to drop extra Gold", stat('giltChance', 'inc', 12)),
       ],
       major: {
         id: 'tr_the_bearer',
         name: 'Carried Out',
         description:
-          '+12% of packs carry a Bearer, and +16 Rarity. It comes up at the rank ' +
-          'the rock has no name for, and what it holds is yours if you put it down.',
+          "+12 percentage points to Bearer chance per pack and +16 Rarity. A Bearer is a Unique enemy " +
+          "carrying a relic.",
         stats: [stat('bearerChance', 'inc', 12), stat('rarity', 'flat', 16)],
       },
     },
@@ -234,15 +234,15 @@ export const TRIAL_WEB: TrialSpec = {
         m('+6 Rarity', stat('rarity', 'flat', 6)),
         m('+8% increased Currency Find', stat('currencyFind', 'inc', 8)),
         m('+6 Rarity', stat('rarity', 'flat', 6)),
-        m('+5% of packs guard a Hoard', stat('hoardChance', 'inc', 5)),
+        m("+5 percentage points to Hoard chance per pack", stat('hoardChance', 'inc', 5)),
         m('+7 Rarity', stat('rarity', 'flat', 7)),
       ],
       major: {
         id: 'tr_reliquary',
         name: 'Sorted Through',
         description:
-          '+24 Rarity, and you name a kind of thing: +45% more of it is found ' +
-          'everywhere. Somebody was already sorting it when the roof came in.',
+          "+24 Rarity. Choose an equipment category: its drop weight is increased by 45%. " +
+          "This changes which equipment drops, not the total number of drops.",
         choices: bend(45).map((c) => ({
           ...c,
           stats: [...c.stats, stat('rarity', 'flat', 24)],
@@ -258,19 +258,19 @@ export const TRIAL_WEB: TrialSpec = {
       at: at(2, 0),
       roads: ['hoard', 'reliquary'],
       minors: [
-        m('+10% of Hoards whose guards stand back up', stat('watchChance', 'inc', 10)),
-        m('+12% of Hoards whose guards stand back up', stat('watchChance', 'inc', 12)),
-        m('+4% of packs guard a Hoard', stat('hoardChance', 'inc', 4)),
-        m('+12% of Hoards whose guards stand back up', stat('watchChance', 'inc', 12)),
-        m('+14% of Hoards whose guards stand back up', stat('watchChance', 'inc', 14)),
-        m('+5% of packs guard a Hoard', stat('hoardChance', 'inc', 5)),
+        m("+10 percentage points to the chance for Hoard guards to revive", stat('watchChance', 'inc', 10)),
+        m("+12 percentage points to the chance for Hoard guards to revive", stat('watchChance', 'inc', 12)),
+        m("+4 percentage points to Hoard chance per pack", stat('hoardChance', 'inc', 4)),
+        m("+12 percentage points to the chance for Hoard guards to revive", stat('watchChance', 'inc', 12)),
+        m("+14 percentage points to the chance for Hoard guards to revive", stat('watchChance', 'inc', 14)),
+        m("+5 percentage points to Hoard chance per pack", stat('hoardChance', 'inc', 5)),
       ],
       major: {
         id: 'tr_read_aloud',
         name: 'Read Aloud',
         description:
-          '+45% of Hoards whose guards stand back up, and +12% of packs guard ' +
-          'a Hoard. They do it once each. You can hear it before it happens.',
+          "+45 percentage points to the chance for Hoard guards to revive once. +12 percentage points to " +
+          "Hoard chance per pack.",
         stats: [stat('watchChance', 'inc', 45), stat('hoardChance', 'inc', 12)],
       },
     },
@@ -281,20 +281,20 @@ export const TRIAL_WEB: TrialSpec = {
       at: at(2, 1),
       roads: ['hoard', 'welling'],
       minors: [
-        m('+10% of deaths leave one of the rank below', stat('splitChance', 'inc', 10)),
-        m('+12% of deaths leave one of the rank below', stat('splitChance', 'inc', 12)),
-        m('+20% increased Magic and Rare monsters', stat('monsterRank', 'inc', 20)),
-        m('+12% of deaths leave one of the rank below', stat('splitChance', 'inc', 12)),
-        m('+8% of deaths well up something worse', stat('wellChance', 'inc', 8)),
-        m('+14% of deaths leave one of the rank below', stat('splitChance', 'inc', 14)),
+        m("+10 percentage points to the chance for a slain enemy to spawn one of a lower rank", stat('splitChance', 'inc', 10)),
+        m("+12 percentage points to the chance for a slain enemy to spawn one of a lower rank", stat('splitChance', 'inc', 12)),
+        m("+20% increased Magic and Rare monster spawn weight", stat('monsterRank', 'inc', 20)),
+        m("+12 percentage points to the chance for a slain enemy to spawn one of a lower rank", stat('splitChance', 'inc', 12)),
+        m("+8 percentage points to the chance for a slain enemy to spawn one of a higher rank", stat('wellChance', 'inc', 8)),
+        m("+14 percentage points to the chance for a slain enemy to spawn one of a lower rank", stat('splitChance', 'inc', 14)),
       ],
       major: {
         id: 'tr_warded',
         name: 'Grown Over',
         description:
-          '+50% of deaths leave one of the rank below, and +80% increased ' +
-          'Magic and Rare monsters. A common leaves nothing, and that is all ' +
-          'that stops it.',
+          "+50 percentage points to the chance for a slain enemy to spawn one of the next lower rank. +80% increased " +
+          "Magic and Rare monster spawn weight. Common enemies and enemies created by Welling " +
+          "cannot trigger this effect.",
         stats: [stat('splitChance', 'inc', 50), stat('monsterRank', 'inc', 80)],
       },
     },
@@ -306,18 +306,18 @@ export const TRIAL_WEB: TrialSpec = {
       roads: ['welling', 'bearer'],
       minors: [
         m('+10% increased Layout Complexity', stat('layoutComplexity', 'inc', 10)),
-        m('+6% of packs guard a Vein', stat('veinChance', 'inc', 6)),
+        m("+6 percentage points to Vein chance per pack", stat('veinChance', 'inc', 6)),
         m('+12% increased Layout Complexity', stat('layoutComplexity', 'inc', 12)),
         m('+8% increased Pack Count', stat('packCount', 'inc', 8)),
-        m('+6% of packs guard a Hoard', stat('hoardChance', 'inc', 6)),
+        m("+6 percentage points to Hoard chance per pack", stat('hoardChance', 'inc', 6)),
         m('+14% increased Layout Complexity', stat('layoutComplexity', 'inc', 14)),
       ],
       major: {
         id: 'tr_winding',
         name: 'The Long Way Round',
         description:
-          '+40% increased Layout Complexity, +25% increased Pack Count and +14% ' +
-          'of packs guard a Vein. Everything worth having is round one more corner.',
+          "+40% increased Layout Complexity, +25% increased Pack Count and +14 percentage points to " +
+          "Vein chance per pack.",
         stats: [
           stat('layoutComplexity', 'inc', 40),
           stat('packCount', 'inc', 25),
@@ -333,19 +333,19 @@ export const TRIAL_WEB: TrialSpec = {
       roads: ['bearer', 'reliquary'],
       minors: [
         m('+12% increased Currency Find', stat('currencyFind', 'inc', 12)),
-        m('+14% of bodies drop coin where they fall', stat('giltChance', 'inc', 14)),
+        m("+14 percentage points to the chance for slain enemies to drop extra Gold", stat('giltChance', 'inc', 14)),
         m('+6 Rarity', stat('rarity', 'flat', 6)),
         m('+14% increased Currency Find', stat('currencyFind', 'inc', 14)),
-        m('+8% of packs hold a Warden', stat('wardenChance', 'inc', 8)),
+        m("+8 percentage points to Warden chance per pack", stat('wardenChance', 'inc', 8)),
         m('+7 Rarity', stat('rarity', 'flat', 7)),
       ],
       major: {
         id: 'tr_the_tithe',
         name: 'The Whole Purse',
         description:
-          '+40% increased Currency Find, +26 Rarity and +30% of bodies drop ' +
-          'coin where they fall, and +18% of packs hold a Warden. What it ' +
-          'charges and what it hands over are one deal.',
+          "+40% increased Currency Find, +26 Rarity and +30 percentage points to the chance for slain enemies to drop " +
+          "extra Gold. +18 percentage points to " +
+          "Warden chance per pack.",
         stats: [
           stat('currencyFind', 'inc', 40),
           stat('rarity', 'flat', 26),

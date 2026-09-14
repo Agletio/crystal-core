@@ -1,6 +1,63 @@
 # Mechanics questions for Claude
 
-## Glossary review — main `726e1417`
+## Current questions — menu/dialogue review at main `4267c981`
+
+Nine entries remain blocked across W022–W026. W005, W008 and W018–W021 were
+re-reviewed after Claude's fixes and are resolved. The earlier review sections
+below are historical evidence, not the current queue.
+
+### W022 — Aethermancer Deep Winter does not reach every Overcharged mode
+
+Blocked: `talent.aethermancer.aet_deepwinter` and
+`.grant.overchargeChills`. `RunSim.applyTyped` raises the Cold application
+chance to at least 100% during an Overcharged hit. Blight's ordinary Poison
+and Exsanguinate's wound use `applyAilment`/`strike` without `applyTyped`.
+They spend Overcharge but do not receive this Chill effect. The request says
+an Overcharged use Chills. Decide whether it should cover these modes or
+whether hits are the intended restriction. Copy states the confirmed Cold-hit
+behavior while this remains blocked. No gameplay change was made.
+
+### W023 — Slow Burn does not slow Rimefield's cooldown
+
+Blocked: `talent.aethermancer.aet_slowburn` and `.grant.starvedSlow`.
+`starvedMultiplier` returns 1 with Slow Burn; `hasteOf` multiplies the Starved
+use rate by 0.5. Rimefield's fixed cooldown in `useSkill` bypasses `hasteOf`.
+It therefore gets full damage without the advertised slower use rate.
+Decide whether the cooldown should pay the same tradeoff. The current copy
+describes the attack/cast speed change; the mode remains unapproved.
+
+### W024 — The Contagion passive does not copy Poison's damage
+
+Blocked: `skill.contagion.card`. This is the passive skill, not Blight's
+Contagion keystone. `spreadAilments` selects the two nearest enemies within
+3 tiles and calls `strike` once per carried Ailment kind. For Poison,
+`strike` has no source damage to copy: Poison is `bySource`, with no base DPS.
+The resulting Poison stack has no damage. Its comments also promise no onward
+spread, but newly created stacks carry no such marker. Confirm the intended
+Poison and repeat-spread rules. Copy corrects the old unlimited-target promise
+to the confirmed two-target limit; the entry remains blocked.
+
+### W025 — Bulwark's hit cap is bypassed by boss-room attacks
+
+Blocked: `skill.bulwark.card`. `dealDamage` applies `hitCap` after ordinary
+mitigation and before movement protection/Mana absorption. `bite(hit=true)`
+does not read it. The original card promised every single hit, and the source
+comment calls it an answer to the blow ending a zone. Confirm whether boss
+slams should obey the cap. Copy describes the confirmed ordinary-hit scope
+without approving the exception.
+
+### W026 — Three conditional damage passives affect hits, not ordinary Poison
+
+Blocked: `skill.brink.card`, `skill.zealotry.card`, `skill.surge.card`.
+`dealDamage` reads `atBrink`, `flushMore` and the `critIntoBuff` damage bonus.
+`applyAilment` and Exsanguinate's `strike` path do not. Original descriptions
+promised damage generally. The revised cards explicitly say hit damage, but
+Claude should confirm that these passives are intentionally ineffective for
+damage-over-time-only uses. Brink's protection also applies to hits and boss
+drains, not Ailment ticks. Keep these entries blocked until that scope is
+settled; do not change mechanics merely to fit the revised text.
+
+## Historical glossary review — main `726e1417`
 
 All 33 definitions were checked; 28 are reviewed and five remain blocked.
 The full ledger now has **1,783 reviewed, 31 blocked, 39 pending, no stale

@@ -43,7 +43,7 @@ function renderBook(): void {
     row.append(el('div', 'bookrow__means', keyword.means));
     host.append(row);
   }
-  if (found.length === 0) host.append(el('p', 'empty', `Nothing is called "${find}".`));
+  if (found.length === 0) host.append(el('p', 'empty', `No entries match "${find}".`));
 }
 
 export function isJournalOpen(): boolean {

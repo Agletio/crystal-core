@@ -42,7 +42,7 @@ export const CAMP_HOTSPOTS: Hotspot[] = [
     id: 'bench',
     x: 176, y: 120, w: 78, h: 54,
     opens: 'craft',
-    says: 'Your bench. Somewhere to pour a currency over a piece and see what it does.',
+    says: "The crafting bench. Add or upgrade equipment modifiers, or roll new modifiers on a crystal.",
   },
   {
     id: 'shelf',
@@ -54,13 +54,13 @@ export const CAMP_HOTSPOTS: Hotspot[] = [
     id: 'fire',
     x: 308, y: 222, w: 76, h: 52,
     opens: 'trials',
-    says: 'The fire. The Reckoning: what the rock owes you, and what it is costing.',
+    says: "The campfire. Spend Reckoning points to change the Fissure and its rewards.",
   },
   {
     id: 'tent',
     x: 532, y: 106, w: 98, h: 86,
     opens: 'character',
-    says: 'Your tent. What you are wearing, and what it comes to.',
+    says: "Your tent. Inspect your equipment, attributes and professions.",
   },
   // THE ANVIL is where a base is MADE, which is a different verb from the
   // bench's: materials decide what a piece IS and currency what is on it.
@@ -68,7 +68,7 @@ export const CAMP_HOTSPOTS: Hotspot[] = [
     id: 'anvil',
     x: 158, y: 224, w: 40, h: 40,
     opens: 'forge',
-    says: 'The anvil. What a heap of worked material could be made into.',
+    says: "The anvil. Craft equipment from processed materials.",
   },
   // SIX STATIONS, one a profession, and every one of them a door into the same
   // room on its own tab. Measured off `camp_ground.png` rather than by eye.
@@ -76,7 +76,7 @@ export const CAMP_HOTSPOTS: Hotspot[] = [
     id: 'smelter',
     x: 28, y: 120, w: 92, h: 87,
     opens: 'work', family: 'metal',
-    says: 'The smelter. Ore in, bars out, and it works while you are down there.',
+    says: "The smelter. Process ore into metal bars.",
   },
   {
     id: 'loom',
@@ -100,7 +100,7 @@ export const CAMP_HOTSPOTS: Hotspot[] = [
     id: 'jeweller',
     x: 472, y: 325, w: 62, h: 41,
     opens: 'work', family: 'gem',
-    says: "The jeweller's. Rough stone, cut.",
+    says: "The jeweller's. Process gems and cut rough shards for crafting.",
   },
 ];
 

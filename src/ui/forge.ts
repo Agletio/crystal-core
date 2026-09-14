@@ -75,7 +75,7 @@ function filters(): void {
   const host = $('forge-filters');
   host.replaceChildren();
   for (const tier of [0, 1, 2, 3]) {
-    const btn = el('button', 'mini climbtab', tier === 0 ? 'Every tier' : `Tier ${tier}`) as HTMLButtonElement;
+    const btn = el('button', 'mini climbtab', tier === 0 ? "All tiers" : `Tier ${tier}`) as HTMLButtonElement;
     btn.id = forgeTierId(tier);
     btn.classList.toggle('climbtab--on', tier === tierShown);
     btn.onclick = () => {
@@ -128,7 +128,7 @@ function saysWindow(recipe: CraftRecipe, base: GearBase): string {
   const lo = Math.ceil(share * liftFor(windowLow(level)));
   const hi = Math.ceil(share * liftFor(windowHigh(level)));
   const top = Math.ceil(share * liftFor(windowHigh(PROFESSION.maxLevel)));
-  return `${lo === hi ? lo : `${lo}–${hi}`} ${what} now · ${top} at level ${PROFESSION.maxLevel}`;
+  return `${lo === hi ? lo : `${lo}–${hi}`} ${what} at your level · ${top} at level ${PROFESSION.maxLevel}`;
 }
 
 /** What a jewellery implicit's stat is CALLED. Off the table, so a new one is
@@ -199,7 +199,7 @@ function baseCard(base: GearBase, recipe: CraftRecipe): HTMLElement {
         .map((m) => (game.materials ?? []).find((i) => i.base === m.id && i.meta.done)?.meta.n as number ?? 0));
       needs.append(needRow(icon, `${one}s`, most, part.wants));
     } else {
-      needs.append(needRow(icon, `worlds with ${part.wants} ${one}s`, ready.length, part.versions));
+      needs.append(needRow(icon, `worlds supplying ${part.wants} ${one}s`, ready.length, part.versions));
     }
   }
   // THE UNIVERSAL ROW: every recipe carries it, so it is a fact about the anvil
@@ -218,7 +218,7 @@ function baseCard(base: GearBase, recipe: CraftRecipe): HTMLElement {
     const rare = uniqueFor(game);
     const held = rare ? ((game.materials ?? []).find((i) => i.base === rare.id)?.meta.n as number) ?? 0 : 0;
     const icon = rare ? itemIcon(makeMaterial(rare, 1), 22) : null;
-    needs.append(needRow(icon, rare ? rare.name : "a world's own material", held, recipe.unique));
+    needs.append(needRow(icon, rare ? rare.name : "rare world material", held, recipe.unique));
   }
   card.append(needs);
 
@@ -227,7 +227,7 @@ function baseCard(base: GearBase, recipe: CraftRecipe): HTMLElement {
   if (odds > 0) card.append(el('div', 'crystal__grow', `${odds}% chance of a Perfect base`));
 
   card.classList.toggle('crystal--locked', levelLocked(game, recipe)); // shut past reading on the LEVEL alone
-  const button = el('button', 'mini', why ?? 'Make it') as HTMLButtonElement;
+  const button = el('button', 'mini', why ?? "Craft") as HTMLButtonElement;
   button.id = forgeMakeId(base.id);
   button.disabled = why !== null;
   button.onclick = () => {
@@ -243,7 +243,7 @@ function baseCard(base: GearBase, recipe: CraftRecipe): HTMLElement {
 
 export function render(): void {
   if (!game) return;
-  for (const done of collectWork(game)) note(`${done.name} came off the station: +${done.n}`);
+  for (const done of collectWork(game)) note(`${done.name} processed: +${done.n}`);
   tabs();
   filters();
   const host = $('forge-list');
@@ -261,14 +261,14 @@ export function render(): void {
   for (const row of rows) host.append(baseCard(row.base, row.recipe));
   if (rows.length === 0) {
     host.append(el('p', 'empty', all.length === 0
-      ? 'Nothing here is made at an anvil.'
-      : makeableOnly ? 'Nothing here you can make yet.' : 'Nothing at that tier here.'));
+      ? "No recipes in this category."
+      : makeableOnly ? "No recipes match your levels and materials." : "No recipes at this tier."));
   }
 
   const made = all.filter((row) => whyNotCraft(game, row.recipe) === null).length;
-  $('forge-count').textContent = `${made} of ${all.length} you can make`;
+  $('forge-count').textContent = `${made} of ${all.length} recipes available`;
   $('forge-note').textContent =
-    'A piece comes out of the anvil with 1 line on it, and the sockets its maker\'s level buys.';
+    "Crafted gear starts with 1 modifier. Higher crafting levels give its sockets more capacity for instability.";
 }
 
 export function openForge(): void {

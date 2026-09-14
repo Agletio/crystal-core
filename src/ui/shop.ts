@@ -257,8 +257,8 @@ function renderSell(): void {
   btn.classList.toggle('buy--armed', selling);
 
   $('shop-sell-hint').textContent = selling
-    ? 'Every piece you click is sold, and waits on the counter until twelve more are.'
-    : 'Any one piece: hold or right-click it in the dock.';
+    ? "Click equipment to sell it. Your last twelve sales are available to buy back."
+    : "To sell a single item, hold or right-click it in your inventory.";
 }
 
 function setSelling(on: boolean): void {
@@ -404,7 +404,7 @@ function gamble(kind: string): void {
   // Seeded off what has been bought, so the roll cannot be reloaded into.
   const item = gambleFor(kind, ilvl, POOL, new Rng(nextGamble++ * 2654435761 + ilvl));
   if (!item) {
-    note(`Nothing under the counter in that shape yet.`, 'fail');
+    note(`No equipment available for that slot.`, 'fail');
     return;
   }
   spend(game.wallet, { gold: cost });
@@ -426,7 +426,7 @@ function rawHost(): void {
   host.replaceChildren();
   const level = game.character.level;
   const stock = MATERIALS.filter((def) => soldHere(def, level));
-  $('shop-raw-hint').textContent = 'A descent gathers about 21 of these for nothing.';
+  $('shop-raw-hint').textContent = "You can also gather these during descents.";
 
   for (const def of stock) {
     const cost = materialPrice(def);

@@ -3008,14 +3008,14 @@ export class RunSim {
       if (potion) {
         out.push({
           id: e.id, by: e.id, name: potion.name,
-          says: `Pouring. ${potion.percentPerSecond}% of your maximum ${potion.pool} a second.`,
+          says: `Recovering ${potion.percentPerSecond * ((this.grants.potionPotency as number) ?? 1)}% of maximum ${potion.pool} per second.`,
           left: e.remaining,
         });
       } else if (e.id === CRIT_BUFF) {
         const buff = critBuff(this.grants);
         out.push({
-          id: e.id, by: 'gale', name: SKILL_BY_ID.gale?.name ?? 'Killing Surge',
-          says: `A Critical landed. ${buff?.more ?? 0}% more damage until it falls.`,
+          id: e.id, by: 'gale', name: SKILL_BY_ID.surge?.name ?? 'Killing Surge',
+          says: `${buff?.more ?? 0}% more hit damage after a Critical Hit.`,
           left: e.remaining,
         });
       }
@@ -3027,7 +3027,7 @@ export class RunSim {
     if (this.sinceKill > 0 && kill.length > 0) {
       out.push({
         id: 'kill', by: 'kill', name: 'On the kill',
-        says: `What the last kill bought: ${kill.length} of guard, pace and swing.`,
+        says: kill.map(g => `${this.grants[g]}% ${g === 'killGuard' ? 'less damage from hits and boss drains' : g === 'killHaste' ? 'more Attack and Cast Speed' : 'more Movement Speed'}`).join('; ') + '.',
         left: this.sinceKill,
       });
     }
@@ -3035,7 +3035,7 @@ export class RunSim {
     if (paint > 0 && this.sinceHit <= WARRIOR.paintSeconds) {
       out.push({
         id: 'paint', by: 'paint', name: 'War Paint',
-        says: 'A blow landed on you, and it is answered until this falls.',
+        says: `${(this.grants.struckMore as number) ?? 0}% more hit damage; ${(this.grants.struckLess as number) ?? 0}% less damage from hits and boss drains.`,
         left: WARRIOR.paintSeconds - this.sinceHit,
       });
     }
@@ -3055,7 +3055,7 @@ export class RunSim {
       const dmg = (this.grants.tempoDamage as number) ?? 0;
       out.push({
         id: 'sleet', by: 'sleet', name: `Sleet ×${this.sleet}`,
-        says: `+${this.sleet * sleet.per}% increased Cast Speed${dmg ? `, ${this.sleet * dmg}% more damage` : ''}. At ${bar} the next cast Freezes what it hits.`,
+        says: `${this.sleet * sleet.per}% ${this.grants.spikeStands ? 'faster cooldown recovery' : 'more Cast Speed'}${dmg ? `, ${this.sleet * dmg}% more hit damage` : ''}. At ${bar} stacks, the next cast Freezes enemies it hits.`,
         left: this.sleet, count: this.sleet,
       });
     }
@@ -3063,7 +3063,7 @@ export class RunSim {
     if (tempo && this.tempo > 0) {
       out.push({
         id: 'tempo', by: 'tempo', name: `Quickening ×${this.tempo}`,
-        says: `+${Math.round(this.tempo * tempo.per * 100)}% increased Attack and Cast Speed, ${this.tempoIn.toFixed(1)}s left.`,
+        says: `+${Math.round(this.tempo * tempo.per * 100)}% more Attack and Cast Speed, ${this.tempoIn.toFixed(1)}s left.`,
         left: this.tempo, count: this.tempo,
       });
     }
@@ -3071,23 +3071,23 @@ export class RunSim {
     if (gusts && this.gusts > 0) {
       out.push({
         id: 'gust', by: 'gust', name: `Gusts ×${this.gusts}`,
-        says: `+${this.gusts * gusts.speed}% increased Movement Speed${gusts.haste ? `, +${this.gusts * gusts.haste}% increased Attack and Cast Speed` : ''}${gusts.guard ? `, ${Math.round(this.gusts * gusts.guard * 100)}% less damage taken` : ''}. A hit takes one.`,
+        says: `+${this.gusts * gusts.speed}% more Movement Speed${gusts.haste ? `, +${this.gusts * gusts.haste}% more Attack and Cast Speed` : ''}${gusts.guard ? `, ${Math.round(this.gusts * gusts.guard * 100)}% less damage from hits and boss drains` : ''}. Taking a hit removes 1 Gust.`,
         left: this.gusts, count: this.gusts,
       });
     }
     if (this.state.vanished > 0) {
       out.push({
         id: 'vanish', by: 'vanish', name: 'Vanished',
-        says: `Nothing wakes and the woken mill about. Walking ${Math.round(((this.grants.vanish as { faster?: number })?.faster ?? 0.4) * 100)}% faster; the first use out of it lands more.`,
+        says: `Enemies stop pursuing you. Gain ${Math.round(((this.grants.vanish as { faster?: number })?.faster ?? 0.4) * 100)}% more Movement Speed. Your next skill use ends Vanished and deals ${Math.round(((this.grants.vanish as { more?: number })?.more ?? 0) * 100)}% more hit damage.`,
         left: this.state.vanished,
       });
     }
     const after = this.moving?.after;
     if (after && this.afterIn > 0 && (after.speed > 0 || after.damage > 0 || after.guard > 0 || after.life > 0 || after.mana > 0)) {
       const parts = [
-        after.speed > 0 ? `+${after.speed}% increased Movement Speed` : '',
+        after.speed > 0 ? `+${after.speed}% more Movement Speed` : '',
         after.damage > 0 ? `${Math.round(after.damage * 100)}% more damage` : '',
-        after.guard > 0 ? `${Math.round(after.guard * 100)}% less damage taken` : '',
+        after.guard > 0 ? `${Math.round(after.guard * 100)}% less damage from hits and boss drains` : '',
         after.life > 0 ? `${after.life}% of Life a second` : '',
         after.mana > 0 ? `${after.mana}% of Mana a second` : '',
       ].filter(Boolean);
@@ -3104,12 +3104,12 @@ export class RunSim {
     const stun = hero.stun ?? 0;
     if (stun > 0) {
       const kind = hero.stunKind === 'freeze' ? 'Frozen' : hero.stunKind === 'pin' ? 'Pinned' : 'Stunned';
-      out.push({ id: 'stun', by: 'stun', name: kind, says: 'Held where you stand: no walking, no using, until it passes.', left: stun });
+      out.push({ id: 'stun', by: 'stun', name: kind, says: 'You cannot move, attack or cast until this effect ends.', left: stun });
     }
     if (this.state.marks > 0) {
       out.push({
         id: 'mark', by: 'mark', name: `Marked ×${this.state.marks}`,
-        says: `${Math.round(this.state.marks * BOSS_FIGHT.markMore * 100)}% more damage taken, from anything. They fall off once nothing is adding them.`,
+        says: `${Math.round(this.state.marks * BOSS_FIGHT.markMore * 100)}% more damage taken from hits and boss drains.`,
         left: this.state.marks, count: this.state.marks,
       });
     }
@@ -3126,18 +3126,16 @@ export class RunSim {
       byKind.set(a.id, row);
     }
     for (const [id, row] of byKind) {
-      const does = row.def.kind === 'damage'
-        ? `${Math.round(row.dps)} damage a second`
+      const does = row.def.kind === 'damage' || id === 'shock'
+        ? `${Math.round(row.dps)} damage per second after Resistance, before other protection`
         : id === 'chill'
-          ? `${Math.round((hero.chill ?? 0) * 100)}% slower to walk and swing`
-          : id === 'shock'
-            ? 'more damage taken from every hit'
-            : id === 'curse'
-              ? 'weaker'
-              : 'more damage taken from hits';
+          ? `${Math.round((hero.chill ?? 0) * 100)}% less Movement, Attack and Cast Speed`
+          : id === 'curse'
+            ? 'Cursed'
+            : `${Math.round(row.count * (row.def.takenPer ?? 0) * this.hide(hero, row.def.type))}% increased damage taken from ordinary hits`;
       out.push({
         id, by: id, name: `${row.def.name} ×${row.count}`,
-        says: `${does}, ${row.left.toFixed(1)}s left on the freshest.`,
+        says: `${does}. Longest remaining stack: ${row.left.toFixed(1)}s.`,
         left: row.left, count: row.count,
       });
     }
@@ -3145,7 +3143,7 @@ export class RunSim {
       const share = Math.round(starvedMultiplier(this.grants) * 100);
       out.push({
         id: 'starved', by: 'starved', name: 'Starved',
-        says: `The pool could not pay for the last use. Uses land for ${share}% of their damage until one is paid for.`,
+        says: `Your last skill use had insufficient Mana. Starved hits, Blight's Poison and Exsanguinate's wound deal ${share}% of normal damage.`,
         left: 0,
       });
     }

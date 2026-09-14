@@ -160,8 +160,8 @@ function renderSlots(): void {
 
   const takes = toolsOn(game.character).map((t) => MATERIAL_FAMILY_BY_ID[t.family]?.raw ?? t.family);
   $('sheet-toolnote').textContent = takes.length === 0
-    ? 'No tool: nothing comes off the floor.'
-    : `This lets you take ${takes.join(' and ')} — and nothing else.`;
+    ? "Equip a tool to gather this material."
+    : `Gathers ${takes.join(' and ')}.`;
 }
 
 /**
@@ -271,16 +271,16 @@ function renderAttributes(): void {
     row.append(el('span', 'attr__how', `${each.join(', ')} per point`));
     const worn = total - from - held;
     const where = [
-      from > 0 ? `${from} from the trade` : '',
+      from > 0 ? `${from} from your trade` : '',
       `${held} spent`,
-      worn !== 0 ? `${worn} worn` : '',
+      worn !== 0 ? `${worn} from equipment` : '',
     ].filter(Boolean);
     attachTooltip(
       row,
       () =>
         `${attr.name}\nPer point: ${each.join(', ')}.\n` +
         `${total} in all — ${where.join(', ')}: ${bought.join(', ')}.\n` +
-        `A level hands you ${LEVELLING.attributePointsPerLevel}.`
+        `Each character level grants ${LEVELLING.attributePointsPerLevel}.`
     );
     host.append(row);
   }
@@ -427,21 +427,21 @@ function renderStats(): void {
     {
       key: 'armour',
       value: `${Math.round(s.armour)} (${s.armourReduction.toFixed(0)}%)`,
-      why: `Against hits only, capped at ${DEFENCE.armourCap}%. Damage over time goes straight through it.`,
+      why: `Against hits only, capped at ${DEFENCE.armourCap}%. Armour does not normally reduce damage over time.`,
     },
     {
       key: 'block',
       value: `${Math.round(s.blockChance)}%`,
       why:
-        `Stops the hit outright, capped at ${DEFENCE.blockCap}%. A shield's alone, ` +
-        'and never against damage over time.',
+        `Stops the hit outright, capped at ${DEFENCE.blockCap}%. Requires a shield. Does not apply to boss attacks ` +
+        "or damage over time.",
     },
     {
       key: 'dodge',
       value: `${Math.round(s.dodgeChance)}%`,
       why:
-        `Stops the hit outright, capped at ${DEFENCE.dodgeCap}%. Traded for your ` +
-        'Armour rather than worn beside it, and never against damage over time.',
+        `Stops the hit outright, capped at ${DEFENCE.dodgeCap}%. Replaces ` +
+        "Armour. Does not apply to boss attacks or damage over time.",
     },
     { key: 'regen/sec', value: s.lifeRegen.toFixed(1) },
     { key: 'mana', value: round(s.maxMana) },
@@ -450,8 +450,8 @@ function renderStats(): void {
       value: s.manaRegen.toFixed(1),
       why:
         `Casting costs ${(s.manaCost * s.attacksPerSecond).toFixed(1)} a second at this rate. ` +
-        `With nothing in the pool you cast anyway, for ${Math.round(starvedMultiplier(treeGrants(game.character)) * 100)}% of your damage — ` +
-        'your own skill, with everything the tree gave it.',
+        `When you cannot pay the full Mana cost, the skill is Starved. Starved hits deal ${Math.round(starvedMultiplier(treeGrants(game.character)) * 100)}% of normal damage. ` +
+        "Talents can change this penalty.",
     },
   ];
 
@@ -492,10 +492,10 @@ function pairLine(character: Character): string | null {
   if (!main || !off) return null;
   const rates = weaponRates(character);
   return (
-    `dual wielding: ${Math.round(DUAL.main * 100)}% of ${main.name} and ` +
+    `Each hit combines ${Math.round(DUAL.main * 100)}% of ${main.name}'s damage and ` +
     `${Math.round(DUAL.off * 100)}% of ` +
-    `${off.name} in every hit, swinging at ${rates[0].toFixed(2)} and then ` +
-    `${rates[1].toFixed(2)} a second, alternately`
+    `${off.name}'s damage. Attack rate alternates between ${rates[0].toFixed(2)} and ` +
+    `${rates[1].toFixed(2)} attacks per second.`
   );
 }
 
@@ -535,7 +535,7 @@ function mainRows(): StatRow[] {
     {
       key: 'crit damage',
       value: `×${(2 + s.critMultiplier / 100).toFixed(2)}`,
-      why: 'Damage over time rolls it per tick.',
+      why: "Ailment damage does not deal Critical Hits.",
     },
     { key: 'mana per use', value: s.manaCost.toFixed(1) },
     { key: 'reach', value: s.attackRange.toFixed(1), unit: 'tiles' },
@@ -588,7 +588,7 @@ function renderSkills(): void {
         el(
           'div',
           'skillsec__how',
-          `takes ${detail.skill.addedEffectiveness}% of added damage, as its own type`
+          `Added damage effectiveness: ${detail.skill.addedEffectiveness}%`
         )
       );
       // A PAIR is two numbers you cannot read off one total: what each hand
@@ -681,7 +681,7 @@ function renderProfessions(): void {
   const at = professionAt(game, profShown);
   steps.append(el('p', 'panel__title', def?.name ?? profShown));
   steps.append(el('p', 'skillhead__sub',
-    `${def?.kind === 'gather' ? 'Gathered' : 'Worked'} · ${def?.makes ?? ''}. ${saysProfession(profShown)}`));
+    `${def?.kind === 'gather' ? "Gathering" : "Crafting"} · ${def?.makes ?? ''}. ${saysProfession(profShown)}`));
   for (const step of unlocksFor(profShown)) {
     // LIT WHEN YOU HAVE IT, dim when you do not — the same two states the
     // anvil's ledger uses, so one glance answers the same question everywhere.

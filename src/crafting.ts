@@ -121,11 +121,11 @@ function whyNotPay(
   const plan = planFor(entry.defId);
   if (plan && !plans.includes(plan.id)) return `${planName(plan)} needed.`;
   const want = levelFor(entry);
-  if (level < want) return `Level ${want} needed for tier ${entry.tier}, you are ${level}.`;
+  if (level < want) return `Jewelling level ${want} required for tier ${entry.tier}; current level: ${level}.`;
   const { shard, n } = costOf(entry);
-  if (!shard) return 'Nothing buys this line.';
+  if (!shard) return "This modifier cannot be crafted.";
   if (held(shard) < n) {
-    return `${n} ${SHARD_BY_ID[shard]?.name ?? shard} needed, you hold ${held(shard)}.`;
+    return `${n} ${SHARD_BY_ID[shard]?.name ?? shard} required; owned: ${held(shard)}.`;
   }
   return null;
 }
@@ -139,13 +139,13 @@ export function whyNotChoose(
   held: (shard: string) => number,
   plans: string[] = []
 ): string | null {
-  if (item.kind !== 'gear') return 'Only gear takes a chosen line.';
+  if (item.kind !== 'gear') return "Choose modifiers for gear only.";
   if (!hasOpenSlot(item, entry.slot)) return `No open ${entry.slot} slot.`;
   // One line a GROUP: two rungs of the same modifier is the ladder said twice.
   if (item.mods.some((m) => m.group === entry.group)) {
-    return `${entry.name} is already on it.`;
+    return `${entry.name} is already on this item.`;
   }
-  if (freeSocket(item) < 0) return 'No socket left to take it.';
+  if (freeSocket(item) < 0) return "No usable empty sockets.";
   return whyNotPay(entry, level, held, plans);
 }
 
@@ -158,11 +158,11 @@ export function whyNotRaise(
   plans: string[] = [],
   pool: ModPool
 ): string | null {
-  if (item.kind !== 'gear') return 'Only gear takes a chosen line.';
+  if (item.kind !== 'gear') return "Choose modifiers for gear only.";
   const entry = nextTier(mod, pool);
-  if (!entry) return `T${mod.tier} is the top of ${mod.name}.`;
+  if (!entry) return `T${mod.tier} is the best tier for ${mod.name}.`;
   const socket = socketsOf(item)[mod.socket ?? -1];
-  if (!socket || socket.dead) return 'Its socket is fractured.';
+  if (!socket || socket.dead) return "This modifier needs a usable socket.";
   // NO ITEM LEVEL GATE: a shallow piece's socket is smaller, and that is the
   // whole of what stops a tier on it — a lucky low roll or a steady hand gets there.
   return whyNotPay(entry, level, held, plans);
@@ -252,12 +252,12 @@ function scriptedMod(item: Item, pool: ModPool, rng: Rng): RolledMod | null {
 /** One random rule into an open socket. */
 export function rollCrystal(item: Item, pool: ModPool, rng: Rng): CraftResult {
   if (item.kind !== 'crystal') {
-    return { ok: false, item, log: [], error: 'A Shard of Making only reaches a crystal.' };
+    return { ok: false, item, log: [], error: "Use a Shard of Making on a crystal." };
   }
   if (!hasOpenSlot(item)) return { ok: false, item, log: [], error: 'No open slot.' };
   const out = clone(item);
   const mod = scriptedMod(out, pool, rng) ?? rollRandomMod(out, pool, rng);
-  if (!mod) return { ok: false, item, log: [], error: 'Nothing can roll here.' };
+  if (!mod) return { ok: false, item, log: [], error: "No compatible modifiers available." };
   out.mods.push(mod);
   return { ok: true, item: out, log: [`+ ${describeMod(mod)}`] };
 }

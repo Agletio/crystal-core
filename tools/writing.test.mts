@@ -1,11 +1,33 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { reconcile, mechanical, sourceRevision } from './writing.mts';
+import { copyGroups, htmlGroups } from './writing-surfaces.mts';
+import { unlocksFor } from '../src/professions';
 import { mkdirSync, writeFileSync, unlinkSync } from 'node:fs';
 
 const entry = (changes: any = {}) => ({ id: 'skill.example.node', status: 'pending',
   textRevision: 'copy-1', mechanicsRevision: 'rules-1', reviewedTextRevision: null,
   reviewedMechanicsRevision: null, reviewedAtCommit: null, notes: '', ...changes });
+
+test('menu declaration IDs survive copy edits and include callback copy', () => {
+  const before = copyGroups('function render() { button.onclick = () => show("No materials."); }');
+  const after = copyGroups('function render() { button.onclick = () => show("Gather materials first."); }');
+  assert.deepEqual([...before.keys()], [...after.keys()]);
+  assert.deepEqual(after.get('render'), ['Gather materials first.']);
+  assert.deepEqual([...copyGroups('function added() { return "New menu"; }').keys()], ['added']);
+});
+
+test('static menu labels and accessibility text use DOM IDs', () => {
+  const groups = htmlGroups('<body><div id="craft"><b>Crafting</b><input id="find" placeholder="Find an item"></div></body>');
+  assert.deepEqual(groups.get('craft'), ['Crafting']);
+  assert.deepEqual(groups.get('find.placeholder'), ['Find an item']);
+});
+
+test('Cooking does not advertise base crafting and Jewelling lists its tiers', () => {
+  assert.ok(unlocksFor('cooking').every(row => !row.what.includes('bases')));
+  assert.ok(unlocksFor('jewelling').some(row => row.what.includes('T1')));
+  assert.deepEqual(unlocksFor('unknown'), []);
+});
 const reviewed = entry({ status: 'reviewed', reviewedTextRevision: 'copy-1',
   reviewedMechanicsRevision: 'rules-1', reviewedAtCommit: 'commit-1', notes: 'Read implementation; kept copy.' });
 

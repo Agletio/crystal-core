@@ -930,8 +930,8 @@ export interface ToolSlotDef {
 }
 
 export const TOOL_SLOTS: ToolSlotDef[] = [
-  { id: 'gather', name: 'Tool', blurb: 'What you can take off the floor. One at a time.' },
-  { id: 'rod', name: 'Rod', blurb: 'Water is outside the count, so this costs the others nothing.' },
+  { id: 'gather', name: 'Tool', blurb: "Equip one gathering tool at a time." },
+  { id: 'rod', name: 'Rod', blurb: "Equip a fishing rod alongside your gathering tool." },
 ];
 
 export const TOOLS: ToolDef[] = [
@@ -2121,29 +2121,29 @@ export const MOD_BY_ID: Record<string, ModDef> = Object.fromEntries(
  */
 export const SHARD_FAMILIES = [
   { id: 'shard_attribute', tag: 'attribute', name: 'Attribute Shard', icon: 'cur_attribute',
-    class: 'basic' as CurrencyClass, weight: 10, buys: 'an Attribute line', does: 'Strength, Intelligence, Dexterity, Acuity, Spirit and Constitution.' },
+    class: 'basic' as CurrencyClass, weight: 10, buys: 'an Attribute line', does: "Raises attributes." },
   { id: 'shard_resistance', tag: 'resistance', name: 'Warding Shard', icon: 'cur_resistance',
-    class: 'basic' as CurrencyClass, weight: 10, buys: 'a Resistance line', does: 'Resistance to one damage type, or to a whole group.' },
+    class: 'basic' as CurrencyClass, weight: 10, buys: 'a Resistance line', does: "Reduces damage taken through Resistance." },
   { id: 'shard_ailment', tag: 'ailment', name: 'Affliction Shard', icon: 'cur_ailment',
-    class: 'uncommon' as CurrencyClass, weight: 6, buys: 'an Ailment line', does: 'The Ailments you apply, and the effect of Ailments on you.' },
+    class: 'uncommon' as CurrencyClass, weight: 6, buys: 'an Ailment line', does: "Improves your Ailments or reduces their effect on you." },
   { id: 'shard_crit', tag: 'crit', name: 'Precision Shard', icon: 'cur_crit',
-    class: 'rare' as CurrencyClass, weight: 6, buys: 'a Critical line', does: 'Critical Chance and Critical Damage.' },
+    class: 'rare' as CurrencyClass, weight: 6, buys: 'a Critical line', does: "Improves Critical Chance and Critical Damage." },
   { id: 'shard_speed', tag: 'speed', name: 'Alacrity Shard', icon: 'cur_speed',
-    class: 'rare' as CurrencyClass, weight: 7, buys: 'an Attack, Cast or Movement Speed line', does: 'Attack, Cast and Movement Speed, and Skill Cooldown.' },
+    class: 'rare' as CurrencyClass, weight: 7, buys: 'an Attack, Cast or Movement Speed line', does: "Increases speed and reduces skill cooldowns." },
   { id: 'shard_life', tag: 'life', name: 'Vitality Shard', icon: 'cur_life',
-    class: 'uncommon' as CurrencyClass, weight: 8, buys: 'a Life line', does: 'Maximum Life, its regeneration and its leech.' },
+    class: 'uncommon' as CurrencyClass, weight: 8, buys: 'a Life line', does: "Increases maximum Life and Life recovery." },
   { id: 'shard_mana', tag: 'mana', name: 'Aether Shard', icon: 'cur_mana',
-    class: 'basic' as CurrencyClass, weight: 6, buys: 'a Mana line', does: 'Maximum Mana, its regeneration and what a use costs.' },
+    class: 'basic' as CurrencyClass, weight: 6, buys: 'a Mana line', does: "Improves your Mana pool, regeneration and skill costs." },
   { id: 'shard_area', tag: 'area', name: 'Expanse Shard', icon: 'cur_area',
-    class: 'uncommon' as CurrencyClass, weight: 5, buys: 'an Area of Effect line', does: 'Area of Effect, and the damage an Area skill deals.' },
+    class: 'uncommon' as CurrencyClass, weight: 5, buys: 'an Area of Effect line', does: "Increases skill area and Area Damage." },
   { id: 'shard_reward', tag: 'reward', name: 'Fortune Shard', icon: 'cur_reward',
-    class: 'exotic' as CurrencyClass, weight: 3, buys: 'a Rarity or Currency Find line', does: 'Rarity and Currency Find.' },
+    class: 'exotic' as CurrencyClass, weight: 3, buys: 'a Rarity or Currency Find line', does: "Improves Rarity and Currency Find." },
   { id: 'shard_damage', tag: 'damage', name: 'Ruin Shard', icon: 'cur_damage',
-    class: 'rare' as CurrencyClass, weight: 14, buys: 'a Damage line', does: 'Damage of every kind, and Levels of your skills.' },
+    class: 'rare' as CurrencyClass, weight: 14, buys: 'a Damage line', does: "Increases damage and skill levels." },
   { id: 'shard_defence', tag: 'defence', name: 'Bulwark Shard', icon: 'cur_defence',
-    class: 'basic' as CurrencyClass, weight: 8, buys: 'an Armour line', does: 'Armour, flat and increased.' },
+    class: 'basic' as CurrencyClass, weight: 8, buys: 'an Armour line', does: "Increases Armour." },
   { id: 'shard_utility', tag: 'utility', name: 'Sundry Shard', icon: 'cur_utility',
-    class: 'basic' as CurrencyClass, weight: 5, buys: 'a line no other shard buys', does: 'Attack Range, and anything no other shard claims.' },
+    class: 'basic' as CurrencyClass, weight: 5, buys: 'a line no other shard buys', does: "Extends Attack Range." },
 ] as const;
 
 export const SHARD_BY_ID: Record<string, (typeof SHARD_FAMILIES)[number]> =
@@ -2315,7 +2315,7 @@ export const CURRENCIES: CurrencyDef[] = [
     id: f.id,
     name: f.name,
     class: f.class,
-    description: `${f.does} ${SHARDS.perTier[0]} of them buys the worst tier and ${SHARDS.perTier[SHARDS.perTier.length - 1]} the best.`,
+    description: `${f.does} Adding a modifier costs ${SHARDS.perTier[0]} shards. For seven-tier modifiers, the final upgrade costs ${SHARDS.perTier[SHARDS.perTier.length - 1]} shards. Each intermediate upgrade has its own cost.`,
     icon: f.icon,
     weight: 0, // never a drop: cut from the rough one
   })),
@@ -2323,7 +2323,7 @@ export const CURRENCIES: CurrencyDef[] = [
     id: 'shard_of_making',
     name: 'Shard of Making',
     class: 'uncommon',
-    description: 'Adds 1 rule to a crystal, in an empty slot.',
+    description: "Adds 1 random modifier to an empty crystal slot.",
     crystal: true,
     weight: 8,
   },
@@ -2428,15 +2428,15 @@ export const LAMPWRIGHT = {
     title: 'The Lampwright',
     beats: [
       {
-        said: 'Going down. Everyone is, when they come past me. Most of them are only going down the once.',
+        said: "Going down? They all are, when they pass me. Most only make the trip once.",
         act: 'face',
       },
       {
-        said: 'It does not end where you think it ends. There is always another way further in, and the things in it take their opinions from somewhere deeper than you.',
+        said: "You will think you have found the bottom. Then you will find another stair. Whatever lives down there is always listening to something deeper.",
         act: 'pace',
       },
       {
-        said: 'Do not go with nothing in your hands. Take this one — I have carried it a long way and it has never once been any use to me.',
+        said: "Here. Better than going empty-handed. I have carried it far enough, and you look more likely to use it.",
         act: 'work',
       },
       {
@@ -2451,9 +2451,9 @@ export const LAMPWRIGHT = {
   journal: {
     title: 'The Lampwright',
     beats: [
-      { said: 'You came back up. Most do not, and none of them wanted this.', act: 'face' },
+      { said: "Back again. Good. I have a book for you. The last person I offered it to said they would remember everything.", act: 'face' },
       {
-        said: 'Everything I have worked out about what is down there is in it — what a thing is called, and what it does. Keep it. Add to it.',
+        said: "Names, mostly. What burns, what poisons, what keeps you alive. I wrote down what I could make sense of. Take it. You will have more to add before long.",
         act: 'work',
       },
     ] as SceneBeat[],
@@ -2464,15 +2464,15 @@ export const LAMPWRIGHT = {
     title: 'The Lampwright',
     beats: [
       {
-        said: 'Now this. I have been keeping it for whoever came back up enough times, and that is you.',
+        said: "I put this aside for someone who kept coming back. Beginning to look as though that is you.",
         act: 'face',
       },
       {
-        said: 'Carry one of these down and the Fissure goes on. And on. Same crack, same rock, and it does not end when it used to end. I have never worked out where the extra comes from.',
+        said: "Set this in the wall and the Fissure grows longer. Same entrance, same stair. More waiting underneath. I have never worked out where the extra comes from.",
         act: 'pace',
       },
       {
-        said: 'And it changes, the longer you hold it. Slowly. Whatever you feed it, it wants the same thing again.',
+        said: "Keep it set while you go below and it will change. Slowly. Whatever you feed it, it wants the same thing again.",
         act: 'work',
       },
     ] as SceneBeat[],
@@ -2485,15 +2485,15 @@ export const LAMPWRIGHT = {
     title: 'The Lampwright',
     beats: [
       {
-        said: 'You went all the way down. Nobody has done that and come back up past me. I had stopped watching the stair.',
+        said: "All the way down, and here you are. I had stopped watching the stair.",
         act: 'face',
       },
       {
-        said: 'So there is nothing under it after all. Only more of it, and it wants something else from you now.',
+        said: "I thought finishing it might mean we were finished with it. That was a foolish thing to hope.",
         act: 'pace',
       },
       {
-        said: 'Here. I have been keeping these two for whoever finished it, and I had begun to think that was nobody.',
+        said: "These are yours. I kept them for whoever saw it through. Nearly forgot why I was keeping them.",
         act: 'work',
       },
     ] as SceneBeat[],
@@ -2520,7 +2520,7 @@ export const LAMPWRIGHT = {
   deeper: {
     title: 'The Lampwright',
     beats: [
-      { said: 'Another one. They come up out of the wall down there faster than I can carry them.', act: 'work' },
+      { said: "Another crystal. The wall is giving them up faster than I can carry them.", act: 'work' },
       { said: 'Take it. I have stopped asking what it is I am handing you.', act: 'face' },
     ] as SceneBeat[],
     button: 'Take it',
@@ -2530,7 +2530,7 @@ export const LAMPWRIGHT = {
     // He KEEPS a counter, so the line that plays when he owes nothing has to
     // say what clicking him does next.
     beats: [
-      { said: 'I keep a shelf here. Shards, mostly. Come and look when you have the gold.', act: 'face' },
+      { said: "There are shards on the shelf. Have a look. I still take gold, for whatever that is worth down here.", act: 'face' },
     ] as SceneBeat[],
     button: 'Take it',
   },
@@ -2554,59 +2554,59 @@ export const TALES: Record<string, TalePanel[]> = {
   workshop: [
     {
       art: 'tale_lamp_1',
-      said: 'I went in a long time ago, to see how far it went. I had a lamp and I had a season of food.',
+      said: "I came to find the bottom. Brought a lamp and enough food for a season.",
     },
     {
       art: 'tale_lamp_2',
-      said: 'The season went. The rock changed twice and kept going. And then, at last, I thought I had found the end of it.',
+      said: "The food ran out. The rock changed twice. Then, at last, the passage opened, and I thought I had reached the end.",
     },
     {
       art: 'tale_lamp_3',
-      said: 'What I had found was that something down there was alive, and that it had been waiting a great deal longer than I had been walking.',
+      said: "Something was alive down there. It had been waiting far longer than I had been walking.",
     },
   ],
   smithy: [
     {
       art: 'tale_smith_1',
-      said: 'I came down for the ore. There is more of it in this rock than anybody above has ever wanted to believe.',
+      said: "I came for the ore. There is more in this rock than the foundries above would believe.",
     },
     {
       art: 'tale_smith_2',
-      said: 'I made them for the men who would come down here and buy them. Not one of those men ever came down.',
+      said: "Made a stock of tools for the miners who were supposed to follow me. Not one of them came.",
     },
     {
       art: 'tale_smith_3',
-      said: 'What came down instead was the rest of the working, and it had been here a good deal longer than the ore had.',
+      said: "Something else found the forge. I heard it beyond the fire and reached for the nearest thing I had made.",
     },
     {
       art: 'tale_smith_4',
-      said: 'So I found out what my own work is worth. It is worth a great deal.',
+      said: "Good steel. I had always said so. That was the night I proved it.",
     },
     {
       art: 'tale_smith_5',
-      said: 'And I have been down here ever since, making the next one.',
+      said: "Still here. Still making the next one.",
     },
   ],
   reading_room: [
     {
       art: 'tale_glass_1',
-      said: 'There were nine of us who could read it. We came down together to copy the wall out, and we agreed on almost nothing else.',
+      said: "Nine of us could read the marks. We came to copy the wall. It was the last thing we agreed on.",
     },
     {
       art: 'tale_glass_2',
-      said: 'The others went back up. I stayed. Two hundred and eleven marks on the one wall, and all of it is a single sentence.',
+      said: "The others went back. I stayed with two hundred and eleven marks. One sentence.",
     },
     {
       art: 'tale_glass_3',
-      said: 'Reading it was not enough. So I set the first of them into myself, to find out whether it would read back.',
+      said: "I could read it, but it could not answer me. I set the first mark into my own flesh.",
     },
     {
       art: 'tale_glass_4',
-      said: 'It read back. After that I stopped deciding how many there should be, and the rock decided instead.',
+      said: "Then it answered. I chose the first mark. The rock chose the rest.",
     },
     {
       art: 'tale_glass_5',
-      said: 'Three marks, copied off a face nobody was meant to reach. I have been waiting a long while for somebody to carry them.',
+      said: "These three came from a wall no one was meant to reach. I have waited a long time for someone willing to speak them.",
     },
   ],
   // NOT SAID BUT SEEN. *"By some magic you can see his memories."* So the
@@ -2617,27 +2617,27 @@ export const TALES: Record<string, TalePanel[]> = {
   ossuary: [
     {
       art: 'tale_bone_1',
-      said: 'He touches your arm and his head comes into yours. It is soft at first. A boy came down here for the work. Nineteen. Boy had a lamp. Boy had food for a season.',
+      said: "His fingers close around your arm. A memory presses into yours. A boy came down for work. Nineteen. Had a lamp. Had food for a season.",
     },
     {
       art: 'tale_bone_2',
-      said: 'Food gone. Lamp gone. Then boy finds the other thing there is down here. Boy does not say it out loud. Boy just does it.',
+      said: "Food gone. Lamp gone. Plenty left to eat, though. Boy never says what. Just eats.",
     },
     {
       art: 'tale_bone_3',
-      said: 'Hands went first. Hands went first and hands never asked him. Head stayed boy a long while after. Head sat and watched hands.',
+      said: "Hands changed first. Never asked him. His head stayed a boy for a long time. Watched what the hands did.",
     },
     {
       art: 'tale_bone_4',
-      said: 'Then head goes too. No hurt in it. No fight in it. Something down in boy said YES, and boy stopped being boy.',
+      said: "Then the head changed. No hurt. No fight. Something inside said yes. No boy after that.",
     },
     {
       art: 'tale_bone_5',
-      said: 'Now it is all mine. All of it, in rows, and I know every one by the sound it makes. I am good. I am the BEST there is at this.',
+      said: "Mine now. All these bones. All in rows. Know every one by its sound. Nobody sorts them better. Nobody.",
     },
     {
       art: 'tale_bone_6',
-      said: 'You are too big. Too big, too bright, I do not try, no. But you go down and things stop down there — bring the stopped ones to ME. I give good things back. I have SO many good things.',
+      said: "Too big to eat, you. Too bright. No, I do not try. But you leave things dead below. Bring them to me. I have good things to trade. So many good things.",
     },
   ],
   orrery: [
@@ -2651,7 +2651,7 @@ export const TALES: Record<string, TalePanel[]> = {
     },
     {
       art: 'tale_orrery_3',
-      said: 'So I hung the thing that would be wrong if I were. It has been turning ever since and it has not been wrong.',
+      said: "I built the orrery to test the pattern. If my measurements were wrong, it would stop. As you can see, it has not.",
     },
     {
       art: 'tale_orrery_4',
@@ -2668,25 +2668,25 @@ export const TALES: Record<string, TalePanel[]> = {
   'worker:hob': [
     {
       art: 'tale_hob',
-      said: 'Four days on that ledge with the lamp out and nothing coming. Then you. I am not going to forget which of us walked down there.',
+      said: "Four days on that ledge. Lamp dead, nothing coming. Then I heard your boots. Give me something to do. I would rather work than think about it.",
     },
   ],
   'worker:nell': [
     {
       art: 'tale_nell',
-      said: 'I can smelt, weave, tan, cook and cut, and down there not one of the five was worth anything. Up here they are yours.',
+      said: "I can smelt, weave, tan, cook and cut stone. None of it got me out of that hole. Up here, I can make myself useful.",
     },
   ],
   'worker:wat': [
     {
       art: 'tale_wat',
-      said: 'I came down for the glass and the glass kept me, and I had stopped counting. You got me out. Put me to work and we are square.',
+      said: "Came for the glass. Stayed rather longer than planned. You got me out; put me to work and we can call it even.",
     },
   ],
   'worker:ida': [
     {
       art: 'tale_ida',
-      said: 'Nothing down there troubles a body that keeps moving, so I moved for a long while. I would rather stand still now, at your fire, and owe you for it.',
+      said: "I kept moving. Whenever I stopped, I could hear them getting closer. Let me stay by this fire. I can work with my hands sitting still.",
     },
   ],
 };
@@ -3242,25 +3242,25 @@ export interface ProfessionDef {
 
 export const PROFESSIONS: ProfessionDef[] = [
   { id: 'blacksmithing', name: 'Blacksmithing', family: 'metal', kind: 'process', icon: 'mat_pale_iron',
-    makes: 'melee armour, and most weapons' },
+    makes: "heavy armour and most weapons" },
   { id: 'weaving', name: 'Weaving', family: 'cloth', kind: 'process', icon: 'mat_wickcloth',
-    makes: 'spell armour, and staves' },
+    makes: "cloth armour and staves" },
   { id: 'leatherworking', name: 'Leatherworking', family: 'hide', kind: 'process', icon: 'mat_sump_hide',
-    makes: 'rogue armour, and bows' },
+    makes: "leather armour and bows" },
   { id: 'jewelling', name: 'Jewelling', family: 'gem', kind: 'process', icon: 'mat_lampstone',
-    makes: 'every ring and amulet, and wands' },
+    makes: "rings, amulets and wands" },
   { id: 'cooking', name: 'Cooking', family: 'fish', kind: 'process', icon: 'mat_blindfish',
-    makes: 'the meals a buff comes out of' },
+    makes: "meals that grant combat bonuses" },
   // GATHERED WITH A TOOL, and levelled by using it. Gem is on none of them: it
   // is the universal material and falls out of everything.
   { id: 'mining', name: 'Mining', family: 'metal', kind: 'gather', icon: 'tool_pick',
-    makes: 'ore, out of a vein in the rock' },
+    makes: "ore from mineral veins" },
   { id: 'harvesting', name: 'Harvesting', family: 'cloth', kind: 'gather', icon: 'tool_sickle',
-    makes: 'fibre, cut off what grows down there' },
+    makes: "fibre from plants" },
   { id: 'skinning', name: 'Skinning', family: 'hide', kind: 'gather', icon: 'tool_knife',
-    makes: 'skins, off what you put down' },
+    makes: "hides from slain beasts" },
   { id: 'fishing', name: 'Fishing', family: 'fish', kind: 'gather', icon: 'tool_rod',
-    makes: 'a catch, out of standing water' },
+    makes: "fish from pools" },
 ];
 
 export const PROFESSION_BY_ID: Record<string, ProfessionDef> = Object.fromEntries(
@@ -3316,7 +3316,7 @@ export const WORKERS: WorkerDef[] = [
   { id: 'wat', name: 'Wat', sprite: 'wat', world: 'prismatic', rung: 7,
     greets: 'I came down for the glass and the glass kept me. Show me the way out and I am yours.' },
   { id: 'ida', name: 'Ida', sprite: 'ida', world: 'demonic', rung: 8,
-    greets: 'Nothing here eats a body that keeps moving. I have been moving. Let me stop, at your camp.' },
+    greets: "They come closer when I stop. I have been walking so long. Is there room at your fire?" },
 ];
 
 export const WORKER_BY_ID: Record<string, WorkerDef> = Object.fromEntries(WORKERS.map((w) => [w.id, w]));
@@ -4121,20 +4121,20 @@ export const OSTEOMANCER = {
    *  register, or the man in the camp is not the man in the memory. */
   beats: [
     {
-      said: 'You have one. You have one on you, I hear it not rotting. Give here. Give here — no. Hold it up. Let me look first.',
+      said: "You have one. Hear it in your bag. Not rotting. Give here. No, wait. Hold it up. Let me look.",
       act: 'face' as const,
     },
     {
-      said: 'They come apart WRONG down here. All of them. Not this one. This one came apart right, and a thing that came apart right was still deciding when it stopped, and a thing still deciding can be ASKED.',
+      said: "Most come apart wrong. Rot gets in. Ruins the useful bits. This one is still changing. Stopped breathing, kept changing. I can ask it to change again.",
       act: 'pace' as const,
     },
     {
-      said: 'I put it in something of yours. Not on top. IN. Whatever the smith meant that piece to be, it stops being that, and it is this now. You pick which one. I do not care which one.',
+      said: "I put it inside something of yours. Under the metal. What the smith put there comes out. This goes in. You choose the piece.",
       act: 'work' as const,
     },
   ],
   /** Once the graft is written. */
-  done: 'There. Do not thank. Bring another. Bring me a WORSE one, I want to see a worse one.',
+  done: "There. No thanks. Bring another. Worse than this one. Want to see what worse can do.",
 };
 
 /**
@@ -4152,20 +4152,20 @@ export const SMITH = {
   gave: 'smith:first',
   beats: [
     {
-      said: 'You came down that ladder with nothing on your belt. Nothing. No wonder the walls are still full.',
+      said: "No tools on your belt. Walked past every vein on the way down, did you?",
       act: 'face' as const,
     },
     {
-      said: 'There is ore in here, and hide on the things that come at you, and fibre where the damp is. All of it stays where it is unless you are carrying the thing that takes it.',
+      said: "Ore in the walls, hides on the beasts, fibre in the damp. Worth carrying the right tool. Otherwise you leave it all behind.",
       act: 'work' as const,
     },
     {
-      said: 'Pick one and it is yours. The others I will sell you, and when you have worn one down far enough to have learned something, bring it back and I will make it better.',
+      said: "First tool is yours. I charge for the rest. Learn to use one properly, then bring it back. I can improve it.",
       act: 'face' as const,
     },
   ],
   /** Once the free one is taken. */
-  idles: 'Wear it out. Then we will talk about what comes after it.',
+  idles: "Get some use out of it. When you are ready for better, you know where I am.",
 };
 
 /**
@@ -5271,7 +5271,7 @@ export const SKILLS: SkillDef[] = [
     requires: 'melee',
     name: 'Strike',
     category: 'attack',
-    description: 'A hard melee blow. One enemy, with Splash.',
+    description: "Strike one enemy in melee, dealing Physical damage with Splash.",
     tags: ['attack', 'melee'],
     behaviour: 'melee',
     damageTypes: ['physical'],
@@ -5294,8 +5294,8 @@ export const SKILLS: SkillDef[] = [
     name: 'Ambush',
     category: 'attack',
     description:
-      'You step through the room to behind one enemy and open on it. One ' +
-      'target, from 5.5 tiles, and it crits at 25%.',
+      "Teleport behind an enemy up to 5.5 tiles away and strike it. Base " +
+      "Critical Chance: 25%.",
     tags: ['attack', 'melee'],
     behaviour: 'ambush',
     damageTypes: ['physical'],
@@ -5316,8 +5316,8 @@ export const SKILLS: SkillDef[] = [
     name: 'Shockwave',
     category: 'attack',
     description:
-      'A wave driven through the ground. A Cone in front of you, and everything ' +
-      'standing in it takes the whole hit.',
+      "Send a shockwave through a Cone in front of you. Every enemy " +
+      "in the Cone takes full Physical damage.",
     // Area from the start, unlike Strike: the wedge IS the skill.
     tags: ['attack', 'melee', 'area'],
     behaviour: 'cone',
@@ -5374,7 +5374,7 @@ export const SKILLS: SkillDef[] = [
     name: 'Fireball',
     category: 'spell',
     description:
-      'A ball of fire at range. One enemy, with Splash.',
+      "Launch a fireball at one enemy, dealing Fire damage with Splash.",
     tags: ['spell', 'projectile'],
     behaviour: 'projectile',
     damageTypes: ['fire'],
@@ -5445,8 +5445,8 @@ export const SKILLS: SkillDef[] = [
     name: 'Arc Lightning',
     category: 'spell',
     description:
-      'A bolt of lightning with 3 Arcs, each for 70% of the damage, with ' +
-      'Splash. It hits one enemy for less than anything else.',
+      "Launch a bolt of lightning with Splash and 3 Arcs. Each Arc deals " +
+      "70% of the original hit damage.",
     tags: ['spell', 'projectile'],
     behaviour: 'projectile',
     damageTypes: ['lightning'],
@@ -5472,8 +5472,8 @@ export const SKILLS: SkillDef[] = [
     name: 'Lightning Arrow',
     category: 'attack',
     description:
-      'An arrow of lightning at range. Full damage to what it hits, 2 Forks on ' +
-      'enemies near it for 45% each, with Splash.',
+      "Fire an arrow with Splash and 2 Forks, each dealing 45% of the original hit damage to " +
+      "a different nearby enemy. Converts 60% of the attack's Physical damage to Lightning.",
     tags: ['attack', 'projectile'],
     behaviour: 'projectile',
     damageTypes: ['lightning'],
@@ -5502,8 +5502,8 @@ export const SKILLS: SkillDef[] = [
     name: 'Creeping Blight',
     category: 'spell',
     description:
-      'Drops a Cloud of Poison on the target for 5s. No target limit — ' +
-      'Area of Effect is what makes it hit more.',
+      "Apply Poison for 5s to every enemy in a Cloud around your target. " +
+      "Area of Effect increases the Cloud radius. This use does not hit.",
     // 'occult' is a damage GROUP and must not appear here. Skill tags ride
     // along in every damage pass, so a stat line tagged 'occult' would scale
     // this skill's fire damage too once Pyroclasm converts it.
@@ -5533,7 +5533,7 @@ export const SKILLS: SkillDef[] = [
     name: 'Killing Surge',
     category: 'passive',
     description:
-      'A Critical deals no extra damage; landing one grants 35% more damage ' +
+      "Critical Hits deal no extra damage. Landing one grants 35% more hit damage " +
       'for 5s.',
     tags: ['passive'],
     behaviour: 'no_cast',
@@ -5554,8 +5554,8 @@ export const SKILLS: SkillDef[] = [
     name: 'Contagion',
     category: 'passive',
     description:
-      'A body dying with an Ailment gives 1 stack of each to every enemy ' +
-      'within 3 tiles, and Ailments you apply are 40% weaker.',
+      "When an enemy dies, spread 1 stack of each Ailment on it to the 2 nearest enemies " +
+      "within 3 tiles. Ailments you apply are 40% weaker.",
     tags: ['passive'],
     behaviour: 'no_cast',
     damageTypes: [],
@@ -5573,8 +5573,8 @@ export const SKILLS: SkillDef[] = [
     name: 'Blood Pact',
     category: 'passive',
     description:
-      'Your mana pool is 0, and every use costs 1.4 life per point of mana it ' +
-      'would have cost.',
+      "Maximum Mana becomes 0. Skills cost 1.4 Life per Mana they " +
+      "would normally cost. This Life cost can kill you.",
     tags: ['passive'],
     behaviour: 'no_cast',
     damageTypes: [],
@@ -5593,7 +5593,7 @@ export const SKILLS: SkillDef[] = [
     name: 'Headsman',
     category: 'passive',
     description:
-      'A hit that leaves an enemy under 6% of its life kills it.',
+      "Cull enemies left at or below 6% of maximum Life by a hit or Ailment tick.",
     tags: ['passive'],
     behaviour: 'no_cast',
     damageTypes: [],
@@ -5611,7 +5611,7 @@ export const SKILLS: SkillDef[] = [
     name: 'Deep Winter',
     category: 'passive',
     description:
-      'A Freeze takes 3 fewer stacks of Chill, and holds 40% longer.',
+      "Freezing an enemy requires 3 fewer Chill stacks, to a minimum of 1. Your Freezes last 40% longer.",
     tags: ['passive'],
     behaviour: 'no_cast',
     damageTypes: [],
@@ -5627,7 +5627,7 @@ export const SKILLS: SkillDef[] = [
     name: 'Transfixion',
     category: 'passive',
     description:
-      'What you hit is held where it stands for 0.35s.',
+      "Hits prevent enemies from moving, attacking or casting for 0.35s. Repeated hits refresh this duration.",
     tags: ['passive'],
     behaviour: 'no_cast',
     damageTypes: [],
@@ -5709,7 +5709,7 @@ export const SKILLS: SkillDef[] = [
     name: 'Unmaking',
     category: 'passive',
     description:
-      'Enemies within 5 tiles have 25% less Fire, Cold and Lightning Resistance.',
+      "Reduces the Fire, Cold and Lightning Resistance of enemies within 5 tiles by 25 percentage points.",
     tags: ['passive'],
     behaviour: 'no_cast',
     damageTypes: [],
@@ -5725,7 +5725,7 @@ export const SKILLS: SkillDef[] = [
     name: 'Unbinding',
     category: 'passive',
     description:
-      'Enemies within 5 tiles have 25% less Poison, Dark and Light Resistance.',
+      "Reduces the Poison, Dark and Light Resistance of enemies within 5 tiles by 25 percentage points.",
     tags: ['passive'],
     behaviour: 'no_cast',
     damageTypes: [],
@@ -5747,8 +5747,8 @@ export const SKILLS: SkillDef[] = [
     name: 'Sundering',
     category: 'passive',
     description:
-      'Every 4s your next hit Bursts around you for 5.5 Physical damage per ' +
-      'character level, 2.4 tiles across.',
+      "Hitting an enemy triggers a Burst around you, dealing 5.5 base Physical damage per " +
+      "character level in a 2.4 tile radius. Cooldown: 4s.",
     tags: ['passive'],
     behaviour: 'no_cast',
     damageTypes: [],
@@ -5824,9 +5824,9 @@ export const SKILLS: SkillDef[] = [
     name: 'Featherstep',
     category: 'passive',
     description:
-      'Your Armour blunts nothing and is instead 60% of itself as Dodge, ' +
-      'and you gain 60% increased Movement Speed once 2s have passed ' +
-      'without a hit landing on you.',
+      "Your Armour no longer reduces damage. Gain Dodge Chance equal to 60% of the damage reduction it would provide, " +
+      "and gain 60% more Movement Speed after 2s " +
+      "without taking damage from a hit or boss drain.",
     tags: ['passive'],
     behaviour: 'no_cast',
     damageTypes: [],
@@ -5848,8 +5848,8 @@ export const SKILLS: SkillDef[] = [
     name: 'Brink',
     category: 'passive',
     description:
-      'While under 35% of your maximum life you deal 65% more damage and take ' +
-      '30% less damage; above it you deal 20% less damage.',
+      "While below 35% of maximum Life, deal 65% more hit damage and take " +
+      "30% less damage from hits and boss drains. At or above 35% Life, deal 20% less hit damage.",
     tags: ['passive'],
     behaviour: 'no_cast',
     damageTypes: [],
@@ -5873,7 +5873,7 @@ export const SKILLS: SkillDef[] = [
     id: 'glass',
     name: 'Glass',
     category: 'passive',
-    description: 'You deal 90% more damage, and your maximum life is 70% lower.',
+    description: "Deal 90% more damage. You have 70% less maximum Life.",
     tags: ['passive'],
     behaviour: 'no_cast',
     damageTypes: [],
@@ -5891,8 +5891,8 @@ export const SKILLS: SkillDef[] = [
     name: 'Reaping',
     category: 'passive',
     description:
-      'Every kill restores 10% of your maximum life, and your maximum life is ' +
-      '35% lower.',
+      "Kills restore 10% of maximum Life. You have " +
+      "35% less maximum Life.",
     tags: ['passive'],
     behaviour: 'no_cast',
     damageTypes: [],
@@ -5911,8 +5911,8 @@ export const SKILLS: SkillDef[] = [
     name: 'Zealotry',
     category: 'passive',
     description:
-      'You deal 55% more damage while your mana is above 70% of your pool, and ' +
-      'every use costs 70% more mana.',
+      "Deal 55% more hit damage while above 70% of maximum Mana, checked after paying the skill cost. " +
+      "Skills cost 70% more Mana.",
     tags: ['passive'],
     behaviour: 'no_cast',
     damageTypes: [],
@@ -5931,8 +5931,8 @@ export const SKILLS: SkillDef[] = [
     name: 'Aftershock',
     category: 'passive',
     description:
-      'Every Ailment on an enemy also deals 50% of each tick to enemies within ' +
-      '2.2 tiles of it, and your Ailments last 40% less time.',
+      "Each Ailment tick on an enemy also deals 50% of its damage after mitigation to other enemies within " +
+      "2.2 tiles. This shared damage is not reduced again. Your Ailments have 40% less duration.",
     tags: ['passive'],
     behaviour: 'no_cast',
     damageTypes: [],
@@ -5952,7 +5952,7 @@ export const SKILLS: SkillDef[] = [
     name: 'Bulwark',
     category: 'passive',
     description:
-      'No single hit can take more than 10% of your maximum life, and you deal ' +
+      "Limits damage from an ordinary hit to 10% of maximum Life before movement skill protection and Mana absorption. Deal " +
       '35% less damage.',
     tags: ['passive'],
     behaviour: 'no_cast',
@@ -5972,8 +5972,8 @@ export const SKILLS: SkillDef[] = [
     name: 'Quickening',
     category: 'passive',
     description:
-      'Each kill grants 10% increased Attack and Cast Speed for 4s, stacking to ' +
-      '6, and you deal 20% less damage.',
+      "Each kill grants 10% more Attack and Cast Speed, stacking up to " +
+      "6 times. These bonuses add together and expire 4s after your last kill. Deal 20% less damage.",
     tags: ['passive'],
     behaviour: 'no_cast',
     damageTypes: [],
@@ -5996,8 +5996,8 @@ export const SKILLS: SkillDef[] = [
     name: 'Rimeheart',
     category: 'passive',
     description:
-      'All your damage is Converted to Cold and every hit you land Chills twice, ' +
-      'and you deal 25% less damage.',
+      "Converts your main skill and its tree to Cold and adds 200 percentage points to your chance to apply Ailments, " +
+      "guaranteeing at least 2 Chill stacks from its Cold hits. Deal 25% less damage.",
     tags: ['passive'],
     behaviour: 'no_cast',
     damageTypes: [],
@@ -6016,8 +6016,8 @@ export const SKILLS: SkillDef[] = [
     name: 'Blink',
     category: 'movement',
     description:
-      'Step up to 5 tiles along the way you are already walking, once every 3 ' +
-      'seconds. A step needs a clear line and takes you through what is in it.',
+      "Teleport up to 5 tiles along your path, once every 3 " +
+      "seconds. Teleports through enemies but requires a clear path through the terrain.",
     tags: ['movement'],
     // Its OWN behaviour rather than the shared `no_cast`, so `GrantDef.reads`
     // can tell a jump's landing from a step that never lands anywhere.
@@ -6036,8 +6036,8 @@ export const SKILLS: SkillDef[] = [
     name: 'Leap',
     category: 'movement',
     description:
-      'Jump up to 6 tiles along the way you are already walking, once every 4 ' +
-      'seconds. A jump needs no clear line — it goes over — and it LANDS.',
+      "Leap up to 6 tiles along your path, once every 4 " +
+      "seconds. Can cross obstacles if there is space to land.",
     tags: ['movement'],
     behaviour: 'leap',
     damageTypes: [],
@@ -6061,8 +6061,8 @@ export const SKILLS: SkillDef[] = [
     name: 'Gale',
     category: 'movement',
     description:
-      'You hold 3 Gusts and move 10% faster for each one. Anything that lands ' +
-      'a hit takes one, and one comes back every 6 seconds.',
+      "Start with 3 Gusts. Each grants 10% more Movement Speed; these bonuses add together. Taking " +
+      "a hit removes 1 Gust and restarts recovery. Recover 1 Gust every 6s, up to your maximum.",
     tags: ['movement'],
     behaviour: 'gale',
     damageTypes: [],
@@ -6091,8 +6091,8 @@ export const SKILL_CATEGORIES: Array<{
 }> = [
   { id: 'spell', name: 'Spells', blurb: 'Cast. Scales with cast speed.' },
   { id: 'attack', name: 'Attacks', blurb: 'Swung. Scales with attack speed.' },
-  { id: 'passive', name: 'Passive Skills', blurb: 'Always on, and always a trade.' },
-  { id: 'movement', name: 'Movement', blurb: 'Crossing ground. Fires itself.' },
+  { id: 'passive', name: 'Passive Skills', blurb: "Passive bonuses and their tradeoffs." },
+  { id: 'movement', name: 'Movement', blurb: "Activates automatically to help you move." },
 ];
 
 /** What the Skills screen offers: a shelf is everything ONE KIND OF SLOT takes,
@@ -6107,11 +6107,11 @@ export const SKILL_SHELVES: Array<{
   {
     id: 'ability',
     name: 'Abilities',
-    blurb: 'What you kill with. Attacks swing, spells cast.',
+    blurb: "Your main attack or spell.",
     holds: ['attack', 'spell'],
   },
-  { id: 'passive', name: 'Passive Skills', blurb: 'Always on, and always a trade.', holds: ['passive'] },
-  { id: 'movement', name: 'Movement', blurb: 'Crossing ground. Fires itself.', holds: ['movement'] },
+  { id: 'passive', name: 'Passive Skills', blurb: "Passive bonuses and their tradeoffs.", holds: ['passive'] },
+  { id: 'movement', name: 'Movement', blurb: "Activates automatically to help you move.", holds: ['movement'] },
 ];
 
 export const SHELF_BY_ID = Object.fromEntries(SKILL_SHELVES.map((s) => [s.id, s]));
@@ -6127,13 +6127,13 @@ export const SKILL_SLOTS: SkillSlotDef[] = [
     id: 'main',
     name: 'Main',
     accepts: ['spell', 'attack'],
-    blurb: 'What you kill with. Every damage number on the sheet is this one.',
+    blurb: "Your main attack or spell. The Character screen shows its damage.",
   },
   {
     id: 'passive',
     name: 'Passive',
     accepts: ['passive'],
-    blurb: 'Always on, and paid for by giving something up.',
+    blurb: "A passive skill. Its bonuses and tradeoffs apply while equipped.",
   },
   // Two more of the same shelf, LEVEL-GATED: three at once is a build rather
   // than a pick, so they arrive across the climb instead of at the start.
@@ -6155,7 +6155,7 @@ export const SKILL_SLOTS: SkillSlotDef[] = [
     id: 'movement',
     name: 'Movement',
     accepts: ['movement'],
-    blurb: 'Ground covered. It fires itself, like the flasks.',
+    blurb: "Activates automatically as you move.",
   },
 ];
 

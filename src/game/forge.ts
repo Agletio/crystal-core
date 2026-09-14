@@ -195,15 +195,15 @@ export const upgradeCost = (game: GameState, tool: ToolDef, rung: ToolRungDef): 
 /** Why a tool cannot be upgraded, or null — in NUMBERS, like every refusal. */
 export function whyNotUpgrade(game: GameState, tool: ToolDef): string | null {
   const rung = nextRung(game, tool);
-  if (!rung) return 'Nothing better to make of it.';
+  if (!rung) return "This tool is fully upgraded.";
   const at = professionAt(game, tool.skill).level;
   const who = PROFESSION_BY_ID[tool.skill]?.name ?? tool.skill;
-  if (at < rung.at) return `${who} ${rung.at} needed, you are ${at}.`;
+  if (at < rung.at) return `${who} ${rung.at} required; current level: ${at}.`;
   const gold = game.wallet.gold ?? 0;
-  if (gold < rung.gold) return `${rung.gold} gold needed, you have ${Math.floor(gold)}.`;
+  if (gold < rung.gold) return `${rung.gold} gold required; owned: ${Math.floor(gold)}.`;
   if (rung.eats > 0 && upgradeCost(game, tool, rung).length === 0) {
     const family = MATERIAL_FAMILY_BY_ID[tool.eats];
-    return `${rung.eats} ${family?.one.toLowerCase() ?? 'unit'}s needed. Work some at ${family?.station ?? 'a station'}.`;
+    return `${rung.eats} ${family?.one.toLowerCase() ?? 'unit'}s required. Process materials at ${family?.station ?? 'a station'}.`;
   }
   return null;
 }
@@ -235,20 +235,20 @@ export function whyNotCraft(game: GameState, recipe: CraftRecipe): string | null
   for (const part of recipe.parts) {
     const at = professionAt(game, part.profession).level;
     const who = PROFESSION_BY_ID[part.profession]?.name ?? part.profession;
-    if (at < part.level) return `${who} ${part.level} needed, you are ${at}.`;
+    if (at < part.level) return `${who} ${part.level} required; current level: ${at}.`;
     const have = versionsFor(game, part);
     if (have.length < part.versions) {
       const family = MATERIAL_FAMILY_BY_ID[PROFESSION_BY_ID[part.profession]?.family ?? ''];
       const one = family?.one ?? 'unit';
       return part.versions === 1
-        ? `${part.wants} ${one}s needed. Work some at ${family?.station ?? 'the station'}.`
-        : `${part.versions} worlds of ${one}s needed, you have ${have.length}.`;
+        ? `${part.wants} ${one}s required. Process materials at ${family?.station ?? 'the station'}.`
+        : `${part.versions} different world variants of ${one}s required; owned: ${have.length}.`;
     }
   }
   if (craftPlan(game, recipe) === null && recipe.gems > 0) {
-    return `${recipe.gems} cut stones needed. Every recipe wants them; cut some at the jeweller's.`;
+    return `${recipe.gems} cut stones required. Cut gems at the jeweller's.`;
   }
-  if (recipe.unique > 0 && !uniqueFor(game)) return 'A world\'s own material is missing.';
+  if (recipe.unique > 0 && !uniqueFor(game)) return "Requires a rare world material.";
   return null;
 }
 

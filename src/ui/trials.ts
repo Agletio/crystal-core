@@ -218,9 +218,9 @@ function drawNode(
     const state = owned
       ? canDeallocateTrial(node.id, allocated)
         ? 'allocated — click to refund'
-        : 'allocated — refunding it would strand another node'
+        : "allocated — needed to connect another allocated node"
       : !reachable
-        ? 'not connected to anything you own'
+        ? "requires a connected allocated node"
         : spare > 0
           ? 'available'
           : 'no points left';
@@ -320,7 +320,7 @@ function render(): void {
     `${spent}/${earned} points spent · ${TRIAL_POINTS_MAX} to earn · ${trialNodes().length} nodes`;
   $('trials-note').textContent =
     `${CAMPAIGN_REWARD.points} points for finishing the climb; every one after that ` +
-    'is ground out of the Ledger.';
+    "is earned by completing Ledger objectives.";
 
   $('trials-webwrap').hidden = false;
   renderLadder();

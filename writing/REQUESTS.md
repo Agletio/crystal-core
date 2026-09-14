@@ -1,18 +1,19 @@
 # Writing requests for Astra
 
 The current queue is the pending, stale and blocked entries in `entries.json`.
-Astra has completed the tree follow-up and the entire 33-entry glossary pass:
-**1,783 reviewed, 31 blocked, 39 pending, no stale entries**. The next writing
-batch is skill cards and character-sheet rules. Character introductions retain
-the owner's approved copy and await their ledger review.
+The menu/dialogue batch has **2,504 reviewed, nine blocked, no pending or stale
+entries** in the current inventory. Review base: main `4267c981`; writing
+branch: `codex/writing-menus-dialogue`. See `MENUS-DIALOGUE.md` for coverage.
 
-Claude: resolve W018–W021 and the remaining W005/W008 findings in `BLOCKERS.md`.
-The five blocked glossary IDs are `keyword.chill`, `keyword.armour`,
-`keyword.gust`, `keyword.shock` and `keyword.starved`. `GLOSSARY.md` contains
-the full review. Review base: main `726e1417229ffd1bc07c923cf1da2eccc7f55d6d`;
-writing branch: `codex/writing-combat-glossary`. Shock's secondary targeting is
-the most urgent new discrepancy. Clearer copy on a blocked entry is not an
-approval of its complete mechanics.
+Claude's requests below have been reviewed. W005, W008 and W018–W021 are settled.
+The current questions are W022–W026 in `BLOCKERS.md`: Deep Winter, Slow Burn,
+the Contagion passive, Bulwark and the scope of three conditional damage
+passives. Clearer copy on these entries is not approval of the disputed rule.
+
+Menu IDs now use `menu.ui.<file>.<declaration>` and `menu.html.<DOM-id>`.
+Currency, professions, materials, objectives, dialogue and Reckoning nodes
+also have stable IDs. Reuse them when requesting another pass. A named menu
+declaration is one review unit containing its copy and callback messages.
 
 The requests below remain as the record of Claude's previous mechanics pass.
 Sleet's stable node ID is `rs_sleet`; `rs_tempo` is the Hail keystone.

@@ -14,9 +14,9 @@ export const OSSUARY: SceneDef = {
   rung: 4,
   said: OSTEOMANCER.seen,
   greets:
-    'Feet. FEET. Half of that was in order and I have been at it since the lamp was lit. You are too big, I do not try. I do not go up. You come back down to me and bring one that came apart right.',
+    "Feet! Watch your feet. Had those sorted. Since the lamp was lit, sorting those. Too big to eat, you. Bring me something smaller. Something that came apart right. I stay here.",
   idles:
-    'Nothing on you. Nothing at all on you. Go down. Bring me one that came apart RIGHT. Then we talk.',
+    "Empty hands. No use to me. Find one the Rot left whole. Bring it here. Then we talk.",
   beats: OSTEOMANCER.beats,
   // HIS OWN ROOM, off the Fissure screen: he does not come up, and the middle
   // of that picture is the bare floor he stands on.
@@ -25,7 +25,7 @@ export const OSSUARY: SceneDef = {
     stands: { x: 410, y: 300 },
     you: { x: 250, y: 312 },
     name: 'The Ossuary',
-    blurb: 'His room, down where you found him. Nothing descends here.',
+    blurb: "The Osteomancer works here. Bring him a Pristine Specimen.",
   },
   encounter: null,
 };

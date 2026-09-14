@@ -139,10 +139,10 @@ function renderPieces(): void {
     btn.append(itemIcon(item, 26));
     const body = el('span', 'slotcell__body');
     body.append(el('span', 'slotcell__name', item.name));
-    body.append(el('span', 'slotcell__meta', why ?? 'he can write on this'));
+    body.append(el('span', 'slotcell__meta', why ?? "Choose this item"));
     btn.append(body);
     attachTooltip(btn, () =>
-      itemCard(item, [why ?? 'what the base gave it is what gets written over'])
+      itemCard(item, [why ?? "Replaces this item's implicit modifiers."])
     );
     btn.disabled = why !== null;
     btn.onclick = () => take(item);

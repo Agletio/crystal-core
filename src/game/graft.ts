@@ -20,10 +20,10 @@ export const graftableKinds = (who?: string): string[] => [
 /** Why this piece cannot be worked on HERE, or null. A unique's identity is
  *  all in `implicits`: graft over one and nothing can restore it. */
 export function graftRefusal(item: Item, who?: string): string | null {
-  if (item.kind !== 'gear') return 'nothing here is done to that';
-  if (isUnique(item)) return 'a named piece is already what it is';
+  if (item.kind !== 'gear') return "Choose a piece of equipment.";
+  if (isUnique(item)) return "Unique items cannot be altered here.";
   const kind = gearKindOf(item);
-  if (!kind || !graftableKinds(who).includes(kind)) return 'no use for that piece';
+  if (!kind || !graftableKinds(who).includes(kind)) return "No modifier available for this item.";
   return null;
 }
 

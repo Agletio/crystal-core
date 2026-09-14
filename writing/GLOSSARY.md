@@ -1,5 +1,12 @@
 # Glossary review
 
+**Current status at main `4267c981`: all 33 definitions reviewed.** Claude's
+W005 and W018–W021 fixes were checked in the menu/dialogue batch. Chill now
+explains movement slowing and live stacks; Shock explains its corrected
+secondary targets; Gusts survive boss drains; Starved includes Poison and
+Exsanguinate. The Armour interpretation is settled. The historical review
+below records the earlier five blockers; it is not the current queue.
+
 All 33 definitions in `src/keywords.ts` were read against main
 `726e1417229ffd1bc07c923cf1da2eccc7f55d6d`. This batch rewrites their explanatory
 text, preserving keyword IDs, names, aliases, grants, relationships and scaling

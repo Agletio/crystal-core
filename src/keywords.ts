@@ -71,8 +71,8 @@ function ailmentMeans(id: string): string {
     'deal Critical damage. With Contagion, each tick uses your Critical Chance to try to spread Poison.';
   const applied = `${type} hits use your chance to apply ${a.name}. `;
   if (a.kind === 'chill') return applied +
-    `Chill stacks normally last ${a.seconds}s. Each application Slows Attack and Cast Speed for ${a.seconds}s, ` +
-    `based on the current stack count: ${a.slowPer}% per stack, up to 75%. ` +
+    `Each Chill stack normally lasts ${a.seconds}s and Slows Movement, Attack and Cast Speed by ${a.slowPer}%. ` +
+    'The Slow follows the number of active stacks and cannot exceed 75%. Modifiers to Ailment strength affect it. ' +
     `Enemies normally Freeze at ${a.freezeAt} stacks for ${a.freezeSeconds}s: they cannot move, attack or cast, ` +
     'and their Chill stacks are removed. The next hit against that enemy is a guaranteed Critical, ' +
     'even while it is Frozen. ' +
@@ -85,7 +85,11 @@ function ailmentMeans(id: string): string {
     'Stack bonuses add together. Exposure does not increase damage taken from Ailment ticks.';
   const damage = `Each stack you apply deals ${a.dps} base ${type} damage per second for ${a.seconds}s, ` +
     'before Ailment damage and duration modifiers. ';
-  return applied + damage + 'Spell Damage, Attack Damage and Critical Damage do not increase this damage.';
+  const arcs = a.kind === 'shock'
+    ? `Each Shock tick on an enemy also damages up to ${a.arcTargets} other enemies within ${a.arcRadius} tiles for ` +
+      `${pct(a.arcShare ?? 0)} of that tick's damage before Resistance. Shock on you does not arc to other targets. `
+    : '';
+  return applied + damage + arcs + 'Spell Damage, Attack Damage and Critical Damage do not increase this damage.';
 }
 
 /**
@@ -397,8 +401,8 @@ export const KEYWORDS: KeywordDef[] = [
     says: ['Starved'],
     means:
       'When you cannot pay the full Mana cost, you spend your remaining Mana and use the skill anyway. ' +
-      `Starved hits deal ${pct(MANA.starvedDamage)} of their normal damage before modifiers to the penalty. ` +
-      "An effect that pays the missing cost with Life prevents Starved. Blight's Poison bypasses this penalty.",
+      `Starved hits, Blight's Poison and Exsanguinate's wound deal ${pct(MANA.starvedDamage)} of their normal damage before modifiers to the penalty. ` +
+      'An effect that pays the missing cost with Life prevents Starved.',
     grants: ['starvedDamage'],
     scales: [],
   },
@@ -433,7 +437,7 @@ export const KEYWORDS: KeywordDef[] = [
     means:
       `Gale starts with ${SKILL_BY_ID.gale?.params?.gusts ?? 0} Gusts. Each grants ` +
       `${SKILL_BY_ID.gale?.params?.speed ?? 0}% more Movement Speed by default; these bonuses add together. ` +
-      'Taking a hit removes one Gust and restarts the recovery timer. Boss drains remove Gusts too. ' +
+      'Taking a hit removes one Gust and restarts the recovery timer. Boss drains do not remove Gusts. ' +
       `One Gust returns every ${SKILL_BY_ID.gale?.params?.back ?? 0}s, up to your maximum. ` +
       'Gale talents can change these values or prevent Gust loss.',
     grants: ['gustSpeed', 'gustMax', 'gustBack'],

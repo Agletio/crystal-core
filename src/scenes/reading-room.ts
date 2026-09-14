@@ -18,24 +18,24 @@ export const READING_ROOM: SceneDef = {
   rung: 3, // early in the zone: his whole objection is to what you are already doing
   said: 'A room somebody swept. The walls are covered in marks and none of them are yours.',
   greets:
-    'Do not touch the wall. You are standing in the middle of a sentence and you cannot read it. Come and find me above and I will tell you whose it is.',
+    "Keep your hands off the wall. Those marks are a sentence, and you are smudging it. Find me above. I would prefer you knew what you were disturbing.",
   idles:
-    'Set more of them in the wall. Read a little further, and then I will hand you the rest of it.',
+    "You have only begun the sentence. Set more crystals in the wall. I will give you the rest when you are ready.",
   beats: [
     {
-      said: 'Stop. Before you set another one of those in the wall — do you know what he has you doing?',
+      said: "Before you set another crystal in the wall: has the Lampwright told you what you are doing?",
       act: 'face',
     },
     {
-      said: 'They are not fuel. They are punctuation. He has you reading a sentence out loud, one mark at a time, and he has never once asked what it says.',
+      said: "He calls them fuel. They are punctuation. Each crystal gives voice to another mark, and he has never troubled himself to read the sentence.",
       act: 'pace',
     },
     {
-      said: `Everything down here has a true name and can be told. That is ${ORDER.name}, and I am the last of us this far down. This one I have written out for you — three marks, copied off a wall nobody was meant to reach.`,
+      said: `Everything below has a true name. To know it is to be heard. That is the teaching of ${ORDER.name}. I am the last of us this far down. These three marks name something old. I copied them from a wall no one was meant to reach.`,
       act: 'work',
     },
     {
-      said: 'Set it in the wall the way you set the others and say it where the rock is thin. It will turn round. Then you will know which of us has been right, and it will not be him.',
+      said: "Set the name beside the crystals. Speak it where the rock is thin. Something will answer. Then you may judge the Lampwright and me for yourself.",
       act: 'face',
     },
   ],

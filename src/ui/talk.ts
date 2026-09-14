@@ -49,7 +49,7 @@ function wordsFor(def: SceneDef): SceneBeat[] {
 function options(def: SceneDef): Array<{ id: string; said: string; go: () => void }> {
   const out = [{ id: 'talk', said: 'Talk', go: () => say(def) }];
   const wanted = relicFor(game, def.id);
-  if (wanted) out.push({ id: 'bench', said: 'Give him what you found', go: () => bench(def) });
+  if (wanted) out.push({ id: 'bench', said: "Offer a relic", go: () => bench(def) });
   else if (def.keeps === 'shop') out.push({ id: 'shop', said: 'Shop', go: counter });
   else if (def.keeps === 'tools') {
     // TWO VERBS, not one screen with a mode nobody can see: buying and
