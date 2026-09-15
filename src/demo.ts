@@ -12509,9 +12509,14 @@ if (rule('FLOOR AND CEILING — is a difficulty number aimed at anything real?')
     );
   }
   // The whole point of the pass: a build playing WELL should still be hurt.
+  // ON CRYSTALS ALONE, which is why it reads so high — a crystal rolls a RULE
+  // and the raw scaling is the RUNG's, so a set with no depth under it is the
+  // shallowest thing in the game. The figure that answers the question is the
+  // one taken at the wall, below.
   gauge(
-    `and it is taken down to ${Math.min(...hurt).toFixed(0)}%-${Math.max(...hurt).toFixed(0)}% ` +
-      'of its life on the way — wanted under 70%, and a game nothing threatens reads 100%'
+    `and on crystals alone it is taken down to ${Math.min(...hurt).toFixed(0)}%-` +
+      `${Math.max(...hurt).toFixed(0)}% of its life — a rungless set is the shallow end, ` +
+      'whatever is socketed'
   );
 
   // The deep end at the level it is FOR. Nothing here had ever been measured
@@ -12534,24 +12539,42 @@ if (rule('FLOOR AND CEILING — is a difficulty number aimed at anything real?')
     const where: RunWhere = { zone, rung: LADDER.zones[zone].rungs - 1 };
     const through: string[] = [];
     const rates: number[] = [];
+    const low: number[] = [];
     for (const skill of MAIN_SKILLS) {
       const who = { ...ceiling(6, skill.id, LEVELLING.maxLevel), souls: SOULS.max };
       const sim = new RunSim([], who, new Rng(770), { where });
       for (const t of DAMAGE_TYPES) sim.state.hero.stats.ailmentWard[t.id] = DEFENCE.ailmentWardCap;
-      if (runToCompletion(sim, 1800).status === 'cleared') through.push(skill.id);
+      // LOW-WATER AT THE WALL: read tick by tick, because a descent ends in a
+      // walk to the exit and regeneration tops you up on the way out.
+      let worst = 1;
+      let guard = Math.ceil(1800 / TICK);
+      while (sim.state.status === 'running' && guard-- > 0) {
+        sim.step(TICK);
+        worst = Math.min(worst, sim.state.hero.life / Math.max(1, sim.state.hero.stats.maxLife));
+      }
+      low.push(worst * 100);
+      if (sim.state.status === 'cleared') through.push(skill.id);
 
       // WHAT THE HONEST CEILING KILLS AT, which is the whole of what the
       // type-blind pick was hiding: it wore one set for all eight, so a skill
       // whose own type happened to be the best-scoring line ran away with it.
+      // BARE OF STONES — `who` carries two, and `runSet` reads them, so the
+      // same measurement off it is the wall's rate rather than the deep end's.
       let killed = 0;
       let seconds = 0;
       for (let i = 0; i < 3; i++) {
-        const final = runToCompletion(new RunSim(deepestSet(new Rng(400 + i), pool), who, new Rng(900 + i)), 600);
+        const bare = ceiling(6, skill.id, LEVELLING.maxLevel);
+        const final = runToCompletion(new RunSim(deepestSet(new Rng(400 + i), pool), bare, new Rng(900 + i)), 600);
         killed += final.killed;
         seconds += final.elapsed;
       }
       rates.push(killed / Math.max(1, seconds));
     }
+    gauge(
+      `at the wall the eight are taken down to ${Math.min(...low).toFixed(0)}%-` +
+        `${Math.max(...low).toFixed(0)}% of their life — THIS is where a ceiling is threatened, ` +
+        'and the band table above is the shallow end by construction'
+    );
     gauge(
       `the eight ceilings kill between ${Math.min(...rates).toFixed(2)} and ${Math.max(...rates).toFixed(2)} ` +
         `a second at the deep end — ${(Math.max(...rates) / Math.max(0.01, Math.min(...rates))).toFixed(1)}x ` +
