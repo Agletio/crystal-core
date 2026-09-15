@@ -104,12 +104,23 @@ minutes**; a silent hour is how this looked stuck.
   Bulwark, Rimeheart — get picked. **It cost +36% a build and 2 minutes on the
   demo, and it moved no gauge**: the ratio below is `buildPower` over
   `buildPower`, so the one number that reports the search cannot see the search
-  getting better. Measured across bands 1, 3 and 6, the second is **1.6× to 8.4×** the
+  getting better. Measured across bands 1, 3 and 6, the second is **3.3× to 9.1×** the
   first — so anything tuned until the floor dies is off by that much, which is
   what made the whole game clearable at 89% life or better. The top of that
   spread WIDENED from 3.0× when the passive shelf tripled, because the search
   picks three passives and a random walk does not. **Anything measuring
   what a descent PAYS runs a ceiling**: a character that dies banks nothing.
+- **AND THE PICK READS THE SKILL, because a line it cannot read is worth
+  nothing.** `damageBreakdown` multiplies a type pass of ZERO by whatever
+  increases are aimed at it, so increased Fire Damage on a cold skill does
+  exactly nothing — and `worth` scored it off `STAT_POWER`, which has no type
+  in it. Measured before the repair: all eight ceilings wore ONE set, five of
+  them carrying 11 to 18 lines their skill could never read, and dropping the
+  lot moved the kill rate by **0.00**. `reaches` in `src/sim/loadout.ts` is
+  `aggregate`'s own rule — every tag of a line in the skill's context — with
+  FLAT damage exempt, since that opens its own type's pass. Read, the eight
+  wear eight different sets and the deep-end spread falls from **3.0× to
+  1.9×**; the demo FAILS a ceiling spending a socket on a pass of zero.
 - **Read the LOW-WATER mark, not the life you walk out on.** A descent ends in a
   walk to the exit and regeneration tops you up on the way, so a build nearly
   killed twice reports full life at the end.
@@ -507,9 +518,16 @@ through."* Measured with `bestBuild` at the level cap and IMMUNE to Ailments —
 the honest ceiling, since a player who gets there has the lines: at a flat 1 the
 top of The Rot was cleared 4/4 by strike and blight and 2/4 by rimespike and
 fireball; at 3 it was blight alone, at 5 blight alone, and at 8 nothing at all.
-**BLIGHT IS THE WHOLE OF WHY IT IS 8** — every other skill was walled at 3 — so
-the number is priced against one outlier and Phase 18 owns that. **NOTHING
-STRANDS BEHIND IT**: no crystal-ladder step and no soulstone asks for a clear up
+**BLIGHT WAS THE WHOLE OF WHY IT IS 8** — every other skill was walled at 3 —
+but that ceiling could not read its own gear, and the honest one is a different
+build: re-measured, **4 of the 8 walk the two-stone Rot top at 8** (rimespike
+3/3, arc lightning 3/3, fireball 1/3, blight 1/3), so blight is no longer the
+outlier and 8 is priced against a build nobody ever had. **AND THE RAMP CANNOT
+BUY IT BACK**: swept, 12 and 16 climbs each leave 3 through, 20 leaves
+rimespike alone and 26 leaves it 1/3 — 3.25× the wall for one skill, because
+danger saturated long before here. **WHAT RAISING IT COSTS is the whole
+two-stone tier**, where the Demonic ladder's 100 clears live, so it is HIS
+call and 8 stands until he makes it. **NOTHING STRANDS BEHIND IT**: no crystal-ladder step and no soulstone asks for a clear up
 there, `soulClears` counts a clear at any depth of the tier, and the second stone
 is owed for the campaign at ONE. The gauge is in FLOOR AND CEILING and it is a
 gauge, never a check — the harness is softer than a player, and the one

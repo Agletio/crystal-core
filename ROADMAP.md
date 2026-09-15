@@ -283,55 +283,6 @@ until every cell is a key the set holds.
       not the Fissure's near-black). A world takes a design through `DESIGN`,
       never through an edited set.
 
-## Phase 9 — WHERE MATERIALS COME FROM: gathered, or off a body
-
-**The rule the user settled**, after three passes: *"mining and fishing should
-be the only ones you just find sitting out"* → *"instead of dropping cloth from
-enemies we have hemp/cotton type materals you make into cloth? that can be the
-herbs."* What it comes to is not "nodes vs enemies" but **things that grow or
-sit in the rock are GATHERED; things that come off a body DROP.**
-
-| family | where | why |
-|---|---|---|
-| metal | gathered | ore in the rock |
-| cloth | gathered | plant fibre — hemp, flax. THE HERB-SHAPED THING |
-| fish | gathered | a pool, which Phase 8 puts water under |
-| hide | **dropped** | skinned off what you killed |
-| gem | **dropped** | *"gems still from everything"* |
-
-**THE SPREAD IS LANDED.** `BODY_DROP.perRun` is 3 whole drops of 2–5 each,
-drawn down body by body through the same `budgets()` the gear and currency
-budgets use, on `bodyRng` — its OWN stream, seed 104729, because a draw per kill
-out of the run's rng cost band 5 its tier 3 bases. `placeNodes` deals round
-`GATHERED` and `rollMaterialDrop` round `DROPPED`, so both halves are a spread
-rather than a roll. Measured, 3.2–8.2 a family against gathering's 20. The
-fishing spot is landed too: `poolSpot` stands `node_ripple` ON the water with a
-walkable neighbour, and a room with no pool grows no fish node at all. **Fish is
-dealt the WET rooms first** — the packs are split by whether their room has a
-bank, and `banks()` SCANS a room rather than sampling it, so a two-tile pool is
-found. Measured over 12 descents: metal 17, cloth 20, wood 15, fish 17.
-
-- [x] **THE CLOTH FAMILY IS FIBRE NOW.** Wickflax, Glasshemp, Rotcotton and
-      Seamflax — the ids `wickcloth`, `glassweave`, `rotsilk`, `weldcloth`
-      stay, since a save points at them — with descriptions that grow and
-      icons that are a bundle of stalks or a boll on a stem, re-asked through
-      `icons.json` → `icon.mts` → `portrait.mts`.
-- [x] **THE ORE ART IS RE-ASKED.** *"I dont like how the ores and the fish
-      look."* Landed in Phase 8: three base ores for every world, a unique
-      node a world, and the fish is a drawn ripple.
-- [x] **`node_carcass` AND `geode_amber` NO LONGER RETIRE.** They were dead
-      data when hide and gem left the floor; the level builder offers every
-      `PROP_ART` id as a placeable object, so they are a palette entry now.
-      `geode_amber` is also a `style` image in `node.mts` and `chest.mts`, and a
-      style image is what keeps the next generation matching the roster.
-- [x] **The demo proves the rates.** Both roads into crafting pay at both ends
-      of the ladder (a `check`), and what they pay is a `gauge`: measured on a
-      ceiling character, 18.8 gathered against 10.0 dropped a descent at the
-      bare Fissure and 18.8 against 9.2 deep — dropped pays half, at every
-      band, which is the balance pass's number and not this phase's.
-
----
-
 ## Phase 11 — THE ART REVIEW'S WORK: what three critics at 5/10 said to fix
 
 **Every line below is a critic's `fix_first` or the director's fault, in their
@@ -1563,43 +1514,51 @@ only adds is a passive every build takes.
       where the set it replaces does 0. Same root as the Blood Pact tie below,
       and the same repair: `played` deciding the passive set.
 
-- [ ] **THE CEILING TAKES BLOOD PACT, AND IT IS A TIE RATHER THAN A WIN.**
-      `bestBuild` equips it and dies 8 times in 8 at the deep end where the same
-      gear with a neutral passive clears 3 — so what it reports as a ceiling is
-      softer than a real one. **Pricing `bloodCost` in `buildPower` was tried and
-      REVERTED, because it changes nothing**: measured on that build, casting
-      drains 9.8 life a second against a pool of 3750, which is 383 seconds and
-      survivable on its own — and bloodpact, headsman and refraction all score
-      11161 to the digit. The sheet cannot separate them because not one of the
-      three changes a thing the sheet reads, so LIST ORDER decides.
-      So the repair is not a better score, it is `played` DECIDING the passive
-      set the way it already decides an arrangement — a second passive fill per
-      arrangement, which doubles the `made` list and is why it is not a
-      five-minute change.
+- [x] **THE CEILING TOOK BLOOD PACT BECAUSE THE SHEET COULD NOT SEE PAST IT**,
+      and the repair landed as `playPassives`: the sheet's own pick is one
+      candidate and drawn sets are PLAYED against it, so the floor decides.
+      Pricing `bloodCost` in `buildPower` had been tried and reverted — it
+      changed nothing, since bloodpact, headsman and refraction all scored
+      11161 to the digit and LIST ORDER was really deciding. It cost +36% a
+      build and 2 minutes on the demo, and the rule-shaped passives get picked
+      now.
 
 ---
 
-## Phase 18 — WHY THE HONEST CEILING FEEDS BLIGHT SO MUCH BETTER
+## Phase 18 — THE CEILING COULD NOT READ ITS OWN GEAR
 
-Measured on a ceiling that CHOOSES every line (the old one rolled, and hid
-this): blight 6.72 kills/s against fireball 4.25 and rimespike 1.94 — a 3.5x
-spread at the deep end. The BARE band is unaffected and still 0.31–0.44, so this
-is purely about scaling: something a full set of chosen lines buys feeds Blight
-far more than it feeds the others.
+The premise was blight 6.72 kills/s against fireball 4.25 and rimespike 1.94 at
+the deep end — a 3.5x spread on a ceiling that CHOOSES every line. **The cause
+was the choosing.**
 
-- [ ] **FIND WHAT IT IS BEFORE TUNING ANYTHING.** The suspicion is that
-      `ailmentMultiplier` and duration compound where a hit skill's damage does
-      not, and that Harvest spreading off every death turns a chosen set into a
-      floor that infects itself. MEASURE which lines the ceiling picked for each
-      of the eight and what each is worth, rather than moving Blight's numbers
-      until the gauge reads level.
+- [x] **FOUND, AND IT WAS THE PICK.** `worth` scored a line off `STAT_POWER`
+      alone, which has no damage type in it, so the search bought whatever the
+      table rated highest — and `damageBreakdown` multiplies a type pass of
+      ZERO by every increase aimed at it. Measured: all eight ceilings wore ONE
+      set (`inc_physical` x7-8, `inc_fire` x5-6, `inc_cold` x4-5, and Arc
+      Lightning holding **2** lines of its own type), five of them carrying 11
+      to 18 lines their skill could never read, and stripping the lot moved the
+      kill rate by **0.00**. `reaches` in `src/sim/loadout.ts` is the repair —
+      `aggregate`'s own rule, with FLAT damage exempt because that opens its
+      own type's pass — and the demo now FAILS a ceiling spending a socket on a
+      pass of zero.
+- [x] **AND IT WAS NEVER ABOUT BLIGHT.** Read, the eight wear eight different
+      sets: strike 5.80, ambush 3.64, shockwave 5.20, rimespike 5.84, fireball
+      7.00, arc lightning 6.95, lightning arrow 5.92, **blight 4.97** — six of
+      the eight up, blight fifth of eight, and the spread **3.0x down to
+      1.9x**. Nothing was tuned; the numbers moved because the builds did.
 
-- [ ] **AND IT NOW PRICES THE ENDGAME WALL.** `SOULS.perStone[1]` is 8 climbs
-      because that is what it took to stop Blight; every other skill was walled
-      at 3. Measured at the top of The Rot with both stones, ceiling at the level
-      cap and immune to Ailments: flat 1 → strike 3/3, blight 3/3, rimespike 1/3,
-      fireball 1/3; at 3 → blight 3/3 and nothing else; at 5 → blight 2/3; at 8 →
-      none. So the wall is priced against ONE outlier, and whatever this phase
-      finds should be followed by re-sweeping that number rather than leaving 8
-      standing as if it were about the endgame.
-
+- [ ] **THE WALL'S PRICE IS NOW HIS CALL.** `SOULS.perStone[1]` is 8 because
+      blight was the only thing that beat it; against the honest ceiling **4 of
+      the 8 walk the two-stone Rot top at 8** (rimespike 3/3, arc lightning 3/3,
+      fireball 1/3, blight 1/3). **The ramp cannot buy it back**: swept, 12 and
+      16 leave 3 through, 20 leaves rimespike alone and 26 leaves it 1/3 — 3.25x
+      the wall for one skill, because `dangerStep` saturated long before here.
+      And raising it makes the WHOLE two-stone tier harder, which is where the
+      Demonic ladder's 100 clears live. So it is a decision about how much of
+      that grind to price, not a number a measurement settles. 8 stands until
+      he says otherwise.
+- [ ] **THE CEILING IS NEVER THREATENED, and that is the next thread.** It walks
+      out of every band at 99-100% of its life where the gauge wants under 70%,
+      and the search now reads 3.3x to 9.1x the floor. A difficulty aimed at
+      something nothing can hurt is aimed at nothing.

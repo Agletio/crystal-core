@@ -12477,6 +12477,37 @@ if (rule('FLOOR AND CEILING — is a difficulty number aimed at anything real?')
     `the search finds ${Math.min(...gaps).toFixed(1)}x to ${Math.max(...gaps).toFixed(1)}x ` +
       'the power of a random walk — a number tuned against the floor is off by that much'
   );
+
+  // A CEILING THAT CANNOT READ ITS OWN GEAR IS NOT ONE, and this is mechanism
+  // rather than balance. `damageBreakdown` multiplies a type pass of zero by
+  // whatever increases are aimed at it, so increased Fire Damage on a cold
+  // skill is worth exactly nothing — and the pick was scoring it off
+  // `STAT_POWER` alone, which has no type in it. Measured before the repair:
+  // every one of the eight wore the same set, five of them carried 11 to 18
+  // lines their skill could never read, and dropping the lot moved the kill
+  // rate by 0.00. FLAT damage of another type is live and stays allowed.
+  {
+    let inert = 0;
+    let lines = 0;
+    for (const skillId of ['strike', 'blight', 'arc_lightning']) {
+      const skill = SKILL_BY_ID[skillId];
+      const reach = new Set([...skill.tags, ...skill.damageTypes]);
+      for (const item of Object.values(ceiling(6, skillId).equipment)) {
+        for (const mod of item.mods) {
+          for (const st of mod.stats) {
+            if (st.stat !== 'damage' || st.form === 'flat') continue;
+            lines++;
+            if (!st.tags.every((t) => reach.has(t))) inert++;
+          }
+        }
+      }
+    }
+    check(
+      inert === 0,
+      `and it spends none of its ${lines} damage lines on a type or a delivery its skill cannot read`,
+      `${inert} of ${lines} increased-damage lines are multiplied by a pass of zero`
+    );
+  }
   // The whole point of the pass: a build playing WELL should still be hurt.
   gauge(
     `and it is taken down to ${Math.min(...hurt).toFixed(0)}%-${Math.max(...hurt).toFixed(0)}% ` +
@@ -12502,12 +12533,30 @@ if (rule('FLOOR AND CEILING — is a difficulty number aimed at anything real?')
     const zone = LADDER.zones.length - 1;
     const where: RunWhere = { zone, rung: LADDER.zones[zone].rungs - 1 };
     const through: string[] = [];
+    const rates: number[] = [];
     for (const skill of MAIN_SKILLS) {
       const who = { ...ceiling(6, skill.id, LEVELLING.maxLevel), souls: SOULS.max };
       const sim = new RunSim([], who, new Rng(770), { where });
       for (const t of DAMAGE_TYPES) sim.state.hero.stats.ailmentWard[t.id] = DEFENCE.ailmentWardCap;
       if (runToCompletion(sim, 1800).status === 'cleared') through.push(skill.id);
+
+      // WHAT THE HONEST CEILING KILLS AT, which is the whole of what the
+      // type-blind pick was hiding: it wore one set for all eight, so a skill
+      // whose own type happened to be the best-scoring line ran away with it.
+      let killed = 0;
+      let seconds = 0;
+      for (let i = 0; i < 3; i++) {
+        const final = runToCompletion(new RunSim(deepestSet(new Rng(400 + i), pool), who, new Rng(900 + i)), 600);
+        killed += final.killed;
+        seconds += final.elapsed;
+      }
+      rates.push(killed / Math.max(1, seconds));
     }
+    gauge(
+      `the eight ceilings kill between ${Math.min(...rates).toFixed(2)} and ${Math.max(...rates).toFixed(2)} ` +
+        `a second at the deep end — ${(Math.max(...rates) / Math.max(0.01, Math.min(...rates))).toFixed(1)}x ` +
+        'across them, and they are meant to scale ROUGHLY the same'
+    );
     gauge(
       `and the top of ${LADDER.zones[zone].name} at ${SOULS.max} soulstones is walked by ` +
         `${through.length} of the ${MAIN_SKILLS.length}${through.length ? ` (${through.join(', ')})` : ''} ` +

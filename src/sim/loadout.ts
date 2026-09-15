@@ -8,6 +8,7 @@ import {
   ARMOUR_FAMILIES,
   ATTRIBUTES,
   CRYSTAL_LEVELS,
+  DAMAGE_TYPES,
   DROP_BANDS,
   EQUIP_SLOTS,
   GEAR_BASE_BY_ID,
@@ -32,7 +33,7 @@ import { attributePointsFor, canDualWield, equipSkill, makeCharacter, openPassiv
 import { BUILT_TREES, canAllocate, treeFor, treePointsFor } from '../skills-tree';
 import { skillProgress } from './character';
 import type { Character } from './character';
-import type { Item, ModEntry } from '../types';
+import type { Item, ModEntry, SkillDef, StatSpec } from '../types';
 
 /** One item per slot, filled to its base's capacity, keyed by slot id. A pool
  *  narrower than every mod rolls a FOCUSED set: a slot whose pool is empty
@@ -249,7 +250,8 @@ function chosenLoadout(
   rng: Rng,
   ilvl: number,
   pool: ModPool,
-  family: string
+  family: string,
+  skill: SkillDef | undefined
 ): Record<string, Item> {
   const out: Record<string, Item> = {};
   for (const slot of EQUIP_SLOTS) {
@@ -263,7 +265,9 @@ function chosenLoadout(
     for (let guard = 0; guard < 12; guard++) {
       const open = choices(item, pool);
       if (open.length === 0) break;
-      const best = open.reduce((a, b) => (worth(topOf(b, pool)) > worth(topOf(a, pool)) ? b : a));
+      const best = open.reduce((a, b) =>
+        worth(topOf(b, pool), skill) > worth(topOf(a, pool), skill) ? b : a
+      );
       item = chooseMod(item, best, 99, rng);
       const reach = (it: Item) =>
         raises(it, pool).find((r) => r.mod.defId === best.defId);
@@ -284,10 +288,26 @@ const topOf = (entry: ModEntry, pool: ModPool): ModEntry =>
     .filter((e) => e.defId === entry.defId)
     .reduce((a, b) => (b.tier < a.tier ? b : a), entry);
 
+const TYPE_TAGS = new Set(DAMAGE_TYPES.map((t) => t.id));
+
+/** `aggregate`'s rule plus what `damageBreakdown` does with it: a line applies
+ *  only when every tag of it is in the context, and an increased line on a type
+ *  pass of zero is multiplied by nothing — measured, five of the eight ceilings
+ *  wore 11 to 18 such lines, worth 0.00 kills/s. */
+function reaches(line: StatSpec, skill: SkillDef | undefined): boolean {
+  if (!skill || (line.tags ?? []).length === 0) return true;
+  const context = new Set([...skill.tags, ...skill.damageTypes]);
+  const flatDamage = line.stat === 'damage' && line.form === 'flat'; // opens its own pass
+  return (line.tags ?? [])
+    .filter((t) => !(flatDamage && TYPE_TAGS.has(t)))
+    .every((t) => context.has(t));
+}
+
 /** What one CHOSEN line is worth, off `STAT_POWER` — the table the hybrid rule
- *  is held to, so the greedy pick cannot disagree with it. */
-const worth = (entry: ModEntry): number =>
+ *  is held to. A line the skill cannot read is worth nothing. */
+const worth = (entry: ModEntry, skill?: SkillDef): number =>
   entry.stats.reduce((n, st) => {
+    if (!reaches(st, skill)) return n;
     const mid = ((st.range?.[0] ?? 0) + (st.range?.[1] ?? 0)) / 2;
     return n + mid * (STAT_POWER[`${st.stat}:${st.form}`] ?? 0);
   }, 0);
@@ -315,7 +335,7 @@ export function bestBuild(band: number, rng: Rng, skillId = 'strike', atLevel?: 
         const pool = focus
           ? new ModPool(ALL_MODS.filter((m) => m.tiers.some((t) => t.stats.some((st) => focus(st.stat)))))
           : new ModPool(ALL_MODS);
-        const character = makeCharacter(chosenLoadout(rng, ilvl, pool, family), skillId);
+        const character = makeCharacter(chosenLoadout(rng, ilvl, pool, family, skill), skillId);
         character.level = level;
         pour(character, attrs);
         // Before the tree: what they grant is in every score the walk reads.
