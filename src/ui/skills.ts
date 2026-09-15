@@ -467,33 +467,46 @@ function renderSkillList(): void {
     bar.append(el('span', 'shelfhead__count', shelfFind ? `${shown.length} of ${skills.length}` : `${skills.length}`));
     host.append(bar);
 
-    const grid = el('div', 'skillgrid');
-    for (const skill of skills.filter(skillMatches)) {
-      const progress = skillProgress(game.character, skill.id);
-      const spare = treePointsFor(skill.id, progress.level) - progress.allocated.length;
-      const mine = heldAnywhere(skill.id);
-
-      const shut = whyNotEquip(game.character, skill.id);
-      const btn = el(
-        'button',
-        `skilltile${mine ? ' skilltile--on' : ''}${shut ? ' skilltile--shut' : ''}`
-      ) as HTMLButtonElement;
-      btn.id = skillRowId(skill.id);
-      btn.append(skillIcon(skill.id, 44));
-      btn.append(el('span', 'skilltile__name', skill.name));
-      // Two marks and no prose: what is held, and what has a point waiting. A
-      // SHUT one says the level it opens at, which is the only fact about it
-      // a player can act on.
-      btn.append(el('span', 'skilltile__tag', shut ? `level ${skill.unlocksAt}` : mine ? 'equipped' : ''));
-      if (spare > 0 && treeFor(skill.id).length > 0) {
-        btn.append(el('span', 'skilltile__spare', String(spare)));
+    // One grid a STEP, with the level between them, because a passive shelf
+    // sorted by step is still one run of tiles with no line where the wall is.
+    // A category whose skills all open at once draws exactly one grid.
+    const steps = [...new Set(shown.map(stepOf))].sort((a, b) => a - b);
+    for (const step of steps) {
+      if (steps.length > 1) {
+        host.append(el('div', 'stephead', step <= 1 ? 'From the start' : `Level ${step}`));
       }
-      attachTooltip(btn, () => skillCard(skill));
-      btn.onclick = () => void open(skill.id);
-      grid.append(btn);
+      const grid = el('div', 'skillgrid');
+      for (const skill of shown.filter((sk) => stepOf(sk) === step)) grid.append(skillTile(skill));
+      host.append(grid);
     }
-    host.append(grid);
   }
+}
+
+const stepOf = (skill: SkillDef): number => skill.unlocksAt ?? 1;
+
+function skillTile(skill: SkillDef): HTMLButtonElement {
+  const progress = skillProgress(game.character, skill.id);
+  const spare = treePointsFor(skill.id, progress.level) - progress.allocated.length;
+  const mine = heldAnywhere(skill.id);
+
+  const shut = whyNotEquip(game.character, skill.id);
+  const btn = el(
+    'button',
+    `skilltile${mine ? ' skilltile--on' : ''}${shut ? ' skilltile--shut' : ''}`
+  ) as HTMLButtonElement;
+  btn.id = skillRowId(skill.id);
+  btn.append(skillIcon(skill.id, 44));
+  btn.append(el('span', 'skilltile__name', skill.name));
+  // Two marks and no prose: what is held, and what has a point waiting. A
+  // SHUT one says the level it opens at, which is the only fact about it
+  // a player can act on.
+  btn.append(el('span', 'skilltile__tag', shut ? `level ${skill.unlocksAt}` : mine ? 'equipped' : ''));
+  if (spare > 0 && treeFor(skill.id).length > 0) {
+    btn.append(el('span', 'skilltile__spare', String(spare)));
+  }
+  attachTooltip(btn, () => skillCard(skill));
+  btn.onclick = () => void open(skill.id);
+  return btn;
 }
 
 // ---------------------------------------------------------------------------

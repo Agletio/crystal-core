@@ -202,7 +202,9 @@ written down, which is why the split exists. An empty slot prints
 takes, so attacks and spells share one — and inside it a `.shelfhead` bar per
 CATEGORY tells them apart. Each skill is a `.skilltile`: its icon, its name
 under it, and two marks — equipped, and a point waiting. The full card is the
-tooltip.
+tooltip. **A category that opens over several levels is one grid a STEP**, with
+a `.stephead` line between them saying which; one step draws one grid and no
+line at all, so only the passive shelf ever shows one.
 
 That REPLACED a rule, and the rule was right until it was not: a row used to
 print `SkillDef.description` because a row carrying only a name is a choice
