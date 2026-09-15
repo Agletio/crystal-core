@@ -1722,6 +1722,18 @@ aimed-at one alone. **AN OBJECT GRANT NEEDS THE `bag` MERGE**: without it a
 notable saying "a further 25%" replaces the enabler's whole bag and is a
 downgrade the tooltip cannot show.
 
+**A SWAP SAYS WHAT IT WILL COST BEFORE YOU SPEND ON IT.** *"Someone might swap
+skills spend a bunch of time setting up the tree or adding passives for that
+skill etc and then only to realize they can't after doing all that."* The
+Fissure already refuses a skill your hand cannot swing, and that is the LAST
+thing a player meets. `weaponWarning` in `src/sim/character.ts` asks the same
+question at the swap and returns the SAME sentence `weaponRefusal` will,
+`equipAsked` in `src/ui/skills.ts` puts it in front of both ways into a slot,
+and it **NEVER REFUSES** — *"don't stop them incase they want to for whatever
+reason just make them aware of whats going to happen."* The displacement line
+is the shelf's alone: standing on a skill's own web and pressing Equip is not a
+question.
+
 **A SKILL'S OWN TREE BUYS WHAT THE SKILL DOES.** *"Remove all the flat stats
 that aren't related to the skill. So like health, armour and stuff like that —
 attack and cast speed, crit etc is all fine."* A web may sell `damage`,

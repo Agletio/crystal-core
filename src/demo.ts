@@ -410,6 +410,7 @@ import {
   weaponFamilies,
   weaponFits,
   weaponRefusal,
+  weaponWarning,
   openSlots,
   slotForSkill,
   makeCharacter,
@@ -6440,6 +6441,31 @@ if (rule('WHAT IT IS SWUNG WITH — does a skill get the weapon it needs?')) {
       stuck !== null && weaponRefusal(game.character) === null,
       'and a pair that disagrees shuts the Fissure until it agrees again',
       `mid-swap ${stuck}, after ${weaponRefusal(game.character)}`
+    );
+  }
+
+  // AND THE SWAP SAYS SO BEFORE YOU SPEND ON IT. The Fissure's refusal is the
+  // last thing a player meets — after the tree and the passives — so the same
+  // mismatch is asked at the swap. It warns and never refuses.
+  {
+    const game = createGame('fresh');
+    game.inventory = [];
+    addItem(game, makeGear('crude_bow', 20));
+    equipItem(game, game.inventory[0], 'weapon');
+    const warned = weaponWarning(game.character, 'shockwave');
+    const quiet = weaponWarning(game.character, 'lightning_arrow');
+    line(`  holding a bow, Shockwave warns: ${warned ?? '(nothing)'}`);
+    check(
+      warned !== null && quiet === null,
+      'a swap onto a skill your hand cannot swing is warned about before it is taken',
+      `shockwave ${warned}, lightning_arrow ${quiet}`
+    );
+    // The warning is the Fissure's own sentence, or the two can disagree.
+    const took = equipSkill(game.character, 'shockwave');
+    check(
+      took && weaponRefusal(game.character) === warned,
+      'and it says exactly what the Fissure will say, having refused nothing',
+      `took ${took}, warned ${warned}, refused ${weaponRefusal(game.character)}`
     );
   }
 

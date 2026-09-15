@@ -128,6 +128,16 @@ const WEAPON_WORDS: Record<string, string> = {
 export const weaponWanted = (skill: SkillDef): string =>
   WEAPON_WORDS[skill.requires ?? ''] ?? `a ${skill.requires}`;
 
+/** The mismatch `weaponRefusal` stops a descent on, asked BEFORE the swap. It
+ *  never refuses — it says so while the tree and the passives behind it are
+ *  still unspent. */
+export function weaponWarning(character: Character, skillId: string): string | null {
+  const skill = SKILL_BY_ID[skillId];
+  const held = character.equipment?.[WEAPON_SLOT] ?? null;
+  if (!skill || weaponFits(skill, held)) return null;
+  return `${skill.name} needs ${weaponWanted(skill)}. You are holding ${held ? held.name : 'nothing'}.`;
+}
+
 /** Why this build cannot go down, or null. A skill and the hand it is swung
  *  with may DISAGREE — refusing the swap both ways is a deadlock you can only
  *  leave through a spell — so the Fissure reads the mismatch here instead.

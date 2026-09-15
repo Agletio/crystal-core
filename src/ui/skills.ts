@@ -57,6 +57,7 @@ import {
   slotIsOpen,
   targetSlotFor,
   weaponWanted,
+  weaponWarning,
   whyNotEquip,
   xpToNext,
 } from '../sim/character';
@@ -333,20 +334,31 @@ async function open(skillId: string): Promise<void> {
   if (!slot) return;
   const held = SKILL_BY_ID[equippedSkill(game.character, slot) ?? ''];
   if (held?.id === skillId) return;
-  if (
-    held &&
-    !(await ask({
-      title: `Equip ${SKILL_BY_ID[skillId]?.name ?? skillId}?`,
-      text: `${held.name} comes out of your ${SKILL_SLOT_BY_ID[slot]?.name.toLowerCase() ?? slot} slot.`,
-      confirm: 'Equip',
-    }))
-  ) {
-    return;
-  }
+  const out = held
+    ? `${held.name} comes out of your ${SKILL_SLOT_BY_ID[slot]?.name.toLowerCase() ?? slot} slot.`
+    : '';
+  if (!(await equipAsked(skillId, out))) return;
   equipSkill(game.character, skillId, slot);
   if (inDescent()) warnAtCamp();
   arming = null;
   render();
+}
+
+/** What a swap costs you, asked BEFORE it is taken and never refusing — at the
+ *  mouth of the Fissure is after the tree and the passives are spent. `also` is
+ *  the displacement sentence, which only the shelf says. */
+async function equipAsked(skillId: string, also = ''): Promise<boolean> {
+  const wrong = weaponWarning(game.character, skillId);
+  const says = [
+    wrong ? `${wrong} You cannot descend until you swap one of them.` : '',
+    also,
+  ].filter(Boolean);
+  if (says.length === 0) return true;
+  return ask({
+    title: `Equip ${SKILL_BY_ID[skillId]?.name ?? skillId}?`,
+    text: says.join(' '),
+    confirm: 'Equip',
+  });
 }
 
 /**
@@ -537,11 +549,14 @@ function renderHeader(): void {
   equip.textContent = equipped ? `Equipped — ${where}` : where ? `Equip as ${where}` : 'Equip';
   equip.disabled = equipped || !slot;
   equip.onclick = () => {
-    equipSkill(game.character, skillId, slot ?? undefined);
-    if (inDescent()) warnAtCamp();
-    arming = null;
-    render();
-    renderWeb();
+    void (async () => {
+      if (!(await equipAsked(skillId))) return;
+      equipSkill(game.character, skillId, slot ?? undefined);
+      if (inDescent()) warnAtCamp();
+      arming = null;
+      render();
+      renderWeb();
+    })();
   };
 }
 

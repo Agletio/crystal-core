@@ -622,6 +622,37 @@ for (const vp of VIEWPORTS) {
     else if (!/\d/.test(shelf.said)) problems.push(`${vp.name}: a shut passive says "${shelf.said}" rather than a level`);
     else await shoot('skill-passives');
   }
+  // A SWAP YOUR HAND CANNOT SWING SAYS SO, and does not refuse. The Fissure
+  // already names the mismatch; by then the tree and the passives are spent.
+  await page.evaluate(() => {
+    document.getElementById('skills-back')?.click();
+    document.querySelector('#skills-cats .catcard:not([disabled])')?.click();
+  });
+  await page.waitForTimeout(250);
+  const clash = await page.evaluate(() => {
+    const tiles = [...document.querySelectorAll('#skills-list .skilltile')];
+    // Shockwave wants a mace; the Blight this run equipped is cast bare-handed.
+    const want = tiles.find((t) => /Shockwave/i.test(t.textContent ?? ''));
+    if (!want) return null;
+    want.click();
+    return true;
+  });
+  if (clash) {
+    await page.waitForTimeout(350);
+    await page.evaluate(() => document.getElementById('skills-equip')?.click());
+    await page.waitForTimeout(250);
+    const said = await page.evaluate(() => ({
+      up: document.getElementById('confirm')?.hidden === false,
+      text: document.getElementById('confirm-text')?.textContent ?? '',
+    }));
+    if (!said.up) problems.push(`${vp.name}: swapping onto a skill the hand cannot swing raised no warning`);
+    else if (!/holding/i.test(said.text)) problems.push(`${vp.name}: the swap warning says "${said.text}"`);
+    else await shoot('skill-clash');
+    // BACKED OUT, so the rest of the run is not standing behind a dialog.
+    await page.evaluate(() => document.getElementById('confirm-no')?.click());
+    await page.waitForTimeout(250);
+  }
+
   // BACK TO THE ABILITY SHELF, because everything below is the WEB's: a shelf
   // of passives has no web at all and the glossary shot comes off a node.
   await page.evaluate(() => {
