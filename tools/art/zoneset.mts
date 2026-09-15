@@ -555,7 +555,10 @@ const ASK: Record<string, Record<string, unknown>> = {
   // floor and byte-identical floor wording still came back at luma 117, 78 and
   // 68. Chaining pins the floor to the tile the game already draws, which is
   // what `test_pool` and every patch set in this file already do — it was the
-  // one thing the face was never asked with.
+  // one thing the face was never asked with. IT WORKED: both chained sets came
+  // back with the floor at luma 117 EXACTLY, `test_round`'s own, so the CHAIN is
+  // the lever and the wording never was. This one reads floor 117 / rock 2 /
+  // face 35 — a warm brown cut against a near-black mass.
   test_warm_chained: {
     lower_description: TEST_FLOOR_SAID,
     lower_base_tile_id: TEST_FLOOR_TILE,
@@ -577,7 +580,10 @@ const ASK: Record<string, Record<string, unknown>> = {
   // The mass warm as well, chained the same way. `test_warm_mass` was the tone
   // rule failing outright at floor 68 against rock 65; with the floor pinned
   // the rock is the only thing the wording can move, so this is the honest
-  // second try at it rather than a repeat.
+  // second try at it rather than a repeat. Measured floor 117 / rock 57 / face
+  // 64: the floor is held now, but a warm MASS closes the separation to 60
+  // against the chained face's 115 and lays a bright rim along every floor
+  // edge. The face alone is what the warm brown is for.
   test_warm_mass_chained: {
     lower_description: TEST_FLOOR_SAID,
     lower_base_tile_id: TEST_FLOOR_TILE,

@@ -279,9 +279,17 @@ until every cell is a key the set holds.
       descents: metal 23, wood 18, cloth 18, fish 37 (26 wet maps), 3.4 units
       a descent, 72% of nodes handing over one. Recipes were costed against
       the old rates — the balance pass reads `CRAFT`'s costs against these.
-- [ ] **WORK THE DESIGN ON.** Next on the test level: the face (warm brown,
-      not the Fissure's near-black). A world takes a design through `DESIGN`,
-      never through an edited set.
+- [ ] **THE WARM FACE IS ASKED AND WAITING ON HIS PICK.** Rounds one and two
+      failed because one sheet is one exposure — the rock's wording dragged the
+      floor, and byte-identical floor wording came back at luma 117, 78 and 68.
+      Round three chains off `TEST_FLOOR_TILE`, and **that was the lever**: both
+      chained sets came back with the floor at **117 exactly**, `test_round`'s
+      own. `test_warm_chained` is floor 117 / rock 2 / face 35 — a warm brown
+      cut against a near-black mass, separation 115 against the shipped set's
+      78. `test_warm_mass_chained` warms the whole mass and closes the
+      separation to 60, with a bright rim along every floor edge, so the face
+      alone is what the warm brown is for. **HIS PICK, then emit and wire it**;
+      a world takes a design through `DESIGN`, never through an edited set.
 
 ## Phase 11 — THE ART REVIEW'S WORK: what three critics at 5/10 said to fix
 
