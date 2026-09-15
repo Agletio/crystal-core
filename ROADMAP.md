@@ -1545,8 +1545,9 @@ was the choosing.**
 - [x] **AND IT WAS NEVER ABOUT BLIGHT.** Read, the eight wear eight different
       sets: strike 5.80, ambush 3.64, shockwave 5.20, rimespike 5.84, fireball
       7.00, arc lightning 6.95, lightning arrow 5.92, **blight 4.97** — six of
-      the eight up, blight fifth of eight, and the spread **3.0x down to
-      1.9x**. Nothing was tuned; the numbers moved because the builds did.
+      the eight up, blight fifth of eight, and the spread **3.0x down to 1.9x**
+      (the demo's own seed reads 5.15 to 8.67, 1.7x). Nothing was tuned; the
+      numbers moved because the builds did.
 
 - [ ] **THE WALL'S PRICE IS NOW HIS CALL.** `SOULS.perStone[1]` is 8 because
       blight was the only thing that beat it; against the honest ceiling **4 of
@@ -1558,7 +1559,10 @@ was the choosing.**
       Demonic ladder's 100 clears live. So it is a decision about how much of
       that grind to price, not a number a measurement settles. 8 stands until
       he says otherwise.
-- [ ] **THE CEILING IS NEVER THREATENED, and that is the next thread.** It walks
-      out of every band at 99-100% of its life where the gauge wants under 70%,
-      and the search now reads 3.3x to 9.1x the floor. A difficulty aimed at
-      something nothing can hurt is aimed at nothing.
+- [x] **THE CEILING LOOKED UNTHREATENED, AND THE MEASUREMENT WAS THE FAULT.**
+      It read 99-100% low water across every band — but `play` builds a crystal
+      set with NO DEPTH under it, and a crystal rolls a RULE where the raw
+      scaling is the rung's, so that table is the shallow end however good the
+      set is. Read at the two-stone Rot top instead, the eight come down to
+      **0%-93%**. The gauge says which is which now. Separately, the deep-end
+      kill rate was being read off the soulstoned copy, which `runSet` scales.

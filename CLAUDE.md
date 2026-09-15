@@ -120,7 +120,14 @@ minutes**; a silent hour is how this looked stuck.
   `aggregate`'s own rule — every tag of a line in the skill's context — with
   FLAT damage exempt, since that opens its own type's pass. Read, the eight
   wear eight different sets and the deep-end spread falls from **3.0× to
-  1.9×**; the demo FAILS a ceiling spending a socket on a pass of zero.
+  1.7×** (5.15 to 8.67 kills/s); the demo FAILS a ceiling spending a socket on
+  a pass of zero.
+- **AND A CEILING IS ONLY THREATENED AT THE WALL.** A crystal rolls a RULE and
+  the raw scaling is the RUNG's, so a set with NO DEPTH under it is the shallow
+  end whatever is socketed — which is the whole of why the band table reads
+  99-100% low water and looks like a game nothing threatens. Measured at the
+  two-stone Rot top instead, the eight come down to **0%-93%**. The figure is
+  taken there now; the band table's own is labelled as the shallow end.
 - **Read the LOW-WATER mark, not the life you walk out on.** A descent ends in a
   walk to the exit and regeneration tops you up on the way, so a build nearly
   killed twice reports full life at the end.
@@ -520,9 +527,10 @@ top of The Rot was cleared 4/4 by strike and blight and 2/4 by rimespike and
 fireball; at 3 it was blight alone, at 5 blight alone, and at 8 nothing at all.
 **BLIGHT WAS THE WHOLE OF WHY IT IS 8** — every other skill was walled at 3 —
 but that ceiling could not read its own gear, and the honest one is a different
-build: re-measured, **4 of the 8 walk the two-stone Rot top at 8** (rimespike
-3/3, arc lightning 3/3, fireball 1/3, blight 1/3), so blight is no longer the
-outlier and 8 is priced against a build nobody ever had. **AND THE RAMP CANNOT
+build: re-measured over three seeds, **4 of the 8 walk the two-stone Rot top at
+8** (rimespike 3/3, arc lightning 3/3, fireball 1/3, blight 1/3) and the demo's
+own single seed reads 3, so blight is no longer the outlier and 8 is priced
+against a build nobody ever had. **AND THE RAMP CANNOT
 BUY IT BACK**: swept, 12 and 16 climbs each leave 3 through, 20 leaves
 rimespike alone and 26 leaves it 1/3 — 3.25× the wall for one skill, because
 danger saturated long before here. **WHAT RAISING IT COSTS is the whole
