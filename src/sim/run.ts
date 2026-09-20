@@ -137,8 +137,15 @@ const DROP_POOL = new ModPool(ALL_MODS);
 export const TICK = 1 / 30;
 
 /** HOW FAR OFF A BODY A CLICK MAY LAND and still mean it, in tiles past its own
- *  radius — *"a little leyway so you don't have to be exactly ontop of them"*. */
-export const CLICK_SLACK = 0.55;
+ *  radius — *"a little leyway so you don't have to be exactly ontop of them"*.
+ *  A miss is no longer a lost cast, so this only decides whether a single
+ *  target is HIT rather than whether anything happens at all. */
+export const CLICK_SLACK = 0.9;
+
+/** WHAT A CAST COSTS YOUR FEET, PoE2's way: the pose is not a root, it is a
+ *  wade. `actionTimer` is already the animation's own window, so there is no
+ *  second clock — while the pose is up, this is the share of your pace left. */
+export const CAST_PACE = 0.4;
 
 /** Monsters beyond this range of the hero don't think at all. */
 const ACTIVE_RANGE = 16;
@@ -633,6 +640,7 @@ export class RunSim {
   private castAt: Vec2 | null = null;
   private stepAt: Vec2 | null = null;
   driving = false;
+  private aimId = -1; // ground aims, counting away from every real body
   private readonly options: RunOptions;
   private readonly skill: SkillDef;
   private events: RunEvent[] = [];
@@ -3001,6 +3009,56 @@ export class RunSim {
   }
 
   /**
+   * A PLACE TO AIM AT, worn as a body so every behaviour reads it the way it
+   * reads a target: `primary` is a position to them, and the one that hits
+   * something directly is stopped by `dealDamage`'s own first line, since this
+   * is `dead`. It is never in `monsters` and never in `byId`, so nothing
+   * targets it, counts it or can kill it.
+   *
+   * Clamped to the skill's own reach, so a melee swing lands at arm's length
+   * toward the cursor rather than across the room.
+   */
+  private groundAt(hero: Entity, at: Vec2): Entity {
+    const reach = hero.stats.attackRange;
+    const dx = at.x - hero.x;
+    const dy = at.y - hero.y;
+    const d = Math.hypot(dx, dy);
+    const far = Math.min(reach, d);
+    const spot = d > 1e-6 ? { x: hero.x + (dx / d) * far, y: hero.y + (dy / d) * far } : { x: at.x, y: at.y };
+    // A DESCENDING id, so two casts at the ground are never one streak: Deep
+    // Cold pays for hammering ONE body and the floor is not a body.
+    return {
+      id: --this.aimId,
+      kind: 'monster',
+      sprite: '',
+      scale: 1,
+      rank: 'common',
+      x: spot.x,
+      y: spot.y,
+      facing: 0,
+      action: 'idle',
+      radius: 0,
+      skillId: null,
+      actionTimer: 0,
+      deathAge: 0,
+      ailments: [],
+      bounty: 0,
+      life: 0,
+      mana: 0,
+      effects: [],
+      stats: hero.stats,
+      cooldown: 0,
+      path: [],
+      pathTimer: 0,
+      targetId: null,
+      walked: 0,
+      aggroed: false,
+      hitFlash: 0,
+      dead: true, // takes nothing, and every behaviour still reads its place
+    };
+  }
+
+  /**
    * The player's own tick. Returns true when it has spent the tick, so the
    * automation below it never runs on a descent somebody is driving.
    */
@@ -3013,22 +3071,30 @@ export class RunSim {
 
     if (step) this.stepToward(hero, step);
 
-    // THE CAST IS THE TICK: standing still to swing is what makes a swing cost
-    // something, and it is the one thing an auto-target was deciding for you.
+    // A CLICK ALWAYS CASTS. A body under the cursor and in reach is what it
+    // swings at; anything else is cast AT THE GROUND, in that direction and no
+    // further than the skill reaches — *"if you're off it still casts but just
+    // hits the ground"*. A cast that silently did nothing is what made this
+    // read as an input the game was dropping.
     if (cast && hero.cooldown <= 0) {
-      const at = this.castTarget(cast);
-      if (at && this.canSee(hero, at)) {
-        this.face(hero, at.x, at.y);
-        this.settleAction(hero, false);
-        this.swing(hero, at);
-        return true;
-      }
+      const body = this.castTarget(cast);
+      const at =
+        body && this.canSee(hero, body) && dist(hero, body) <= this.reachTo(hero, body)
+          ? body
+          : this.groundAt(hero, cast);
+      this.face(hero, at.x, at.y);
+      this.settleAction(hero, false);
+      this.swing(hero, at);
+      return true;
     }
 
     const { x, y } = this.held;
     if (x !== 0 || y !== 0) {
       const len = Math.hypot(x, y) || 1;
-      const far = hero.stats.moveSpeed * dt * this.paceOf(hero);
+      // MID-CAST YOU WADE. The pose already has a window of its own, so this
+      // reads it rather than keeping a second clock that could disagree.
+      const wading = hero.action === 'attack' && hero.actionTimer > 0 ? CAST_PACE : 1;
+      const far = hero.stats.moveSpeed * dt * this.paceOf(hero) * wading;
       const wasX = hero.x;
       const wasY = hero.y;
       this.nudge(hero, (x / len) * far, (y / len) * far);

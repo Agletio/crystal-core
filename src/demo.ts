@@ -225,7 +225,7 @@ import {
 } from './economy';
 import { hasGearArt } from './ui/icons';
 import { LIVE_PROPS, RIPPLE, lootSpan, rippleRings } from './render/renderer';
-import { CLICK_SLACK, RunSim, TICK, runToCompletion, walkToMeeting } from './sim/run';
+import { CAST_PACE, CLICK_SLACK, RunSim, TICK, runToCompletion, walkToMeeting } from './sim/run';
 import { tierForSet } from './sim/crystal';
 import { findPath } from './sim/pathfind';
 import { MEETINGS, folkMet, folkRooms, gaveKey, hasHeard, hasMet, keyOwed, nextMeeting, owedTale, takeBoss, takeHeard, takeMet, whoIsDown, metMark } from './game/scenes';
@@ -12229,6 +12229,74 @@ if (rule('DRIVING — does a hand on the keys change anything that is measured?'
       off(0.9) === body && off(1.5) === null,
       `a click ${CLICK_SLACK} tiles past a body still means it, and further out means nothing`,
       `near ${off(0.9)?.id}, far ${off(1.5)?.id}`
+    );
+  }
+
+  // A CLICK IS NEVER LOST, which is what made this read as dropped input: a
+  // miss used to be silence. It casts at the GROUND, and the ground is not a
+  // body — nothing is minted, killed or dropped by aiming at the floor.
+  {
+    const fresh = (id: string) => {
+      const c = ladderCharacter(3, new Rng(5), id);
+      return new RunSim(ladderSet(3, new Rng(5), pool), c, new Rng(35));
+    };
+    let cast = 0;
+    const tried = ['strike', 'rimespike', 'fireball', 'blight', 'arc_lightning'];
+    for (const id of tried) {
+      const one = fresh(id);
+      one.castTo({ x: one.state.hero.x, y: one.state.hero.y - 20 }); // at nothing at all
+      one.step(TICK);
+      if (one.state.casts > 0) cast++;
+    }
+    check(cast === tried.length, `a click at empty ground casts, on ${cast} of ${tried.length} skills`, `${cast} of ${tried.length}`);
+
+    const floor = fresh('rimespike');
+    const bodies = floor.state.monsters.length;
+    for (let i = 0; i < 120; i++) {
+      floor.castTo({ x: floor.state.hero.x + 8, y: floor.state.hero.y - 8 });
+      floor.step(TICK);
+    }
+    check(
+      floor.state.killed === 0 && floor.state.monsters.length === bodies && !floor.state.hero.dead,
+      `and ${floor.state.casts} casts at the floor mint no body, no kill and no corpse`,
+      `${floor.state.killed} killed, ${bodies} -> ${floor.state.monsters.length} bodies`
+    );
+
+    // MID-CAST YOU WADE, PoE2's way. Measured on the SAME tick of the SAME
+    // descent walked twice, because a wall is what a looser probe measures.
+    const one = fresh('strike');
+    one.hold(1, 0);
+    one.step(TICK);
+    const free = Math.hypot(one.state.hero.x - one.state.map.entrance.x, one.state.hero.y - one.state.map.entrance.y);
+    const two = fresh('strike');
+    two.hold(1, 0);
+    two.castTo({ x: two.state.hero.x + 5, y: two.state.hero.y });
+    two.step(TICK);
+    const from = { x: two.state.hero.x, y: two.state.hero.y };
+    two.step(TICK);
+    const wading = Math.hypot(two.state.hero.x - from.x, two.state.hero.y - from.y);
+    const ratio = wading / Math.max(1e-9, free);
+    line(`  a free tick covers ${free.toFixed(4)} tiles, a mid-cast one ${wading.toFixed(4)} — ${(ratio * 100).toFixed(0)}% of your pace`);
+    check(
+      Math.abs(ratio - CAST_PACE) < 0.02,
+      `the casting pose costs ${((1 - CAST_PACE) * 100).toFixed(0)}% of your pace and never roots you`,
+      `${ratio.toFixed(2)} against ${CAST_PACE}`
+    );
+
+    // HELD IS MAX SPEED: the cooldown is the only thing pacing it.
+    const rate = fresh('strike');
+    const want = rate.state.hero.stats.attacksPerSecond;
+    const secs = 6;
+    for (let i = 0; i < secs / TICK; i++) {
+      rate.castTo({ x: rate.state.hero.x + 3, y: rate.state.hero.y });
+      rate.step(TICK);
+    }
+    const got = rate.state.casts / secs;
+    line(`  held down for ${secs}s: ${got.toFixed(2)} casts a second against a sheet rate of ${want.toFixed(2)}`);
+    check(
+      got > want * 0.85,
+      'and holding the button casts at the rate the sheet promises',
+      `${got.toFixed(2)} against ${want.toFixed(2)}`
     );
   }
 }

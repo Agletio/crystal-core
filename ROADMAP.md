@@ -155,6 +155,25 @@ Five guards are the whole of it: the player's tick runs ahead of every policy,
 `maybeMove` returns early, `acquireTarget` returns null, the exit is not walked
 to, and `worldAt` is the camera's inverse on both renderers.
 
+**A CLICK IS NEVER LOST, AND THE POSE IS A WADE.** *"I feel like im clicking a
+lot and its not casting"* — and it was exactly that: a click that found no body
+under the cursor did nothing at all, silently. A cast now always happens. A
+body in reach and in sight is what it swings at; anything else is cast AT THE
+GROUND in that direction, clamped to the skill's own reach, so a melee swing
+lands at arm's length rather than across the room. `groundAt` wears the place
+as a body because `primary` is a POSITION to every behaviour, and it is `dead`,
+so `dealDamage`'s own first line drops anything aimed at it — measured, 120
+casts at the floor mint no body, no kill and no corpse. Its id counts DOWN
+away from every real one, so two casts at the floor are never one streak.
+`CLICK_SLACK` went 0.55 → 0.9 with it.
+
+**AND THE CAST COSTS YOUR FEET, PoE2's way** — *"while you're doing the
+animation you move a little bit slower"*. `CAST_PACE` is 0.4 and it reads
+`actionTimer`, the pose's own window, so there is no second clock to disagree
+with the animation. Measured on the same tick of the same descent walked twice
+(a looser probe measures a wall): 0.1363 tiles free against 0.0545 mid-cast,
+40% exactly. Held down, 1.67 casts a second against a sheet rate of 1.65.
+
 **THE CAMERA IS HIS, AND A DESCENT IS NEVER DRAGGED.** *"Camera should track
 character now that its wasd"* and *"it just accidentally drags when you're
 trying to cast."* The follow is re-asserted every frame while driving, the
