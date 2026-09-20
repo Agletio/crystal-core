@@ -116,6 +116,17 @@ const LOOT_ROWS = 6;
 let game: GameState;
 let sim: RunSim | null = null;
 let renderer: Renderer | null = null;
+/** WHERE THE CURSOR IS, live, because neither SPACE nor a HELD button has an
+ *  event of its own to read a position off: both go where you are looking. */
+let cursor = { x: 0, y: 0 };
+let casting = false;
+let stageEl: HTMLElement | null = null;
+const cursorTile = (event?: { clientX: number; clientY: number }): Vec2 => {
+  if (event) cursor = { x: event.clientX, y: event.clientY };
+  const box = stageEl?.getBoundingClientRect();
+  if (!box || !renderer) return { x: 0, y: 0 };
+  return renderer.worldAt({ x: cursor.x - box.left, y: cursor.y - box.top });
+};
 let phase: Phase = 'menu';
 let playing = false;
 
@@ -1246,6 +1257,15 @@ function frame(now: number): void {
     }
   }
 
+  // A HAND ON THE KEYS KEEPS THE CAMERA ON HIM. Drag-to-look is a thing you do
+  // to a descent you are watching; driving out from under your own camera is
+  // not a decision anybody wants to have made. Zoom is untouched — it leans on
+  // the middle rather than the cursor while following, which is what a follow
+  // cam is, and zooming out to look ahead still works.
+  if (sim?.driving) renderer?.follow();
+  // HELD IS HELD: a skill on a cooldown wants the button down rather than one
+  // click a swing, and the cooldown is what paces it.
+  if (casting && sim && playing && phase === 'running') sim.castTo(cursorTile());
   if (sim && renderer && phase !== 'menu') renderer.draw(sim.state, emerge);
   if (sim) renderReadout();
   stepArrival(dt);
@@ -1419,20 +1439,20 @@ export function initRun(state: GameState): void {
   let from: { x: number; y: number } | null = null;
   let held: number | null = null;
 
-  // WHERE THE CURSOR IS, in tiles. Kept live because SPACE has no event of its
-  // own to read a position off — the mover goes where you are looking.
-  let cursor = { x: 0, y: 0 };
-  const cursorTile = (event?: { clientX: number; clientY: number }) => {
-    if (event) cursor = { x: event.clientX, y: event.clientY };
-    const box = stage.getBoundingClientRect();
-    return (
-      renderer?.worldAt({ x: cursor.x - box.left, y: cursor.y - box.top }) ?? { x: 0, y: 0 }
-    );
-  };
+  stageEl = stage;
   stage.addEventListener('pointermove', (event) => {
     cursor = { x: event.clientX, y: event.clientY };
   });
+  // A DESCENT IS CAST AT, NEVER DRAGGED. A button down is a cast and nothing
+  // else — *"it just accidentally drags when you're trying to cast"* — so the
+  // camera is never armed while one is running, and the cast lands on the
+  // PRESS rather than on the release, which is what a swing is.
   stage.addEventListener('pointerdown', (event) => {
+    if (sim && playing && phase === 'running') {
+      casting = true;
+      sim.castTo(cursorTile(event));
+      return;
+    }
     from = { x: event.clientX, y: event.clientY };
   });
   stage.addEventListener('pointermove', (event) => {
@@ -1455,17 +1475,17 @@ export function initRun(state: GameState): void {
     held = null;
     stage.classList.remove('stage--drag');
   };
-  // A CLICK IS A CAST, and the drag's own 4px of slop is what tells them
-  // apart — under that it never became a drag, so it was always a click.
-  // Either button: there is one active skill, so which one you pressed is not
-  // a question the game has an answer to.
   stage.addEventListener('pointerup', (event) => {
-    if (held === null && sim && playing) sim.castTo(cursorTile(event));
+    casting = false;
     release(event);
   });
   stage.addEventListener('contextmenu', (event) => event.preventDefault());
-  stage.addEventListener('pointercancel', () => release());
+  stage.addEventListener('pointercancel', () => {
+    casting = false;
+    release();
+  });
   stage.addEventListener('pointerleave', () => {
+    casting = false;
     release();
     hideTooltip();
   });
@@ -1487,7 +1507,8 @@ export function initRun(state: GameState): void {
     w: [0, -1], a: [-1, 0], s: [0, 1], d: [1, 0],
   };
   const down = new Set<string>();
-  const drivable = (): boolean => !!sim && playing && topWindow() === null;
+  const drivable = (): boolean =>
+    !!sim && playing && phase === 'running' && topWindow() === null;
   const push = (): void => {
     let x = 0;
     let y = 0;
@@ -1530,6 +1551,7 @@ export function initRun(state: GameState): void {
   // A key held when the descent ends is one nothing will ever release.
   globalThis.addEventListener('blur', () => {
     down.clear();
+    casting = false;
     sim?.hold(0, 0);
   });
 

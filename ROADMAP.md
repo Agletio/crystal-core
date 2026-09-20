@@ -155,6 +155,15 @@ Five guards are the whole of it: the player's tick runs ahead of every policy,
 `maybeMove` returns early, `acquireTarget` returns null, the exit is not walked
 to, and `worldAt` is the camera's inverse on both renderers.
 
+**THE CAMERA IS HIS, AND A DESCENT IS NEVER DRAGGED.** *"Camera should track
+character now that its wasd"* and *"it just accidentally drags when you're
+trying to cast."* The follow is re-asserted every frame while driving, the
+drag is not armed at all during a running descent, and the cast lands on the
+PRESS and REPEATS while the button is down — a skill on a cooldown wants the
+button held rather than one click a swing. Zoom is untouched and still reaches
+the whole map, leaning on the middle rather than the cursor, which is what a
+follow cam is.
+
 - [ ] **PLAY IT AND SAY.** The question is feel and nothing else. What is known
       to be missing if it stays: the auto-walks (chest, node, person) still fire
       when the floor is dead, movement speed has never been tuned for a hand on
