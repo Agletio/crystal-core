@@ -133,6 +133,117 @@ binding.
 
 ---
 
+## THE 3D CONVERSION — a plan, not a commitment
+
+*"I decided I hate the graphics and I want full 3d… im thinking meshy +
+blender + chatgpt to make 3d models idk about the actual world though."*
+
+**NOTHING HERE IS STARTED.** It is written down so the cost is visible before
+any of it is paid, and so the order is one that leaves the game playable the
+whole way through.
+
+### What it costs, measured rather than guessed
+
+The RENDER layer is ~6,200 lines (`pixi.ts` 1,867, `renderer.ts` 2,693,
+`canvas2d.ts` 662, `sprites.ts` 521, `bestiary.ts` 477) over **17 MB of
+generated art data** — `generated-art.ts` alone is 9.4 MB and
+`generated-scene.ts` 5.3 MB. All of it is replaced or retired.
+
+**THE SIM IS NOT TOUCHED, AND NEITHER IS ANYTHING MEASURED BY IT.** Entities
+carry `x`, `y` in tiles, `facing` in radians, `radius` and `scale`; a 3D
+renderer reads the same `RunState` the two present ones read. `src/sim/`,
+every table in `data.ts`, crafting, professions, the climb, trees, trades and
+the whole of `src/demo.ts` are untouched — **the demo never renders**, so
+every balance number stays green from the first day to the last.
+
+### The one fact that makes this smaller than it looks
+
+`GENERATED` holds **126 body rows off 34 distinct sprites, and 92 of those
+rows are weapon and tool variants** — a hero was generated once per thing he
+could hold, because a 2D body draws what it carries. In 3D that is ONE rigged
+mesh with a weapon parented to a hand bone. The same collapse happens again on
+facings (five per state, mirrored — a mesh just turns) and on every frame of
+`HERO_HANDS`, which authors a hand position per frame by hand.
+
+So the art SURFACE shrinks hard: **about 4 heroes, ~30 monsters, ~10 people
+and workers, ~26 weapons and tools, and 40-50 real props** out of the 110
+rows, since much of that table is rubble and stains that stay decals. What
+grows instead is the ENGINE, and that is the trade being made.
+
+### The world, which is the part he flagged
+
+*"idk about the actual world though."* The grid already knows everything a 3D
+world needs: `Grid` carries rock, floor, patches and the cut face per cell.
+**The walls are EXTRUDED from the rock mask** — no modelling at all for a
+first pass, and no tileset. `wangKey` and the whole corner-key scheme are not
+ported; they are what 2D needed to fake a wall. A modular kit can replace the
+extrusion later, piece by piece, without the sim noticing.
+
+### The order, and why it is this order
+
+- [ ] **A — PROVE IT, and nothing else (days).** A three.js `Renderer` beside
+      the two that exist, behind the seam already in `src/render/renderer.ts`
+      (`draw`, `setZoom`, `panBy`, `lookAt`, `screenAt`, `worldAt`, `follow`).
+      Boxes for walls, capsules for bodies, no art whatsoever, a dev-kit
+      toggle. It answers the four things that can kill this: does the camera
+      and scale read at all, does it hold frame rate with the deep end's 850
+      bodies, does `worldAt` still put a cast where the cursor is, and do
+      `shots`/`smoke`/`peek` still screenshot under headless WebGL.
+- [ ] **B — THE WORLD.** Extruded geometry, lighting, and a look. Zone colour
+      comes from lights and materials now, which is where the free recolour
+      that baked palettes gave us comes back.
+- [ ] **C — ONE BODY, END TO END.** One hero: Meshy → Blender → rig →
+      6 clips (idle, walk, attack, cast, hurt, death) → GLB → wired through
+      `generatedBeat`, which is already the one answer for which state and
+      frame is showing. **Only after this is the per-body cost known**, and
+      every estimate past here is a guess until it lands.
+- [ ] **D — THE ROSTER.** Four heroes, then monsters by tier. The long pole,
+      and the one that is measured in months rather than weeks.
+- [ ] **E — VFX.** Currently pixel blocks and stills: every burst, spike,
+      cloud, wedge, tether and ball. Particles and shaders, and it is the step
+      everybody underestimates.
+- [ ] **F — THE 2D HALF, which is a DECISION and not work.** The camp picture,
+      the three act cross-sections, eleven web weather scenes, the tales, the
+      portraits and 1.6 MB of icons. Painted backdrops beside 3D is a real and
+      respectable look; half-converted is not. Icons can be turntable renders
+      off the models, which is a pipeline rather than an art job.
+- [ ] **G — THE RULES THAT DIE.** *"There are no image files, and no binary
+      assets"* is repealed: GLBs cannot live in `docs/app.js`, so `docs/`
+      grows a models folder and the build copies it. Static hosting does not
+      care. three.js is ~600 KB minified into a bundle that is 1.6 MB today.
+
+### What would make this fail
+
+**Keeping pixi as the default until 3D reaches parity is the whole safety
+plan.** Both live behind one seam, toggled; the game is playable every day.
+A conversion that makes the game unrunnable for a month is the one that gets
+abandoned in week three.
+
+### The pipeline, and where it stops working
+
+Meshy is good at ONE prop or ONE character, from an image rather than from
+text — so ChatGPT's job is the concept image that makes Meshy controllable.
+Blender does cleanup, UVs, decimation and GLB export. **Mixamo auto-rigs and
+animates humanoids for free**, which covers the heroes, the workers and the
+people, and is far more reliable than hand-animating six clips apiece. It does
+NOT cover a beetle, a spire or anything with the wrong number of limbs — those
+are hand-rigged in Blender or bought, and that is where the roster gets
+expensive.
+
+**LOW-POLY, FLAT-SHADED, STRONG SILHOUETTES** is the recommendation: it is
+cheaper to make, it hides what Meshy is bad at, and silhouette is already what
+this game's art is judged on.
+
+### Three questions to answer before Phase A
+
+1. **The camera.** Fixed three-quarter like Diablo and PoE, or free orbit?
+   It decides the models' detail budget, the world's geometry and whether
+   anything needs a back.
+2. **The 2D half.** Do the camp, the tales and the act maps stay painted?
+3. **The look.** Low-poly flat-shaded, or textured and lit?
+
+---
+
 ## THE DRIVING SPIKE — waiting on him to play it
 
 *"How crazy is it if I wanna make this not an idle game anymore… its just
