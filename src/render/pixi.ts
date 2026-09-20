@@ -1840,6 +1840,8 @@ export async function createPixiRenderer(
   }
 
   const screenAt = (v: { x: number; y: number }) => ({ x: sx(v.x), y: sy(v.y) });
+  const worldAt = (v: { x: number; y: number }) =>
+    tile > 0 ? { x: (v.x - offX) / tile - 0.5, y: (v.y - offY) / tile - 0.5 } : { x: 0, y: 0 };
 
   /** Point at a tile. Same state a drag writes, so `follow()` undoes it. */
   function lookAt(spot: { x: number; y: number }): void {
@@ -1861,5 +1863,5 @@ export async function createPixiRenderer(
     app.destroy(true, { children: true });
   }
 
-  return { resize, draw, setZoom, panBy, lookAt, follow, screenAt, destroy };
+  return { resize, draw, setZoom, panBy, lookAt, follow, screenAt, worldAt, destroy };
 }

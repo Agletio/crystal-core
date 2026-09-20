@@ -73,6 +73,9 @@ export interface Renderer {
   /** Where a tile is on the SURFACE, in CSS pixels from its top left — the
    *  same split the camera rides on. */
   screenAt(at: Vec2): { x: number; y: number };
+  /** The inverse: which TILE a CSS pixel is over. The camera is each
+   *  renderer's own business, so the way back out of it is too. */
+  worldAt(at: { x: number; y: number }): Vec2;
   follow(): void;
   /** Release the surface and any GPU resources. */
   destroy(): void;

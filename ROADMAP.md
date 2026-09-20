@@ -133,6 +133,39 @@ binding.
 
 ---
 
+## THE DRIVING SPIKE — waiting on him to play it
+
+*"How crazy is it if I wanna make this not an idle game anymore… its just
+straight up boring lol"*
+
+**BUILT AND UNJUDGED.** WASD walks, Space sends the mover at the cursor, either
+mouse button casts the main skill at the body under it with `CLICK_SLACK` of
+0.55 tiles of leeway. Nothing is deleted and nothing is re-balanced: this is a
+spike to answer whether it FEELS good, and it is reversible in one revert.
+
+**THE LATCH IS THE WHOLE DESIGN.** `RunSim.driving` is set by the first input
+and by nothing else, so a descent nobody drives never reaches a line of the
+driving code. Measured: three seeds clear in 101.93s/129, 67.37s/123 and
+123.33s/163 kills before and after, to the digit. That is what lets the player
+take the wheel without re-opening every number in `CLAUDE.md` — the automation
+is not deleted, it is what runs when nobody is asking, and it becomes a
+benchmark bot rather than the game.
+
+Five guards are the whole of it: the player's tick runs ahead of every policy,
+`maybeMove` returns early, `acquireTarget` returns null, the exit is not walked
+to, and `worldAt` is the camera's inverse on both renderers.
+
+- [ ] **PLAY IT AND SAY.** The question is feel and nothing else. What is known
+      to be missing if it stays: the auto-walks (chest, node, person) still fire
+      when the floor is dead, movement speed has never been tuned for a hand on
+      the keys, there is no aim indicator, and a 42-depth campaign means
+      something different when you drive every second of it.
+- [ ] **WHAT IT WOULD BUY, if it stays.** `NOTHING KEYS OFF WHERE THE HERO
+      STANDS` is a tax paid only because nobody drives, and it dies the moment
+      he does — that is the design space the whole change is really for.
+
+---
+
 ## Phase 8 — TERRAIN, RECALIBRATED: levels, water, detail, and where things grow
 
 *"We are failing to achieve what I want here so lets just start from the

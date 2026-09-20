@@ -93,6 +93,7 @@ import { drawn, skillIcon } from './icons';
 import { itemIcon } from './icons';
 import { itemCard } from './itemcard';
 import { attachTooltip, hideTooltip } from './tooltip';
+import { topWindow } from './windows';
 import { starvedMultiplier } from '../sim/grants';
 import type { PotionDef } from '../data';
 
@@ -1417,6 +1418,20 @@ export function initRun(state: GameState): void {
   // corner of a map that no longer exists is a black screen.
   let from: { x: number; y: number } | null = null;
   let held: number | null = null;
+
+  // WHERE THE CURSOR IS, in tiles. Kept live because SPACE has no event of its
+  // own to read a position off — the mover goes where you are looking.
+  let cursor = { x: 0, y: 0 };
+  const cursorTile = (event?: { clientX: number; clientY: number }) => {
+    if (event) cursor = { x: event.clientX, y: event.clientY };
+    const box = stage.getBoundingClientRect();
+    return (
+      renderer?.worldAt({ x: cursor.x - box.left, y: cursor.y - box.top }) ?? { x: 0, y: 0 }
+    );
+  };
+  stage.addEventListener('pointermove', (event) => {
+    cursor = { x: event.clientX, y: event.clientY };
+  });
   stage.addEventListener('pointerdown', (event) => {
     from = { x: event.clientX, y: event.clientY };
   });
@@ -1440,7 +1455,15 @@ export function initRun(state: GameState): void {
     held = null;
     stage.classList.remove('stage--drag');
   };
-  stage.addEventListener('pointerup', (event) => release(event));
+  // A CLICK IS A CAST, and the drag's own 4px of slop is what tells them
+  // apart — under that it never became a drag, so it was always a click.
+  // Either button: there is one active skill, so which one you pressed is not
+  // a question the game has an answer to.
+  stage.addEventListener('pointerup', (event) => {
+    if (held === null && sim && playing) sim.castTo(cursorTile(event));
+    release(event);
+  });
+  stage.addEventListener('contextmenu', (event) => event.preventDefault());
   stage.addEventListener('pointercancel', () => release());
   stage.addEventListener('pointerleave', () => {
     release();
@@ -1456,6 +1479,59 @@ export function initRun(state: GameState): void {
     details.setAttribute('aria-expanded', String(!panel.hidden));
     details.classList.toggle('mini--on', !panel.hidden);
   };
+
+  // DRIVING. Captured ahead of the bindings, because `s` opens the skills and
+  // Space centres the camera — and only while a descent is actually running
+  // with nothing over it, so neither is lost anywhere else.
+  const DIR: Record<string, [number, number]> = {
+    w: [0, -1], a: [-1, 0], s: [0, 1], d: [1, 0],
+  };
+  const down = new Set<string>();
+  const drivable = (): boolean => !!sim && playing && topWindow() === null;
+  const push = (): void => {
+    let x = 0;
+    let y = 0;
+    for (const key of down) {
+      x += DIR[key][0];
+      y += DIR[key][1];
+    }
+    sim?.hold(x, y);
+  };
+  globalThis.addEventListener(
+    'keydown',
+    (event) => {
+      if (!drivable() || event.metaKey || event.ctrlKey || event.altKey) return;
+      const tag = (event.target as HTMLElement | null)?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+      const key = event.key.toLowerCase();
+      if (key === ' ') {
+        event.preventDefault();
+        event.stopPropagation();
+        if (sim) sim.stepTo(cursorTile());
+        return;
+      }
+      if (!(key in DIR)) return;
+      event.preventDefault();
+      event.stopPropagation();
+      down.add(key);
+      push();
+    },
+    { capture: true }
+  );
+  globalThis.addEventListener(
+    'keyup',
+    (event) => {
+      const key = event.key.toLowerCase();
+      if (!down.delete(key)) return;
+      push();
+    },
+    { capture: true }
+  );
+  // A key held when the descent ends is one nothing will ever release.
+  globalThis.addEventListener('blur', () => {
+    down.clear();
+    sim?.hold(0, 0);
+  });
 
   globalThis.addEventListener('resize', fitCanvas);
 

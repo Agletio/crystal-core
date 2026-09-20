@@ -225,7 +225,7 @@ import {
 } from './economy';
 import { hasGearArt } from './ui/icons';
 import { LIVE_PROPS, RIPPLE, lootSpan, rippleRings } from './render/renderer';
-import { RunSim, TICK, runToCompletion, walkToMeeting } from './sim/run';
+import { CLICK_SLACK, RunSim, TICK, runToCompletion, walkToMeeting } from './sim/run';
 import { tierForSet } from './sim/crystal';
 import { findPath } from './sim/pathfind';
 import { MEETINGS, folkMet, folkRooms, gaveKey, hasHeard, hasMet, keyOwed, nextMeeting, owedTale, takeBoss, takeHeard, takeMet, whoIsDown, metMark } from './game/scenes';
@@ -12172,6 +12172,63 @@ if (rule('POTIONS — a budget you spend, and one rule that spends it')) {
       unbound.length === 0,
       `all ${POTIONS.length} flasks are on a binding, so rebinding one is a table edit`,
       `no binding for ${unbound.map((p) => p.id).join(', ')}`
+    );
+  }
+}
+
+// ===========================================================================
+}
+
+if (rule('DRIVING — does a hand on the keys change anything that is measured?')) {
+
+// THE LATCH IS THE WHOLE DESIGN: `driving` is set by the first input and by
+// nothing else, so a descent nobody drives never reaches a line of it. That is
+// what lets the player take the wheel without re-opening every number in this
+// file — the automation is not deleted, it is what runs when nobody is asking.
+{
+  const seeds = [3, 11, 29];
+  let same = 0;
+  for (const seed of seeds) {
+    const who = ladderCharacter(3, new Rng(seed));
+    const one = runToCompletion(new RunSim(ladderSet(3, new Rng(seed), pool), who, new Rng(seed * 7)), 600);
+    const kept = { status: one.status, killed: one.killed, elapsed: one.elapsed };
+    const two = new RunSim(ladderSet(3, new Rng(seed), pool), who, new Rng(seed * 7));
+    two.hold(0, 0); // asking for NOTHING is not asking
+    const end = runToCompletion(two, 600);
+    if (end.status === kept.status && end.killed === kept.killed && end.elapsed === kept.elapsed) same++;
+  }
+  check(
+    same === seeds.length,
+    `an undriven descent is the descent that has always run, ${same} of ${seeds.length} to the digit`,
+    `${same} of ${seeds.length} matched`
+  );
+
+  // AND A HAND ON THE KEYS IS THE ONLY THING THAT MOVES HIM. Nothing walks a
+  // driven hero: no target is acquired, no mover fires, no exit is walked to.
+  const who = ladderCharacter(3, new Rng(5));
+  const sim = new RunSim(ladderSet(3, new Rng(5), pool), who, new Rng(35));
+  const hero = sim.state.hero;
+  const from = { x: hero.x, y: hero.y };
+  sim.hold(1, 0);
+  for (let i = 0; i < 30; i++) sim.step(TICK);
+  const east = hero.x - from.x;
+  sim.hold(0, 0);
+  const stood = { x: hero.x, y: hero.y };
+  for (let i = 0; i < 60; i++) sim.step(TICK);
+  const drift = Math.hypot(hero.x - stood.x, hero.y - stood.y);
+  line(`  a second of east moves him ${east.toFixed(2)} tiles; letting go, he drifts ${drift.toFixed(3)}`);
+  check(east > 0.5, 'WASD moves the hero', `${east.toFixed(2)} tiles east`);
+  check(drift < 0.01, 'and letting go stops him — nothing walks a hero somebody is driving', `${drift.toFixed(3)} tiles`);
+
+  // THE LEEWAY, which is the whole of what a click means: *"a little leyway so
+  // you don't have to be exactly ontop of them."*
+  const body = sim.state.monsters.find((m) => !m.dead);
+  if (body) {
+    const off = (by: number) => sim.castTarget({ x: body.x + body.radius + CLICK_SLACK * by, y: body.y });
+    check(
+      off(0.9) === body && off(1.5) === null,
+      `a click ${CLICK_SLACK} tiles past a body still means it, and further out means nothing`,
+      `near ${off(0.9)?.id}, far ${off(1.5)?.id}`
     );
   }
 }

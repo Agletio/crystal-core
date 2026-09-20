@@ -136,6 +136,10 @@ const DROP_POOL = new ModPool(ALL_MODS);
 /** Sim step. 30/s is plenty for movement this slow and keeps replays cheap. */
 export const TICK = 1 / 30;
 
+/** HOW FAR OFF A BODY A CLICK MAY LAND and still mean it, in tiles past its own
+ *  radius — *"a little leyway so you don't have to be exactly ontop of them"*. */
+export const CLICK_SLACK = 0.55;
+
 /** Monsters beyond this range of the hero don't think at all. */
 const ACTIVE_RANGE = 16;
 
@@ -620,6 +624,15 @@ export class RunSim {
    *  run's own stream every kill, which moved every seed in the game. */
   private readonly planRng = new Rng(15485863);
   private readonly queued: string[] = []; // presses waiting for the next tick
+  /** WHAT THE PLAYER IS ASKING FOR, drained at the top of the step exactly as
+   *  a potion press is — a press that landed between two ticks would stop the
+   *  seed replaying. `driving` latches on the first input and never clears:
+   *  with none, every line below is the descent that has always run, which is
+   *  what keeps `runToCompletion` and every number measured off it. */
+  private held = { x: 0, y: 0 };
+  private castAt: Vec2 | null = null;
+  private stepAt: Vec2 | null = null;
+  driving = false;
   private readonly options: RunOptions;
   private readonly skill: SkillDef;
   private events: RunEvent[] = [];
@@ -1956,6 +1969,9 @@ export class RunSim {
 
     if (this.afterIn > 0) this.afterIn -= dt;
     this.stepGusts(dt);
+
+    // THE PLAYER GOES FIRST, and with nobody driving this is not even reached.
+    if (this.driving && this.drove(hero, dt)) return;
     // ASKED EVERY TICK, not from inside the walk: a hero toe to toe with
     // something has no path at all, and standing there being hit is exactly
     // when a kite has to fire.
@@ -2042,7 +2058,8 @@ export class RunSim {
 
     hero.targetId = null;
     // A route that does not exist is the same answer as being there already.
-    if (out > AT_EXIT && this.advance(hero, exit, dt)) return;
+    if (!this.driving && out > AT_EXIT && this.advance(hero, exit, dt)) return;
+    if (this.driving && out > AT_EXIT) return; // the way out is a place you walk to
 
     // THE SWEEP: at the mouth, everything he walked past comes to him at once.
     if (s.ground.length > 0) {
@@ -2542,6 +2559,7 @@ export class RunSim {
   }
 
   private acquireTarget(hero: Entity): Entity | null {
+    if (this.driving) return null; // the cursor is the target picker now
     if (hero.targetId !== null) {
       const held = this.byId.get(hero.targetId);
       // A held target that is BEHIND A WARDEN is dropped rather than kept: it
@@ -2745,6 +2763,7 @@ export class RunSim {
   private maybeMove(hero: Entity): void {
     const skill = this.mover;
     const m = this.moving;
+    if (this.driving) return; // Space is the mover on a descent somebody drives
     if (!skill || !m || this.moveIn > 0) return;
     if (hero.dead || (hero.stun ?? 0) > 0) return; // a Fall holds you still
     if (skill.behaviour === 'gale') return; // its charges are the whole skill
@@ -2942,6 +2961,130 @@ export class RunSim {
    *  arrives, so a press cannot land between two ticks. */
   usePotion(id: string): void {
     this.queued.push(id);
+  }
+
+  /** WASD, as a direction rather than a place: held state, not a press. */
+  hold(x: number, y: number): void {
+    this.held = { x, y };
+    if (x !== 0 || y !== 0) this.driving = true;
+  }
+
+  /** The main skill, at the body under the cursor — `castTarget` is what the
+   *  leeway is for. The mover goes to a POINT, since that is what it is. */
+  castTo(at: Vec2): void {
+    this.castAt = at;
+    this.driving = true;
+  }
+
+  stepTo(at: Vec2): void {
+    this.stepAt = at;
+    this.driving = true;
+  }
+
+  /** The body a click means, which is never exactly the one under the pixel.
+   *  Nearest live body whose own radius plus `CLICK_SLACK` covers the cursor. */
+  castTarget(at: Vec2): Entity | null {
+    let best: Entity | null = null;
+    let near = Infinity;
+    for (const m of this.state.monsters) {
+      if (m.dead) continue;
+      const d = dist(m, at);
+      if (d > m.radius + CLICK_SLACK || d >= near) continue;
+      near = d;
+      best = m;
+    }
+    const boss = this.state.boss;
+    if (boss && !boss.dead && dist(boss, at) <= boss.radius + CLICK_SLACK && dist(boss, at) < near) {
+      return boss;
+    }
+    return best;
+  }
+
+  /**
+   * The player's own tick. Returns true when it has spent the tick, so the
+   * automation below it never runs on a descent somebody is driving.
+   */
+  private drove(hero: Entity, dt: number): boolean {
+    const cast = this.castAt;
+    const step = this.stepAt;
+    this.castAt = null;
+    this.stepAt = null;
+    if (hero.dead || (hero.stun ?? 0) > 0) return true; // a Fall holds you still
+
+    if (step) this.stepToward(hero, step);
+
+    // THE CAST IS THE TICK: standing still to swing is what makes a swing cost
+    // something, and it is the one thing an auto-target was deciding for you.
+    if (cast && hero.cooldown <= 0) {
+      const at = this.castTarget(cast);
+      if (at && this.canSee(hero, at)) {
+        this.face(hero, at.x, at.y);
+        this.settleAction(hero, false);
+        this.swing(hero, at);
+        return true;
+      }
+    }
+
+    const { x, y } = this.held;
+    if (x !== 0 || y !== 0) {
+      const len = Math.hypot(x, y) || 1;
+      const far = hero.stats.moveSpeed * dt * this.paceOf(hero);
+      const wasX = hero.x;
+      const wasY = hero.y;
+      this.nudge(hero, (x / len) * far, (y / len) * far);
+      hero.walked += Math.hypot(hero.x - wasX, hero.y - wasY);
+      const moved = Math.abs(hero.x - wasX) > 1e-6 || Math.abs(hero.y - wasY) > 1e-6;
+      if (moved) this.face(hero, hero.x + (hero.x - wasX), hero.y + (hero.y - wasY));
+      this.settleAction(hero, moved);
+      this.dropTool();
+      hero.path = [];
+      hero.targetId = null;
+      return true;
+    }
+    return false;
+  }
+
+  /** SPACE: the mover, at the cursor rather than along a path nobody walked.
+   *  The reach, the cooldown and the wake are the skill's own, as they are
+   *  when the policy fires it. */
+  private stepToward(hero: Entity, at: Vec2): void {
+    const skill = this.mover;
+    const m = this.moving;
+    if (!skill || !m || this.moveIn > 0 || skill.behaviour === 'gale') return;
+    const grid = this.state.map.grid;
+    const jumps = skill.behaviour === 'leap';
+    const dx = at.x - hero.x;
+    const dy = at.y - hero.y;
+    const d = Math.hypot(dx, dy) || 1;
+    const far = Math.min(m.reach, d);
+
+    // As far along the line as still fits, so a step at a wall is a short step
+    // rather than nothing at all.
+    let landing: Vec2 | null = null;
+    for (let t = far; t >= 0.5; t -= 0.25) {
+      const spot = { x: hero.x + (dx / d) * t, y: hero.y + (dy / d) * t };
+      if (!grid.fits(spot.x, spot.y, hero.radius)) continue;
+      if (this.penned(spot, hero.radius)) continue;
+      if (!jumps && !hasLineOfSight(grid, hero, spot)) continue;
+      landing = spot;
+      break;
+    }
+    if (!landing) return;
+
+    const was = { x: hero.x, y: hero.y };
+    this.emit(skill.vfxKind ?? 'blink', [was, landing], 'physical', 0.25);
+    if (jumps) hero.hop = { fx: hero.x, fy: hero.y, left: MOVE.hopSeconds, total: MOVE.hopSeconds };
+    hero.x = landing.x;
+    hero.y = landing.y;
+    hero.path = [];
+    this.state.blinks++;
+    const sooner = Math.max(MOVE.leastCooldown, 1 - hero.stats.cooldown / 100);
+    this.moveIn = m.wait * sooner;
+    if (m.wake) this.slowRound(was, m.wake);
+    if (jumps) this.land(hero, null);
+    if (m.mana > 0) hero.mana = Math.min(hero.stats.maxMana, hero.mana + hero.stats.maxMana * m.mana);
+    if (m.heal > 0 && jumps) hero.life = Math.min(hero.stats.maxLife, hero.life + hero.stats.maxLife * m.heal);
+    this.openWindow();
   }
 
   /** What a potion is waiting for, whoever is asking. */

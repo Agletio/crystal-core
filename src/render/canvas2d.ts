@@ -85,6 +85,7 @@ export function createCanvasRenderer(host: HTMLElement, palette: Palette): Rende
       lookAt: () => {},
       follow: () => {},
       screenAt: () => ({ x: 0, y: 0 }),
+      worldAt: () => ({ x: 0, y: 0 }),
       destroy: () => canvas.remove(),
     };
   }
@@ -152,6 +153,10 @@ export function createCanvasRenderer(host: HTMLElement, palette: Palette): Rende
     x: cx(seen, v.x),
     y: cy(seen, v.y),
   });
+  const worldAt = (v: { x: number; y: number }) =>
+    seen.tile > 0
+      ? { x: (v.x - seen.offX) / seen.tile - 0.5, y: (v.y - seen.offY) / seen.tile - 0.5 }
+      : { x: 0, y: 0 };
 
   function drawMap(state: RunState, v: View): void {
     const { grid } = state.map;
@@ -653,5 +658,5 @@ export function createCanvasRenderer(host: HTMLElement, palette: Palette): Rende
   };
 
   resize(cssWidth, cssHeight);
-  return { resize, draw, setZoom, panBy, lookAt, follow, screenAt, destroy: () => canvas.remove() };
+  return { resize, draw, setZoom, panBy, lookAt, follow, screenAt, worldAt, destroy: () => canvas.remove() };
 }
