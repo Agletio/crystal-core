@@ -234,13 +234,47 @@ expensive.
 cheaper to make, it hides what Meshy is bad at, and silhouette is already what
 this game's art is judged on.
 
-### Three questions to answer before Phase A
+### The three questions, answered
 
-1. **The camera.** Fixed three-quarter like Diablo and PoE, or free orbit?
-   It decides the models' detail budget, the world's geometry and whether
-   anything needs a back.
-2. **The 2D half.** Do the camp, the tales and the act maps stay painted?
-3. **The look.** Low-poly flat-shaded, or textured and lit?
+1. **A FIXED ANGLE, Hades-style, and it is the biggest cost saver available.**
+   Nothing needs a back, no geometry needs a far side, wall occlusion between
+   camera and hero never happens, and `worldAt` stays a plain inverse rather
+   than a raycast onto a ground plane — so casting at the cursor keeps working
+   unchanged. **But not Hades' DISTANCE**: its rooms are small and hand-made
+   where these floors are generated and hold 850 bodies at the deep end, so
+   the camera sits further out, at Diablo and PoE distance, and keeps the zoom
+   range it already has for scouting. A slight lead toward the cursor is cheap
+   and worth having.
+2. **DEFERRED, and it costs nothing to defer.** *"I need to see it."* Nothing
+   in phases A through C depends on it, and Phase A answers it for free: put a
+   grey-box descent beside the painted camp and the answer takes five seconds.
+   Phase F is late in the order for exactly this reason.
+3. **TEXTURED AND LIT.** One caution: texture is Meshy's weakest output, so
+   the art direction has to carry it — a tight palette, a strong key and a rim
+   light, and bake what can be baked. A fixed camera is what makes baking
+   viable at all.
+
+### AND THE CAMERA DECIDES A COMBAT QUESTION, which is not an art question
+
+**AN ORDINARY MONSTER HAS NO WIND-UP.** `stepMonster` calls `dealDamage` on
+the same tick the cooldown comes up, and sets the attack pose at that same
+instant; only a BOSS telegraphs (`BOSS_FIGHT.windup`, `bossTelegraph`). So
+damage is not dodgeable today — it simply happens to whatever is in reach.
+The hero standing in it was correct while nobody drove him, and `CLAUDE.md`
+says so: *"You STAND IN IT. Giving ground while the skill recovered was tried
+and taken back out — kiting is too op."* That rule was written about an AI.
+
+A Hades camera with WASD is a game about DODGING, and there is nothing to
+dodge. **This is sim work, it is testable today in 2D, and it decides whether
+the 3D version is worth building** — if telegraphed combat is not fun flat, no
+amount of geometry saves it. It belongs BEFORE Phase A, not after.
+
+### The other thing the Hades shape implies
+
+*"just two skills?"* — `SKILL_SLOTS` is a table, and `CLAUDE.md` already says
+a fourth slot is one entry and never a named field, so a second ACTIVE skill
+is one row. What it costs is a passive slot and a doubled damage-skill balance
+surface. Separable from 3D entirely, and worth deciding on its own.
 
 ---
 
