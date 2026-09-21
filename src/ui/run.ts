@@ -94,6 +94,7 @@ import { itemIcon } from './icons';
 import { itemCard } from './itemcard';
 import { attachTooltip, hideTooltip } from './tooltip';
 import { topWindow } from './windows';
+import { createThreeRenderer } from '../render/three';
 import { starvedMultiplier } from '../sim/grants';
 import type { PotionDef } from '../data';
 
@@ -1351,6 +1352,27 @@ export function centreCamera(): void {
  * hostile driver, jsdom in the smoke test — canvas simply stays, and the page
  * is never blank.
  */
+/** THE 3D SPIKE'S SWITCH. Pixi stays the default until 3D reaches parity —
+ *  a conversion that makes the game unrunnable for a month is the one that
+ *  gets abandoned in week three — so this swaps the seam and nothing else. */
+export function useThree(on: boolean): void {
+  const stage = $('run-stage');
+  const palette = readPalette(document.documentElement);
+  renderer?.destroy();
+  stage.replaceChildren();
+  if (on) {
+    const three = createThreeRenderer(stage, palette);
+    renderer = three;
+    (globalThis as Record<string, unknown>).__three = three;
+  } else {
+    renderer = createCanvasRenderer(stage, palette);
+    delete (globalThis as Record<string, unknown>).__three;
+    void upgradeRenderer(stage, palette);
+  }
+  renderer.setZoom(zoom);
+  fitCanvas();
+}
+
 async function upgradeRenderer(host: HTMLElement, palette: Palette): Promise<void> {
   let pixi: Renderer | null = null;
   try {

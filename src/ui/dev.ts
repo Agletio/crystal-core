@@ -21,6 +21,7 @@ import { heal } from '../game/save';
 import { ZONES } from '../render/generated-tiles';
 import { TEST_LEVEL, testLevel } from '../sim/grid';
 import { showingWalk, walkOverlay } from '../render/renderer';
+import { useThree } from './run';
 import { takeHeard, takeMet } from '../game/scenes';
 import { campaignDone, progressKey } from '../ladder';
 import { pathToNotable } from '../skills-tree';
@@ -41,6 +42,7 @@ function el(tag: string, cls?: string, text?: string): HTMLElement {
 let game: GameState;
 let hooks: DevHooks;
 let testing = false;
+let inThree = false;
 
 export interface DevHooks {
   /** Drops into a room now, by scene id. */
@@ -348,6 +350,20 @@ function render(): void {
     render();
   };
   sets.append(test);
+
+  // THE 3D SPIKE, grey boxes and capsules. Pixi is the default and stays it;
+  // this is here so the question can be answered by looking rather than by
+  // arguing, and `__three.stats()` is what the measurement reads.
+  const solid = el('button', 'mini devbtn') as HTMLButtonElement;
+  solid.id = 'dev-three';
+  solid.append(el('span', 'devbtn__name', inThree ? '3D spike: on' : '3D spike: off'));
+  solid.append(el('span', 'devbtn__what', 'grey boxes and capsules, no art — the renderer seam swapped'));
+  solid.onclick = () => {
+    inThree = !inThree;
+    useThree(inThree);
+    render();
+  };
+  sets.append(solid);
 
   // WHERE A BODY MAY STAND, over the floor that shipped. Green walks, red does
   // not, and the amber band across the top of a tile under rock is drawn ground

@@ -181,7 +181,47 @@ extrusion later, piece by piece, without the sim noticing.
 
 ### The order, and why it is this order
 
-- [ ] **A — PROVE IT, and nothing else (days).** A three.js `Renderer` beside
+**PHASE A IS BUILT AND MEASURED.** `src/render/three.ts` is a third `Renderer`
+behind the same seam, `dev-three` in the dev kit swaps to it, and
+`tools/three-peek.mjs` plays a real descent under it and reports. Grey boxes
+and capsules, no art.
+
+**THE FLOOR DRAWS IN 3 CALLS.** Ten thousand cells, every wall and every body,
+three draw calls and 27,000 triangles — the floor and the rock are one
+`InstancedMesh` each. That risk is dead, as long as nothing is ever a mesh per
+cell.
+
+**THE LIGHT CURVE IS THE SHAPE PREDICTED**, measured at band 4 under headless
+SwiftShader — software, so the ABSOLUTE frame rate is a floor and only the
+curve means anything: 0 lights 11.8, 1 → 9.0, 2 → 10.7, 4 → 7.0, 8 → 3.7,
+16 → 2.0. Flat to about four and then it falls off a cliff. **So the answer is
+BAKED light plus a budget of about four dynamic ones**, which is what the fixed
+camera was chosen to make possible.
+
+**THE WORLD NEEDS NO MODELLING TO READ AS A DUNGEON.** Extruded from the rock
+mask, it is recognisably a floor with chambers and passages — `shots/three-spike.png`.
+
+**AND THE WHOLE 2D UI SITS ON TOP UNCHANGED**, which was not planned for: the
+HUD, the rail, the dock and the flasks all overlay the 3D stage with no work at
+all, because they were already a shell over a canvas.
+
+**WHAT PHASE A DID NOT ANSWER, and must not be quoted as if it did:**
+
+- [ ] **SKINNED MESHES ARE STILL UNMEASURED.** A capsule is not a skinned mesh
+      and 16 bodies is not 60. The draw-call and light numbers say nothing
+      about bone updates, and this is the one number that could still force
+      vertex animation textures. It wants a rigged GLB — so it is really the
+      first half of Phase C.
+- [ ] **A WALL BETWEEN THE CAMERA AND THE HERO STILL HIDES HIM.** The claim
+      that a fixed angle makes occlusion impossible was TOO STRONG: it removes
+      ARBITRARY occlusion, not the wall standing on the camera side. Close in,
+      the hero went behind one. Fading or culling the rock between camera and
+      focus is real work and belongs in Phase B.
+- [ ] **`worldAt` RAYCASTS but is not yet measured against a real click.** It
+      casts onto the ground plane; whether a cast lands where the cursor is
+      under a perspective camera wants the driving controls pointed at it.
+
+- [x] **A — PROVE IT, and nothing else (days).** A three.js `Renderer` beside
       the two that exist, behind the seam already in `src/render/renderer.ts`
       (`draw`, `setZoom`, `panBy`, `lookAt`, `screenAt`, `worldAt`, `follow`).
       Boxes for walls, capsules for bodies, no art whatsoever, a dev-kit
