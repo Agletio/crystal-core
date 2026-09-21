@@ -248,11 +248,15 @@ all, because they were already a shell over a canvas.
         SwiftShader, which is software WebGL: a scene that is 60fps on a GPU
         can be seconds a frame there. The demo never renders and is safe.
 
-**AND THE PAYLOAD IS THE RISK THAT IS NOT THERE.** `docs/app.js` already ships
-**18 MB, 6.1 MB gzipped** — the note in the `art` skill saying 1.62 MB is stale
-by ten times and wants fixing. So a textured 3D payload is a change of degree
-rather than of kind, which it would not be for a normal web game. Draco on the
-meshes and KTX2 on the textures are the levers if it matters.
+**AND THE PAYLOAD IS NOT A RISK AT ALL, BECAUSE THE GAME IS DOWNLOADED.**
+*"The web page build is purely for testing simplicity. The final game will be
+a downloaded game. We don't really care about size at the scale we are
+making."* So `docs/` is a TEST HARNESS from here on, not the product, and
+every size number below is a note about that harness. Draco and KTX2 are
+optional, not a plan. What the browser build still has to do is LOAD FAST
+ENOUGH TO JUDGE A MODEL IN, which is a different and much softer bar.
+(`docs/app.js` ships 18 MB, 6.1 MB gzipped; the `art` skill's note saying
+1.62 MB is stale by ten times and still wants fixing.)
 
 **THE DE-LIGHTING COST WAS WRONG, AND IT IS A REQUEST FLAG.** This file said a
 baked albedo meant a Blender pass on every model and was *"the single biggest
@@ -279,10 +283,16 @@ is good enough is still unjudged** and can only be judged on a real model —
       portraits and 1.6 MB of icons. Painted backdrops beside 3D is a real and
       respectable look; half-converted is not. Icons can be turntable renders
       off the models, which is a pipeline rather than an art job.
-- [ ] **G — THE RULES THAT DIE.** *"There are no image files, and no binary
-      assets"* is repealed: GLBs cannot live in `docs/app.js`, so `docs/`
-      grows a models folder and the build copies it. Static hosting does not
-      care. three.js is ~600 KB minified into a bundle that is 1.6 MB today.
+- [ ] **G — THE RULES THAT DIE, AND THE BIGGEST ONE IS HOW IT SHIPS.**
+      *"The final game will be a downloaded game."* So the browser build stops
+      being the product and becomes the TEST HARNESS, which is what makes the
+      rest of this cheap: *"There are no image files, and no binary assets"* is
+      repealed outright, `docs/` grows a models folder the build copies, and
+      size stops being an argument — *"we don't really care about size at the
+      scale we are making."* What the harness still owes is a page that loads
+      fast enough to judge a model in. **CLAUDE.md is not rewritten yet**: the
+      2D game ships from `docs/` today and that line stays true until 3D is
+      what runs.
 
 ### What would make this fail
 
@@ -363,11 +373,11 @@ and `bakedLuma`'s "LIGHTING IS PAINTED IN" verdict fires on both.
       stage anyway: the rigged GLB is what gets wired, so that is where 1.8
       is pinned. Unasked, the model came back at 1.90m.
 
-**THE PAYLOAD IS THE NUMBER TO WATCH.** One textured 2k body with PBR maps is
-**8 MB of GLB**, and the maps are map, normalMap, roughnessMap, metalnessMap
-and emissiveMap. Thirty-seven bodies at that rate is ~300 MB against a
-`docs/app.js` that ships 18 MB today, so Draco and KTX2 stop being levers and
-become the plan. `texture_resolution` and `enable_pbr` are the cheaper dials.
+**A TEXTURED 2K BODY IS 8 MB**, carrying map, normalMap, roughnessMap,
+metalnessMap and emissiveMap. Against a downloaded build that is nothing, so
+it is recorded as a fact rather than a risk; against the browser harness it is
+the one thing that makes a test page slow, and 1k JPEG maps take the same body
+to 1.24 MB with nothing visible lost at camera distance.
 
 **RIGGING IS CHEAP AND IT REPAIRS WHAT IMAGE-TO-3D GOT WRONG.** 5 credits,
 `animation_type: biped`, and the rigged GLB comes back **1.8m with its feet at
@@ -385,15 +395,20 @@ each over one skinned mesh.
       and emissiveMap alone**. The albedo is untouched (0.473 low frequency
       against 0.472), so nothing about the de-lighting changes — but normal and
       roughness are gone, and `enable_pbr` is paying for maps that do not
-      survive the stage after it. Flat-shaded low-poly is the recommendation
-      anyway, so this may be free; it is not yet decided.
-- [ ] **EVERY CLIP IS A WHOLE COPY OF THE BODY.** The walk and the run are
-      7.6 MB each and so is the rig — the mesh and its texture ride along with
-      the animation. Five clips a body is 38 MB of which 30 is the same mesh
-      four times over, and thirty-seven bodies is unshippable. **What ships is
-      ONE mesh and the tracks off each clip**, which three.js loads as
-      `AnimationClip`s against one `SkinnedMesh`; extracting them is a Phase C
-      build step, not a runtime one.
+      survive the stage after it. **WITH NO SIZE PRESSURE THIS IS A REAL
+      LOSS**, not a saving: a downloaded build wants those maps, so the
+      question is whether to re-attach them to the rigged GLB or to commit to
+      flat-shaded low-poly on purpose.
+- [x] **EVERY CLIP IS A WHOLE COPY OF THE BODY, AND MERGING THEM WORKS.** Each
+      animated GLB carries the mesh and its texture again — walk, run and the
+      rig are 7.6 MB apiece. Size is not why that is wrong; **five copies of
+      one skeleton is the wrong shape for an animation system**. Proved out:
+      loading each GLB, keeping the first one's scene and taking every other
+      one's `AnimationClip`, then exporting through `GLTFExporter`, gives ONE
+      `SkinnedMesh` carrying both clips by name. It is a Phase C build step and
+      not a runtime one. Note the exporter re-encodes every map as PNG, which
+      came out LARGER than the input (9.23 MB) until the maps were handed back
+      as JPEG.
 - [ ] **READABILITY AT CAMERA DISTANCE IS A RISK NOTHING LISTED.** At the
       spike's own framing — 40° fov, 52° pitch, 26 tiles back over zoom — the
       hero is about 60px tall at the default 1.6 and reads as a dark smudge;
@@ -404,6 +419,12 @@ each over one skinned mesh.
       tuned. **The mesh is not the problem** — the same body reads fine under a
       three-point rig. Phase B owns the light; whether the roster's darkest
       `look`s are re-written for 3D is a decision nobody has taken.
+**AND THERE IS SOMETHING TO DRIVE HIM AROUND IN.** A standalone page — the
+spike's own room, framing and light, with WASD, a zoom over the real 1-5 range,
+a light multiplier, a torch and a readout of **how many pixels tall he reads**
+— which is how the readability question gets answered by looking rather than
+by arguing. It is a test harness and lives outside the repo.
+
 - [ ] **WHICH PRESET CLIP PER STATE IS STILL UNPICKED**, and every library row
       carries a `preview_url` GIF, so it is judged rather than guessed. An
       `animate` call is the first animation credit spent and none has been.
