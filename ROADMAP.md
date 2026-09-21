@@ -254,13 +254,13 @@ by ten times and wants fixing. So a textured 3D payload is a change of degree
 rather than of kind, which it would not be for a normal web game. Draco on the
 meshes and KTX2 on the textures are the levers if it matters.
 
-**AND THE ONE THAT BITES AT THE INTERSECTION OF HIS TWO CHOICES**: Meshy ships
-albedo with the LIGHTING PAINTED INTO IT — shadows and highlights baked into
-the diffuse map. Under real lights that double-shades and reads as dirt. Wanting
-*textured and lit* means a de-lighting pass in Blender on every model, flat
-albedo with normal and roughness split out. It is the single biggest per-model
-cost in the pipeline and it is invisible until the first model is lit, which is
-what Phase C is for.
+**THE DE-LIGHTING COST WAS WRONG, AND IT IS A REQUEST FLAG.** This file said a
+baked albedo meant a Blender pass on every model and was *"the single biggest
+per-model cost in the pipeline"*. Read against the OpenAPI spec, `remove_lighting`
+is a boolean on the image-to-3d request and `enable_pbr` splits normal and
+roughness out on its own. So the PIPELINE cost is a flag. **Whether its output
+is good enough is still unjudged** and can only be judged on a real model —
+`turntable.mjs` is what judges it, and the measurement is written down below.
 - [ ] **B — THE WORLD.** Extruded geometry, lighting, and a look. Zone colour
       comes from lights and materials now, which is where the free recolour
       that baked palettes gave us comes back.
@@ -291,33 +291,97 @@ plan.** Both live behind one seam, toggled; the game is playable every day.
 A conversion that makes the game unrunnable for a month is the one that gets
 abandoned in week three.
 
-### AND MESHY IS BLOCKED FROM THIS SESSION
+### MESHY IS REACHABLE NOW, AND THE KEY IS ONE SESSION AWAY
 
-`api.meshy.ai` is refused by the environment's egress policy — the proxy
-answers 403 to CONNECT and the README's rule is to report it rather than route
-round it. Measured beside it: `api.pixellab.ai` answers and `github.com`
-answers, so the allowlist is explicit and Meshy is simply not on it.
+The allowlist holds `api.meshy.ai` and `*.meshy.ai`; both answer, so the 403 is
+gone. **The KEY is not in this container** — an environment variable is fixed
+when the container starts, and it was added after this one did, so a FRESH
+SESSION picks it up with nothing more to do. `meshy.mts` reads `MESHY_API_KEY`,
+`Meshy_api_key` or `meshy_api_key`, because caps are a convention rather than a
+rule and the name it was stored under is the second.
 
-**Two ways past it, and the second needs nothing from anybody:**
+- [ ] **THE ONE OPEN ALLOWLIST QUESTION: where the FILES are served from.** The
+      spec declares every download as `format: uri` with no example host, so
+      whether a finished GLB comes off `*.meshy.ai` or off cloud storage cannot
+      be known until one arrives. `pull` in `meshy.mts` records the host of
+      everything it fetches into `made.json` and prints it, so the first real
+      download answers it; a 403 there says the allowlist wants that host.
+- [ ] **FIRST CALL NEXT SESSION IS `model.mts library`**, which is FREE and
+      spends no credits. It lists every preset action, which is what says
+      whether the clips the roster needs exist as presets or have to be made.
 
-- [ ] **ADD `api.meshy.ai` TO THE ENVIRONMENT'S ALLOWED HOSTS**, wherever
-      `api.pixellab.ai` was added — the network policy is chosen when the
-      environment is made. Then the whole loop runs from here.
-- [ ] **OR HE RUNS MESHY AND COMMITS THE GLB.** Everything downstream is
-      local and already possible: `bpy` installs as a wheel, `gltf-transform`
-      is on npm, and the turntable render is three.js, which is now in the
-      bundle. Models land in `tools/3d/models/` and nothing else changes.
+### WHAT THE SPEC CHANGED, MEASURED AGAINST WHAT THIS FILE ASSUMED
+
+Read at `https://docs.meshy.ai/openapi.json`, 51 endpoints. Five of them move
+work OFF the local pipeline, which is why no Blender wheel was installed:
+
+- **MESHY RIGS AND ANIMATES.** `/v1/rigging` takes a GLB and `/v1/animations`
+  applies a preset from a library. **Mixamo is off the critical path** for
+  humanoids — it was the one manual browser step in the plan and it is now an
+  API call. Rigging also returns walk and run clips free beside the rig.
+- **DECIMATION IS SERVER-SIDE.** `target_polycount` runs 100 to 300,000 on the
+  request, so a low-poly body is asked for rather than reduced afterwards.
+  Rigging REFUSES anything above 320,000 faces, which is the one hard limit.
+- **`origin_at: bottom` AND `resize_height`** hand back a model standing on
+  y=0 at a stated height in metres — which is exactly what the renderer wants,
+  since it pins a body at its FOOT (`bodyFoot`, `FOOT_DROP`). A tile is a
+  metre, so a hero is asked for at 1.8 and arrives in game units.
+- **`model_type: lowpoly` AND `pose_mode: a-pose`** are both first-class, which
+  is the recommendation below and the rest pose rigging wants.
+- **`/v1/text-to-image` DRAWS THE CONCEPT TOO**, with `generate_multi_view` for
+  a four-view sheet and `remove_background`. So the ChatGPT step is OPTIONAL
+  rather than required, and the prompt is the body's OWN `look` out of
+  `tools/art/bodies.json` — the prose is never written twice.
+
+**AND THE ROSTER HAS FIVE STATES, NOT SIX.** Phase C says six clips; the heroes
+in `bodies.json` carry idle, walk, attack, cast and death, with no `hurt`.
+
+### THE LOCAL HALF IS BUILT AND TESTED
+
+`tools/3d/`, and every part of it runs today with no key:
+
+- **`testmodel.mjs`** writes a GLB with no generator at all — a two-box figure,
+  1.8m, standing on y=0, with lighting PAINTED INTO its texture on purpose. It
+  is what the rest was tested on.
+- **`turntable.mjs <model.glb>`** is how a model is JUDGED. It prints height,
+  origin, triangles, whether it is rigged, its clips and its maps, and writes a
+  two-row sheet: LIT on top, raw base colour underneath. Baked lighting is
+  invisible in the first row and unmissable in the second.
+- **`bakedLuma` PUTS A NUMBER ON THE BAKE.** Baked lighting is LOW FREQUENCY,
+  so the spread that survives an 8x8 reduction is the bake and the rest is
+  material detail. Measured on three known textures — a flat one, and ramps of
+  0.55 and 0.85:
+
+  | painted ramp | low frequency | detail |
+  |---|---|---|
+  | none | **0.000** | 0.057 |
+  | 0.55 | **0.644** | 0.044 |
+  | 0.85 | **1.201** | 0.159 |
+
+  The low-frequency figure tracks the bake and reads ZERO on a flat albedo,
+  which is what makes it a test of `remove_lighting` rather than an opinion:
+  ask one model with the flag and one without, and compare the two numbers.
+- **`meshy.mts`** is the transport and **`model.mts`** the walker, on the same
+  shape `body.mts` uses — `models.json` asks, `made.json` records every task id
+  and URL, so an interrupted run resumes instead of paying twice.
+- **NOTHING IN `models.json` IS PROSE.** A model's description is its body's
+  own `look`, so the pixel roster and the 3D roster cannot drift into two
+  different characters. What is there is what only 3D has: height in metres and
+  a triangle budget.
+
+**NONE OF IT IS WIRED INTO THE GAME**, by design — that is Phase C, and it
+waits on a real model to wire.
 
 ### The pipeline, and where it stops working
 
 Meshy is good at ONE prop or ONE character, from an image rather than from
 text — so ChatGPT's job is the concept image that makes Meshy controllable.
-Blender does cleanup, UVs, decimation and GLB export. **Mixamo auto-rigs and
-animates humanoids for free**, which covers the heroes, the workers and the
-people, and is far more reliable than hand-animating six clips apiece. It does
-NOT cover a beetle, a spire or anything with the wrong number of limbs — those
-are hand-rigged in Blender or bought, and that is where the roster gets
-expensive.
+**Rigging and animation are Meshy's own**, which covers the heroes, the workers
+and the people through one API. It does NOT cover a beetle, a spire or anything
+with the wrong number of limbs — a preset skeleton is humanoid — so those are
+hand-rigged in Blender or bought, and that is where the roster gets expensive.
+Blender is left for what nothing else does: a frame the generator got wrong,
+exactly as Aseprite is for the pixel roster.
 
 **LOW-POLY, FLAT-SHADED, STRONG SILHOUETTES** is the recommendation: it is
 cheaper to make, it hides what Meshy is bad at, and silhouette is already what

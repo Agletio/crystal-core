@@ -10,11 +10,14 @@ node_modules/
 npm-debug.log*
 .DS_Store
 Thumbs.db
-.env
 .env.local
 *.tsbuildinfo
 .vscode/
 .idea/
+
+# Generated 3D. `tools/3d/testmodel.mjs` rewrites the test figure on demand and
+# a model off the generator is a large binary with a URL in tools/3d/made.json.
+tools/3d/models/
 
 # Screenshot output from `npm run shots` — regenerated, never reviewed.
 shots/
