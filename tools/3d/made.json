@@ -1,0 +1,42 @@
+{
+  "tasks": {
+    "aethermancer:concept": {
+      "kind": "concept",
+      "id": "01a0c1a7-3df4-734e-98e6-073f901e2d14",
+      "status": "SUCCEEDED",
+      "formats": [],
+      "credits": 9
+    },
+    "aethermancer:make": {
+      "kind": "make",
+      "id": "01a0c1a8-991f-7000-8820-c6712726aced",
+      "status": "SUCCEEDED",
+      "formats": [
+        "glb",
+        "fbx",
+        "usdz",
+        "obj",
+        "mtl",
+        "stl"
+      ],
+      "credits": 30
+    },
+    "aethermancer:make:lit": {
+      "kind": "make",
+      "id": "01a0c1a8-a0dc-7429-8cae-eedba88c82b6",
+      "status": "SUCCEEDED",
+      "formats": [
+        "glb",
+        "fbx",
+        "usdz",
+        "obj",
+        "mtl",
+        "stl"
+      ],
+      "credits": 30
+    }
+  },
+  "hosts": [
+    "assets.meshy.ai"
+  ]
+}

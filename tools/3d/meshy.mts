@@ -1,24 +1,22 @@
 /**
  * THE GENERATOR FOR 3D, and it is a plain REST API rather than an MCP server.
- * `https://api.meshy.ai`, bearer token, submit-and-poll: every endpoint answers
- * a task id and the task carries `status` until it is `SUCCEEDED`.
+ * Bearer token, submit-and-poll: every endpoint answers a task id, and the
+ * task carries `status` until it is `SUCCEEDED`.
  *
- * WHAT IT DOWNLOADS IS RECORDED. A finished task hands back URLs the spec
- * declares only as `format: uri`, so which HOST serves them cannot be known
- * until one arrives — and if it is not a `*.meshy.ai` the environment's
- * allowlist has to learn it. `pull` prints and stores every host it fetched.
+ * Files come off `assets.meshy.ai`, signed and expiring within days, so `pull`
+ * records every host it fetched and the ledger keeps ids rather than URLs.
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 
-// The spec's one server, and the `/openapi` is part of it: without that
-// prefix every path answers NoMatchingRoute rather than 401.
+// `/openapi` is part of the server: without it every path 404s NoMatchingRoute.
 const BASE = 'https://api.meshy.ai/openapi';
 const LEDGER = 'tools/3d/made.json';
 
+// No URL is kept: an id can always ask for a fresh one.
 export interface Made {
   hosts?: string[];
-  tasks?: Record<string, { kind: string; id: string; status?: string; urls?: Record<string, string> }>;
+  tasks?: Record<string, { kind: string; id: string; status?: string; formats?: string[]; credits?: number }>;
 }
 
 export function key(): string {
@@ -55,15 +53,28 @@ export async function submit(path: string, body: Record<string, unknown>): Promi
   return id;
 }
 
+// WHERE THE URLS SIT DEPENDS ON THE STAGE: image-to-3d and text-to-image
+// carry theirs at the top level, rigging and animation nest theirs under
+// `result`. Both shapes are declared so one reader serves every stage.
 export interface Task {
   id: string;
   status: string;
   progress?: number;
   model_urls?: Record<string, string>;
   texture_urls?: Array<Record<string, string>>;
-  rigged_character_glb_url?: string;
-  animation_glb_url?: string;
+  consumed_credits?: number;
+  remove_lighting?: boolean;
+  result?: {
+    rigged_character_glb_url?: string;
+    animation_glb_url?: string;
+    basic_animations?: Record<string, string>;
+  };
   task_error?: { message?: string };
+}
+
+/** The finished GLB of whatever stage this task was, wherever it sits. */
+export function glbOf(task: Task): string | undefined {
+  return task.model_urls?.glb ?? task.result?.rigged_character_glb_url ?? task.result?.animation_glb_url;
 }
 
 export const fetchTask = (path: string, id: string): Promise<Task> => call(`${path}/${id}`) as Promise<Task>;

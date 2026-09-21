@@ -291,24 +291,88 @@ plan.** Both live behind one seam, toggled; the game is playable every day.
 A conversion that makes the game unrunnable for a month is the one that gets
 abandoned in week three.
 
-### MESHY IS REACHABLE NOW, AND THE KEY IS ONE SESSION AWAY
+### MESHY IS CONNECTED, AND ONE MODEL HAS BEEN THROUGH IT
 
-The allowlist holds `api.meshy.ai` and `*.meshy.ai`; both answer, so the 403 is
-gone. **The KEY is not in this container** — an environment variable is fixed
-when the container starts, and it was added after this one did, so a FRESH
-SESSION picks it up with nothing more to do. `meshy.mts` reads `MESHY_API_KEY`,
-`Meshy_api_key` or `meshy_api_key`, because caps are a convention rather than a
-rule and the name it was stored under is the second.
+The key is in the environment as `Meshy_api_key`, the allowlist holds
+`api.meshy.ai` and `*.meshy.ai`, and a hero has been generated end to end for
+**69 credits of 3100** — 9 for the concept image and 30 for each half of the
+de-lighting measurement.
 
-- [ ] **THE ONE OPEN ALLOWLIST QUESTION: where the FILES are served from.** The
-      spec declares every download as `format: uri` with no example host, so
-      whether a finished GLB comes off `*.meshy.ai` or off cloud storage cannot
-      be known until one arrives. `pull` in `meshy.mts` records the host of
-      everything it fetches into `made.json` and prints it, so the first real
-      download answers it; a 403 there says the allowlist wants that host.
-- [ ] **FIRST CALL NEXT SESSION IS `model.mts library`**, which is FREE and
-      spends no credits. It lists every preset action, which is what says
-      whether the clips the roster needs exist as presets or have to be made.
+**THE BASE PATH WAS WRONG, and it was the whole of the 404.** The spec declares
+one server, `https://api.meshy.ai/openapi`, and `BASE` had dropped the suffix,
+so every call in the transport was aimed a level too high and answered
+NoMatchingRoute. Nothing else about the transport was wrong.
+
+**THE FILES COME OFF `assets.meshy.ai`, so the allowlist needs nothing.** Both
+the concept PNG and both GLBs were served from it under `*.meshy.ai`, and
+`made.json` records the host. **A DOWNLOAD URL IS SIGNED AND EXPIRES**, within
+days, so the ledger keeps the task id, the formats and the host and never the
+URL — a resume asks for a fresh one.
+
+**THE PRESET LIBRARY IS 678 ACTIONS AND IT COVERS THE FIVE STATES.** Idle 25,
+Walking 87, AttackingwithWeapon 38 and Punching 38, CastingSpell 12, Dying 11 —
+and GettingHit 11 for `hurt`, Charged_Ground_Slam and the stomps for `slam`,
+Zombie_Scream and Shouting_Angrily for `roar`. Nothing the roster carries is
+missing.
+
+- **EVERY ONE OF THE 678 IS BIPED**, off its own preview path, so the library
+  is humanoid motion and nothing else. **RIGGING IS NOT** — `animation_type`
+  is `biped|quadruped` — so a four-legged body can be rigged by the API and
+  still has no preset clip to wear. Measured on the roster: 129 rows are **37
+  distinct bodies** once the 92 weapon and off-hand variants collapse, and of
+  those **28 read biped and 9 do not** — courser, heap, imp, hornfiend,
+  shardling, lattice, prism, spire, chime. Those nine are where the roster
+  gets expensive, exactly as the pipeline note said.
+- **90 OF THE 678 ARE `_inplace`**, which is no root motion — 39 of them
+  Walking. The sim owns `x`, `y` in tiles, so an in-place clip is what a body
+  wants and a travelling one fights the sim. Melee swings are NOT offered in
+  place; stripping the root bone's position track at load is a line of
+  three.js and not a reason to author anything.
+
+**WHAT THE TWO MODELS MEASURED, and it is the sheet the flag was asked for:**
+
+| | low frequency | detail | whole |
+|---|---|---|---|
+| `remove_lighting` **true** | **0.472** | 2.095 | 2.567 |
+| `remove_lighting` **false** | **0.587** | 2.440 | 3.027 |
+
+**THE FLAG WORKS AND IT IS NOT A CURE.** Same concept image, same everything,
+only the flag between them, and the API echoes it back on the task: the bake
+falls by a fifth and the de-lit albedo is visibly flatter through the robe.
+**BUT THE RESIDUAL IS NOT READABLE AGAINST THE REFERENCE TABLE** — 0.000 flat,
+0.644 at a 0.55 ramp, 1.201 at 0.85 were measured on synthetic textures with
+one base colour, where this body genuinely holds pale skin, near-black cloth
+and lit violet phials. Low frequency on a real character counts that as bake.
+**So the A/B DIFFERENCE is the measurement and the absolute number is not**,
+and `bakedLuma`'s "LIGHTING IS PAINTED IN" verdict fires on both.
+
+**AND THREE THINGS THE SPEC PROMISED DID NOT ARRIVE:**
+
+- [ ] **`origin_at: bottom` DID NOT PUT THE FEET ON THE GROUND.** Both models
+      measure `feet at y -0.953` — centred, not foot-origined — where the
+      renderer pins a body at its FOOT (`bodyFoot`, `FOOT_DROP`). An offset at
+      load costs nothing, and `/v1/resize` takes `origin_at` of its own, so
+      this is a question of which stage owns it rather than a wall.
+- [ ] **`target_polycount` WAS ASKED AT 6,000 AND ANSWERED AT 17,732.** Nearly
+      3x, and `should_remesh` is the untried lever — it defaults by model
+      rather than to on. Rigging refuses anything above 320,000, so nothing is
+      blocked, but a low-poly roster is not what came back.
+- [x] **`resize_height` IS NOT AN IMAGE-TO-3D FIELD.** It belongs to
+      `/v1/resize` and `/v1/remesh`, and `make` had been sending it where it
+      does nothing. **RIGGING TAKES `height_meters`**, which is the right
+      stage anyway: the rigged GLB is what gets wired, so that is where 1.8
+      is pinned. Unasked, the model came back at 1.90m.
+
+**THE PAYLOAD IS THE NUMBER TO WATCH.** One textured 2k body with PBR maps is
+**8 MB of GLB**, and the maps are map, normalMap, roughnessMap, metalnessMap
+and emissiveMap. Thirty-seven bodies at that rate is ~300 MB against a
+`docs/app.js` that ships 18 MB today, so Draco and KTX2 stop being levers and
+become the plan. `texture_resolution` and `enable_pbr` are the cheaper dials.
+
+- [ ] **THE ANIMATION SPEND IS NOT STARTED, and it is the next decision.**
+      Rigging and each clip cost credits, `basic_animations` comes back free
+      beside the rig, and which of the 678 to wear per state is a judgement
+      the previews answer — every row carries a `preview_url` GIF.
 
 ### WHAT THE SPEC CHANGED, MEASURED AGAINST WHAT THIS FILE ASSUMED
 

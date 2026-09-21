@@ -17,7 +17,7 @@
  * string — the two rosters cannot drift into two different characters.
  */
 import { readFileSync } from 'node:fs';
-import { fetchTask, ledger, pull, submit, waitFor, writeLedger } from './meshy.mts';
+import { fetchTask, glbOf, ledger, pull, submit, waitFor, writeLedger } from './meshy.mts';
 
 const ASKS = 'tools/3d/models.json';
 const BODIES = 'tools/art/bodies.json';
@@ -129,17 +129,15 @@ async function watch(): Promise<void> {
     if (task.status === 'SUCCEEDED') continue;
     console.log(`${slot} (${task.kind})`);
     const done = await waitFor(PATHS[task.kind], task.id);
-    const urls: Record<string, string> = {
-      ...(done.model_urls ?? {}),
-      ...(done.rigged_character_glb_url ? { glb: done.rigged_character_glb_url } : {}),
-      ...(done.animation_glb_url ? { glb: done.animation_glb_url } : {}),
-    };
+    const glb = glbOf(done);
+    const urls: Record<string, string> = { ...(done.model_urls ?? {}), ...(glb ? { glb } : {}) };
+    if (done.consumed_credits != null) console.log(`  ${done.consumed_credits} credits`);
     if (urls.glb) {
       const dest = `tools/3d/models/${slot.replace(/:/g, '-')}.glb`;
       console.log(`  served from ${await pull(urls.glb, dest)} -> ${dest}`);
     }
     const now = ledger();
-    now.tasks![slot] = { ...task, status: 'SUCCEEDED', urls };
+    now.tasks![slot] = { ...task, status: 'SUCCEEDED', formats: Object.keys(urls), credits: done.consumed_credits };
     writeLedger(now);
   }
   console.log(`hosts seen: ${(ledger().hosts ?? ['none yet']).join(', ')}`);
