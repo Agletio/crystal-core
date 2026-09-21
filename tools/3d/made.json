@@ -34,6 +34,15 @@
         "stl"
       ],
       "credits": 30
+    },
+    "aethermancer:rig": {
+      "kind": "rig",
+      "id": "01a0c1ee-6b60-7722-9f87-3b1063c394cc",
+      "status": "SUCCEEDED",
+      "formats": [
+        "glb"
+      ],
+      "credits": 5
     }
   },
   "hosts": [

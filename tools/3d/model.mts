@@ -108,10 +108,19 @@ async function make(sprite: string, lit?: string): Promise<void> {
   remember(`${sprite}:make${keepLight ? ':lit' : ''}`, 'make', id);
 }
 
+/** WHERE THE HEIGHT IS PINNED. image-to-3d has no sizing field, and the rigged
+ *  GLB is what gets wired, so `height_meters` belongs here — a tile is a metre,
+ *  so the model arrives in game units. */
 async function rig(sprite: string): Promise<void> {
+  const ask = askFor(sprite);
   const from = held(`${sprite}:make`);
   if (!from) throw new Error(`nothing made for ${sprite} yet`);
-  remember(`${sprite}:rig`, 'rig', await submit(PATHS.rig, { input_task_id: from.id }));
+  const id = await submit(PATHS.rig, {
+    input_task_id: from.id,
+    animation_type: 'biped',
+    height_meters: ask.height,
+  });
+  remember(`${sprite}:rig`, 'rig', id);
 }
 
 async function animate(sprite: string, action: string): Promise<void> {

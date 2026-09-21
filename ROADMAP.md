@@ -369,10 +369,44 @@ and emissiveMap. Thirty-seven bodies at that rate is ~300 MB against a
 `docs/app.js` that ships 18 MB today, so Draco and KTX2 stop being levers and
 become the plan. `texture_resolution` and `enable_pbr` are the cheaper dials.
 
-- [ ] **THE ANIMATION SPEND IS NOT STARTED, and it is the next decision.**
-      Rigging and each clip cost credits, `basic_animations` comes back free
-      beside the rig, and which of the 678 to wear per state is a judgement
-      the previews answer — every row carries a `preview_url` GIF.
+**RIGGING IS CHEAP AND IT REPAIRS WHAT IMAGE-TO-3D GOT WRONG.** 5 credits,
+`animation_type: biped`, and the rigged GLB comes back **1.8m with its feet at
+y 0** where the unrigged one was 1.90m and centred. So `origin_at` failing at
+image-to-3d costs nothing: **rigging is the stage that owns height and
+origin**, and `height_meters` is where a tile being a metre is asserted.
+
+**AND IT HANDS BACK WALK AND RUN FOR NOTHING.** `basic_animations` carries
+`walking_glb_url` and `running_glb_url` beside the rig, so the first moving
+picture of a hero cost no animation spend at all — 1.07s and 0.67s, 72 tracks
+each over one skinned mesh.
+
+- [ ] **RIGGING DROPS THE PBR MAPS.** image-to-3d returned map, normalMap,
+      roughnessMap, metalnessMap and emissiveMap; the rigged GLB carries **map
+      and emissiveMap alone**. The albedo is untouched (0.473 low frequency
+      against 0.472), so nothing about the de-lighting changes — but normal and
+      roughness are gone, and `enable_pbr` is paying for maps that do not
+      survive the stage after it. Flat-shaded low-poly is the recommendation
+      anyway, so this may be free; it is not yet decided.
+- [ ] **EVERY CLIP IS A WHOLE COPY OF THE BODY.** The walk and the run are
+      7.6 MB each and so is the rig — the mesh and its texture ride along with
+      the animation. Five clips a body is 38 MB of which 30 is the same mesh
+      four times over, and thirty-seven bodies is unshippable. **What ships is
+      ONE mesh and the tracks off each clip**, which three.js loads as
+      `AnimationClip`s against one `SkinnedMesh`; extracting them is a Phase C
+      build step, not a runtime one.
+- [ ] **READABILITY AT CAMERA DISTANCE IS A RISK NOTHING LISTED.** At the
+      spike's own framing — 40° fov, 52° pitch, 26 tiles back over zoom — the
+      hero is about 60px tall at the default 1.6 and reads as a dark smudge;
+      at the closest zoom of 5 he is still a near-black blob. Two causes pull
+      apart: the Aethermancer's own `look` says *"deep indigo, cold violet,
+      near-black"*, written for a 48px sprite where every pixel was chosen,
+      and the spike's light is one directional and an ambient that was never
+      tuned. **The mesh is not the problem** — the same body reads fine under a
+      three-point rig. Phase B owns the light; whether the roster's darkest
+      `look`s are re-written for 3D is a decision nobody has taken.
+- [ ] **WHICH PRESET CLIP PER STATE IS STILL UNPICKED**, and every library row
+      carries a `preview_url` GIF, so it is judged rather than guessed. An
+      `animate` call is the first animation credit spent and none has been.
 
 ### WHAT THE SPEC CHANGED, MEASURED AGAINST WHAT THIS FILE ASSUMED
 
