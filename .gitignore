@@ -37,3 +37,7 @@ tools/art/cache/
 art-review/
 
 art/palette-*.png
+
+# Secrets — never committed. The Meshy key lives here, the way
+# PIXELLAB_API_KEY lives in the environment.
+.env

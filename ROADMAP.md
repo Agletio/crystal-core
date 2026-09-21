@@ -291,6 +291,23 @@ plan.** Both live behind one seam, toggled; the game is playable every day.
 A conversion that makes the game unrunnable for a month is the one that gets
 abandoned in week three.
 
+### AND MESHY IS BLOCKED FROM THIS SESSION
+
+`api.meshy.ai` is refused by the environment's egress policy — the proxy
+answers 403 to CONNECT and the README's rule is to report it rather than route
+round it. Measured beside it: `api.pixellab.ai` answers and `github.com`
+answers, so the allowlist is explicit and Meshy is simply not on it.
+
+**Two ways past it, and the second needs nothing from anybody:**
+
+- [ ] **ADD `api.meshy.ai` TO THE ENVIRONMENT'S ALLOWED HOSTS**, wherever
+      `api.pixellab.ai` was added — the network policy is chosen when the
+      environment is made. Then the whole loop runs from here.
+- [ ] **OR HE RUNS MESHY AND COMMITS THE GLB.** Everything downstream is
+      local and already possible: `bpy` installs as a wheel, `gltf-transform`
+      is on npm, and the turntable render is three.js, which is now in the
+      bundle. Models land in `tools/3d/models/` and nothing else changes.
+
 ### The pipeline, and where it stops working
 
 Meshy is good at ONE prop or ONE character, from an image rather than from
