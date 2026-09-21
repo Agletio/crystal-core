@@ -185,10 +185,42 @@ extrusion later, piece by piece, without the sim noticing.
       the two that exist, behind the seam already in `src/render/renderer.ts`
       (`draw`, `setZoom`, `panBy`, `lookAt`, `screenAt`, `worldAt`, `follow`).
       Boxes for walls, capsules for bodies, no art whatsoever, a dev-kit
-      toggle. It answers the four things that can kill this: does the camera
-      and scale read at all, does it hold frame rate with the deep end's 850
-      bodies, does `worldAt` still put a cast where the cursor is, and do
-      `shots`/`smoke`/`peek` still screenshot under headless WebGL.
+      toggle. **THE RENDERING IS NOT THE RISK — THE LIGHTING IS**, so it
+      measures these and stops:
+      - **HOW MANY DYNAMIC LIGHTS the frame can carry.** three.js is a FORWARD
+        renderer: every light multiplies shader cost per lit object, and past
+        a handful it falls over. A cave wants a torch, a fireball that lights
+        the room and a spike that glows. The answer is almost certainly BAKED
+        static light plus two or three dynamic ones — and a fixed camera over
+        static geometry is what makes baking possible at all, which is the
+        second thing the camera decision buys.
+      - **SHADOWS, or none.** One directional light with a single cascade is
+        affordable; a shadow-casting point light per effect is not.
+      - **DRAW CALLS ON THE FLOOR.** A 100×100 grid is 10,000 tiles and one
+        mesh each is dead on arrival. Merged geometry or `InstancedMesh` from
+        the first line, never a mesh per cell.
+      - **SKINNED MESHES ON SCREEN AT ONCE.** 850 bodies exist at the deep end
+        but a Diablo-distance camera sees perhaps 40-60. Each is a draw call
+        and a CPU bone update. If 60 will not hold, the fix is known — vertex
+        animation textures and instancing — but it is real work and wants
+        knowing NOW rather than at Phase D.
+      - **HEADLESS.** `shots`, `smoke` and `peek` run Chromium under
+        SwiftShader, which is software WebGL: a scene that is 60fps on a GPU
+        can be seconds a frame there. The demo never renders and is safe.
+
+**AND THE PAYLOAD IS THE RISK THAT IS NOT THERE.** `docs/app.js` already ships
+**18 MB, 6.1 MB gzipped** — the note in the `art` skill saying 1.62 MB is stale
+by ten times and wants fixing. So a textured 3D payload is a change of degree
+rather than of kind, which it would not be for a normal web game. Draco on the
+meshes and KTX2 on the textures are the levers if it matters.
+
+**AND THE ONE THAT BITES AT THE INTERSECTION OF HIS TWO CHOICES**: Meshy ships
+albedo with the LIGHTING PAINTED INTO IT — shadows and highlights baked into
+the diffuse map. Under real lights that double-shades and reads as dirt. Wanting
+*textured and lit* means a de-lighting pass in Blender on every model, flat
+albedo with normal and roughness split out. It is the single biggest per-model
+cost in the pipeline and it is invisible until the first model is lit, which is
+what Phase C is for.
 - [ ] **B — THE WORLD.** Extruded geometry, lighting, and a look. Zone colour
       comes from lights and materials now, which is where the free recolour
       that baked palettes gave us comes back.
