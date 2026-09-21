@@ -11,7 +11,9 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 
-const BASE = 'https://api.meshy.ai';
+// The spec's one server, and the `/openapi` is part of it: without that
+// prefix every path answers NoMatchingRoute rather than 401.
+const BASE = 'https://api.meshy.ai/openapi';
 const LEDGER = 'tools/3d/made.json';
 
 export interface Made {

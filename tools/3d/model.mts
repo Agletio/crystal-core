@@ -6,7 +6,8 @@
  *
  *   npx tsx tools/3d/model.mts library [word]     free, spends no credits
  *   npx tsx tools/3d/model.mts concept <sprite>   a reference image off `look`
- *   npx tsx tools/3d/model.mts make <sprite>      that image to a textured GLB
+ *   npx tsx tools/3d/model.mts make <sprite> [lit] that image to a textured GLB
+ *                                                 `lit` keeps the baked lighting
  *   npx tsx tools/3d/model.mts rig <sprite>
  *   npx tsx tools/3d/model.mts animate <sprite> <action_id>
  *   npx tsx tools/3d/model.mts watch              poll everything pending
@@ -77,8 +78,13 @@ async function concept(sprite: string): Promise<void> {
   remember(`${sprite}:concept`, 'concept', id);
 }
 
-async function make(sprite: string): Promise<void> {
+/** `lit` leaves the baked lighting IN, which is the control half of the
+ *  de-lighting measurement: one model each way off the SAME concept image, so
+ *  the only thing between them is the flag, and `turntable.mjs` reads the
+ *  low-frequency luma of both. */
+async function make(sprite: string, lit?: string): Promise<void> {
   const ask = askFor(sprite);
+  const keepLight = lit === 'lit';
   const from = held(`${sprite}:concept`);
   if (!from) throw new Error(`no concept for ${sprite} yet — run \`concept ${sprite}\` first`);
   const done = await fetchTask(PATHS.concept, from.id);
@@ -89,15 +95,17 @@ async function make(sprite: string): Promise<void> {
     model_type: ask.model_type,
     topology: ask.topology,
     target_polycount: ask.target_polycount,
-    remove_lighting: ask.remove_lighting,
+    remove_lighting: keepLight ? false : ask.remove_lighting,
     enable_pbr: ask.enable_pbr,
     origin_at: ask.origin_at,
     pose_mode: ask.pose_mode,
     texture_resolution: ask.texture_resolution,
-    resize_height: ask.height,
     should_texture: true,
   });
-  remember(`${sprite}:make`, 'make', id);
+  // HEIGHT IS NOT ASKED HERE: `resize_height` is a field of /v1/resize and
+  // /v1/remesh, and image-to-3d has no sizing but `auto_size`. What comes back
+  // is whatever scale Meshy picked, and `turntable.mjs` prints it.
+  remember(`${sprite}:make${keepLight ? ':lit' : ''}`, 'make', id);
 }
 
 async function rig(sprite: string): Promise<void> {
@@ -141,7 +149,7 @@ const [verb, a, b] = process.argv.slice(2);
 const VERBS: Record<string, () => Promise<void>> = {
   library: () => library(a),
   concept: () => concept(a),
-  make: () => make(a),
+  make: () => make(a, b),
   rig: () => rig(a),
   animate: () => animate(a, b),
   watch: () => watch(),
