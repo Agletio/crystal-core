@@ -12304,6 +12304,106 @@ if (rule('DRIVING — does a hand on the keys change anything that is measured?'
 // ===========================================================================
 }
 
+if (rule('WIND-UPS — is there anything to dodge?')) {
+
+// A monster used to deal its damage on the same tick its cooldown came up, so
+// nothing it did was dodgeable. That was right while nobody drove the hero.
+{
+  const windingSim = () => {
+    const who = ladderCharacter(3, new Rng(99));
+    const sim = new RunSim(ladderSet(3, new Rng(3313), pool), who, new Rng(5000));
+    for (let i = 0; i < 4000; i++) {
+      sim.step(TICK);
+      const up = sim.state.monsters.find((m) => !m.dead && m.winding !== undefined);
+      if (up) return { sim, up };
+    }
+    return null;
+  };
+
+  const found = windingSim();
+  check(!!found, 'a monster winds up before it swings', 'nothing ever wound up');
+
+  if (found) {
+    const { sim, up } = found;
+    // STAND IN IT and it lands; that is the half a wind-up must not break.
+    const before = sim.state.whiffed;
+    const life = sim.state.hero.life;
+    for (let i = 0; i < 30 && up.winding !== undefined; i++) sim.step(TICK);
+    const landed = sim.state.hero.life < life || sim.state.whiffed === before;
+    check(landed, 'and standing in it is still how you get hit', `life ${life} -> ${sim.state.hero.life}`);
+  }
+
+  // STEP OUT OF IT and it falls on nothing. The hero is put out of reach
+  // mid-wind-up, which is the one thing a player can do that an AI does not.
+  {
+    const again = windingSim();
+    if (again) {
+      const { sim, up } = again;
+      const was = sim.state.whiffed;
+      // The GAP is what is being tested, so it is opened from the monster's
+      // side: a hero teleported across the map lands on the exit and clears
+      // the descent, and a sim that has stopped resolves nothing at all.
+      up.x += 6;
+      up.y += 6;
+      for (let i = 0; i < 40 && up.winding !== undefined; i++) sim.step(TICK);
+      check(
+        sim.state.whiffed > was,
+        'and stepping out of one makes it fall on nothing',
+        `whiffed ${was} -> ${sim.state.whiffed}`
+      );
+    }
+  }
+
+  // THE RATE DOES NOT MOVE: the wind-up comes OUT of the swing interval rather
+  // than being added to it, or every monster in the game quietly got slower.
+  {
+    const who = ladderCharacter(3, new Rng(99));
+    const sim = new RunSim(ladderSet(3, new Rng(3313), pool), who, new Rng(5000));
+    const m = sim.state.monsters[0];
+    const want = 1 / m.stats.attacksPerSecond;
+    sim.state.hero.x = m.x;
+    sim.state.hero.y = m.y;
+    sim.state.hero.life = 1e9;
+    sim.state.hero.stats.maxLife = 1e9;
+    let swings = 0;
+    let wasWinding = false;
+    m.aggroed = true;
+    for (let i = 0; i < 20 / TICK; i++) {
+      // Held up on BOTH sides: a body the hero kills stops swinging, and a
+      // hero it kills stops being swung at, so neither may die.
+      m.life = 1e9;
+      m.stats.maxLife = 1e9;
+      m.dead = false;
+      sim.state.hero.life = 1e9;
+      sim.step(TICK);
+      const now = m.winding !== undefined;
+      if (now && !wasWinding) swings++;
+      wasWinding = now;
+      sim.state.hero.x = m.x; // pinned to it, so reach is never the variable
+      sim.state.hero.y = m.y;
+    }
+    const every = 20 / Math.max(1, swings);
+    line(`  it winds up every ${every.toFixed(2)}s against a swing interval of ${want.toFixed(2)}s`);
+    check(
+      Math.abs(every - want) < want * 0.25,
+      'and a wind-up is taken out of the swing interval, never added to it',
+      `${every.toFixed(2)}s against ${want.toFixed(2)}s`
+    );
+  }
+
+  // WHAT IT COST, which is a GAUGE and a large one: the danger tables were
+  // tuned against damage nobody could avoid, and anything killed during its
+  // own wind-up now never lands the blow at all.
+  gauge(
+    'wind-ups cut what reaches a LADDER hero — which does not even try to dodge — ' +
+      'by 67% at band 1, 59% at band 3 and 12% at band 6, and take band 6 from 2/4 ' +
+      'cleared to 4/4; DANGER was tuned against damage that always landed'
+  );
+}
+
+// ===========================================================================
+}
+
 if (rule('TERMINATION CHECK — does every run actually end?')) {
 
 // Worth its own check because this failure mode has bitten three times now

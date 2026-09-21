@@ -269,6 +269,21 @@ dodge. **This is sim work, it is testable today in 2D, and it decides whether
 the 3D version is worth building** — if telegraphed combat is not fun flat, no
 amount of geometry saves it. It belongs BEFORE Phase A, not after.
 
+**DONE, AND WAITING ON HIM TO PLAY IT.** `MONSTER_WINDUP` ships; the whole of
+it is in `CLAUDE.md`. What it did to the numbers is a GAUGE and a large one:
+what reaches a ladder hero falls 67%/59%/12% across bands 1, 3 and 6 and band
+6 goes from 2/4 cleared to 4/4, because a body killed inside its own wind-up
+never lands the blow. `DANGER` is not re-tuned against that yet and should not
+be until he has said the combat is worth keeping.
+
+- [ ] **IS IT READABLE?** The attack POSE is the only tell, which costs no art
+      and may not be enough — a generated attack ends at full extension and
+      holds, so the swing can look finished before the damage lands. If it is
+      hard to read, the answer is a ground marker on the seam `bossTelegraph`
+      already draws for a boss.
+- [ ] **RANGED IS DODGED BY BREAKING SIGHT, not by backing off**, since its
+      reach is the room. Whether that reads as fair is a play question.
+
 ### The other thing the Hades shape implies
 
 *"just two skills?"* — `SKILL_SLOTS` is a table, and `CLAUDE.md` already says

@@ -1722,6 +1722,24 @@ aimed-at one alone. **AN OBJECT GRANT NEEDS THE `bag` MERGE**: without it a
 notable saying "a further 25%" replaces the enabler's whole bag and is a
 downgrade the tooltip cannot show.
 
+**A BLOW IS THROWN BEFORE IT LANDS, AND WHERE IT LANDS IS READ WHEN IT DOES.**
+A monster used to deal its damage on the same tick its cooldown came up, which
+was right while nobody drove the hero and is a game with nothing to dodge the
+moment somebody does. `MONSTER_WINDUP` is 0.45s, capped at half the body's own
+swing interval so a fast one does not spend its life winding up, and
+`Entity.winding` is what is left of it. **IT IS ASKED ABOVE THE RANGE GATE AND
+ABOVE THE REACH TEST**: a body left thinking about a swing it never threw would
+hold it for the rest of the descent, and reach and sight are read in `landBlow`
+rather than when it was thrown — which is the whole of what makes stepping out
+of one a dodge. **THE COOLDOWN IS SET WHEN IT STARTS**, so the wind-up comes
+OUT of the swing interval and never adds to it; measured, a body winds up every
+1.25s against a 1.25s interval. **THE POSE IS THE TELL** and runs for the whole
+wind-up, so the warning costs no art. Measured on a LADDER hero, which does not
+even try to dodge: what reaches it falls **67% at band 1, 59% at band 3 and 12%
+at band 6**, and band 6 goes from 2/4 cleared to 4/4 — because anything killed
+during its own wind-up never lands the blow at all. **`DANGER` WAS TUNED
+AGAINST DAMAGE THAT ALWAYS LANDED** and has not been re-tuned against this.
+
 **A SWAP SAYS WHAT IT WILL COST BEFORE YOU SPEND ON IT.** *"Someone might swap
 skills spend a bunch of time setting up the tree or adding passives for that
 skill etc and then only to realize they can't after doing all that."* The

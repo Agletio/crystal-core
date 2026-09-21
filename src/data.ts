@@ -2869,6 +2869,22 @@ export const TRADE = {
  * the bare Fissure is made of. Crystal modifiers are the whole climb from here,
  * so these are the floor of the game rather than a rung on it.
  */
+/**
+ * WHAT A BLOW COSTS BEFORE IT LANDS. A monster used to deal its damage on the
+ * same tick its cooldown came up, which was correct while nobody drove the
+ * hero and is a game with nothing to dodge the moment somebody does.
+ *
+ * It is taken OUT of the swing interval rather than added to it — the cooldown
+ * is set when the wind-up starts — so the rate a body attacks at does not move
+ * and only a dodge costs it anything.
+ */
+export const MONSTER_WINDUP = {
+  seconds: 0.45,
+  /** Never more than this much of its own swing interval, or a fast body
+   *  spends its whole life winding up and never lands anything. */
+  share: 0.5,
+};
+
 export const MONSTER_BASE = {
   /** High enough that a pack survives long enough to swing back. */
   life: 34,

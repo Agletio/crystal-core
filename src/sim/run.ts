@@ -9,7 +9,7 @@ import { SOLID_PROPS } from '../vignettes';
 import { generateMap, sceneMap, dist, hasLineOfSight, roomCenter, openSpots, dampSpots } from './grid';
 import type { GameMap, Grid, Room, Vec2 } from './grid';
 import { findPath, nearestByPath } from './pathfind';
-import { AILMENT, AMBUSH, DAMAGE_TYPE_BY_ID, PASSIVE_DAMAGE, POTIONS, POTION_BY_ID } from '../data';
+import { AILMENT, AMBUSH, DAMAGE_TYPE_BY_ID, MONSTER_WINDUP, PASSIVE_DAMAGE, POTIONS, POTION_BY_ID } from '../data';
 import { percentStat, dangerScore} from '../mods';
 import type { BossPhase } from '../data';
 
@@ -311,6 +311,9 @@ export interface Entity {
   effects: TimedEffect[];
   stats: CombatStats;
   cooldown: number;
+  /** Seconds until a blow already thrown falls due. Where it lands is read
+   *  then, not now, which is what makes stepping out of one a dodge. */
+  winding?: number;
   stun?: number; // seconds held still: a Freeze, a Pin, or the boss's Fall
   stunKind?: 'freeze' | 'pin' | 'fall'; // which of the three wrote it, for the picture
   struck?: boolean; // whether ANY hit has landed on it: First Blood reads it
@@ -601,6 +604,9 @@ export interface RunState {
   clouds: Array<{ x: number; y: number; radius: number; power: number; seconds: number; spread?: { radius: number; generation: number }; left: number; tickIn: number; cast: CastMark }>; // Blight's drifting clouds
   gusts: number; // what GALE is holding, which is what its speed is worth
   /** Uses that fired the COMBAT mode: a step away, and a landing on a body. */
+  /** Blows that fell on nothing because the hero was gone by the time they
+   *  landed. `dodged` above is the Dodge STAT, which is a different thing. */
+  whiffed: number;
   kites: number;
   dives: number;
   /** Damage the mana pool paid for instead of your life. */
@@ -929,6 +935,7 @@ export class RunSim {
       damageTaken: {},
       blocked: 0,
       dodged: 0,
+      whiffed: 0,
     };
 
     if (def?.who && def.plan) this.state.folk.push(this.stand(def.who, def.plan.stands));
@@ -2422,10 +2429,47 @@ export class RunSim {
     this.waveTimer = def.wave.every;
   }
 
+  /**
+   * A WIND-UP FALLING DUE. Reach and sight are read HERE rather than when it
+   * was thrown, so a hero who left is a hero it misses — and a ranged body is
+   * dodged by breaking line of sight rather than by backing off, since its
+   * reach is the room.
+   */
+  private landBlow(m: Entity, hero: Entity): void {
+    this.face(m, hero.x, hero.y);
+    if (dist(m, hero) > this.reachTo(m, hero) || !this.canSee(m, hero)) {
+      this.state.whiffed++;
+      return;
+    }
+    const skill = m.skillId ? SKILL_BY_ID[m.skillId] : undefined;
+    if (skill) {
+      this.useSkill(m, hero, skill); // ranged packs go down the hero's own path
+      return;
+    }
+    m.action = 'attack';
+    m.actionTimer = ATTACK_POSE;
+    this.dealDamage(m, hero, 1);
+  }
+
   private stepMonster(m: Entity, dt: number): void {
     const hero = this.state.hero;
     if (m.cooldown > 0) m.cooldown -= dt;
     if ((m.tethered ?? 0) > 0) m.tethered = Math.max(0, (m.tethered ?? 0) - dt);
+
+    // A BLOW ALREADY THROWN FALLS DUE WHEREVER THE HERO WENT, so this is asked
+    // above the range gate AND above the reach test: walking out of one is the
+    // whole of what makes it a dodge, and a body left thinking about a swing
+    // it never threw would hold it for the rest of the descent. Committed
+    // while it runs — it neither closes nor re-aims.
+    if (m.winding !== undefined) {
+      m.winding -= dt;
+      m.path = [];
+      this.settleAction(m, false);
+      if (m.winding > 0) return;
+      m.winding = undefined;
+      this.landBlow(m, hero);
+      return;
+    }
 
     const d = dist(m, hero);
     if (d > ACTIVE_RANGE) return;
@@ -2473,17 +2517,12 @@ export class RunSim {
       this.face(m, hero.x, hero.y);
       this.settleAction(m, false);
       if (m.cooldown <= 0) {
-        const skill = m.skillId ? SKILL_BY_ID[m.skillId] : undefined;
-        if (skill) {
-          // Ranged packs go through the exact same skill path the hero uses.
-          this.useSkill(m, hero, skill);
-        } else {
-          // What `useSkill` sets, or a melee body swings from a standing pose.
-          m.action = 'attack';
-          m.actionTimer = ATTACK_POSE;
-          this.dealDamage(m, hero, 1);
-          m.cooldown = this.swingCooldown(m);
-        }
+        // THE POSE IS THE TELL, and it runs for the whole wind-up: a body
+        // rearing back is the only warning there is, and it costs no art.
+        m.winding = Math.min(MONSTER_WINDUP.seconds, this.swingCooldown(m) * MONSTER_WINDUP.share);
+        m.action = 'attack';
+        m.actionTimer = Math.max(ATTACK_POSE, m.winding);
+        m.cooldown = this.swingCooldown(m); // out of the interval, never added to it
       }
       return;
     }
