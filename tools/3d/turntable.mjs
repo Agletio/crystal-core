@@ -20,7 +20,7 @@
  * full-resolution spread adds. A flat albedo reads low near 0.
  */
 import { createServer } from 'node:http';
-import { readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join, resolve, extname } from 'node:path';
@@ -201,6 +201,7 @@ if (s.baked) {
   console.log(`  base colour luma spread ${s.baked.whole} = ${s.baked.low} low frequency + ${s.baked.detail} detail`);
   console.log(`              ${s.baked.low > 0.25 ? 'LIGHTING IS PAINTED IN — de-light it' : 'flat enough to light'}`);
 }
+await mkdir(dirname(join(root, out)), { recursive: true }); // shots/ is gitignored
 await writeFile(join(root, out), Buffer.from(got.png.split(',')[1], 'base64'));
 console.log(`  wrote ${out} — lit on top, raw base colour underneath\n`);
 

@@ -13,7 +13,8 @@
  * measures that ramp, so the de-light question has an answer on a model whose
  * true albedo is known — it is flat by construction.
  */
-import { writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { dirname } from 'node:path';
 import { deflateSync } from 'node:zlib';
 
 const HEIGHT = 1.8; // metres, a person
@@ -166,6 +167,7 @@ const tag = (len, type) => {
   return b;
 };
 const out = process.argv[2] ?? 'tools/3d/models/testfigure.glb';
+mkdirSync(dirname(out), { recursive: true }); // the models folder is gitignored, so a fresh clone has none
 writeFileSync(out, Buffer.concat([
   head, tag(json.length, 0x4e4f534a), json, tag(bin.length, 0x004e4942), bin,
 ]));
