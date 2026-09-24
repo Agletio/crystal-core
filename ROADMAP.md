@@ -184,20 +184,20 @@ generation is budgeted, and what code can build is built in code.
   own bag icons and carried in the hand bone (`Figure.carry`); the husk swings a
   pick and the Answering its maul.
 
-### The phases left, in order
+- **THE SHALLOWS IS WHOLE IN 3D**, the Answering's fight included: the Fall's
+  circles on the floor, the boss in its phase's colour, its maul in hand, the
+  boss bar the DOM's own. A keystone's ball, fuse, tremor or walking cloud is
+  drawn off the bursts and pools the sim already emits for it.
 
-1. **3D-C — THE DESCENT FINISHED.** Every VFX kind drawn as its own shape (the
-   burst, the pool, the spikes, the wedge, the slash and the thrown ones are;
-   the orb, the tremor, the fuse, the cloud and the boss's telegraphs are not),
-   a chest model that opens, the boss's arena, and a person met on the way down
-   standing in 3D.
-2. **3D-D — THE OTHER TWO ZONES' BODIES.** The Prism's and the Rot's monsters
-   and bosses (the Abyss's imp, chanter and hornfiend ARE three of the Rot's),
-   Wat and Ida, the Osteomancer and the Geometer. Until then each stands as its
-   own pixel frames on a card.
-3. **3D-F — THE ROOMS.** The Osteomancer's and the Geometer's rooms are still
-   their drawn pictures; built as scenes the way the camp was, they are two
-   more props sets and one more person each.
+### What is left, and it is all CREDITS — see Open questions
+
+1. **3D-D — THE OTHER TWO ZONES' BODIES.** The Prism's six (shardling,
+   lattice, bloom, prism, spire, chime) and its boss, the Rot's flenser, bloat
+   and maw and its boss, Wat and Ida, the Osteomancer and the Geometer. Until
+   then each stands as its own pixel frames on a card, which plays.
+2. **3D-F — THE ROOMS.** The Osteomancer's and the Geometer's rooms are still
+   their drawn pictures; built as scenes the way the camp was, they are a set
+   of props and one person each.
 
 ### Traps it has already paid for
 
@@ -1390,6 +1390,13 @@ still be satisfiable.
 ---
 
 ## Open questions
+
+- **SPEND THE CREDITS LEFT ON THE OTHER ZONES?** 538 remain of the
+  subscription's. The town, the map and the Shallows — what was asked for —
+  are done in 3D. The Prism's and the Rot's monsters and bosses and the four
+  people left would take about 420 (a concept 9, a model 15 or 30, a rig 5);
+  the two rooms' props about 240 more, so not both. Until then an unmodelled
+  body is its own pixel frames on a card and plays exactly as it did.
 
 **Do not guess at these.** None ever blocked a phase and none is work waiting to
 be picked up — they are decisions the user has not made. Ask before acting.

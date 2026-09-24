@@ -7,6 +7,8 @@
  * Not part of the suite. Requires a current bundle.
  *
  *   node tools/boss-peek.mjs [dir] [shots] [zoom]
+ *
+ * `Q=3d` draws it in 3D, on SwiftShader, and waits for the 3D renderer first.
  */
 import { createServer } from 'node:http';
 import { readFile, writeFile } from 'node:fs/promises';
@@ -30,7 +32,9 @@ const server = createServer(async (req, res) => {
 await new Promise((r) => server.listen(0, '127.0.0.1', r));
 const base = `http://127.0.0.1:${server.address().port}`;
 
-const browser = await chromium.launch();
+const Q = process.env.Q ?? '';
+const GL3 = /(^|&)3d/.test(Q);
+const browser = await chromium.launch(GL3 ? { args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] } : undefined);
 const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
 page.on('console', (m) => {
   if (m.type() === 'error' && !/WebGL|GPU/i.test(m.text())) console.log('page:', m.text());
@@ -45,7 +49,7 @@ async function makeCharacter() {
   await page.waitForTimeout(700);
 }
 
-await page.goto(`${base}/index.html`, { waitUntil: 'load' });
+await page.goto(`${base}/index.html${Q ? `?${Q}` : ''}`, { waitUntil: 'load' });
 await page.waitForTimeout(900);
 await page.evaluate(() => document.getElementById('title')?.click());
 await page.evaluate(() => document.getElementById('save-play')?.click());
@@ -76,8 +80,9 @@ const armed = await page.evaluate(() => {
 });
 console.log('keyhole:', armed);
 await page.waitForTimeout(400);
+if (GL3) await page.waitForFunction(() => !!globalThis.__three, null, { timeout: 240000 });
 await page.evaluate(() => document.getElementById('run-launch')?.click());
-await page.waitForTimeout(2500);
+await page.waitForTimeout(GL3 ? 20000 : 2500);
 for (let i = 0; i < 4; i++) {
   await page.keyboard.press('Escape');
   await page.waitForTimeout(150);
@@ -99,7 +104,7 @@ await page.waitForTimeout(400);
 
 for (let i = 0; i < Number(shots); i++) {
   await writeFile(join(out, `boss-${String(i).padStart(2, '0')}.png`), await page.screenshot());
-  await page.waitForTimeout(2200);
+  await page.waitForTimeout(GL3 ? 15000 : 2200);
 }
 console.log('runPhase', await page.evaluate(() => document.body.dataset.runPhase));
 
