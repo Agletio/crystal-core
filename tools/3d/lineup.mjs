@@ -4,9 +4,9 @@
  * renderer is ever in the way.
  *
  *   node tools/3d/lineup.mjs out.png [clip] [at,at,…] [body,body,…]
+ *   PAGE=fxsheet node tools/3d/lineup.mjs out.png '' 0.35   every effect kind at a share of its life
  *
- * No clip stands them at rest. Reads the built shards in `docs/gl/`, so run
- * `npm run build:gl` after a pack.
+ * No clip stands them at rest. Reads the built shards: `npm run build:gl` after a pack.
  */
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
@@ -17,11 +17,12 @@ import { chromium } from 'playwright';
 const root = new URL('../..', import.meta.url).pathname;
 const [out = 'lineup.png', clip = '', at = '0.5', bodies = ''] = process.argv.slice(2);
 const bundle = join(root, 'tools/3d/cache/lineup.js');
-await build({ entryPoints: [join(root, 'tools/3d/lineup.ts')], bundle: true, format: 'esm', outfile: bundle, logLevel: 'warning' });
+await build({ entryPoints: [join(root, `tools/3d/${process.env.PAGE ?? 'lineup'}.ts`)], bundle: true, format: 'esm', outfile: bundle, logLevel: 'warning' });
+const style = (await readFile(join(root, 'docs/index.html'), 'utf8')).match(/<style>[\s\S]*?<\/style>/)?.[0] ?? '';
 const server = createServer(async (req, res) => {
   const url = (req.url ?? '/').split('?')[0];
   try {
-    if (url === '/') return res.writeHead(200, { 'content-type': 'text/html' }).end('<!doctype html><body><script type="module" src="/lineup.js"></script>');
+    if (url === '/') return res.writeHead(200, { 'content-type': 'text/html' }).end(`<!doctype html><head>${style}</head><body><script type="module" src="/lineup.js"></script>`);
     const path = url === '/lineup.js' ? bundle : join(root, 'docs', url.slice(1));
     res.writeHead(200, { 'content-type': extname(path) === '.js' ? 'text/javascript' : 'application/octet-stream' }).end(await readFile(path));
   } catch {

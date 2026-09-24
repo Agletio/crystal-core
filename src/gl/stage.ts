@@ -130,7 +130,7 @@ export class Stage {
     this.forced = asked.has('high') || asked.has('low');
     const high = this.quality === 'high';
     this.renderer.setPixelRatio(high ? Math.min(2, globalThis.devicePixelRatio || 1) : 1);
-    this.renderer.shadowMap.enabled = true;
+    this.renderer.shadowMap.enabled = high; // a software rasteriser draws the scene twice for them, at a frame a second
     this.renderer.shadowMap.type = high ? THREE.PCFSoftShadowMap : THREE.PCFShadowMap;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.3;

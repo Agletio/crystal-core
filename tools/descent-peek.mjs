@@ -456,7 +456,7 @@ if (process.env.CAST) {
     document.body.dataset.holdDelay = after; // AFTER=<sim seconds> past the first effect, for a flight
     if (kind) document.body.dataset.holdKind = kind; // KIND=<vfx kind>: the first effect OF THAT KIND, so a mode's own picture is what is held
   }, [process.env.AFTER ?? '0', process.env.KIND ?? '']);
-  for (let i = 0; i < 1200; i++) {
+  for (let i = 0; i < (GL3 ? 6000 : 1200); i++) {
     if (await page.evaluate(() => document.body.dataset.hold)) break;
     await page.waitForTimeout(40);
   }

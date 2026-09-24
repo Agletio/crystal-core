@@ -15,11 +15,11 @@
 import * as THREE from 'three';
 import type { Vec2 } from '../sim/grid';
 import type { Entity, RunState } from '../sim/run';
-import { SKILL_BY_ID, MONSTERS, GEAR_BASE_BY_ID } from '../data';
+import { SKILL_BY_ID, MONSTERS, GEAR_BASE_BY_ID, AURA_BY_ID } from '../data';
 import { HERO_SCALE } from '../sim/appearance';
 import { MOVE } from '../data';
 import type { Palette, Renderer } from './renderer';
-import { ZOOM_MAX, ZOOM_MIN, lootBeam, lootSpan } from './renderer';
+import { ZOOM_MAX, ZOOM_MIN, bossTelegraph, groupColour, lootBeam, lootSpan } from './renderer';
 import { bodyFoot, generatedFrame, makeSheet } from './sprites';
 import type { SpriteSheet } from './sprites';
 import { makeProp } from './sprites';
@@ -193,6 +193,47 @@ export async function createThreeRenderer(host: HTMLElement, palette: Palette): 
   const lootGroup = new THREE.Group();
   stage.scene.add(lootGroup);
 
+  // WHAT LIES ON THE FLOOR AND IS NOT A THING: a shred aura's reach, the Fall's
+  // circles filling as their fuse burns, the glow under a monster carrying an
+  // aura. A pool of rings, laid again each frame.
+  const marks = new THREE.Group();
+  stage.scene.add(marks);
+  stage.glowing.push(marks);
+  const ringGeo = new THREE.RingGeometry(0.9, 1, 64).rotateX(-Math.PI / 2);
+  const discGeo = new THREE.CircleGeometry(1, 48).rotateX(-Math.PI / 2);
+  const pool: THREE.Mesh[] = [];
+  let used = 0;
+  const mark = (geo: THREE.BufferGeometry, x: number, z: number, r: number, colour: string, alpha: number): void => {
+    let m = pool[used];
+    if (!m) {
+      m = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false }));
+      pool.push(m);
+      marks.add(m);
+    }
+    used++;
+    m.geometry = geo;
+    m.visible = true;
+    m.position.set(x, (terrain?.heightAt(x, z) ?? 0) + 0.04, z);
+    m.scale.setScalar(Math.max(0.01, r));
+    const mat = m.material as THREE.MeshBasicMaterial;
+    mat.color.set(colour);
+    mat.opacity = alpha;
+  };
+  function drawMarks(state: RunState): void {
+    used = 0;
+    for (const a of state.auras) mark(ringGeo, a.x, a.y, a.r, groupColour(palette, a.group), 0.45);
+    for (const ring of state.circles) {
+      const gone = 1 - Math.max(0, ring.fuse) / Math.max(0.01, ring.of);
+      mark(ringGeo, ring.x, ring.y, ring.r, palette.ember, 0.9);
+      mark(discGeo, ring.x, ring.y, ring.r * gone, palette.ember, 0.25 + gone * 0.35);
+    }
+    for (const m of state.monsters) {
+      if (m.dead || !m.aura || !AURA_BY_ID[m.aura]) continue;
+      mark(discGeo, m.x, m.y, 1.6, AURA_BY_ID[m.aura].family === 'demonic' ? palette.venom : palette.bone, 0.16);
+    }
+    for (let i = used; i < pool.length; i++) pool[i].visible = false;
+  }
+
   let zoom = 2;
   stage.distance = distanceAt(zoom);
   let looking: THREE.Vector3 | null = null;
@@ -320,7 +361,8 @@ export async function createThreeRenderer(host: HTMLElement, palette: Palette): 
         z = e.hop.fy + (e.y - e.hop.fy) * through;
         lift = Math.sin(through * Math.PI) * (MOVE.hopHeight ?? 1) * 1.4;
       }
-      const ground = terrain?.heightAt(x, z) ?? 0;
+      let ground = terrain?.heightAt(x, z) ?? 0;
+      if (e === state.hero && emerge < 1) ground -= (1 - emerge) * 1.9; // down into the hole, not simply away
       if (v.body instanceof Board) {
         v.body.root.position.set(x, ground + lift, z);
         v.body.step(e, state.elapsed, dt);
@@ -367,6 +409,11 @@ export async function createThreeRenderer(host: HTMLElement, palette: Palette): 
         fig.play(fig.def.hit, 0.3);
         v.hitWait = 0.6;
       }
+      // WHAT IT IS UNDER, in its own light: the boss's phase, and ice round a body a Freeze holds.
+      const told = e === state.boss ? bossTelegraph(palette, state.phase, state.elapsed) : null;
+      const frozen = (e.stun ?? 0) > 0 && e.stunKind === 'freeze';
+      fig.look.uRim.value.set(told ? told.colour : frozen ? '#9fd8ff' : '#000000');
+      fig.look.uRimPower.value = told ? 0.9 : frozen ? 1.4 : 0;
       fig.step(pose, dt);
     }
     for (const [id, v] of shown) {
@@ -433,6 +480,7 @@ export async function createThreeRenderer(host: HTMLElement, palette: Palette): 
     if (state.map !== builtFor) build(state);
     sync(state, dt, emerge);
     syncLoot(state, s.uTime.value);
+    drawMarks(state);
     dressing?.update(state, s.uTime.value);
     effects?.sync(state);
 

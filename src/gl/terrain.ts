@@ -61,7 +61,7 @@ const WALL_AT = 0.35; // from a floor corner toward the rock corner, where the f
 const UNDER = 0.18; // the floor runs this far on under the face, so a face pushed back by its noise leaves no crack
 const ROWS = 6; // rows a wall is cut into, for its noise to have somewhere to go
 const FACE_NOISE = 0.36; // metres a face moves along its own normal
-const BOULDER = 14; // cells: a clump of rock this small with floor all round it is a boulder
+const BOULDER = 14; // cells: a clump of rock this small with floor all round it is boulders
 const CAP_REACH = 5; // cells of solid rock capped past the last floor; beyond it the fog is all there is
 const CAP_SHADE = 0.34; // the rock's top, darker than any face, so it reads as mass rather than floor
 
@@ -125,6 +125,39 @@ export function buildTerrain(map: GameMap, assets: Assets, s: Shared, eye: THREE
   const mouths = [map.entrance, map.exit].filter((m, i, all) => all.findIndex((n) => n.x === m.x && n.y === m.y) === i);
   const mouthCell = (x: number, y: number) => mouths.some((m) => m.x === x && m.y === y);
 
+  // ROCK THAT IS AN ISLAND is a clump of boulders on the floor, never a four-metre monolith: its cells are floor to the
+  // ground mesh and carry stones instead. The grid still blocks them — nothing here changes where a body may stand.
+  const clump = new Int32Array(W * H).fill(-1);
+  const small: boolean[] = [];
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      if (!rock(x, y) || clump[y * W + x] >= 0) continue;
+      const id = small.length;
+      const todo = [y * W + x];
+      clump[y * W + x] = id;
+      let size = 0;
+      let edge = false;
+      while (todo.length) {
+        const at = todo.pop()!;
+        size++;
+        const cx = at % W;
+        const cy = (at - cx) / W;
+        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+          const nx = cx + dx;
+          const ny = cy + dy;
+          if (nx < 0 || ny < 0 || nx >= W || ny >= H) {
+            edge = true;
+            continue;
+          }
+          const n = ny * W + nx;
+          if (rock(nx, ny) && clump[n] < 0) (clump[n] = id), todo.push(n);
+        }
+      }
+      small.push(!edge && size <= BOULDER);
+    }
+  }
+  const loose = (x: number, y: number): boolean => x >= 0 && y >= 0 && x < W && y < H && clump[y * W + x] >= 0 && small[clump[y * W + x]];
+
   // CORNERS, (W+1) by (H+1); corner (i, j) stands at world (i - 0.5, j - 0.5).
   const CW = W + 1;
   const corner = (i: number, j: number) => j * CW + i;
@@ -135,7 +168,7 @@ export function buildTerrain(map: GameMap, assets: Assets, s: Shared, eye: THREE
   for (let j = 0; j <= H; j++) {
     for (let i = 0; i <= W; i++) {
       const around = cells(i, j);
-      floorish[corner(i, j)] = around.some(([x, y]) => !rock(x, y)) ? 1 : 0;
+      floorish[corner(i, j)] = around.some(([x, y]) => !rock(x, y) || loose(x, y)) ? 1 : 0;
       wetness[corner(i, j)] = around.filter(([x, y]) => wet(x, y)).length / 4;
       depth[corner(i, j)] = around.filter(([x, y]) => deep(x, y)).length / 4;
     }
@@ -168,39 +201,6 @@ export function buildTerrain(map: GameMap, assets: Assets, s: Shared, eye: THREE
       }
     }
   }
-  // ROCK THAT IS AN ISLAND: a clump cut off from the mass stands as a boulder, never a four-metre monolith.
-  const clump = new Int32Array(W * H).fill(-1);
-  const small: boolean[] = [];
-  for (let y = 0; y < H; y++) {
-    for (let x = 0; x < W; x++) {
-      if (!rock(x, y) || clump[y * W + x] >= 0) continue;
-      const id = small.length;
-      const todo = [y * W + x];
-      clump[y * W + x] = id;
-      let size = 0;
-      let edge = false;
-      while (todo.length) {
-        const at = todo.pop()!;
-        size++;
-        const cx = at % W;
-        const cy = (at - cx) / W;
-        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
-          const nx = cx + dx;
-          const ny = cy + dy;
-          if (nx < 0 || ny < 0 || nx >= W || ny >= H) {
-            edge = true;
-            continue;
-          }
-          const n = ny * W + nx;
-          if (rock(nx, ny) && clump[n] < 0) (clump[n] = id), todo.push(n);
-        }
-      }
-      small.push(!edge && size <= BOULDER);
-    }
-  }
-  const boulder = (i: number, j: number): boolean =>
-    cells(i, j).some(([x, y]) => x >= 0 && y >= 0 && x < W && y < H && clump[y * W + x] >= 0 && small[clump[y * W + x]]);
-
   const openness = (i: number, j: number): number => {
     let d = 99;
     for (const [x, y] of cells(i, j)) d = Math.min(d, x >= 0 && y >= 0 && x < W && y < H ? far[y * W + x] : 0);
@@ -226,7 +226,7 @@ export function buildTerrain(map: GameMap, assets: Assets, s: Shared, eye: THREE
   };
 
   // ─── THE WALLS ───
-  interface Crossing { key: string; x: number; z: number; nx: number; nz: number; n: number; low: boolean }
+  interface Crossing { key: string; x: number; z: number; nx: number; nz: number; n: number }
   const crossings = new Map<string, Crossing>();
   const segments: [string, string, number, number][] = []; // two crossing keys and the segment's floor normal
   const P = (i: number, j: number) => ({ x: i - 0.5, z: j - 0.5 });
@@ -262,7 +262,7 @@ export function buildTerrain(map: GameMap, assets: Assets, s: Shared, eye: THREE
           poly.push({ key: `e${key}`, x: a.x + (b.x - a.x) * t, z: a.z + (b.z - a.z) * t, y: 0, shade: 0.42, edge: true });
           mass.push(`x${key}`);
           if (!crossings.has(key)) {
-            crossings.set(key, { key, x: a.x + (b.x - a.x) * WALL_AT, z: a.z + (b.z - a.z) * WALL_AT, nx: 0, nz: 0, n: 0, low: boulder(ri, rj) });
+            crossings.set(key, { key, x: a.x + (b.x - a.x) * WALL_AT, z: a.z + (b.z - a.z) * WALL_AT, nx: 0, nz: 0, n: 0 });
           }
         }
       }
@@ -347,7 +347,6 @@ export function buildTerrain(map: GameMap, assets: Assets, s: Shared, eye: THREE
       { key: `${ka}|${kb}`, x: (A.x + B.x) / 2, z: (A.z + B.z) / 2, nx: snx, nz: snz },
       { key: kb, x: B.x, z: B.z, nx: B.nx / bn, nz: B.nz / bn },
     ].map((c) => ({ ...c, h: heightOf(c.x, c.z, c.nx, c.nz) }));
-    if (A.low || B.low) for (const c of cols) c.h = Math.min(c.h, 1.1 + 0.5 * noise3(c.x * 0.7, 5.3, c.z * 0.7));
     tops.set(ka, cols[0].h);
     tops.set(kb, cols[2].h);
     // WOUND TO FACE THE FLOOR: t × up is the face normal of (a, b, b-above).
@@ -403,7 +402,7 @@ export function buildTerrain(map: GameMap, assets: Assets, s: Shared, eye: THREE
         (x = c.x), (z = c.z), (y = (tops.get(c.key) ?? look.low) - 0.02);
       } else {
         const [i, j] = key.slice(1).split(',').map(Number);
-        (x = i - 0.5), (z = j - 0.5), (y = boulder(i, j) ? 1.2 : look.low);
+        (x = i - 0.5), (z = j - 0.5), (y = look.low);
       }
       const n = pos.length / 3;
       pos.push(x, y, z);
@@ -440,6 +439,38 @@ export function buildTerrain(map: GameMap, assets: Assets, s: Shared, eye: THREE
     const cap = new THREE.Mesh(geo, material(assets, look.rock, look.rockTint, s, { triplanar: 0.45 }));
     cap.receiveShadow = true;
     group.add(cap);
+  }
+
+  // ─── BOULDERS: a rough stone a loose cell, overlapping into an outcrop ───
+  {
+    const seats: THREE.Matrix4[] = [];
+    for (let y = 0; y < H; y++) {
+      for (let x = 0; x < W; x++) {
+        if (!loose(x, y)) continue;
+        const tall = 0.75 + hash(x, y, 31) * 0.7;
+        const wide = 0.62 + hash(x, y, 32) * 0.18;
+        seats.push(new THREE.Matrix4().compose(
+          new THREE.Vector3(x + (hash(x, y, 33) - 0.5) * 0.2, tall * 0.35, y + (hash(x, y, 34) - 0.5) * 0.2),
+          new THREE.Quaternion().setFromEuler(new THREE.Euler((hash(x, y, 35) - 0.5) * 0.4, hash(x, y, 36) * 6.3, (hash(x, y, 37) - 0.5) * 0.4)),
+          new THREE.Vector3(wide, tall, wide)
+        ));
+      }
+    }
+    if (seats.length) {
+      const geo = new THREE.IcosahedronGeometry(1, 2);
+      const p = geo.getAttribute('position') as THREE.BufferAttribute;
+      const v = new THREE.Vector3();
+      for (let i = 0; i < p.count; i++) {
+        v.fromBufferAttribute(p, i);
+        const k = 0.78 + fbm3(v.x * 1.7 + 4, v.y * 1.7, v.z * 1.7) * 0.42;
+        p.setXYZ(i, v.x * k, v.y * k, v.z * k);
+      }
+      geo.computeVertexNormals();
+      const rocks = new THREE.InstancedMesh(geo, material(assets, look.rock, look.rockTint, s, { triplanar: 0.7 }, false), seats.length);
+      seats.forEach((m, i) => rocks.setMatrixAt(i, m));
+      rocks.castShadow = rocks.receiveShadow = true;
+      group.add(rocks);
+    }
   }
 
   // ─── WATER: one surface over every wet cell, fading to nothing at its shore ───
@@ -561,9 +592,9 @@ function waterMaterial(s: Shared, colour: number): THREE.ShaderMaterial {
         return mix(mix(h(i), h(i + vec2(1, 0)), f.x), mix(h(i + vec2(0, 1)), h(i + vec2(1, 1)), f.x), f.y); }
       void main() {
         vec2 p = vWorld.xz;
-        float ripple = n(p * 2.1 + vec2(uTime * 0.12, uTime * 0.07)) * 0.6 + n(p * 4.7 - uTime * 0.18) * 0.4;
-        float sheen = pow(ripple, 6.0) * 0.55;
-        vec3 col = uColor * (0.8 + 0.4 * ripple) + vec3(0.55, 0.62, 0.7) * sheen;
+        float ripple = n(p * 3.1 + vec2(uTime * 0.12, uTime * 0.07)) * 0.6 + n(p * 7.3 - uTime * 0.18) * 0.4;
+        float sheen = pow(ripple, 9.0) * 0.16; // still water: a glint where the lamps catch it, never a pattern
+        vec3 col = uColor * (0.92 + 0.12 * ripple) + vec3(0.55, 0.62, 0.7) * sheen;
         gl_FragColor = vec4(col, smoothstep(0.05, 0.75, vShore) * 0.86);
         #include <tonemapping_fragment>
         #include <colorspace_fragment>

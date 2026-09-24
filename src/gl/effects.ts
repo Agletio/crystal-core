@@ -45,6 +45,26 @@ function glowTex(): THREE.Texture {
   return glowTexture;
 }
 
+/** A disc that fades to nothing at its rim, for anything lying on the floor: a hard edge is a decal. */
+let softTexture: THREE.Texture | null = null;
+function softTex(): THREE.Texture {
+  if (softTexture) return softTexture;
+  const c = document.createElement('canvas');
+  c.width = c.height = 128;
+  const g = c.getContext('2d');
+  if (g) {
+    const r = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+    r.addColorStop(0, 'rgba(255,255,255,0.95)');
+    r.addColorStop(0.62, 'rgba(255,255,255,0.8)');
+    r.addColorStop(0.86, 'rgba(255,255,255,0.35)');
+    r.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = r;
+    g.fillRect(0, 0, 128, 128);
+  }
+  softTexture = new THREE.CanvasTexture(c);
+  return softTexture;
+}
+
 function orb(color: THREE.Color, size: number): THREE.Sprite {
   const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex(), color, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, toneMapped: false }));
   s.scale.setScalar(size);
@@ -154,7 +174,7 @@ export class Effects {
         for (const p of [from, to]) {
           const at = this.at(p, 0.9);
           this.particles.emit({ at, count: 26, spread: 0.3, speed: [0.5, 2.2], life: [0.3, 0.7], size: [0.05, 0.12], color: [c, 0xffffff], swirl: 3 });
-          this.lamps.flash(at, c, 12, 6, 0.25);
+          this.lamps.flash(at, c, 5, 3.5, 0.2);
         }
         return none;
       }
@@ -182,7 +202,7 @@ export class Effects {
       const sh = new THREE.Mesh(new THREE.OctahedronGeometry(0.12, 0).scale(0.7, 0.7, 2.6), this.ice);
       body.add(sh, orb(c, 0.8));
     } else {
-      body = orb(c, 0.9);
+      body = orb(c, 1.5);
       body.add(orb(new THREE.Color(1, 0.95, 0.8), 0.45));
     }
     g.add(body);
@@ -235,7 +255,10 @@ export class Effects {
     ring.position.copy(centre);
     const flash = orb(c, radius * 2.2);
     flash.position.copy(centre).y += 0.6;
-    this.group.add(ring, flash);
+    const wave = new THREE.Mesh(this.discGeo, additive(c.clone().multiplyScalar(0.6), 0.5));
+    (wave.material as THREE.MeshBasicMaterial).map = softTex();
+    wave.position.copy(centre);
+    this.group.add(ring, flash, wave);
     this.lamps.flash(centre.clone().setY(1.2), c, 26, radius * 3 + 3, 0.35);
     this.particles.emit({ at: centre.clone().setY(0.4), count: Math.round(20 + radius * 14), spread: radius * 0.3, speed: [radius * 2, radius * 5], dir: new THREE.Vector3(0, 0.25, 0), cone: 1, life: [0.25, 0.6], size: [0.06, 0.14], color: [c, 0xffffff], streak: 0.05, drag: 2.5 });
     return {
@@ -244,11 +267,14 @@ export class Effects {
         ring.scale.setScalar(r);
         (ring.material as THREE.MeshBasicMaterial).opacity = 0.9 * (1 - t * t);
         (flash.material as THREE.SpriteMaterial).opacity = Math.max(0, 0.8 * (1 - t * 2.5));
+        wave.scale.setScalar(r * 0.95);
+        (wave.material as THREE.MeshBasicMaterial).opacity = 0.5 * (1 - t) * (1 - t);
       },
       dispose: () => {
-        this.group.remove(ring, flash);
+        this.group.remove(ring, flash, wave);
         (ring.material as THREE.Material).dispose();
         (flash.material as THREE.Material).dispose();
+        (wave.material as THREE.Material).dispose();
       },
     };
   }
@@ -277,11 +303,12 @@ export class Effects {
     const from = fx.points[0];
     const to = fx.points[1] ?? from;
     const radius = Math.hypot(to.x - from.x, to.y - from.y);
-    const ink = c.clone().multiplyScalar(0.55);
-    const disc = new THREE.Mesh(this.discGeo, new THREE.MeshBasicMaterial({ color: ink, transparent: true, opacity: 0.7, depthWrite: false }));
+    const ink = c.clone().multiplyScalar(0.3);
+    const disc = new THREE.Mesh(this.discGeo, new THREE.MeshBasicMaterial({ color: ink, map: softTex(), transparent: true, opacity: 0.75, depthWrite: false }));
     disc.position.copy(this.at(from, 0.03));
     disc.renderOrder = 1;
-    const sheen = new THREE.Mesh(this.discGeo, additive(c, 0.35));
+    const sheen = new THREE.Mesh(this.discGeo, additive(c.clone().multiplyScalar(0.5), 0.35));
+    (sheen.material as THREE.MeshBasicMaterial).map = softTex();
     sheen.position.copy(disc.position).y += 0.01;
     this.group.add(disc, sheen);
     let bubble = 0;
@@ -291,8 +318,8 @@ export class Effects {
         disc.scale.setScalar(r);
         sheen.scale.setScalar(r * 0.8);
         const fade = 1 - Math.max(0, (t - 0.8) / 0.2);
-        (disc.material as THREE.MeshBasicMaterial).opacity = 0.7 * fade;
-        (sheen.material as THREE.MeshBasicMaterial).opacity = 0.3 * fade;
+        (disc.material as THREE.MeshBasicMaterial).opacity = 0.75 * fade;
+        (sheen.material as THREE.MeshBasicMaterial).opacity = (0.18 + 0.08 * Math.sin(t * 20)) * fade;
         if ((bubble += 1) % 4 === 0) {
           const a = Math.random() * Math.PI * 2;
           const d = Math.sqrt(Math.random()) * r;
@@ -365,9 +392,13 @@ export class Effects {
     const geo = new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
     geo.setIndex(idx);
-    const fan = new THREE.Mesh(geo, additive(c, 0.5, THREE.DoubleSide));
-    fan.position.copy(this.at(o, 0.04));
-    this.group.add(fan);
+    const fan = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: 0x1c1610, transparent: true, opacity: 0.55, depthWrite: false, side: THREE.DoubleSide }));
+    fan.position.copy(this.at(o, 0.03));
+    const rim = new THREE.Mesh(new THREE.RingGeometry(0.93, 1, 32, 1, a0, a1 - a0).rotateX(-Math.PI / 2).rotateY(0), additive(c.clone().lerp(new THREE.Color(1, 0.9, 0.7), 0.4), 0.9, THREE.DoubleSide));
+    rim.geometry.rotateY(0);
+    rim.position.copy(this.at(o, 0.05));
+    rim.scale.set(1, 1, -1); // the ring's angles run the other way round from the fan's
+    this.group.add(fan, rim);
     for (let i = 0; i < 18; i++) {
       const a = a0 + (a1 - a0) * (i / 17);
       const d = reach * (0.3 + 0.7 * ((i * 37) % 17) / 17);
@@ -375,13 +406,18 @@ export class Effects {
     }
     return {
       update: (_fx, t) => {
-        fan.scale.setScalar(Math.max(0.05, reach * (0.25 + 0.75 * Math.min(1, t * 1.5))));
-        (fan.material as THREE.MeshBasicMaterial).opacity = 0.5 * (1 - t);
+        const front = Math.max(0.05, reach * (0.25 + 0.75 * Math.min(1, t * 1.5)));
+        fan.scale.setScalar(front);
+        rim.scale.set(front, 1, -front);
+        (fan.material as THREE.MeshBasicMaterial).opacity = 0.55 * (1 - t * t);
+        (rim.material as THREE.MeshBasicMaterial).opacity = 0.9 * (1 - t);
       },
       dispose: () => {
-        this.group.remove(fan);
+        this.group.remove(fan, rim);
         geo.dispose();
+        rim.geometry.dispose();
         (fan.material as THREE.Material).dispose();
+        (rim.material as THREE.Material).dispose();
       },
     };
   }

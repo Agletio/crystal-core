@@ -94,6 +94,22 @@ export const BODIES: Record<string, BodyDef> = {
     attack: [W('hornfiend/attack', 0.2, 0.82, 0.98), W('bank/slam', 0.1, 0.55, 0.9)],
     hit: W('hero/hit', 0.02, 0.12, 0.3), death: W('hornfiend/death', 0, 0, 0.97), roar: W('imp/roar', 0.1, 0.3, 0.75),
   },
+  // THE ROT'S, off the Abyss's own models and the clips it bought for them.
+  imp: {
+    model: 'imp', shard: 'abyss/actors', height: 1.15, idle: 'imp/idle', move: 'imp/run',
+    attack: [W('imp/attack', 0.08, 0.42, 0.78)], hit: W('imp/hit', 0.02, 0.04, 0.1), death: W('imp/death', 0.02, 0, 0.6),
+    roar: W('imp/roar', 0.1, 0.3, 0.75), rim: 0.55,
+  },
+  chanter: {
+    model: 'chanter', shard: 'abyss/actors', height: 1.9, idle: 'chanter/idle', move: 'chanter/walk',
+    attack: [W('chanter/cast', 0.18, 0.52, 0.82)], cast: [W('chanter/cast', 0.18, 0.52, 0.82)],
+    hit: W('chanter/hit', 0.02, 0.04, 0.1), death: W('chanter/death', 0.02, 0, 0.6), rim: 1.3,
+  },
+  hornfiend: {
+    model: 'hornfiend', shard: 'abyss/actors', height: 3.0, idle: 'hornfiend/idle', move: 'hornfiend/walk',
+    attack: [W('hornfiend/attack', 0.2, 0.82, 0.98)], hit: W('hornfiend/hit', 0.02, 0.12, 0.3), death: W('hornfiend/death', 0, 0, 0.97),
+    roar: W('hornfiend/roar', 0.1, 0.35, 0.8), rim: 1.1,
+  },
   crawler: {
     model: 'crawler', shard: 'shallows', height: 1.0, idle: '', move: '', still: 'beast',
     attack: [W('', 0, 0.5, 1)], hit: W('', 0, 0.2, 1), death: W('', 0, 0, 1),
