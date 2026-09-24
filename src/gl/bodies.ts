@@ -185,6 +185,10 @@ const GRIP_TURN = {
   shield: new THREE.Euler(Math.PI, 0, Math.PI / 2),
 };
 const PALM = 0.085;
+/** A STAFF STANDS UP in the hand whatever the wrist does, leaned this far forward, and is held this far
+ *  down its shaft: every clip in the bank is a fist or a claw, and one following the thumb put its butt
+ *  through the head on every cast. */
+const STAFF = { lean: 0.22, shift: 0.24 };
 
 const RANK_LOOK: Record<string, { glow: number; power: number; grow: number }> = {
   magic: { glow: 0x4a7dff, power: 0.32, grow: 1.1 },
@@ -547,6 +551,7 @@ export class Figure {
   private readonly limbs = new Map<string, THREE.Object3D>(); // a beast's own bones, by `rigBeast`'s names
   private gait = 0;
   private moving = false;
+  private upright: THREE.Object3D | null = null; // a carried staff, stood up each frame
 
   constructor(readonly def: BodyDef, readonly template: Template, s: Shared, rank: string, scale: number, monster: boolean) {
     this.model = def.still === 'glide' ? template.scene.clone(true) : cloneSkinned(template.scene);
@@ -677,6 +682,16 @@ export class Figure {
     this.top = { ...top, action: upper };
   }
 
+  private standStaff(): void {
+    const up = this.upright;
+    if (!up?.parent) return;
+    const hand = up.parent.getWorldQuaternion(new THREE.Quaternion()).invert();
+    const want = this.root.getWorldQuaternion(new THREE.Quaternion()).multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), STAFF.lean));
+    up.quaternion.copy(hand.multiply(want));
+    const k = up.scale.x;
+    up.position.set(0, PALM * k, 0).addScaledVector(new THREE.Vector3(0, 1, 0).applyQuaternion(up.quaternion), STAFF.shift * k);
+  }
+
   /** A hit's flinch, over whatever the body is doing. */
   flinch(seconds: number): void {
     this.play(this.def.hit, seconds, { weight: FLINCH });
@@ -692,6 +707,7 @@ export class Figure {
     const had = this.carried.get(slot);
     if ((had?.key ?? null) === (source ? key : null)) return;
     had?.obj.removeFromParent();
+    if (had && had.obj === this.upright) this.upright = null;
     this.carried.delete(slot);
     const hand = this.hands.get(slot === 'main' ? 'RightHand' : 'LeftHand');
     if (!key || !source || !hand) return;
@@ -701,6 +717,7 @@ export class Figure {
     obj.scale.setScalar(k);
     obj.position.y = PALM * k;
     obj.rotation.copy(key === 'shield' ? GRIP_TURN.shield : GRIP_TURN[slot]);
+    if (key === 'staff') this.upright = obj;
     obj.traverse((o) => {
       const m = o as THREE.Mesh;
       if (m.isMesh) m.castShadow = true;
@@ -720,6 +737,7 @@ export class Figure {
     this.base = '';
     this.top = null;
     this.mixer.update(0);
+    this.standStaff();
   }
 
   /** Where a thing leaves the body: whichever hand is further forward, or the chest. */
@@ -776,6 +794,7 @@ export class Figure {
       base.timeScale = this.moving && depicts > 0.05 ? THREE.MathUtils.clamp(p.speed / depicts, 0.4, 2.4) : 1;
     }
     this.mixer?.update(p.held ? 0 : dt);
+    this.standStaff();
     if (Figure.trace) this.model.userData.playing = `${this.base}${this.top ? ` + ${this.top.action.getClip().name}` : ''}${this.moving ? ' moving' : ''}`;
   }
 

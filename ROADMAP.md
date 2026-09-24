@@ -221,8 +221,13 @@ generation is budgeted, and what code can build is built in code.
     real surface.
   - **THE GROUND**: a way down is a FUNNEL the floor runs into, where a body
     stood on air over a square hole; a wall one cell thick is stones, where it
-    was an invisible wall; a lake's shore is where the floor rises through it;
-    `heightAt` reads between corners, where it jumped 38 cm at a shore.
+    was an invisible wall; water fades out as the floor rises to it, where its
+    shore was a sawtooth along the cells; `heightAt` reads between corners,
+    where it jumped 38 cm at a shore; the Prism, the Rot and the Seam are lit
+    enough to see a body under its bar.
+  - **A STAFF STANDS UP IN THE HAND**, leaned forward, whatever the wrist does:
+    every clip in the bank is a fist or a claw, and one following the thumb
+    put a staff's butt through the head on every cast.
 
 ### What is left, and it is all CREDITS — see Open questions
 

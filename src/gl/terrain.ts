@@ -47,15 +47,15 @@ export const LOOKS: Record<MapTheme, GroundLook> = {
   },
   prismatic: {
     floor: 'sand', rock: 'cave_rock', floorTint: 0x8c93b0, rockTint: 0x9aa2d8, tall: 4.6, low: 0.9, water: 0x101838,
-    sky: [0x4a5a9a, 0x121628, 0.8], moon: [0x9ab0ff, 1.1], fog: [0x06070e, 0.018],
+    sky: [0x6676b8, 0x1a2040, 1.0], moon: [0xaec0ff, 1.35], fog: [0x06070e, 0.016],
   },
   demonic: {
     floor: 'sand', rock: 'cave_rock', floorTint: 0x9a6a5c, rockTint: 0xa86a5e, tall: 4.2, low: 0.9, water: 0x2a0806,
-    sky: [0x5a2a20, 0x1c0806, 0.8], moon: [0xff9a78, 0.9], fog: [0x0c0404, 0.018],
+    sky: [0x8a4a3a, 0x2a0e0a, 1.0], moon: [0xffb098, 1.3], fog: [0x0c0404, 0.016],
   },
   seam: {
     floor: 'sand', rock: 'cave_rock', floorTint: 0x8a7c9c, rockTint: 0x9a84a8, tall: 4.6, low: 0.9, water: 0x180a24,
-    sky: [0x5a4070, 0x140a1c, 0.8], moon: [0xb090ff, 1.0], fog: [0x08050c, 0.018],
+    sky: [0x7a5a98, 0x1e1028, 1.0], moon: [0xc0a4ff, 1.25], fog: [0x08050c, 0.016],
   },
 };
 
@@ -68,6 +68,7 @@ const CAP_REACH = 5; // cells of solid rock capped past the last floor; beyond i
 const CAP_SHADE = 0.34; // the rock's top, darker than any face, so it reads as mass rather than floor
 const FUNNEL = { reach: 1.05, throat: 0.3, depth: 0.5, ring: 1.45 }; // metres: a way down, out from its middle
 const LANTERN_Y = 1.9;
+const WATER_Y = -0.05;
 
 export interface Terrain {
   group: THREE.Group;
@@ -600,8 +601,8 @@ export function buildTerrain(map: GameMap, assets: Assets, s: Shared, eye: THREE
       const had = seen.get(c);
       if (had !== undefined) return had;
       const n = pos.length / 3;
-      pos.push(i - 0.5, -0.05, j - 0.5);
-      alpha.push(Math.min(1, wetness[c] * 1.6));
+      pos.push(i - 0.5, WATER_Y, j - 0.5);
+      alpha.push(WATER_Y - sink(c)); // how deep the floor lies under it here; the floor's triangles are these ones
       seen.set(c, n);
       return n;
     };
@@ -738,7 +739,7 @@ function waterMaterial(s: Shared, colour: number): THREE.ShaderMaterial {
         float ripple = n(p * 3.1 + vec2(uTime * 0.12, uTime * 0.07)) * 0.6 + n(p * 7.3 - uTime * 0.18) * 0.4;
         float sheen = pow(ripple, 9.0) * 0.16; // still water: a glint where the lamps catch it, never a pattern
         vec3 col = uColor * (0.92 + 0.12 * ripple) + vec3(0.55, 0.62, 0.7) * sheen;
-        gl_FragColor = vec4(col, smoothstep(0.0, 0.6, vShore) * 0.88);
+        gl_FragColor = vec4(col, smoothstep(0.0, 0.14, vShore) * 0.88); // clear where the floor comes up to it
         #include <tonemapping_fragment>
         #include <colorspace_fragment>
       }`,
