@@ -1,0 +1,25 @@
+{
+  "_": "THE 3D ROSTER: every body the game draws, asked of Meshy. THE PROSE IS NEVER HERE \u2014 a body's words are its `look` in tools/art/bodies.json, the same words its pixel art was generated from, and its CURRENT PICTURE goes along as the reference image, so the 3D body is that design redrawn rather than a new one. What is here is what only 3D has: height in metres (a tile is a metre), the skeleton, and which pictures to send.",
+  "_refs": "cast = the hero's 128 still off GENERATED_CAST; body = the idle frame off GENERATED; portrait = the bust off GENERATED_PORTRAITS; walk = a walk frame, for a body whose idle hides its stride.",
+  "style": {
+    "biped": "Recreate the character in the reference image as a high-end 3D game character for a AAA dark gothic action RPG in the style of Diablo IV. KEEP ITS DESIGN: the same clothing, colours, proportions, accessories and silhouette as the reference, redrawn with realistic anatomy, weathered materials and fine hand-crafted detail \u2014 NOT pixel art, NOT low resolution, NOT a cartoon. Full body visible from the top of the head to the soles of the feet, facing the viewer, standing in a relaxed A-pose with the arms held out and down about 45 degrees and the feet shoulder-width apart, both hands empty. Plain flat mid-grey studio backdrop, soft even diffuse light from the front, no harsh shadows, no rim light, no ground shadow, sharp focus. No text, no logo, no watermark, no border, no scenery.",
+    "quadruped": "Recreate the creature in the reference image as a high-end 3D game creature for a AAA dark gothic action RPG in the style of Diablo IV. KEEP ITS DESIGN: the same anatomy, colours, proportions and silhouette as the reference, redrawn with realistic bone and fine hand-crafted detail \u2014 NOT pixel art, NOT low resolution, NOT a cartoon. The whole body visible from nose to tail, standing on all four legs in a neutral stance, seen from a three-quarter front-side view. Plain flat mid-grey studio backdrop, soft even diffuse light, no harsh shadows, no rim light, no ground shadow, sharp focus. No text, no logo, no watermark, no border, no scenery."
+  },
+  "bodies": [
+    {"id": "aethermancer", "kind": "hero", "refs": ["cast"], "height": 1.8, "rig": "biped"},
+    {"id": "alchemist", "kind": "hero", "refs": ["cast"], "height": 1.8, "rig": "biped"},
+    {"id": "obreth", "kind": "hero", "refs": ["cast"], "height": 1.85, "rig": "biped"},
+    {"id": "mahthar", "kind": "hero", "refs": ["cast"], "height": 1.9, "rig": "biped"},
+    {"id": "husk", "sprite": "hewer", "kind": "monster", "refs": ["body"], "height": 1.75, "rig": "biped"},
+    {"id": "crawler", "sprite": "dragger", "kind": "monster", "refs": ["body", "walk"], "height": 1.0, "rig": "quadruped"},
+    {"id": "hound", "sprite": "courser", "kind": "monster", "refs": ["body", "walk"], "height": 1.1, "rig": "quadruped"},
+    {"id": "heap", "kind": "monster", "refs": ["body"], "height": 2.4, "rig": "biped"},
+    {"id": "gaunt", "kind": "monster", "refs": ["body"], "height": 2.9, "rig": "biped", "note": "ITS PROPORTIONS ARE THE WHOLE DESIGN: nearly three metres tall, legs half again as long as a man's, arms so long they hang BELOW THE KNEES, a SMALL skull on a long thin neck, a narrow stretched ribcage. Elongated and starved \u2014 NOT a normal human skeleton, NOT ordinary proportions."},
+    {"id": "bonecaller", "sprite": "shroud", "kind": "monster", "refs": ["body"], "height": 1.95, "rig": "biped"},
+    {"id": "answering", "kind": "boss", "refs": ["body"], "height": 4.0, "rig": "biped", "note": "COLOSSAL AND HEAVY: shoulders twice the width of a man's, a barrel chest, thick heavy limbs, and massive dark plates of fused bone armour GROWN over the shoulders, the chest, the forearms and the shins \u2014 a hulking brute of a warlord, NOT a lean skeleton, NOT normal human proportions. Empty-handed: the maul is a prop of its own, parented to the hand."},
+    {"id": "lampwright", "kind": "person", "refs": ["portrait", "body"], "height": 1.85, "rig": "biped", "note": "Empty-handed: the lantern pole is a prop of its own, parented to the hand."},
+    {"id": "smith", "kind": "person", "refs": ["portrait", "body"], "height": 1.9, "rig": "biped"},
+    {"id": "hob", "kind": "person", "refs": ["portrait", "body"], "height": 1.35, "rig": "biped"},
+    {"id": "nell", "kind": "person", "refs": ["portrait", "body"], "height": 1.7, "rig": "biped"}
+  ]
+}

@@ -480,13 +480,25 @@ in `bodies.json` carry idle, walk, attack, cast and death, with no `hurt`.
   The low-frequency figure tracks the bake and reads ZERO on a flat albedo,
   which is what makes it a test of `remove_lighting` rather than an opinion:
   ask one model with the flag and one without, and compare the two numbers.
-- **`meshy.mts`** is the transport and **`model.mts`** the walker, on the same
-  shape `body.mts` uses — `models.json` asks, `made.json` records every task id
-  and URL, so an interrupted run resumes instead of paying twice.
-- **NOTHING IN `models.json` IS PROSE.** A model's description is its body's
-  own `look`, so the pixel roster and the 3D roster cannot drift into two
-  different characters. What is there is what only 3D has: height in metres and
-  a triangle budget.
+- **`meshy.mts`** is the transport every Meshy tool shares and
+  **`roster.mts`** the walker, on the same shape `body.mts` uses —
+  `roster.json` asks, `made.json` records every task id, so an interrupted run
+  resumes instead of paying twice.
+- **NOTHING IN `roster.json` IS PROSE, AND A CONCEPT IS THE PIXEL BODY
+  REDRAWN.** A body's words are its own `look`, with the sentences about the
+  pixel camera dropped, and its CURRENT PICTURE goes along as the reference
+  image through `/v1/image-to-image` — the cast still for a hero, the bust
+  and the body for a person, the idle frame for a monster — so the pixel
+  roster and the 3D roster cannot drift into two different characters. What
+  is there is what only 3D has: height in metres and the skeleton.
+
+**THE SHALLOWS' ROSTER IS CONCEPTED AND WAITS ON HIS APPROVAL**: the four
+heroes, its six monsters, the Answering and the four people found there, 234
+credits of concepts, 9 a picture. Thirteen of fifteen came back faithful on
+the first ask. **THE GENERATOR WILL NOT DRAW A PROPORTION IT CALLS WRONG**:
+the Gaunt came back a man-sized skeleton three times however it was worded,
+so its length is the RIG's job — its limb bones stretched at load, the way
+`height_meters` already owns its height.
 
 **NONE OF IT IS WIRED INTO THE GAME**, by design — that is Phase C, and it
 waits on a real model to wire.

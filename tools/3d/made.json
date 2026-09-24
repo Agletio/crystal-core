@@ -1,51 +1,132 @@
 {
-  "tasks": {
-    "aethermancer:concept": {
-      "kind": "concept",
-      "id": "01a0c1a7-3df4-734e-98e6-073f901e2d14",
-      "status": "SUCCEEDED",
-      "formats": [],
-      "credits": 9
-    },
-    "aethermancer:make": {
-      "kind": "make",
-      "id": "01a0c1a8-991f-7000-8820-c6712726aced",
-      "status": "SUCCEEDED",
-      "formats": [
-        "glb",
-        "fbx",
-        "usdz",
-        "obj",
-        "mtl",
-        "stl"
-      ],
-      "credits": 30
-    },
-    "aethermancer:make:lit": {
-      "kind": "make",
-      "id": "01a0c1a8-a0dc-7429-8cae-eedba88c82b6",
-      "status": "SUCCEEDED",
-      "formats": [
-        "glb",
-        "fbx",
-        "usdz",
-        "obj",
-        "mtl",
-        "stl"
-      ],
-      "credits": 30
-    },
-    "aethermancer:rig": {
-      "kind": "rig",
-      "id": "01a0c1ee-6b60-7722-9f87-3b1063c394cc",
-      "status": "SUCCEEDED",
-      "formats": [
-        "glb"
-      ],
-      "credits": 5
-    }
+  "aethermancer:concept:0": {
+    "id": "01a0d371-639a-7681-8c44-620122923d34",
+    "status": "SUCCEEDED",
+    "credits": 9
   },
-  "hosts": [
-    "assets.meshy.ai"
-  ]
+  "aethermancer:concept:1": {
+    "id": "01a0d371-63ac-7507-b969-0ad97f6610de",
+    "status": "SUCCEEDED",
+    "credits": 9
+  },
+  "alchemist:concept:0": {
+    "id": "01a0d371-6282-733e-a819-836d9ddcf343",
+    "status": "SUCCEEDED",
+    "credits": 9
+  },
+  "alchemist:concept:1": {
+    "id": "01a0d371-627a-7552-9e2b-418aed364c0f",
+    "status": "SUCCEEDED",
+    "credits": 9
+  },
+  "answering:concept:0": {
+    "id": "01a0d371-63ff-7606-af8e-a2b8481ee0b9",
+    "status": "SUCCEEDED",
+    "credits": 9
+  },
+  "answering:concept:1": {
+    "id": "01a0d372-e8f2-7163-b1bb-2ec9761817e2",
+    "status": "SUCCEEDED",
+    "credits": 9
+  },
+  "answering:concept:2": {
+    "id": "01a0d372-e8eb-73e2-bc83-7de63f72dcd7",
+    "status": "SUCCEEDED",
+    "credits": 9
+  },
+  "bonecaller:concept:0": {
+    "id": "01a0d371-63c7-7787-b508-10e8e71e15f9",
+    "status": "SUCCEEDED",
+    "credits": 9
+  },
+  "crawler:concept:0": {
+    "id": "01a0d371-6500-734f-a423-18fbcd9086b0",
+    "status": "SUCCEEDED",
+    "credits": 9
+  },
+  "gaunt:concept:0": {
+    "id": "01a0d371-627a-76c8-a7c9-3d67b5b80c35",
+    "status": "SUCCEEDED",
+    "credits": 9
+  },
+  "gaunt:concept:1": {
+    "id": "01a0d372-e8d8-7489-bf31-f043217cba9c",
+    "status": "SUCCEEDED",
+    "credits": 9
+  },
+  "gaunt:concept:2": {
+    "id": "01a0d372-e8de-70f0-a280-46980dbc6ec9",
+    "status": "SUCCEEDED",
+    "credits": 9
+  },
+  "heap:concept:0": {
+    "id": "01a0d371-650f-7504-8057-fff62f86cdb1",
+    "status": "SUCCEEDED",
+    "credits": 9
+  },
+  "hob:concept:0": {
+    "id": "01a0d371-653a-7389-9865-a499da03969d",
+    "status": "SUCCEEDED",
+    "credits": 9
+  },
+  "hound:concept:0": {
+    "id": "01a0d371-6279-762c-b528-3e17bdca4d6d",
+    "status": "SUCCEEDED",
+    "credits": 9
+  },
+  "husk:concept:0": {
+    "id": "01a0d371-63b4-7660-b6dc-861915fbda06",
+    "status": "SUCCEEDED",
+    "credits": 9
+  },
+  "lampwright:concept:0": {
+    "id": "01a0d371-6509-75da-9908-341547a7818d",
+    "status": "SUCCEEDED",
+    "credits": 9
+  },
+  "mahthar:concept:0": {
+    "id": "01a0d371-650b-72c3-91f7-3442bc1aad56",
+    "status": "SUCCEEDED",
+    "credits": 9
+  },
+  "mahthar:concept:1": {
+    "id": "01a0d371-652e-76ff-8f4a-8d695d632d61",
+    "status": "SUCCEEDED",
+    "credits": 9
+  },
+  "nell:concept:0": {
+    "id": "01a0d371-65bb-7600-9775-24902e6d8db1",
+    "status": "SUCCEEDED",
+    "credits": 9
+  },
+  "obreth:concept:0": {
+    "id": "01a0d371-63a2-7473-9032-70549ad89af4",
+    "status": "SUCCEEDED",
+    "credits": 9
+  },
+  "obreth:concept:1": {
+    "id": "01a0d371-6391-733e-9fba-e76bf0b093f4",
+    "status": "SUCCEEDED",
+    "credits": 9
+  },
+  "scene-camp:0": {
+    "id": "01a0d374-a34c-7330-8416-1e7447367b8c",
+    "status": "SUCCEEDED",
+    "credits": 9
+  },
+  "scene-camp:1": {
+    "id": "01a0d374-a353-72b6-8c7c-a25fbeeed185",
+    "status": "SUCCEEDED",
+    "credits": 9
+  },
+  "scene-shallows:0": {
+    "id": "01a0d374-a351-701b-a514-019b3c71e2fa",
+    "status": "SUCCEEDED",
+    "credits": 9
+  },
+  "smith:concept:0": {
+    "id": "01a0d371-6477-7669-8f14-a0bdaa221629",
+    "status": "SUCCEEDED",
+    "credits": 9
+  }
 }

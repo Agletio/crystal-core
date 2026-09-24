@@ -1,114 +1,135 @@
 /**
- * THE GENERATOR FOR 3D, and it is a plain REST API rather than an MCP server.
- * Bearer token, submit-and-poll: every endpoint answers a task id, and the
- * task carries `status` until it is `SUCCEEDED`.
+ * THE MESHY TRANSPORT, shared by every tool that asks it for anything: the
+ * call with its back-off, the poll, the download, and the LEDGER that makes a
+ * run idempotent — a step already SUCCEEDED with its file on disk is skipped,
+ * and one SUCCEEDED without its file is fetched again off its id, since a
+ * download URL is signed and expires and an id does not.
  *
- * Files come off `assets.meshy.ai`, signed and expiring within days, so `pull`
- * records every host it fetched and the ledger keeps ids rather than URLs.
+ * A module, not a script: importing it runs nothing.
  */
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, renameSync, rmdirSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 
-// `/openapi` is part of the server: without it every path 404s NoMatchingRoute.
 const BASE = 'https://api.meshy.ai/openapi';
-const LEDGER = 'tools/3d/made.json';
 
-// No URL is kept: an id can always ask for a fresh one.
-export interface Made {
-  hosts?: string[];
-  tasks?: Record<string, { kind: string; id: string; status?: string; formats?: string[]; credits?: number }>;
-}
-
-export function key(): string {
-  // The environment names it either way; caps are a convention, not a rule.
-  const found = process.env.MESHY_API_KEY ?? process.env.Meshy_api_key ?? process.env.meshy_api_key;
-  if (!found) throw new Error('MESHY_API_KEY is not set — it is fixed at container start, so a fresh session picks up a newly added one');
-  return found;
-}
-
-export function ledger(): Made {
-  return existsSync(LEDGER) ? (JSON.parse(readFileSync(LEDGER, 'utf8')) as Made) : {};
-}
-
-export function writeLedger(next: Made): void {
-  mkdirSync(dirname(LEDGER), { recursive: true });
-  writeFileSync(LEDGER, `${JSON.stringify(next, null, 2)}\n`);
-}
-
-async function call(path: string, init?: RequestInit): Promise<unknown> {
-  const res = await fetch(`${BASE}${path}`, {
-    ...init,
-    headers: { Authorization: `Bearer ${key()}`, 'Content-Type': 'application/json', ...(init?.headers ?? {}) },
-  });
-  const text = await res.text();
-  if (!res.ok) throw new Error(`${init?.method ?? 'GET'} ${path} -> ${res.status} ${text.slice(0, 300)}`);
-  return text ? JSON.parse(text) : null;
-}
-
-/** Submit, and hand back the task id the poll needs. */
-export async function submit(path: string, body: Record<string, unknown>): Promise<string> {
-  const out = (await call(path, { method: 'POST', body: JSON.stringify(body) })) as { result?: string; id?: string };
-  const id = out.result ?? out.id;
-  if (!id) throw new Error(`${path} answered no task id: ${JSON.stringify(out).slice(0, 200)}`);
-  return id;
-}
-
-// WHERE THE URLS SIT DEPENDS ON THE STAGE: image-to-3d and text-to-image
-// carry theirs at the top level, rigging and animation nest theirs under
-// `result`. Both shapes are declared so one reader serves every stage.
-export interface Task {
+export interface Entry {
   id: string;
   status: string;
-  progress?: number;
-  model_urls?: Record<string, string>;
-  texture_urls?: Array<Record<string, string>>;
-  consumed_credits?: number;
-  remove_lighting?: boolean;
-  result?: {
-    rigged_character_glb_url?: string;
-    animation_glb_url?: string;
-    basic_animations?: Record<string, string>;
-  };
-  task_error?: { message?: string };
+  credits?: number;
+  from?: string;
 }
+export type Ledger = Record<string, Entry>;
 
-/** The finished GLB of whatever stage this task was, wherever it sits. */
-export function glbOf(task: Task): string | undefined {
-  return task.model_urls?.glb ?? task.result?.rigged_character_glb_url ?? task.result?.animation_glb_url;
-}
+const key = (): string => {
+  const k = process.env.MESHY_API_KEY ?? process.env.Meshy_api_key;
+  if (!k) throw new Error('no Meshy key in the environment');
+  return k;
+};
 
-export const fetchTask = (path: string, id: string): Promise<Task> => call(`${path}/${id}`) as Promise<Task>;
+export const readLedger = (file: string): Ledger => (existsSync(file) ? (JSON.parse(readFileSync(file, 'utf8')) as Ledger) : {});
 
-/** Poll to a terminal state. Generation is minutes, so this is a slow loop by
- *  design and prints progress rather than going quiet. */
-export async function waitFor(path: string, id: string, every = 10000): Promise<Task> {
-  let said = -1;
-  for (;;) {
-    const task = await fetchTask(path, id);
-    if (task.status === 'SUCCEEDED') return task;
-    if (task.status === 'FAILED' || task.status === 'CANCELED') {
-      throw new Error(`${id} ${task.status}: ${task.task_error?.message ?? 'no reason given'}`);
+// MANY RUNS WRITE ONE LEDGER AT ONCE, so a write is a read-modify-write under a
+// directory lock and lands by rename: a half-written ledger read by a
+// neighbour once lost a submitted task, credits and all.
+const nap = (ms: number) => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+export function record(file: string, name: string, entry: Entry): void {
+  const lock = `${file}.lock`;
+  for (let tries = 0; ; tries++) {
+    try {
+      mkdirSync(lock);
+      break;
+    } catch {
+      if (tries > 400) throw new Error(`${lock} held for 20s — remove it if no run is going`);
+      nap(50);
     }
-    const at = task.progress ?? 0;
-    if (at !== said) {
-      console.log(`  ${id} ${task.status} ${at}%`);
-      said = at;
-    }
-    await new Promise((go) => setTimeout(go, every));
+  }
+  try {
+    const all = readLedger(file);
+    all[name] = entry;
+    const sorted = Object.fromEntries(Object.entries(all).sort(([a], [b]) => a.localeCompare(b)));
+    writeFileSync(`${file}.tmp`, `${JSON.stringify(sorted, null, 2)}\n`);
+    renameSync(`${file}.tmp`, file);
+  } finally {
+    rmdirSync(lock);
   }
 }
 
-/** Fetch one URL to disk and REMEMBER ITS HOST, which is the open question
- *  about the allowlist: a download served off the generator's own domain needs
- *  nothing, and one served off cloud storage needs that host adding. */
-export async function pull(url: string, dest: string): Promise<string> {
-  const host = new URL(url).host;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`download ${host} -> ${res.status}${res.status === 403 ? ' (allowlist? add this host)' : ''}`);
-  mkdirSync(dirname(dest), { recursive: true });
-  writeFileSync(dest, Buffer.from(await res.arrayBuffer()));
-  const led = ledger();
-  led.hosts = [...new Set([...(led.hosts ?? []), host])];
-  writeLedger(led);
-  return host;
+export async function call(path: string, init?: RequestInit): Promise<any> {
+  for (let attempt = 0; ; attempt++) {
+    const res = await fetch(`${BASE}${path}`, {
+      ...init,
+      headers: { Authorization: `Bearer ${key()}`, 'Content-Type': 'application/json' },
+    });
+    const text = await res.text();
+    if (res.ok) return text ? JSON.parse(text) : null;
+    // 429 and 5xx are the service pacing us; anything else is our ask.
+    if ((res.status === 429 || res.status >= 500) && attempt < 6) {
+      await new Promise((go) => setTimeout(go, 4000 * 2 ** attempt));
+      continue;
+    }
+    throw new Error(`${init?.method ?? 'GET'} ${path} -> ${res.status} ${text.slice(0, 400)}`);
+  }
+}
+
+async function wait(path: string, id: string, label: string): Promise<any> {
+  let said = -1;
+  for (;;) {
+    const task = await call(`${path}/${id}`);
+    if (task.status === 'SUCCEEDED') return task;
+    if (task.status === 'FAILED' || task.status === 'CANCELED') {
+      throw new Error(`${label} ${task.status}: ${task.task_error?.message ?? 'no reason given'}`);
+    }
+    if (task.progress !== said) {
+      console.log(`  ${label} ${task.status} ${task.progress ?? 0}%`);
+      said = task.progress;
+    }
+    await new Promise((go) => setTimeout(go, 8000));
+  }
+}
+
+export async function download(url: string, dest: string): Promise<void> {
+  for (let attempt = 0; ; attempt++) {
+    const res = await fetch(url);
+    if (res.ok) {
+      mkdirSync(dirname(dest), { recursive: true });
+      writeFileSync(dest, Buffer.from(await res.arrayBuffer()));
+      return;
+    }
+    if (attempt >= 4) throw new Error(`download ${new URL(url).host} -> ${res.status}`);
+    await new Promise((go) => setTimeout(go, 3000 * 2 ** attempt));
+  }
+}
+
+/** Submit unless `ledger` already holds `name`, wait for it, fetch its file. Null when there was nothing to do. */
+export async function run(
+  ledger: string,
+  name: string,
+  path: string,
+  body: Record<string, unknown>,
+  file: string,
+  urlOf: (task: any) => string | undefined
+): Promise<any> {
+  const had = readLedger(ledger)[name];
+  if (had?.status === 'SUCCEEDED' && existsSync(file)) {
+    console.log(`  ${name}: have it`);
+    return null;
+  }
+  let id = had && had.status !== 'FAILED' && had.status !== 'NEW' ? had.id : '';
+  if (!id) {
+    const out = await call(path, { method: 'POST', body: JSON.stringify(body) });
+    id = out.result ?? out.id;
+    record(ledger, name, { id, status: 'PENDING', from: had?.from });
+    console.log(`  ${name}: submitted ${id}`);
+  }
+  const task = await wait(path, id, name);
+  const url = urlOf(task);
+  if (!url) throw new Error(`${name}: SUCCEEDED with no file to fetch`);
+  await download(url, file);
+  record(ledger, name, { id, status: 'SUCCEEDED', credits: task.consumed_credits ?? undefined, from: had?.from });
+  console.log(`  ${name}: ${file}`);
+  return task;
+}
+
+export async function balance(): Promise<number> {
+  return (await call('/v1/balance')).balance;
 }
