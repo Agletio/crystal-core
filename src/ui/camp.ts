@@ -37,8 +37,34 @@ import { syncTalk, wants } from './talk';
 import type { GameState } from '../game/state';
 
 import { closeParley } from './talk';
+import { Camp3d } from '../gl/camp';
+import type { CampPerson, CampView } from '../gl/camp';
+import { CAMP_HOTSPOTS as SPOTS } from '../scenes/camp';
 
 const $ = (id: string) => document.getElementById(id)!;
+
+/** THE CAMP IN 3D, once its art has landed: the picture and its canvas stand
+ *  down and every button is laid over the thing it stands for, each frame. */
+let deep: Camp3d | null = null;
+let asking = false;
+export function useCamp3d(on: boolean): void {
+  if (!on) {
+    deep?.dispose();
+    deep = null;
+    document.body.classList.remove('camp3d');
+    return;
+  }
+  if (deep || asking) return;
+  asking = true;
+  const rects = Object.fromEntries(SPOTS.map((h) => [h.id, h]));
+  void Camp3d.create($('camp'), rects).then((made) => {
+    asking = false;
+    if (!made) return;
+    deep = made;
+    document.body.classList.add('camp3d');
+    fit();
+  });
+}
 
 let game: GameState;
 let opens: Record<string, (spot: Hotspot, at: DOMRect) => void> = {};
@@ -65,6 +91,7 @@ function fit(): void {
   const style = $('camp-stage').style;
   style.setProperty('--camp-sx', scale);
   style.setProperty('--camp-sy', scale);
+  deep?.resize(box.width || globalThis.innerWidth, box.height || globalThis.innerHeight, Number(scale));
 }
 
 export function initCamp(
@@ -256,12 +283,51 @@ function frame(now: number): void {
   if (!live) return;
   if (started === 0) started = now;
   const at = (now - started) / 1000;
+  if (deep) {
+    drawDeep(deep, at - last);
+    last = at;
+    requestAnimationFrame(frame);
+    return;
+  }
+  last = at;
   const canvas = $('camp-live') as HTMLCanvasElement;
   const ctx = canvas.getContext?.('2d') ?? null;
   // No 2d context in jsdom: the picture and every hotspot still stand, which
   // is the half a headless harness can see.
   if (ctx) draw(ctx, canvas, at);
   requestAnimationFrame(frame);
+}
+
+let last = 0;
+
+/** Everybody where the picture stands them, the crystals in their sockets, and
+ *  every button moved onto whatever it stands for now that it is 3D. */
+function drawDeep(view3d: Camp3d, dt: number): void {
+  const folk: CampPerson[] = [];
+  folkMet(game).forEach((def, i) => folk.push({ key: `who-${def.id}`, sprite: def.who, at: folkSpot(def, i), lit: i === lit }));
+  workersFound(game).forEach((w, i) => folk.push({ key: `worker-${w.id}`, sprite: w.sprite, at: workerSpot(w.id, i), lit: lit === 100 + i, working: !!jobOf(game, w.id) }));
+  const own = jobOf(game, SELF);
+  const foot = own ? CAMP_STATION_FOOT[familyOfJob(own) ?? ''] : undefined;
+  const view: CampView = {
+    // Off to the fire's side: a body in 3D stands in front of what it faces.
+    hero: { key: 'hero', sprite: heroSpriteFor(game.character), at: foot ? { x: foot.x + 18, y: foot.y } : { x: CAMP_STAND.x - 52, y: CAMP_STAND.y - 22 }, lit: false },
+    folk,
+    sockets: CRYSTAL_SLOTS.map((slot) => {
+      const held = game.sockets[slot.id];
+      return held ? { family: String(held.meta.family ?? 'normal'), level: Number(held.meta.level ?? 1) } : null;
+    }),
+    banked,
+    hot: null,
+  };
+  view3d.frame(view, Math.min(0.1, Math.max(0, dt)));
+  const box = $('camp').getBoundingClientRect();
+  const place = (id: string, btn: HTMLElement | null): void => {
+    const r = btn ? view3d.bounds(id, box.width, box.height) : null;
+    if (!r || !btn) return;
+    Object.assign(btn.style, { left: `${r.x}px`, top: `${r.y}px`, width: `${r.w}px`, height: `${r.h}px` });
+  };
+  for (const spot of CAMP_HOTSPOTS) place(spot.id, document.getElementById(`camp-${spot.id}`));
+  for (const p of folk) place(p.key, document.getElementById(`camp-${p.key}`));
 }
 
 /** WHETHER THE FIRE IS BANKED: points waiting on the web it opens. A COUNT sat

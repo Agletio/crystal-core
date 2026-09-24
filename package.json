@@ -21,7 +21,7 @@
     "writing:test": "tsx --test tools/writing.test.mts",
     "build:abyss": "esbuild world=src/abyss/assets/load-world.ts actors=src/abyss/assets/load-actors.ts props=src/abyss/assets/load-props.ts furniture=src/abyss/assets/load-furniture.ts --bundle --format=iife --minify --outdir=docs/abyss --log-level=warning",
     "abyss": "tsx tools/abyss/check.mts",
-    "build:gl": "esbuild heroes=src/gl/assets/load-heroes.ts shallows=src/gl/assets/load-shallows.ts folk=src/gl/assets/load-folk.ts clips=src/gl/assets/load-clips.ts ground=src/gl/assets/load-ground.ts --bundle --format=iife --minify --outdir=docs/gl --log-level=warning"
+    "build:gl": "esbuild heroes=src/gl/assets/load-heroes.ts shallows=src/gl/assets/load-shallows.ts folk=src/gl/assets/load-folk.ts clips=src/gl/assets/load-clips.ts ground=src/gl/assets/load-ground.ts camp=src/gl/assets/load-camp.ts gear=src/gl/assets/load-gear.ts --bundle --format=iife --minify --outdir=docs/gl --log-level=warning"
   },
   "devDependencies": {
     "@babel/parser": "^8.0.4",

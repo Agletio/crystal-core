@@ -254,6 +254,216 @@
     "status": "SUCCEEDED",
     "credits": 5
   },
+  "prop:anvil:concept": {
+    "id": "01a0d464-86f5-702d-94e6-38ef25a639d5",
+    "status": "SUCCEEDED",
+    "credits": 9
+  },
+  "prop:anvil:model": {
+    "id": "01a0d466-af65-7646-b560-5c63ce3f12f0",
+    "status": "SUCCEEDED",
+    "credits": 30
+  },
+  "prop:bench:concept": {
+    "id": "01a0d464-86f6-76a9-973f-92ab596a43cc",
+    "status": "SUCCEEDED",
+    "credits": 9
+  },
+  "prop:bench:model": {
+    "id": "01a0d466-af60-70cd-885a-c7ab4984e2bd",
+    "status": "SUCCEEDED",
+    "credits": 30
+  },
+  "prop:bow:concept": {
+    "id": "01a0d464-8706-7684-9a87-84eea66b8c61",
+    "status": "SUCCEEDED",
+    "credits": 6
+  },
+  "prop:bow:model": {
+    "id": "01a0d466-afb6-7336-8e8a-c947ef136665",
+    "status": "SUCCEEDED",
+    "credits": 15
+  },
+  "prop:dagger:concept": {
+    "id": "01a0d464-8704-70ea-b638-64f849d5d60e",
+    "status": "SUCCEEDED",
+    "credits": 6
+  },
+  "prop:dagger:model": {
+    "id": "01a0d466-afa3-7699-8352-f3a477998b47",
+    "status": "SUCCEEDED",
+    "credits": 15
+  },
+  "prop:hook:concept": {
+    "id": "01a0d464-8706-7540-8c78-fa872987a37e",
+    "status": "SUCCEEDED",
+    "credits": 6
+  },
+  "prop:hook:model": {
+    "id": "01a0d466-afb5-7774-88e9-550af81cd4fa",
+    "status": "SUCCEEDED",
+    "credits": 15
+  },
+  "prop:jeweller:concept": {
+    "id": "01a0d464-8708-7046-bb7d-2065f8dcea37",
+    "status": "SUCCEEDED",
+    "credits": 9
+  },
+  "prop:jeweller:model": {
+    "id": "01a0d466-af78-76d9-905e-70115432e99b",
+    "status": "SUCCEEDED",
+    "credits": 30
+  },
+  "prop:kitchen:concept": {
+    "id": "01a0d464-870e-739a-b8f4-77c78a27056c",
+    "status": "SUCCEEDED",
+    "credits": 9
+  },
+  "prop:kitchen:model": {
+    "id": "01a0d466-af53-7735-bfad-2480f2bca160",
+    "status": "SUCCEEDED",
+    "credits": 30
+  },
+  "prop:loom:concept": {
+    "id": "01a0d464-86f6-76a8-9e24-b23470fbb23d",
+    "status": "SUCCEEDED",
+    "credits": 9
+  },
+  "prop:loom:model": {
+    "id": "01a0d466-af6c-74d9-a9e8-c35448f1a126",
+    "status": "SUCCEEDED",
+    "credits": 30
+  },
+  "prop:mace:concept": {
+    "id": "01a0d464-8719-760a-9693-3a9828aa3c4b",
+    "status": "SUCCEEDED",
+    "credits": 6
+  },
+  "prop:mace:model": {
+    "id": "01a0d466-af8a-7469-9da1-d308e1235b01",
+    "status": "SUCCEEDED",
+    "credits": 15
+  },
+  "prop:mace2h:concept": {
+    "id": "01a0d464-86fe-75da-b6a1-cf8c66d0a5b9",
+    "status": "SUCCEEDED",
+    "credits": 6
+  },
+  "prop:mace2h:model": {
+    "id": "01a0d466-af9f-76a0-9ae7-7e42accd1133",
+    "status": "SUCCEEDED",
+    "credits": 15
+  },
+  "prop:pick:concept": {
+    "id": "01a0d464-8701-75a8-a823-90af44cd068e",
+    "status": "SUCCEEDED",
+    "credits": 6
+  },
+  "prop:pick:model": {
+    "id": "01a0d466-af69-7040-810d-802e673a1528",
+    "status": "SUCCEEDED",
+    "credits": 15
+  },
+  "prop:rod:concept": {
+    "id": "01a0d464-8721-708f-99c7-22bc5dd059d8",
+    "status": "SUCCEEDED",
+    "credits": 6
+  },
+  "prop:rod:model": {
+    "id": "01a0d466-afbd-7243-9e5c-1b7f5adc6a1d",
+    "status": "SUCCEEDED",
+    "credits": 15
+  },
+  "prop:shelf:concept": {
+    "id": "01a0d464-8702-729e-a479-177e806ca518",
+    "status": "SUCCEEDED",
+    "credits": 9
+  },
+  "prop:shelf:model": {
+    "id": "01a0d466-af5c-73b1-96b5-f6c5996b5177",
+    "status": "SUCCEEDED",
+    "credits": 30
+  },
+  "prop:shield:concept": {
+    "id": "01a0d464-8714-7668-9d7f-4c198b53c2cd",
+    "status": "SUCCEEDED",
+    "credits": 6
+  },
+  "prop:shield:model": {
+    "id": "01a0d466-afb1-75b7-8961-25bc6f4b1efd",
+    "status": "SUCCEEDED",
+    "credits": 15
+  },
+  "prop:smelter:concept": {
+    "id": "01a0d464-86f5-75a3-a14b-d2e47524ef18",
+    "status": "SUCCEEDED",
+    "credits": 9
+  },
+  "prop:smelter:model": {
+    "id": "01a0d466-af61-7509-93fb-72d1c8b7da2f",
+    "status": "SUCCEEDED",
+    "credits": 30
+  },
+  "prop:staff:concept": {
+    "id": "01a0d464-8708-7047-bc08-a336e0700449",
+    "status": "SUCCEEDED",
+    "credits": 6
+  },
+  "prop:staff:model": {
+    "id": "01a0d466-afb4-7246-8002-1a4d6941bc95",
+    "status": "SUCCEEDED",
+    "credits": 15
+  },
+  "prop:sword:concept": {
+    "id": "01a0d464-870e-7412-8e10-5ffa25f2ff1a",
+    "status": "SUCCEEDED",
+    "credits": 6
+  },
+  "prop:sword:model": {
+    "id": "01a0d466-af6a-771f-91f7-4336f26ab963",
+    "status": "SUCCEEDED",
+    "credits": 15
+  },
+  "prop:sword2h:concept": {
+    "id": "01a0d464-8779-72f3-a782-4fd4ca5ed38e",
+    "status": "SUCCEEDED",
+    "credits": 6
+  },
+  "prop:sword2h:model": {
+    "id": "01a0d466-af92-71da-af15-b6b007cb7b57",
+    "status": "SUCCEEDED",
+    "credits": 15
+  },
+  "prop:tannery:concept": {
+    "id": "01a0d464-86f5-75a2-9530-eb504eedcf30",
+    "status": "SUCCEEDED",
+    "credits": 9
+  },
+  "prop:tannery:model": {
+    "id": "01a0d466-af7f-72f7-b874-293f75376ef3",
+    "status": "SUCCEEDED",
+    "credits": 30
+  },
+  "prop:tent:concept": {
+    "id": "01a0d464-8700-73e6-8113-87c3419a67fd",
+    "status": "SUCCEEDED",
+    "credits": 9
+  },
+  "prop:tent:model": {
+    "id": "01a0d466-afa2-734d-beeb-c939574e3055",
+    "status": "SUCCEEDED",
+    "credits": 30
+  },
+  "prop:wand:concept": {
+    "id": "01a0d464-8700-7628-a0c6-7379083aaa62",
+    "status": "SUCCEEDED",
+    "credits": 6
+  },
+  "prop:wand:model": {
+    "id": "01a0d466-af9d-7643-9888-9e66792ae82f",
+    "status": "SUCCEEDED",
+    "credits": 15
+  },
   "sand:surface": {
     "id": "01a0d432-3e62-7781-b1c2-9e23f4086f11",
     "status": "SUCCEEDED",

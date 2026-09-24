@@ -164,29 +164,36 @@ generation is budgeted, and what code can build is built in code.
   so does the dev kit. Every body, prop, effect and number reads the same
   `RunState` the 2D renderers read, so the systems are the game's own.
 - **`tools/3d/lineup.mjs`** stands every body in one picture holding a clip at
-  the moments asked; `Q=3d` on `descent-peek` shoots a real descent in 3D.
+  the moments asked (`GEAR=`, `GRIP=`, `HAND=` put a piece in a hand);
+  `Q=3d` on `descent-peek` shoots a real descent in 3D and
+  `tools/3d/camp-peek.mjs` the camp (`KIT=1` with everybody met, `BOXES=1`
+  with every hotspot outlined).
+
+- **THE CAMP IS 3D** (`src/gl/camp.ts`): the approved concept built as a
+  scene — the cliff, the crack and its sockets in code, nine stations and the
+  tent modelled off CROPS of the approved concept (`tools/3d/props.mts`), the
+  fire in code — laid out where the painted camp has them, and every hotspot
+  still the DOM button it was, moved each frame onto the thing it stands for.
+- **WHAT A HERO HOLDS IS DRAWN**: all twelve `HELD` families modelled off their
+  own bag icons and carried in the hand bone (`Figure.carry`); the husk swings a
+  pick and the Answering its maul.
 
 ### The phases left, in order
 
-1. **3D-A — WHAT A HERO HOLDS.** Twelve `HELD` families (sword, dagger, mace,
-   the two two-handers, staff, wand, bow, shield, pick, sickle, rod): a
-   concept each, a `meshy-6-lite` model each (15 credits), parented to the hand
-   bone by family, the swing chosen off it as `SWINGS` already is.
-2. **3D-B — THE CAMP IN 3D.** The approved camp concept (`tools/3d/cache/
-   scene-camp-1.png`) built as a scene: the cliff and the crack and its four
-   sockets in code, ten props modelled (smelter, shelf, bench, anvil, loom,
-   tanning frame, tent, kitchen, jeweller's, the fire), everybody met standing
-   about, and every `CAMP_HOTSPOTS` door a raycast onto the same `opens`.
-3. **3D-C — THE DESCENT FINISHED.** Every VFX kind drawn as its own shape (the
+1. **3D-C — THE DESCENT FINISHED.** Every VFX kind drawn as its own shape (the
    burst, the pool, the spikes, the wedge, the slash and the thrown ones are;
    the orb, the tremor, the fuse, the cloud and the boss's telegraphs are not),
-   a chest model that opens, and the boss's arena.
-4. **3D-D — THE OTHER TWO ZONES' BODIES.** The Prism's and the Rot's monsters
+   a chest model that opens, the boss's arena, and a person met on the way down
+   standing in 3D.
+2. **3D-D — THE OTHER TWO ZONES' BODIES.** The Prism's and the Rot's monsters
    and bosses (the Abyss's imp, chanter and hornfiend ARE three of the Rot's),
    Wat and Ida, the Osteomancer and the Geometer. Until then each stands as its
    own pixel frames on a card.
-5. **3D-E — A RIG FOR WHAT MESHY WOULD NOT RIG.** The crawler and the hound,
+3. **3D-E — A RIG FOR WHAT MESHY WOULD NOT RIG.** The crawler and the hound,
    and the Lampwright's glide, built in code.
+4. **3D-F — THE CAMP ALIVE.** A worker at a station working it (the hammer at
+   the smelter, the stoop at the loom), the hero at the station he works, and
+   the rooms the Osteomancer and the Geometer keep.
 
 ### Traps it has already paid for
 
@@ -198,8 +205,12 @@ generation is budgeted, and what code can build is built in code.
   from: re-binding a clone in place re-binds the original.
 - **`attached` BINDING READS A BAKED VERTEX IN WORLD UNITS**, not the
   armature's centimetres — baked in centimetres the Gaunt stood 213 metres.
-- **A LIGHT RIG TUNED FOR THE ABYSS TURNS PALE SAND LAVENDER.** Each world
-  carries its own sky, moon and fog in `LOOKS`.
+- **A LIGHT RIG TUNED FOR THE ABYSS TURNS PALE SAND LAVENDER** and lights
+  every body from BEHIND. Each world carries its own sky, moon and fog in
+  `LOOKS`, and `Lamps.moonFrom` puts the overhead light on the camera's side.
+- **A MESHY HAND BONE RUNS WRIST TO FINGERS ALONG Y**: a weapon is a quarter
+  turn off it, out of the thumb, and its origin is the wrist — the grip is in
+  the palm (`GRIP_TURN`, `PALM` in `src/gl/bodies.ts`).
 
 ## THE DRIVING SPIKE — waiting on him to play it
 

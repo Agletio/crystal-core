@@ -1,0 +1,214 @@
+{
+  "_": "WHAT STANDS IN THE CAMP AND WHAT A HERO HOLDS, asked of Meshy. A camp prop's reference is its own CROP of the approved camp concept (`tools/3d/cache/scene-camp-1.png`, in that picture's pixels), so the 3D camp is the camp he approved; a piece of gear's is its own inventory icon, so the 3D weapon is the item the bag shows. `size` is metres along the thing's longest side as it stands in the game.",
+  "style": {
+    "prop": "Recreate the object in the reference image ALONE as a high-end 3D game prop for a AAA dark gothic action RPG in the style of Diablo IV. KEEP ITS DESIGN: the same shape, parts, materials and colours as the reference, with weathered surfaces and fine hand-crafted detail — NOT pixel art, NOT a cartoon. The whole object visible and centred, seen from a three-quarter view from slightly above, filling most of the frame. Plain flat mid-grey studio backdrop, soft even diffuse light, no harsh shadows, no ground shadow, no floor, no grass, nothing else in the picture. No text, no logo, no watermark.",
+    "gear": "Recreate the item in the reference icon as a high-end 3D game prop for a AAA dark gothic action RPG in the style of Diablo IV. KEEP ITS DESIGN: the same shape, materials and colours as the icon, with weathered metal, worn leather and fine hand-crafted detail — NOT pixel art, NOT a cartoon, NOT an icon. The whole item visible, standing upright and centred, seen from the front and a little to one side, filling most of the frame's height. Plain flat mid-grey studio backdrop, soft even diffuse light, no harsh shadows, no ground shadow, nothing else in the picture — no hand, no person, no stand, no wall. No text."
+  },
+  "props": [
+    {
+      "id": "smelter",
+      "kind": "prop",
+      "crop": [
+        40,
+        225,
+        265,
+        430
+      ],
+      "size": 2.1,
+      "words": "A squat smelting furnace of rough stacked stone bricks with a short square chimney, a round arched firebox mouth glowing orange with coals, and firewood stacked in a recess under it."
+    },
+    {
+      "id": "shelf",
+      "kind": "prop",
+      "crop": [
+        228,
+        185,
+        352,
+        325
+      ],
+      "size": 1.9,
+      "words": "A tall rickety wooden shelf of dark weathered planks, three shelves holding stoppered glass bottles of red and green liquid, small jars and a wooden box."
+    },
+    {
+      "id": "bench",
+      "kind": "prop",
+      "crop": [
+        355,
+        250,
+        505,
+        360
+      ],
+      "size": 1.6,
+      "words": "A heavy wooden workbench of thick dark planks on sturdy legs, with a small anvil, hammers, tongs and a metal vice on its top."
+    },
+    {
+      "id": "anvil",
+      "kind": "prop",
+      "crop": [
+        305,
+        440,
+        410,
+        535
+      ],
+      "size": 1.0,
+      "words": "A black iron blacksmith's anvil standing on a thick tree stump."
+    },
+    {
+      "id": "loom",
+      "kind": "prop",
+      "crop": [
+        778,
+        238,
+        902,
+        380
+      ],
+      "size": 1.9,
+      "words": "A tall upright wooden weaving loom frame with warp threads strung down it and a half-woven cloth at its foot, on two splayed wooden feet."
+    },
+    {
+      "id": "tannery",
+      "kind": "prop",
+      "crop": [
+        908,
+        243,
+        1038,
+        372
+      ],
+      "size": 1.9,
+      "words": "A tanning frame of rough wooden poles lashed together, with a pale animal hide stretched and laced tight across its middle by cords."
+    },
+    {
+      "id": "tent",
+      "kind": "prop",
+      "crop": [
+        1060,
+        212,
+        1275,
+        400
+      ],
+      "size": 3.2,
+      "words": "A patched canvas A-frame tent of faded grey and green cloth patches over crossed wooden poles, its front flap open."
+    },
+    {
+      "id": "kitchen",
+      "kind": "prop",
+      "crop": [
+        955,
+        395,
+        1080,
+        545
+      ],
+      "size": 1.8,
+      "words": "A cooking tripod of three wooden poles tied at the top, a black iron cauldron hanging from a chain over a small ring of stones with charred logs."
+    },
+    {
+      "id": "jeweller",
+      "kind": "prop",
+      "crop": [
+        335,
+        600,
+        515,
+        740
+      ],
+      "size": 1.7,
+      "words": "A low heavy wooden work table with a stone grinding wheel on a frame at one end, small bottles, fine tools and cut gems laid on its top."
+    },
+    {
+      "id": "sword",
+      "kind": "gear",
+      "icon": "gear_sword",
+      "size": 0.95,
+      "words": "A one-handed straight double-edged arming sword with a simple crossguard and a leather-wrapped grip.",
+      "grip": 0.1
+    },
+    {
+      "id": "dagger",
+      "kind": "gear",
+      "icon": "gear_dagger",
+      "size": 0.42,
+      "words": "A long double-edged dagger with a short crossguard and a leather-wrapped grip.",
+      "grip": 0.14
+    },
+    {
+      "id": "mace",
+      "kind": "gear",
+      "icon": "gear_mace",
+      "size": 0.75,
+      "words": "A one-handed flanged iron mace on a wooden haft with a leather grip.",
+      "grip": 0.1
+    },
+    {
+      "id": "sword2h",
+      "kind": "gear",
+      "icon": "gear_sword2h",
+      "size": 1.5,
+      "words": "A two-handed greatsword with a long broad blade, a wide crossguard and a long leather-wrapped grip.",
+      "grip": 0.12
+    },
+    {
+      "id": "mace2h",
+      "kind": "gear",
+      "icon": "gear_mace2h",
+      "size": 1.3,
+      "words": "A two-handed war maul: a heavy iron hammer head on a long wooden haft.",
+      "grip": 0.14
+    },
+    {
+      "id": "staff",
+      "kind": "gear",
+      "icon": "gear_staff",
+      "size": 1.8,
+      "words": "A tall gnarled wooden mage's staff with a carved head holding a crystal.",
+      "grip": 0.42
+    },
+    {
+      "id": "wand",
+      "kind": "gear",
+      "icon": "gear_wand",
+      "size": 0.4,
+      "words": "A short carved wand of dark wood with a crystal set in its tip.",
+      "grip": 0.22
+    },
+    {
+      "id": "bow",
+      "kind": "gear",
+      "icon": "gear_bow",
+      "size": 1.4,
+      "words": "A recurve longbow of dark wood with a leather-wrapped grip and a taut string.",
+      "grip": 0.5
+    },
+    {
+      "id": "shield",
+      "kind": "gear",
+      "icon": "gear_shield",
+      "size": 0.8,
+      "words": "A round wooden shield with an iron rim and an iron boss in the middle, seen from its front face.",
+      "grip": 0.5
+    },
+    {
+      "id": "pick",
+      "kind": "gear",
+      "icon": "tool_pick",
+      "size": 0.9,
+      "words": "A miner's pickaxe: an iron pick head on a wooden handle.",
+      "grip": 0.12
+    },
+    {
+      "id": "hook",
+      "kind": "gear",
+      "icon": "tool_sickle",
+      "size": 0.55,
+      "words": "A harvesting sickle: a curved iron blade on a short wooden handle.",
+      "grip": 0.14
+    },
+    {
+      "id": "rod",
+      "kind": "gear",
+      "icon": "tool_rod",
+      "size": 1.9,
+      "words": "A simple wooden fishing rod with a reel near the handle and a line hanging from its tip.",
+      "grip": 0.12
+    }
+  ],
+  "_grip": "A piece of gear's GRIP is where the hand closes on it, as a share of its height from the bottom: the pack step puts that point at the origin, so a hand bone holds it with no per-item offset."
+}

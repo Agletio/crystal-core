@@ -295,6 +295,11 @@ no hover and the icon left; short of material or gold it stays readable, so
 what to go and gather is on it.
 Everything else is still on the rail, and a screen with neither a
 button nor a hotspot is one somebody will lose.
+**IN 3D THE CAMP IS THE APPROVED CONCEPT BUILT AS A SCENE, AND THE PICTURE'S
+PIXELS ARE STILL ITS LAYOUT**: `src/gl/camp.ts` stands everything where
+`src/scenes/camp.ts` measured it, at real sizes, and every hotspot stays the
+DOM button it was — moved each frame onto the thing it stands for, so no id and
+no `opens` changed.
 
 **A COUNTER BELONGS TO A PERSON, and the shop is the Lampwright's.** *"The shop
 should exist in the first character you meet… Each character can have something

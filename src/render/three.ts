@@ -150,6 +150,7 @@ export async function createThreeRenderer(host: HTMLElement, palette: Palette): 
   const s = shared();
   const lamps = new Lamps(stage.quality);
   lamps.heroPower = 9;
+  lamps.moonFrom.set(9, 26, 14); // from the eye's side: a body turned to the camera is lit, not a silhouette
   const motes = new Particles();
   const bolts = new Lightning();
   stage.scene.add(lamps.group, motes.group, bolts.mesh);
@@ -157,6 +158,7 @@ export async function createThreeRenderer(host: HTMLElement, palette: Palette): 
   stage.glowing.push(motes.group, bolts.mesh);
 
   const templates = new Map<string, Template>();
+  const gearOf = (key: string | undefined): THREE.Object3D | null => (key ? (assets.models[key]?.gltf.scene ?? null) : null);
   const loading = new Set<string>();
   /** A shard fetched the first time a body in it is seen; a card stands in until it lands. */
   const need = (shard: string): void => {
@@ -181,6 +183,7 @@ export async function createThreeRenderer(host: HTMLElement, palette: Palette): 
     return made;
   };
 
+  need('gear'); // what hands hold: fetched behind the bodies, and empty hands until it lands
   let builtFor: unknown = null;
   let terrain: Terrain | null = null;
   let dressing: Dressing | null = null;
@@ -260,6 +263,17 @@ export async function createThreeRenderer(host: HTMLElement, palette: Palette): 
     return (main && SWINGS[main]) || fig.def.attack;
   }
 
+  /** WHAT EACH HAND HOLDS: a hero's off his sprite's variant and what the sim pinned, a tool INSTEAD of both while he
+   *  gathers; a monster's off its own body. A bow is the off hand's, as `HELD` has it. */
+  function handsOf(e: Entity, fig: Figure): { main?: string; off?: string; size?: number } {
+    if (e.kind !== 'hero') return fig.def.holds ?? {};
+    if (e.tool) return { main: e.tool };
+    const drawn = e.sprite.split('_').slice(1);
+    const main: string | undefined = e.held ?? drawn[0];
+    const off: string | undefined = e.offhand ?? drawn[1];
+    return main === 'bow' || main === 'shield' ? { off: main } : { main, off };
+  }
+
   function bodyOf(e: Entity): Figure | Board | null {
     const id = bodyFor(e.sprite);
     const t = id ? templateOf(id) : null;
@@ -329,6 +343,9 @@ export async function createThreeRenderer(host: HTMLElement, palette: Palette): 
         fig.die(dt);
         continue;
       }
+      const hands = handsOf(e, fig);
+      fig.carry('main', hands.main ?? null, gearOf(hands.main), hands.size);
+      fig.carry('off', hands.off ?? null, gearOf(hands.off), hands.size);
       // A MONSTER'S BLOW is timed to fall when its wind-up runs out; the hero's lands the tick it is made.
       const winding = e.winding !== undefined;
       if (winding && !v.winding) {

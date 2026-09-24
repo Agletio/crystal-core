@@ -1780,6 +1780,9 @@
     image-rendering: pixelated;
   }
   .camp__live { width: 100%; height: 100%; image-rendering: pixelated; pointer-events: none; }
+  /* THE CAMP IN 3D: its own canvas under the stage, and the picture, its
+     canvas and the flat crystals stand down; the buttons stay and are moved. */
+  body.camp3d .camp__art, body.camp3d .camp__live, body.camp3d .camp__crystals { display: none; }
   /* Every layer over the art is full-bleed, so a structural one takes no
      pointer and the BUTTONS take it back — the folk layer sits over the
      fixtures and swallowed all eight of them the moment it existed. */

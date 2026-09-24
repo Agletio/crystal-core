@@ -31,7 +31,9 @@ const sun = new THREE.DirectionalLight(0xffffff, 2.4);
 sun.position.set(4, 8, 10);
 scene.add(sun);
 
-const assets = await loadAssets('gl', ['heroes', 'shallows', 'folk', 'clips'], 4);
+const assets = await loadAssets('gl', ['heroes', 'shallows', 'folk', 'clips', 'gear'], 4);
+const gear = ask.get('gear') ?? '';
+const turn3 = (ask.get('grip') ?? '0,0,0').split(',').map(Number);
 const bank = bankOf(assets.models.clips);
 const s = shared();
 const made = new Map<string, Template>();
@@ -50,6 +52,16 @@ moments.forEach((at, row) => {
     fig.root.scale.setScalar(scale);
     fig.root.position.set(col * gap, -row * 2.6, 0);
     fig.root.rotation.y = turn;
+    const piece = gear && assets.models[gear];
+    const hand = fig.hands.get(ask.get('hand') ?? 'RightHand');
+    if (piece && hand) {
+      const held = piece.gltf.scene.clone(true);
+      held.rotation.set(turn3[0], turn3[1], turn3[2]);
+      const k = 1 / hand.getWorldScale(new THREE.Vector3()).x; // the hand sits under the armature's centimetres
+      held.scale.setScalar(k);
+      held.position.y = Number(ask.get('palm') ?? 0.085) * k; // the bone's origin is the WRIST; the grip is in the palm
+      hand.add(held);
+    }
     if (clip) fig.hold(clip, at);
     scene.add(fig.root);
     widest = Math.max(widest, col);

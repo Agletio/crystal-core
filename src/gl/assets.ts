@@ -71,22 +71,19 @@ function texture(uri: string, srgb: boolean, anisotropy: number): Promise<THREE.
   });
 }
 
-/** Every shard named, fetched then decoded; `said` hears each step as it lands. */
-export async function loadAssets(
-  dir: string,
-  names: readonly string[],
-  anisotropy: number,
-  said: (what: string, done: number) => void = () => undefined
-): Promise<Assets> {
-  let steps = 0;
-  const total = names.length * 2;
-  const tick = (what: string) => said(what, ++steps / total);
-  await Promise.all(names.map((n) => script(dir, n).then(() => tick(`fetched ${n}`))));
+/** ONE DECODE A SHARD for the page's life: the descent and the camp are two
+ *  stages and share what was parsed, each uploading its own copy to its GPU. */
+const decoded = new Map<string, Promise<Assets>>();
 
-  const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
-  const out: Assets = { models: {}, surfaces: {}, decals: {}, icons: {} };
-  for (const name of names) {
-    const shard = globalThis.__shards?.[`${dir}/${name}`] ?? {};
+function decode(dir: string, name: string, anisotropy: number): Promise<Assets> {
+  const key = `${dir}/${name}`;
+  const had = decoded.get(key);
+  if (had) return had;
+  const made = (async (): Promise<Assets> => {
+    await script(dir, name);
+    const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
+    const out: Assets = { models: {}, surfaces: {}, decals: {}, icons: {} };
+    const shard = globalThis.__shards?.[key] ?? {};
     await Promise.all(
       Object.entries(shard).map(async ([id, e]) => {
         if (e.glb) out.models[id] = { gltf: await loader.parseAsync(bytes(e.glb), ''), meta: e.meta ?? {} };
@@ -101,7 +98,30 @@ export async function loadAssets(
         }
       })
     );
-    tick(`decoded ${name}`);
+    return out;
+  })();
+  made.catch(() => decoded.delete(key)); // a failed fetch may be asked again
+  decoded.set(key, made);
+  return made;
+}
+
+/** Every shard named, fetched then decoded; `said` hears each one as it lands. */
+export async function loadAssets(
+  dir: string,
+  names: readonly string[],
+  anisotropy: number,
+  said: (what: string, done: number) => void = () => undefined
+): Promise<Assets> {
+  let steps = 0;
+  const parts = await Promise.all(
+    names.map((n) => decode(dir, n, anisotropy).then((a) => (said(`decoded ${n}`, ++steps / names.length), a)))
+  );
+  const out: Assets = { models: {}, surfaces: {}, decals: {}, icons: {} };
+  for (const a of parts) {
+    Object.assign(out.models, a.models);
+    Object.assign(out.surfaces, a.surfaces);
+    Object.assign(out.decals, a.decals);
+    Object.assign(out.icons, a.icons);
   }
   return out;
 }

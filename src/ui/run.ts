@@ -53,7 +53,7 @@ import { WORKERS, workerMark } from '../data';
 import { descentFacts, takeGrinds } from '../game/trials';
 import { SCENES, SCENE_BY_ID } from '../scenes';
 import type { Hotspot } from '../scenes/camp';
-import { initCamp, openCamp, closeCamp, isCampOpen, renderCamp, setCampEmber } from './camp';
+import { initCamp, openCamp, closeCamp, isCampOpen, renderCamp, setCampEmber, useCamp3d } from './camp';
 import { greetAfterTale, openTalk } from './talk';
 import { playTale } from './tale';
 import {
@@ -1368,6 +1368,7 @@ export const inThree = (): boolean => want3d();
 /** The dev kit's switch: the seam swapped and nothing else. */
 export function useThree(on: boolean): void {
   wants3d = on;
+  useCamp3d(on);
   const stage = $('run-stage');
   const palette = readPalette(document.documentElement);
   renderer?.destroy();
@@ -1428,6 +1429,7 @@ export function initRun(state: GameState): void {
   ($('run-menu-close') as HTMLButtonElement).onclick = () => closeFissure();
 
   initCamp(game, OPENS);
+  useCamp3d(want3d());
 
   ($('run-launch') as HTMLButtonElement).onclick = () => {
     if (bagsFull(game)) return;

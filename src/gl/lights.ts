@@ -86,8 +86,11 @@ export class Lamps {
     this.flashes.push({ at: at.clone(), color: new THREE.Color(color), power, range, life, left: life });
   }
 
+  /** Where the overhead light stands off the eye: the Abyss's behind, rimming the dark; a world with faces to read, in front. */
+  readonly moonFrom = new THREE.Vector3(-14, 26, -11);
+
   update(eye: THREE.Vector3, hero: THREE.Vector3, t: number, dt: number): void {
-    this.moon.position.set(eye.x - 14, eye.y + 26, eye.z - 11);
+    this.moon.position.copy(eye).add(this.moonFrom);
     this.moon.target.position.copy(eye);
     this.hero.position.set(hero.x + 0.6, hero.y + 3.8, hero.z + 0.9);
     this.hero.intensity = this.heroPower * (0.96 + 0.04 * Math.sin(t * 2.3));

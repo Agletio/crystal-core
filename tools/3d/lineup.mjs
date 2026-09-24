@@ -34,7 +34,7 @@ const page = await browser.newPage({ viewport: { width: Number(process.env.W ?? 
 const errors = [];
 page.on('pageerror', (e) => errors.push(e.message));
 page.on('console', (m) => (m.type() === 'error' ? errors.push(m.text()) : console.log(`  page: ${m.text()}`)));
-const q = new URLSearchParams({ clip, at, ...(bodies ? { bodies } : {}), ...(process.env.TURN ? { turn: process.env.TURN } : {}), ...(process.env.DEBUG ? { debug: '1' } : {}) });
+const q = new URLSearchParams({ clip, at, ...(bodies ? { bodies } : {}), ...(process.env.TURN ? { turn: process.env.TURN } : {}), ...(process.env.DEBUG ? { debug: '1' } : {}), ...(process.env.GEAR ? { gear: process.env.GEAR } : {}), ...(process.env.GRIP ? { grip: process.env.GRIP } : {}), ...(process.env.HAND ? { hand: process.env.HAND } : {}) });
 await page.goto(`http://127.0.0.1:${server.address().port}/?${q}`);
 await page.waitForFunction(() => globalThis.__done === true, null, { timeout: 180000 }).catch(() => undefined);
 await page.screenshot({ path: out });

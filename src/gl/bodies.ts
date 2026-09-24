@@ -48,6 +48,8 @@ export interface BodyDef {
   shape?: Shape;
   /** No skeleton: moved whole. A beast trots on its own bob, a person glides. */
   still?: 'beast' | 'glide';
+  /** What a body that is NOT a hero carries, by `HELD` family: a hero's is his equipment. */
+  holds?: { main?: string; off?: string; size?: number };
   rim?: number; // a glow the body's own paint carries, 1 as painted
 }
 
@@ -67,7 +69,7 @@ export const BODIES: Record<string, BodyDef> = {
   obreth: { ...HERO, model: 'obreth', move: 'obreth/run', height: 1.85 },
   mahthar: { ...HERO, model: 'mahthar', move: 'mahthar/run', height: 1.9 },
   husk: {
-    model: 'husk', shard: 'shallows', height: 1.75, idle: 'hornfiend/idle', move: 'husk/walk',
+    model: 'husk', shard: 'shallows', height: 1.75, idle: 'hornfiend/idle', move: 'husk/walk', holds: { main: 'pick' },
     attack: [W('imp/attack', 0.08, 0.42, 0.78)],
     hit: W('hero/hit', 0.02, 0.1, 0.3), death: W('imp/death', 0.02, 0, 0.6),
   },
@@ -88,7 +90,7 @@ export const BODIES: Record<string, BodyDef> = {
     hit: W('chanter/hit', 0.02, 0.06, 0.2), death: W('chanter/death', 0.02, 0, 0.6),
   },
   answering: {
-    model: 'answering', shard: 'shallows', height: 4.0, idle: 'hornfiend/idle', move: 'answering/walk',
+    model: 'answering', shard: 'shallows', height: 4.0, idle: 'hornfiend/idle', move: 'answering/walk', holds: { main: 'mace2h', size: 1.6 },
     attack: [W('hornfiend/attack', 0.2, 0.82, 0.98), W('bank/slam', 0.1, 0.55, 0.9)],
     hit: W('hero/hit', 0.02, 0.12, 0.3), death: W('hornfiend/death', 0, 0, 0.97), roar: W('imp/roar', 0.1, 0.3, 0.75),
   },
@@ -145,9 +147,20 @@ export const SWINGS: Record<string, Window[]> = {
 
 /** A RANK IS LIGHT OUTSIDE THE BODY — a pool of it on the floor under the feet —
  *  and never a line round its edge: the silhouette is the body's own. */
+/** HOW A HAND HOLDS A THING, in the hand bone's own frame: Meshy's hand bone
+ *  runs wrist to fingers along Y, so a weapon stands out of the thumb side of
+ *  the fist a quarter turn off it, and a shield hangs face-out off the left. The
+ *  bone's origin is the WRIST; the grip is `PALM` metres on, in the palm. */
+const GRIP_TURN = {
+  main: new THREE.Euler(0, 0, -Math.PI / 2),
+  off: new THREE.Euler(0, 0, Math.PI / 2),
+  shield: new THREE.Euler(Math.PI, 0, Math.PI / 2),
+};
+const PALM = 0.085;
+
 const RANK_LOOK: Record<string, { glow: number; power: number; grow: number }> = {
-  magic: { glow: 0x4a7dff, power: 0.55, grow: 1.1 },
-  rare: { glow: 0xffb02e, power: 0.7, grow: 1.2 },
+  magic: { glow: 0x4a7dff, power: 0.32, grow: 1.1 },
+  rare: { glow: 0xffb02e, power: 0.4, grow: 1.2 },
 };
 
 let poolTexture: THREE.Texture | null = null;
@@ -300,6 +313,7 @@ export class Figure {
   deadFor = -1;
   gone = false;
   seenAt = 0; // when the sim last had this body, for the corpse to outlive it
+  private readonly carried = new Map<'main' | 'off', { key: string; obj: THREE.Object3D }>();
 
   constructor(readonly def: BodyDef, readonly template: Template, s: Shared, rank: string, scale: number, monster: boolean) {
     this.model = def.still ? template.scene.clone(true) : cloneSkinned(template.scene);
@@ -314,7 +328,7 @@ export class Figure {
         new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2),
         new THREE.MeshBasicMaterial({ map: poolTex(), color: r.glow, transparent: true, opacity: r.power, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false })
       );
-      const span = Math.max(1.2, this.height * 0.75);
+      const span = THREE.MathUtils.clamp(this.height * 0.6, 1.2, 2.6);
       pool.scale.setScalar(span);
       pool.position.y = 0.03;
       this.root.add(pool);
@@ -389,6 +403,29 @@ export class Figure {
 
   get busy(): boolean {
     return this.top !== null;
+  }
+
+  /** What a hand holds: a model out of the gear shard, `key` its family, null empty.
+   *  Scaled off the ARMATURE only, so a bigger body holds a bigger weapon. */
+  carry(slot: 'main' | 'off', key: string | null, source: THREE.Object3D | null, grow = 1): void {
+    const had = this.carried.get(slot);
+    if ((had?.key ?? null) === (source ? key : null)) return;
+    had?.obj.removeFromParent();
+    this.carried.delete(slot);
+    const hand = this.hands.get(slot === 'main' ? 'RightHand' : 'LeftHand');
+    if (!key || !source || !hand) return;
+    const obj = source.clone(true);
+    this.model.updateMatrixWorld(true);
+    const k = (this.model.getWorldScale(new THREE.Vector3()).x / hand.getWorldScale(new THREE.Vector3()).x) * grow;
+    obj.scale.setScalar(k);
+    obj.position.y = PALM * k;
+    obj.rotation.copy(key === 'shield' ? GRIP_TURN.shield : GRIP_TURN[slot]);
+    obj.traverse((o) => {
+      const m = o as THREE.Mesh;
+      if (m.isMesh) m.castShadow = true;
+    });
+    hand.add(obj);
+    this.carried.set(slot, { key, obj });
   }
 
   /** Stood in ONE frame of a clip, `at` of the way through, and held there. */
