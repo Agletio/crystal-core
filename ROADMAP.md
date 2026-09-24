@@ -174,6 +174,9 @@ generation is budgeted, and what code can build is built in code.
   tent modelled off CROPS of the approved concept (`tools/3d/props.mts`), the
   fire in code — laid out where the painted camp has them, and every hotspot
   still the DOM button it was, moved each frame onto the thing it stands for.
+- **THE CRAWLER AND THE HOUND ARE RIGGED IN CODE** (`rigBeast`): four limbs
+  found where the mesh meets the ground, the head its highest mass and turned
+  to +Z, a hip and a knee a limb, and a trot on the diagonal pairs.
 - **WHAT A HERO HOLDS IS DRAWN**: all twelve `HELD` families modelled off their
   own bag icons and carried in the hand bone (`Figure.carry`); the husk swings a
   pick and the Answering its maul.
@@ -189,9 +192,7 @@ generation is budgeted, and what code can build is built in code.
    and bosses (the Abyss's imp, chanter and hornfiend ARE three of the Rot's),
    Wat and Ida, the Osteomancer and the Geometer. Until then each stands as its
    own pixel frames on a card.
-3. **3D-E — A RIG FOR WHAT MESHY WOULD NOT RIG.** The crawler and the hound,
-   and the Lampwright's glide, built in code.
-4. **3D-F — THE CAMP ALIVE.** A worker at a station working it (the hammer at
+3. **3D-F — THE CAMP ALIVE.** A worker at a station working it (the hammer at
    the smelter, the stoop at the loom), the hero at the station he works, and
    the rooms the Osteomancer and the Geometer keep.
 
@@ -208,6 +209,8 @@ generation is budgeted, and what code can build is built in code.
 - **A LIGHT RIG TUNED FOR THE ABYSS TURNS PALE SAND LAVENDER** and lights
   every body from BEHIND. Each world carries its own sky, moon and fog in
   `LOOKS`, and `Lamps.moonFrom` puts the overhead light on the camera's side.
+- **PACKED POSITIONS ARE 16-BIT AND NORMALISED**: a mesh moved in place
+  clamps to the unit cube, so geometry is made floats before it is baked.
 - **A MESHY HAND BONE RUNS WRIST TO FINGERS ALONG Y**: a weapon is a quarter
   turn off it, out of the thumb, and its origin is the wrist — the grip is in
   the palm (`GRIP_TURN`, `PALM` in `src/gl/bodies.ts`).

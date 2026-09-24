@@ -270,9 +270,121 @@ function reshape(scene: THREE.Object3D, shape: Shape): void {
   });
 }
 
+/**
+ * A BEAST MESHY WOULD NOT RIG, rigged here: its four limbs are where the mesh
+ * meets the ground, found by clustering what is under its belly; its head is
+ * its highest mass, and the body is turned so that head is +Z like every other
+ * model. A limb is a hip and a knee; everything over the belly is the body.
+ */
+function rigBeast(scene: THREE.Object3D): THREE.Object3D {
+  scene.updateMatrixWorld(true);
+  let source: THREE.Mesh | null = null;
+  scene.traverse((o) => {
+    if (!source && (o as THREE.Mesh).isMesh) source = o as THREE.Mesh;
+  });
+  if (!source) return scene;
+  const mesh = source as THREE.Mesh;
+  const geo = mesh.geometry.clone();
+  // PACKED POSITIONS ARE 16-BIT and normalised: moved in place they clamp to the
+  // unit cube, so they are floats before anything transforms them.
+  for (const name of ['position', 'normal']) {
+    const a = geo.getAttribute(name);
+    if (!a) continue;
+    const f = new Float32Array(a.count * 3);
+    for (let i = 0; i < a.count; i++) (f[i * 3] = a.getX(i)), (f[i * 3 + 1] = a.getY(i)), (f[i * 3 + 2] = a.getZ(i));
+    geo.setAttribute(name, new THREE.BufferAttribute(f, 3));
+  }
+  geo.applyMatrix4(mesh.matrixWorld);
+  const pos = geo.getAttribute('position') as THREE.BufferAttribute;
+  geo.computeBoundingBox();
+  const box = geo.boundingBox!;
+  const h = box.max.y - box.min.y;
+  const floor = box.min.y;
+  const v = new THREE.Vector3();
+  // THE HEAD: the top of the body, off the middle of the whole.
+  const mid = new THREE.Vector2();
+  const top = new THREE.Vector2();
+  let n = 0;
+  let nt = 0;
+  for (let i = 0; i < pos.count; i++) {
+    v.fromBufferAttribute(pos, i);
+    mid.x += v.x;
+    mid.y += v.z;
+    n++;
+    if (v.y > floor + h * 0.8) (top.x += v.x), (top.y += v.z), nt++;
+  }
+  mid.divideScalar(Math.max(1, n));
+  top.divideScalar(Math.max(1, nt));
+  const ahead = top.clone().sub(mid);
+  const turn = ahead.lengthSq() > 1e-6 ? Math.atan2(ahead.x, ahead.y) : 0;
+  geo.applyMatrix4(new THREE.Matrix4().makeTranslation(-mid.x, -floor, -mid.y));
+  geo.applyMatrix4(new THREE.Matrix4().makeRotationY(-turn));
+  // THE LIMBS: what is under the belly, in four clumps seeded at its corners.
+  const hipY = h * 0.42;
+  const kneeY = h * 0.2;
+  const low: THREE.Vector2[] = [];
+  for (let i = 0; i < pos.count; i += 2) {
+    v.fromBufferAttribute(pos, i);
+    if (v.y < h * 0.3) low.push(new THREE.Vector2(v.x, v.z));
+  }
+  const lo = new THREE.Vector2(Infinity, Infinity);
+  const hi = new THREE.Vector2(-Infinity, -Infinity);
+  for (const p of low) (lo.min(p), hi.max(p));
+  const legs = [new THREE.Vector2(hi.x, hi.y), new THREE.Vector2(lo.x, hi.y), new THREE.Vector2(hi.x, lo.y), new THREE.Vector2(lo.x, lo.y)]; // FL FR BL BR
+  for (let round = 0; round < 8; round++) {
+    const sum = legs.map(() => new THREE.Vector3());
+    for (const p of low) {
+      let best = 0;
+      for (let k = 1; k < 4; k++) if (p.distanceToSquared(legs[k]) < p.distanceToSquared(legs[best])) best = k;
+      sum[best].x += p.x;
+      sum[best].y += p.y;
+      sum[best].z++;
+    }
+    sum.forEach((s3, k) => s3.z > 0 && legs[k].set(s3.x / s3.z, s3.y / s3.z));
+  }
+  const root = new THREE.Bone();
+  root.name = 'beast_body';
+  root.position.set(0, hipY, 0);
+  const bones: THREE.Bone[] = [root];
+  ['FL', 'FR', 'BL', 'BR'].forEach((name, k) => {
+    const hip = new THREE.Bone();
+    hip.name = `beast_hip_${name}`;
+    hip.position.set(legs[k].x, 0, legs[k].y);
+    const knee = new THREE.Bone();
+    knee.name = `beast_knee_${name}`;
+    knee.position.set(0, kneeY - hipY, 0);
+    hip.add(knee);
+    root.add(hip);
+    bones.push(hip, knee);
+  });
+  const index = new Uint16Array(pos.count * 4);
+  const weight = new Float32Array(pos.count * 4);
+  const smooth = (a: number, b: number, x: number) => THREE.MathUtils.smoothstep(x, Math.min(a, b), Math.max(a, b)) * (a > b ? -1 : 1) + (a > b ? 1 : 0);
+  const p2 = new THREE.Vector2();
+  for (let i = 0; i < pos.count; i++) {
+    v.fromBufferAttribute(pos, i);
+    p2.set(v.x, v.z);
+    let leg = 0;
+    for (let k = 1; k < 4; k++) if (p2.distanceToSquared(legs[k]) < p2.distanceToSquared(legs[leg])) leg = k;
+    const onLeg = smooth(hipY + h * 0.06, hipY - h * 0.08, v.y);
+    const onKnee = smooth(kneeY + h * 0.05, kneeY - h * 0.05, v.y);
+    index.set([0, 1 + leg * 2, 2 + leg * 2, 0], i * 4);
+    weight.set([1 - onLeg, onLeg * (1 - onKnee), onLeg * onKnee, 0], i * 4);
+  }
+  geo.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(index, 4));
+  geo.setAttribute('skinWeight', new THREE.Float32BufferAttribute(weight, 4));
+  const skinned = new THREE.SkinnedMesh(geo, mesh.material);
+  skinned.add(root);
+  skinned.bind(new THREE.Skeleton(bones));
+  const out = new THREE.Group();
+  out.add(skinned);
+  return out;
+}
+
 export function makeTemplate(def: BodyDef, model: Model, bank: Bank | null): Template {
-  const scene = def.shape ? cloneSkinned(model.gltf.scene) : model.gltf.scene;
+  let scene = def.shape ? cloneSkinned(model.gltf.scene) : model.gltf.scene;
   if (def.shape) reshape(scene, def.shape);
+  if (def.still === 'beast') scene = rigBeast(scene);
   const rigged = !def.still;
   const box = new THREE.Box3().setFromObject(scene);
   return {
@@ -330,9 +442,14 @@ export class Figure {
   gone = false;
   seenAt = 0; // when the sim last had this body, for the corpse to outlive it
   private readonly carried = new Map<'main' | 'off', { key: string; obj: THREE.Object3D }>();
+  private readonly limbs = new Map<string, THREE.Object3D>(); // a beast's own bones, by `rigBeast`'s names
+  private gait = 0;
 
   constructor(readonly def: BodyDef, readonly template: Template, s: Shared, rank: string, scale: number, monster: boolean) {
-    this.model = def.still ? template.scene.clone(true) : cloneSkinned(template.scene);
+    this.model = def.still === 'glide' ? template.scene.clone(true) : cloneSkinned(template.scene);
+    this.model.traverse((o) => {
+      if (o.name.startsWith('beast_')) this.limbs.set(o.name.slice(6), o);
+    });
     const grow = (def.height / template.height) * scale * (RANK_LOOK[rank]?.grow ?? 1);
     this.height = template.height * grow;
     this.model.scale.setScalar(grow);
@@ -521,11 +638,26 @@ export class Figure {
       this.model.rotation.z = Math.sin(t * 0.9) * 0.03;
       return;
     }
-    const pace = p.moving ? Math.max(1, p.speed) * 5.5 : 1.2;
-    const bob = p.moving ? Math.abs(Math.sin(t * pace)) * 0.06 : Math.sin(t * pace) * 0.012;
-    this.model.position.set(0, bob, push);
-    this.model.rotation.x = p.moving ? Math.sin(t * pace * 2) * 0.05 : 0;
-    this.model.rotation.z = p.moving ? Math.sin(t * pace) * 0.04 : 0;
+    // A TROT: the diagonal pairs swing together, a knee folding as its foot comes forward.
+    const stride = 0.55 * this.height; // metres a whole cycle carries it
+    this.gait += p.moving ? (p.speed / Math.max(0.2, stride)) * Math.PI * 2 * dt : 0;
+    const swing = p.moving ? 0.55 : 0;
+    const PHASE: Record<string, number> = { FL: 0, BR: 0, FR: Math.PI, BL: Math.PI };
+    for (const [leg, off] of Object.entries(PHASE)) {
+      const hip = this.limbs.get(`hip_${leg}`);
+      const knee = this.limbs.get(`knee_${leg}`);
+      const a = this.gait + off;
+      if (hip) hip.rotation.x = THREE.MathUtils.lerp(hip.rotation.x, Math.sin(a) * swing, 1 - Math.exp(-dt * 20));
+      if (knee) knee.rotation.x = THREE.MathUtils.lerp(knee.rotation.x, -Math.max(0, Math.cos(a)) * swing * 1.1, 1 - Math.exp(-dt * 20));
+    }
+    const body = this.limbs.get('body');
+    if (body) {
+      body.userData.rest ??= body.position.y;
+      const lift = p.moving ? Math.abs(Math.cos(this.gait)) * 0.04 : Math.sin(t * 1.9) * 0.012; // a share of its height
+      body.position.y = (body.userData.rest as number) * (1 + lift);
+      body.rotation.x = Math.sin(this.lunge * Math.PI) * 0.35; // the lunge puts its head down at you
+    }
+    this.model.position.set(0, 0, push);
   }
 
   /** A body down: its death plays once and holds; the corpse lies, then sinks. */

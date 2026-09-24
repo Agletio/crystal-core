@@ -63,6 +63,10 @@ moments.forEach((at, row) => {
       hand.add(held);
     }
     if (clip) fig.hold(clip, at);
+    if (ask.has('move')) {
+      const pose = { x: 0, z: 0, lift: 0, facing: 0, moving: true, speed: 3, dead: false, hurt: false, held: false, flash: 0, hidden: 0 };
+      for (let k = 0; k < Math.round(at * 60); k++) fig.step(pose, 1 / 60);
+    }
     scene.add(fig.root);
     widest = Math.max(widest, col);
   });
