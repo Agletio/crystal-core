@@ -1,0 +1,299 @@
+{
+  "_": "THE ABYSS'S ART BIBLE: every picture the showcase level is built from, asked of Meshy. A style line is appended to every prompt of its kind, so the look is written once. `meshy.mts` walks this file; `made.json` records what came back.",
+  "style": {
+    "character": "Full body game character concept for a AAA dark gothic action RPG in the style of Diablo IV: grounded gritty realism, intricate hand-crafted detail, worn and weathered materials, realistic proportions. Rendered as a high-end 3D character model turnaround: the whole figure visible from the top of the head to the soles of the feet, facing the viewer, standing in a relaxed A-pose with the arms held out and down about 45 degrees away from the body and the feet shoulder-width apart. Plain flat mid-grey studio backdrop, soft even diffuse light from the front, no harsh shadows, no rim light, no ground shadow, sharp focus. No text, no logo, no watermark, no border, no scenery.",
+    "prop": "Single isolated game environment prop for a AAA dark gothic action RPG in the style of Diablo IV: grounded gritty realism, weathered hand-crafted materials, rich physically based detail. Rendered as a high-end 3D asset: the whole object visible and centred, three-quarter view from slightly above, plain flat mid-grey studio backdrop, soft even diffuse light, no harsh shadows, no ground shadow. Nothing else in the picture. No text, no logo, no watermark, no border.",
+    "texture": "Seamless tileable PBR albedo texture, a perfectly flat orthographic view straight down onto the surface, filling the whole square frame edge to edge, uniform flat diffuse lighting with no shadows, no specular highlights, no vignette and no perspective, photorealistic and extremely detailed, for a AAA dark gothic action RPG in the style of Diablo IV.",
+    "decal": "A flat orthographic view straight down, centred and isolated on a pure black background, nothing else in the frame, for a AAA dark gothic action RPG in the style of Diablo IV.",
+    "icon": "A single square skill icon for a AAA dark gothic action RPG in the style of Diablo IV: a painterly, highly detailed emblem filling the whole square frame edge to edge, dramatic lighting, rich dark background inside the square, no border, no frame, no text, no letters, no numbers, no watermark."
+  },
+  "assets": [
+    {
+      "id": "hero",
+      "kind": "character",
+      "model": "nano-banana-pro",
+      "height": 1.8,
+      "polycount": 40000,
+      "prompt": "THE AETHERMANCER, a storm-touched battle mage. A tall lean man with long limbs, at least eight heads tall, NOT chibi, NOT anime, NOT a big head. A pale ivory hooded mantle with frayed, tattered edges draped over his shoulders; a fitted deep midnight-blue longcoat falling to just above the knees, split up the front and the back like armoured tassets, its hem and cuffs embroidered with glowing electric-cyan runes; one heavy ornate pauldron of tarnished silver on the left shoulder engraved with arcane sigils; engraved silver gauntlets whose knuckles are set with small glowing cyan crystals; dark leather trousers and tall steel-toed boots; crossed leather belts hung with small glass phials of glowing blue liquid; a luminous cyan aether crystal in a silver clasp at the centre of the chest. The hood is up but pulled back to show a stern pale scarred face with a short dark beard and faintly glowing cyan eyes. Empty open hands, no staff, no weapon, no cape trailing on the floor.",
+      "anims": {
+        "idle": 11,
+        "ready": 245,
+        "run": 659,
+        "cast": 136,
+        "cast2": 133,
+        "hit": 179,
+        "death": 189
+      }
+    },
+    {
+      "id": "hero_g",
+      "kind": "character",
+      "model": "gpt-image-2",
+      "height": 1.8,
+      "polycount": 40000,
+      "prompt": "THE AETHERMANCER, a storm-touched battle mage. A tall lean man with long limbs, at least eight heads tall, NOT chibi, NOT anime, NOT a big head. A pale ivory hooded mantle with frayed, tattered edges draped over his shoulders; a fitted deep midnight-blue longcoat falling to just above the knees, split up the front and the back like armoured tassets, its hem and cuffs embroidered with glowing electric-cyan runes; one heavy ornate pauldron of tarnished silver on the left shoulder engraved with arcane sigils; engraved silver gauntlets whose knuckles are set with small glowing cyan crystals; dark leather trousers and tall steel-toed boots; crossed leather belts hung with small glass phials of glowing blue liquid; a luminous cyan aether crystal in a silver clasp at the centre of the chest. The hood is up but pulled back to show a stern pale scarred face with a short dark beard and faintly glowing cyan eyes. Empty open hands, no staff, no weapon, no cape trailing on the floor."
+    },
+    {
+      "id": "imp",
+      "kind": "character",
+      "model": "nano-banana-pro",
+      "height": 1.15,
+      "polycount": 20000,
+      "prompt": "A SMALL FIRE IMP DEMON, a wiry emaciated creature about the height of a child, with long spindly arms ending in hooked black claws, digitigrade goat-like hind legs with small black hooves, a hunched back ridged with bony spines, a short thin barbed tail, charred black-and-crimson skin cracked with glowing orange magma veins, a narrow skull-like head with two swept-back curved black horns, pointed ears, a wide fanged grin and small glowing ember-orange eyes. Menacing and feral, NOT cute, NOT a cartoon.",
+      "anims": {
+        "idle": 245,
+        "run": 673,
+        "attack": 219,
+        "hit": 172,
+        "death": 181,
+        "roar": 386
+      }
+    },
+    {
+      "id": "chanter",
+      "kind": "character",
+      "model": "nano-banana-pro",
+      "height": 1.9,
+      "polycount": 25000,
+      "prompt": "A DEMONIC CULTIST PRIEST, a gaunt tall man with realistic proportions, eight heads tall, in heavy layered blood-red and black ceremonial robes with a deep pointed hood; his face hidden behind a bleached horned ram-skull mask; bone fetishes, iron keys and small skulls hanging on chains around his neck; long thin grey hands with black nails; a thick leather belt with a curved ritual dagger and a scroll case; ember-red occult runes painted down the front of the robe; the robe hem torn and scorched, ending above the ankles, bare dirty feet. NOT anime, NOT a cartoon.",
+      "anims": {
+        "idle": 0,
+        "walk": 692,
+        "cast": 129,
+        "hit": 172,
+        "death": 181
+      }
+    },
+    {
+      "id": "hornfiend",
+      "kind": "character",
+      "model": "nano-banana-pro",
+      "height": 3.0,
+      "polycount": 30000,
+      "prompt": "A COLOSSAL HORNED DEMON BRUTE, a hulking hunched mountain of muscle three metres tall with a small head sunk low between enormous shoulders, huge curling black ram horns, dark oxblood-red leathery skin covered in old scars and stitched wounds, jagged black iron armour plates bolted directly into its shoulders and forearms, glowing molten orange cracks across its chest and belly, enormous clawed hands, thick digitigrade legs ending in cloven hooves, a ragged loincloth of chainmail and flayed hide, iron chains wrapped around one forearm. NOT a cartoon, NOT cute.",
+      "anims": {
+        "idle": 11,
+        "walk": 669,
+        "attack": 128,
+        "hit": 179,
+        "death": 8,
+        "roar": 386
+      }
+    },
+    {
+      "id": "column",
+      "kind": "prop",
+      "model": "nano-banana-pro",
+      "aspect": "9:16",
+      "polycount": 16000,
+      "prompt": "A MASSIVE GOTHIC CATHEDRAL COLUMN: a thick round stone pillar with a clustered, fluted shaft, a heavy square stepped plinth at the foot and a crumbling capital carved with snarling demonic faces and thorny foliage at the top. Dark weathered grey limestone blackened with soot, cracked and chipped, with old dried blood splashed near the base. Very tall and narrow, standing upright."
+    },
+    {
+      "id": "brazier",
+      "kind": "prop",
+      "model": "nano-banana-pro",
+      "aspect": "1:1",
+      "polycount": 14000,
+      "prompt": "AN IRON BRAZIER: a wide, deep spiked bowl of black wrought iron heaped with glowing orange embers and charred coals, standing on three curved legs that end in clawed demonic feet, rings of rivets and a few tarnished bronze bands, rust and soot. About waist height."
+    },
+    {
+      "id": "candelabra",
+      "kind": "prop",
+      "model": "nano-banana-pro",
+      "aspect": "3:4",
+      "polycount": 14000,
+      "prompt": "A TALL IRON FLOOR CANDELABRA: a black wrought-iron stand as tall as a man with a tripod base of clawed feet, a twisted stem and seven curved arms, each holding a thick half-melted ivory church candle with long wax drips running down the arms and stem. The candles are unlit."
+    },
+    {
+      "id": "candles",
+      "kind": "prop",
+      "model": "nano-banana-pro",
+      "aspect": "1:1",
+      "polycount": 12000,
+      "prompt": "A CLUSTER OF MELTED CHURCH CANDLES standing on the floor: about fifteen thick ivory candles of very different heights crowded together in a wide puddle of hardened wax, with two small cracked human skulls among them and wax dripped over the skulls. The candles are unlit."
+    },
+    {
+      "id": "skulls",
+      "kind": "prop",
+      "model": "nano-banana-pro",
+      "aspect": "4:3",
+      "polycount": 14000,
+      "prompt": "A HEAP OF HUMAN SKULLS AND BONES piled on the floor, a low wide mound of cracked yellowed skulls, femurs, ribs and jawbones tangled together, old and dusty, with a few scraps of rotted cloth."
+    },
+    {
+      "id": "sarcophagus",
+      "kind": "prop",
+      "model": "nano-banana-pro",
+      "aspect": "4:3",
+      "polycount": 16000,
+      "prompt": "AN ANCIENT STONE SARCOPHAGUS: a long rectangular coffin of dark weathered grey stone with gothic tracery carved along its sides, its heavy lid carved with the effigy of a knight lying with his hands folded on a sword, the lid cracked across and slid partly open at one corner, moss and soot in the carvings."
+    },
+    {
+      "id": "statue",
+      "kind": "prop",
+      "model": "nano-banana-pro",
+      "aspect": "3:4",
+      "polycount": 18000,
+      "prompt": "A STONE STATUE OF A HORNED DEMON: a gargoyle-like winged fiend with ram horns and bat wings folded at its back, crouching on top of a tall square stone pedestal carved with runes, clawed hands resting on its knees, weathered dark stone with cracks and lichen."
+    },
+    {
+      "id": "altar",
+      "kind": "prop",
+      "model": "nano-banana-pro",
+      "aspect": "4:3",
+      "polycount": 14000,
+      "prompt": "A SACRIFICIAL DEMONIC ALTAR: a thick heavy slab of black stone resting on a wide stepped stone base, carved with occult runes and blood grooves running to the corners, iron shackles on short chains hanging from its sides, dried dark blood stains across the top."
+    },
+    {
+      "id": "pew",
+      "kind": "prop",
+      "model": "nano-banana-pro",
+      "aspect": "16:9",
+      "polycount": 12000,
+      "prompt": "A BROKEN WOODEN CATHEDRAL PEW: a long dark oak church bench with tall carved gothic end panels, the seat cracked and split in the middle and one end panel snapped off at an angle, old rotten wood."
+    },
+    {
+      "id": "cage",
+      "kind": "prop",
+      "model": "nano-banana-pro",
+      "aspect": "3:4",
+      "polycount": 14000,
+      "prompt": "A RUSTED IRON GIBBET CAGE: a tall narrow cylindrical cage of black iron bars with a domed top ring, standing upright on a heavy square iron base plate, a slumped human skeleton sitting inside behind the bars."
+    },
+    {
+      "id": "sconce",
+      "kind": "prop",
+      "model": "nano-banana-pro",
+      "aspect": "3:4",
+      "polycount": 8000,
+      "prompt": "A MEDIEVAL IRON WALL TORCH: a wrought iron wall bracket with a curled arm and a small square back plate holding a thick wooden torch with its head wrapped in charred oily cloth, unlit."
+    },
+    {
+      "id": "rubble",
+      "kind": "prop",
+      "model": "nano-banana-pro",
+      "aspect": "4:3",
+      "polycount": 12000,
+      "prompt": "A PILE OF FALLEN MASONRY: broken cut stone blocks, a cracked column drum and smaller stone chunks and grit heaped low and wide, dark grey weathered stone with dust."
+    },
+    {
+      "id": "spikes",
+      "kind": "prop",
+      "model": "nano-banana-pro",
+      "aspect": "16:9",
+      "polycount": 12000,
+      "prompt": "A BARRICADE OF SHARPENED STAKES: a crude low fence of thick sharpened wooden stakes lashed together with rope and iron spikes, leaning outward, two human skulls impaled on the tallest stakes, dark weathered wood."
+    },
+    {
+      "id": "chest",
+      "kind": "prop",
+      "model": "nano-banana-pro",
+      "aspect": "4:3",
+      "polycount": 12000,
+      "prompt": "AN ORNATE TREASURE CHEST: a heavy dark oak chest bound with black iron straps, studs and corner plates, a domed lid and a big iron lock plate shaped like a snarling demon face, closed."
+    },
+    {
+      "id": "arch",
+      "kind": "prop",
+      "model": "nano-banana-pro",
+      "aspect": "3:4",
+      "polycount": 16000,
+      "prompt": "A GOTHIC STONE ARCHWAY: a free-standing pointed arch doorframe built of large dark weathered grey stone blocks, two thick square piers and a tall pointed arch, a carved demonic skull on the keystone, cracks and chipped edges, nothing inside the opening."
+    },
+    {
+      "id": "throne",
+      "kind": "prop",
+      "model": "nano-banana-pro",
+      "aspect": "3:4",
+      "polycount": 18000,
+      "prompt": "A DEMONIC THRONE: a tall imposing throne made of fused human bones and black iron, a high spiked backrest crowned with curved horns, skulls set into the armrests, standing on a low round stone dais with steps."
+    },
+    {
+      "id": "banner",
+      "kind": "prop",
+      "model": "nano-banana-pro",
+      "aspect": "9:16",
+      "polycount": 8000,
+      "prompt": "A TATTERED WAR BANNER: a long torn crimson cloth banner painted with a black demonic horned sigil, hanging from a crossbar on a tall black iron pole with a spiked finial, the pole set in a heavy square stone base, the cloth hanging still and straight down."
+    },
+    {
+      "id": "floor_stone",
+      "kind": "texture",
+      "model": "nano-banana-pro",
+      "prompt": "Ancient cathedral floor of large irregular worn flagstones: dark charcoal-grey and umber stone slabs of many different sizes fitted together with narrow dark grout gaps, cracked and chipped edges, grime, soot and scattered dust, faint old dried blood in some cracks."
+    },
+    {
+      "id": "floor_crypt",
+      "kind": "texture",
+      "model": "nano-banana-pro",
+      "prompt": "Old crypt floor of small square dark stone tiles laid in a grid, many of them cracked, broken or missing, dirt, grit and bone dust packed into the gaps."
+    },
+    {
+      "id": "wall_stone",
+      "kind": "texture",
+      "model": "nano-banana-pro",
+      "prompt": "A massive dark gothic ashlar wall seen face on: large rough-hewn rectangular stone blocks laid in even horizontal courses with deep dark mortar joints, soot and water stains, cracks and chipped corners."
+    },
+    {
+      "id": "rock",
+      "kind": "texture",
+      "model": "nano-banana-pro",
+      "prompt": "Rough dark volcanic basalt rock surface: jagged fractured facets and crevices, soot-black and charcoal with faint rust-red mineral veins."
+    },
+    {
+      "id": "circle",
+      "kind": "decal",
+      "model": "nano-banana-pro",
+      "prompt": "A demonic summoning circle burned into a dark stone floor: a perfect thick ring of occult runes around a large pentagram with smaller runes between its points, every line glowing molten orange-red like lava, thin cracks radiating outward from the ring."
+    },
+    {
+      "id": "magma",
+      "kind": "decal",
+      "model": "nano-banana-pro",
+      "prompt": "A branching network of glowing magma cracks: jagged fissures of molten orange and yellow light spreading outward from the centre and thinning to hairlines at their ends."
+    },
+    {
+      "id": "blood",
+      "kind": "decal",
+      "model": "nano-banana-pro",
+      "prompt": "A large dark crimson pool of fresh blood with splatters and droplets flung around it and smeared drag marks, glossy wet in the middle."
+    },
+    {
+      "id": "rose",
+      "kind": "decal",
+      "model": "nano-banana-pro",
+      "prompt": "A great circular gothic ROSE WINDOW of stained glass seen straight on, glowing from behind: radiating petals of blood-red, crimson and deep amber glass held in black iron tracery, a horned demonic sigil in the centre, every pane lit from behind as if by fire."
+    },
+    {
+      "id": "lancet",
+      "kind": "decal",
+      "model": "nano-banana-pro",
+      "aspect": "9:16",
+      "prompt": "A tall narrow pointed gothic LANCET WINDOW of stained glass seen straight on, glowing from behind: blood-red and deep violet glass panes in black lead lines, a thin weeping saint with a halo of flame, every pane lit from behind."
+    },
+    {
+      "id": "icon_arc",
+      "kind": "icon",
+      "model": "nano-banana-pro",
+      "prompt": "ARC LIGHTNING: a jagged forking bolt of brilliant white and electric-cyan lightning leaping from an open gauntleted hand and branching into three chained arcs, crackling sparks, a deep indigo storm-dark background."
+    },
+    {
+      "id": "icon_blink",
+      "kind": "icon",
+      "model": "nano-banana-pro",
+      "prompt": "BLINK: a hooded mage dissolving into a streak of violet and cyan light as he teleports, his silhouette smeared into glowing motes, an after-image left behind, a deep violet void background."
+    },
+    {
+      "id": "icon_life",
+      "kind": "icon",
+      "model": "nano-banana-pro",
+      "prompt": "A HEALING POTION: a round glass flask with a cork stopper filled with glowing blood-red liquid, bubbles rising, a dark stone background."
+    },
+    {
+      "id": "icon_mana",
+      "kind": "icon",
+      "model": "nano-banana-pro",
+      "prompt": "A MANA POTION: a tall faceted glass vial filled with glowing deep-blue liquid, swirling light inside, a dark stone background."
+    }
+  ]
+}

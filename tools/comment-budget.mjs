@@ -32,6 +32,7 @@ const EXTENSIONS = new Set([...SCRIPT, '.html']);
 const SKIP_DIRS = new Set(['node_modules', '.git', 'shots', 'dist', 'build']);
 /** Generated, minified, and not written by anyone. */
 const SKIP_FILES = new Set(['docs/app.js']);
+const SKIP_UNDER = ['docs/abyss/']; // the Abyss's asset bundles, minified data
 
 export const FLOOR = 10;
 export const SHARE = 0.2;
@@ -177,7 +178,7 @@ export function check(files) {
         return null;
       }
       const path = relative(root, resolve(file)).split('\\').join('/');
-      if (SKIP_FILES.has(path)) return null;
+      if (SKIP_FILES.has(path) || SKIP_UNDER.some((dir) => path.startsWith(dir))) return null;
       const result = measure(text, file, SHARE_BY_FILE[path] ?? SHARE);
       return { path, ...result, over: result.comments - result.budget };
     })

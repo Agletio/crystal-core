@@ -18,6 +18,10 @@ Thumbs.db
 # Generated 3D. `tools/3d/testmodel.mjs` rewrites the test figure on demand and
 # a model off the generator is a large binary with a URL in tools/3d/made.json.
 tools/3d/models/
+# The Abyss's downloads: concept PNGs and GLBs off the generator. What ships is
+# the converted data in src/abyss/assets/; the ids that fetch these are in
+# tools/abyss/made.json.
+tools/abyss/cache/
 
 # Screenshot output from `npm run shots` — regenerated, never reviewed.
 shots/

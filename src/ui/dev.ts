@@ -22,6 +22,7 @@ import { ZONES } from '../render/generated-tiles';
 import { TEST_LEVEL, testLevel } from '../sim/grid';
 import { showingWalk, walkOverlay } from '../render/renderer';
 import { useThree } from './run';
+import { enterAbyss } from '../abyss';
 import { takeHeard, takeMet } from '../game/scenes';
 import { campaignDone, progressKey } from '../ladder';
 import { pathToNotable } from '../skills-tree';
@@ -364,6 +365,22 @@ function render(): void {
     render();
   };
   sets.append(solid);
+
+  // THE ABYSS: a level built in 3D from scratch, played on the real sim with an
+  // Aethermancer it dresses itself. Nothing it does touches the save.
+  const abyss = group(
+    'The Abyss',
+    'A hand-built 3D descent — an Aethermancer with Arc Lightning and Blink, a cathedral, a lava rift and a Herald. A sandbox: nothing is banked.'
+  );
+  const dive = el('button', 'mini devbtn') as HTMLButtonElement;
+  dive.id = 'dev-abyss';
+  dive.append(el('span', 'devbtn__name', 'Enter the Abyss'));
+  dive.append(el('span', 'devbtn__what', 'WASD, click to cast, Space to blink — 36 MB to load'));
+  dive.onclick = () => {
+    close();
+    void enterAbyss(game.character.name || 'Aethermancer', () => hooks.refresh());
+  };
+  abyss.append(dive);
 
   // WHERE A BODY MAY STAND, over the floor that shipped. Green walks, red does
   // not, and the amber band across the top of a tile under rock is drawn ground

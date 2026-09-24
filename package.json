@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "demo": "tsx src/demo.ts",
-    "build": "esbuild src/web.ts --bundle --format=iife --minify --outfile=docs/app.js",
+    "build": "esbuild src/web.ts --bundle --format=iife --minify --outfile=docs/app.js && npm run build:abyss",
     "watch": "esbuild src/web.ts --bundle --format=iife --outfile=docs/app.js --watch",
     "typecheck": "tsc --noEmit",
     "smoke": "node smoke.mjs",
@@ -18,14 +18,20 @@
     "writing": "tsx tools/writing.mts",
     "writing:sync": "tsx tools/writing.mts sync",
     "writing:check": "tsx tools/writing.mts check",
-    "writing:test": "tsx --test tools/writing.test.mts"
+    "writing:test": "tsx --test tools/writing.test.mts",
+    "build:abyss": "esbuild world=src/abyss/assets/load-world.ts actors=src/abyss/assets/load-actors.ts props=src/abyss/assets/load-props.ts furniture=src/abyss/assets/load-furniture.ts --bundle --format=iife --minify --outdir=docs/abyss --log-level=warning",
+    "abyss": "tsx tools/abyss/check.mts"
   },
   "devDependencies": {
     "@babel/parser": "^8.0.4",
+    "@gltf-transform/core": "^4.5.0",
+    "@gltf-transform/extensions": "^4.5.0",
+    "@gltf-transform/functions": "^4.5.0",
     "@types/node": "^26.1.2",
     "@types/three": "^0.186.0",
     "esbuild": "^0.28.1",
     "jsdom": "^30.0.1",
+    "meshoptimizer": "^1.2.0",
     "pixi.js": "^8.19.0",
     "playwright": "^1.56.1",
     "tsx": "^4.23.5",

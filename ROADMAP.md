@@ -626,6 +626,57 @@ follow cam is.
 
 ---
 
+## THE ABYSS — a 3D showcase in the dev kit, waiting on him to play it
+
+*"add this to the dev menu don't break the working game but I wanna see it in
+game and play it… redo all the art for one character and one spell. Do
+aethermancer, arc, blink. Make an entire level from scratch… still isometric
+camera and dark demonic style like the diablo games."*
+
+**BUILT, AND NOTHING OUTSIDE THE DEV KIT KNOWS IT EXISTS.** Dev kit → The Abyss
+→ Enter the Abyss: an overlay over the page, the game behind it held
+(`body.dataset.hold`), and leaving puts you back in the camp as you left it.
+Nothing it finds is banked. `src/abyss/` is the whole of it; `src/sim` is
+untouched, so no writing entry went stale.
+
+- **A HAND-LAID LEVEL**, `src/abyss/level.ts`, 92×44: the Stair of Ash, the
+  Ossuary Gallery, the Weeping Nave under a rose window, the Chapel of the
+  Drowned Saints, the Wound — a lava rift and one bridge — and the Sanctum of
+  the Pact, where Vhal-Morrag rises out of the circle once every pack is down.
+  Fifteen packs of imps, chanters and hornfiends.
+- **THE REAL SIM, TRANSPLANTED.** `src/abyss/sim.ts` builds a `RunSim` the
+  ordinary way and swaps in the map, the packs and the Herald through four
+  private members; `sim.driving` hands the hero to the keys. `npm run abyss`
+  plays it headless on the game's own policy and fails on a mechanism.
+  Measured over six seeds: 5 cleared in 50–105s, low water 31–86%, and the
+  sixth died to the Herald — the policy never drinks a flask.
+- **THE HERO** is an Aethermancer at drop band 5 — Arc Lightning, Blink, and a
+  random tree walk that never takes the Transformer or a keystone, since
+  Emberarc, Frostarc, Ball Lightning and Cloudburst are each a bolt the level
+  draws nothing for.
+- **EVERY PICTURE IS NEW, AND GENERATED.** Meshy text-to-image → image-to-3D →
+  rig → animate through `tools/abyss/meshy.mts`; `asks.json` is the art bible
+  and `made.json` the ledger. `pack.mts` and `tex.mts` pack what came back into
+  four shards loaded on entry, `docs/abyss/{world,actors,props,furniture}.js`,
+  36 MB between them and each under Cloudflare's 25 MiB. About 1,070 credits.
+- **THE RENDERER** is three.js on a fixed isometric camera (yaw 45°, pitch 56°):
+  - GTAO, bloom, ACES and a grade.
+  - A pool of point lights handed each frame to the lamps nearest the eye.
+  - An x-ray that dithers a wall open between the camera and the hero.
+  - Lightning drawn by midpoint displacement and re-rolled every few frames.
+  - HIGH on a real GPU and LOW on SwiftShader; `?high`, `?low` and `?noao`
+    force one.
+- [ ] **PLAY IT AND SAY.** Every judgement so far is off SwiftShader in a
+      headless browser, where a HIGH frame takes seconds. Nobody has measured
+      the frame rate on a real GPU.
+- [ ] **THE DESIGNS WERE PICKED, NOT APPROVED.** The hero's concept sheet went
+      to him with A chosen; every monster and prop design is Claude's pick.
+- [ ] **ITS TEXT IS NOT IN THE WRITING LEDGER** — the area banners, the
+      Herald's name, the end screens. Dev-only today; it goes in the day any of
+      it ships.
+
+---
+
 ## Phase 8 — TERRAIN, RECALIBRATED: levels, water, detail, and where things grow
 
 *"We are failing to achieve what I want here so lets just start from the
