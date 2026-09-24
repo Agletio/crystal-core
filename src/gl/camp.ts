@@ -44,8 +44,15 @@ export interface CampPerson {
   sprite: string;
   at: { x: number; y: number }; // feet, in art pixels
   lit: boolean;
-  working?: boolean;
+  /** At a station on a job: the hammer at the smelter, a stoop at the rest, facing `toward` (art pixels). */
+  work?: 'hammer' | 'stoop';
+  toward?: { x: number; y: number };
 }
+
+const WORK = {
+  hammer: { clip: 'hornfiend/attack', start: 0.25, impact: 0.8, end: 0.98 },
+  stoop: { clip: 'bank/stoop', start: 0.05, impact: 0.5, end: 0.95 },
+};
 
 export interface CampView {
   hero: CampPerson;
@@ -246,7 +253,7 @@ export class Camp3d {
       this.world.add(fig.root);
     }
     const at = worldOf(p.at.x, p.at.y);
-    const toward = face.clone().sub(at);
+    const toward = (p.toward ? worldOf(p.toward.x, p.toward.y) : face).clone().sub(at);
     const pose: Pose = {
       x: at.x, z: at.z, lift: 0, facing: Math.atan2(toward.z, toward.x), moving: false, speed: 0,
       dead: false, hurt: false, held: false, flash: p.lit ? 0.22 : 0, hidden: 0,
@@ -259,6 +266,7 @@ export class Camp3d {
     const off: string | undefined = lead ? drawn[0] : drawn[1];
     fig.carry('main', main ?? null, main ? (this.assets.models[main]?.gltf.scene ?? null) : null);
     fig.carry('off', off ?? null, off ? (this.assets.models[off]?.gltf.scene ?? null) : null);
+    if (p.work && !fig.busy) fig.play(WORK[p.work], p.work === 'hammer' ? 1.1 : 1.6);
     fig.step(pose, dt);
     fig.seenAt = this.time;
   }

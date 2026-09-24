@@ -174,6 +174,9 @@ generation is budgeted, and what code can build is built in code.
   tent modelled off CROPS of the approved concept (`tools/3d/props.mts`), the
   fire in code — laid out where the painted camp has them, and every hotspot
   still the DOM button it was, moved each frame onto the thing it stands for.
+- **THE CAMP WORKS**: a worker on a job stands at its station hammering at
+  the smelter or stooping at the rest, and so does the hero at the one he
+  works.
 - **THE CRAWLER AND THE HOUND ARE RIGGED IN CODE** (`rigBeast`): four limbs
   found where the mesh meets the ground, the head its highest mass and turned
   to +Z, a hip and a knee a limb, and a trot on the diagonal pairs.
@@ -192,9 +195,9 @@ generation is budgeted, and what code can build is built in code.
    and bosses (the Abyss's imp, chanter and hornfiend ARE three of the Rot's),
    Wat and Ida, the Osteomancer and the Geometer. Until then each stands as its
    own pixel frames on a card.
-3. **3D-F — THE CAMP ALIVE.** A worker at a station working it (the hammer at
-   the smelter, the stoop at the loom), the hero at the station he works, and
-   the rooms the Osteomancer and the Geometer keep.
+3. **3D-F — THE ROOMS.** The Osteomancer's and the Geometer's rooms are still
+   their drawn pictures; built as scenes the way the camp was, they are two
+   more props sets and one more person each.
 
 ### Traps it has already paid for
 

@@ -11447,7 +11447,7 @@
       "src/game/smith.ts",
       "src/game/save.ts"
     ],
-    "mechanicsRevision": "7557125510b1a6412323467c4720beb3f5c3f1351c69b5769d51b786433edf3b",
+    "mechanicsRevision": "93b63a198ac9713711a5f197b8d087bb0b0ea05cc85a4cec068c6dc1f24e782d",
     "textRevision": "3e2fc4a2c7bee8c703dda33aa1fa7164d06b27f975ecb56af3a96ee564e93e99",
     "status": "stale",
     "reviewedMechanicsRevision": "3f1ef79acf89fe143fb9d932067ebde91f27a4d71b62f710db4e09c7e067c7e4",
@@ -11492,7 +11492,7 @@
       "src/game/smith.ts",
       "src/game/save.ts"
     ],
-    "mechanicsRevision": "7557125510b1a6412323467c4720beb3f5c3f1351c69b5769d51b786433edf3b",
+    "mechanicsRevision": "93b63a198ac9713711a5f197b8d087bb0b0ea05cc85a4cec068c6dc1f24e782d",
     "textRevision": "bd21cfde758b9cca95c6014e6b915cc0d16b5b4e4d5237ded7e821ad9018d0eb",
     "status": "stale",
     "reviewedMechanicsRevision": "3f1ef79acf89fe143fb9d932067ebde91f27a4d71b62f710db4e09c7e067c7e4",

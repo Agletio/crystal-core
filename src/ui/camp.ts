@@ -305,12 +305,25 @@ let last = 0;
 function drawDeep(view3d: Camp3d, dt: number): void {
   const folk: CampPerson[] = [];
   folkMet(game).forEach((def, i) => folk.push({ key: `who-${def.id}`, sprite: def.who, at: folkSpot(def, i), lit: i === lit }));
-  workersFound(game).forEach((w, i) => folk.push({ key: `worker-${w.id}`, sprite: w.sprite, at: workerSpot(w.id, i), lit: lit === 100 + i, working: !!jobOf(game, w.id) }));
+  // AT A STATION, a body works it and faces it: the hammer at the smelter, a stoop at the rest.
+  const station = (family: string | undefined) => CAMP_HOTSPOTS.find((h) => h.opens === 'work' && h.family === family);
+  const working = (family: string | undefined): Pick<CampPerson, 'work' | 'toward'> => {
+    const at = station(family);
+    return at ? { work: family === 'metal' ? 'hammer' : 'stoop', toward: { x: at.x + at.w / 2, y: at.y + at.h / 2 } } : {};
+  };
+  workersFound(game).forEach((w, i) => {
+    const job = jobOf(game, w.id);
+    folk.push({ key: `worker-${w.id}`, sprite: w.sprite, at: workerSpot(w.id, i), lit: lit === 100 + i, ...(job ? working(familyOfJob(job)) : {}) });
+  });
   const own = jobOf(game, SELF);
   const foot = own ? CAMP_STATION_FOOT[familyOfJob(own) ?? ''] : undefined;
   const view: CampView = {
     // Off to the fire's side: a body in 3D stands in front of what it faces.
-    hero: { key: 'hero', sprite: heroSpriteFor(game.character), at: foot ? { x: foot.x + 18, y: foot.y } : { x: CAMP_STAND.x - 52, y: CAMP_STAND.y - 22 }, lit: false },
+    hero: {
+      key: 'hero', sprite: heroSpriteFor(game.character), lit: false,
+      at: foot ? { x: foot.x + 18, y: foot.y } : { x: CAMP_STAND.x - 52, y: CAMP_STAND.y - 22 },
+      ...(own ? working(familyOfJob(own)) : {}),
+    },
     folk,
     sockets: CRYSTAL_SLOTS.map((slot) => {
       const held = game.sockets[slot.id];
