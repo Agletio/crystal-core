@@ -74,6 +74,7 @@ export function dress(map: GameMap, terrain: Terrain, assets: Assets, s: Shared,
   // ─── COVER: every scrap the carve left, as stones a little sunk in the sand ───
   const cover = map.props.filter((p) => COVER.has(p.id));
   const scraps: { geo: number; mat: THREE.Matrix4 }[] = [];
+  const ways = [map.entrance, map.exit];
   for (const prop of cover) {
     const shape = COVER_SHAPE[prop.id];
     if (!shape) continue;
@@ -81,6 +82,7 @@ export function dress(map: GameMap, terrain: Terrain, assets: Assets, s: Shared,
     for (let k = 0; k < n; k++) {
       const x = prop.x + (hash(prop.x, prop.y, k * 3 + 2) - 0.5) * 0.9;
       const z = prop.y + (hash(prop.y, prop.x, k * 3 + 5) - 0.5) * 0.9;
+      if (ways.some((w) => Math.hypot(x - w.x, z - w.y) < 0.55)) continue; // nothing lies in a way down's throat
       const size = shape.size[0] + hash(x, z, 7) * (shape.size[1] - shape.size[0]);
       q.setFromEuler(new THREE.Euler(hash(x, z, 8) * 0.6, hash(x, z, 9) * 6.3, hash(x, z, 10) * 0.6));
       scraps.push({

@@ -9,6 +9,7 @@ import * as THREE from 'three';
 import { Rng } from '../../src/rng';
 import { RunSim, TICK } from '../../src/sim/run';
 import { ladderCharacter } from '../../src/sim/loadout';
+import { equipSkill } from '../../src/sim/character';
 import { WALL } from '../../src/sim/grid';
 import type { Vec2 } from '../../src/sim/grid';
 import { createThreeRenderer, harness } from '../../src/render/three';
@@ -28,6 +29,7 @@ walkOverlay(ask.has('walk'));
 
 const hero = ladderCharacter(Math.min(8, 1 + zone * 3 + Math.floor(depth / 5)), new Rng(seed * 7 + depth), ask.get('skill') ?? 'strike');
 hero.trade = ask.get('trade') ?? 'warrior'; // a trade with a body, or the hero is his pixel frames on a card
+if (ask.get('mover')) equipSkill(hero, ask.get('mover')!, 'movement');
 const sim = new RunSim([], hero, new Rng(seed * 101 + depth * 13 + zone), { where: { zone, rung: depth } });
 const s = sim.state;
 for (let t = 0; t < Number(ask.get('sim') ?? 0) && s.status === 'running'; t += TICK) sim.step(TICK);
@@ -173,6 +175,13 @@ if (ask.has('play')) {
       clock += 1000 / 60;
       if (f % 2 === 0) sim.step(TICK);
       renderer.draw(s, 1, { alpha: (f % 2) / 2, steps: f % 2 === 0 ? 1 : 0 });
+      if (ask.get('watch')) {
+        for (const m of s.monsters) {
+          if (m.defId !== ask.get('watch')) continue;
+          const b = renderer.bodyAt(m.id);
+          if (f % 3 === 0) console.log(`watch ${(f / 60).toFixed(2)}s #${m.id} dead ${m.dead} action ${m.action} life ${m.life.toFixed(0)} stun ${(m.stun ?? 0).toFixed(2)} ${m.stunKind ?? ''} at ${m.x.toFixed(2)},${m.y.toFixed(2)} ${b?.userData.playing ?? ''}`);
+        }
+      }
       if (f % every !== 0) continue;
       for (const c of host.querySelectorAll('canvas')) sg.drawImage(c, (n % 6) * fw, Math.floor(n / 6) * fh, fw, fh);
       sg.fillStyle = '#fff';

@@ -740,8 +740,9 @@ timber box in a gullet of meat read as furniture somebody carried down, which
 is the whole reason the table is per world. **A LOCK AND AN OUTCROP ARE WALKED
 ROUND, NEVER THROUGH** — in 3D a body stood inside the chest it guarded:
 `blockIfWhole` makes a Hoard's tile and a dry node's SOLID wherever that cuts
-nothing off and never in the ring round a way in or out, and `beside` is the
-open side the hero stands on to open or work one. Measured, the Spike's 20s
+nothing off and never in the ring round a way in or out, `lockSpot` keeps a
+lock off that ring too (both stood at the room's middle, a box over the hole),
+and `beside` is the open side the hero stands on to open or work one. Measured, the Spike's 20s
 window read the same kills to the digit with it.
 
 **A GATHERING NODE IS A LOCK WITH A FAMILY ON IT.** *"It's weird to get ore

@@ -6,7 +6,7 @@
  */
 import { Rng } from '../rng';
 import { SOLID_PROPS } from '../vignettes';
-import { generateMap, sceneMap, dist, hasLineOfSight, roomCenter, openSpots, dampSpots, blockIfWhole } from './grid';
+import { generateMap, sceneMap, dist, hasLineOfSight, roomCenter, openSpots, dampSpots, blockIfWhole, FLOOR } from './grid';
 import type { GameMap, Grid, Room, Vec2 } from './grid';
 import { findPath, nearestByPath } from './pathfind';
 import { AILMENT, AMBUSH, DAMAGE_TYPE_BY_ID, MONSTER_WINDUP, PASSIVE_DAMAGE, POTIONS, POTION_BY_ID } from '../data';
@@ -1198,7 +1198,7 @@ export class RunSim {
       const lift = 1 + (rank0 + (locked ? HOARD.rank : 0)) / 100;
       const guards = locked ? Math.round(packSize * HOARD.size) : packSize;
       if (locked) {
-        const middle = roomCenter(room); // a PROP: both renderers already draw one
+        const middle = this.lockSpot(map, room); // a PROP: both renderers already draw one
         blockIfWhole(map.grid, middle.x, middle.y, map.entrance, [map.entrance, map.exit]); // a box is walked round, never through
         const set = LOCKS[this.set.theme] ?? LOCKS.fissure;
         const rare = this.rng.chance(LOCK.rareChance);
@@ -1383,6 +1383,27 @@ export class RunSim {
       const drawn = pool?.on ?? at;
       map.props.push({ id: pair.node, x: drawn.x, y: drawn.y });
     }
+  }
+
+  /** The room's middle, unless a way in or out stands there or beside it — then the nearest floor clear of
+   *  both, found in a fixed order so it moves no draw. A lock on the exit is drawn over the hole. */
+  private lockSpot(map: GameMap, room: Room): Vec2 {
+    const middle = roomCenter(room);
+    const clear = (x: number, y: number): boolean =>
+      map.grid.at(x, y) === FLOOR && map.grid.walkable(x, y) &&
+      [map.entrance, map.exit].every((w) => Math.max(Math.abs(Math.round(w.x) - x), Math.abs(Math.round(w.y) - y)) >= 2);
+    if (clear(middle.x, middle.y)) return middle;
+    for (let r = 1; r <= Math.max(room.w, room.h); r++) {
+      for (let dy = -r; dy <= r; dy++) {
+        for (let dx = -r; dx <= r; dx++) {
+          const x = middle.x + dx;
+          const y = middle.y + dy;
+          if (Math.max(Math.abs(dx), Math.abs(dy)) !== r || x < room.x || y < room.y || x >= room.x + room.w || y >= room.y + room.h) continue;
+          if (clear(x, y)) return { x, y };
+        }
+      }
+    }
+    return middle;
   }
 
   /** Every water tile with a bank. A SCAN, so sorting packs by it moves no draw. */

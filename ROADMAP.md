@@ -216,9 +216,10 @@ generation is budgeted, and what code can build is built in code.
     two-hander's swing 17); a Leap plays a jump.
   - **CLIPPING**: bodies are drawn clear of faces, boulders, locks and seams —
     inside a face 1933 body-ticks to 151, a boulder ~3000 to 442, a seam 2149
-    to 76 — and locks and seams are SOLID in the sim; a boulder beside a
+    to 76 — and locks and seams are SOLID in the sim, and a lock is never put
+    on a way in or out (both stood at the room's middle); a boulder beside a
     walked cell stays inside its own; lanterns and roots hang on the face's
-    real surface.
+    real surface, and no loose stone lies in a funnel's throat.
   - **THE GROUND**: a way down is a FUNNEL the floor runs into, where a body
     stood on air over a square hole; a wall one cell thick is stones, where it
     was an invisible wall; water fades out as the floor rises to it, where its
