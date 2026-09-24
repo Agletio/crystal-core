@@ -266,7 +266,7 @@ export class Camp3d {
     const off: string | undefined = lead ? drawn[0] : drawn[1];
     fig.carry('main', main ?? null, main ? (this.assets.models[main]?.gltf.scene ?? null) : null);
     fig.carry('off', off ?? null, off ? (this.assets.models[off]?.gltf.scene ?? null) : null);
-    if (p.work && !fig.busy) fig.play(WORK[p.work], p.work === 'hammer' ? 1.1 : 1.6);
+    if (p.work && !fig.busy) fig.play(WORK[p.work], p.work === 'hammer' ? 1.1 : 1.6, { whole: true });
     fig.step(pose, dt);
     fig.seenAt = this.time;
   }

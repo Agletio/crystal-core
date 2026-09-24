@@ -13,7 +13,8 @@
  * rock rises into the dark, and the dark is the void behind it.
  *
  * Water sinks the floor under it and lies over it as one surface; the ways in
- * and out are pits cut into the floor with steps going down.
+ * and out are FUNNELS the floor itself runs down into, to a throat of dark:
+ * a body that crosses one walks down and out of it, and never stands on air.
  */
 import * as THREE from 'three';
 import { WALL } from '../sim/grid';
@@ -22,6 +23,7 @@ import type { MapTheme } from '../types';
 import type { Assets } from './assets';
 import { patch } from './shaders';
 import type { Shared } from './shaders';
+import type { Edge, Round } from './clearance';
 
 /** What a world's ground is made of: surface ids in the shard, tints over them, and how tall its rock stands. */
 export interface GroundLook {
@@ -64,13 +66,23 @@ const FACE_NOISE = 0.36; // metres a face moves along its own normal
 const BOULDER = 14; // cells: a clump of rock this small with floor all round it is boulders
 const CAP_REACH = 5; // cells of solid rock capped past the last floor; beyond it the fog is all there is
 const CAP_SHADE = 0.34; // the rock's top, darker than any face, so it reads as mass rather than floor
+const FUNNEL = { reach: 1.05, throat: 0.3, depth: 0.5, ring: 1.45 }; // metres: a way down, out from its middle
+const LANTERN_Y = 1.9;
 
 export interface Terrain {
   group: THREE.Group;
   /** The ground under a point, in metres: water sinks it. */
   heightAt(x: number, z: number): number;
-  /** Tall walls, for lamps to hang on: a point on the face, its normal into the floor. */
-  faces: { at: THREE.Vector3; normal: THREE.Vector3 }[];
+  /** Tall walls, for lamps to hang on: a point on the face, its normal into the floor, and how far the
+   *  rock stands out of that point at a lantern's height. */
+  faces: { at: THREE.Vector3; normal: THREE.Vector3; out: number }[];
+  /** How far the face stands out along its normal at a height: what hangs on it is hung that far out. */
+  pushAt(x: number, y: number, z: number): number;
+  /** Every face where a body's shoulders would meet it, and every boulder: what a drawn body keeps clear of. */
+  edges: Edge[];
+  stones: Round[];
+  /** The dark at the bottom of each way down, which nothing but the hero goes into. */
+  throats: Round[];
   dispose(): void;
 }
 
@@ -173,6 +185,14 @@ export function buildTerrain(map: GameMap, assets: Assets, s: Shared, eye: THREE
       depth[corner(i, j)] = around.filter(([x, y]) => deep(x, y)).length / 4;
     }
   }
+  // A WALL ONE CELL THICK has no corner that is rock, so no face could stand in it: it is stones like a clump.
+  const thin = new Uint8Array(W * H);
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      if (!rock(x, y) || loose(x, y)) continue;
+      if (floorish[corner(x, y)] && floorish[corner(x + 1, y)] && floorish[corner(x, y + 1)] && floorish[corner(x + 1, y + 1)]) thin[y * W + x] = 1;
+    }
+  }
 
   // HOW FAR EACH CELL IS FROM ROCK, for the dark a floor gathers at a wall's foot.
   const far = new Float32Array(W * H).fill(99);
@@ -207,6 +227,31 @@ export function buildTerrain(map: GameMap, assets: Assets, s: Shared, eye: THREE
     return d;
   };
   const sink = (c: number) => -0.62 * Math.pow(depth[c], 1.4) - 0.1 * wetness[c];
+  const cornerShade = (i: number, j: number): number => (0.5 + 0.5 * Math.min(1, openness(i, j) / 3)) * (1 - 0.35 * wetness[corner(i, j)]);
+  /** A corner field read between corners, as the floor's own triangles carry it. */
+  const between = (x: number, z: number, at: (i: number, j: number) => number): number => {
+    const fx = THREE.MathUtils.clamp(x + 0.5, 0, W);
+    const fz = THREE.MathUtils.clamp(z + 0.5, 0, H);
+    const i = Math.min(W - 1, Math.floor(fx));
+    const j = Math.min(H - 1, Math.floor(fz));
+    const tx = fx - i;
+    const tz = fz - j;
+    return (at(i, j) * (1 - tx) + at(i + 1, j) * tx) * (1 - tz) + (at(i, j + 1) * (1 - tx) + at(i + 1, j + 1) * tx) * tz;
+  };
+  // A WAY DOWN IS A FUNNEL where the floor round it is whole; an authored room's that is not keeps the old shaft.
+  const funnels = mouths.filter((m) => {
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (rock(m.x + dx, m.y + dy) || deep(m.x + dx, m.y + dy)) return false;
+    return true;
+  });
+  const inFunnel = (x: number, y: number): boolean => funnels.some((m) => Math.abs(x - m.x) <= 1 && Math.abs(y - m.y) <= 1);
+  const bowl = (x: number, z: number): number => {
+    let h = 0;
+    for (const m of funnels) {
+      const r = Math.hypot(x - m.x, z - m.y);
+      if (r < FUNNEL.reach) h = Math.min(h, -FUNNEL.depth * THREE.MathUtils.smoothstep(FUNNEL.reach - r, 0, FUNNEL.reach - FUNNEL.throat));
+    }
+    return h;
+  };
 
   // ─── THE FLOOR ───
   const fPos: number[] = [];
@@ -247,9 +292,7 @@ export function buildTerrain(map: GameMap, assets: Assets, s: Shared, eye: THREE
         if (!f[k]) mass.push(`c${i},${j}`);
         if (f[k]) {
           const p = P(i, j);
-          const open = openness(i, j);
-          const shade = (0.5 + 0.5 * Math.min(1, open / 3)) * (1 - 0.35 * wetness[c]);
-          poly.push({ key: `c${c}`, x: p.x, z: p.z, y: sink(c), shade, edge: false });
+          poly.push({ key: `c${c}`, x: p.x, z: p.z, y: sink(c), shade: cornerShade(i, j), edge: false });
         }
         const k2 = (k + 1) % 4;
         if (f[k] !== f[k2]) {
@@ -267,8 +310,8 @@ export function buildTerrain(map: GameMap, assets: Assets, s: Shared, eye: THREE
         }
       }
       if (mass.length >= 3) masses.push(mass);
-      // Floor, unless this cell is a way down.
-      if (!mouthCell(x, y) && poly.length >= 3) {
+      // Floor, unless this cell is a way down or the funnel round one.
+      if (!mouthCell(x, y) && !inFunnel(x, y) && poly.length >= 3) {
         const v = poly.map((p) => floorVertex(p.key, p.x, p.z, p.y, p.shade));
         for (let k = 1; k < v.length - 1; k++) fIdx.push(v[0], v[k + 1], v[k]); // wound to face up
       }
@@ -302,6 +345,58 @@ export function buildTerrain(map: GameMap, assets: Assets, s: Shared, eye: THREE
     }
   }
 
+  /** A polygon, whichever way round it was listed, wound to face up. */
+  const upward = (ids: number[]): void => {
+    let area = 0;
+    for (let k = 0; k < ids.length; k++) {
+      const a = ids[k] * 3;
+      const b = ids[(k + 1) % ids.length] * 3;
+      area += fPos[a] * fPos[b + 2] - fPos[b] * fPos[a + 2];
+    }
+    const v = area >= 0 ? ids : [...ids].reverse();
+    for (let k = 1; k < v.length - 1; k++) fIdx.push(v[0], v[k + 1], v[k]);
+  };
+  // ─── THE FUNNELS: rings down to the throat, zipped at the rim to the corners of the cells round them ───
+  for (const m of funnels) {
+    const NA = 40;
+    const NR = 8;
+    const rings: number[][] = [];
+    for (let k = 0; k <= NR; k++) {
+      const r = FUNNEL.throat + (FUNNEL.ring - FUNNEL.throat) * Math.pow(k / NR, 1.3);
+      const row: number[] = [];
+      for (let a = 0; a < NA; a++) {
+        const x = m.x + Math.cos((a / NA) * Math.PI * 2) * r;
+        const z = m.y + Math.sin((a / NA) * Math.PI * 2) * r;
+        const down = -bowl(x, z) / FUNNEL.depth;
+        row.push(floorVertex(`f${m.x},${m.y}:${k}:${a}`, x, z, between(x, z, (i, j) => sink(corner(i, j))) + bowl(x, z), between(x, z, cornerShade) * (1 - 0.75 * down * down)));
+      }
+      rings.push(row);
+    }
+    for (let k = 0; k < NR; k++) {
+      for (let a = 0; a < NA; a++) upward([rings[k][a], rings[k][(a + 1) % NA], rings[k + 1][(a + 1) % NA], rings[k + 1][a]]);
+    }
+    const rim: { id: number; t: number }[] = [];
+    for (let j = m.y - 1; j <= m.y + 2; j++) {
+      for (let i = m.x - 1; i <= m.x + 2; i++) {
+        if (i > m.x - 1 && i < m.x + 2 && j > m.y - 1 && j < m.y + 2) continue;
+        const p = P(i, j);
+        const t = Math.atan2(p.z - m.y, p.x - m.x);
+        rim.push({ id: floorVertex(`c${corner(i, j)}`, p.x, p.z, sink(corner(i, j)), cornerShade(i, j)), t: t < 0 ? t + Math.PI * 2 : t });
+      }
+    }
+    rim.sort((a, b) => a.t - b.t);
+    const inner = rings[NR].map((id, a) => ({ id, t: (a / NA) * Math.PI * 2 }));
+    let i = 0;
+    let j = 0;
+    const turn = (list: { t: number }[], n: number) => list[n % list.length].t + Math.floor(n / list.length) * Math.PI * 2;
+    for (let n = 0; n < inner.length + rim.length; n++) {
+      const a = inner[i % inner.length];
+      const b = rim[j % rim.length];
+      if (j >= rim.length || (i < inner.length && turn(inner, i + 1) <= turn(rim, j + 1))) upward([a.id, inner[(i + 1) % inner.length].id, b.id]), i++;
+      else upward([a.id, rim[(j + 1) % rim.length].id, b.id]), j++;
+    }
+  }
+
   const floorGeo = new THREE.BufferGeometry();
   floorGeo.setAttribute('position', new THREE.Float32BufferAttribute(fPos, 3));
   floorGeo.setAttribute('color', new THREE.Float32BufferAttribute(fCol, 3));
@@ -323,12 +418,15 @@ export function buildTerrain(map: GameMap, assets: Assets, s: Shared, eye: THREE
   const wIdx: number[] = [];
   const wKeys = new Map<string, number>();
   const faces: Terrain['faces'] = [];
+  const edges: Edge[] = [];
+  const stones: Round[] = [];
   const tops = new Map<string, number>(); // a crossing's wall height, where the cap meets it
+  const pushAt = (x: number, y: number, z: number): number => (fbm3(x * 0.85, y * 0.85, z * 0.85) - 0.3) * FACE_NOISE * THREE.MathUtils.smoothstep(y, -0.25, 0.6);
   const wallVertex = (key: string, x: number, z: number, nx: number, nz: number, h: number, row: number): number => {
     const had = wKeys.get(`${key}:${row}`);
     if (had !== undefined) return had;
     const y = -0.25 + (h + 0.25) * (row / ROWS);
-    const push = (fbm3(x * 0.85, y * 0.85, z * 0.85) - 0.3) * FACE_NOISE * THREE.MathUtils.smoothstep(y, -0.25, 0.6);
+    const push = pushAt(x, y, z);
     const n = wPos.length / 3;
     wPos.push(x + nx * push, y, z + nz * push);
     wUv.push((x + z) * 0.35, y * 0.35);
@@ -364,9 +462,11 @@ export function buildTerrain(map: GameMap, assets: Assets, s: Shared, eye: THREE
         wIdx.push(a, b, c2, a, c2, d);
       }
     }
+    const [a, b] = [cols[0], cols[2]].map((c) => ({ x: c.x + c.nx * pushAt(c.x, 1.1, c.z), z: c.z + c.nz * pushAt(c.x, 1.1, c.z) }));
+    edges.push({ ax: a.x, az: a.z, bx: b.x, bz: b.z });
     const mid = cols[1];
     if (mid.h > look.tall * 0.7 && hash(mid.x, mid.z, 9) < 0.14) {
-      faces.push({ at: new THREE.Vector3(mid.x, 0, mid.z), normal: new THREE.Vector3(mid.nx, 0, mid.nz) });
+      faces.push({ at: new THREE.Vector3(mid.x, 0, mid.z), normal: new THREE.Vector3(mid.nx, 0, mid.nz), out: pushAt(mid.x, LANTERN_Y, mid.z) });
     }
   }
   const wallGeo = new THREE.BufferGeometry();
@@ -441,29 +541,36 @@ export function buildTerrain(map: GameMap, assets: Assets, s: Shared, eye: THREE
     group.add(cap);
   }
 
-  // ─── BOULDERS: a rough stone a loose cell, overlapping into an outcrop ───
+  // ─── BOULDERS: a rough stone a loose cell, overlapping into an outcrop — but one beside a
+  // cell somebody walks keeps inside its own, or a body standing next to it stands in it ───
   {
     const seats: THREE.Matrix4[] = [];
     for (let y = 0; y < H; y++) {
       for (let x = 0; x < W; x++) {
-        if (!loose(x, y)) continue;
-        const tall = 0.75 + hash(x, y, 31) * 0.7;
-        const wide = 0.62 + hash(x, y, 32) * 0.18;
+        if (!loose(x, y) && !thin[y * W + x]) continue;
+        let edge = false;
+        for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (grid.walkable(x + dx, y + dy)) edge = true;
+        const wide = edge ? 0.34 + hash(x, y, 32) * 0.06 : 0.62 + hash(x, y, 32) * 0.18; // the stone's noise reaches 1.22 of it
+        const tall = edge ? wide * (1.1 + hash(x, y, 31) * 0.7) : 0.75 + hash(x, y, 31) * 0.7;
+        const drift = edge ? 0 : 0.2;
+        const at = { x: x + (hash(x, y, 33) - 0.5) * drift, z: y + (hash(x, y, 34) - 0.5) * drift };
+        stones.push({ x: at.x, z: at.z, r: wide * 1.1 });
         seats.push(new THREE.Matrix4().compose(
-          new THREE.Vector3(x + (hash(x, y, 33) - 0.5) * 0.2, tall * 0.35, y + (hash(x, y, 34) - 0.5) * 0.2),
+          new THREE.Vector3(at.x, tall * 0.35, at.z),
           new THREE.Quaternion().setFromEuler(new THREE.Euler((hash(x, y, 35) - 0.5) * 0.4, hash(x, y, 36) * 6.3, (hash(x, y, 37) - 0.5) * 0.4)),
           new THREE.Vector3(wide, tall, wide)
         ));
       }
     }
     if (seats.length) {
-      const geo = new THREE.IcosahedronGeometry(1, 2);
+      // FACETED, never an egg: few faces, pushed hard, and a flattened crown.
+      const geo = new THREE.IcosahedronGeometry(1, 1);
       const p = geo.getAttribute('position') as THREE.BufferAttribute;
       const v = new THREE.Vector3();
       for (let i = 0; i < p.count; i++) {
         v.fromBufferAttribute(p, i);
-        const k = 0.78 + fbm3(v.x * 1.7 + 4, v.y * 1.7, v.z * 1.7) * 0.42;
-        p.setXYZ(i, v.x * k, v.y * k, v.z * k);
+        const k = 0.72 + fbm3(v.x * 2.1 + 4, v.y * 2.1, v.z * 2.1) * 0.5;
+        p.setXYZ(i, v.x * k, Math.min(v.y * k, 0.7) * 0.85, v.z * k);
       }
       geo.computeVertexNormals();
       const rocks = new THREE.InstancedMesh(geo, material(assets, look.rock, look.rockTint, s, { triplanar: 0.7 }, false), seats.length);
@@ -473,9 +580,16 @@ export function buildTerrain(map: GameMap, assets: Assets, s: Shared, eye: THREE
     }
   }
 
-  // ─── WATER: one surface over every wet cell, fading to nothing at its shore ───
+  // ─── WATER: one level surface over every wet cell and a cell past it, so the SHORE is wherever the
+  // floor rises through it — a line the ground's own slope draws, never a cell's edge ───
   const wetCells: [number, number][] = [];
-  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (wet(x, y)) wetCells.push([x, y]);
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      let near = false;
+      for (let dy = -1; dy <= 1 && !near; dy++) for (let dx = -1; dx <= 1 && !near; dx++) near = wet(x + dx, y + dy);
+      if (near && !rock(x, y)) wetCells.push([x, y]);
+    }
+  }
   if (wetCells.length) {
     const pos: number[] = [];
     const alpha: number[] = [];
@@ -486,7 +600,7 @@ export function buildTerrain(map: GameMap, assets: Assets, s: Shared, eye: THREE
       const had = seen.get(c);
       if (had !== undefined) return had;
       const n = pos.length / 3;
-      pos.push(i - 0.5, -0.06, j - 0.5);
+      pos.push(i - 0.5, -0.05, j - 0.5);
       alpha.push(Math.min(1, wetness[c] * 1.6));
       seen.set(c, n);
       return n;
@@ -507,21 +621,20 @@ export function buildTerrain(map: GameMap, assets: Assets, s: Shared, eye: THREE
     group.add(water);
   }
 
-  // ─── THE WAYS DOWN: a pit, a rim of stone, and steps ───
+  // ─── THE WAYS DOWN: a throat under each funnel; a shaft with steps where there is none ───
   const stone = material(assets, look.rock, look.rockTint, s, { triplanar: 0.8 }, false);
-  for (const m of mouths) group.add(pit(m.x, m.y, stone));
+  for (const m of mouths) group.add(funnels.includes(m) ? throat(m.x, m.y, stone) : pit(m.x, m.y, stone));
 
-  const heightAt = (x: number, z: number): number => {
-    const i = Math.round(x + 0.5);
-    const j = Math.round(z + 0.5);
-    if (i < 0 || j < 0 || i > W || j > H) return 0;
-    return sink(corner(i, j));
-  };
+  const heightAt = (x: number, z: number): number => between(x, z, (i, j) => sink(corner(i, j))) + bowl(x, z);
 
   return {
     group,
     heightAt,
     faces,
+    pushAt,
+    edges,
+    stones,
+    throats: funnels.map((m) => ({ x: m.x, z: m.y, r: FUNNEL.throat })),
     dispose: () =>
       group.traverse((o) => {
         const mesh = o as THREE.Mesh;
@@ -532,7 +645,37 @@ export function buildTerrain(map: GameMap, assets: Assets, s: Shared, eye: THREE
   };
 }
 
-/** A way down: a shaft into the dark with steps round its wall, and a rim of broken stone round its mouth. */
+/** Under a funnel: the dark it runs down into, and broken stone lying round its lip. */
+function throat(x: number, z: number, stone: THREE.MeshStandardMaterial): THREE.Group {
+  const g = new THREE.Group();
+  g.position.set(x, 0, z);
+  const shaft = new THREE.Mesh(
+    new THREE.CylinderGeometry(FUNNEL.throat, FUNNEL.throat * 0.8, 3, 24, 1, true),
+    new THREE.MeshStandardMaterial({ color: 0x0e0b09, roughness: 1, side: THREE.BackSide })
+  );
+  shaft.position.y = -FUNNEL.depth - 1.48;
+  const bottom = new THREE.Mesh(new THREE.CircleGeometry(FUNNEL.throat, 24).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0x000000 }));
+  bottom.position.y = -FUNNEL.depth - 2.95;
+  g.add(shaft, bottom);
+  const rim = new THREE.InstancedMesh(new THREE.DodecahedronGeometry(1, 0), stone, 12);
+  const m = new THREE.Matrix4();
+  for (let k = 0; k < 12; k++) {
+    const a = (k / 12) * Math.PI * 2 + hash(x, z, k) * 0.4;
+    const r = FUNNEL.reach + 0.05 + hash(k, x, z) * 0.3;
+    const sz = 0.06 + hash(z, k, x) * 0.08;
+    m.compose(
+      new THREE.Vector3(Math.cos(a) * r, sz * 0.2, Math.sin(a) * r),
+      new THREE.Quaternion().setFromEuler(new THREE.Euler(hash(k, 1, x) * 3, a, hash(k, 2, z) * 3)),
+      new THREE.Vector3(sz, sz * 0.6, sz)
+    );
+    rim.setMatrixAt(k, m);
+  }
+  rim.castShadow = rim.receiveShadow = true;
+  g.add(rim);
+  return g;
+}
+
+/** A way down where no funnel fits: a shaft into the dark with steps round its wall, and a rim of broken stone. */
 function pit(x: number, z: number, stone: THREE.MeshStandardMaterial): THREE.Group {
   const g = new THREE.Group();
   g.position.set(x, 0, z);
@@ -595,7 +738,7 @@ function waterMaterial(s: Shared, colour: number): THREE.ShaderMaterial {
         float ripple = n(p * 3.1 + vec2(uTime * 0.12, uTime * 0.07)) * 0.6 + n(p * 7.3 - uTime * 0.18) * 0.4;
         float sheen = pow(ripple, 9.0) * 0.16; // still water: a glint where the lamps catch it, never a pattern
         vec3 col = uColor * (0.92 + 0.12 * ripple) + vec3(0.55, 0.62, 0.7) * sheen;
-        gl_FragColor = vec4(col, smoothstep(0.05, 0.75, vShore) * 0.86);
+        gl_FragColor = vec4(col, smoothstep(0.0, 0.6, vShore) * 0.88);
         #include <tonemapping_fragment>
         #include <colorspace_fragment>
       }`,

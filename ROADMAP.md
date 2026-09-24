@@ -189,6 +189,41 @@ generation is budgeted, and what code can build is built in code.
   boss bar the DOM's own. A keystone's ball, fuse, tremor or walking cloud is
   drawn off the bursts and pools the sim already emits for it.
 
+- **THE FIRST BUG PASS**, after *"lots of bugs… mostly regarding movement,
+  map generation/layout, clipping of objects walls, and animations"*. Every
+  fault was MEASURED before and after, and the tools stay:
+  `tools/3d/audit.mts` builds and plays real descents headless and holds the
+  ground against the grid; `PAGE=gait` measures every clip on every body;
+  `PAGE=walk` walks a body and follows its planted foot; `PAGE=ground` is a
+  real descent through the real renderer — `views=` shoots the ways in and
+  out, a lake, a seam; `play=` follows every foot through a fight, `film=`
+  shoots a filmstrip, `walk=1` lays the dev kit's walkable overlay (which 3D
+  now draws too).
+  - **MOVEMENT**: a body is drawn between ticks, where easing toward the sim
+    drew a walker at 2.5 and 3.6 m/s on alternate frames; a clip's speed is
+    read off its planted foot, where the old hips reading was 0 for every
+    clip in the bank and every gait played at one speed — a hero's feet
+    skated under him at 2.3 m/s; a body picks the GAIT nearest its speed.
+    Measured over 40s of Shallows depth 4: a planted foot drifts 0.01 m/s on
+    a husk, 0.03 on a heap, 0.04 on a Bonecaller and 0.24 on a walking hero
+    (was 1.5). A turn on the spot still sweeps the feet, as it does in any
+    game without foot IK.
+  - **ANIMATION**: a swing, a cast and a fall outweigh their loop nine to
+    one (every swing was half a swing and every corpse half stood up); on the
+    move a swing or a flinch is its top half and the legs keep walking; a
+    death runs to the floor (the husk's and the Bonecaller's stopped
+    kneeling); every clip is grounded (the smith's idle floated 22 cm, a
+    two-hander's swing 17); a Leap plays a jump.
+  - **CLIPPING**: bodies are drawn clear of faces, boulders, locks and seams —
+    inside a face 1933 body-ticks to 151, a boulder ~3000 to 442, a seam 2149
+    to 76 — and locks and seams are SOLID in the sim; a boulder beside a
+    walked cell stays inside its own; lanterns and roots hang on the face's
+    real surface.
+  - **THE GROUND**: a way down is a FUNNEL the floor runs into, where a body
+    stood on air over a square hole; a wall one cell thick is stones, where it
+    was an invisible wall; a lake's shore is where the floor rises through it;
+    `heightAt` reads between corners, where it jumped 38 cm at a shore.
+
 ### What is left, and it is all CREDITS — see Open questions
 
 1. **3D-D — THE OTHER TWO ZONES' BODIES.** The Prism's six (shardling,
@@ -217,6 +252,12 @@ generation is budgeted, and what code can build is built in code.
 - **A MESHY HAND BONE RUNS WRIST TO FINGERS ALONG Y**: a weapon is a quarter
   turn off it, out of the thumb, and its origin is the wrist — the grip is in
   the palm (`GRIP_TURN`, `PALM` in `src/gl/bodies.ts`).
+- **EVERY CLIP IN THE BANK WALKS ON THE SPOT**, so its hips say it is standing
+  still: a speed is read off the planted foot or not at all.
+- **TWO ACTIONS AT WEIGHT ONE ARE A HALF-AND-HALF BLEND** in three's mixer,
+  whatever order they were started in.
+- **A SWING BEGUN STANDING IS WALKED OUT OF**: it is halved to its top half the
+  frame the body moves, or the legs hold the swing's stance and skate.
 
 ## THE DRIVING SPIKE — waiting on him to play it
 

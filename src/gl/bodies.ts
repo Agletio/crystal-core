@@ -10,6 +10,13 @@
  * is time-scaled so the blow falls when `winding` runs out, which is the tell
  * the game gives and the one thing the art may not get wrong. The hero's swing
  * lands the tick it is made, so his starts just short of its impact.
+ *
+ * EVERY CLIP IS MEASURED ON THE BODY IT PLAYS ON before it is played: stood on
+ * the floor by its lower foot (a clip made for another skeleton floats or sinks
+ * by whatever the two legs differ), and its walking speed read off the foot
+ * that is planted, since every clip in the bank walks on the spot. A body picks
+ * the GAIT whose speed is nearest its own and plays it at exactly that speed,
+ * so a foot on the floor stays where it was put.
  */
 import * as THREE from 'three';
 import { clone as cloneSkinned } from 'three/addons/utils/SkeletonUtils.js';
@@ -39,12 +46,13 @@ export interface BodyDef {
   height: number; // metres, at the sprite's own scale
   idle: string;
   ready?: string; // the idle with something awake near
-  move: string;
+  move: string[]; // gaits, slowest first: the one nearest the body's speed plays
   attack: Window[];
   cast?: Window[];
   hit: Window;
   death: Window;
   roar?: Window;
+  leap?: Window; // a mover's jump, over the arc the renderer flies it along
   shape?: Shape;
   /** No skeleton: moved whole. A beast trots on its own bob, a person glides. */
   still?: 'beast' | 'glide';
@@ -60,78 +68,82 @@ const HERO: Omit<BodyDef, 'model' | 'move'> = {
   attack: [W('imp/attack', 0.2, 0.42, 0.78)],
   cast: [W('hero/cast', 0.3, 0.37, 0.6), W('hero/cast2', 0.32, 0.4, 0.62)],
   hit: W('hero/hit', 0.02, 0.1, 0.34), death: W('hero/death', 0, 0, 0.98),
+  leap: W('bank/leap', 0.12, 0.29, 0.45), // the crouch, the spring, and down hard at its end
 };
+/** A hero jogs at his own pace and sprints on his OWN run once something makes him quicker. Obreth's
+ *  legs take the borrowed jog badly — measured, his planted foot skated at 1.2 m/s — so he walks or runs. */
+const heroGaits = (id: string): string[] => (id === 'obreth' ? [`${id}/walk`, `${id}/run`] : ['hero/run', `${id}/run`]);
 
 /** By body id. A hero's is the TRADE's sprite; a monster's is `MONSTERS`' own id. */
 export const BODIES: Record<string, BodyDef> = {
-  aethermancer: { ...HERO, model: 'aethermancer', move: 'aethermancer/run' },
-  alchemist: { ...HERO, model: 'alchemist', move: 'alchemist/run' },
-  obreth: { ...HERO, model: 'obreth', move: 'obreth/run', height: 1.85 },
-  mahthar: { ...HERO, model: 'mahthar', move: 'mahthar/run', height: 1.9 },
+  aethermancer: { ...HERO, model: 'aethermancer', move: heroGaits('aethermancer') },
+  alchemist: { ...HERO, model: 'alchemist', move: heroGaits('alchemist') },
+  obreth: { ...HERO, model: 'obreth', move: heroGaits('obreth'), height: 1.85 },
+  mahthar: { ...HERO, model: 'mahthar', move: heroGaits('mahthar'), height: 1.9 },
   husk: {
-    model: 'husk', shard: 'shallows', height: 1.75, idle: 'hornfiend/idle', move: 'husk/walk', holds: { main: 'pick' },
+    model: 'husk', shard: 'shallows', height: 1.75, idle: 'hornfiend/idle', move: ['husk/walk', 'husk/run'], holds: { main: 'pick' },
     attack: [W('imp/attack', 0.08, 0.42, 0.78)],
-    hit: W('hero/hit', 0.02, 0.1, 0.3), death: W('imp/death', 0.02, 0, 0.6),
+    hit: W('hero/hit', 0.02, 0.1, 0.3), death: W('imp/death', 0.02, 0, 0.92),
   },
   gaunt: {
-    model: 'husk', shard: 'shallows', height: 2.9, idle: 'hornfiend/idle', move: 'bank/shamble',
+    model: 'husk', shard: 'shallows', height: 2.9, idle: 'hornfiend/idle', move: ['bank/shamble', 'husk/walk'],
     attack: [W('imp/attack', 0.08, 0.42, 0.78)],
     hit: W('hero/hit', 0.02, 0.1, 0.3), death: W('hornfiend/death', 0, 0, 0.97), roar: W('imp/roar', 0.1, 0.3, 0.75),
     shape: { lengths: { LeftUpLeg: 1.45, LeftLeg: 1.45, RightUpLeg: 1.45, RightLeg: 1.45, LeftArm: 1.7, LeftForeArm: 1.7, RightArm: 1.7, RightForeArm: 1.7, neck: 1.8 }, head: 0.72 },
   },
   heap: {
-    model: 'heap', shard: 'shallows', height: 2.4, idle: 'hornfiend/idle', move: 'hornfiend/walk',
+    model: 'heap', shard: 'shallows', height: 2.4, idle: 'hornfiend/idle', move: ['hornfiend/walk', 'heap/walk'],
     attack: [W('hornfiend/attack', 0.2, 0.82, 0.98)],
     hit: W('hero/hit', 0.02, 0.12, 0.3), death: W('hornfiend/death', 0, 0, 0.97), roar: W('hornfiend/roar', 0.1, 0.35, 0.8),
   },
   bonecaller: {
-    model: 'bonecaller', shard: 'shallows', height: 1.95, idle: 'chanter/idle', move: 'chanter/walk',
+    model: 'bonecaller', shard: 'shallows', height: 1.95, idle: 'chanter/idle', move: ['bonecaller/walk', 'bonecaller/run'],
     attack: [W('chanter/cast', 0.18, 0.52, 0.82)], cast: [W('chanter/cast', 0.18, 0.52, 0.82)],
-    hit: W('chanter/hit', 0.02, 0.06, 0.2), death: W('chanter/death', 0.02, 0, 0.6),
+    hit: W('chanter/hit', 0.02, 0.06, 0.2), death: W('hero/death', 0, 0, 0.98),
   },
   answering: {
-    model: 'answering', shard: 'shallows', height: 4.0, idle: 'hornfiend/idle', move: 'answering/walk', holds: { main: 'mace2h', size: 1.6 },
+    model: 'answering', shard: 'shallows', height: 4.0, idle: 'hornfiend/idle', move: ['bank/shamble', 'answering/walk'], holds: { main: 'mace2h', size: 1.6 },
     attack: [W('hornfiend/attack', 0.2, 0.82, 0.98), W('bank/slam', 0.1, 0.55, 0.9)],
     hit: W('hero/hit', 0.02, 0.12, 0.3), death: W('hornfiend/death', 0, 0, 0.97), roar: W('imp/roar', 0.1, 0.3, 0.75),
   },
   // THE ROT'S, off the Abyss's own models and the clips it bought for them.
   imp: {
-    model: 'imp', shard: 'abyss/actors', height: 1.15, idle: 'imp/idle', move: 'imp/run',
-    attack: [W('imp/attack', 0.08, 0.42, 0.78)], hit: W('imp/hit', 0.02, 0.04, 0.1), death: W('imp/death', 0.02, 0, 0.6),
+    model: 'imp', shard: 'abyss/actors', height: 1.15, idle: 'imp/idle', move: ['imp/run'],
+    attack: [W('imp/attack', 0.08, 0.42, 0.78)], hit: W('imp/hit', 0.02, 0.04, 0.1), death: W('imp/death', 0.02, 0, 0.92),
     roar: W('imp/roar', 0.1, 0.3, 0.75), rim: 0.55,
   },
   chanter: {
-    model: 'chanter', shard: 'abyss/actors', height: 1.9, idle: 'chanter/idle', move: 'chanter/walk',
+    model: 'chanter', shard: 'abyss/actors', height: 1.9, idle: 'chanter/idle', move: ['chanter/walk'],
     attack: [W('chanter/cast', 0.18, 0.52, 0.82)], cast: [W('chanter/cast', 0.18, 0.52, 0.82)],
-    hit: W('chanter/hit', 0.02, 0.04, 0.1), death: W('chanter/death', 0.02, 0, 0.6), rim: 1.3,
+    hit: W('chanter/hit', 0.02, 0.04, 0.1), death: W('chanter/death', 0.02, 0, 0.92), rim: 1.3,
   },
   hornfiend: {
-    model: 'hornfiend', shard: 'abyss/actors', height: 3.0, idle: 'hornfiend/idle', move: 'hornfiend/walk',
+    model: 'hornfiend', shard: 'abyss/actors', height: 3.0, idle: 'hornfiend/idle', move: ['hornfiend/walk'],
     attack: [W('hornfiend/attack', 0.2, 0.82, 0.98)], hit: W('hornfiend/hit', 0.02, 0.12, 0.3), death: W('hornfiend/death', 0, 0, 0.97),
     roar: W('hornfiend/roar', 0.1, 0.35, 0.8), rim: 1.1,
   },
   crawler: {
-    model: 'crawler', shard: 'shallows', height: 1.0, idle: '', move: '', still: 'beast',
+    model: 'crawler', shard: 'shallows', height: 1.0, idle: '', move: [], still: 'beast',
     attack: [W('', 0, 0.5, 1)], hit: W('', 0, 0.2, 1), death: W('', 0, 0, 1),
   },
   hound: {
-    model: 'hound', shard: 'shallows', height: 1.1, idle: '', move: '', still: 'beast',
+    model: 'hound', shard: 'shallows', height: 1.1, idle: '', move: [], still: 'beast',
     attack: [W('', 0, 0.5, 1)], hit: W('', 0, 0.2, 1), death: W('', 0, 0, 1),
   },
   lampwright: {
-    model: 'lampwright', shard: 'folk', height: 1.85, idle: '', move: '', still: 'glide',
+    model: 'lampwright', shard: 'folk', height: 1.85, idle: '', move: [], still: 'glide',
     attack: [W('', 0, 0.5, 1)], hit: W('', 0, 0.2, 1), death: W('', 0, 0, 1),
   },
   smith: {
-    model: 'smith', shard: 'folk', height: 1.9, idle: 'chanter/idle', move: 'smith/walk',
+    model: 'smith', shard: 'folk', height: 1.9, idle: 'chanter/idle', move: ['smith/walk', 'smith/run'],
     attack: [W('hornfiend/attack', 0.2, 0.82, 0.98)], hit: W('hero/hit', 0.02, 0.1, 0.3), death: W('hero/death', 0, 0, 0.98),
   },
   hob: {
-    model: 'hob', shard: 'folk', height: 1.35, idle: 'chanter/idle', move: 'hob/walk',
+    model: 'hob', shard: 'folk', height: 1.35, idle: 'chanter/idle', move: ['hob/walk', 'hob/run'],
     attack: [W('bank/stoop', 0, 0.5, 1)], hit: W('hero/hit', 0.02, 0.1, 0.3), death: W('hero/death', 0, 0, 0.98),
   },
   nell: {
-    model: 'nell', shard: 'folk', height: 1.7, idle: 'chanter/idle', move: 'nell/walk',
+    model: 'nell', shard: 'folk', height: 1.7, idle: 'chanter/idle', move: ['nell/walk', 'nell/run'],
     attack: [W('bank/stoop', 0, 0.5, 1)], hit: W('hero/hit', 0.02, 0.1, 0.3), death: W('hero/death', 0, 0, 0.98),
   },
 };
@@ -204,7 +216,24 @@ export interface Template {
   height: number; // metres the model stands at scale 1
   clips: Map<string, THREE.AnimationClip>;
   bank: Bank | null;
+  probe?: Probe | null;
 }
+
+/** A spare copy of a body, posed on the CPU to measure a clip before anything plays it. */
+interface Probe {
+  scene: THREE.Object3D;
+  mixer: THREE.AnimationMixer;
+  bones: THREE.Object3D[];
+  feet: THREE.Object3D[];
+  rest: number; // the lower ankle's height standing at rest
+  unit: number; // metres a unit of the hips' parent, which is what a Hips.position key is in
+}
+
+const TOP = 9; // a one-shot outweighs the loop under it nine to one: a swing is a swing, not half of one
+const FLINCH = 1.2; // a hit is laid OVER what the body is doing, never instead of it
+const UPPER = '|upper'; // a clip's top half alone, for a body swinging on the move
+const LEGS = new Set(['Hips', 'LeftUpLeg', 'LeftLeg', 'LeftFoot', 'LeftToeBase', 'RightUpLeg', 'RightLeg', 'RightFoot', 'RightToeBase']);
+const SAMPLES = 40;
 
 export function bankOf(model: Model | undefined): Bank | null {
   if (!model) return null;
@@ -396,12 +425,83 @@ export function makeTemplate(def: BodyDef, model: Model, bank: Bank | null): Tem
   };
 }
 
-function clipOf(t: Template, name: string): THREE.AnimationClip | null {
+function probeOf(t: Template): Probe | null {
+  if (t.probe !== undefined) return t.probe;
+  const scene = cloneSkinned(t.scene);
+  scene.updateMatrixWorld(true);
+  const p = new THREE.Vector3();
+  const feet = ['LeftFoot', 'RightFoot'].map((n) => scene.getObjectByName(n)).filter((o): o is THREE.Object3D => !!o);
+  const hips = scene.getObjectByName('Hips');
+  const bones: THREE.Object3D[] = [];
+  scene.traverse((o) => ((o as THREE.Bone).isBone ? bones.push(o) : undefined));
+  t.probe = feet.length === 2 && hips?.parent
+    ? { scene, mixer: new THREE.AnimationMixer(scene), bones, feet, rest: Math.min(...feet.map((f) => f.getWorldPosition(p).y)), unit: hips.parent.getWorldScale(p).y }
+    : null;
+  return t.probe;
+}
+
+/** A clip played through on the probe: how far the lower foot rides off its rest height, the lowest
+ *  bone, and the speed its planted foot slides back at — which is the speed the clip walks. */
+function measure(pr: Probe, clip: THREE.AnimationClip, height: number): { low: number[]; lowest: number[]; depicts: number } {
+  const action = pr.mixer.clipAction(clip);
+  action.play();
+  const p = new THREE.Vector3();
+  const low: number[] = [];
+  const lowest: number[] = [];
+  const tracks = pr.feet.map(() => [] as { y: number; z: number }[]);
+  for (let k = 0; k <= SAMPLES; k++) {
+    pr.mixer.setTime((clip.duration * k) / SAMPLES);
+    pr.scene.updateMatrixWorld(true);
+    const ys = pr.feet.map((f, i) => {
+      f.getWorldPosition(p);
+      tracks[i].push({ y: p.y, z: p.z });
+      return p.y;
+    });
+    low.push(Math.min(...ys) - pr.rest);
+    lowest.push(Math.min(...pr.bones.map((b) => b.getWorldPosition(p).y)));
+  }
+  action.stop();
+  pr.mixer.uncacheAction(clip);
+  const planted = 0.03 * (height / 1.8);
+  const slides: number[] = [];
+  for (const tr of tracks) {
+    const floor = Math.min(...tr.map((f) => f.y));
+    for (let k = 0; k < SAMPLES; k++) {
+      if (tr[k].y - floor < planted && tr[k + 1].y - floor < planted) slides.push(-(tr[k + 1].z - tr[k].z) / (clip.duration / SAMPLES));
+    }
+  }
+  slides.sort((a, b) => a - b);
+  return { low, lowest, depicts: slides.length ? Math.max(0, slides[slides.length >> 1]) : 0 };
+}
+
+/** `name` made to play on this body: retargeted, stood on its feet, its speed read. A fall lies ON the floor,
+ *  never in it. `<clip>|upper` is its top half alone. */
+export function clipOf(t: Template, name: string): THREE.AnimationClip | null {
   if (!name || !t.skeleton || !t.bank) return null;
   const had = t.clips.get(name);
   if (had) return had;
-  const made = retarget(t.bank, name, t.skeleton, /death|leap/.test(name));
-  if (made) t.clips.set(name, made);
+  if (name.endsWith(UPPER)) {
+    const whole = clipOf(t, name.slice(0, -UPPER.length));
+    if (!whole) return null;
+    const upper = new THREE.AnimationClip(name, whole.duration, whole.tracks.filter((tr) => !LEGS.has(tr.name.split('.')[0])));
+    upper.userData = { ...whole.userData };
+    t.clips.set(name, upper);
+    return upper;
+  }
+  const falls = /death/.test(name);
+  const made = retarget(t.bank, name, t.skeleton, falls);
+  if (!made) return null;
+  const pr = probeOf(t);
+  if (pr) {
+    const m = measure(pr, made, t.height);
+    const tail = m.lowest.slice(-Math.ceil(SAMPLES * 0.15)); // where a fall comes to rest
+    const lift = falls ? Math.max(0, 0.02 * (t.height / 1.8) - Math.min(...tail)) : -Math.min(...m.low);
+    const hips = made.tracks.find((tr) => tr.name === 'Hips.position');
+    const dy = THREE.MathUtils.clamp(lift, -0.35 * (t.height / 1.8), 0.35 * (t.height / 1.8)) / pr.unit;
+    if (hips) for (let i = 1; i < hips.values.length; i += 3) hips.values[i] += dy;
+    made.userData.speed = m.depicts;
+  }
+  t.clips.set(name, made);
   return made;
 }
 
@@ -424,6 +524,8 @@ export interface Pose {
 }
 
 export class Figure {
+  /** A harness's: every figure writes what it is playing into its model's `userData.playing`. */
+  static trace = false;
   readonly root = new THREE.Group();
   readonly look: ActorLook = actorLook();
   readonly model: THREE.Object3D;
@@ -433,7 +535,7 @@ export class Figure {
   private readonly actions = new Map<string, THREE.AnimationAction>();
   private readonly materials: THREE.Material[] = [];
   private base = '';
-  private top: { action: THREE.AnimationAction; end: number; hold: boolean } | null = null;
+  private top: { action: THREE.AnimationAction; end: number; hold: boolean; clip: string; whole: boolean; weight: number } | null = null;
   private yaw = 0;
   private placed = false;
   private time = Math.random() * 10;
@@ -444,6 +546,7 @@ export class Figure {
   private readonly carried = new Map<'main' | 'off', { key: string; obj: THREE.Object3D }>();
   private readonly limbs = new Map<string, THREE.Object3D>(); // a beast's own bones, by `rigBeast`'s names
   private gait = 0;
+  private moving = false;
 
   constructor(readonly def: BodyDef, readonly template: Template, s: Shared, rank: string, scale: number, monster: boolean) {
     this.model = def.still === 'glide' ? template.scene.clone(true) : cloneSkinned(template.scene);
@@ -506,19 +609,41 @@ export class Figure {
     const next = this.action(name);
     if (!next) return;
     const was = this.actions.get(this.base);
-    next.reset().setLoop(THREE.LoopRepeat, Infinity).play();
+    next.reset().setLoop(THREE.LoopRepeat, Infinity).setEffectiveWeight(1);
+    // One gait into another keeps its place in the stride, or the feet swap mid-step.
+    const gaits = this.def.move;
+    if (was && gaits.includes(this.base) && gaits.includes(name)) next.time = (was.time / was.getClip().duration) * next.getClip().duration;
+    next.play();
     if (was && fade > 0) next.crossFadeFrom(was, fade, false);
     else if (was) was.stop();
     this.base = name;
   }
 
-  /** A window of a clip over `seconds`, its impact `impactIn` from now when that is given. */
-  play(w: Window, seconds: number, impactIn?: number, hold = false): void {
+  /** The gait nearest the speed asked, the one already playing kept until another is clearly nearer. */
+  private gaitFor(speed: number): string {
+    const gaits = this.def.move;
+    const miss = (g: string): number => {
+      const d = ((clipOf(this.template, g)?.userData.speed as number | undefined) ?? 0) * this.model.scale.x;
+      return d > 0.05 ? Math.abs(Math.log(Math.max(0.05, speed) / d)) : Infinity;
+    };
+    let best = gaits.includes(this.base) ? this.base : '';
+    let score = best ? miss(best) - 0.2 : Infinity;
+    for (const g of gaits) {
+      const m = miss(g);
+      if (m < score) (best = g), (score = m);
+    }
+    return best || gaits[0] || this.def.idle;
+  }
+
+  /** A window of a clip over `seconds`, its impact `impactIn` from now when that is given. A swing on the move
+   *  is its top half alone, so the legs keep walking under it; `whole` is the whole body whatever it was doing. */
+  play(w: Window, seconds: number, o: { impactIn?: number; hold?: boolean; weight?: number; whole?: boolean } = {}): void {
+    const { impactIn, hold = false, weight = TOP, whole = hold } = o;
     if (this.def.still) {
       this.lunge = hold ? 0 : 1;
       return;
     }
-    const action = this.action(w.clip);
+    const action = this.action(this.moving && !whole ? w.clip + UPPER : w.clip);
     if (!action) return;
     const dur = action.getClip().duration;
     let scale = ((w.end - w.start) * dur) / Math.max(0.05, seconds);
@@ -529,9 +654,32 @@ export class Figure {
     action.clampWhenFinished = true;
     action.time = w.start * dur;
     action.timeScale = THREE.MathUtils.clamp(scale, 0.2, 4);
-    action.setEffectiveWeight(1);
+    action.setEffectiveWeight(weight);
     action.fadeIn(hold ? 0.12 : 0.06).play();
-    this.top = { action, end: w.end * dur, hold };
+    this.top = { action, end: w.end * dur, hold, clip: w.clip, whole, weight };
+  }
+
+  /** A swing begun standing that the body walks out of: its top half carries on at the same moment,
+   *  and the legs go back to walking. */
+  private halve(): void {
+    const top = this.top;
+    if (!top || top.whole || top.action.getClip().name.endsWith(UPPER)) return;
+    const upper = this.action(top.clip + UPPER);
+    if (!upper) return;
+    upper.reset();
+    upper.setLoop(THREE.LoopOnce, 1);
+    upper.clampWhenFinished = true;
+    upper.time = top.action.time;
+    upper.timeScale = top.action.timeScale;
+    upper.setEffectiveWeight(top.weight);
+    upper.play();
+    top.action.stop();
+    this.top = { ...top, action: upper };
+  }
+
+  /** A hit's flinch, over whatever the body is doing. */
+  flinch(seconds: number): void {
+    this.play(this.def.hit, seconds, { weight: FLINCH });
   }
 
   get busy(): boolean {
@@ -618,14 +766,17 @@ export class Figure {
         }
       }
     }
-    const idle = this.def.idle;
-    this.loop(p.moving ? this.def.move : idle, 0.18);
+    this.moving = p.moving && this.def.move.length > 0;
+    if (this.moving) this.halve();
+    this.loop(this.moving ? this.gaitFor(p.speed) : this.def.idle, 0.14);
     const base = this.actions.get(this.base);
     if (base) {
-      const depicts = (base.getClip().userData.speed as number) * this.model.scale.x;
-      base.timeScale = p.moving && depicts > 0.2 ? THREE.MathUtils.clamp(p.speed / depicts, 0.5, 2.2) : 1;
+      // AT THE SPEED IT IS CARRIED: the planted foot moves with the floor, never across it.
+      const depicts = ((base.getClip().userData.speed as number | undefined) ?? 0) * this.model.scale.x;
+      base.timeScale = this.moving && depicts > 0.05 ? THREE.MathUtils.clamp(p.speed / depicts, 0.4, 2.4) : 1;
     }
     this.mixer?.update(p.held ? 0 : dt);
+    if (Figure.trace) this.model.userData.playing = `${this.base}${this.top ? ` + ${this.top.action.getClip().name}` : ''}${this.moving ? ' moving' : ''}`;
   }
 
   /** A body with no skeleton: a trot is a bob and a roll, a glide a slow sway. */
@@ -664,8 +815,13 @@ export class Figure {
   die(dt: number): void {
     if (this.deadFor < 0) {
       this.deadFor = 0;
+      this.moving = false;
       if (this.def.still) this.model.rotation.z = 0;
-      else this.play(this.def.death, 1.6, undefined, true);
+      else {
+        this.actions.get(this.base)?.fadeOut(0.25); // the fall is the whole body's: nothing stands on under it
+        this.base = '';
+        this.play(this.def.death, 2, { hold: true });
+      }
     }
     this.deadFor += dt;
     if (this.def.still) this.model.rotation.z = Math.min(Math.PI / 2, this.deadFor * 6);

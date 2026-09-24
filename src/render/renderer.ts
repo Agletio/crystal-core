@@ -57,12 +57,19 @@ export interface Palette {
   pearl: string;
 }
 
+export interface TickClock {
+  alpha: number; // how far the frame is into the NEXT tick, 0..1
+  steps: number; // ticks run since the last frame
+}
+
 export interface Renderer {
   /** CSS pixel dimensions. Implementations handle devicePixelRatio. */
   resize(width: number, height: number): void;
   /** `emerge` is how far out of the ground the hero is: 1 standing, 0 gone.
-   *  Only the handover moves it, and only the UI knows it exists. */
-  draw(state: RunState, emerge?: number): void;
+   *  Only the handover moves it, and only the UI knows it exists. `clock` is
+   *  where the frame falls between two ticks, for a renderer that draws
+   *  between them rather than at the sim's own thirty a second. */
+  draw(state: RunState, emerge?: number, clock?: TickClock): void;
   /** 1 fits the whole map; above that it follows the hero unless panned. `at`
    *  is CSS pixels from the view's middle that must not move: lean in on the
    *  cursor, or what you leaned in on slides out from under it. */

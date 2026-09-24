@@ -1193,6 +1193,7 @@ function absorbEvents(): void {
 function frame(now: number): void {
   const dt = lastFrame === 0 ? 0 : Math.min(0.25, (now - lastFrame) / 1000);
   lastFrame = now;
+  let ticked = 0; // steps this frame, for a renderer drawing between them
 
   // The sim does not tick at all while this runs: you are climbing.
   if (handover > 0) {
@@ -1219,6 +1220,7 @@ function frame(now: number): void {
       accumulator -= TICK;
       steps++;
     }
+    ticked += steps;
     if (sim.state.meeting && !spoke && arrival <= 0) speak();
   }
   if (sim && phase === 'scene' && sim.state.folk[0] && renderer) {
@@ -1237,6 +1239,7 @@ function frame(now: number): void {
       accumulator -= TICK;
       steps++;
     }
+    ticked += steps;
     absorbEvents();
     document.body.dataset.heroTool = sim.state.hero.tool ?? ''; // what a harness reads to catch a gather
     document.body.dataset.effects = String(sim.state.vfx.length); // and to catch a cast
@@ -1267,7 +1270,7 @@ function frame(now: number): void {
   // HELD IS HELD: a skill on a cooldown wants the button down rather than one
   // click a swing, and the cooldown is what paces it.
   if (casting && sim && playing && phase === 'running') sim.castTo(cursorTile());
-  if (sim && renderer && phase !== 'menu') renderer.draw(sim.state, emerge);
+  if (sim && renderer && phase !== 'menu') renderer.draw(sim.state, emerge, { alpha: Math.min(1, accumulator / TICK), steps: ticked });
   if (sim) renderReadout();
   stepArrival(dt);
   // After the draw: it anchors off where the camera just put the boss.

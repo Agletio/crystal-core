@@ -15,11 +15,12 @@
 import * as THREE from 'three';
 import type { Vec2 } from '../sim/grid';
 import type { Entity, RunState } from '../sim/run';
+import { TICK } from '../sim/run';
 import { SKILL_BY_ID, MONSTERS, GEAR_BASE_BY_ID, AURA_BY_ID } from '../data';
 import { HERO_SCALE } from '../sim/appearance';
 import { MOVE } from '../data';
-import type { Palette, Renderer } from './renderer';
-import { ZOOM_MAX, ZOOM_MIN, bossTelegraph, groupColour, lootBeam, lootSpan } from './renderer';
+import type { Palette, Renderer, TickClock } from './renderer';
+import { ZOOM_MAX, ZOOM_MIN, bossTelegraph, groupColour, lootBeam, lootSpan, showingWalk, walkMarks } from './renderer';
 import { bodyFoot, generatedFrame, makeSheet } from './sprites';
 import type { SpriteSheet } from './sprites';
 import { makeProp } from './sprites';
@@ -40,6 +41,7 @@ import type { Pose, Template, Window } from '../gl/bodies';
 import type { Bank } from '../gl/retarget';
 import { Effects } from '../gl/effects';
 import { Overlay } from '../gl/overlay';
+import { Clearance } from '../gl/clearance';
 
 export interface ThreeStats {
   quality: string;
@@ -49,7 +51,14 @@ export interface ThreeStats {
   boards: number;
   fps: number;
 }
-export type ThreeRenderer = Renderer & { stats(): ThreeStats };
+/** For a harness that follows bodies over thousands of frames and needs no pictures of them. */
+export const harness = { pictures: true };
+
+export type ThreeRenderer = Renderer & {
+  stats(): ThreeStats;
+  /** The drawn body of an entity, for a harness to read its bones. */
+  bodyAt(id: number): THREE.Object3D | null;
+};
 
 /** Whether this page has a GPU of its own: a software rasteriser — the headless
  *  harness's — draws 3D at a frame a second, so it keeps to 2D unless asked. */
@@ -122,6 +131,12 @@ interface Shown {
   timer: number; // the last action timer seen, so a fresh swing is told from one still running
   winding: boolean;
   hitWait: number;
+  going: boolean; // walking as DRAWN: off how fast the body really crosses the floor, never the action's name
+  hopping: boolean;
+  drawn: { x: number; y: number; z: number }; // where the body is drawn, feet
+  was: { x: number; y: number }; // the sim's last two ticks, which a frame is drawn between
+  now: { x: number; y: number };
+  pace: number; // metres a second between them
 }
 
 export async function createThreeRenderer(host: HTMLElement, palette: Palette): Promise<ThreeRenderer | null> {
@@ -186,6 +201,7 @@ export async function createThreeRenderer(host: HTMLElement, palette: Palette): 
   need('gear'); // what hands hold: fetched behind the bodies, and empty hands until it lands
   let builtFor: unknown = null;
   let terrain: Terrain | null = null;
+  let clearance: Clearance | null = null;
   let dressing: Dressing | null = null;
   let effects: Effects | null = null;
   const shown = new Map<number, Shown>();
@@ -234,6 +250,52 @@ export async function createThreeRenderer(host: HTMLElement, palette: Palette): 
     for (let i = used; i < pool.length; i++) pool[i].visible = false;
   }
 
+  // THE WALKABLE OVERLAY, the dev kit's: the same `walkMarks` the 2D renderers paint, laid on the ground's own height.
+  let walk: THREE.Mesh | null = null;
+  function syncWalk(state: RunState): void {
+    if (!showingWalk() || !terrain) {
+      if (walk) walk.visible = false;
+      return;
+    }
+    if (walk?.userData.map === state.map) {
+      walk.visible = true;
+      return;
+    }
+    if (walk) (walk.removeFromParent(), walk.geometry.dispose(), (walk.material as THREE.Material).dispose());
+    const t = terrain;
+    const pos: number[] = [];
+    const col: number[] = [];
+    const c = new THREE.Color();
+    const { grid } = state.map;
+    for (let y = 0; y < grid.height; y++) {
+      for (let x = 0; x < grid.width; x++) {
+        for (const d of walkMarks(palette, grid, x, y)) {
+          c.set(d.colour);
+          const x0 = x - 0.5 + d.x + 0.04;
+          const z0 = y - 0.5 + d.y + 0.04;
+          const sx = (d.w - 0.08) / 4;
+          const sz = (d.h - 0.08) / 4;
+          for (let v = 0; v < 4; v++) {
+            for (let u = 0; u < 4; u++) {
+              const [a, b] = [x0 + u * sx, z0 + v * sz];
+              for (const [px, pz] of [[a, b], [a, b + sz], [a + sx, b + sz], [a, b], [a + sx, b + sz], [a + sx, b]]) {
+                pos.push(px, t.heightAt(px, pz) + 0.06, pz);
+                col.push(c.r, c.g, c.b, d.alpha);
+              }
+            }
+          }
+        }
+      }
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 4));
+    walk = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, depthWrite: false, toneMapped: false }));
+    walk.userData.map = state.map;
+    walk.renderOrder = 3;
+    stage.scene.add(walk);
+  }
+
   let zoom = 2;
   stage.distance = distanceAt(zoom);
   let looking: THREE.Vector3 | null = null;
@@ -252,6 +314,7 @@ export async function createThreeRenderer(host: HTMLElement, palette: Palette): 
     if (dressing) (stage.scene.remove(dressing.group), dressing.dispose());
     if (effects) (stage.scene.remove(effects.group), effects.dispose(), stage.glowing.splice(stage.glowing.indexOf(effects.group), 1));
     terrain = dressing = effects = null;
+    clearance = null;
   };
 
   function build(state: RunState): void {
@@ -275,6 +338,12 @@ export async function createThreeRenderer(host: HTMLElement, palette: Palette): 
     });
     stage.scene.add(dressing.group);
     lamps.use(dressing.lamps);
+    const rounds = [
+      ...t.stones,
+      ...state.hoards.map((h) => ({ x: h.x, z: h.y, r: 0.45 })),
+      ...state.nodes.filter((n) => n.family !== 'fish').map((n) => ({ x: n.x, z: n.y, r: 0.4 })),
+    ];
+    clearance = new Clearance(state.map.grid.width, state.map.grid.height, t.edges, rounds);
     effects = new Effects(palette, motes, bolts, lamps, castFrom, (x, z) => t.heightAt(x, z));
     stage.scene.add(effects.group);
     stage.glowing.push(effects.group);
@@ -326,7 +395,7 @@ export async function createThreeRenderer(host: HTMLElement, palette: Palette): 
     return frames ? new Board(e, frames) : null;
   }
 
-  function sync(state: RunState, dt: number, emerge: number): void {
+  function sync(state: RunState, dt: number, emerge: number, clock?: TickClock): void {
     const all: Entity[] = [state.hero, ...state.monsters, ...state.folk];
     const here = new Set<number>();
     for (const e of all) {
@@ -340,18 +409,32 @@ export async function createThreeRenderer(host: HTMLElement, palette: Palette): 
       if (!v) {
         const body = bodyOf(e);
         if (!body) continue;
-        v = { body, x: e.x, z: e.y, speed: 0, timer: e.actionTimer, winding: false, hitWait: 0 };
+        v = { body, x: e.x, z: e.y, speed: 0, timer: e.actionTimer, winding: false, hitWait: 0, going: false, hopping: false, drawn: { x: e.x, y: 0, z: e.y }, was: { x: e.x, y: e.y }, now: { x: e.x, y: e.y }, pace: 0 };
         shown.set(e.id, v);
         stage.scene.add(body.root);
       }
-      // SMOOTHED over the sim's 30 steps a second, but a jump no walk makes is a cut.
-      const far = Math.hypot(e.x - v.x, e.y - v.z);
-      const k = far > 1.6 ? 1 : 1 - Math.exp(-dt * 22);
-      const nx = v.x + (e.x - v.x) * k;
-      const nz = v.z + (e.y - v.z) * k;
-      v.speed = THREE.MathUtils.lerp(v.speed, dt > 0 && far <= 1.6 ? Math.hypot(nx - v.x, nz - v.z) / dt : 0, 1 - Math.exp(-dt * 8));
-      v.x = nx;
-      v.z = nz;
+      if (clock) {
+        // DRAWN BETWEEN THE LAST TWO TICKS, as far into the next as the frame is: eased toward the sim
+        // instead, a body stepped at thirty a second is drawn at two speeds on alternate frames.
+        if (clock.steps > 0) {
+          v.was = v.now;
+          v.now = { x: e.x, y: e.y };
+          if (Math.hypot(v.now.x - v.was.x, v.now.y - v.was.y) > 1.6 * clock.steps) v.was = v.now; // a jump no walk makes is a cut
+          v.pace = Math.hypot(v.now.x - v.was.x, v.now.y - v.was.y) / (TICK * clock.steps);
+        }
+        v.x = v.was.x + (v.now.x - v.was.x) * clock.alpha;
+        v.z = v.was.y + (v.now.y - v.was.y) * clock.alpha;
+        v.speed = THREE.MathUtils.lerp(v.speed, v.pace, 1 - Math.exp(-dt * 10));
+      } else {
+        // With no clock, eased toward the sim; a jump no walk makes is a cut.
+        const far = Math.hypot(e.x - v.x, e.y - v.z);
+        const k = far > 1.6 ? 1 : 1 - Math.exp(-dt * 22);
+        const nx = v.x + (e.x - v.x) * k;
+        const nz = v.z + (e.y - v.z) * k;
+        v.speed = THREE.MathUtils.lerp(v.speed, dt > 0 && far <= 1.6 ? Math.hypot(nx - v.x, nz - v.z) / dt : 0, 1 - Math.exp(-dt * 8));
+        v.x = nx;
+        v.z = nz;
+      }
       let x = v.x;
       let z = v.z;
       let lift = 0;
@@ -361,8 +444,24 @@ export async function createThreeRenderer(host: HTMLElement, palette: Palette): 
         z = e.hop.fy + (e.y - e.hop.fy) * through;
         lift = Math.sin(through * Math.PI) * (MOVE.hopHeight ?? 1) * 1.4;
       }
+      if (clearance && terrain) {
+        const half = v.body instanceof Figure ? THREE.MathUtils.clamp(v.body.height * 0.16, 0.24, 0.7) : 0.26;
+        const at = clearance.place(x, z, half, { x, z });
+        x = at.x;
+        z = at.z;
+        // A body wandering over a way down stands on its funnel's side, not on the dark in the middle.
+        for (const t of e === state.hero ? [] : terrain.throats) {
+          const d = Math.hypot(x - t.x, z - t.z);
+          const keep = t.r + half * 0.8;
+          if (d >= keep) continue;
+          const [ux, uz] = d > 1e-3 ? [(x - t.x) / d, (z - t.z) / d] : [1, 0];
+          x = t.x + ux * keep;
+          z = t.z + uz * keep;
+        }
+      }
       let ground = terrain?.heightAt(x, z) ?? 0;
       if (e === state.hero && emerge < 1) ground -= (1 - emerge) * 1.9; // down into the hole, not simply away
+      v.drawn = { x, y: ground + lift, z };
       if (v.body instanceof Board) {
         v.body.root.position.set(x, ground + lift, z);
         v.body.step(e, state.elapsed, dt);
@@ -370,9 +469,11 @@ export async function createThreeRenderer(host: HTMLElement, palette: Palette): 
       }
       const fig = v.body;
       const hero = e === state.hero;
+      // A body hit while it walks keeps walking: the sim's action says 'hurt' and its feet still carry it.
+      v.going = v.going ? v.speed > 0.22 : v.speed > (e.action === 'move' ? 0.3 : 0.6);
       const pose: Pose = {
         x, z, lift: ground + lift, facing: e.facing,
-        moving: !e.dead && e.action === 'move' && !e.hop,
+        moving: !e.dead && !e.hop && v.going,
         speed: v.speed,
         dead: e.dead,
         hurt: e.action === 'hurt',
@@ -390,9 +491,11 @@ export async function createThreeRenderer(host: HTMLElement, palette: Palette): 
       fig.carry('off', hands.off ?? null, gearOf(hands.off), hands.size);
       // A MONSTER'S BLOW is timed to fall when its wind-up runs out; the hero's lands the tick it is made.
       const winding = e.winding !== undefined;
-      if (winding && !v.winding) {
+      if (e.hop && !v.hopping && fig.def.leap) {
+        fig.play(fig.def.leap, e.hop.total, { whole: true }); // a jump is the whole body's, and lands where the arc does
+      } else if (winding && !v.winding) {
         const ws = swingOf(e, fig);
-        fig.play(ws[Math.floor(Math.random() * ws.length)], 0, e.winding);
+        fig.play(ws[Math.floor(Math.random() * ws.length)], 0, { impactIn: e.winding });
       } else if (e.kind === 'hero' && e.action === 'attack' && e.actionTimer > v.timer + 1e-4) {
         const ws = swingOf(e, fig);
         const w = ws[state.casts % ws.length];
@@ -402,11 +505,12 @@ export async function createThreeRenderer(host: HTMLElement, palette: Palette): 
         const ws = swingOf(e, fig);
         fig.play(ws[0], 0.5);
       }
+      v.hopping = !!e.hop;
       v.winding = winding;
       v.timer = e.actionTimer;
       v.hitWait -= dt;
       if (e.action === 'hurt' && !fig.busy && v.hitWait <= 0) {
-        fig.play(fig.def.hit, 0.3);
+        fig.flinch(0.3);
         v.hitWait = 0.6;
       }
       // WHAT IT IS UNDER, in its own light: the boss's phase, and ice round a body a Freeze holds.
@@ -473,14 +577,15 @@ export async function createThreeRenderer(host: HTMLElement, palette: Palette): 
     return new THREE.Vector3(v?.x ?? state.hero.x, 0, v?.z ?? state.hero.y);
   };
 
-  function draw(state: RunState, emerge = 1): void {
+  function draw(state: RunState, emerge = 1, clock?: TickClock): void {
     const now = performance.now();
     const dt = last === 0 ? 0 : Math.min(0.1, (now - last) / 1000);
     last = now;
     if (state.map !== builtFor) build(state);
-    sync(state, dt, emerge);
+    sync(state, dt, emerge, clock);
     syncLoot(state, s.uTime.value);
     drawMarks(state);
+    syncWalk(state);
     dressing?.update(state, s.uTime.value);
     effects?.sync(state);
 
@@ -493,12 +598,14 @@ export async function createThreeRenderer(host: HTMLElement, palette: Palette): 
     lamps.update(stage.focus, hero, s.uTime.value, dt);
     motes.update(dt);
     bolts.update(dt, stage.camera);
-    stage.render(dt);
+    if (harness.pictures) stage.render(dt);
     overlay.draw(state, {
       screen: (x, y, z) => stage.screen(new THREE.Vector3(x, y + (terrain?.heightAt(x, z) ?? 0), z)),
-      headOf: (e) => {
+      over: (e) => {
         const v = shown.get(e.id);
-        return v && v.body instanceof Figure ? v.body.height : e.scale * 0.95;
+        if (!v) return null;
+        const tall = v.body instanceof Figure ? v.body.height : e.scale * 0.95;
+        return stage.screen(new THREE.Vector3(v.drawn.x, v.drawn.y + tall + 0.25, v.drawn.z));
       },
     });
 
@@ -549,6 +656,10 @@ export async function createThreeRenderer(host: HTMLElement, palette: Palette): 
       overlay.dispose();
       stage.dispose();
       canvas.remove();
+    },
+    bodyAt(id: number): THREE.Object3D | null {
+      const v = shown.get(id);
+      return v && v.body instanceof Figure ? v.body.model : null;
     },
     stats(): ThreeStats {
       let bodies = 0;

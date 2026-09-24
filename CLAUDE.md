@@ -219,6 +219,13 @@ minutes**; a silent hour is how this looked stuck.
   missing. Its art is SHARDS in `docs/gl/`, built by `npm run build:gl` from
   `src/gl/assets/` (written by `tools/3d/pack.mts`) and fetched only by a page
   that draws in 3D. `ROADMAP.md` holds what is left of the conversion.
+  **A BODY IS DRAWN BETWEEN THE SIM'S TICKS** (`TickClock`, off the frame
+  loop's own accumulator) **AND CLEAR OF WHAT IT WOULD STAND IN** (`src/gl/clearance.ts`);
+  **THE SIM IS NEVER TOLD**: a step that minded a body's width cut a bare
+  Rimespike's kills in the Spike's window from 16 to 11. **EVERY CLIP IS
+  MEASURED ON THE BODY THAT PLAYS IT** — stood on its lower foot, its walking
+  speed read off the planted one — and a one-shot OUTWEIGHS the loop under it:
+  two actions at weight one are a half-and-half blend.
 - **NOTHING KEYS OFF WHERE THE HERO STANDS.** *"It feels bad to ever take like
   % increased damage to near enemies when you can't control your character's
   location at all."* Nobody drives him, so a condition on distance is a
@@ -730,7 +737,12 @@ box (`PropSpec.with`), or the lid going back moves the box under it. **A rare
 one is never a bigger pile**: `LOCK.rareRarity` is what its ONE drop is worth
 extra, because rarity buys what a piece IS everywhere else in the game. A
 timber box in a gullet of meat read as furniture somebody carried down, which
-is the whole reason the table is per world.
+is the whole reason the table is per world. **A LOCK AND AN OUTCROP ARE WALKED
+ROUND, NEVER THROUGH** — in 3D a body stood inside the chest it guarded:
+`blockIfWhole` makes a Hoard's tile and a dry node's SOLID wherever that cuts
+nothing off and never in the ring round a way in or out, and `beside` is the
+open side the hero stands on to open or work one. Measured, the Spike's 20s
+window read the same kills to the digit with it.
 
 **A GATHERING NODE IS A LOCK WITH A FAMILY ON IT.** *"It's weird to get ore
 from enemies… should there be ore to mine in the area and your character just

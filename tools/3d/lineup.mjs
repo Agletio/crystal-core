@@ -4,7 +4,7 @@
  * renderer is ever in the way.
  *
  *   node tools/3d/lineup.mjs out.png [clip] [at,at,…] [body,body,…]
- *   PAGE=fxsheet node tools/3d/lineup.mjs out.png '' 0.35   every effect kind at a share of its life
+ *   PAGE=fxsheet|ground|gait|walk QUERY='…' node tools/3d/lineup.mjs out.png   another page; each says what it asks
  *
  * No clip stands them at rest. Reads the built shards: `npm run build:gl` after a pack.
  */
@@ -35,9 +35,9 @@ const page = await browser.newPage({ viewport: { width: Number(process.env.W ?? 
 const errors = [];
 page.on('pageerror', (e) => errors.push(e.message));
 page.on('console', (m) => (m.type() === 'error' ? errors.push(m.text()) : console.log(`  page: ${m.text()}`)));
-const q = new URLSearchParams({ clip, at, ...(bodies ? { bodies } : {}), ...(process.env.TURN ? { turn: process.env.TURN } : {}), ...(process.env.DEBUG ? { debug: '1' } : {}), ...(process.env.GEAR ? { gear: process.env.GEAR } : {}), ...(process.env.GRIP ? { grip: process.env.GRIP } : {}), ...(process.env.HAND ? { hand: process.env.HAND } : {}), ...(process.env.MOVE ? { move: '1' } : {}) });
+const q = new URLSearchParams({ clip, at, ...(bodies ? { bodies } : {}), ...(process.env.TURN ? { turn: process.env.TURN } : {}), ...(process.env.DEBUG ? { debug: '1' } : {}), ...(process.env.GEAR ? { gear: process.env.GEAR } : {}), ...(process.env.GRIP ? { grip: process.env.GRIP } : {}), ...(process.env.HAND ? { hand: process.env.HAND } : {}), ...(process.env.MOVE ? { move: '1' } : {}), ...Object.fromEntries(new URLSearchParams(process.env.QUERY ?? '')) });
 await page.goto(`http://127.0.0.1:${server.address().port}/?${q}`);
-await page.waitForFunction(() => globalThis.__done === true, null, { timeout: 180000 }).catch(() => undefined);
+await page.waitForFunction(() => globalThis.__done === true, null, { timeout: Number(process.env.WAIT ?? 180) * 1000 }).catch(() => undefined);
 await page.screenshot({ path: out });
 console.log(`wrote ${out}${errors.length ? `\nerrors:\n  ${errors.join('\n  ')}` : ''}`);
 await browser.close();

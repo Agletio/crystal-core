@@ -110,12 +110,15 @@ export function dress(map: GameMap, terrain: Terrain, assets: Assets, s: Shared,
     for (let k = 0; k < (thin ? 2 : 3); k++) {
       const side = (hash(prop.x, prop.y, k) - 0.5) * 0.8;
       const top = look.tall * (0.62 + hash(prop.y, prop.x, k) * 0.3);
-      const base = new THREE.Vector3(prop.x + toward[0] * 0.36 + toward[1] * side, 0, prop.y + toward[1] * 0.36 + toward[0] * side);
+      // ON the face: it stands WALL_AT short of the floor cell, and its rock is pushed out by the noise at each height.
+      const along = { x: prop.x + toward[1] * side, z: prop.y + toward[0] * side };
       const pts: THREE.Vector3[] = [];
       for (let i = 0; i <= 6; i++) {
         const f = i / 6;
         const sway = Math.sin(f * 5 + k) * 0.12 * f;
-        pts.push(new THREE.Vector3(base.x + toward[0] * 0.08 * f + toward[1] * sway, top * (1 - f * (0.75 + hash(k, prop.x) * 0.2)), base.z + toward[1] * 0.08 * f + toward[0] * sway));
+        const y = top * (1 - f * (0.75 + hash(k, prop.x) * 0.2));
+        const out = 0.15 + terrain.pushAt(along.x + toward[0] * 0.15, y, along.z + toward[1] * 0.15) + 0.04 + 0.08 * f;
+        pts.push(new THREE.Vector3(along.x + toward[0] * out + toward[1] * sway, y, along.z + toward[1] * out + toward[0] * sway));
       }
       const tube = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 16, thin ? 0.018 : 0.03, 5, false);
       const root = new THREE.Mesh(tube, rootMat);
@@ -127,7 +130,7 @@ export function dress(map: GameMap, terrain: Terrain, assets: Assets, s: Shared,
   // ─── LANTERNS on the tall faces, a light each ───
   const glass = new THREE.MeshStandardMaterial({ color: 0x331a08, emissive: 0xffa24a, emissiveIntensity: 2.6, roughness: 0.4 });
   for (const face of terrain.faces) {
-    const at = face.at.clone().addScaledVector(face.normal, 0.16);
+    const at = face.at.clone().addScaledVector(face.normal, face.out + 0.14);
     at.y = 1.9;
     const lantern = new THREE.Group();
     lantern.position.copy(at);
@@ -199,11 +202,12 @@ export function dress(map: GameMap, terrain: Terrain, assets: Assets, s: Shared,
       return g;
     }
     const grass = n.family === 'cloth';
+    // Inside its own tile: the sim walks everything round it at half a tile and a body's width.
     for (let k = 0; k < (grass ? 2 : 4); k++) {
-      const r = 0.16 + hash(n.x, n.y, k) * 0.2;
+      const r = 0.14 + hash(n.x, n.y, k) * 0.13;
       const rock = new THREE.Mesh(stones[k % 4], rockMat);
       rock.scale.setScalar(r);
-      rock.position.set((hash(k, n.x) - 0.5) * 0.5, r * 0.3, (hash(n.y, k) - 0.5) * 0.5);
+      rock.position.set((hash(k, n.x) - 0.5) * 0.36, r * 0.3, (hash(n.y, k) - 0.5) * 0.36);
       rock.castShadow = rock.receiveShadow = true;
       g.add(rock);
     }
@@ -212,7 +216,7 @@ export function dress(map: GameMap, terrain: Terrain, assets: Assets, s: Shared,
       const blade = new THREE.MeshStandardMaterial({ color: ink, roughness: 0.8, side: THREE.DoubleSide });
       for (let k = 0; k < 14; k++) {
         const b = new THREE.Mesh(new THREE.ConeGeometry(0.025, 0.4 + hash(k, n.x, 2) * 0.35, 3), blade);
-        b.position.set((hash(k, n.y, 3) - 0.5) * 0.55, 0.2, (hash(n.x, k, 4) - 0.5) * 0.55);
+        b.position.set((hash(k, n.y, 3) - 0.5) * 0.5, 0.2, (hash(n.x, k, 4) - 0.5) * 0.5);
         b.rotation.set((hash(k, 5) - 0.5) * 0.7, 0, (hash(k, 6) - 0.5) * 0.7);
         crystals.add(b);
       }
@@ -224,7 +228,7 @@ export function dress(map: GameMap, terrain: Terrain, assets: Assets, s: Shared,
       for (let k = 0; k < 7; k++) {
         const c = new THREE.Mesh(new THREE.OctahedronGeometry(0.07 + hash(k, n.y, 7) * 0.06, 0), shine);
         c.scale.y = 1.8 + hash(k, 8) * 1.4;
-        c.position.set((hash(k, n.x, 9) - 0.5) * 0.5, 0.18 + hash(k, 10) * 0.18, (hash(n.y, k, 11) - 0.5) * 0.5);
+        c.position.set((hash(k, n.x, 9) - 0.5) * 0.4, 0.18 + hash(k, 10) * 0.18, (hash(n.y, k, 11) - 0.5) * 0.4);
         c.rotation.set((hash(k, 12) - 0.5) * 1.1, hash(k, 13) * 3, (hash(k, 14) - 0.5) * 1.1);
         c.castShadow = true;
         crystals.add(c);

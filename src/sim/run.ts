@@ -6,7 +6,7 @@
  */
 import { Rng } from '../rng';
 import { SOLID_PROPS } from '../vignettes';
-import { generateMap, sceneMap, dist, hasLineOfSight, roomCenter, openSpots, dampSpots } from './grid';
+import { generateMap, sceneMap, dist, hasLineOfSight, roomCenter, openSpots, dampSpots, blockIfWhole } from './grid';
 import type { GameMap, Grid, Room, Vec2 } from './grid';
 import { findPath, nearestByPath } from './pathfind';
 import { AILMENT, AMBUSH, DAMAGE_TYPE_BY_ID, MONSTER_WINDUP, PASSIVE_DAMAGE, POTIONS, POTION_BY_ID } from '../data';
@@ -1199,6 +1199,7 @@ export class RunSim {
       const guards = locked ? Math.round(packSize * HOARD.size) : packSize;
       if (locked) {
         const middle = roomCenter(room); // a PROP: both renderers already draw one
+        blockIfWhole(map.grid, middle.x, middle.y, map.entrance, [map.entrance, map.exit]); // a box is walked round, never through
         const set = LOCKS[this.set.theme] ?? LOCKS.fissure;
         const rare = this.rng.chance(LOCK.rareChance);
         const which = rare ? set.rare : (this.rng.pick(set.common) ?? set.common[0]);
@@ -1294,7 +1295,7 @@ export class RunSim {
     }
     // LAST, and deliberately: every draw a node spends comes after the one that
     // decided a body, so how much ore a run holds cannot move what is fighting.
-    this.placeNodes(map, packCount, packRoom);
+    this.placeNodes(map, packCount, packRoom, monsters);
     return monsters;
   }
 
@@ -1303,7 +1304,7 @@ export class RunSim {
    * in the map's dressing because a node is guarded: what frees it is the pack
    * whose room it stands in going down, which is the Hoard's rule exactly.
    */
-  private placeNodes(map: GameMap, packCount: number, packRoom: Room[]): void {
+  private placeNodes(map: GameMap, packCount: number, packRoom: Room[], bodies: Entity[]): void {
     if (this.options.scene) return; // an authored room has no packs to guard one
     const world = MATERIALS.filter((m) => m.world === this.set.theme);
     const unique = world.find((m) => m.family === null);
@@ -1357,7 +1358,9 @@ export class RunSim {
       const family = rare ? metal : MATERIAL_FAMILY_BY_ID[laid[i].family];
       const def = rare ? unique : world.find((m) => m.family === family.id);
       if (!def || (family.id === 'fish' && !pool)) continue;
-      const at = pool?.stand ?? this.nodeSpot(map, room, family.id);
+      const at = pool?.stand ?? this.nodeSpot(map, room, family.id, bodies);
+      // An outcrop is walked ROUND like any rock; a fishing spot is where he stands, so it stays open.
+      if (!pool) blockIfWhole(map.grid, at.x, at.y, map.entrance, [map.entrance, map.exit]);
       const pairs = [[family.node ?? '', family.spent ?? ''], ...(family.also ?? [])];
       const [node, spent] = rare && def.node ? [def.node, def.spent ?? ''] : pairs[this.rng.int(0, pairs.length - 1)];
       const pair = { node, spent };
@@ -1424,12 +1427,13 @@ export class RunSim {
    *  stands. WHERE A FAMILY GROWS comes first — ore on open floor, a plant on
    *  damp floor — and a room with no such spot falls back to any tile, and that
    *  to the middle rather than dropping the node. */
-  private nodeSpot(map: GameMap, room: Room, family = ''): Vec2 {
+  private nodeSpot(map: GameMap, room: Room, family = '', bodies: Entity[] = []): Vec2 {
     const middle = roomCenter(room);
     const free = (x: number, y: number): boolean =>
       map.grid.walkable(x, y) &&
       !(x === Math.round(middle.x) && y === Math.round(middle.y)) &&
-      !map.props.some((p) => p.x === x && p.y === y && SOLID_PROPS.has(p.id));
+      !map.props.some((p) => p.x === x && p.y === y && SOLID_PROPS.has(p.id)) &&
+      !bodies.some((b) => Math.round(b.x) === x && Math.round(b.y) === y); // nothing grows under a body standing there
     const grows =
       family === 'metal' || family === 'unique' ? openSpots(map.grid, room)
       : family === 'cloth' ? dampSpots(map.grid, room)
@@ -1623,6 +1627,21 @@ export class RunSim {
     }
     if (grid.walkable(x, e.y)) e.x = x;
     if (grid.walkable(e.x, y)) e.y = y;
+  }
+
+  /** Where a body stands to reach a thing it may not walk into: the open side of it nearest the hero,
+   *  or the thing itself where nothing stands it apart. */
+  private beside(to: Vec2): Vec2 {
+    const grid = this.state.map.grid;
+    if (grid.walkable(to.x, to.y)) return to;
+    let best = to;
+    let far = Infinity;
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+      const at = { x: Math.round(to.x) + dx, y: Math.round(to.y) + dy };
+      const d = dist(this.state.hero, at);
+      if (grid.walkable(at.x, at.y) && d < far) (best = at), (far = d);
+    }
+    return best;
   }
 
   /** A shove, refusing any component that would put a BODY inside a wall.
@@ -5429,7 +5448,7 @@ export class RunSim {
       }
     }
     if (!near) return false;
-    if (far > HOARD.reach && this.advance(hero, near, dt)) {
+    if (far > HOARD.reach && this.advance(hero, this.beside(near), dt)) {
       this.face(hero, near.x, near.y);
       return true;
     }
@@ -5475,7 +5494,7 @@ export class RunSim {
       }
     }
     if (!near) return false;
-    if (far > GATHER.reach && this.advance(hero, near, dt)) {
+    if (far > GATHER.reach && this.advance(hero, this.beside(near), dt)) {
       this.aside = near.id;
       this.face(hero, near.x, near.y);
       return true;

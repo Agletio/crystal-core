@@ -19,8 +19,9 @@ const CRIT_POP = 0.16; // seconds a Critical lands oversized before it settles
 export interface Anchor {
   /** CSS pixels of a world point, or null behind the camera. */
   screen(x: number, y: number, z: number): { x: number; y: number } | null;
-  /** Metres from a body's feet to the top of its head, as drawn. */
-  headOf(e: Entity): number;
+  /** CSS pixels just over a body's head WHERE IT IS DRAWN — smoothed, lifted, kept clear of the rock —
+   *  or null behind the camera: a bar at the sim's own point steps along at the sim's rate. */
+  over(e: Entity): { x: number; y: number } | null;
 }
 
 export class Overlay {
@@ -77,7 +78,7 @@ export class Overlay {
     // A BAR over everything alive, the hero's notched every hundred life.
     const bar = (e: Entity, colour: string, notch: boolean): void => {
       if (e.dead) return;
-      const top = a.screen(e.x, a.headOf(e) + 0.25, e.y);
+      const top = a.over(e);
       if (!top) return;
       const w = Math.max(34, Math.min(110, 30 * e.scale));
       const h = notch ? 6 : 5;

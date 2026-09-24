@@ -1003,6 +1003,21 @@ function carveCorridor(grid: Grid, a: Vec2, b: Vec2, rng: Rng, wobble: number): 
   }
 }
 
+/** A tile made SOLID only where that cuts nothing off: every tile `from` reached before, but this one,
+ *  it reaches after. What stands in a room's middle is gone round, never walked through — and never in
+ *  the ring of floor a way in or out keeps round it. */
+export function blockIfWhole(grid: Grid, x: number, y: number, from: Vec2, ways: Vec2[] = []): boolean {
+  const key = y * grid.width + x;
+  if (grid.at(x, y) !== FLOOR || !grid.walkable(x, y)) return false;
+  if (ways.some((w) => Math.abs(Math.round(w.x) - x) <= 1 && Math.abs(Math.round(w.y) - y) <= 1)) return false;
+  const before = reachable(grid, from);
+  if (!before.has(key)) return false;
+  grid.solid[key] = 1;
+  if (reachable(grid, from).size === before.size - 1) return true;
+  grid.solid[key] = 0;
+  return false;
+}
+
 export function reachable(grid: Grid, from: Vec2): Set<number> {
   const seen = new Set<number>();
   const start = Math.round(from.y) * grid.width + Math.round(from.x);

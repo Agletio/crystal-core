@@ -54,13 +54,20 @@ moments.forEach((at, row) => {
     fig.root.rotation.y = turn;
     const piece = gear && assets.models[gear];
     const hand = fig.hands.get(ask.get('hand') ?? 'RightHand');
-    if (piece && hand) {
-      const held = piece.gltf.scene.clone(true);
-      held.rotation.set(turn3[0], turn3[1], turn3[2]);
-      const k = 1 / hand.getWorldScale(new THREE.Vector3()).x; // the hand sits under the armature's centimetres
-      held.scale.setScalar(k);
-      held.position.y = Number(ask.get('palm') ?? 0.085) * k; // the bone's origin is the WRIST; the grip is in the palm
-      hand.add(held);
+    if (piece && ask.has('grip')) {
+      if (hand) {
+        const held = piece.gltf.scene.clone(true);
+        held.rotation.set(turn3[0], turn3[1], turn3[2]);
+        const k = 1 / hand.getWorldScale(new THREE.Vector3()).x; // the hand sits under the armature's centimetres
+        held.scale.setScalar(k);
+        held.position.y = Number(ask.get('palm') ?? 0.085) * k; // the bone's origin is the WRIST; the grip is in the palm
+        hand.add(held);
+      }
+    } else if (gear) {
+      // As a descent holds it: every piece named, through the Figure's own hands.
+      for (const [slot, key] of gear.split('+').map((k, i) => [i === 0 && k !== 'shield' && k !== 'bow' ? 'main' : 'off', k] as const)) {
+        fig.carry(slot, key, assets.models[key]?.gltf.scene ?? null);
+      }
     }
     if (clip) fig.hold(clip, at);
     if (ask.has('move')) {
