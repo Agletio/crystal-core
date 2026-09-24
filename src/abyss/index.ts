@@ -13,17 +13,17 @@ import { MONSTER_BY_ID } from '../data';
 import { TICK } from '../sim/run';
 import type { Entity } from '../sim/run';
 import { Cast } from './actors';
-import { loadAssets } from './assets';
-import type { Assets } from './assets';
-import { flames } from './fire';
+import { loadAssets } from '../gl/assets';
+import type { Assets } from '../gl/assets';
+import { flames } from '../gl/fire';
 import { Director } from './fx';
 import { Hud } from './hud';
 import { CIRCLE, HERALD, ROOMS } from './level';
-import { Lamps } from './lights';
-import { Particles } from './particles';
-import { shared } from './shaders';
+import { Lamps } from '../gl/lights';
+import { Particles } from '../gl/particles';
+import { shared } from '../gl/shaders';
 import { Abyss, aethermancer } from './sim';
-import { Stage } from './stage';
+import { Stage } from '../gl/stage';
 import { buildWorld } from './world';
 
 const AREAS: Record<string, [string, string]> = {
@@ -70,7 +70,7 @@ export async function enterAbyss(name: string, leave: () => void): Promise<void>
 
   let assets: Assets;
   try {
-    assets = await loadAssets(stage.anisotropy, (what, share) => hud.loading(share, what));
+    assets = await loadAssets('abyss', ['world', 'actors', 'props', 'furniture'], stage.anisotropy, (what, share) => hud.loading(share, what));
   } catch (err) {
     hud.loading(0, `The Abyss would not open: ${(err as Error).message}`);
     await new Promise((go) => setTimeout(go, 2500));

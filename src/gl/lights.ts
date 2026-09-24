@@ -1,5 +1,5 @@
 /**
- * THE ABYSS'S LIGHT: a cold moon overhead casting the one shadow map, the
+ * THE LIGHT: a cold moon overhead casting the one shadow map, the
  * hero's own lamp, and a POOL of point lights handed each frame to whichever
  * braziers, candles and lava vents are nearest the eye. A forward renderer
  * pays per light per pixel, so the level holds a hundred sources and the frame
@@ -9,8 +9,18 @@
  * A FLASH — a bolt landing, a blink — outranks every lamp for its few frames.
  */
 import * as THREE from 'three';
-import type { LightSource } from './world';
 import type { Quality } from './stage';
+
+/** A lamp the level owns: the pool hands the nearest of these a real light each frame. */
+export interface LightSource {
+  kind: string;
+  at: THREE.Vector3;
+  color: THREE.Color;
+  power: number;
+  range: number;
+  flicker: number;
+  seed: number;
+}
 
 interface Flash {
   at: THREE.Vector3;

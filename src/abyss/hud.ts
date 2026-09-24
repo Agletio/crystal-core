@@ -9,7 +9,7 @@
 import * as THREE from 'three';
 import type { RunState } from '../sim/run';
 import type { Cast } from './actors';
-import type { Stage } from './stage';
+import type { Stage } from '../gl/stage';
 
 export interface Icons {
   arc?: string;

@@ -15,9 +15,9 @@
 import * as THREE from 'three';
 import { clone as cloneSkinned } from 'three/addons/utils/SkeletonUtils.js';
 import type { Entity, RunState } from '../sim/run';
-import type { Assets } from './assets';
-import { actorLook, patchActor } from './shaders';
-import type { ActorLook, Shared } from './shaders';
+import type { Assets } from '../gl/assets';
+import { actorLook, patchActor } from '../gl/shaders';
+import type { ActorLook, Shared } from '../gl/shaders';
 
 interface Window {
   clip: string;

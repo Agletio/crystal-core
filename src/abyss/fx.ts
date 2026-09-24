@@ -11,12 +11,12 @@
 import * as THREE from 'three';
 import type { RunState, Vfx } from '../sim/run';
 import type { Actor, Cast } from './actors';
-import type { Lamps } from './lights';
-import { HELLFIRE, Lightning, SPARKLE, STORM } from './lightning';
-import type { BoltStyle } from './lightning';
-import type { Particles } from './particles';
-import type { Shared } from './shaders';
-import type { Stage } from './stage';
+import type { Lamps } from '../gl/lights';
+import { HELLFIRE, Lightning, SPARKLE, STORM } from '../gl/lightning';
+import type { BoltStyle } from '../gl/lightning';
+import type { Particles } from '../gl/particles';
+import type { Shared } from '../gl/shaders';
+import type { Stage } from '../gl/stage';
 import type { World } from './world';
 
 const TYPE_TINT: Record<string, number> = { lightning: 0x9cc8ff, fire: 0xff7a2a, cold: 0xa8e4ff, physical: 0xb3261e, occult: 0xb05cff };

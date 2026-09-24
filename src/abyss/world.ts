@@ -11,11 +11,13 @@
  * Every surface is UV'd in WORLD metres, so a texture runs on across cells.
  */
 import * as THREE from 'three';
-import type { Assets } from './assets';
+import type { Assets } from '../gl/assets';
+import type { Flame } from '../gl/fire';
+import type { LightSource } from '../gl/lights';
 import { groundAt, HEIGHT, MARKS, PROPS, walks, WIDTH, WINDOWS } from './level';
 import type { Ground, PropKind, PropSpot } from './level';
-import { lava, patch } from './shaders';
-import type { Shared } from './shaders';
+import { lava, patch } from '../gl/shaders';
+import type { Shared } from '../gl/shaders';
 
 export const WALL_TALL = 5.6;
 export const WALL_LOW = 0.95;
@@ -32,20 +34,6 @@ const TALL: PropKind[] = ['column', 'statue', 'arch', 'cage', 'banner', 'throne'
 const LIFT: Partial<Record<LightKind, number>> = { brazier: 1.3, candelabra: 0.7, candles: 1.5, sconce: 0.45 };
 
 export type LightKind = 'brazier' | 'candelabra' | 'candles' | 'sconce' | 'lava' | 'circle' | 'window';
-export interface LightSource {
-  kind: LightKind;
-  at: THREE.Vector3;
-  color: THREE.Color;
-  power: number;
-  range: number;
-  flicker: number;
-  seed: number;
-}
-export interface Flame {
-  at: THREE.Vector3;
-  size: number;
-  kind: 'candle' | 'torch' | 'brazier';
-}
 
 export interface World {
   group: THREE.Group;

@@ -9,6 +9,16 @@
     "status": "SUCCEEDED",
     "credits": 9
   },
+  "aethermancer:model": {
+    "id": "01a0d42d-50d6-7718-b0bb-c310d7379eaf",
+    "status": "SUCCEEDED",
+    "credits": 30
+  },
+  "aethermancer:rig": {
+    "id": "01a0d430-f23c-734c-abd7-6f3d74b6b123",
+    "status": "SUCCEEDED",
+    "credits": 5
+  },
   "alchemist:concept:0": {
     "id": "01a0d371-6282-733e-a819-836d9ddcf343",
     "status": "SUCCEEDED",
@@ -18,6 +28,16 @@
     "id": "01a0d371-627a-7552-9e2b-418aed364c0f",
     "status": "SUCCEEDED",
     "credits": 9
+  },
+  "alchemist:model": {
+    "id": "01a0d42d-50cd-76c8-961f-ce99447e52ff",
+    "status": "SUCCEEDED",
+    "credits": 30
+  },
+  "alchemist:rig": {
+    "id": "01a0d430-f248-71d5-986b-194a4a497765",
+    "status": "SUCCEEDED",
+    "credits": 5
   },
   "answering:concept:0": {
     "id": "01a0d371-63ff-7606-af8e-a2b8481ee0b9",
@@ -34,8 +54,48 @@
     "status": "SUCCEEDED",
     "credits": 9
   },
+  "answering:concept:3": {
+    "id": "01a0d42c-72ec-7060-80ff-95802255278c",
+    "status": "SUCCEEDED",
+    "credits": 9
+  },
+  "answering:model": {
+    "id": "01a0d42d-516b-739d-be2e-200d996489e7",
+    "status": "SUCCEEDED",
+    "credits": 30
+  },
+  "answering:rig": {
+    "id": "01a0d430-f254-7228-8e28-33c531735be2",
+    "status": "SUCCEEDED",
+    "credits": 5
+  },
   "bonecaller:concept:0": {
     "id": "01a0d371-63c7-7787-b508-10e8e71e15f9",
+    "status": "SUCCEEDED",
+    "credits": 9
+  },
+  "bonecaller:model": {
+    "id": "01a0d42d-50fb-7066-81eb-b576f2a31e90",
+    "status": "SUCCEEDED",
+    "credits": 30
+  },
+  "bonecaller:rig": {
+    "id": "01a0d430-f24e-779a-b3ed-0b2e2d9480e6",
+    "status": "SUCCEEDED",
+    "credits": 5
+  },
+  "camp_dirt:surface": {
+    "id": "01a0d432-3e5c-7169-b3a7-2bbed5c71f5c",
+    "status": "SUCCEEDED",
+    "credits": 9
+  },
+  "camp_grass:surface": {
+    "id": "01a0d432-3e5a-7511-a226-64f205a85d24",
+    "status": "SUCCEEDED",
+    "credits": 9
+  },
+  "cave_rock:surface": {
+    "id": "01a0d432-3e51-7026-b2b9-034a53df32f2",
     "status": "SUCCEEDED",
     "credits": 9
   },
@@ -43,6 +103,11 @@
     "id": "01a0d371-6500-734f-a423-18fbcd9086b0",
     "status": "SUCCEEDED",
     "credits": 9
+  },
+  "crawler:model": {
+    "id": "01a0d42d-513b-72c2-90f6-0e98ba88009d",
+    "status": "SUCCEEDED",
+    "credits": 30
   },
   "gaunt:concept:0": {
     "id": "01a0d371-627a-76c8-a7c9-3d67b5b80c35",
@@ -64,25 +129,70 @@
     "status": "SUCCEEDED",
     "credits": 9
   },
+  "heap:model": {
+    "id": "01a0d42d-5171-77ee-a4ac-0989f92daa38",
+    "status": "SUCCEEDED",
+    "credits": 30
+  },
+  "heap:rig": {
+    "id": "01a0d430-f24d-72a3-8df1-745e4675fd07",
+    "status": "SUCCEEDED",
+    "credits": 5
+  },
   "hob:concept:0": {
     "id": "01a0d371-653a-7389-9865-a499da03969d",
     "status": "SUCCEEDED",
     "credits": 9
+  },
+  "hob:model": {
+    "id": "01a0d42d-51a4-77d5-b181-5ca02cae8ee6",
+    "status": "SUCCEEDED",
+    "credits": 30
+  },
+  "hob:rig": {
+    "id": "01a0d430-f258-76d5-8748-4812ff123900",
+    "status": "SUCCEEDED",
+    "credits": 5
   },
   "hound:concept:0": {
     "id": "01a0d371-6279-762c-b528-3e17bdca4d6d",
     "status": "SUCCEEDED",
     "credits": 9
   },
+  "hound:model": {
+    "id": "01a0d42d-5151-72d2-8be9-b91b9c6da179",
+    "status": "SUCCEEDED",
+    "credits": 30
+  },
   "husk:concept:0": {
     "id": "01a0d371-63b4-7660-b6dc-861915fbda06",
     "status": "SUCCEEDED",
     "credits": 9
   },
+  "husk:model": {
+    "id": "01a0d42d-5136-7087-8551-dbf63efc4982",
+    "status": "SUCCEEDED",
+    "credits": 30
+  },
+  "husk:rig": {
+    "id": "01a0d430-f24d-7014-b4b4-49d0bef68d6c",
+    "status": "SUCCEEDED",
+    "credits": 5
+  },
   "lampwright:concept:0": {
     "id": "01a0d371-6509-75da-9908-341547a7818d",
     "status": "SUCCEEDED",
     "credits": 9
+  },
+  "lampwright:concept:1": {
+    "id": "01a0d42c-7302-7265-9a57-8920aaab5e8a",
+    "status": "SUCCEEDED",
+    "credits": 9
+  },
+  "lampwright:model": {
+    "id": "01a0d42d-51bc-7498-88d2-496f56830e79",
+    "status": "SUCCEEDED",
+    "credits": 30
   },
   "mahthar:concept:0": {
     "id": "01a0d371-650b-72c3-91f7-3442bc1aad56",
@@ -94,10 +204,30 @@
     "status": "SUCCEEDED",
     "credits": 9
   },
+  "mahthar:model": {
+    "id": "01a0d42d-5118-7075-b566-bb76e1d82f2b",
+    "status": "SUCCEEDED",
+    "credits": 30
+  },
+  "mahthar:rig": {
+    "id": "01a0d435-e0a8-721a-a7b0-0f854c91de03",
+    "status": "SUCCEEDED",
+    "credits": 5
+  },
   "nell:concept:0": {
     "id": "01a0d371-65bb-7600-9775-24902e6d8db1",
     "status": "SUCCEEDED",
     "credits": 9
+  },
+  "nell:model": {
+    "id": "01a0d42d-51f5-76b9-9b4c-9ccc1bc064f5",
+    "status": "SUCCEEDED",
+    "credits": 30
+  },
+  "nell:rig": {
+    "id": "01a0d430-f225-74e1-bf47-f54bbb91609d",
+    "status": "SUCCEEDED",
+    "credits": 5
   },
   "obreth:concept:0": {
     "id": "01a0d371-63a2-7473-9032-70549ad89af4",
@@ -106,6 +236,21 @@
   },
   "obreth:concept:1": {
     "id": "01a0d371-6391-733e-9fba-e76bf0b093f4",
+    "status": "SUCCEEDED",
+    "credits": 9
+  },
+  "obreth:model": {
+    "id": "01a0d42d-50f8-732d-af3f-b90f7bdbdc43",
+    "status": "SUCCEEDED",
+    "credits": 30
+  },
+  "obreth:rig": {
+    "id": "01a0d430-f24b-7217-b201-6d744d8cd891",
+    "status": "SUCCEEDED",
+    "credits": 5
+  },
+  "sand:surface": {
+    "id": "01a0d432-3e62-7781-b1c2-9e23f4086f11",
     "status": "SUCCEEDED",
     "credits": 9
   },
@@ -126,6 +271,21 @@
   },
   "smith:concept:0": {
     "id": "01a0d371-6477-7669-8f14-a0bdaa221629",
+    "status": "SUCCEEDED",
+    "credits": 9
+  },
+  "smith:model": {
+    "id": "01a0d42d-51d8-7760-99b3-7a5354d5a916",
+    "status": "SUCCEEDED",
+    "credits": 30
+  },
+  "smith:rig": {
+    "id": "01a0d430-f227-7769-99c4-b9021765ef76",
+    "status": "SUCCEEDED",
+    "credits": 5
+  },
+  "wood:surface": {
+    "id": "01a0d432-3e54-751b-a465-4c66a2319835",
     "status": "SUCCEEDED",
     "credits": 9
   }

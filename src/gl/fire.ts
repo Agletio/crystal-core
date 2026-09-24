@@ -5,8 +5,13 @@
  * orange, then red, then gone. HDR, so bloom does the halo.
  */
 import * as THREE from 'three';
-import type { Flame } from './world';
 import type { Shared } from './shaders';
+
+export interface Flame {
+  at: THREE.Vector3;
+  size: number;
+  kind: 'candle' | 'torch' | 'brazier';
+}
 
 const STACK: Record<Flame['kind'], { tongues: number; spread: number; lift: number; heat: number }> = {
   candle: { tongues: 1, spread: 0, lift: 1.9, heat: 0.8 },
