@@ -63,7 +63,7 @@ Exactly three things end a session, and a finished phase is not one:
 | `npm run comments` | comment budget |
 | `npm run theme` | every colour a token, every token defined |
 | `npm run typecheck` | tsc, `src` only |
-| `npm run build` | bundle to `docs/app.js`, and the Abyss's art to `docs/abyss/` — **committed**, Cloudflare runs no build |
+| `npm run build` | bundle to `docs/app.js`, and the 3D art to `docs/abyss/` and `docs/gl/` — **committed**, Cloudflare runs no build |
 | `npm run mods` | every modifier rolls, does something, reads |
 | `npm run smoke` | ~7min: headless boot and interaction |
 | `npm run demo` | **~2min**: every mechanism check that is cheap — trees, grants, saves, the sheet, terminations. The slow sections (`SLOW` in `src/demo.ts`: played descents by the dozen, the economy, the ceiling search) print `skipped`. `DEMO_ONLY=spike,web` runs just the sections whose title holds a word, slow or not; `DEMO_FULL=1` runs the lot (47min alone, measured). `DEMO_TIME=1` times each section |
@@ -212,6 +212,13 @@ minutes**; a silent hour is how this looked stuck.
 - **Only Pixi draws sprites**; `canvas2d` is a fallback with none. Sprite work
   being invisible there is correct. Anything per-tile is a pure function in
   `render/renderer.ts` so both renderers read one answer.
+- **THE DESCENT IS DRAWN IN 3D WHERE THERE IS A GPU** — `src/render/three.ts`
+  over `src/gl`, reading the same `RunState` and deciding nothing; the headless
+  harness keeps 2D, and `?3d`, `?2d` and the dev kit overrule it. A sprite with
+  no model stands its OWN pixel frames on a card, so nothing unmodelled goes
+  missing. Its art is SHARDS in `docs/gl/`, built by `npm run build:gl` from
+  `src/gl/assets/` (written by `tools/3d/pack.mts`) and fetched only by a page
+  that draws in 3D. `ROADMAP.md` holds what is left of the conversion.
 - **NOTHING KEYS OFF WHERE THE HERO STANDS.** *"It feels bad to ever take like
   % increased damage to near enemies when you can't control your character's
   location at all."* Nobody drives him, so a condition on distance is a

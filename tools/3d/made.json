@@ -69,6 +69,11 @@
     "status": "SUCCEEDED",
     "credits": 5
   },
+  "bank:anim": {
+    "id": "01a0d43d-dbc8-70f3-93c0-4dc8d459416d",
+    "status": "SUCCEEDED",
+    "credits": 30
+  },
   "bonecaller:concept:0": {
     "id": "01a0d371-63c7-7787-b508-10e8e71e15f9",
     "status": "SUCCEEDED",

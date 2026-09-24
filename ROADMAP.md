@@ -133,449 +133,73 @@ binding.
 
 ---
 
-## THE 3D CONVERSION — a plan, not a commitment
+## THE 3D CONVERSION — under way, at his word
 
-*"I decided I hate the graphics and I want full 3d… im thinking meshy +
-blender + chatgpt to make 3d models idk about the actual world though."*
+*"ok do the exact same thing except this time remake the actual game making
+sure all the systems work. All I care about preserving are the actual systems
+in the game and the general style of the character and enemies… if possible
+being able to have your characters equipped gear would be cool. WE can start
+with just going for like the town, all the menus and systems in the town, the
+map, and at least one level in the map."* Then: *"approved… Trim to do what you
+can with what we have… just start converting the real game this looks way
+better."* **The credits are the subscription's and there is no top-up**: every
+generation is budgeted, and what code can build is built in code.
 
-**NOTHING HERE IS STARTED.** It is written down so the cost is visible before
-any of it is paid, and so the order is one that leaves the game playable the
-whole way through.
+### What is built
 
-### What it costs, measured rather than guessed
+- **THE ENGINE IS `src/gl`**, shared with the Abyss: the stage, the light pool,
+  particles, lightning, fire, and a TERRAIN off any `GameMap` by marching
+  squares, tall behind and low in front, with boulders for rock islands and a
+  dark stone top over the mass so a low wall is never a black shard.
+- **THE ROSTER IS MODELLED**: the four heroes, the husk, the heap, the
+  bonecaller, the Answering, the smith, Hob and Nell are rigged; the crawler,
+  the hound and the Lampwright failed Meshy's auto-rig (free) and stand as
+  static meshes moved whole; the Gaunt is the husk's mesh REPROPORTIONED in the
+  mesh itself (`reshape` in `src/gl/bodies.ts`).
+- **ONE CLIP BANK FOR EVERY BIPED** (`tools/3d/pack.mts clips`): 56 clips —
+  the Abyss's, ten bought once on the husk, and every rig's own walk and run —
+  retargeted through BOTH rest poses at load (`src/gl/retarget.ts`).
+- **THE DESCENT IS DRAWN IN 3D** (`src/render/three.ts`), default wherever
+  there is a GPU; the headless harness keeps 2D, `?3d` / `?2d` overrule it and
+  so does the dev kit. Every body, prop, effect and number reads the same
+  `RunState` the 2D renderers read, so the systems are the game's own.
+- **`tools/3d/lineup.mjs`** stands every body in one picture holding a clip at
+  the moments asked; `Q=3d` on `descent-peek` shoots a real descent in 3D.
 
-The RENDER layer is ~6,200 lines (`pixi.ts` 1,867, `renderer.ts` 2,693,
-`canvas2d.ts` 662, `sprites.ts` 521, `bestiary.ts` 477) over **17 MB of
-generated art data** — `generated-art.ts` alone is 9.4 MB and
-`generated-scene.ts` 5.3 MB. All of it is replaced or retired.
+### The phases left, in order
 
-**THE SIM IS NOT TOUCHED, AND NEITHER IS ANYTHING MEASURED BY IT.** Entities
-carry `x`, `y` in tiles, `facing` in radians, `radius` and `scale`; a 3D
-renderer reads the same `RunState` the two present ones read. `src/sim/`,
-every table in `data.ts`, crafting, professions, the climb, trees, trades and
-the whole of `src/demo.ts` are untouched — **the demo never renders**, so
-every balance number stays green from the first day to the last.
+1. **3D-A — WHAT A HERO HOLDS.** Twelve `HELD` families (sword, dagger, mace,
+   the two two-handers, staff, wand, bow, shield, pick, sickle, rod): a
+   concept each, a `meshy-6-lite` model each (15 credits), parented to the hand
+   bone by family, the swing chosen off it as `SWINGS` already is.
+2. **3D-B — THE CAMP IN 3D.** The approved camp concept (`tools/3d/cache/
+   scene-camp-1.png`) built as a scene: the cliff and the crack and its four
+   sockets in code, ten props modelled (smelter, shelf, bench, anvil, loom,
+   tanning frame, tent, kitchen, jeweller's, the fire), everybody met standing
+   about, and every `CAMP_HOTSPOTS` door a raycast onto the same `opens`.
+3. **3D-C — THE DESCENT FINISHED.** Every VFX kind drawn as its own shape (the
+   burst, the pool, the spikes, the wedge, the slash and the thrown ones are;
+   the orb, the tremor, the fuse, the cloud and the boss's telegraphs are not),
+   a chest model that opens, and the boss's arena.
+4. **3D-D — THE OTHER TWO ZONES' BODIES.** The Prism's and the Rot's monsters
+   and bosses (the Abyss's imp, chanter and hornfiend ARE three of the Rot's),
+   Wat and Ida, the Osteomancer and the Geometer. Until then each stands as its
+   own pixel frames on a card.
+5. **3D-E — A RIG FOR WHAT MESHY WOULD NOT RIG.** The crawler and the hound,
+   and the Lampwright's glide, built in code.
 
-### The one fact that makes this smaller than it looks
+### Traps it has already paid for
 
-`GENERATED` holds **126 body rows off 34 distinct sprites, and 92 of those
-rows are weapon and tool variants** — a hero was generated once per thing he
-could hold, because a 2D body draws what it carries. In 3D that is ONE rigged
-mesh with a weapon parented to a hand bone. The same collapse happens again on
-facings (five per state, mirrored — a mesh just turns) and on every frame of
-`HERO_HANDS`, which authors a hand position per frame by hand.
-
-So the art SURFACE shrinks hard: **about 4 heroes, ~30 monsters, ~10 people
-and workers, ~26 weapons and tools, and 40-50 real props** out of the 110
-rows, since much of that table is rubble and stains that stay decals. What
-grows instead is the ENGINE, and that is the trade being made.
-
-### The world, which is the part he flagged
-
-*"idk about the actual world though."* The grid already knows everything a 3D
-world needs: `Grid` carries rock, floor, patches and the cut face per cell.
-**The walls are EXTRUDED from the rock mask** — no modelling at all for a
-first pass, and no tileset. `wangKey` and the whole corner-key scheme are not
-ported; they are what 2D needed to fake a wall. A modular kit can replace the
-extrusion later, piece by piece, without the sim noticing.
-
-### The order, and why it is this order
-
-**PHASE A IS BUILT AND MEASURED.** `src/render/three.ts` is a third `Renderer`
-behind the same seam, `dev-three` in the dev kit swaps to it, and
-`tools/three-peek.mjs` plays a real descent under it and reports. Grey boxes
-and capsules, no art.
-
-**THE FLOOR DRAWS IN 3 CALLS.** Ten thousand cells, every wall and every body,
-three draw calls and 27,000 triangles — the floor and the rock are one
-`InstancedMesh` each. That risk is dead, as long as nothing is ever a mesh per
-cell.
-
-**THE LIGHT CURVE IS THE SHAPE PREDICTED**, measured at band 4 under headless
-SwiftShader — software, so the ABSOLUTE frame rate is a floor and only the
-curve means anything: 0 lights 11.8, 1 → 9.0, 2 → 10.7, 4 → 7.0, 8 → 3.7,
-16 → 2.0. Flat to about four and then it falls off a cliff. **So the answer is
-BAKED light plus a budget of about four dynamic ones**, which is what the fixed
-camera was chosen to make possible.
-
-**THE WORLD NEEDS NO MODELLING TO READ AS A DUNGEON.** Extruded from the rock
-mask, it is recognisably a floor with chambers and passages — `shots/three-spike.png`.
-
-**AND THE WHOLE 2D UI SITS ON TOP UNCHANGED**, which was not planned for: the
-HUD, the rail, the dock and the flasks all overlay the 3D stage with no work at
-all, because they were already a shell over a canvas.
-
-**WHAT PHASE A DID NOT ANSWER, and must not be quoted as if it did:**
-
-- [ ] **SKINNED MESHES ARE STILL UNMEASURED.** A capsule is not a skinned mesh
-      and 16 bodies is not 60. The draw-call and light numbers say nothing
-      about bone updates, and this is the one number that could still force
-      vertex animation textures. It wants a rigged GLB — so it is really the
-      first half of Phase C.
-- [ ] **A WALL BETWEEN THE CAMERA AND THE HERO STILL HIDES HIM.** The claim
-      that a fixed angle makes occlusion impossible was TOO STRONG: it removes
-      ARBITRARY occlusion, not the wall standing on the camera side. Close in,
-      the hero went behind one. Fading or culling the rock between camera and
-      focus is real work and belongs in Phase B.
-- [ ] **`worldAt` RAYCASTS but is not yet measured against a real click.** It
-      casts onto the ground plane; whether a cast lands where the cursor is
-      under a perspective camera wants the driving controls pointed at it.
-
-- [x] **A — PROVE IT, and nothing else (days).** A three.js `Renderer` beside
-      the two that exist, behind the seam already in `src/render/renderer.ts`
-      (`draw`, `setZoom`, `panBy`, `lookAt`, `screenAt`, `worldAt`, `follow`).
-      Boxes for walls, capsules for bodies, no art whatsoever, a dev-kit
-      toggle. **THE RENDERING IS NOT THE RISK — THE LIGHTING IS**, so it
-      measures these and stops:
-      - **HOW MANY DYNAMIC LIGHTS the frame can carry.** three.js is a FORWARD
-        renderer: every light multiplies shader cost per lit object, and past
-        a handful it falls over. A cave wants a torch, a fireball that lights
-        the room and a spike that glows. The answer is almost certainly BAKED
-        static light plus two or three dynamic ones — and a fixed camera over
-        static geometry is what makes baking possible at all, which is the
-        second thing the camera decision buys.
-      - **SHADOWS, or none.** One directional light with a single cascade is
-        affordable; a shadow-casting point light per effect is not.
-      - **DRAW CALLS ON THE FLOOR.** A 100×100 grid is 10,000 tiles and one
-        mesh each is dead on arrival. Merged geometry or `InstancedMesh` from
-        the first line, never a mesh per cell.
-      - **SKINNED MESHES ON SCREEN AT ONCE.** 850 bodies exist at the deep end
-        but a Diablo-distance camera sees perhaps 40-60. Each is a draw call
-        and a CPU bone update. If 60 will not hold, the fix is known — vertex
-        animation textures and instancing — but it is real work and wants
-        knowing NOW rather than at Phase D.
-      - **HEADLESS.** `shots`, `smoke` and `peek` run Chromium under
-        SwiftShader, which is software WebGL: a scene that is 60fps on a GPU
-        can be seconds a frame there. The demo never renders and is safe.
-
-**AND THE PAYLOAD IS NOT A RISK AT ALL, BECAUSE THE GAME IS DOWNLOADED.**
-*"The web page build is purely for testing simplicity. The final game will be
-a downloaded game. We don't really care about size at the scale we are
-making."* So `docs/` is a TEST HARNESS from here on, not the product, and
-every size number below is a note about that harness. Draco and KTX2 are
-optional, not a plan. What the browser build still has to do is LOAD FAST
-ENOUGH TO JUDGE A MODEL IN, which is a different and much softer bar.
-(`docs/app.js` ships 18 MB, 6.1 MB gzipped; the `art` skill's note saying
-1.62 MB is stale by ten times and still wants fixing.)
-
-**THE DE-LIGHTING COST WAS WRONG, AND IT IS A REQUEST FLAG.** This file said a
-baked albedo meant a Blender pass on every model and was *"the single biggest
-per-model cost in the pipeline"*. Read against the OpenAPI spec, `remove_lighting`
-is a boolean on the image-to-3d request and `enable_pbr` splits normal and
-roughness out on its own. So the PIPELINE cost is a flag. **Whether its output
-is good enough is still unjudged** and can only be judged on a real model —
-`turntable.mjs` is what judges it, and the measurement is written down below.
-- [ ] **B — THE WORLD.** Extruded geometry, lighting, and a look. Zone colour
-      comes from lights and materials now, which is where the free recolour
-      that baked palettes gave us comes back.
-- [ ] **C — ONE BODY, END TO END.** One hero: Meshy → Blender → rig →
-      6 clips (idle, walk, attack, cast, hurt, death) → GLB → wired through
-      `generatedBeat`, which is already the one answer for which state and
-      frame is showing. **Only after this is the per-body cost known**, and
-      every estimate past here is a guess until it lands.
-- [ ] **D — THE ROSTER.** Four heroes, then monsters by tier. The long pole,
-      and the one that is measured in months rather than weeks.
-- [ ] **E — VFX.** Currently pixel blocks and stills: every burst, spike,
-      cloud, wedge, tether and ball. Particles and shaders, and it is the step
-      everybody underestimates.
-- [ ] **F — THE 2D HALF, which is a DECISION and not work.** The camp picture,
-      the three act cross-sections, eleven web weather scenes, the tales, the
-      portraits and 1.6 MB of icons. Painted backdrops beside 3D is a real and
-      respectable look; half-converted is not. Icons can be turntable renders
-      off the models, which is a pipeline rather than an art job.
-- [ ] **G — THE RULES THAT DIE, AND THE BIGGEST ONE IS HOW IT SHIPS.**
-      *"The final game will be a downloaded game."* So the browser build stops
-      being the product and becomes the TEST HARNESS, which is what makes the
-      rest of this cheap: *"There are no image files, and no binary assets"* is
-      repealed outright, `docs/` grows a models folder the build copies, and
-      size stops being an argument — *"we don't really care about size at the
-      scale we are making."* What the harness still owes is a page that loads
-      fast enough to judge a model in. **CLAUDE.md is not rewritten yet**: the
-      2D game ships from `docs/` today and that line stays true until 3D is
-      what runs.
-
-### What would make this fail
-
-**Keeping pixi as the default until 3D reaches parity is the whole safety
-plan.** Both live behind one seam, toggled; the game is playable every day.
-A conversion that makes the game unrunnable for a month is the one that gets
-abandoned in week three.
-
-### MESHY IS CONNECTED, AND ONE MODEL HAS BEEN THROUGH IT
-
-The key is in the environment as `Meshy_api_key`, the allowlist holds
-`api.meshy.ai` and `*.meshy.ai`, and a hero has been generated end to end for
-**69 credits of 3100** — 9 for the concept image and 30 for each half of the
-de-lighting measurement.
-
-**THE BASE PATH WAS WRONG, and it was the whole of the 404.** The spec declares
-one server, `https://api.meshy.ai/openapi`, and `BASE` had dropped the suffix,
-so every call in the transport was aimed a level too high and answered
-NoMatchingRoute. Nothing else about the transport was wrong.
-
-**THE FILES COME OFF `assets.meshy.ai`, so the allowlist needs nothing.** Both
-the concept PNG and both GLBs were served from it under `*.meshy.ai`, and
-`made.json` records the host. **A DOWNLOAD URL IS SIGNED AND EXPIRES**, within
-days, so the ledger keeps the task id, the formats and the host and never the
-URL — a resume asks for a fresh one.
-
-**THE PRESET LIBRARY IS 678 ACTIONS AND IT COVERS THE FIVE STATES.** Idle 25,
-Walking 87, AttackingwithWeapon 38 and Punching 38, CastingSpell 12, Dying 11 —
-and GettingHit 11 for `hurt`, Charged_Ground_Slam and the stomps for `slam`,
-Zombie_Scream and Shouting_Angrily for `roar`. Nothing the roster carries is
-missing.
-
-- **EVERY ONE OF THE 678 IS BIPED**, off its own preview path, so the library
-  is humanoid motion and nothing else. **RIGGING IS NOT** — `animation_type`
-  is `biped|quadruped` — so a four-legged body can be rigged by the API and
-  still has no preset clip to wear. Measured on the roster: 129 rows are **37
-  distinct bodies** once the 92 weapon and off-hand variants collapse, and of
-  those **28 read biped and 9 do not** — courser, heap, imp, hornfiend,
-  shardling, lattice, prism, spire, chime. Those nine are where the roster
-  gets expensive, exactly as the pipeline note said.
-- **90 OF THE 678 ARE `_inplace`**, which is no root motion — 39 of them
-  Walking. The sim owns `x`, `y` in tiles, so an in-place clip is what a body
-  wants and a travelling one fights the sim. Melee swings are NOT offered in
-  place; stripping the root bone's position track at load is a line of
-  three.js and not a reason to author anything.
-
-**WHAT THE TWO MODELS MEASURED, and it is the sheet the flag was asked for:**
-
-| | low frequency | detail | whole |
-|---|---|---|---|
-| `remove_lighting` **true** | **0.472** | 2.095 | 2.567 |
-| `remove_lighting` **false** | **0.587** | 2.440 | 3.027 |
-
-**THE FLAG WORKS AND IT IS NOT A CURE.** Same concept image, same everything,
-only the flag between them, and the API echoes it back on the task: the bake
-falls by a fifth and the de-lit albedo is visibly flatter through the robe.
-**BUT THE RESIDUAL IS NOT READABLE AGAINST THE REFERENCE TABLE** — 0.000 flat,
-0.644 at a 0.55 ramp, 1.201 at 0.85 were measured on synthetic textures with
-one base colour, where this body genuinely holds pale skin, near-black cloth
-and lit violet phials. Low frequency on a real character counts that as bake.
-**So the A/B DIFFERENCE is the measurement and the absolute number is not**,
-and `bakedLuma`'s "LIGHTING IS PAINTED IN" verdict fires on both.
-
-**AND THREE THINGS THE SPEC PROMISED DID NOT ARRIVE:**
-
-- [ ] **`origin_at: bottom` DID NOT PUT THE FEET ON THE GROUND.** Both models
-      measure `feet at y -0.953` — centred, not foot-origined — where the
-      renderer pins a body at its FOOT (`bodyFoot`, `FOOT_DROP`). An offset at
-      load costs nothing, and `/v1/resize` takes `origin_at` of its own, so
-      this is a question of which stage owns it rather than a wall.
-- [ ] **`target_polycount` WAS ASKED AT 6,000 AND ANSWERED AT 17,732.** Nearly
-      3x, and `should_remesh` is the untried lever — it defaults by model
-      rather than to on. Rigging refuses anything above 320,000, so nothing is
-      blocked, but a low-poly roster is not what came back.
-- [x] **`resize_height` IS NOT AN IMAGE-TO-3D FIELD.** It belongs to
-      `/v1/resize` and `/v1/remesh`, and `make` had been sending it where it
-      does nothing. **RIGGING TAKES `height_meters`**, which is the right
-      stage anyway: the rigged GLB is what gets wired, so that is where 1.8
-      is pinned. Unasked, the model came back at 1.90m.
-
-**A TEXTURED 2K BODY IS 8 MB**, carrying map, normalMap, roughnessMap,
-metalnessMap and emissiveMap. Against a downloaded build that is nothing, so
-it is recorded as a fact rather than a risk; against the browser harness it is
-the one thing that makes a test page slow, and 1k JPEG maps take the same body
-to 1.24 MB with nothing visible lost at camera distance.
-
-**RIGGING IS CHEAP AND IT REPAIRS WHAT IMAGE-TO-3D GOT WRONG.** 5 credits,
-`animation_type: biped`, and the rigged GLB comes back **1.8m with its feet at
-y 0** where the unrigged one was 1.90m and centred. So `origin_at` failing at
-image-to-3d costs nothing: **rigging is the stage that owns height and
-origin**, and `height_meters` is where a tile being a metre is asserted.
-
-**AND IT HANDS BACK WALK AND RUN FOR NOTHING.** `basic_animations` carries
-`walking_glb_url` and `running_glb_url` beside the rig, so the first moving
-picture of a hero cost no animation spend at all — 1.07s and 0.67s, 72 tracks
-each over one skinned mesh.
-
-- [ ] **RIGGING DROPS THE PBR MAPS.** image-to-3d returned map, normalMap,
-      roughnessMap, metalnessMap and emissiveMap; the rigged GLB carries **map
-      and emissiveMap alone**. The albedo is untouched (0.473 low frequency
-      against 0.472), so nothing about the de-lighting changes — but normal and
-      roughness are gone, and `enable_pbr` is paying for maps that do not
-      survive the stage after it. **WITH NO SIZE PRESSURE THIS IS A REAL
-      LOSS**, not a saving: a downloaded build wants those maps, so the
-      question is whether to re-attach them to the rigged GLB or to commit to
-      flat-shaded low-poly on purpose.
-- [x] **EVERY CLIP IS A WHOLE COPY OF THE BODY, AND MERGING THEM WORKS.** Each
-      animated GLB carries the mesh and its texture again — walk, run and the
-      rig are 7.6 MB apiece. Size is not why that is wrong; **five copies of
-      one skeleton is the wrong shape for an animation system**. Proved out:
-      loading each GLB, keeping the first one's scene and taking every other
-      one's `AnimationClip`, then exporting through `GLTFExporter`, gives ONE
-      `SkinnedMesh` carrying both clips by name. It is a Phase C build step and
-      not a runtime one. Note the exporter re-encodes every map as PNG, which
-      came out LARGER than the input (9.23 MB) until the maps were handed back
-      as JPEG.
-- [ ] **READABILITY AT CAMERA DISTANCE IS A RISK NOTHING LISTED.** At the
-      spike's own framing — 40° fov, 52° pitch, 26 tiles back over zoom — the
-      hero is about 60px tall at the default 1.6 and reads as a dark smudge;
-      at the closest zoom of 5 he is still a near-black blob. Two causes pull
-      apart: the Aethermancer's own `look` says *"deep indigo, cold violet,
-      near-black"*, written for a 48px sprite where every pixel was chosen,
-      and the spike's light is one directional and an ambient that was never
-      tuned. **The mesh is not the problem** — the same body reads fine under a
-      three-point rig. Phase B owns the light; whether the roster's darkest
-      `look`s are re-written for 3D is a decision nobody has taken.
-**AND THERE IS SOMETHING TO DRIVE HIM AROUND IN.** A standalone page — the
-spike's own room, framing and light, with WASD, a zoom over the real 1-5 range,
-a light multiplier, a torch and a readout of **how many pixels tall he reads**
-— which is how the readability question gets answered by looking rather than
-by arguing. It is a test harness and lives outside the repo.
-
-- [ ] **WHICH PRESET CLIP PER STATE IS STILL UNPICKED**, and every library row
-      carries a `preview_url` GIF, so it is judged rather than guessed. An
-      `animate` call is the first animation credit spent and none has been.
-
-### WHAT THE SPEC CHANGED, MEASURED AGAINST WHAT THIS FILE ASSUMED
-
-Read at `https://docs.meshy.ai/openapi.json`, 51 endpoints. Five of them move
-work OFF the local pipeline, which is why no Blender wheel was installed:
-
-- **MESHY RIGS AND ANIMATES.** `/v1/rigging` takes a GLB and `/v1/animations`
-  applies a preset from a library. **Mixamo is off the critical path** for
-  humanoids — it was the one manual browser step in the plan and it is now an
-  API call. Rigging also returns walk and run clips free beside the rig.
-- **DECIMATION IS SERVER-SIDE.** `target_polycount` runs 100 to 300,000 on the
-  request, so a low-poly body is asked for rather than reduced afterwards.
-  Rigging REFUSES anything above 320,000 faces, which is the one hard limit.
-- **`origin_at: bottom` AND `resize_height`** hand back a model standing on
-  y=0 at a stated height in metres — which is exactly what the renderer wants,
-  since it pins a body at its FOOT (`bodyFoot`, `FOOT_DROP`). A tile is a
-  metre, so a hero is asked for at 1.8 and arrives in game units.
-- **`model_type: lowpoly` AND `pose_mode: a-pose`** are both first-class, which
-  is the recommendation below and the rest pose rigging wants.
-- **`/v1/text-to-image` DRAWS THE CONCEPT TOO**, with `generate_multi_view` for
-  a four-view sheet and `remove_background`. So the ChatGPT step is OPTIONAL
-  rather than required, and the prompt is the body's OWN `look` out of
-  `tools/art/bodies.json` — the prose is never written twice.
-
-**AND THE ROSTER HAS FIVE STATES, NOT SIX.** Phase C says six clips; the heroes
-in `bodies.json` carry idle, walk, attack, cast and death, with no `hurt`.
-
-### THE LOCAL HALF IS BUILT AND TESTED
-
-`tools/3d/`, and every part of it runs today with no key:
-
-- **`testmodel.mjs`** writes a GLB with no generator at all — a two-box figure,
-  1.8m, standing on y=0, with lighting PAINTED INTO its texture on purpose. It
-  is what the rest was tested on.
-- **`turntable.mjs <model.glb>`** is how a model is JUDGED. It prints height,
-  origin, triangles, whether it is rigged, its clips and its maps, and writes a
-  two-row sheet: LIT on top, raw base colour underneath. Baked lighting is
-  invisible in the first row and unmissable in the second.
-- **`bakedLuma` PUTS A NUMBER ON THE BAKE.** Baked lighting is LOW FREQUENCY,
-  so the spread that survives an 8x8 reduction is the bake and the rest is
-  material detail. Measured on three known textures — a flat one, and ramps of
-  0.55 and 0.85:
-
-  | painted ramp | low frequency | detail |
-  |---|---|---|
-  | none | **0.000** | 0.057 |
-  | 0.55 | **0.644** | 0.044 |
-  | 0.85 | **1.201** | 0.159 |
-
-  The low-frequency figure tracks the bake and reads ZERO on a flat albedo,
-  which is what makes it a test of `remove_lighting` rather than an opinion:
-  ask one model with the flag and one without, and compare the two numbers.
-- **`meshy.mts`** is the transport every Meshy tool shares and
-  **`roster.mts`** the walker, on the same shape `body.mts` uses —
-  `roster.json` asks, `made.json` records every task id, so an interrupted run
-  resumes instead of paying twice.
-- **NOTHING IN `roster.json` IS PROSE, AND A CONCEPT IS THE PIXEL BODY
-  REDRAWN.** A body's words are its own `look`, with the sentences about the
-  pixel camera dropped, and its CURRENT PICTURE goes along as the reference
-  image through `/v1/image-to-image` — the cast still for a hero, the bust
-  and the body for a person, the idle frame for a monster — so the pixel
-  roster and the 3D roster cannot drift into two different characters. What
-  is there is what only 3D has: height in metres and the skeleton.
-
-**THE SHALLOWS' ROSTER IS CONCEPTED AND WAITS ON HIS APPROVAL**: the four
-heroes, its six monsters, the Answering and the four people found there, 234
-credits of concepts, 9 a picture. Thirteen of fifteen came back faithful on
-the first ask. **THE GENERATOR WILL NOT DRAW A PROPORTION IT CALLS WRONG**:
-the Gaunt came back a man-sized skeleton three times however it was worded,
-so its length is the RIG's job — its limb bones stretched at load, the way
-`height_meters` already owns its height.
-
-**NONE OF IT IS WIRED INTO THE GAME**, by design — that is Phase C, and it
-waits on a real model to wire.
-
-### The pipeline, and where it stops working
-
-Meshy is good at ONE prop or ONE character, from an image rather than from
-text — so ChatGPT's job is the concept image that makes Meshy controllable.
-**Rigging and animation are Meshy's own**, which covers the heroes, the workers
-and the people through one API. It does NOT cover a beetle, a spire or anything
-with the wrong number of limbs — a preset skeleton is humanoid — so those are
-hand-rigged in Blender or bought, and that is where the roster gets expensive.
-Blender is left for what nothing else does: a frame the generator got wrong,
-exactly as Aseprite is for the pixel roster.
-
-**LOW-POLY, FLAT-SHADED, STRONG SILHOUETTES** is the recommendation: it is
-cheaper to make, it hides what Meshy is bad at, and silhouette is already what
-this game's art is judged on.
-
-### The three questions, answered
-
-1. **A FIXED ANGLE, Hades-style, and it is the biggest cost saver available.**
-   Nothing needs a back, no geometry needs a far side, wall occlusion between
-   camera and hero never happens, and `worldAt` stays a plain inverse rather
-   than a raycast onto a ground plane — so casting at the cursor keeps working
-   unchanged. **But not Hades' DISTANCE**: its rooms are small and hand-made
-   where these floors are generated and hold 850 bodies at the deep end, so
-   the camera sits further out, at Diablo and PoE distance, and keeps the zoom
-   range it already has for scouting. A slight lead toward the cursor is cheap
-   and worth having.
-2. **DEFERRED, and it costs nothing to defer.** *"I need to see it."* Nothing
-   in phases A through C depends on it, and Phase A answers it for free: put a
-   grey-box descent beside the painted camp and the answer takes five seconds.
-   Phase F is late in the order for exactly this reason.
-3. **TEXTURED AND LIT.** One caution: texture is Meshy's weakest output, so
-   the art direction has to carry it — a tight palette, a strong key and a rim
-   light, and bake what can be baked. A fixed camera is what makes baking
-   viable at all.
-
-### AND THE CAMERA DECIDES A COMBAT QUESTION, which is not an art question
-
-**AN ORDINARY MONSTER HAS NO WIND-UP.** `stepMonster` calls `dealDamage` on
-the same tick the cooldown comes up, and sets the attack pose at that same
-instant; only a BOSS telegraphs (`BOSS_FIGHT.windup`, `bossTelegraph`). So
-damage is not dodgeable today — it simply happens to whatever is in reach.
-The hero standing in it was correct while nobody drove him, and `CLAUDE.md`
-says so: *"You STAND IN IT. Giving ground while the skill recovered was tried
-and taken back out — kiting is too op."* That rule was written about an AI.
-
-A Hades camera with WASD is a game about DODGING, and there is nothing to
-dodge. **This is sim work, it is testable today in 2D, and it decides whether
-the 3D version is worth building** — if telegraphed combat is not fun flat, no
-amount of geometry saves it. It belongs BEFORE Phase A, not after.
-
-**DONE, AND WAITING ON HIM TO PLAY IT.** `MONSTER_WINDUP` ships; the whole of
-it is in `CLAUDE.md`. What it did to the numbers is a GAUGE and a large one:
-what reaches a ladder hero falls 67%/59%/12% across bands 1, 3 and 6 and band
-6 goes from 2/4 cleared to 4/4, because a body killed inside its own wind-up
-never lands the blow. `DANGER` is not re-tuned against that yet and should not
-be until he has said the combat is worth keeping.
-
-- [ ] **IS IT READABLE?** The attack POSE is the only tell, which costs no art
-      and may not be enough — a generated attack ends at full extension and
-      holds, so the swing can look finished before the damage lands. If it is
-      hard to read, the answer is a ground marker on the seam `bossTelegraph`
-      already draws for a boss.
-- [ ] **RANGED IS DODGED BY BREAKING SIGHT, not by backing off**, since its
-      reach is the room. Whether that reads as fair is a play question.
-
-### The other thing the Hades shape implies
-
-*"just two skills?"* — `SKILL_SLOTS` is a table, and `CLAUDE.md` already says
-a fourth slot is one entry and never a named field, so a second ACTIVE skill
-is one row. What it costs is a passive slot and a doubled damage-skill balance
-surface. Separable from 3D entirely, and worth deciding on its own.
-
----
+- **THE HUSK'S RIG IS MESHY'S OTHER SKELETON**: 22 bones, three spine bones
+  named one place along and their axes flipped. Renamed at pack time
+  (`HUSK_BONES`), and a clip bought on it still plays everywhere, because a
+  retarget reads rest POSES, never names alone.
+- **A CLONED SKELETON SHARES ITS INVERSE BINDS** with the one it was cloned
+  from: re-binding a clone in place re-binds the original.
+- **`attached` BINDING READS A BAKED VERTEX IN WORLD UNITS**, not the
+  armature's centimetres — baked in centimetres the Gaunt stood 213 metres.
+- **A LIGHT RIG TUNED FOR THE ABYSS TURNS PALE SAND LAVENDER.** Each world
+  carries its own sky, moon and fog in `LOOKS`.
 
 ## THE DRIVING SPIKE — waiting on him to play it
 

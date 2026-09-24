@@ -32,19 +32,38 @@ export interface GroundLook {
   tall: number;
   low: number;
   water: number;
+  /** Its LIGHT: the dark's tint above and below, what falls from overhead, and the fog. */
+  sky: [number, number, number];
+  moon: [number, number];
+  fog: [number, number];
 }
 
 export const LOOKS: Record<MapTheme, GroundLook> = {
-  fissure: { floor: 'sand', rock: 'cave_rock', floorTint: 0xd8cdb8, rockTint: 0xb0a496, tall: 4.2, low: 0.9, water: 0x0c1a1c },
-  prismatic: { floor: 'sand', rock: 'cave_rock', floorTint: 0x8c93b0, rockTint: 0x7c84b8, tall: 4.6, low: 0.9, water: 0x101838 },
-  demonic: { floor: 'sand', rock: 'cave_rock', floorTint: 0x9a6a5c, rockTint: 0x8a4a40, tall: 4.2, low: 0.9, water: 0x2a0806 },
-  seam: { floor: 'sand', rock: 'cave_rock', floorTint: 0x8a7c9c, rockTint: 0x7a6488, tall: 4.6, low: 0.9, water: 0x180a24 },
+  fissure: {
+    floor: 'sand', rock: 'cave_rock', floorTint: 0xcfc4ae, rockTint: 0xe2d6c4, tall: 4.2, low: 0.9, water: 0x0c1a1c,
+    sky: [0xa89c88, 0x3a2e22, 1.15], moon: [0xe6dac4, 1.5], fog: [0x0b0908, 0.014],
+  },
+  prismatic: {
+    floor: 'sand', rock: 'cave_rock', floorTint: 0x8c93b0, rockTint: 0x9aa2d8, tall: 4.6, low: 0.9, water: 0x101838,
+    sky: [0x4a5a9a, 0x121628, 0.8], moon: [0x9ab0ff, 1.1], fog: [0x06070e, 0.018],
+  },
+  demonic: {
+    floor: 'sand', rock: 'cave_rock', floorTint: 0x9a6a5c, rockTint: 0xa86a5e, tall: 4.2, low: 0.9, water: 0x2a0806,
+    sky: [0x5a2a20, 0x1c0806, 0.8], moon: [0xff9a78, 0.9], fog: [0x0c0404, 0.018],
+  },
+  seam: {
+    floor: 'sand', rock: 'cave_rock', floorTint: 0x8a7c9c, rockTint: 0x9a84a8, tall: 4.6, low: 0.9, water: 0x180a24,
+    sky: [0x5a4070, 0x140a1c, 0.8], moon: [0xb090ff, 1.0], fog: [0x08050c, 0.018],
+  },
 };
 
 const WALL_AT = 0.35; // from a floor corner toward the rock corner, where the face stands
 const UNDER = 0.18; // the floor runs this far on under the face, so a face pushed back by its noise leaves no crack
 const ROWS = 6; // rows a wall is cut into, for its noise to have somewhere to go
 const FACE_NOISE = 0.36; // metres a face moves along its own normal
+const BOULDER = 14; // cells: a clump of rock this small with floor all round it is a boulder
+const CAP_REACH = 5; // cells of solid rock capped past the last floor; beyond it the fog is all there is
+const CAP_SHADE = 0.34; // the rock's top, darker than any face, so it reads as mass rather than floor
 
 export interface Terrain {
   group: THREE.Group;
@@ -80,7 +99,7 @@ function noise3(x: number, y: number, z: number): number {
 }
 const fbm3 = (x: number, y: number, z: number): number => noise3(x, y, z) * 0.6 + noise3(x * 2.3, y * 2.3, z * 2.3) * 0.4;
 
-function material(assets: Assets, id: string, tint: number, s: Shared, o: Parameters<typeof patch>[2], shaded = true): THREE.MeshStandardMaterial {
+export function material(assets: Assets, id: string, tint: number, s: Shared, o: Parameters<typeof patch>[2], shaded = true): THREE.MeshStandardMaterial {
   const set = assets.surfaces[id];
   const mat = new THREE.MeshStandardMaterial({
     map: set?.albedo ?? null,
@@ -149,6 +168,39 @@ export function buildTerrain(map: GameMap, assets: Assets, s: Shared, eye: THREE
       }
     }
   }
+  // ROCK THAT IS AN ISLAND: a clump cut off from the mass stands as a boulder, never a four-metre monolith.
+  const clump = new Int32Array(W * H).fill(-1);
+  const small: boolean[] = [];
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      if (!rock(x, y) || clump[y * W + x] >= 0) continue;
+      const id = small.length;
+      const todo = [y * W + x];
+      clump[y * W + x] = id;
+      let size = 0;
+      let edge = false;
+      while (todo.length) {
+        const at = todo.pop()!;
+        size++;
+        const cx = at % W;
+        const cy = (at - cx) / W;
+        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+          const nx = cx + dx;
+          const ny = cy + dy;
+          if (nx < 0 || ny < 0 || nx >= W || ny >= H) {
+            edge = true;
+            continue;
+          }
+          const n = ny * W + nx;
+          if (rock(nx, ny) && clump[n] < 0) (clump[n] = id), todo.push(n);
+        }
+      }
+      small.push(!edge && size <= BOULDER);
+    }
+  }
+  const boulder = (i: number, j: number): boolean =>
+    cells(i, j).some(([x, y]) => x >= 0 && y >= 0 && x < W && y < H && clump[y * W + x] >= 0 && small[clump[y * W + x]]);
+
   const openness = (i: number, j: number): number => {
     let d = 99;
     for (const [x, y] of cells(i, j)) d = Math.min(d, x >= 0 && y >= 0 && x < W && y < H ? far[y * W + x] : 0);
@@ -174,12 +226,13 @@ export function buildTerrain(map: GameMap, assets: Assets, s: Shared, eye: THREE
   };
 
   // ─── THE WALLS ───
-  interface Crossing { key: string; x: number; z: number; nx: number; nz: number; n: number }
+  interface Crossing { key: string; x: number; z: number; nx: number; nz: number; n: number; low: boolean }
   const crossings = new Map<string, Crossing>();
   const segments: [string, string, number, number][] = []; // two crossing keys and the segment's floor normal
   const P = (i: number, j: number) => ({ x: i - 0.5, z: j - 0.5 });
   const edgeKey = (a: number, b: number) => (a < b ? `${a}_${b}` : `${b}_${a}`);
 
+  const masses: string[][] = [];
   for (let y = 0; y < H; y++) {
     for (let x = 0; x < W; x++) {
       const cs = [[x, y], [x + 1, y], [x + 1, y + 1], [x, y + 1]] as const;
@@ -187,9 +240,11 @@ export function buildTerrain(map: GameMap, assets: Assets, s: Shared, eye: THREE
       const f = ids.map((c) => floorish[c] === 1);
       if (!f.some(Boolean)) continue;
       const poly: { key: string; x: number; z: number; y: number; shade: number; edge: boolean }[] = [];
+      const mass: string[] = []; // the rock's own polygon round this cell: its corners and crossings, for the cap
       for (let k = 0; k < 4; k++) {
         const [i, j] = cs[k];
         const c = ids[k];
+        if (!f[k]) mass.push(`c${i},${j}`);
         if (f[k]) {
           const p = P(i, j);
           const open = openness(i, j);
@@ -205,11 +260,13 @@ export function buildTerrain(map: GameMap, assets: Assets, s: Shared, eye: THREE
           const key = edgeKey(ids[k], ids[k2]);
           const t = WALL_AT + UNDER;
           poly.push({ key: `e${key}`, x: a.x + (b.x - a.x) * t, z: a.z + (b.z - a.z) * t, y: 0, shade: 0.42, edge: true });
+          mass.push(`x${key}`);
           if (!crossings.has(key)) {
-            crossings.set(key, { key, x: a.x + (b.x - a.x) * WALL_AT, z: a.z + (b.z - a.z) * WALL_AT, nx: 0, nz: 0, n: 0 });
+            crossings.set(key, { key, x: a.x + (b.x - a.x) * WALL_AT, z: a.z + (b.z - a.z) * WALL_AT, nx: 0, nz: 0, n: 0, low: boulder(ri, rj) });
           }
         }
       }
+      if (mass.length >= 3) masses.push(mass);
       // Floor, unless this cell is a way down.
       if (!mouthCell(x, y) && poly.length >= 3) {
         const v = poly.map((p) => floorVertex(p.key, p.x, p.z, p.y, p.shade));
@@ -266,6 +323,7 @@ export function buildTerrain(map: GameMap, assets: Assets, s: Shared, eye: THREE
   const wIdx: number[] = [];
   const wKeys = new Map<string, number>();
   const faces: Terrain['faces'] = [];
+  const tops = new Map<string, number>(); // a crossing's wall height, where the cap meets it
   const wallVertex = (key: string, x: number, z: number, nx: number, nz: number, h: number, row: number): number => {
     const had = wKeys.get(`${key}:${row}`);
     if (had !== undefined) return had;
@@ -289,6 +347,9 @@ export function buildTerrain(map: GameMap, assets: Assets, s: Shared, eye: THREE
       { key: `${ka}|${kb}`, x: (A.x + B.x) / 2, z: (A.z + B.z) / 2, nx: snx, nz: snz },
       { key: kb, x: B.x, z: B.z, nx: B.nx / bn, nz: B.nz / bn },
     ].map((c) => ({ ...c, h: heightOf(c.x, c.z, c.nx, c.nz) }));
+    if (A.low || B.low) for (const c of cols) c.h = Math.min(c.h, 1.1 + 0.5 * noise3(c.x * 0.7, 5.3, c.z * 0.7));
+    tops.set(ka, cols[0].h);
+    tops.set(kb, cols[2].h);
     // WOUND TO FACE THE FLOOR: t × up is the face normal of (a, b, b-above).
     const tx = B.x - A.x;
     const tz = B.z - A.z;
@@ -323,6 +384,63 @@ export function buildTerrain(map: GameMap, assets: Assets, s: Shared, eye: THREE
 
   const group = new THREE.Group();
   group.add(floor, walls);
+
+  // ─── THE ROCK'S TOP: dark stone at the face's own height at its rim, the low wall's behind it ───
+  {
+    const pos: number[] = [];
+    const col: number[] = [];
+    const uv: number[] = [];
+    const idx: number[] = [];
+    const seen = new Map<string, number>();
+    const vertex = (key: string): number => {
+      const had = seen.get(key);
+      if (had !== undefined) return had;
+      let x: number;
+      let z: number;
+      let y: number;
+      if (key[0] === 'x') {
+        const c = crossings.get(key.slice(1))!;
+        (x = c.x), (z = c.z), (y = (tops.get(c.key) ?? look.low) - 0.02);
+      } else {
+        const [i, j] = key.slice(1).split(',').map(Number);
+        (x = i - 0.5), (z = j - 0.5), (y = boulder(i, j) ? 1.2 : look.low);
+      }
+      const n = pos.length / 3;
+      pos.push(x, y, z);
+      uv.push(x * 0.3, z * 0.3);
+      const shade = CAP_SHADE * (0.8 + 0.4 * noise3(x * 0.4, 1.7, z * 0.4));
+      col.push(shade, shade, shade);
+      seen.set(key, n);
+      return n;
+    };
+    for (const mass of masses) {
+      const v = mass.map(vertex);
+      for (let k = 1; k < v.length - 1; k++) idx.push(v[0], v[k + 1], v[k]);
+    }
+    // Rock with no floor near it at all: a tile of the same stone, out to where the fog has it.
+    const near = (x: number, y: number): boolean => {
+      for (let dy = -CAP_REACH; dy <= CAP_REACH; dy++) for (let dx = -CAP_REACH; dx <= CAP_REACH; dx++) if (!rock(x + dx, y + dy)) return true;
+      return false;
+    };
+    for (let y = -1; y <= H; y++) {
+      for (let x = -1; x <= W; x++) {
+        const cs = [[x, y], [x + 1, y], [x + 1, y + 1], [x, y + 1]];
+        if (cs.some(([i, j]) => i >= 0 && j >= 0 && i <= W && j <= H && floorish[corner(i, j)] === 1)) continue;
+        if (!near(x, y)) continue;
+        const v = cs.map(([i, j]) => vertex(`c${i},${j}`));
+        idx.push(v[0], v[2], v[1], v[0], v[3], v[2]);
+      }
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+    geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+    geo.setIndex(idx);
+    geo.computeVertexNormals();
+    const cap = new THREE.Mesh(geo, material(assets, look.rock, look.rockTint, s, { triplanar: 0.45 }));
+    cap.receiveShadow = true;
+    group.add(cap);
+  }
 
   // ─── WATER: one surface over every wet cell, fading to nothing at its shore ───
   const wetCells: [number, number][] = [];

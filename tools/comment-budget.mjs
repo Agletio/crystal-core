@@ -32,7 +32,7 @@ const EXTENSIONS = new Set([...SCRIPT, '.html']);
 const SKIP_DIRS = new Set(['node_modules', '.git', 'shots', 'dist', 'build']);
 /** Generated, minified, and not written by anyone. */
 const SKIP_FILES = new Set(['docs/app.js']);
-const SKIP_UNDER = ['docs/abyss/']; // the Abyss's asset bundles, minified data
+const SKIP_UNDER = ['docs/abyss/', 'docs/gl/', 'tools/3d/cache/']; // 3D asset bundles, minified data, and the 3D tools' scratch
 
 export const FLOOR = 10;
 export const SHARE = 0.2;

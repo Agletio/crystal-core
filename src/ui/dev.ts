@@ -21,7 +21,7 @@ import { heal } from '../game/save';
 import { ZONES } from '../render/generated-tiles';
 import { TEST_LEVEL, testLevel } from '../sim/grid';
 import { showingWalk, walkOverlay } from '../render/renderer';
-import { useThree } from './run';
+import { inThree, useThree } from './run';
 import { enterAbyss } from '../abyss';
 import { takeHeard, takeMet } from '../game/scenes';
 import { campaignDone, progressKey } from '../ladder';
@@ -43,7 +43,6 @@ function el(tag: string, cls?: string, text?: string): HTMLElement {
 let game: GameState;
 let hooks: DevHooks;
 let testing = false;
-let inThree = false;
 
 export interface DevHooks {
   /** Drops into a room now, by scene id. */
@@ -352,16 +351,14 @@ function render(): void {
   };
   sets.append(test);
 
-  // THE 3D SPIKE, grey boxes and capsules. Pixi is the default and stays it;
-  // this is here so the question can be answered by looking rather than by
-  // arguing, and `__three.stats()` is what the measurement reads.
+  // 3D OR 2D: a GPU gets 3D and the headless harness 2D, and this overrules
+  // either for the rest of the page's life. `__three.stats()` reads the frame.
   const solid = el('button', 'mini devbtn') as HTMLButtonElement;
   solid.id = 'dev-three';
-  solid.append(el('span', 'devbtn__name', inThree ? '3D spike: on' : '3D spike: off'));
-  solid.append(el('span', 'devbtn__what', 'grey boxes and capsules, no art — the renderer seam swapped'));
+  solid.append(el('span', 'devbtn__name', inThree() ? 'Descent in 3D: on' : 'Descent in 3D: off'));
+  solid.append(el('span', 'devbtn__what', 'the renderer seam swapped: 3D models, or the 2D sprites'));
   solid.onclick = () => {
-    inThree = !inThree;
-    useThree(inThree);
+    useThree(!inThree());
     render();
   };
   sets.append(solid);

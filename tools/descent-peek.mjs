@@ -21,6 +21,8 @@
  * of a second and one screenshot of a descent will not hold one.
  * `TEST=1` shoots the test level; `WALK=1` paints where a body may STAND: green
  * walks, red does not, amber is ground a face is drawn on that nobody may enter.
+ * `Q=3d` is the page's own query, and `3d` draws the descent in 3D — on
+ * SwiftShader, so the shot waits for the 3D renderer's art to land first.
  */
 import { createServer } from 'node:http';
 import { readFile, writeFile } from 'node:fs/promises';
@@ -69,7 +71,9 @@ const server = createServer(async (req, res) => {
 await new Promise((r) => server.listen(0, '127.0.0.1', r));
 const base = `http://127.0.0.1:${server.address().port}`;
 
-const browser = await chromium.launch();
+const Q = process.env.Q ?? '';
+const GL3 = /(^|&)3d/.test(Q);
+const browser = await chromium.launch(GL3 ? { args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] } : undefined);
 const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
 page.on('console', (m) => {
   if (m.type() === 'error' && !/WebGL|GPU/i.test(m.text())) console.log('page:', m.text());
@@ -134,7 +138,7 @@ async function throughOpening() {
   await page.waitForTimeout(400);
 }
 
-await page.goto(`${base}/index.html`, { waitUntil: 'load' });
+await page.goto(`${base}/index.html${Q ? `?${Q}` : ''}`, { waitUntil: 'load' });
 await page.waitForTimeout(900);
 await page.evaluate(() => document.getElementById('title')?.click());
 await page.evaluate(() => document.getElementById('save-play')?.click());
@@ -346,6 +350,7 @@ if (zone in ZONE_TAB) {
 }
 
 
+if (GL3) await page.waitForFunction(() => !!globalThis.__three, null, { timeout: 240000 });
 await page.evaluate(() => document.getElementById('run-launch')?.click());
 // GATHER=1 shoots the first GATHER instead of the eighth second: the page says
 // what tool the hero is holding, and the burst starts the moment it is one.

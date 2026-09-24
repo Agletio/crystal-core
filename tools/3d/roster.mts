@@ -7,6 +7,7 @@
  *   npx tsx tools/3d/roster.mts model <id|all>                 the approved concept (`pick`) to a textured mesh
  *   npx tsx tools/3d/roster.mts rig <id|all>                   a skeleton at the body's height, and the walk and run it comes with
  *   npx tsx tools/3d/roster.mts surface <id|all>               a seamless surface picture, for the pack step to make a material of
+ *   npx tsx tools/3d/roster.mts clips                          the clip bank, bought once on one rig for every biped
  *   npx tsx tools/3d/roster.mts status                         the ledger and the balance
  *
  * A CONCEPT IS THE PIXEL BODY REDRAWN, never a new character: the ask carries
@@ -44,6 +45,7 @@ interface Roster {
   bodies: Body[];
   surfaces_style: string;
   surfaces: { id: string; prompt: string }[];
+  clips: { on: string; actions: Record<string, number> };
 }
 
 const roster = (): Roster => JSON.parse(readFileSync(join(HERE, 'roster.json'), 'utf8')) as Roster;
@@ -198,6 +200,22 @@ async function surface(id: string): Promise<void> {
   await run(LEDGER, `${id}:surface`, '/v1/text-to-image', ask, join(CACHE, `surface-${id}.png`), (t) => t.image_urls?.[0]);
 }
 
+/** ONE CALL, ONE FILE, clips in the order asked — so the names file IS the order. */
+async function clips(): Promise<void> {
+  const { on, actions } = roster().clips;
+  const rigged = readLedger(LEDGER)[`${on}:rig`];
+  if (rigged?.status !== 'SUCCEEDED') throw new Error(`${on} has no finished rig to animate`);
+  writeFileSync(join(CACHE, 'bank-anim.json'), JSON.stringify(Object.keys(actions)));
+  await run(
+    LEDGER,
+    'bank:anim',
+    '/v1/animations',
+    { rig_task_id: rigged.id, action_ids: Object.values(actions), post_process: { operation_type: 'change_fps', fps: 30 } },
+    join(CACHE, 'bank-anim.glb'),
+    (t) => t.result?.animation_glb_url
+  );
+}
+
 async function status(): Promise<void> {
   let spent = 0;
   for (const [name, e] of Object.entries(readLedger(LEDGER))) {
@@ -222,8 +240,9 @@ else if (verb === 'surface') {
   const which = id === 'all' ? roster().surfaces.map((x) => x.id) : [id];
   const results = await Promise.allSettled(which.map(surface));
   results.forEach((r, i) => r.status === 'rejected' && console.error(`${which[i]}: ${(r.reason as Error).message}`));
-} else if (verb === 'status') await status();
+} else if (verb === 'clips') await clips();
+else if (verb === 'status') await status();
 else {
-  console.error('roster.mts refs|concept|edit|model|rig|surface <id|all> … | status');
+  console.error('roster.mts refs|concept|edit|model|rig|surface <id|all> … | clips | status');
   process.exit(1);
 }

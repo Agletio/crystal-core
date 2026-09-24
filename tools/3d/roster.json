@@ -1,34 +1,213 @@
 {
-  "_": "THE 3D ROSTER: every body the game draws, asked of Meshy. THE PROSE IS NEVER HERE \u2014 a body's words are its `look` in tools/art/bodies.json, the same words its pixel art was generated from, and its CURRENT PICTURE goes along as the reference image, so the 3D body is that design redrawn rather than a new one. What is here is what only 3D has: height in metres (a tile is a metre), the skeleton, and which pictures to send.",
+  "_": "THE 3D ROSTER: every body the game draws, asked of Meshy. THE PROSE IS NEVER HERE — a body's words are its `look` in tools/art/bodies.json, the same words its pixel art was generated from, and its CURRENT PICTURE goes along as the reference image, so the 3D body is that design redrawn rather than a new one. What is here is what only 3D has: height in metres (a tile is a metre), the skeleton, and which pictures to send.",
   "_refs": "cast = the hero's 128 still off GENERATED_CAST; body = the idle frame off GENERATED; portrait = the bust off GENERATED_PORTRAITS; walk = a walk frame, for a body whose idle hides its stride.",
-  "_pick": "The concept variant approved to model from. `same` names a body whose mesh this one wears, reproportioned at load \u2014 the generator draws the Gaunt man-sized however it is asked, so its length is the rig's.",
+  "_pick": "The concept variant approved to model from. `same` names a body whose mesh this one wears, reproportioned at load — the generator draws the Gaunt man-sized however it is asked, so its length is the rig's.",
   "style": {
-    "biped": "Recreate the character in the reference image as a high-end 3D game character for a AAA dark gothic action RPG in the style of Diablo IV. KEEP ITS DESIGN: the same clothing, colours, proportions, accessories and silhouette as the reference, redrawn with realistic anatomy, weathered materials and fine hand-crafted detail \u2014 NOT pixel art, NOT low resolution, NOT a cartoon. Full body visible from the top of the head to the soles of the feet, facing the viewer, standing in a relaxed A-pose with the arms held out and down about 45 degrees and the feet shoulder-width apart, both hands empty. Plain flat mid-grey studio backdrop, soft even diffuse light from the front, no harsh shadows, no rim light, no ground shadow, sharp focus. No text, no logo, no watermark, no border, no scenery.",
-    "quadruped": "Recreate the creature in the reference image as a high-end 3D game creature for a AAA dark gothic action RPG in the style of Diablo IV. KEEP ITS DESIGN: the same anatomy, colours, proportions and silhouette as the reference, redrawn with realistic bone and fine hand-crafted detail \u2014 NOT pixel art, NOT low resolution, NOT a cartoon. The whole body visible from nose to tail, standing on all four legs in a neutral stance, seen from a three-quarter front-side view. Plain flat mid-grey studio backdrop, soft even diffuse light, no harsh shadows, no rim light, no ground shadow, sharp focus. No text, no logo, no watermark, no border, no scenery."
+    "biped": "Recreate the character in the reference image as a high-end 3D game character for a AAA dark gothic action RPG in the style of Diablo IV. KEEP ITS DESIGN: the same clothing, colours, proportions, accessories and silhouette as the reference, redrawn with realistic anatomy, weathered materials and fine hand-crafted detail — NOT pixel art, NOT low resolution, NOT a cartoon. Full body visible from the top of the head to the soles of the feet, facing the viewer, standing in a relaxed A-pose with the arms held out and down about 45 degrees and the feet shoulder-width apart, both hands empty. Plain flat mid-grey studio backdrop, soft even diffuse light from the front, no harsh shadows, no rim light, no ground shadow, sharp focus. No text, no logo, no watermark, no border, no scenery.",
+    "quadruped": "Recreate the creature in the reference image as a high-end 3D game creature for a AAA dark gothic action RPG in the style of Diablo IV. KEEP ITS DESIGN: the same anatomy, colours, proportions and silhouette as the reference, redrawn with realistic bone and fine hand-crafted detail — NOT pixel art, NOT low resolution, NOT a cartoon. The whole body visible from nose to tail, standing on all four legs in a neutral stance, seen from a three-quarter front-side view. Plain flat mid-grey studio backdrop, soft even diffuse light, no harsh shadows, no rim light, no ground shadow, sharp focus. No text, no logo, no watermark, no border, no scenery."
   },
   "bodies": [
-    {"id": "aethermancer", "kind": "hero", "refs": ["cast"], "height": 1.8, "rig": "biped", "pick": 0},
-    {"id": "alchemist", "kind": "hero", "refs": ["cast"], "height": 1.8, "rig": "biped", "pick": 0},
-    {"id": "obreth", "kind": "hero", "refs": ["cast"], "height": 1.85, "rig": "biped", "pick": 0},
-    {"id": "mahthar", "kind": "hero", "refs": ["cast"], "height": 1.9, "rig": "biped", "pick": 0},
-    {"id": "husk", "sprite": "hewer", "kind": "monster", "refs": ["body"], "height": 1.75, "rig": "biped", "pick": 0},
-    {"id": "crawler", "sprite": "dragger", "kind": "monster", "refs": ["body", "walk"], "height": 1.0, "rig": "quadruped", "pick": 0},
-    {"id": "hound", "sprite": "courser", "kind": "monster", "refs": ["body", "walk"], "height": 1.1, "rig": "quadruped", "pick": 0},
-    {"id": "heap", "kind": "monster", "refs": ["body"], "height": 2.4, "rig": "biped", "pick": 0},
-    {"id": "gaunt", "kind": "monster", "refs": ["body"], "height": 2.9, "rig": "biped", "note": "ITS PROPORTIONS ARE THE WHOLE DESIGN: nearly three metres tall, legs half again as long as a man's, arms so long they hang BELOW THE KNEES, a SMALL skull on a long thin neck, a narrow stretched ribcage. Elongated and starved \u2014 NOT a normal human skeleton, NOT ordinary proportions.", "same": "husk"},
-    {"id": "bonecaller", "sprite": "shroud", "kind": "monster", "refs": ["body"], "height": 1.95, "rig": "biped", "pick": 0},
-    {"id": "answering", "kind": "boss", "refs": ["body"], "height": 4.0, "rig": "biped", "note": "COLOSSAL AND HEAVY: shoulders twice the width of a man's, a barrel chest, thick heavy limbs, and massive dark plates of fused bone armour GROWN over the shoulders, the chest, the forearms and the shins \u2014 a hulking brute of a warlord, NOT a lean skeleton, NOT normal human proportions. Empty-handed: the maul is a prop of its own, parented to the hand.", "pick": 3},
-    {"id": "lampwright", "kind": "person", "refs": ["portrait", "body"], "height": 1.85, "rig": "biped", "note": "Empty-handed: the lantern pole is a prop of its own, parented to the hand.", "pick": 1},
-    {"id": "smith", "kind": "person", "refs": ["portrait", "body"], "height": 1.9, "rig": "biped", "pick": 0},
-    {"id": "hob", "kind": "person", "refs": ["portrait", "body"], "height": 1.35, "rig": "biped", "pick": 0},
-    {"id": "nell", "kind": "person", "refs": ["portrait", "body"], "height": 1.7, "rig": "biped", "pick": 0}
+    {
+      "id": "aethermancer",
+      "kind": "hero",
+      "refs": [
+        "cast"
+      ],
+      "height": 1.8,
+      "rig": "biped",
+      "pick": 0
+    },
+    {
+      "id": "alchemist",
+      "kind": "hero",
+      "refs": [
+        "cast"
+      ],
+      "height": 1.8,
+      "rig": "biped",
+      "pick": 0
+    },
+    {
+      "id": "obreth",
+      "kind": "hero",
+      "refs": [
+        "cast"
+      ],
+      "height": 1.85,
+      "rig": "biped",
+      "pick": 0
+    },
+    {
+      "id": "mahthar",
+      "kind": "hero",
+      "refs": [
+        "cast"
+      ],
+      "height": 1.9,
+      "rig": "biped",
+      "pick": 0
+    },
+    {
+      "id": "husk",
+      "sprite": "hewer",
+      "kind": "monster",
+      "refs": [
+        "body"
+      ],
+      "height": 1.75,
+      "rig": "biped",
+      "pick": 0
+    },
+    {
+      "id": "crawler",
+      "sprite": "dragger",
+      "kind": "monster",
+      "refs": [
+        "body",
+        "walk"
+      ],
+      "height": 1.0,
+      "rig": "quadruped",
+      "pick": 0
+    },
+    {
+      "id": "hound",
+      "sprite": "courser",
+      "kind": "monster",
+      "refs": [
+        "body",
+        "walk"
+      ],
+      "height": 1.1,
+      "rig": "quadruped",
+      "pick": 0
+    },
+    {
+      "id": "heap",
+      "kind": "monster",
+      "refs": [
+        "body"
+      ],
+      "height": 2.4,
+      "rig": "biped",
+      "pick": 0
+    },
+    {
+      "id": "gaunt",
+      "kind": "monster",
+      "refs": [
+        "body"
+      ],
+      "height": 2.9,
+      "rig": "biped",
+      "note": "ITS PROPORTIONS ARE THE WHOLE DESIGN: nearly three metres tall, legs half again as long as a man's, arms so long they hang BELOW THE KNEES, a SMALL skull on a long thin neck, a narrow stretched ribcage. Elongated and starved — NOT a normal human skeleton, NOT ordinary proportions.",
+      "same": "husk"
+    },
+    {
+      "id": "bonecaller",
+      "sprite": "shroud",
+      "kind": "monster",
+      "refs": [
+        "body"
+      ],
+      "height": 1.95,
+      "rig": "biped",
+      "pick": 0
+    },
+    {
+      "id": "answering",
+      "kind": "boss",
+      "refs": [
+        "body"
+      ],
+      "height": 4.0,
+      "rig": "biped",
+      "note": "COLOSSAL AND HEAVY: shoulders twice the width of a man's, a barrel chest, thick heavy limbs, and massive dark plates of fused bone armour GROWN over the shoulders, the chest, the forearms and the shins — a hulking brute of a warlord, NOT a lean skeleton, NOT normal human proportions. Empty-handed: the maul is a prop of its own, parented to the hand.",
+      "pick": 3
+    },
+    {
+      "id": "lampwright",
+      "kind": "person",
+      "refs": [
+        "portrait",
+        "body"
+      ],
+      "height": 1.85,
+      "rig": "biped",
+      "note": "Empty-handed: the lantern pole is a prop of its own, parented to the hand.",
+      "pick": 1
+    },
+    {
+      "id": "smith",
+      "kind": "person",
+      "refs": [
+        "portrait",
+        "body"
+      ],
+      "height": 1.9,
+      "rig": "biped",
+      "pick": 0
+    },
+    {
+      "id": "hob",
+      "kind": "person",
+      "refs": [
+        "portrait",
+        "body"
+      ],
+      "height": 1.35,
+      "rig": "biped",
+      "pick": 0
+    },
+    {
+      "id": "nell",
+      "kind": "person",
+      "refs": [
+        "portrait",
+        "body"
+      ],
+      "height": 1.7,
+      "rig": "biped",
+      "pick": 0
+    }
   ],
   "surfaces_style": "Seamless tileable PBR albedo texture, a perfectly flat orthographic view straight down onto the surface, filling the whole square frame edge to edge, uniform flat diffuse lighting with no shadows, no specular highlights, no vignette and no perspective, photorealistic and extremely detailed, for a AAA dark fantasy action RPG in the style of Diablo IV. NOT pixel art.",
   "surfaces": [
-    {"id": "sand", "prompt": "The floor of a dry underground mine cave: packed pale dusty khaki sand and fine grit, a few small scattered pebbles and flecks of stone, faintly scuffed, matte and dry. Pale greyish tan, NOT orange, NOT yellow, NOT red, NOT a beach."},
-    {"id": "cave_rock", "prompt": "A rough cave rock face: dark brown-grey weathered stone, cracked and layered in rough horizontal strata, chipped edges, dust in the cracks, matte. Dark and earthy, NOT blue, NOT purple, NOT mossy, NOT bricks."},
-    {"id": "camp_dirt", "prompt": "A trampled dirt path in a camp at the foot of a cliff: packed brown earth, small stones, bits of straw and ash, faint boot prints. Warm dark brown, NOT red, NOT sand."},
-    {"id": "camp_grass", "prompt": "Short scruffy dark green grass and moss growing on dark earth, patchy with bare soil showing through, a few tiny stones. Dark muted olive green, NOT bright, NOT lime, NOT flowers."},
-    {"id": "wood", "prompt": "Old weathered wooden planks seen straight on, dark grey-brown timber with deep grain, cracks, knots and old nail holes, matte and dusty. NOT painted, NOT varnished, NOT red."}
-  ]
+    {
+      "id": "sand",
+      "prompt": "The floor of a dry underground mine cave: packed pale dusty khaki sand and fine grit, a few small scattered pebbles and flecks of stone, faintly scuffed, matte and dry. Pale greyish tan, NOT orange, NOT yellow, NOT red, NOT a beach."
+    },
+    {
+      "id": "cave_rock",
+      "prompt": "A rough cave rock face: dark brown-grey weathered stone, cracked and layered in rough horizontal strata, chipped edges, dust in the cracks, matte. Dark and earthy, NOT blue, NOT purple, NOT mossy, NOT bricks."
+    },
+    {
+      "id": "camp_dirt",
+      "prompt": "A trampled dirt path in a camp at the foot of a cliff: packed brown earth, small stones, bits of straw and ash, faint boot prints. Warm dark brown, NOT red, NOT sand."
+    },
+    {
+      "id": "camp_grass",
+      "prompt": "Short scruffy dark green grass and moss growing on dark earth, patchy with bare soil showing through, a few tiny stones. Dark muted olive green, NOT bright, NOT lime, NOT flowers."
+    },
+    {
+      "id": "wood",
+      "prompt": "Old weathered wooden planks seen straight on, dark grey-brown timber with deep grain, cracks, knots and old nail holes, matte and dusty. NOT painted, NOT varnished, NOT red."
+    }
+  ],
+  "clips": {
+    "_": "THE CLIP BANK: every biped shares Meshy's 24 bones, so a clip bought once on ANY rig plays on all of them. These are the ones the Abyss did not already buy (its hero, imp, chanter and hornfiend clips are the rest). Names are what the renderer asks for; the numbers are Meshy's library ids.",
+    "on": "husk",
+    "actions": {
+      "dual": 92,
+      "bow": 224,
+      "thrust": 240,
+      "shamble": 113,
+      "talk": 313,
+      "talk2": 309,
+      "slam": 127,
+      "stomp": 255,
+      "stoop": 276,
+      "leap": 382
+    }
+  }
 }

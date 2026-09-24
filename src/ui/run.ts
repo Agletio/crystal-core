@@ -94,7 +94,7 @@ import { itemIcon } from './icons';
 import { itemCard } from './itemcard';
 import { attachTooltip, hideTooltip } from './tooltip';
 import { topWindow } from './windows';
-import { createThreeRenderer } from '../render/three';
+import { createThreeRenderer, hardwareGL } from '../render/three';
 import { starvedMultiplier } from '../sim/grants';
 import type { PotionDef } from '../data';
 
@@ -1352,42 +1352,61 @@ export function centreCamera(): void {
  * hostile driver, jsdom in the smoke test — canvas simply stays, and the page
  * is never blank.
  */
-/** THE 3D SPIKE'S SWITCH. Pixi stays the default until 3D reaches parity —
- *  a conversion that makes the game unrunnable for a month is the one that
- *  gets abandoned in week three — so this swaps the seam and nothing else. */
+/** WHETHER A DESCENT IS DRAWN IN 3D: a GPU says yes, a software rasteriser —
+ *  the headless harness — says no, and the URL (`?3d`, `?2d`) or the dev kit
+ *  overrules either. The 2D renderer is up while the 3D one's art loads. */
+let wants3d: boolean | null = null;
+function want3d(): boolean {
+  if (wants3d !== null) return wants3d;
+  const asked = new URLSearchParams(globalThis.location?.search ?? '');
+  wants3d = asked.has('3d') ? true : asked.has('2d') ? false : hardwareGL();
+  return wants3d;
+}
+
+export const inThree = (): boolean => want3d();
+
+/** The dev kit's switch: the seam swapped and nothing else. */
 export function useThree(on: boolean): void {
+  wants3d = on;
   const stage = $('run-stage');
   const palette = readPalette(document.documentElement);
   renderer?.destroy();
   stage.replaceChildren();
-  if (on) {
-    const three = createThreeRenderer(stage, palette);
-    renderer = three;
-    (globalThis as Record<string, unknown>).__three = three;
-  } else {
-    renderer = createCanvasRenderer(stage, palette);
-    delete (globalThis as Record<string, unknown>).__three;
-    void upgradeRenderer(stage, palette);
-  }
+  renderer = createCanvasRenderer(stage, palette);
   renderer.setZoom(zoom);
   fitCanvas();
+  void upgradeRenderer(stage, palette);
 }
 
+/**
+ * Start on canvas so something is on screen immediately, then hand over to
+ * WebGL once Pixi has its device, and to 3D once its art has landed. If a step
+ * cannot initialise — no WebGL, a hostile driver, jsdom in the smoke test — the
+ * one before it simply stays, and the page is never blank.
+ */
 async function upgradeRenderer(host: HTMLElement, palette: Palette): Promise<void> {
+  const swap = (next: Renderer): void => {
+    renderer?.destroy();
+    renderer = next;
+    // The new renderer starts at its own default, so the zoom the UI is
+    // currently claiming has to be handed over with it — otherwise the label
+    // says 2× and the picture is fitted.
+    next.setZoom(zoom);
+    fitCanvas();
+  };
+  const three = want3d() ? createThreeRenderer(host, palette).catch(() => null) : null;
   let pixi: Renderer | null = null;
   try {
     pixi = await createPixiRenderer(host, palette);
   } catch {
     pixi = null;
   }
-  if (!pixi) return;
-  renderer?.destroy();
-  renderer = pixi;
-  // The new renderer starts at its own default, so the zoom the UI is
-  // currently claiming has to be handed over with it — otherwise the label
-  // says 2× and the picture is fitted.
-  pixi.setZoom(zoom);
-  fitCanvas();
+  if (pixi) swap(pixi);
+  const deep = await three;
+  if (deep && wants3d) {
+    swap(deep);
+    (globalThis as Record<string, unknown>).__three = deep;
+  } else deep?.destroy();
 }
 
 export function initRun(state: GameState): void {

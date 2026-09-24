@@ -36,6 +36,7 @@ const REACH = 24; // metres from the eye at which a lamp has faded out of the po
 export class Lamps {
   readonly group = new THREE.Group();
   readonly moon: THREE.DirectionalLight;
+  readonly sky: THREE.HemisphereLight;
   readonly hero: THREE.PointLight;
   private readonly pool: THREE.PointLight[] = [];
   private readonly flashes: Flash[] = [];
@@ -44,7 +45,8 @@ export class Lamps {
 
   constructor(quality: Quality) {
     const high = quality === 'high';
-    this.group.add(new THREE.HemisphereLight(0x3a4468, 0x1c0d08, 0.85));
+    this.sky = new THREE.HemisphereLight(0x3a4468, 0x1c0d08, 0.85);
+    this.group.add(this.sky);
     this.moon = new THREE.DirectionalLight(0x8e9cff, 1.3);
     this.moon.castShadow = true;
     this.moon.shadow.mapSize.set(high ? 2048 : 1024, high ? 2048 : 1024);
@@ -64,6 +66,15 @@ export class Lamps {
       this.pool.push(lamp);
       this.group.add(lamp);
     }
+  }
+
+  /** A world's own light: what the dark is tinted, and what falls from above. */
+  tone(sky: number, ground: number, skyPower: number, moon: number, moonPower: number): void {
+    this.sky.color.set(sky);
+    this.sky.groundColor.set(ground);
+    this.sky.intensity = skyPower;
+    this.moon.color.set(moon);
+    this.moon.intensity = moonPower;
   }
 
   use(sources: LightSource[]): void {
