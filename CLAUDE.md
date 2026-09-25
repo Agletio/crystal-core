@@ -3,7 +3,8 @@
 A browser ARPG. Deterministic fixed-timestep sim, seeded RNG, no framework, no
 server. Ships TWICE, both committed: the WEB build, `docs/index.html` +
 `docs/app.js`, is the pixel-art game Cloudflare serves; the DOWNLOAD, `3d/`, is
-the same game drawn in 3D, played off the disk.
+the same game drawn in 3D, played in the Windows DESKTOP APP (`shell/`), which
+fetches whatever changed in it each time it starts.
 
 Two files: **this one** (always true, always loaded) and **`ROADMAP.md`** (the
 work that is left). Everything domain-specific is a SKILL — load it when you
@@ -67,6 +68,7 @@ Exactly three things end a session, and a finished phase is not one:
 | `npm run typecheck` | tsc, `src` only |
 | `npm run build` | the web build to `docs/app.js`, and the download to `3d/` — its bundle, its page and its 3D art in `3d/gl/` and `3d/abyss/` — **committed**, Cloudflare runs no build |
 | `npm run zip:3d` | `crystal-core-3d.zip` of `3d/`, never committed; CI puts it on the rolling `3d-latest` release on every push that changes `3d/` (`.github/workflows/download-3d.yml`) |
+| `cd shell && npm start` | the desktop app over the repo's own `3d/` as its installed copy; `-- --offline` skips GitHub, `CRYSTAL_QUERY=3d` draws 3D without a GPU. `desktop.yml` builds the Windows installer onto the `desktop-latest` release whenever `shell/` changes |
 | `npm run mods` | every modifier rolls, does something, reads |
 | `npm run smoke` | ~7min: headless boot and interaction |
 | `npm run demo` | **~2min**: every mechanism check that is cheap — trees, grants, saves, the sheet, terminations. The slow sections (`SLOW` in `src/demo.ts`: played descents by the dozen, the economy, the ceiling search) print `skipped`. `DEMO_ONLY=spike,web` runs just the sections whose title holds a word, slow or not; `DEMO_FULL=1` runs the lot (47min alone, measured). `DEMO_TIME=1` times each section |
@@ -226,6 +228,30 @@ minutes**; a silent hour is how this looked stuck.
   double-click with no server, because everything it loads is a classic
   script beside it — a `fetch` or a module script breaks that, and
   `tools/build-3d.mjs` strips the analytics beacon from its page.
+- **THE DESKTOP APP PLAYS THE DOWNLOAD, AND IT IS INSTALLED ONCE.** *"I want
+  the final game to be a standalone desktop app but I also want it to be easy
+  to check changes against without having to do a bunch of downloads on every
+  change."* `shell/` is Electron: each start and each F5 it reads its branch's
+  commit off git's own `info/refs` (the REST API answers sixty times an hour),
+  diffs that commit's `3d/manifest.json` — every file's sha256, written by the
+  build — against what it holds, and fetches only what differs, kept under its
+  own hash so a build is switched to whole or not at all. It serves them over
+  `app://game/`, a fixed origin, so the save outlives every update. The branch
+  is `shell/build.json`, rewritten by CI to the one the installer was built
+  from. **A build that needs more of the app than an installed one has bumps
+  `SHELL` in `shell/update.mjs` and `shell` in the manifest TOGETHER**, and an
+  older app then keeps running the last build it could.
+- **WHAT THE 3D COSTS IS A PRESET, AND NOTHING IS COMPILED MID-FIGHT.** `PRESET`
+  in `src/gl/stage.ts` is Low / Medium / High — pixel ratio, anti-aliasing,
+  shadows, ambient occlusion, how many lights — picked in Settings, kept per
+  machine by `src/graphics.ts`, Medium on a GPU and Low on a software
+  rasteriser; a new one rebuilds both stages. **Three.js deletes a shader
+  program with the last material using it and compiles it again on the next**,
+  so every effect coming back after a quiet spell hitched: `Stage.pin` holds
+  every program for the stage's life, and `Stage.warm` compiles every body and
+  effect material before a renderer is handed over — into the composer's own
+  target, since that decides tone mapping. Measured: a minute of descent
+  compiles nothing.
 - **IN THE DOWNLOAD THE DESCENT IS DRAWN IN 3D WHERE THERE IS A GPU** —
   `src/render/three.ts` over `src/gl`, reading the same `RunState` and deciding
   nothing; the headless harness keeps 2D, and `?3d`, `?2d` and the dev kit
@@ -2047,7 +2073,9 @@ src/ui/            one module per screen; talk.ts is a person in the camp
 src/ui/builder.ts  THE LEVEL BUILDER: paint a floor with the real sets and props
 src/abyss/         THE ABYSS: the download's dev-kit 3D level, three.js over the real sim; its art is 3d/abyss/
 src/deep.ts        the 3D HALF's seam: src/deep3d.ts fills it in the download (src/desktop.ts), the web leaves it empty
-3d/                THE DOWNLOAD, built and committed: the web page less its beacon, the 3D bundle, its shards
+src/graphics.ts    the 3D quality and the frame readout, as the player chose them, per machine
+3d/                THE DOWNLOAD, built and committed: the web page less its beacon, the 3D bundle, its shards, manifest.json
+shell/             THE DESKTOP APP: update.mjs keeps the game files, main.mjs is the window; its install and dist are ignored
 tools/art/         the generator, over MCP: bodies.json asks, generated.json answers
 tools/*-peek.mjs   screenshots off the committed bundle, the download's for `Q=3d`; plan-peek draws a builder plan
 tools/act-floors.mts  where the FLOORS are in a cross-section, to place a depth on one

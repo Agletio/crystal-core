@@ -149,7 +149,14 @@ generation is budgeted, and what code can build is built in code.
 the web version to its pixel art idle game verison and then make this version
 you have a seperate build I can download."* `3d/` is built by `npm run build`
 beside `docs/` and committed with it, and `npm run zip:3d` is the zip — too
-large to attach, so CI publishes it as the `3d-latest` release. Everything below is the download's; the web draws none of it.
+large to attach, so CI publishes it as the `3d-latest` release. **It is PLAYED
+in the desktop app** (`shell/`, the `desktop-latest` release's installer),
+which fetches what changed on its branch at every start and on F5, and the
+3D reads a graphics preset (Low, Medium by default, High) with a frame-rate
+readout in Settings. **The app follows `claude/vibrant-meitner-u476md`**: when
+work moves to another branch, rebuild the installer from it (`desktop.yml`
+runs on any push that touches `shell/`) or set `branch` in the app's
+`settings.json`. Everything below is the download's; the web draws none of it.
 
 ### What is built
 
