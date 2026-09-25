@@ -6,6 +6,12 @@ server. Ships TWICE, both committed: the WEB build, `docs/index.html` +
 the same game drawn in 3D, played in the Windows DESKTOP APP (`shell/`), which
 fetches whatever changed in it each time it starts.
 
+**THE WEB GAME STANDS AS IT IS; THE 3D GAME IS A SEPARATE ONE, IN UNREAL.**
+*"I don't want to mirror changes. It just needs to exist as it is and the 3d
+version in unreal can be a completely separate game."* Nothing here is mirrored
+to or from it, the web phases in `ROADMAP.md` are on hold, and the Unreal game
+lives in its own repo, built on his PC — this repo is its reference.
+
 Two files: **this one** (always true, always loaded) and **`ROADMAP.md`** (the
 work that is left). Everything domain-specific is a SKILL — load it when you
 touch that domain, not before.
@@ -2077,7 +2083,7 @@ src/graphics.ts    the 3D quality and the frame readout, as the player chose the
 3d/                THE DOWNLOAD, built and committed: the web page less its beacon, the 3D bundle, its shards, manifest.json
 shell/             THE DESKTOP APP: update.mjs keeps the game files, main.mjs is the window; its install and dist are ignored
 tools/art/         the generator, over MCP: bodies.json asks, generated.json answers
-tools/unreal/      the Unreal version's side of the repo: export.mts writes the 3D art as files Unreal imports
+tools/unreal/      export.mts writes the 3D art as files the separate Unreal game imports
 tools/*-peek.mjs   screenshots off the committed bundle, the download's for `Q=3d`; plan-peek draws a builder plan
 tools/act-floors.mts  where the FLOORS are in a cross-section, to place a depth on one
 src/demo.ts        the checks; src/mods-check.ts the modifier sweep

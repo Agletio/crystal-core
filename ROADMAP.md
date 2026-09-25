@@ -7,6 +7,15 @@ this file** — `git log` is where a session that has to undo one looks.
 
 ## Where this stands
 
+**THE WEB GAME STANDS AS IT IS, AND THE UNREAL GAME IS A SEPARATE ONE.**
+*"I want to clarify the web version 2d is standalone. Like I don't want to
+mirror changes. It just needs to exist as it is and the 3d version in unreal
+can be a completely separate game."* Nothing is mirrored either way. Every web
+phase below, the loose ends, the three.js conversion, the driving spike and the
+Abyss are ON HOLD — not work waiting to be picked up — and the download and its
+desktop app stay as they are. The next work is THE UNREAL GAME, and it is done
+on his PC.
+
 **THE SETTLED ORDER IS SPENT.** *"just finish phase 6, make the character walk
 to the chest, you can pick the names for phase 6 too. And then go to phase 7."*
 All three are done:
@@ -133,7 +142,7 @@ binding.
 
 ---
 
-## THE UNREAL VERSION — waiting on his PC
+## THE UNREAL GAME — a separate game, built on his PC
 
 *"I want unreal. What if we used my pc as a server to run unreal on?"* This
 container cannot install or run Unreal (tens of GB, and its editor needs a
@@ -141,35 +150,30 @@ GPU), so the work runs in a Claude Code session ON HIS PC — the Claude Desktop
 app, or `claude remote-control` in a terminal in the repo — which drives the
 editor, builds and screenshots there, and shows up in the Claude Code app.
 
-**The shape, recommended and not yet confirmed: one game, drawn two ways.** The
-rules and the screens stay as they are and run in Unreal's own browser widget,
-laid over the world, the way Electron runs them now — so the 34,000 lines of
-rules, the 15,000 of screens and the demo's 1,308 checks are SHARED with the
-web game, never copied. Unreal draws the world: everything drawn already goes
-through one `Renderer` a frame (`src/deep.ts` is the seam), so Unreal is one
-more, fed a compact `RunState` snapshot across the browser's bridge and the
-camp's `CampView` the same way. If the browser layer is too slow, screens move
-to native Unreal UI one at a time and the bridge stays. **Text first, like
-everything else here**: C++, config and Python editor scripts are committed,
-and the `Content/` they import and build is regenerated on his PC, so git holds
-no big binaries; what truly must be authored in the editor goes through LFS.
-
-**Done**: `tools/unreal/export.mts` writes every model and the clip bank as
-plain GLB (meshopt and quantization undone — Unreal's importer reads neither)
-with its meta, and the ground textures, to `unreal/Import/`: 36 models, 56
-clips and 15 textures, 47 MB, every file read back with no decoder.
+**It is its own game, native throughout**: C++ for its rules, Unreal's own UI,
+and its OWN PRIVATE repo — Fab assets may not be published, and its content is
+large binaries. Nothing is shared with the web game and nothing is mirrored.
+This repo is its REFERENCE: the rules as they stand in `src/` and in
+`CLAUDE.md`, and the 3D art through `tools/unreal/export.mts`, which
+writes every model and the clip bank as plain GLB (meshopt and quantization
+undone — Unreal's importer reads neither) with its meta, and the ground
+textures, to `unreal/Import/`: 36 models, 56 clips and 15 textures, 47 MB,
+every file read back with no decoder.
 
 1. **Setup on his PC**: Unreal Engine 5 and Visual Studio 2022 with *Game
-   development with C++*; a blank C++ project in `unreal/`; an editor Python
-   script importing `unreal/Import/`; one headless build and a screenshot,
+   development with C++*; the private repo with a blank C++ project; an editor
+   Python script importing `unreal/Import/`; one build and a screenshot,
    proving the loop.
-2. **The bridge**: the game in a browser widget over the viewport, the snapshot
-   out each tick, clicks on the world back in; the hero walking a real descent's
-   grid.
-3. **The world**: terrain off `GameMap`, bodies and their clips (the IK
-   Retargeter off the clip bank), gear in hands, effects.
-4. **The camp**, where `src/scenes/camp.ts` measured it.
-5. **Shipping**: packaging, and updates through Steam or a patcher of its own.
+2. **A vertical slice**: one hero, one skill, one descent of The Shallows — the
+   grid, the packs, a fight, a death and a drop — so every later system has
+   somewhere to land.
+3. **The camp, then the systems one at a time**, each ported from this repo's
+   rules or redesigned, at his word.
+4. **Shipping**: packaging, and updates through Steam.
+
+**Open question for the slice**: does the hero fight on his own, as the web
+game's does, or does the player drive him? It decides what the slice is built
+round.
 
 ---
 
