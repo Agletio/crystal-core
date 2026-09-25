@@ -21,8 +21,8 @@
  * of a second and one screenshot of a descent will not hold one.
  * `TEST=1` shoots the test level; `WALK=1` paints where a body may STAND: green
  * walks, red does not, amber is ground a face is drawn on that nobody may enter.
- * `Q=3d` is the page's own query, and `3d` draws the descent in 3D — on
- * SwiftShader, so the shot waits for the 3D renderer's art to land first.
+ * `Q=3d` is the page's own query: the descent in 3D, off the download in `3d/`,
+ * on SwiftShader, so the shot waits for the 3D renderer's art to land first.
  */
 import { createServer } from 'node:http';
 import { readFile, writeFile } from 'node:fs/promises';
@@ -31,9 +31,11 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join, extname } from 'node:path';
 import { chromium } from 'playwright';
 
-const docs = join(dirname(fileURLToPath(import.meta.url)), '..', 'docs');
+const Q = process.env.Q ?? '';
+const GL3 = /(^|&)3d/.test(Q);
+const docs = join(dirname(fileURLToPath(import.meta.url)), '..', GL3 ? '3d' : 'docs');
 if (!existsSync(join(docs, 'app.js'))) {
-  console.error('descent-peek: docs/app.js missing — run `npm run build` first');
+  console.error(`descent-peek: ${GL3 ? '3d' : 'docs'}/app.js missing — run \`npm run build\` first`);
   process.exit(1);
 }
 
@@ -71,8 +73,6 @@ const server = createServer(async (req, res) => {
 await new Promise((r) => server.listen(0, '127.0.0.1', r));
 const base = `http://127.0.0.1:${server.address().port}`;
 
-const Q = process.env.Q ?? '';
-const GL3 = /(^|&)3d/.test(Q);
 const browser = await chromium.launch(GL3 ? { args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] } : undefined);
 const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
 page.on('console', (m) => {

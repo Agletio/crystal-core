@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "demo": "tsx src/demo.ts",
-    "build": "esbuild src/web.ts --bundle --format=iife --minify --outfile=docs/app.js && npm run build:abyss && npm run build:gl",
+    "build": "esbuild src/web.ts --bundle --format=iife --minify --outfile=docs/app.js && npm run build:3d",
+    "build:3d": "esbuild src/desktop.ts --bundle --format=iife --minify --outfile=3d/app.js --log-level=warning && node tools/build-3d.mjs && npm run build:abyss && npm run build:gl",
+    "zip:3d": "node tools/build-3d.mjs zip",
     "watch": "esbuild src/web.ts --bundle --format=iife --outfile=docs/app.js --watch",
     "typecheck": "tsc --noEmit",
     "smoke": "node smoke.mjs",
@@ -19,9 +21,9 @@
     "writing:sync": "tsx tools/writing.mts sync",
     "writing:check": "tsx tools/writing.mts check",
     "writing:test": "tsx --test tools/writing.test.mts",
-    "build:abyss": "esbuild world=src/abyss/assets/load-world.ts actors=src/abyss/assets/load-actors.ts props=src/abyss/assets/load-props.ts furniture=src/abyss/assets/load-furniture.ts --bundle --format=iife --minify --outdir=docs/abyss --log-level=warning",
+    "build:abyss": "esbuild world=src/abyss/assets/load-world.ts actors=src/abyss/assets/load-actors.ts props=src/abyss/assets/load-props.ts furniture=src/abyss/assets/load-furniture.ts --bundle --format=iife --minify --outdir=3d/abyss --log-level=warning",
     "abyss": "tsx tools/abyss/check.mts",
-    "build:gl": "esbuild heroes=src/gl/assets/load-heroes.ts shallows=src/gl/assets/load-shallows.ts folk=src/gl/assets/load-folk.ts clips=src/gl/assets/load-clips.ts ground=src/gl/assets/load-ground.ts camp=src/gl/assets/load-camp.ts gear=src/gl/assets/load-gear.ts --bundle --format=iife --minify --outdir=docs/gl --log-level=warning"
+    "build:gl": "esbuild heroes=src/gl/assets/load-heroes.ts shallows=src/gl/assets/load-shallows.ts folk=src/gl/assets/load-folk.ts clips=src/gl/assets/load-clips.ts ground=src/gl/assets/load-ground.ts camp=src/gl/assets/load-camp.ts gear=src/gl/assets/load-gear.ts --bundle --format=iife --minify --outdir=3d/gl --log-level=warning"
   },
   "devDependencies": {
     "@babel/parser": "^8.0.4",

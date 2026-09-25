@@ -1,6 +1,6 @@
 /**
  * THE GAME'S 3D ART, MADE INTO WHAT SHIPS: the bodies, the clip bank and the
- * ground, each a module of data URIs in `src/gl/assets/`, built to `docs/gl/`
+ * ground, each a module of data URIs in `src/gl/assets/`, built to `3d/gl/`
  * by `npm run build:gl` and fetched only by a page that draws in 3D.
  *
  *   npx tsx tools/3d/pack.mts [bodies|clips|ground|props] [id…]
@@ -281,7 +281,7 @@ function shard(name: string, type: 'ModelShard' | 'WorldShard', body: string[]):
   ].join('\n');
   writeFileSync(join(OUT, `${name}.ts`), text);
   const loader = [
-    `// The ${name} shard's own bundle, docs/gl/${name}.js: it registers itself and does nothing else.`,
+    `// The ${name} shard's own bundle, 3d/gl/${name}.js: it registers itself and does nothing else.`,
     `import { SHARD } from './${name}';`,
     '',
     `(globalThis.__shards ??= {})['gl/${name}'] = SHARD;`,

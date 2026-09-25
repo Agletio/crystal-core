@@ -22,7 +22,7 @@ import { ZONES } from '../render/generated-tiles';
 import { TEST_LEVEL, testLevel } from '../sim/grid';
 import { showingWalk, walkOverlay } from '../render/renderer';
 import { inThree, useThree } from './run';
-import { enterAbyss } from '../abyss';
+import { deepOf } from '../deep';
 import { takeHeard, takeMet } from '../game/scenes';
 import { campaignDone, progressKey } from '../ladder';
 import { pathToNotable } from '../skills-tree';
@@ -351,33 +351,37 @@ function render(): void {
   };
   sets.append(test);
 
-  // 3D OR 2D: a GPU gets 3D and the headless harness 2D, and this overrules
-  // either for the rest of the page's life. `__three.stats()` reads the frame.
-  const solid = el('button', 'mini devbtn') as HTMLButtonElement;
-  solid.id = 'dev-three';
-  solid.append(el('span', 'devbtn__name', inThree() ? 'Descent in 3D: on' : 'Descent in 3D: off'));
-  solid.append(el('span', 'devbtn__what', 'the renderer seam swapped: 3D models, or the 2D sprites'));
-  solid.onclick = () => {
-    useThree(!inThree());
-    render();
-  };
-  sets.append(solid);
+  // 3D OR 2D, in the download alone: a GPU gets 3D and the headless harness 2D,
+  // and this overrules either for the rest of the page's life.
+  // `__three.stats()` reads the frame.
+  const deep = deepOf();
+  if (deep) {
+    const solid = el('button', 'mini devbtn') as HTMLButtonElement;
+    solid.id = 'dev-three';
+    solid.append(el('span', 'devbtn__name', inThree() ? 'Descent in 3D: on' : 'Descent in 3D: off'));
+    solid.append(el('span', 'devbtn__what', 'the renderer seam swapped: 3D models, or the 2D sprites'));
+    solid.onclick = () => {
+      useThree(!inThree());
+      render();
+    };
+    sets.append(solid);
 
-  // THE ABYSS: a level built in 3D from scratch, played on the real sim with an
-  // Aethermancer it dresses itself. Nothing it does touches the save.
-  const abyss = group(
-    'The Abyss',
-    'A hand-built 3D descent — an Aethermancer with Arc Lightning and Blink, a cathedral, a lava rift and a Herald. A sandbox: nothing is banked.'
-  );
-  const dive = el('button', 'mini devbtn') as HTMLButtonElement;
-  dive.id = 'dev-abyss';
-  dive.append(el('span', 'devbtn__name', 'Enter the Abyss'));
-  dive.append(el('span', 'devbtn__what', 'WASD, click to cast, Space to blink — 36 MB to load'));
-  dive.onclick = () => {
-    close();
-    void enterAbyss(game.character.name || 'Aethermancer', () => hooks.refresh());
-  };
-  abyss.append(dive);
+    // THE ABYSS: a level built in 3D from scratch, played on the real sim with
+    // an Aethermancer it dresses itself. Nothing it does touches the save.
+    const abyss = group(
+      'The Abyss',
+      'A hand-built 3D descent — an Aethermancer with Arc Lightning and Blink, a cathedral, a lava rift and a Herald. A sandbox: nothing is banked.'
+    );
+    const dive = el('button', 'mini devbtn') as HTMLButtonElement;
+    dive.id = 'dev-abyss';
+    dive.append(el('span', 'devbtn__name', 'Enter the Abyss'));
+    dive.append(el('span', 'devbtn__what', 'WASD, click to cast, Space to blink — 36 MB to load'));
+    dive.onclick = () => {
+      close();
+      void deep.abyss(game.character.name || 'Aethermancer', () => hooks.refresh());
+    };
+    abyss.append(dive);
+  }
 
   // WHERE A BODY MAY STAND, over the floor that shipped. Green walks, red does
   // not, and the amber band across the top of a tile under rock is drawn ground

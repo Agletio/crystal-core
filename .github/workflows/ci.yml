@@ -76,12 +76,12 @@ jobs:
       - name: commit the rebuilt bundle
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
-          if git diff --quiet -- docs/app.js; then
+          if git diff --quiet -- docs/app.js 3d/; then
             echo "bundle already matches the source"
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add docs/app.js
-          git commit -m "Rebuild docs/app.js [skip ci]"
+          git add docs/app.js 3d/
+          git commit -m "Rebuild docs/app.js and the 3d/ download [skip ci]"
           git push

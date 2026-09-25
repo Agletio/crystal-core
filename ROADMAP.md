@@ -145,6 +145,12 @@ can with what we have… just start converting the real game this looks way
 better."* **The credits are the subscription's and there is no top-up**: every
 generation is budgeted, and what code can build is built in code.
 
+**IT IS THE DOWNLOAD NOW, AND THE WEB IS THE PIXEL-ART GAME AGAIN** — *"revert
+the web version to its pixel art idle game verison and then make this version
+you have a seperate build I can download."* `3d/` is built by `npm run build`
+beside `docs/` and committed with it, and `npm run zip:3d` is the zip handed
+over. Everything below is the download's; the web draws none of it.
+
 ### What is built
 
 - **THE ENGINE IS `src/gl`**, shared with the Abyss: the stage, the light pool,
@@ -159,8 +165,8 @@ generation is budgeted, and what code can build is built in code.
 - **ONE CLIP BANK FOR EVERY BIPED** (`tools/3d/pack.mts clips`): 56 clips —
   the Abyss's, ten bought once on the husk, and every rig's own walk and run —
   retargeted through BOTH rest poses at load (`src/gl/retarget.ts`).
-- **THE DESCENT IS DRAWN IN 3D** (`src/render/three.ts`), default wherever
-  there is a GPU; the headless harness keeps 2D, `?3d` / `?2d` overrule it and
+- **THE DESCENT IS DRAWN IN 3D** (`src/render/three.ts`), in the download
+  wherever there is a GPU; the headless harness keeps 2D, `?3d` / `?2d` overrule it and
   so does the dev kit. Every body, prop, effect and number reads the same
   `RunState` the 2D renderers read, so the systems are the game's own.
 - **`tools/3d/lineup.mjs`** stands every body in one picture holding a clip at
@@ -357,8 +363,8 @@ untouched, so no writing entry went stale.
 - **EVERY PICTURE IS NEW, AND GENERATED.** Meshy text-to-image → image-to-3D →
   rig → animate through `tools/abyss/meshy.mts`; `asks.json` is the art bible
   and `made.json` the ledger. `pack.mts` and `tex.mts` pack what came back into
-  four shards loaded on entry, `docs/abyss/{world,actors,props,furniture}.js`,
-  36 MB between them and each under Cloudflare's 25 MiB. About 1,070 credits.
+  four shards loaded on entry, `3d/abyss/{world,actors,props,furniture}.js`,
+  36 MB between them. About 1,070 credits. The DOWNLOAD's dev kit alone has it.
 - **THE RENDERER** is three.js on a fixed isometric camera (yaw 45°, pitch 56°):
   - GTAO, bloom, ACES and a grade.
   - A pool of point lights handed each frame to the lamps nearest the eye.

@@ -9,7 +9,10 @@ description: Drawing the map and the bodies on it — the pixi/canvas2d split, s
 `src/render/canvas2d.ts` is a fallback that draws coloured circles with a
 facing tick. **Only Pixi draws sprites** — bodies, tilesets, props, held
 weapons, VFX pictures — and sprite work being invisible in the fallback is
-correct, not a bug to fix.
+correct, not a bug to fix. **A third, `src/render/three.ts`, is the DOWNLOAD's
+alone** (`3d/`, handed over through `src/deep.ts`): the web build never imports
+three.js, so nothing under `src/render/` that the web reaches may import it
+either — a value import from `src/gl/` pulls the whole of it back in.
 
 **Anything per-tile is a pure function in `render/renderer.ts`**, so both
 renderers read one answer and cannot come apart: `tileDecals`, `livingDecals`,

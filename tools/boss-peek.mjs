@@ -8,7 +8,8 @@
  *
  *   node tools/boss-peek.mjs [dir] [shots] [zoom]
  *
- * `Q=3d` draws it in 3D, on SwiftShader, and waits for the 3D renderer first.
+ * `Q=3d` draws it in 3D off the download in `3d/`, on SwiftShader, and waits
+ * for the 3D renderer first.
  */
 import { createServer } from 'node:http';
 import { readFile, writeFile } from 'node:fs/promises';
@@ -17,7 +18,9 @@ import { dirname, join, extname } from 'node:path';
 import { chromium } from 'playwright';
 
 const [out = '.', shots = 12, zoom = 3] = process.argv.slice(2);
-const docs = join(dirname(fileURLToPath(import.meta.url)), '..', 'docs');
+const Q = process.env.Q ?? '';
+const GL3 = /(^|&)3d/.test(Q);
+const docs = join(dirname(fileURLToPath(import.meta.url)), '..', GL3 ? '3d' : 'docs');
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css' };
 const server = createServer(async (req, res) => {
   const url = (req.url ?? '/').split('?')[0];
@@ -32,8 +35,6 @@ const server = createServer(async (req, res) => {
 await new Promise((r) => server.listen(0, '127.0.0.1', r));
 const base = `http://127.0.0.1:${server.address().port}`;
 
-const Q = process.env.Q ?? '';
-const GL3 = /(^|&)3d/.test(Q);
 const browser = await chromium.launch(GL3 ? { args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] } : undefined);
 const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
 page.on('console', (m) => {

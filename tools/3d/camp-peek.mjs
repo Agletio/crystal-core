@@ -1,5 +1,5 @@
 /**
- * THE CAMP IN 3D, shot in real Chromium off the committed bundle: a new
+ * THE CAMP IN 3D, shot in real Chromium off the download's committed bundle: a new
  * character made, the camp waited on until its 3D art has landed, then a frame.
  *
  *   node tools/3d/camp-peek.mjs out.png [hover-id]
@@ -12,7 +12,7 @@ import { readFile } from 'node:fs/promises';
 import { join, extname } from 'node:path';
 import { chromium } from 'playwright';
 
-const docs = new URL('../../docs', import.meta.url).pathname;
+const docs = new URL('../../3d', import.meta.url).pathname;
 const [out = 'camp.png', hover = ''] = process.argv.slice(2);
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css' };
 const server = createServer(async (req, res) => {

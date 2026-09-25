@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import { buildSync } from 'esbuild';
 import { Rng } from './rng';
 import { ModPool } from './mods';
 import {
@@ -16886,6 +16887,22 @@ if (rule('THE SAVE — does a save survive the game changing under it?')) {
 // The harness is a report you read AND a check that can fail. Everything
 // above prints numbers to judge by eye; the check() calls are the ones with
 // an answer, and CI needs them to decide red or green.
+}
+
+if (rule('TWO BUILDS — the web draws in 2D, the download in 3D')) {
+  // Bundled as `npm run build` bundles them, with nothing written: one value
+  // import of the 3D code anywhere the web reaches puts three.js back on it.
+  const inputs = (entry: string): string[] =>
+    Object.keys(buildSync({ entryPoints: [new URL(entry, import.meta.url).pathname], bundle: true, format: 'iife', write: false, metafile: true, logLevel: 'silent' }).metafile.inputs);
+  const deep = (f: string): boolean => /node_modules\/three\/|src\/gl\/|src\/abyss\/|src\/render\/three\.ts/.test(f);
+  const web = inputs('./web.ts').filter(deep);
+  check(web.length === 0, 'the web build carries no three.js, nothing of src/gl or src/abyss, and no 3D renderer', `the web build pulls in ${web.slice(0, 4).join(', ')}`);
+  const download = inputs('./desktop.ts');
+  check(
+    ['src/render/three.ts', 'src/gl/camp.ts', 'src/abyss/index.ts'].every((f) => download.some((d) => d.endsWith(f))),
+    'the download carries the 3D descent, the 3D camp and the Abyss',
+    'the download is missing part of its 3D half'
+  );
 }
 
 rule('RESULT');

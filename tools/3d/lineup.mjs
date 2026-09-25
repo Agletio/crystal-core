@@ -6,7 +6,7 @@
  *   node tools/3d/lineup.mjs out.png [clip] [at,at,…] [body,body,…]
  *   PAGE=fxsheet|ground|gait|walk QUERY='…' node tools/3d/lineup.mjs out.png   another page; each says what it asks
  *
- * No clip stands them at rest. Reads the built shards: `npm run build:gl` after a pack.
+ * No clip stands them at rest. Reads the built shards in `3d/gl/`: `npm run build:gl` after a pack.
  */
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
@@ -23,7 +23,7 @@ const server = createServer(async (req, res) => {
   const url = (req.url ?? '/').split('?')[0];
   try {
     if (url === '/') return res.writeHead(200, { 'content-type': 'text/html' }).end(`<!doctype html><head>${style}</head><body><script type="module" src="/lineup.js"></script>`);
-    const path = url === '/lineup.js' ? bundle : join(root, 'docs', url.slice(1));
+    const path = url === '/lineup.js' ? bundle : join(root, '3d', url.slice(1));
     res.writeHead(200, { 'content-type': extname(path) === '.js' ? 'text/javascript' : 'application/octet-stream' }).end(await readFile(path));
   } catch {
     res.writeHead(404).end();

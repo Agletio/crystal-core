@@ -37,18 +37,21 @@ import { syncTalk, wants } from './talk';
 import type { GameState } from '../game/state';
 
 import { closeParley } from './talk';
-import { Camp3d } from '../gl/camp';
+import { deepOf } from '../deep';
+import type { DeepCamp } from '../deep';
 import type { CampPerson, CampView } from '../gl/camp';
 import { CAMP_HOTSPOTS as SPOTS } from '../scenes/camp';
 
 const $ = (id: string) => document.getElementById(id)!;
 
-/** THE CAMP IN 3D, once its art has landed: the picture and its canvas stand
- *  down and every button is laid over the thing it stands for, each frame. */
-let deep: Camp3d | null = null;
+/** THE CAMP IN 3D, in the download once its art has landed: the picture and
+ *  its canvas stand down and every button is laid over the thing it stands
+ *  for, each frame. */
+let deep: DeepCamp | null = null;
 let asking = false;
 export function useCamp3d(on: boolean): void {
-  if (!on) {
+  const made3d = deepOf();
+  if (!on || !made3d) {
     deep?.dispose();
     deep = null;
     document.body.classList.remove('camp3d');
@@ -57,7 +60,7 @@ export function useCamp3d(on: boolean): void {
   if (deep || asking) return;
   asking = true;
   const rects = Object.fromEntries(SPOTS.map((h) => [h.id, h]));
-  void Camp3d.create($('camp'), rects).then((made) => {
+  void made3d.camp($('camp'), rects).then((made) => {
     asking = false;
     if (!made) return;
     deep = made;
@@ -302,7 +305,7 @@ let last = 0;
 
 /** Everybody where the picture stands them, the crystals in their sockets, and
  *  every button moved onto whatever it stands for now that it is 3D. */
-function drawDeep(view3d: Camp3d, dt: number): void {
+function drawDeep(view3d: DeepCamp, dt: number): void {
   const folk: CampPerson[] = [];
   folkMet(game).forEach((def, i) => folk.push({ key: `who-${def.id}`, sprite: def.who, at: folkSpot(def, i), lit: i === lit }));
   // AT A STATION, a body works it and faces it: the hammer at the smelter, a stoop at the rest.

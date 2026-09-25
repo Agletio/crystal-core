@@ -1,6 +1,6 @@
 /**
  * THE ABYSS, SHOT: into the game, through the dev kit's own door, and a frame
- * written wherever the script says — off the committed bundle, like every peek.
+ * written wherever the script says — off the download's committed bundle.
  *
  *   Q='?high' node tools/abyss/peek.mjs out.png [steps…]
  *
@@ -18,7 +18,7 @@ import { join, extname } from 'node:path';
 import { chromium } from 'playwright';
 
 const root = new URL('../..', import.meta.url).pathname;
-const docs = join(root, 'docs');
+const docs = join(root, '3d');
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.png': 'image/png' };
 const server = createServer(async (req, res) => {
   const url = (req.url ?? '/').split('?')[0];

@@ -1,7 +1,10 @@
 node_modules/
 
 # Build output is COMMITTED on purpose — GitHub Pages serves static files and
-# won't run a build. docs/app.js is deliberately NOT ignored here.
+# won't run a build. docs/app.js is deliberately NOT ignored here, and nor is
+# 3d/, the download, which is fetched from the repository. Its zip is handed
+# over, never kept.
+crystal-core-3d.zip
 
 # Local Claude Code settings — machine-specific, not shared.
 .claude/settings.local.json

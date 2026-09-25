@@ -21,9 +21,9 @@ import { dirname, join, extname } from 'node:path';
 import { chromium } from 'playwright';
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
-const docs = join(root, 'docs');
+const docs = join(root, '3d');
 if (!existsSync(join(docs, 'app.js'))) {
-  console.error('three-peek: docs/app.js missing — run `npm run build` first');
+  console.error('three-peek: 3d/app.js missing — run `npm run build` first');
   process.exit(1);
 }
 

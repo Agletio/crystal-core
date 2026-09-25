@@ -94,7 +94,7 @@ import { itemIcon } from './icons';
 import { itemCard } from './itemcard';
 import { attachTooltip, hideTooltip } from './tooltip';
 import { topWindow } from './windows';
-import { createThreeRenderer, hardwareGL } from '../render/three';
+import { deepOf } from '../deep';
 import { starvedMultiplier } from '../sim/grants';
 import type { PotionDef } from '../data';
 
@@ -1349,20 +1349,18 @@ export function centreCamera(): void {
   renderer?.follow();
 }
 
-/**
- * Start on canvas so something is on screen immediately, then hand over to
- * WebGL once Pixi has its device. If Pixi can't initialise — no WebGL, a
- * hostile driver, jsdom in the smoke test — canvas simply stays, and the page
- * is never blank.
- */
-/** WHETHER A DESCENT IS DRAWN IN 3D: a GPU says yes, a software rasteriser —
- *  the headless harness — says no, and the URL (`?3d`, `?2d`) or the dev kit
- *  overrules either. The 2D renderer is up while the 3D one's art loads. */
+/** WHETHER A DESCENT IS DRAWN IN 3D: never in the web build, which carries no
+ *  3D half (`src/deep.ts`). In the download a GPU says yes, a software
+ *  rasteriser — the headless harness — says no, and the URL (`?3d`, `?2d`) or
+ *  the dev kit overrules either. The 2D renderer is up while the 3D one's art
+ *  loads. */
 let wants3d: boolean | null = null;
 function want3d(): boolean {
+  const deep = deepOf();
+  if (!deep) return false;
   if (wants3d !== null) return wants3d;
   const asked = new URLSearchParams(globalThis.location?.search ?? '');
-  wants3d = asked.has('3d') ? true : asked.has('2d') ? false : hardwareGL();
+  wants3d = asked.has('3d') ? true : asked.has('2d') ? false : deep.hardware();
   return wants3d;
 }
 
@@ -1398,7 +1396,7 @@ async function upgradeRenderer(host: HTMLElement, palette: Palette): Promise<voi
     next.setZoom(zoom);
     fitCanvas();
   };
-  const three = want3d() ? createThreeRenderer(host, palette).catch(() => null) : null;
+  const three = want3d() ? (deepOf()?.descent(host, palette).catch(() => null) ?? null) : null;
   let pixi: Renderer | null = null;
   try {
     pixi = await createPixiRenderer(host, palette);
