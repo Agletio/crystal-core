@@ -148,8 +148,8 @@ generation is budgeted, and what code can build is built in code.
 **IT IS THE DOWNLOAD NOW, AND THE WEB IS THE PIXEL-ART GAME AGAIN** — *"revert
 the web version to its pixel art idle game verison and then make this version
 you have a seperate build I can download."* `3d/` is built by `npm run build`
-beside `docs/` and committed with it, and `npm run zip:3d` is the zip handed
-over. Everything below is the download's; the web draws none of it.
+beside `docs/` and committed with it, and `npm run zip:3d` is the zip — too
+large to attach, so CI publishes it as the `3d-latest` release. Everything below is the download's; the web draws none of it.
 
 ### What is built
 

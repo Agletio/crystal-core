@@ -66,7 +66,7 @@ Exactly three things end a session, and a finished phase is not one:
 | `npm run theme` | every colour a token, every token defined |
 | `npm run typecheck` | tsc, `src` only |
 | `npm run build` | the web build to `docs/app.js`, and the download to `3d/` — its bundle, its page and its 3D art in `3d/gl/` and `3d/abyss/` — **committed**, Cloudflare runs no build |
-| `npm run zip:3d` | `crystal-core-3d.zip` of `3d/`, to hand over; never committed |
+| `npm run zip:3d` | `crystal-core-3d.zip` of `3d/`, never committed; CI puts it on the rolling `3d-latest` release on every push that changes `3d/` (`.github/workflows/download-3d.yml`) |
 | `npm run mods` | every modifier rolls, does something, reads |
 | `npm run smoke` | ~7min: headless boot and interaction |
 | `npm run demo` | **~2min**: every mechanism check that is cheap — trees, grants, saves, the sheet, terminations. The slow sections (`SLOW` in `src/demo.ts`: played descents by the dozen, the economy, the ceiling search) print `skipped`. `DEMO_ONLY=spike,web` runs just the sections whose title holds a word, slow or not; `DEMO_FULL=1` runs the lot (47min alone, measured). `DEMO_TIME=1` times each section |

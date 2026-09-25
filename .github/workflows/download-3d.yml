@@ -1,0 +1,40 @@
+# THE DOWNLOAD, handed over as a release. The 3D build is too large to send as
+# an attachment, so every push that changes 3d/ zips it and puts it on the
+# rolling `3d-latest` release — one link, whatever branch it came from:
+#
+#   https://github.com/Agletio/crystal-core/releases/download/3d-latest/crystal-core-3d.zip
+#
+# The folder is committed (`npm run build` writes it), so nothing is built here.
+name: 3d download
+
+on:
+  push:
+    paths: ['3d/**', 'tools/build-3d.mjs', '.github/workflows/download-3d.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: download-3d
+  cancel-in-progress: true
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: zip the folder
+        run: node tools/build-3d.mjs zip
+
+      - name: put it on the 3d-latest release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete 3d-latest --yes --cleanup-tag || true
+          gh api -X DELETE "repos/${{ github.repository }}/git/refs/tags/3d-latest" || true
+          gh release create 3d-latest crystal-core-3d.zip \
+            --target "$GITHUB_SHA" --prerelease \
+            --title "Crystal Core 3D — latest build" \
+            --notes "The game drawn in 3D, played off the disk: unzip it and open crystal-core-3d/index.html in Chrome, Edge or Firefox. A GPU draws it in 3D; without one it falls back to the pixel art. Built from ${GITHUB_SHA::7} on ${GITHUB_REF_NAME}."
