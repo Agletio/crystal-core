@@ -41,6 +41,7 @@ import { deepOf } from '../deep';
 import type { DeepCamp } from '../deep';
 import type { CampPerson, CampView } from '../gl/camp';
 import { CAMP_HOTSPOTS as SPOTS } from '../scenes/camp';
+import { worked } from './frames';
 
 const $ = (id: string) => document.getElementById(id)!;
 
@@ -49,6 +50,9 @@ const $ = (id: string) => document.getElementById(id)!;
  *  for, each frame. */
 let deep: DeepCamp | null = null;
 let asking = false;
+let settling: Promise<unknown> = Promise.resolve();
+/** Settles once the camp's 3D stands or has failed to: the descent's art waits for it, so the camp comes first. */
+export const campSettled = (): Promise<unknown> => settling;
 export function useCamp3d(on: boolean): void {
   const made3d = deepOf();
   if (!on || !made3d) {
@@ -60,7 +64,9 @@ export function useCamp3d(on: boolean): void {
   if (deep || asking) return;
   asking = true;
   const rects = Object.fromEntries(SPOTS.map((h) => [h.id, h]));
-  void made3d.camp($('camp'), rects).then((made) => {
+  const making = made3d.camp($('camp'), rects).catch(() => null);
+  settling = making;
+  void making.then((made) => {
     asking = false;
     if (!made) return;
     deep = made;
@@ -287,7 +293,9 @@ function frame(now: number): void {
   if (started === 0) started = now;
   const at = (now - started) / 1000;
   if (deep) {
+    const began = performance.now();
     drawDeep(deep, at - last);
+    worked(performance.now() - began);
     last = at;
     requestAnimationFrame(frame);
     return;

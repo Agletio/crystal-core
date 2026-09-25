@@ -73,6 +73,7 @@ import {
   centreCamera,
   drinkFlask,
   initRun,
+  regraphics,
   sceneEnded,
   onRunFocused,
   skipToGift,
@@ -246,7 +247,7 @@ measureDock();
 mountFixtures();
 initInventory(game);
 initHistory();
-initSettings(game, refreshRunPanels);
+initSettings(game, refreshRunPanels, regraphics);
 initJournal(game, refreshRunPanels);
 initDev(game, {
   enterRoom: enterRoomNow,

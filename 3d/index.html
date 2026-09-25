@@ -1150,6 +1150,12 @@
     border: 2px solid var(--edge); border-radius: var(--r);
     box-shadow: var(--bevel), var(--gilt), var(--lift);
   }
+  /* The download's frame-rate readout, under the depth plate and clear of it. */
+  .frames {
+    position: fixed; z-index: 19; right: 16px; top: 72px; pointer-events: none;
+    padding: 2px 8px; font-size: 11px; font-variant-numeric: tabular-nums; color: var(--text-dim);
+    background-color: var(--panel); border: 1px solid var(--edge); border-radius: var(--r);
+  }
   .toast {
     position: fixed; z-index: 96; left: 50%; transform: translateX(-50%);
     bottom: calc(var(--dock-h, 0px) + 14px);
@@ -3154,6 +3160,7 @@
     <div class="modal__body">
       <p class="skillhead__sub">Click a key to change its binding. Escape closes the top window.</p>
       <div class="keyrows" id="settings-keys"></div>
+      <div class="keyrows" id="settings-graphics" hidden></div>
     </div>
   </div>
 </div>
@@ -3263,6 +3270,7 @@
 <div class="tip" id="tooltip" hidden></div>
 <div class="itemmenu" id="itemmenu" hidden></div>
 <div class="atcamp" id="atcamp" hidden>Takes effect on your next run.</div>
+<div class="frames" id="frames" hidden></div>
 <div class="toast" id="toast" hidden></div>
 <script src="./app.js"></script>
 </body>

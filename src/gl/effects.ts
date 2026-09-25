@@ -71,6 +71,20 @@ function orb(color: THREE.Color, size: number): THREE.Sprite {
   return s;
 }
 
+const inked = (color: THREE.Color): THREE.MeshBasicMaterial =>
+  new THREE.MeshBasicMaterial({ color, map: softTex(), transparent: true, opacity: 0.75, depthWrite: false });
+const shade = (): THREE.MeshBasicMaterial =>
+  new THREE.MeshBasicMaterial({ color: 0x1c1610, transparent: true, opacity: 0.55, depthWrite: false, side: THREE.DoubleSide });
+
+/** One of every material an effect is drawn with, for the stage to compile before the first cast. */
+export function effectSamples(): THREE.Object3D[] {
+  const plane = new THREE.PlaneGeometry(0.1, 0.1);
+  const white = new THREE.Color(1, 1, 1);
+  const mapped = additive(white);
+  mapped.map = softTex();
+  return [additive(white), additive(white, 1, THREE.DoubleSide), mapped, inked(white), shade()].map((m) => new THREE.Mesh(plane, m) as THREE.Object3D).concat(orb(white, 1));
+}
+
 export class Effects {
   readonly group = new THREE.Group();
   private readonly live = new Map<Vfx, Live>();
@@ -304,7 +318,7 @@ export class Effects {
     const to = fx.points[1] ?? from;
     const radius = Math.hypot(to.x - from.x, to.y - from.y);
     const ink = c.clone().multiplyScalar(0.3);
-    const disc = new THREE.Mesh(this.discGeo, new THREE.MeshBasicMaterial({ color: ink, map: softTex(), transparent: true, opacity: 0.75, depthWrite: false }));
+    const disc = new THREE.Mesh(this.discGeo, inked(ink));
     disc.position.copy(this.at(from, 0.03));
     disc.renderOrder = 1;
     const sheen = new THREE.Mesh(this.discGeo, additive(c.clone().multiplyScalar(0.5), 0.35));
@@ -392,7 +406,7 @@ export class Effects {
     const geo = new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
     geo.setIndex(idx);
-    const fan = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: 0x1c1610, transparent: true, opacity: 0.55, depthWrite: false, side: THREE.DoubleSide }));
+    const fan = new THREE.Mesh(geo, shade());
     fan.position.copy(this.at(o, 0.03));
     const rim = new THREE.Mesh(new THREE.RingGeometry(0.93, 1, 32, 1, a0, a1 - a0).rotateX(-Math.PI / 2).rotateY(0), additive(c.clone().lerp(new THREE.Color(1, 0.9, 0.7), 0.4), 0.9, THREE.DoubleSide));
     rim.geometry.rotateY(0);

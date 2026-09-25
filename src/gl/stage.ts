@@ -2,9 +2,10 @@
  * THE ABYSS'S RENDERER: one WebGL2 context, an HDR pipeline and the camera.
  *
  * Scene → (GTAO) → bloom → ACES → a grade in display space: split toning,
- * an S-curve, radial chromatic aberration, vignette and grain. HIGH is for a
- * GPU; LOW is what a software rasteriser (the headless harness) can carry, and
- * it is picked off the renderer's own name, never a guess.
+ * an S-curve, radial chromatic aberration, vignette and grain. What that costs
+ * is a `PRESET`: the URL's (`?low`, `?medium`, `?high`), else the player's own
+ * (`src/graphics.ts`), else LOW on a software rasteriser — the headless
+ * harness, picked off the renderer's own name — and MEDIUM on a GPU.
  *
  * The camera is FIXED at 45° of yaw — the classic isometric diagonal, so every
  * room shows its north and west walls as the back of the diorama — and only
@@ -17,8 +18,17 @@ import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
+import { QUALITIES, graphics } from '../graphics';
+import type { Quality } from '../graphics';
 
-export type Quality = 'high' | 'low';
+export type { Quality } from '../graphics';
+
+/** What each quality buys. The ratio is a cap on the screen's own pixel ratio; the lamps are the point lights handed round. */
+export const PRESET: Record<Quality, { ratio: number; samples: number; shadows: THREE.ShadowMapType | null; ao: boolean; lamps: number; shadowMap: number; anisotropy: number }> = {
+  low: { ratio: 1, samples: 0, shadows: null, ao: false, lamps: 4, shadowMap: 1024, anisotropy: 1 },
+  medium: { ratio: 1, samples: 4, shadows: THREE.PCFShadowMap, ao: false, lamps: 8, shadowMap: 1024, anisotropy: 4 },
+  high: { ratio: 2, samples: 4, shadows: THREE.PCFSoftShadowMap, ao: true, lamps: 12, shadowMap: 2048, anisotropy: 16 },
+};
 
 export const YAW = Math.PI / 4;
 export const PITCH = (56 * Math.PI) / 180;
@@ -98,6 +108,10 @@ function environment(renderer: THREE.WebGLRenderer): THREE.Texture {
   return env;
 }
 
+let running: Quality | null = null;
+/** The quality the last stage built runs at, for the settings screen to light. */
+export const stageQuality = (): Quality | null => running;
+
 export class Stage {
   readonly renderer: THREE.WebGLRenderer;
   readonly scene = new THREE.Scene();
@@ -108,7 +122,8 @@ export class Stage {
   private readonly grade: ShaderPass;
   private readonly gtao: GTAOPass | null = null;
   private readonly size = new THREE.Vector2(1, 1);
-  /** A quality the URL asked for is never traded for frame rate. */
+  private readonly pinned = new WeakSet<object>();
+  /** A quality the URL or the player asked for is never traded for frame rate. */
   readonly forced: boolean;
   readonly focus = new THREE.Vector3();
   /** What the AO pass must not see: its depth pass draws a transparent ribbon as a solid wall. */
@@ -126,12 +141,15 @@ export class Stage {
     const info = gl.getExtension('WEBGL_debug_renderer_info');
     const name = String(info ? gl.getParameter(info.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER));
     const asked = new URLSearchParams(location.search);
-    this.quality = asked.has('high') ? 'high' : /swiftshader|llvmpipe|software/i.test(name) || asked.has('low') ? 'low' : 'high';
-    this.forced = asked.has('high') || asked.has('low');
-    const high = this.quality === 'high';
-    this.renderer.setPixelRatio(high ? Math.min(2, globalThis.devicePixelRatio || 1) : 1);
-    this.renderer.shadowMap.enabled = high; // a software rasteriser draws the scene twice for them, at a frame a second
-    this.renderer.shadowMap.type = high ? THREE.PCFSoftShadowMap : THREE.PCFShadowMap;
+    const software = /swiftshader|llvmpipe|software/i.test(name); // draws the scene twice for shadows, at a frame a second
+    const url = QUALITIES.find((q) => asked.has(q));
+    this.quality = url ?? graphics().quality ?? (software ? 'low' : 'medium');
+    this.forced = url !== undefined || graphics().quality !== null;
+    running = this.quality;
+    const preset = PRESET[this.quality];
+    this.renderer.setPixelRatio(Math.min(preset.ratio, globalThis.devicePixelRatio || 1));
+    this.renderer.shadowMap.enabled = preset.shadows !== null;
+    this.renderer.shadowMap.type = preset.shadows ?? THREE.PCFShadowMap;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.3;
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -142,10 +160,10 @@ export class Stage {
     this.scene.environment = environment(this.renderer);
     this.scene.environmentIntensity = 0.55;
 
-    const target = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: high ? 4 : 0 });
+    const target = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: preset.samples });
     this.composer = new EffectComposer(this.renderer, target);
     this.composer.addPass(new RenderPass(this.scene, this.camera));
-    if (high && !asked.has('noao')) {
+    if (preset.ao && !asked.has('noao')) {
       this.gtao = new GTAOPass(this.scene, this.camera, 1, 1);
       this.gtao.updateGtaoMaterial({ radius: 0.32, distanceExponent: 2, thickness: 0.45, scale: 1.1, samples: 16 });
       this.gtao.blendIntensity = 0.8;
@@ -167,7 +185,7 @@ export class Stage {
   }
 
   get anisotropy(): number {
-    return this.quality === 'high' ? this.renderer.capabilities.getMaxAnisotropy() : 1;
+    return Math.min(PRESET[this.quality].anisotropy, this.renderer.capabilities.getMaxAnisotropy());
   }
 
   resize(width: number, height: number): void {
@@ -264,6 +282,28 @@ export class Stage {
     this.grade.uniforms.uHurt.value = this.hurt;
     this.renderer.info.reset();
     this.composer.render(dt);
+    this.pin();
+  }
+
+  /** Three.js deletes a program when the last material using it goes, and compiles it again — a hitch —
+   *  the next time one comes: every kind of effect, every time it came back. So each is held for the stage's life. */
+  pin(): void {
+    for (const program of this.renderer.info.programs ?? []) {
+      if (this.pinned.has(program)) continue;
+      this.pinned.add(program);
+      program.usedTimes++;
+    }
+  }
+
+  /** Compiles `object` as a frame will draw it — into the composer's own target, which is what decides tone mapping
+   *  and colour space, and lit by this scene — then holds what it compiled, so its first sight is not a hitch. */
+  async warm(object: THREE.Object3D): Promise<void> {
+    const was = this.renderer.getRenderTarget();
+    this.renderer.setRenderTarget(this.composer.renderTarget1);
+    const done = this.renderer.compileAsync(object, this.camera, this.scene);
+    this.renderer.setRenderTarget(was);
+    await done;
+    this.pin();
   }
 
   dispose(): void {

@@ -9,6 +9,7 @@
  * A FLASH — a bolt landing, a blink — outranks every lamp for its few frames.
  */
 import * as THREE from 'three';
+import { PRESET } from './stage';
 import type { Quality } from './stage';
 
 /** A lamp the level owns: the pool hands the nearest of these a real light each frame. */
@@ -44,12 +45,12 @@ export class Lamps {
   heroPower = 16;
 
   constructor(quality: Quality) {
-    const high = quality === 'high';
+    const preset = PRESET[quality];
     this.sky = new THREE.HemisphereLight(0x3a4468, 0x1c0d08, 0.85);
     this.group.add(this.sky);
     this.moon = new THREE.DirectionalLight(0x8e9cff, 1.3);
     this.moon.castShadow = true;
-    this.moon.shadow.mapSize.set(high ? 2048 : 1024, high ? 2048 : 1024);
+    this.moon.shadow.mapSize.set(preset.shadowMap, preset.shadowMap);
     const cam = this.moon.shadow.camera;
     cam.left = cam.bottom = -21;
     cam.right = cam.top = 21;
@@ -61,7 +62,7 @@ export class Lamps {
     this.group.add(this.moon, this.moon.target);
     this.hero = new THREE.PointLight(0xffd9b8, this.heroPower, 14, 1.4);
     this.group.add(this.hero);
-    for (let i = 0; i < (high ? 12 : 4); i++) {
+    for (let i = 0; i < preset.lamps; i++) {
       const lamp = new THREE.PointLight(0xffffff, 0, 8, 2);
       this.pool.push(lamp);
       this.group.add(lamp);

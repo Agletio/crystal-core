@@ -53,7 +53,7 @@ import { WORKERS, workerMark } from '../data';
 import { descentFacts, takeGrinds } from '../game/trials';
 import { SCENES, SCENE_BY_ID } from '../scenes';
 import type { Hotspot } from '../scenes/camp';
-import { initCamp, openCamp, closeCamp, isCampOpen, renderCamp, setCampEmber, useCamp3d } from './camp';
+import { campSettled, initCamp, openCamp, closeCamp, isCampOpen, renderCamp, setCampEmber, useCamp3d } from './camp';
 import { greetAfterTale, openTalk } from './talk';
 import { playTale } from './tale';
 import {
@@ -95,6 +95,7 @@ import { itemCard } from './itemcard';
 import { attachTooltip, hideTooltip } from './tooltip';
 import { topWindow } from './windows';
 import { deepOf } from '../deep';
+import { worked } from './frames';
 import { starvedMultiplier } from '../sim/grants';
 import type { PotionDef } from '../data';
 
@@ -1191,6 +1192,7 @@ function absorbEvents(): void {
 }
 
 function frame(now: number): void {
+  const began = performance.now();
   const dt = lastFrame === 0 ? 0 : Math.min(0.25, (now - lastFrame) / 1000);
   lastFrame = now;
   let ticked = 0; // steps this frame, for a renderer drawing between them
@@ -1275,6 +1277,7 @@ function frame(now: number): void {
   stepArrival(dt);
   // After the draw: it anchors off where the camera just put the boss.
   syncShout(dt);
+  worked(performance.now() - began);
   requestAnimationFrame(frame);
 }
 
@@ -1366,6 +1369,13 @@ function want3d(): boolean {
 
 export const inThree = (): boolean => want3d();
 
+/** A new graphics choice: both 3D stages are built again, since a stage reads its quality once. */
+export function regraphics(): void {
+  if (!want3d()) return;
+  useCamp3d(false);
+  useThree(true);
+}
+
 /** The dev kit's switch: the seam swapped and nothing else. */
 export function useThree(on: boolean): void {
   wants3d = on;
@@ -1396,7 +1406,7 @@ async function upgradeRenderer(host: HTMLElement, palette: Palette): Promise<voi
     next.setZoom(zoom);
     fitCanvas();
   };
-  const three = want3d() ? (deepOf()?.descent(host, palette).catch(() => null) ?? null) : null;
+  const three = want3d() ? campSettled().then(() => deepOf()?.descent(host, palette) ?? null).catch(() => null) : null;
   let pixi: Renderer | null = null;
   try {
     pixi = await createPixiRenderer(host, palette);

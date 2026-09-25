@@ -7,6 +7,7 @@
  */
 import type { Palette, Renderer } from './render/renderer';
 import type { CampView, Rect } from './gl/camp';
+import type { Quality } from './graphics';
 
 export interface DeepCamp {
   frame(view: CampView, dt: number): void;
@@ -21,6 +22,8 @@ export interface Deep {
   descent(host: HTMLElement, palette: Palette): Promise<Renderer | null>;
   camp(host: HTMLElement, spots: Record<string, Rect>): Promise<DeepCamp | null>;
   abyss(name: string, leave: () => void): Promise<void>;
+  /** The quality the 3D stages run at, once one is built. */
+  quality(): Quality | null;
 }
 
 let deep: Deep | null = null;

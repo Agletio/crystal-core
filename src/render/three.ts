@@ -39,7 +39,7 @@ import type { Dressing } from '../gl/dressing';
 import { BODIES, Figure, SWINGS, bankOf, bodyFor, makeTemplate } from '../gl/bodies';
 import type { Pose, Template, Window } from '../gl/bodies';
 import type { Bank } from '../gl/retarget';
-import { Effects } from '../gl/effects';
+import { Effects, effectSamples } from '../gl/effects';
 import { Overlay } from '../gl/overlay';
 import { Clearance } from '../gl/clearance';
 
@@ -50,6 +50,7 @@ export interface ThreeStats {
   bodies: number;
   boards: number;
   fps: number;
+  programs: number; // shader programs compiled so far: one more mid-descent is a hitch
 }
 /** For a harness that follows bodies over thousands of frames and needs no pictures of them. */
 export const harness = { pictures: true };
@@ -159,7 +160,6 @@ export async function createThreeRenderer(host: HTMLElement, palette: Palette): 
   canvas.id = 'run-canvas';
   canvas.setAttribute('aria-label', 'map view');
   if (getComputedStyle(host).position === 'static') host.style.position = 'relative'; // the overlay is pinned to it
-  host.append(canvas);
   const overlay = new Overlay(host, palette);
 
   const s = shared();
@@ -617,6 +617,27 @@ export async function createThreeRenderer(host: HTMLElement, palette: Palette): 
     }
   }
 
+  // THE FIRST OF A KIND IS NOT A HITCH: every body the loaded shards hold, as a hero and as a ranked monster,
+  // and every material an effect is drawn with, compiled before the renderer is handed over.
+  const warmed = new THREE.Group();
+  const standIns: Figure[] = [];
+  for (const [id, def] of Object.entries(BODIES)) {
+    const template = assets.models[def.model] ? templateOf(id) : null;
+    if (!template) continue;
+    for (const monster of [false, true]) {
+      const figure = new Figure(def, template, s, monster ? 'rare' : 'common', 1, monster);
+      standIns.push(figure);
+      warmed.add(figure.root);
+    }
+  }
+  const samples = effectSamples();
+  warmed.add(...samples);
+  await stage.warm(warmed).catch(() => undefined);
+  for (const figure of standIns) figure.dispose();
+  for (const sample of samples) ((sample as THREE.Mesh).material as THREE.Material).dispose();
+  // UNDER whatever is drawing now, so a stage still loading never covers it; the swap takes that one away.
+  host.prepend(canvas);
+
   const middle = () => ({ x: (canvas.clientWidth || 1) / 2, y: (canvas.clientHeight || 1) / 2 });
 
   return {
@@ -665,7 +686,7 @@ export async function createThreeRenderer(host: HTMLElement, palette: Palette): 
       let bodies = 0;
       let boards = 0;
       for (const v of shown.values()) v.body instanceof Figure ? bodies++ : boards++;
-      return { quality: stage.quality, calls: stage.renderer.info.render.calls, triangles: stage.renderer.info.render.triangles, bodies, boards, fps };
+      return { quality: stage.quality, calls: stage.renderer.info.render.calls, triangles: stage.renderer.info.render.triangles, bodies, boards, fps, programs: stage.renderer.info.programs?.length ?? 0 };
     },
   };
 }
