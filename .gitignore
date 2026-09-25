@@ -57,3 +57,6 @@ art/palette-*.png
 shell/node_modules/
 shell/build/
 shell/dist/
+
+# Unreal: the 3D art exported for import (tools/unreal/export.mts), rebuilt on demand.
+unreal/Import/

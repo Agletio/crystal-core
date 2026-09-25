@@ -133,6 +133,46 @@ binding.
 
 ---
 
+## THE UNREAL VERSION — waiting on his PC
+
+*"I want unreal. What if we used my pc as a server to run unreal on?"* This
+container cannot install or run Unreal (tens of GB, and its editor needs a
+GPU), so the work runs in a Claude Code session ON HIS PC — the Claude Desktop
+app, or `claude remote-control` in a terminal in the repo — which drives the
+editor, builds and screenshots there, and shows up in the Claude Code app.
+
+**The shape, recommended and not yet confirmed: one game, drawn two ways.** The
+rules and the screens stay as they are and run in Unreal's own browser widget,
+laid over the world, the way Electron runs them now — so the 34,000 lines of
+rules, the 15,000 of screens and the demo's 1,308 checks are SHARED with the
+web game, never copied. Unreal draws the world: everything drawn already goes
+through one `Renderer` a frame (`src/deep.ts` is the seam), so Unreal is one
+more, fed a compact `RunState` snapshot across the browser's bridge and the
+camp's `CampView` the same way. If the browser layer is too slow, screens move
+to native Unreal UI one at a time and the bridge stays. **Text first, like
+everything else here**: C++, config and Python editor scripts are committed,
+and the `Content/` they import and build is regenerated on his PC, so git holds
+no big binaries; what truly must be authored in the editor goes through LFS.
+
+**Done**: `tools/unreal/export.mts` writes every model and the clip bank as
+plain GLB (meshopt and quantization undone — Unreal's importer reads neither)
+with its meta, and the ground textures, to `unreal/Import/`: 36 models, 56
+clips and 15 textures, 47 MB, every file read back with no decoder.
+
+1. **Setup on his PC**: Unreal Engine 5 and Visual Studio 2022 with *Game
+   development with C++*; a blank C++ project in `unreal/`; an editor Python
+   script importing `unreal/Import/`; one headless build and a screenshot,
+   proving the loop.
+2. **The bridge**: the game in a browser widget over the viewport, the snapshot
+   out each tick, clicks on the world back in; the hero walking a real descent's
+   grid.
+3. **The world**: terrain off `GameMap`, bodies and their clips (the IK
+   Retargeter off the clip bank), gear in hands, effects.
+4. **The camp**, where `src/scenes/camp.ts` measured it.
+5. **Shipping**: packaging, and updates through Steam or a patcher of its own.
+
+---
+
 ## THE 3D CONVERSION — under way, at his word
 
 *"ok do the exact same thing except this time remake the actual game making

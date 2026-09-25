@@ -2077,6 +2077,7 @@ src/graphics.ts    the 3D quality and the frame readout, as the player chose the
 3d/                THE DOWNLOAD, built and committed: the web page less its beacon, the 3D bundle, its shards, manifest.json
 shell/             THE DESKTOP APP: update.mjs keeps the game files, main.mjs is the window; its install and dist are ignored
 tools/art/         the generator, over MCP: bodies.json asks, generated.json answers
+tools/unreal/      the Unreal version's side of the repo: export.mts writes the 3D art as files Unreal imports
 tools/*-peek.mjs   screenshots off the committed bundle, the download's for `Q=3d`; plan-peek draws a builder plan
 tools/act-floors.mts  where the FLOORS are in a cross-section, to place a depth on one
 src/demo.ts        the checks; src/mods-check.ts the modifier sweep
