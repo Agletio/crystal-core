@@ -1,0 +1,56 @@
+# THE DESKTOP APP'S INSTALLER, built on Windows whenever shell/ changes and put
+# on the rolling `desktop-latest` release:
+#
+#   https://github.com/Agletio/crystal-core/releases/download/desktop-latest/Crystal-Core-Setup.exe
+#
+# The app fetches each new game build itself, so this is only rebuilt for the
+# app. It follows the branch it was built from, and carries that commit's 3d/
+# so a fresh install starts with nothing to download.
+name: desktop app
+
+on:
+  push:
+    paths: ['shell/**', '.github/workflows/desktop.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: desktop-app
+  cancel-in-progress: true
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: install
+        working-directory: shell
+        run: npm ci
+
+      - name: follow the branch this was built from
+        working-directory: shell
+        shell: bash
+        run: node -e "const fs=require('fs');const b=JSON.parse(fs.readFileSync('build.json','utf8'));b.branch=process.env.GITHUB_REF_NAME;fs.writeFileSync('build.json',JSON.stringify(b)+'\n')"
+
+      - name: build the installer
+        working-directory: shell
+        run: npm run dist
+
+      - name: put it on the desktop-latest release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete desktop-latest --yes --cleanup-tag || true
+          gh api -X DELETE "repos/${{ github.repository }}/git/refs/tags/desktop-latest" || true
+          gh release create desktop-latest shell/dist/Crystal-Core-Setup.exe \
+            --target "$GITHUB_SHA" --prerelease \
+            --title "Crystal Core for Windows" \
+            --notes "Install once. Each time it starts, and on F5, it downloads whatever changed on ${GITHUB_REF_NAME} and plays it. F11 is fullscreen, F12 the developer tools. Built from ${GITHUB_SHA::7}."

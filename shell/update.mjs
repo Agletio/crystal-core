@@ -37,6 +37,14 @@ async function within(ms, fetchFn, url, init = {}) {
   }
 }
 
+/** The commit `branch` is on, asked the way git asks: GitHub's API answers sixty times an hour a machine, and this is not counted. */
+async function commitOf(fetchFn, repo, branch) {
+  const res = await within(WAIT, fetchFn, `https://github.com/${repo}.git/info/refs?service=git-upload-pack`, { headers: { 'user-agent': 'git/2 crystal-core' } });
+  if (!res.ok) return null;
+  const name = branch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(`([0-9a-f]{40}) refs/heads/${name}[\\n\\0]`).exec(await res.text())?.[1] ?? null;
+}
+
 /** The build the app runs from: the last one fetched, else the installer's own. */
 export async function readBuilds(dataDir, bundledDir) {
   const current = await json(join(dataDir, 'current.json'));
@@ -100,11 +108,7 @@ export async function update({ repo, branch, dataDir, bundledDir, fetchFn, say =
   let commit = null;
   try {
     // A commit's raw files are never stale; a branch's are cached for five minutes.
-    const answer = await within(WAIT, fetchFn, `https://api.github.com/repos/${repo}/commits/${branch}`, {
-      headers: { accept: 'application/vnd.github.sha', 'user-agent': 'crystal-core' },
-    });
-    const sha = answer.ok ? (await answer.text()).trim() : '';
-    commit = /^[0-9a-f]{40}$/.test(sha) ? sha : null;
+    commit = await commitOf(fetchFn, repo, branch).catch(() => null);
     base = `https://raw.githubusercontent.com/${repo}/${commit ?? `refs/heads/${branch}`}/3d/`;
     const got = await within(WAIT, fetchFn, `${base}manifest.json`);
     if (!got.ok) throw new Error(`the build list answered ${got.status}`);
