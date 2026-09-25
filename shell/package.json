@@ -1,0 +1,35 @@
+{
+  "name": "crystal-core",
+  "productName": "Crystal Core",
+  "version": "1.0.0",
+  "description": "Crystal Core, drawn in 3D",
+  "author": "Agletio",
+  "private": true,
+  "type": "module",
+  "main": "main.mjs",
+  "scripts": {
+    "start": "electron .",
+    "icon": "node icon.mjs",
+    "dist": "node icon.mjs && electron-builder --win nsis --x64 --publish never"
+  },
+  "devDependencies": {
+    "electron": "44.4.5",
+    "electron-builder": "26.15.3"
+  },
+  "build": {
+    "appId": "io.github.agletio.crystalcore",
+    "productName": "Crystal Core",
+    "files": ["main.mjs", "update.mjs", "loading.html", "build.json", "package.json"],
+    "extraResources": [{ "from": "../3d", "to": "game" }],
+    "directories": { "output": "dist", "buildResources": "build" },
+    "win": { "target": "nsis", "icon": "build/icon.png" },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Crystal Core",
+      "artifactName": "Crystal-Core-Setup.${ext}"
+    }
+  }
+}

@@ -3,10 +3,14 @@
  * — `index.html` opened by a double-click, no server, no network, since all it
  * loads is classic scripts beside it.
  *
- *   node tools/build-3d.mjs        the page: docs/index.html less the analytics beacon
+ *   node tools/build-3d.mjs        the page (docs/index.html less the analytics beacon), then the manifest
  *   node tools/build-3d.mjs zip    crystal-core-3d.zip of the folder, never committed
+ *
+ * The MANIFEST is every file's sha256 and size, and it is what the desktop app (`shell/`) diffs to fetch
+ * only what changed; `shell` is the oldest app that can run this build, `SHELL` in `shell/update.mjs`.
  */
-import { readFileSync, writeFileSync, mkdirSync, rmSync, existsSync, symlinkSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, rmSync, existsSync, symlinkSync, readdirSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
@@ -41,4 +45,17 @@ if (process.argv[2] === 'zip') {
   }
   mkdirSync(out, { recursive: true });
   writeFileSync(join(out, 'index.html'), page.replace(beacon, ''));
+  const files = {};
+  const walk = (dir) => {
+    for (const entry of readdirSync(join(out, dir), { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) {
+      const path = dir ? `${dir}/${entry.name}` : entry.name;
+      if (entry.isDirectory()) walk(path);
+      else if (path !== 'manifest.json') {
+        const bytes = readFileSync(join(out, path));
+        files[path] = { sha256: createHash('sha256').update(bytes).digest('hex'), size: bytes.length };
+      }
+    }
+  };
+  walk('');
+  writeFileSync(join(out, 'manifest.json'), `${JSON.stringify({ shell: 1, files }, null, 1)}\n`);
 }

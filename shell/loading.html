@@ -1,0 +1,43 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Crystal Core</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #0c0a08; color: #d8cbb0; font-family: Georgia, 'Times New Roman', serif; }
+  body { display: grid; place-items: center; user-select: none; }
+  .card { width: min(440px, 80vw); text-align: center; }
+  h1 { margin: 0 0 24px; font-weight: normal; font-size: 22px; letter-spacing: .24em; text-transform: uppercase; color: #e2c17a; }
+  .bar { height: 6px; background: #1d1812; border: 1px solid #3a3024; border-radius: 3px; overflow: hidden; }
+  .bar i { display: block; height: 100%; width: 0; background: #c99b4a; transition: width .15s linear; }
+  #say { margin-top: 12px; min-height: 1.4em; font-size: 13px; color: #a89a80; }
+  #where { position: fixed; left: 0; right: 0; bottom: 12px; text-align: center; font-size: 11px; color: #6b604e; }
+</style>
+</head>
+<body>
+<div class="card"><h1>Crystal Core</h1><div class="bar"><i id="fill"></i></div><div id="say">Checking for a new build</div></div>
+<div id="where"></div>
+<script>
+  const mb = (n) => `${(n / 1e6).toFixed(1)} MB`;
+  window.say = (m) => {
+    const fill = document.getElementById('fill');
+    const say = document.getElementById('say');
+    if (m.branch) document.getElementById('where').textContent = m.branch;
+    if (m.stage === 'checking') say.textContent = 'Checking for a new build';
+    if (m.stage === 'downloading') {
+      fill.style.width = `${m.total ? Math.round((m.done / m.total) * 100) : 0}%`;
+      say.textContent = `Downloading ${m.files} ${m.files === 1 ? 'file' : 'files'}: ${mb(m.done)} of ${mb(m.total)}`;
+    }
+    if (m.stage === 'starting') {
+      fill.style.width = '100%';
+      say.textContent = m.commit ? `Starting build ${m.commit.slice(0, 7)}` : 'Starting';
+    }
+    if (m.stage === 'offline') {
+      fill.style.width = '100%';
+      say.textContent = `Starting the build already here: ${m.why}`;
+    }
+    if (m.stage === 'error') say.textContent = `The game files could not be loaded: ${m.why}. F5 tries again.`;
+  };
+</script>
+</body>
+</html>

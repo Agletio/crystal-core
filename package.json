@@ -6,7 +6,7 @@
   "scripts": {
     "demo": "tsx src/demo.ts",
     "build": "esbuild src/web.ts --bundle --format=iife --minify --outfile=docs/app.js && npm run build:3d",
-    "build:3d": "esbuild src/desktop.ts --bundle --format=iife --minify --outfile=3d/app.js --log-level=warning && node tools/build-3d.mjs && npm run build:abyss && npm run build:gl",
+    "build:3d": "esbuild src/desktop.ts --bundle --format=iife --minify --outfile=3d/app.js --log-level=warning && npm run build:abyss && npm run build:gl && node tools/build-3d.mjs",
     "zip:3d": "node tools/build-3d.mjs zip",
     "watch": "esbuild src/web.ts --bundle --format=iife --outfile=docs/app.js --watch",
     "typecheck": "tsc --noEmit",

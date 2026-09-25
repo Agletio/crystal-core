@@ -1,0 +1,57 @@
+{
+ "shell": 1,
+ "files": {
+  "abyss/actors.js": {
+   "sha256": "45273f6a9491b26cd7fcd5e4ba5b8ce5dd9bcf1faea79bed30de2065b0a336a2",
+   "size": 11793773
+  },
+  "abyss/furniture.js": {
+   "sha256": "8eab9d1df7aeaeb31100ae460083a8f46f32bd05a196630d8443ac70433d4bfe",
+   "size": 8380765
+  },
+  "abyss/props.js": {
+   "sha256": "1c2ad1fef1d6b5eeaaa368c66c53bf8385c1180bf082a7de253911b8fab87361",
+   "size": 11534613
+  },
+  "abyss/world.js": {
+   "sha256": "cb4c56dd9317dae8e2453a6b534e2e0bf263de7eca1dd156b83a9e742a059684",
+   "size": 5058922
+  },
+  "app.js": {
+   "sha256": "a5de9ba8b9848978decbf5c8f8a6afb882d9b4943f25ce814141735eacdd04a2",
+   "size": 19382849
+  },
+  "gl/camp.js": {
+   "sha256": "adda582d588cb83c52ce3c973aed932d93e3f5155744d6895ef7fc36513873d4",
+   "size": 9526807
+  },
+  "gl/clips.js": {
+   "sha256": "fdfb1339aed1b1cdf2aac5af6b93d0dfff5798872028e7bd922395a3ac72e970",
+   "size": 1849673
+  },
+  "gl/folk.js": {
+   "sha256": "a266dd6b12941e1bf38c59383c3a110b06e3bcf48a75d544e91fd6afa1244df1",
+   "size": 5119459
+  },
+  "gl/gear.js": {
+   "sha256": "6584e103e1b033189939d125f20f1376a2a0234e5b752afe37117916392edace",
+   "size": 3782143
+  },
+  "gl/ground.js": {
+   "sha256": "8915f195f822388c515b8305a68481e9522917fa084833eb921041b59a0b0b3d",
+   "size": 6191336
+  },
+  "gl/heroes.js": {
+   "sha256": "e9a96df3d33cb453c843aa23eb8b168ae3978660e38cdd27f717782ee310c26c",
+   "size": 7608249
+  },
+  "gl/shallows.js": {
+   "sha256": "c6c1d3e402f09f98841f675a60e3f39c0e8fbb52b93485ded5eee3594935d6aa",
+   "size": 8550398
+  },
+  "index.html": {
+   "sha256": "574e6043926d24fb153cda9a457d68a8b24c9edf8713aa5b282182af0b945aab",
+   "size": 180384
+  }
+ }
+}

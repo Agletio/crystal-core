@@ -52,3 +52,8 @@ art/palette-*.png
 # Secrets — never committed. The Meshy key lives here, the way
 # PIXELLAB_API_KEY lives in the environment.
 .env
+
+# The desktop app's own install, its icon (drawn off src/ at build time) and its installers.
+shell/node_modules/
+shell/build/
+shell/dist/
